@@ -1,0 +1,16 @@
+Metadata-Version: 1.0
+Name: PyNbody
+Version: 0.0.0
+Summary: A Python Toolkit for Astrophysical N-Body Simulations
+Home-page: UNKNOWN
+Author: Guilherme G. Ferrari
+Author-email: gg.ferrari@gmail.com
+License: MIT License
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 1 - Planning
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: C
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering
