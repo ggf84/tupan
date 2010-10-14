@@ -2,7 +2,7 @@ Metadata-Version: 1.0
 Name: PyNbody
 Version: 0.0.0
 Summary: A Python Toolkit for Astrophysical N-Body Simulations
-Home-page: UNKNOWN
+Home-page: http://github.com/GuilhermeFerrari/PyNbody
 Author: Guilherme G. Ferrari
 Author-email: gg.ferrari@gmail.com
 License: MIT License

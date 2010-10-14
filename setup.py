@@ -19,7 +19,7 @@ setup(
     author_email='gg.ferrari@gmail.com',
     packages=['pynbody', 'pynbody.test'],
     scripts=['scripts/grav.py', 'scripts/sph.py'],
-    url='',
+    url='http://github.com/GuilhermeFerrari/PyNbody',
     license='MIT License',
     description='A Python Toolkit for Astrophysical N-Body Simulations',
     long_description=open('README.txt').read(),
