@@ -1,8 +1,14 @@
+#!/usr/bin/env python
+
+"""
+Setup Script
+"""
+
 from distutils.core import setup
-from pynbody import VERSION
+import pynbody
 
 
-classifiers = """
+CLASSIFIERS = """
 Development Status :: 1 - Planning
 Intended Audience :: Science/Research
 License :: OSI Approved :: MIT License
@@ -14,16 +20,16 @@ Topic :: Scientific/Engineering
 
 setup(
     name='PyNbody',
-    version=VERSION,
+    version=pynbody.VERSION,
     author='Guilherme G. Ferrari',
     author_email='gg.ferrari@gmail.com',
     packages=['pynbody', 'pynbody.test'],
     scripts=['scripts/grav.py', 'scripts/sph.py'],
     url='http://github.com/GuilhermeFerrari/PyNbody',
     license='MIT License',
-    description='A Python Toolkit for Astrophysical N-Body Simulations',
+    description=pynbody.__doc__.strip(),
     long_description=open('README.txt').read(),
-    classifiers=[c for c in classifiers.split('\n') if c],
+    classifiers=[c for c in CLASSIFIERS.split('\n') if c],
 )
 
 ########## end of file ##########
