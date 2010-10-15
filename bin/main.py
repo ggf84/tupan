@@ -10,6 +10,9 @@ from pynbody import Simulation
 
 
 def process_cmdline():
+    """
+    process command line arguments
+    """
     # create the parser
     parser = argparse.ArgumentParser(
         description='Performs a N-body Simulation')
@@ -24,7 +27,10 @@ def process_cmdline():
     return args
 
 
-def main(argv=None):
+def main():
+    """
+    The top level main function
+    """
     args = process_cmdline()
     mysim = Simulation(args)
     mysim.run()
@@ -32,8 +38,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    status = main()
-    sys.exit(status)
+    sys.exit(main())
 
 
 ########## end of file ##########

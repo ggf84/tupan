@@ -24,7 +24,7 @@ setup(
     author='Guilherme G. Ferrari',
     author_email='gg.ferrari@gmail.com',
     packages=['pynbody', 'pynbody.test'],
-    scripts=['scripts/grav.py', 'scripts/sph.py'],
+    scripts=['bin/main.py'],
     url='http://github.com/GuilhermeFerrari/PyNbody',
     license='MIT License',
     description=pynbody.__doc__.strip(),

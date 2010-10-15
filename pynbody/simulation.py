@@ -10,7 +10,7 @@ class Simulation():
     The Simulation class is the top level class for N-body simulations
     """
 
-    def __init__(self):
+    def __init__(self, args):
         pass
 
     def run(self):
