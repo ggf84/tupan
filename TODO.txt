@@ -1,0 +1,24 @@
+[pt_BR]
+
+    !* a pasta script/ deverá ser renomeada para bin/
+
+    !* criar um script 'main.py' que irá substituir 'grav.py' e 'sph.py'
+
+    * 'main.py' deve ser responsável por fazer a interface de linha de
+       comando e chamar o método run() da classe Simulation. As opções
+       recebidas devem ficar em um dicionário que será passado para run()
+
+    * o método run() deve chamar outros métodos:
+        1. fazer leitura de condições iniciais
+            - caso 'newrun': calcular as grandezas necessárias para prosseguir
+            - caso 'restart': tais grandezas devem fazer parte do input
+        2. fazer a escrita inicial dos outputs e logs da simulação
+        3. ???
+
+    * 
+
+
+
+classe:
+    * Simulation:
+        - 
