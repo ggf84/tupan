@@ -31,6 +31,9 @@ def process_cmdline():
         '-l', '--log', type=argparse.FileType('w'), default=sys.stdout,
         help='the file where the log should be written (default: sys.stdout)')
     parser.add_argument(
+        '-m', '--mod', default='newrun', help='operation mode of '
+        'the simulation (newrun/restart) (default: newrun)')
+    parser.add_argument(
         '-o', '--out', type=int, default=None, help='number of individual '
         'time steps between each particle output (default: None)')
     parser.add_argument(
