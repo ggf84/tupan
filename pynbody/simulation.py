@@ -11,7 +11,7 @@ class Simulation():
     """
 
     def __init__(self, args):
-        pass
+        print args
 
     def run(self):
         """

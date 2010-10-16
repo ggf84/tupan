@@ -2,5 +2,3 @@ include MANIFEST.in
 include *.txt *.cfg
 global-include *.py
 recursive-include doc *.rst
-graft scripts
-
