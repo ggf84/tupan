@@ -5,6 +5,7 @@
 A Python Toolkit for Astrophysical N-Body Simulations
 """
 
+from .version import version, version_status, version_tuple
 from .simulation import Simulation
 
 

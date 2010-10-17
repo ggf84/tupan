@@ -21,10 +21,10 @@ Topic :: Scientific/Engineering
 
 setup(
     name='PyNbody',
-    version=pynbody.version.version,
+    version=pynbody.version,
     author='Guilherme G. Ferrari',
     author_email='gg.ferrari@gmail.com',
-    packages=['pynbody', 'pynbody.test'],
+    packages=['pynbody', 'pynbody.analysis', 'pynbody.models', 'pynbody.test'],
     scripts=['bin/main.py'],
     url='http://github.com/GuilhermeFerrari/PyNbody',
     license='MIT License',

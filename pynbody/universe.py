@@ -68,9 +68,13 @@ class BlackHole(Body):
     def __init__(self, index=0, mass=0.0, pos=Vector(0, 0, 0),
                  vel=Vector(0, 0, 0), spin=Vector(0, 0, 0)):
         """initializer"""
-        self.spin = spin
         Body.__init__(self, index, mass, pos, vel)
+        self.spin = spin
 
+    def __repr__(self):
+        fmt = '[{0:s}, {1:s}, {2:s}, {3:s}, {4:s}]'
+        return fmt.format(repr(self.index), repr(self.mass), repr(self.pos),
+                          repr(self.vel), repr(self.spin))
 
 
 class SPH(Body):
@@ -83,15 +87,18 @@ class Star(Body):
     pass
 
 
-class Universe(object):
+class Universe(dict):
     """This class holds the particle types in the simulation"""
 
-    def __init__(self):
+    def __new__(cls, *members):
+        """constructor"""
+        return dict.__new__(cls, members)
+
+    def __init__(self, members=''):
         """initializer"""
-        self.members = {'body': None,
-                        'star': None,
-                        'sph': None,
-                        'bh': None}
+        dict.__init__(self)
+        for member in members:
+            self[member] = None
 
 
 ########## end of file ##########
