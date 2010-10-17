@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """
 Setup Script
@@ -8,7 +9,7 @@ from distutils.core import setup
 import pynbody
 
 
-CLASSIFIERS = """
+classifiers = """
 Development Status :: 1 - Planning
 Intended Audience :: Science/Research
 License :: OSI Approved :: MIT License
@@ -20,7 +21,7 @@ Topic :: Scientific/Engineering
 
 setup(
     name='PyNbody',
-    version=pynbody.VERSION,
+    version=pynbody.version.version,
     author='Guilherme G. Ferrari',
     author_email='gg.ferrari@gmail.com',
     packages=['pynbody', 'pynbody.test'],
@@ -29,7 +30,7 @@ setup(
     license='MIT License',
     description=pynbody.__doc__.strip(),
     long_description=open('README.txt').read(),
-    classifiers=[c for c in CLASSIFIERS.split('\n') if c],
+    classifiers=[c for c in classifiers.split('\n') if c],
 )
 
 ########## end of file ##########
