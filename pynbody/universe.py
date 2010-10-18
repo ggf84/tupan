@@ -61,7 +61,7 @@ class Body(object):
         return self.etot
 
 
-# TODO: [pt_BR]: sobrescrever os métodos da classe 'Particle' apropriadamente.
+# TODO: [pt_BR]: sobrescrever os métodos da classe 'Body' apropriadamente.
 class BlackHole(Body):
     """A base class for black holes"""
 
