@@ -1,35 +1,39 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-The Simulation class
-"""
+"""The Simulation class"""
 
 from __future__ import print_function
-from .universe import Universe
+from pprint import pprint
+import random
+
+from .universe import Universe, Body, BlackHole
 
 
 class IO():
-    """
-    """
-    def read_ic(self, filename):
-        pass
+    """  """
+
+    def __init__(self):
+        members = ['body', 'bh']
+        self.myuniverse = Universe(members)
+
+    def read_data(self, fname):
+        print('reading data from \'{0}\''.format(fname))
+        return self.myuniverse
 
     def take_a_particle_based_sampling(self):
         pass
 
 
 class Diagnostic():
-    """
-    """
+    """  """
+
     def write_diagnostic(self):
         pass
 
 
-class Simulation():
-    """
-    The Simulation class is the top level class for N-body simulations
-    """
+class Simulation(IO):
+    """The Simulation class is the top level class for N-body simulations"""
 
     def __init__(self, args):
         self.time = 0.0           # global simulation time
@@ -40,19 +44,19 @@ class Simulation():
         self.icfname = args.ic
         self.sim_mode = args.mod
 
-        self.args = args
-        self.myuniv = Universe()
 
     def prepare_for_run(self):
         pass
 
     def run(self):
-        """
-        Initialize a N-body simulation
-        """
+        """Initialize a N-body simulation"""
         print('running...')
-        print(self.args)
-        print(self.myuniv)
+        io = IO()
+        myuniverse = io.read_data(self.icfname)
+
+
+        pprint(myuniverse)
+        print('running... done')
 
 
 ########## end of file ##########

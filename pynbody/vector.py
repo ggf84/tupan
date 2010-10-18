@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-Definition of class Vector.
-"""
+"""Definition of class Vector"""
 
 from __future__ import division
 from math import sqrt
@@ -11,10 +9,8 @@ from math import sqrt
 __all__ = ['Vector']
 
 
-class Vector:
-    """
-    A class for 3-dimensional vectors.
-    """
+class Vector(object):
+    """A base class for 3-dimensional vectors"""
 
     def __init__(self, x=0.0, y=0.0, z=0.0):
         self.x = x
@@ -109,12 +105,12 @@ class Vector:
             return Vector(self.x * obj.x, self.y * obj.y, self.z * obj.z)
         return Vector(self.x * obj, self.y * obj, self.z * obj)
 
-    def __truediv__(self, obj):  # XXX: PY3K
+    def __truediv__(self, obj):  # PY3K
         if isinstance(obj, Vector):
             return Vector(self.x / obj.x, self.y / obj.y, self.z / obj.z)
         return Vector(self.x / obj, self.y / obj, self.z / obj)
 
-    def __floordiv__(self, obj):  # XXX: PY3K
+    def __floordiv__(self, obj):  # PY3K
         if isinstance(obj, Vector):
             return Vector(self.x // obj.x, self.y // obj.y, self.z // obj.z)
         return Vector(self.x // obj, self.y // obj, self.z // obj)
@@ -124,7 +120,7 @@ class Vector:
             return Vector(self.x % obj.x, self.y % obj.y, self.z % obj.z)
         return Vector(self.x % obj, self.y % obj, self.z % obj)
 
-    def __divmod__(self, obj):  # XXX: PY3K
+    def __divmod__(self, obj):  # PY3K
         if isinstance(obj, Vector):
             return (Vector(self.x // obj.x, self.y // obj.y, self.z // obj.z),
                     Vector(self.x % obj.x, self.y % obj.y, self.z % obj.z))
@@ -172,16 +168,16 @@ class Vector:
     def __rmul__(self, obj):
         return Vector(obj * self.x, obj * self.y, obj * self.z)
 
-    def __rtruediv__(self, obj):  # XXX: PY3K
+    def __rtruediv__(self, obj):  # PY3K
         return Vector(obj / self.x, obj / self.y, obj / self.z)
 
-    def __rfloordiv__(self, obj):  # XXX: PY3K
+    def __rfloordiv__(self, obj):  # PY3K
         return Vector(obj // self.x, obj // self.y, obj // self.z)
 
     def __rmod__(self, obj):
         return Vector(obj % self.x, obj % self.y, obj % self.z)
 
-    def __rdivmod__(self, obj):  # XXX: PY3K
+    def __rdivmod__(self, obj):  # PY3K
         return (Vector(obj // self.x, obj // self.y, obj // self.z),
                 Vector(obj % self.x, obj % self.y, obj % self.z))
 
@@ -238,7 +234,7 @@ class Vector:
             self.z *= obj
         return self
 
-    def __itruediv__(self, obj):  # XXX: PY3K
+    def __itruediv__(self, obj):  # PY3K
         if isinstance(obj, Vector):
             self.x /= obj.x
             self.y /= obj.y
@@ -249,7 +245,7 @@ class Vector:
             self.z /= obj
         return self
 
-    def __ifloordiv__(self, obj):  # XXX: PY3K
+    def __ifloordiv__(self, obj):  # PY3K
         if isinstance(obj, Vector):
             self.x //= obj.x
             self.y //= obj.y
@@ -354,28 +350,34 @@ class Vector:
     # Square and Norm Vector Operations
 
     def square(self):
+        """Returns the square norm of the vector"""
         return (self.x * self.x + self.y * self.y + self.z * self.z)
 
     def norm(self):
+        """Returns the norm of the vector"""
         return sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
 
     # Unit Vector Operations
 
     def unit_vector(self):
+        """Returns its unit vector"""
         temp = sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
         return Vector(self.x / temp, self.y / temp, self.z / temp)
 
     def normalize(self):
+        """Returns the normalized vector"""
         temp = sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
         self.x, self.y, self.z = self.x / temp, self.y / temp, self.z / temp
         return self
 
     # Vector Multiplication Operations
 
-    def dot(self, obj):  # Dot Product
+    def dot(self, obj):
+        """Returns the dot vector product"""
         return (self.x * obj.x + self.y * obj.y + self.z * obj.z)
 
-    def cross(self, obj):  # Vector Cross Product
+    def cross(self, obj):
+        """Returns the cross vector product"""
         return Vector(self.y * obj.z - self.z * obj.y,
                       self.z * obj.x - self.x * obj.z,
                       self.x * obj.y - self.y * obj.x)
@@ -383,6 +385,7 @@ class Vector:
     # Copy Vector Operation
 
     def copy(self):
+        """Returns a copy of the vector"""
         return Vector(self.x, self.y, self.z)
 
 

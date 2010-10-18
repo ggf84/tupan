@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-"""  """
+"""This module holds base classes for particle types"""
 
 from vector import Vector
 
@@ -10,13 +10,27 @@ from vector import Vector
 class Body(object):
     """A base class for particles"""
 
-    def __init__(self, index=0, mass=0.0,
-                 pos=Vector(0, 0, 0), vel=Vector(0, 0, 0)):
-        """initializer"""
-        self.index = index
-        self.mass = mass
-        self.pos = pos
-        self.vel = vel
+    def __init__(self, index=None, mass=None, pos=None, vel=None):
+
+        if index is None:
+            self.index = 0
+        else:
+            self.index = index
+
+        if mass is None:
+            self.mass = 0.0
+        else:
+            self.mass = mass
+
+        if pos is None:
+            self.pos = Vector(0, 0, 0)
+        else:
+            self.pos = pos
+
+        if vel is None:
+            self.vel = Vector(0, 0, 0)
+        else:
+            self.vel = vel
 
         self.acc = None
         self.ekin = None
@@ -32,17 +46,17 @@ class Body(object):
         """get the particle's acceleration due to other bodies"""
         self.acc = Vector(0, 0, 0)
         for body in bodies:
-            dr = self.pos - body.pos
-            drinv3 = dr.square() ** (-1.5)
-            self.acc -= body.mass * dr * drinv3
+            dist = self.pos - body.pos
+            distinv3 = dist.square() ** (-1.5)
+            self.acc -= body.mass * dist * distinv3
         return self.acc
 
     def get_pot(self, bodies):
         """get the gravitational potential in the particle's location"""
         pot = 0.0
         for body in bodies:
-            dr = self.pos - body.pos
-            pot -= body.mass / dr.norm()
+            dist = self.pos - body.pos
+            pot -= body.mass / dist.norm()
         return pot
 
     def get_ekin(self):
@@ -65,11 +79,13 @@ class Body(object):
 class BlackHole(Body):
     """A base class for black holes"""
 
-    def __init__(self, index=0, mass=0.0, pos=Vector(0, 0, 0),
-                 vel=Vector(0, 0, 0), spin=Vector(0, 0, 0)):
-        """initializer"""
+    def __init__(self, index=None, mass=None, pos=None, vel=None, spin=None):
+
         Body.__init__(self, index, mass, pos, vel)
-        self.spin = spin
+        if spin is None:
+            self.spin = Vector(0, 0, 0)
+        else:
+            self.spin = spin
 
     def __repr__(self):
         fmt = '[{0:s}, {1:s}, {2:s}, {3:s}, {4:s}]'
@@ -77,7 +93,7 @@ class BlackHole(Body):
                           repr(self.vel), repr(self.spin))
 
 
-class SPH(Body):
+class Sph(Body):
     """A base class for sph particles"""
     pass
 
@@ -97,16 +113,14 @@ class Universe(dict):
     def __init__(self, members=''):
         """initializer"""
         dict.__init__(self)
-        for member in members:
-#            self[member] = None
-            if member is 'body':
-                self[member] = Body()
-            if member is 'bh':
-                self[member] = BlackHole()
-            if member is 'star':
-                self[member] = Star()
-            if member is 'sph':
-                self[member] = Sph()
+        if 'body' in members:
+            self['body'] = [Body()]
+        if 'bh' in members:
+            self['bh'] = [BlackHole()]
+        if 'star' in members:
+            self['star'] = [Star()]
+        if 'sph' in members:
+            self['sph'] = [Sph()]
 
 
 ########## end of file ##########
