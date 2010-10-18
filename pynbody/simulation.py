@@ -32,6 +32,14 @@ class Simulation():
     """
 
     def __init__(self, args):
+        self.time = 0.0           # global simulation time
+        self.eta = args.tau
+        self.fdia = args.dia      # diagnostic frequency per time unit
+        self.fdump = args.out     # indicates how often each particle is dumped
+        self.tend = args.end
+        self.icfname = args.ic
+        self.sim_mode = args.mod
+
         self.args = args
         self.myuniv = Universe()
 
