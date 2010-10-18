@@ -98,7 +98,15 @@ class Universe(dict):
         """initializer"""
         dict.__init__(self)
         for member in members:
-            self[member] = None
+#            self[member] = None
+            if member is 'body':
+                self[member] = Body()
+            if member is 'bh':
+                self[member] = BlackHole()
+            if member is 'star':
+                self[member] = Star()
+            if member is 'sph':
+                self[member] = Sph()
 
 
 ########## end of file ##########
