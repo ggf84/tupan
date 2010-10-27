@@ -12,9 +12,6 @@
         2. fazer a escrita inicial dos outputs e logs da simulação
         3. ???
 
-    * 
-
-
 
 classe:
     * Simulation:

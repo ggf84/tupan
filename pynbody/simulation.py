@@ -19,6 +19,7 @@ class IO():
 
     def read_data(self, fname):
         print('reading data from \'{0}\''.format(fname))
+        for i in xrange(100000): a = i*i-2*i+i/5
         return self.myuniverse
 
     def take_a_particle_based_sampling(self):
@@ -47,6 +48,7 @@ class Simulation(IO):
 
     def prepare_for_run(self):
         pass
+
 
     def run(self):
         """Initialize a N-body simulation"""

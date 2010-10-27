@@ -10,12 +10,34 @@ from vector import Vector
 class Body(object):
     """A base class for particles"""
 
-    def __init__(self, index=None, mass=None, pos=None, vel=None):
+    def __init__(self,
+                 index=None,
+                 nstep=None,
+                 time=None,
+                 tstep=None,
+                 mass=None,
+                 pos=None,
+                 vel=None):
 
         if index is None:
             self.index = 0
         else:
             self.index = index
+
+        if nstep is None:
+            self.nstep = 0
+        else:
+            self.nstep = nstep
+
+        if time is None:
+            self.time = 0.0
+        else:
+            self.time = time
+
+        if tstep is None:
+            self.tstep = 0.0
+        else:
+            self.tstep = tstep
 
         if mass is None:
             self.mass = 0.0
@@ -32,31 +54,31 @@ class Body(object):
         else:
             self.vel = vel
 
-        self.acc = None
         self.ekin = None
         self.epot = None
         self.etot = None
 
     def __repr__(self):
-        fmt = '[{0:s}, {1:s}, {2:s}, {3:s}]'
-        return fmt.format(repr(self.index), repr(self.mass),
-                          repr(self.pos), repr(self.vel))
+        fmt = '[{0:s}, {1:s}, {2:s}, {3:s}, {4:s}, {5:s}, {6:s}]'
+        return fmt.format(repr(self.index), repr(self.nstep), repr(self.time),
+                          repr(self.tstep), repr(self.mass), repr(self.pos),
+                          repr(self.vel))
 
     def get_acc(self, bodies):
         """get the particle's acceleration due to other bodies"""
-        self.acc = Vector(0, 0, 0)
+        acc = Vector(0, 0, 0)
         for body in bodies:
-            dist = self.pos - body.pos
-            distinv3 = dist.square() ** (-1.5)
-            self.acc -= body.mass * dist * distinv3
-        return self.acc
+            dpos = self.pos - body.pos
+            dposinv3 = dpos.square() ** (-1.5)
+            acc -= body.mass * dpos * dposinv3
+        return acc
 
     def get_pot(self, bodies):
         """get the gravitational potential in the particle's location"""
         pot = 0.0
         for body in bodies:
-            dist = self.pos - body.pos
-            pot -= body.mass / dist.norm()
+            dpos = self.pos - body.pos
+            pot -= body.mass / dpos.norm()
         return pot
 
     def get_ekin(self):
@@ -79,17 +101,26 @@ class Body(object):
 class BlackHole(Body):
     """A base class for black holes"""
 
-    def __init__(self, index=None, mass=None, pos=None, vel=None, spin=None):
+    def __init__(self,
+                 index=None,
+                 nstep=None,
+                 time=None,
+                 tstep=None,
+                 mass=None,
+                 pos=None,
+                 vel=None,
+                 spin=None):
 
-        Body.__init__(self, index, mass, pos, vel)
+        Body.__init__(self, index, nstep, time, tstep, mass, pos, vel)
         if spin is None:
             self.spin = Vector(0, 0, 0)
         else:
             self.spin = spin
 
     def __repr__(self):
-        fmt = '[{0:s}, {1:s}, {2:s}, {3:s}, {4:s}]'
-        return fmt.format(repr(self.index), repr(self.mass), repr(self.pos),
+        fmt = '[{0:s}, {1:s}, {2:s}, {3:s}, {4:s}, {5:s}, {6:s}, {7:s}]'
+        return fmt.format(repr(self.index), repr(self.nstep), repr(self.time),
+                          repr(self.tstep), repr(self.mass), repr(self.pos),
                           repr(self.vel), repr(self.spin))
 
 
