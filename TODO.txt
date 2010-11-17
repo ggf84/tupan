@@ -11,6 +11,7 @@
             - caso 'restart': tais grandezas devem fazer parte do input
         2. fazer a escrita inicial dos outputs e logs da simulação
         3. ???
+        4. ????
 
 
 classe:
