@@ -14,12 +14,16 @@ class IO():
     """  """
 
     def __init__(self):
-        members = ['body', 'bh']
-        self.myuniverse = Universe(members)
+        self.myuniverse = Universe()
 
     def read_data(self, fname):
         print('reading data from \'{0}\''.format(fname))
-        for i in xrange(100000): a = i*i-2*i+i/5
+        for i in xrange(10000): a = i*i-2*i+i/5
+
+        for i in xrange(8):
+            self.myuniverse.get_member('body', Body())
+        for i in xrange(3):
+            self.myuniverse.get_member('bh', BlackHole())
         return self.myuniverse
 
     def take_a_particle_based_sampling(self):
@@ -55,7 +59,6 @@ class Simulation(IO):
         print('running...')
         io = IO()
         myuniverse = io.read_data(self.icfname)
-
 
         pprint(myuniverse)
         print('running... done')

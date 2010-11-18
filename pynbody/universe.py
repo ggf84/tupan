@@ -4,6 +4,7 @@
 
 """This module holds base classes for particle types"""
 
+import sys
 from vector import Vector
 
 
@@ -11,33 +12,27 @@ class Body(object):
     """A base class for particles"""
 
     def __init__(self,
-                 index=None,
                  nstep=None,
-                 time=None,
                  tstep=None,
+                 time=None,
                  mass=None,
                  pos=None,
                  vel=None):
-
-        if index is None:
-            self.index = 0
-        else:
-            self.index = index
 
         if nstep is None:
             self.nstep = 0
         else:
             self.nstep = nstep
 
-        if time is None:
-            self.time = 0.0
-        else:
-            self.time = time
-
         if tstep is None:
             self.tstep = 0.0
         else:
             self.tstep = tstep
+
+        if time is None:
+            self.time = 0.0
+        else:
+            self.time = time
 
         if mass is None:
             self.mass = 0.0
@@ -45,12 +40,12 @@ class Body(object):
             self.mass = mass
 
         if pos is None:
-            self.pos = Vector(0, 0, 0)
+            self.pos = Vector(0.0, 0.0, 0.0)
         else:
             self.pos = pos
 
         if vel is None:
-            self.vel = Vector(0, 0, 0)
+            self.vel = Vector(0.0, 0.0, 0.0)
         else:
             self.vel = vel
 
@@ -59,14 +54,14 @@ class Body(object):
         self.etot = None
 
     def __repr__(self):
-        fmt = '[{0:s}, {1:s}, {2:s}, {3:s}, {4:s}, {5:s}, {6:s}]'
-        return fmt.format(repr(self.index), repr(self.nstep), repr(self.time),
-                          repr(self.tstep), repr(self.mass), repr(self.pos),
-                          repr(self.vel))
+        fmt = '({0:s}, {1:s}, {2:s}, {3:s}, {4:s}, {5:s})'
+        return fmt.format(repr(self.nstep), repr(self.tstep),
+                          repr(self.time), repr(self.mass),
+                          repr(self.pos), repr(self.vel))
 
     def get_acc(self, bodies):
         """get the particle's acceleration due to other bodies"""
-        acc = Vector(0, 0, 0)
+        acc = Vector(0.0, 0.0, 0.0)
         for body in bodies:
             dpos = self.pos - body.pos
             dposinv3 = dpos.square() ** (-1.5)
@@ -102,26 +97,25 @@ class BlackHole(Body):
     """A base class for black holes"""
 
     def __init__(self,
-                 index=None,
                  nstep=None,
-                 time=None,
                  tstep=None,
+                 time=None,
                  mass=None,
                  pos=None,
                  vel=None,
                  spin=None):
 
-        Body.__init__(self, index, nstep, time, tstep, mass, pos, vel)
+        Body.__init__(self, nstep, tstep, time, mass, pos, vel)
         if spin is None:
-            self.spin = Vector(0, 0, 0)
+            self.spin = Vector(0.0, 0.0, 0.0)
         else:
             self.spin = spin
 
     def __repr__(self):
-        fmt = '[{0:s}, {1:s}, {2:s}, {3:s}, {4:s}, {5:s}, {6:s}, {7:s}]'
-        return fmt.format(repr(self.index), repr(self.nstep), repr(self.time),
-                          repr(self.tstep), repr(self.mass), repr(self.pos),
-                          repr(self.vel), repr(self.spin))
+        fmt = '({0:s}, {1:s}, {2:s}, {3:s}, {4:s}, {5:s}, {6:s})'
+        return fmt.format(repr(self.nstep), repr(self.tstep),
+                          repr(self.time), repr(self.mass),
+                          repr(self.pos), repr(self.vel), repr(self.spin))
 
 
 class Sph(Body):
@@ -137,21 +131,55 @@ class Star(Body):
 class Universe(dict):
     """This class holds the particle types in the simulation"""
 
-    def __new__(cls, *members):
+    def __new__(cls):
         """constructor"""
-        return dict.__new__(cls, members)
+        return dict.__new__(cls)
 
-    def __init__(self, members=''):
+    def __init__(self):
         """initializer"""
         dict.__init__(self)
-        if 'body' in members:
-            self['body'] = [Body()]
-        if 'bh' in members:
-            self['bh'] = [BlackHole()]
-        if 'star' in members:
-            self['star'] = [Star()]
-        if 'sph' in members:
-            self['sph'] = [Sph()]
+        self['body'] = {}
+        self['bh'] = {}
+        self['sph'] = {}
+        self['star'] = {}
+
+    def get_member(self, member='', data=None,
+                   body_idx = iter(xrange(sys.maxint)),
+                   bh_idx = iter(xrange(sys.maxint)),
+                   sph_idx = iter(xrange(sys.maxint)),
+                   star_idx = iter(xrange(sys.maxint))):
+
+        if 'body' in member:
+            try:
+                if not isinstance(data, Body):
+                    raise TypeError('expcted a \'Body\' type')
+                self['body'][body_idx.next()] = data
+            except TypeError:
+                raise
+
+        if 'bh' in member:
+            try:
+                if not isinstance(data, BlackHole):
+                    raise TypeError('expcted a \'BlackHole\' type')
+                self['bh'][bh_idx.next()] = data
+            except TypeError:
+                raise
+
+        if 'sph' in member:
+            try:
+                if not isinstance(data, Sph):
+                    raise TypeError('expcted a \'Sph\' type')
+                self['sph'][sph_idx.next()] = data
+            except TypeError:
+                raise
+
+        if 'star' in member:
+            try:
+                if not isinstance(data, Star):
+                    raise TypeError('expcted a \'Star\' type')
+                self['star'][star_idx.next()] = data
+            except TypeError:
+                raise
 
 
 ########## end of file ##########
