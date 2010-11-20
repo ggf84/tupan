@@ -1,4 +1,5 @@
 build
 dist
+*.hdf5
 MANIFEST
 *.pyc

@@ -59,6 +59,17 @@ class Body(object):
                           repr(self.time), repr(self.mass),
                           repr(self.pos), repr(self.vel))
 
+    def __getitem__(self, index):
+        return (self.nstep, self.tstep, self.time, self.mass, self.pos, self.vel)[index]
+
+    def __iter__(self):
+        yield self.nstep
+        yield self.tstep
+        yield self.time
+        yield self.mass
+        yield self.pos
+        yield self.vel
+
     def get_acc(self, bodies):
         """get the particle's acceleration due to other bodies"""
         acc = Vector(0.0, 0.0, 0.0)
@@ -117,6 +128,17 @@ class BlackHole(Body):
                           repr(self.time), repr(self.mass),
                           repr(self.pos), repr(self.vel), repr(self.spin))
 
+    def __getitem__(self, index):
+        return (self.nstep, self.tstep, self.time, self.mass, self.pos, self.vel, self.spin)[index]
+
+    def __iter__(self):
+        yield self.nstep
+        yield self.tstep
+        yield self.time
+        yield self.mass
+        yield self.pos
+        yield self.vel
+        yield self.spin
 
 class Sph(Body):
     """A base class for sph particles"""
@@ -138,10 +160,23 @@ class Universe(dict):
     def __init__(self):
         """initializer"""
         dict.__init__(self)
-        self['body'] = {}
-        self['bh'] = {}
-        self['sph'] = {}
-        self['star'] = {}
+
+        # Body
+        self['body'] = {'dtype': [('nstep', 'u4'), ('tstep', 'f8'),
+                                  ('time', 'f8'), ('mass', 'f8'),
+                                  ('pos', 'f8', (3,)), ('vel', 'f8', (3,))]}
+
+        # BlackHole
+        self['bh'] = {'dtype': [('nstep', 'u4'), ('tstep', 'f8'),
+                                ('time', 'f8'), ('mass', 'f8'),
+                                ('pos', 'f8', (3,)), ('vel', 'f8', (3,)),
+                                ('spin', 'f8', (3,))]}
+
+        # Sph
+        self['sph'] = {'dtype': None}
+
+        # Star
+        self['star'] = {'dtype': None}
 
     def get_member(self, member='', data=None,
                    body_idx = iter(xrange(sys.maxint)),
