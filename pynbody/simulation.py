@@ -34,12 +34,28 @@ class IO():
                                                   chunks=True,
                                                   compression='gzip',
                                                   shuffle=True)
-                    tuplefied_vv = []
-                    for kk in v.keys():
-                        if isinstance(kk, int):
-                            tuplefied_vv.insert(kk, tuple(v.get(kk)))
-                    wl[:,1] = tuplefied_vv
+#                    tuplefied = []
+#                    for kk in sorted(v.keys()):
+#                        if isinstance(kk, int):
+#                            tuplefied.append(tuple(v.get(kk)))
+#                    wl[:,1] = tuplefied
 
+
+                    tuplefied = [tuple(v.get(kk))
+                                 for kk in sorted(v.keys())
+                                 if isinstance(kk, int)]
+                    wl[:,1] = tuplefied
+
+
+#                    def myfilter(obj):
+#                        return isinstance(obj[0], int)
+#                    def func(items):
+#                        return tuple(items[1])
+#                    tuplefied = map(func, filter(myfilter, sorted(v.items())))
+#                    wl[:,1] = tuplefied
+
+
+#                    pprint(tuplefied)
 #                    print(wl[:,1])
 
 
@@ -70,7 +86,7 @@ class IO():
     def read_data(self, fname):
         print('reading data from \'{0}\''.format(fname))
 
-        for i in xrange(10000):
+        for i in xrange(100000):
             data =  (random.randint(16, 64),
                      0.001*random.random(),
                      float(i),
