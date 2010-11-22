@@ -7,8 +7,11 @@ from __future__ import (print_function, with_statement)
 from pprint import pprint
 import random
 import h5py
+import gzip
+import time
 
 from .universe import Universe, Body, BlackHole
+from vector import Vector
 
 
 class IO():
@@ -24,15 +27,38 @@ class IO():
             for (k, v) in data.items():
                 subgrp[k] = snap.create_group(k)
                 subgrp[k].attrs['dtype'] = str(v['dtype'])
-                for (kk, vv) in v.items():
-                    if isinstance(kk, int):
-                        wl = subgrp[k].create_dataset('worldline'+str(kk), (1,),
-                                                      dtype=v['dtype'],
-                                                      maxshape=(None,),
-                                                      compression='gzip',
-                                                      shuffle=True)
-                        wl[0] = tuple(vv)
+                if v['members'] > 0:
+                    wl = subgrp[k].create_dataset('wl', (v['members'],3),
+                                                  dtype=v['dtype'],
+                                                  maxshape=(None,None),
+                                                  chunks=True,
+                                                  compression='gzip',
+                                                  shuffle=True)
+                    tuplefied_vv = []
+                    for kk in v.keys():
+                        if isinstance(kk, int):
+                            tuplefied_vv.insert(kk, tuple(v.get(kk)))
+                    wl[:,1] = tuplefied_vv
 
+#                    print(wl[:,1])
+
+
+
+#        with h5py.File(fname+'.hdf5', 'w') as fobj:
+#            snap = fobj.create_group('snapshot')
+#            subgrp = {}
+#            for (k, v) in data.items():
+#                subgrp[k] = snap.create_group(k)
+#                subgrp[k].attrs['dtype'] = str(v['dtype'])
+#                for (kk, vv) in v.items():
+#                    if isinstance(kk, int):
+#                        wl = subgrp[k].create_dataset('wl'+str(kk), (1,),
+#                                                      dtype=v['dtype'],
+#                                                      maxshape=(None,),
+#                                                      chunks=True,
+#                                                      compression='gzip',
+#                                                      shuffle=True)
+#                        wl[0] = tuple(vv)
 
 
     def load_snapshot(self):
@@ -43,12 +69,25 @@ class IO():
 
     def read_data(self, fname):
         print('reading data from \'{0}\''.format(fname))
-        for i in xrange(10000): a = i*i-2*i+i/5
 
-        for i in xrange(10):
-            self.myuniverse.get_member('body', Body(pos=[3.0*i, 2.0+i, (i+1)/2.0]))
+        for i in xrange(10000):
+            data =  (random.randint(16, 64),
+                     0.001*random.random(),
+                     float(i),
+                     random.random(),
+                     Vector(random.random(), random.random(), random.random()),
+                     Vector(random.random(), random.random(), random.random()))
+            self.myuniverse.get_member('body', Body(*data))
         for i in xrange(3):
-            self.myuniverse.get_member('bh', BlackHole(vel=[3.0+i, 2.0*i, (i+1)/4.0]))
+            data =  (random.randint(16, 64),
+                     0.001*random.random(),
+                     float(i),
+                     random.random(),
+                     Vector(random.random(), random.random(), random.random()),
+                     Vector(3.0+i, 2.0*i, (i+1)/4.0),
+                     Vector(random.random(), random.random(), random.random()))
+            self.myuniverse.get_member('bh', BlackHole(*data))
+
         return self.myuniverse
 
     def take_a_particle_based_sampling(self):
@@ -86,10 +125,20 @@ class Simulation(IO):
         myuniverse = io.read_data(self.icfname)
 
 #        print('sleeping...')
-#        import time
 #        time.sleep(5)
 
-        io.dump_snapshot('snap', myuniverse)
+        for i in range(5):
+            t0 = time.time()
+            io.dump_snapshot('snap', myuniverse)
+            t1 = time.time()
+            print(t1-t0)
+
+        f_in = open('snap.hdf5', 'r')
+        f_out = gzip.open('snap.hdf5.gz', 'wb')
+        f_out.writelines(f_in)
+        f_out.close()
+        f_in.close()
+
 
 #        pprint(myuniverse)
         print('running... done')

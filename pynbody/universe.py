@@ -162,21 +162,25 @@ class Universe(dict):
         dict.__init__(self)
 
         # Body
-        self['body'] = {'dtype': [('nstep', 'u4'), ('tstep', 'f8'),
+        self['body'] = {'members': 0,
+                        'dtype': [('nstep', 'u4'), ('tstep', 'f8'),
                                   ('time', 'f8'), ('mass', 'f8'),
                                   ('pos', 'f8', (3,)), ('vel', 'f8', (3,))]}
 
         # BlackHole
-        self['bh'] = {'dtype': [('nstep', 'u4'), ('tstep', 'f8'),
+        self['bh'] = {'members': 0,
+                      'dtype': [('nstep', 'u4'), ('tstep', 'f8'),
                                 ('time', 'f8'), ('mass', 'f8'),
                                 ('pos', 'f8', (3,)), ('vel', 'f8', (3,)),
                                 ('spin', 'f8', (3,))]}
 
         # Sph
-        self['sph'] = {'dtype': None}
+        self['sph'] = {'members': 0,
+                       'dtype': None}
 
         # Star
-        self['star'] = {'dtype': None}
+        self['star'] = {'members': 0,
+                        'dtype': None}
 
     def get_member(self, member='', data=None,
                    body_idx = iter(xrange(sys.maxint)),
@@ -188,7 +192,9 @@ class Universe(dict):
             try:
                 if not isinstance(data, Body):
                     raise TypeError('expcted a \'Body\' type')
-                self['body'][body_idx.next()] = data
+                index = body_idx.next()
+                self['body']['members'] = index+1
+                self['body'][index] = data
             except TypeError:
                 raise
 
@@ -196,7 +202,9 @@ class Universe(dict):
             try:
                 if not isinstance(data, BlackHole):
                     raise TypeError('expcted a \'BlackHole\' type')
-                self['bh'][bh_idx.next()] = data
+                index = bh_idx.next()
+                self['bh']['members'] = index+1
+                self['bh'][index] = data
             except TypeError:
                 raise
 
@@ -204,7 +212,9 @@ class Universe(dict):
             try:
                 if not isinstance(data, Sph):
                     raise TypeError('expcted a \'Sph\' type')
-                self['sph'][sph_idx.next()] = data
+                index = sph_idx.next()
+                self['sph']['members'] = index+1
+                self['sph'][index] = data
             except TypeError:
                 raise
 
@@ -212,7 +222,9 @@ class Universe(dict):
             try:
                 if not isinstance(data, Star):
                     raise TypeError('expcted a \'Star\' type')
-                self['star'][star_idx.next()] = data
+                index = star_idx.next()
+                self['star']['members'] = index+1
+                self['star'][index] = data
             except TypeError:
                 raise
 
