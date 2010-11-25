@@ -4,71 +4,49 @@
 
 """This module holds base classes for particle types"""
 
-import sys
-from vector import Vector
+import numpy as np
+from .vector import Vector
 
 
-class Body(object):
+class Body(tuple):
     """A base class for particles"""
 
-    def __init__(self,
-                 nstep=None,
-                 tstep=None,
-                 time=None,
-                 mass=None,
-                 pos=None,
-                 vel=None):
+    def __init__(self, fields=None):
 
-        if nstep is None:
+        tuple.__init__(self)
+
+        if fields:
+            (self.index,
+             self.nstep,
+             self.tstep,
+             self.time,
+             self.mass,
+             self.pos,
+             self.vel) = fields
+        else:
+            self.index = 0
             self.nstep = 0
-        else:
-            self.nstep = nstep
-
-        if tstep is None:
             self.tstep = 0.0
-        else:
-            self.tstep = tstep
-
-        if time is None:
             self.time = 0.0
-        else:
-            self.time = time
-
-        if mass is None:
             self.mass = 0.0
-        else:
-            self.mass = mass
-
-        if pos is None:
             self.pos = Vector(0.0, 0.0, 0.0)
-        else:
-            self.pos = pos
-
-        if vel is None:
             self.vel = Vector(0.0, 0.0, 0.0)
-        else:
-            self.vel = vel
 
         self.ekin = None
         self.epot = None
         self.etot = None
 
-    def __repr__(self):
-        fmt = '({0:s}, {1:s}, {2:s}, {3:s}, {4:s}, {5:s})'
-        return fmt.format(repr(self.nstep), repr(self.tstep),
-                          repr(self.time), repr(self.mass),
-                          repr(self.pos), repr(self.vel))
-
-    def __getitem__(self, index):
-        return (self.nstep, self.tstep, self.time, self.mass, self.pos, self.vel)[index]
-
     def __iter__(self):
+        yield self.index
         yield self.nstep
         yield self.tstep
         yield self.time
         yield self.mass
         yield self.pos
         yield self.vel
+
+    def __repr__(self):
+        return '{0}'.format(self[:])
 
     def get_acc(self, bodies):
         """get the particle's acceleration due to other bodies"""
@@ -107,31 +85,17 @@ class Body(object):
 class BlackHole(Body):
     """A base class for black holes"""
 
-    def __init__(self,
-                 nstep=None,
-                 tstep=None,
-                 time=None,
-                 mass=None,
-                 pos=None,
-                 vel=None,
-                 spin=None):
+    def __init__(self, fields=None):
 
-        Body.__init__(self, nstep, tstep, time, mass, pos, vel)
-        if spin is None:
-            self.spin = Vector(0.0, 0.0, 0.0)
+        if fields:
+            Body.__init__(self, fields[:-1])
+            self.spin = list(fields[::-1][0])
         else:
-            self.spin = spin
-
-    def __repr__(self):
-        fmt = '({0:s}, {1:s}, {2:s}, {3:s}, {4:s}, {5:s}, {6:s})'
-        return fmt.format(repr(self.nstep), repr(self.tstep),
-                          repr(self.time), repr(self.mass),
-                          repr(self.pos), repr(self.vel), repr(self.spin))
-
-    def __getitem__(self, index):
-        return (self.nstep, self.tstep, self.time, self.mass, self.pos, self.vel, self.spin)[index]
+            Body.__init__(self)
+            self.spin = Vector(0.0, 0.0, 0.0)
 
     def __iter__(self):
+        yield self.index
         yield self.nstep
         yield self.tstep
         yield self.time
@@ -139,6 +103,10 @@ class BlackHole(Body):
         yield self.pos
         yield self.vel
         yield self.spin
+
+    def __repr__(self):
+        return '{0}'.format(self[:])
+
 
 class Sph(Body):
     """A base class for sph particles"""
@@ -162,71 +130,57 @@ class Universe(dict):
         dict.__init__(self)
 
         # Body
-        self['body'] = {'members': 0,
-                        'dtype': [('nstep', 'u4'), ('tstep', 'f8'),
-                                  ('time', 'f8'), ('mass', 'f8'),
-                                  ('pos', 'f8', (3,)), ('vel', 'f8', (3,))]}
+        self['body'] = {}
+        self['body'].setdefault('array', np.array([], dtype=Body))
+        self['body'].setdefault('format',
+                                [('index', '<u8'), ('nstep', '<u8'),
+                                 ('tstep', '<f8'), ('time', '<f8'),
+                                 ('mass', '<f8'), ('pos', '<f8', (3,)),
+                                 ('vel', '<f8', (3,))])
 
         # BlackHole
-        self['bh'] = {'members': 0,
-                      'dtype': [('nstep', 'u4'), ('tstep', 'f8'),
-                                ('time', 'f8'), ('mass', 'f8'),
-                                ('pos', 'f8', (3,)), ('vel', 'f8', (3,)),
-                                ('spin', 'f8', (3,))]}
+        self['bh'] = {}
+        self['bh'].setdefault('array', np.array([], dtype=BlackHole))
+        self['bh'].setdefault('format',
+                              [('index', '<u8'), ('nstep', '<u8'),
+                               ('tstep', '<f8'), ('time', '<f8'),
+                               ('mass', '<f8'), ('pos', '<f8', (3,)),
+                               ('vel', '<f8', (3,)), ('spin', '<f8', (3,))])
 
         # Sph
-        self['sph'] = {'members': 0,
-                       'dtype': None}
+        self['sph'] = {}
+        self['sph'].setdefault('array', np.array([], dtype=Sph))
+        self['sph'].setdefault('format', None)
 
         # Star
-        self['star'] = {'members': 0,
-                        'dtype': None}
+        self['star'] = {}
+        self['star'].setdefault('array', np.array([], dtype=Star))
+        self['star'].setdefault('format', None)
 
-    def get_member(self, member='', data=None,
-                   body_idx = iter(xrange(sys.maxint)),
-                   bh_idx = iter(xrange(sys.maxint)),
-                   sph_idx = iter(xrange(sys.maxint)),
-                   star_idx = iter(xrange(sys.maxint))):
-
+    def set_members(self, member='', data=None):
         if 'body' in member:
-            try:
-                if not isinstance(data, Body):
-                    raise TypeError('expcted a \'Body\' type')
-                index = body_idx.next()
-                self['body']['members'] = index+1
-                self['body'][index] = data
-            except TypeError:
-                raise
+            tmp = np.ndarray(len(data), dtype=Body)
+            tmp.setfield(data, dtype=Body)
+            self['body']['array'] = np.array(tmp, dtype=Body)
+#            self['body']['array'] = data
 
         if 'bh' in member:
-            try:
-                if not isinstance(data, BlackHole):
-                    raise TypeError('expcted a \'BlackHole\' type')
-                index = bh_idx.next()
-                self['bh']['members'] = index+1
-                self['bh'][index] = data
-            except TypeError:
-                raise
+            tmp = np.ndarray(len(data), dtype=BlackHole)
+            tmp.setfield(data, dtype=BlackHole)
+            self['bh']['array'] = np.array(tmp, dtype=BlackHole)
+#            self['bh']['array'] = data
 
         if 'sph' in member:
-            try:
-                if not isinstance(data, Sph):
-                    raise TypeError('expcted a \'Sph\' type')
-                index = sph_idx.next()
-                self['sph']['members'] = index+1
-                self['sph'][index] = data
-            except TypeError:
-                raise
+            tmp = np.ndarray(len(data), dtype=Sph)
+            tmp.setfield(data, dtype=Sph)
+            self['sph']['array'] = np.array(tmp, dtype=Sph)
+#            self['sph']['array'] = data
 
         if 'star' in member:
-            try:
-                if not isinstance(data, Star):
-                    raise TypeError('expcted a \'Star\' type')
-                index = star_idx.next()
-                self['star']['members'] = index+1
-                self['star'][index] = data
-            except TypeError:
-                raise
+            tmp = np.ndarray(len(data), dtype=Star)
+            tmp.setfield(data, dtype=Star)
+            self['star']['array'] = np.array(tmp, dtype=Star)
+#            self['star']['array'] = data
 
 
 ########## end of file ##########

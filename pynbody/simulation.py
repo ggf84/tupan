@@ -10,9 +10,10 @@ import h5py
 import gzip
 import time
 
-from .universe import Universe, Body, BlackHole
-from vector import Vector
+from .universe import (Universe, Body, BlackHole)
+from .vector import Vector
 
+random.seed(0)
 
 class IO():
     """  """
@@ -25,39 +26,19 @@ class IO():
             snap = fobj.create_group('snapshot')
             subgrp = {}
             for (k, v) in data.items():
-                subgrp[k] = snap.create_group(k)
-                subgrp[k].attrs['dtype'] = str(v['dtype'])
-                if v['members'] > 0:
-                    wl = subgrp[k].create_dataset('wl', (v['members'],3),
-                                                  dtype=v['dtype'],
-                                                  maxshape=(None,None),
-                                                  chunks=True,
-                                                  compression='gzip',
-                                                  shuffle=True)
-#                    tuplefied = []
-#                    for kk in sorted(v.keys()):
-#                        if isinstance(kk, int):
-#                            tuplefied.append(tuple(v.get(kk)))
-#                    wl[:,1] = tuplefied
-
-
-                    tuplefied = [tuple(v.get(kk))
-                                 for kk in sorted(v.keys())
-                                 if isinstance(kk, int)]
-                    wl[:,1] = tuplefied
-
-
-#                    def myfilter(obj):
-#                        return isinstance(obj[0], int)
-#                    def func(items):
-#                        return tuple(items[1])
-#                    tuplefied = map(func, filter(myfilter, sorted(v.items())))
-#                    wl[:,1] = tuplefied
-
-
-#                    pprint(tuplefied)
-#                    print(wl[:,1])
-
+                subgrp = snap.create_group(k)
+                if len(v['array']) > 0:
+                    subgrp.attrs['format'] = str(v['format'])
+                    wl = subgrp.create_dataset('wl', (len(v['array']),3),
+                                               dtype=v['format'],
+                                               maxshape=(None,None),
+                                               chunks=True,
+                                               compression='gzip',
+                                               shuffle=True)
+                    if isinstance(v['array'], list):
+                        wl[:,1] = v['array']
+                    else:
+                        wl[:,1] = v['array'].tolist()
 
 
 #        with h5py.File(fname+'.hdf5', 'w') as fobj:
@@ -86,23 +67,32 @@ class IO():
     def read_data(self, fname):
         print('reading data from \'{0}\''.format(fname))
 
-        for i in xrange(100000):
-            data =  (random.randint(16, 64),
-                     0.001*random.random(),
-                     float(i),
-                     random.random(),
-                     Vector(random.random(), random.random(), random.random()),
-                     Vector(random.random(), random.random(), random.random()))
-            self.myuniverse.get_member('body', Body(*data))
+        bodydata = []
+        for i in xrange(10):
+            data = (i,
+                    random.randint(16, 64),
+                    0.001*random.random(),
+                    float(i),
+                    random.random(),
+                    Vector(random.random(), random.random(), random.random()),
+                    Vector(random.random(), random.random(), random.random()))
+#            data = Body()
+            bodydata.append(Body(data))
+        self.myuniverse.set_members('body', bodydata)
+
+        bhdata = []
         for i in xrange(3):
-            data =  (random.randint(16, 64),
-                     0.001*random.random(),
-                     float(i),
-                     random.random(),
-                     Vector(random.random(), random.random(), random.random()),
-                     Vector(3.0+i, 2.0*i, (i+1)/4.0),
-                     Vector(random.random(), random.random(), random.random()))
-            self.myuniverse.get_member('bh', BlackHole(*data))
+            data = (i,
+                    random.randint(16, 64),
+                    0.001*random.random(),
+                    float(i),
+                    random.random(),
+                    Vector(random.random(), random.random(), random.random()),
+                    Vector(random.random(), random.random(), random.random()),
+                    Vector(random.random(), random.random(), random.random()))
+#            data = BlackHole()
+            bhdata.append(BlackHole(data))
+        self.myuniverse.set_members('bh', bhdata)
 
         return self.myuniverse
 
@@ -140,8 +130,6 @@ class Simulation(IO):
         io = IO()
         myuniverse = io.read_data(self.icfname)
 
-#        print('sleeping...')
-#        time.sleep(5)
 
         for i in range(5):
             t0 = time.time()
@@ -156,7 +144,7 @@ class Simulation(IO):
         f_in.close()
 
 
-#        pprint(myuniverse)
+        pprint(myuniverse)
         print('running... done')
 
 
