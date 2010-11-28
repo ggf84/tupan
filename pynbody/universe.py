@@ -52,17 +52,19 @@ class Body(tuple):
         """get the particle's acceleration due to other bodies"""
         acc = Vector(0.0, 0.0, 0.0)
         for body in bodies:
-            dpos = self.pos - body.pos
-            dposinv3 = dpos.square() ** (-1.5)
-            acc -= body.mass * dpos * dposinv3
+            if self.index != body.index:
+                dpos = self.pos - body.pos
+                dposinv3 = dpos.square() ** (-1.5)
+                acc -= body.mass * dpos * dposinv3
         return acc
 
     def get_pot(self, bodies):
         """get the gravitational potential in the particle's location"""
         pot = 0.0
         for body in bodies:
-            dpos = self.pos - body.pos
-            pot -= body.mass / dpos.norm()
+            if self.index != body.index:
+                dpos = self.pos - body.pos
+                pot -= body.mass / dpos.norm()
         return pot
 
     def get_ekin(self):

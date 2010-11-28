@@ -5,4 +5,7 @@
 
 """
 
+from .plummer import Plummer
+
+
 ########## end of file ##########
