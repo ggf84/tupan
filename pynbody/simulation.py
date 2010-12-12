@@ -74,6 +74,7 @@ class IO():
                     0.001*random.random(),
                     float(i),
                     random.random(),
+                    -random.random(),
                     Vector(random.random(), random.random(), random.random()),
                     Vector(random.random(), random.random(), random.random()))
 #            data = Body()
@@ -87,6 +88,7 @@ class IO():
                     0.001*random.random(),
                     float(i),
                     random.random(),
+                    -random.random(),
                     Vector(random.random(), random.random(), random.random()),
                     Vector(random.random(), random.random(), random.random()),
                     Vector(random.random(), random.random(), random.random()))

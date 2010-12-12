@@ -21,6 +21,7 @@ class Body(tuple):
              self.tstep,
              self.time,
              self.mass,
+             self.pot,
              self.pos,
              self.vel) = fields
         else:
@@ -29,9 +30,11 @@ class Body(tuple):
             self.tstep = 0.0
             self.time = 0.0
             self.mass = 0.0
+            self.pot = 0.0
             self.pos = Vector(0.0, 0.0, 0.0)
             self.vel = Vector(0.0, 0.0, 0.0)
 
+        self.acc = None
         self.ekin = None
         self.epot = None
         self.etot = None
@@ -42,39 +45,46 @@ class Body(tuple):
         yield self.tstep
         yield self.time
         yield self.mass
+        yield self.pot
         yield self.pos
         yield self.vel
 
     def __repr__(self):
         return '{0}'.format(self[:])
 
-    def get_acc(self, bodies):
-        """get the particle's acceleration due to other bodies"""
-        acc = Vector(0.0, 0.0, 0.0)
+    def set_acc(self, bodies):
+        """set the particle's acceleration due to other bodies"""
+        sumacc = Vector(0.0, 0.0, 0.0)
         for body in bodies:
             if self.index != body.index:
                 dpos = self.pos - body.pos
                 dposinv3 = dpos.square() ** (-1.5)
-                acc -= body.mass * dpos * dposinv3
-        return acc
+                sumacc -= body.mass * dpos * dposinv3
+        self.acc = sumacc
 
-    def get_pot(self, bodies):
-        """get the gravitational potential in the particle's location"""
-        pot = 0.0
+    def get_acc(self):
+        return self.acc
+
+    def set_pot(self, bodies):
+        """set the gravitational potential in the particle's location"""
+        sumpot = 0.0
         for body in bodies:
             if self.index != body.index:
                 dpos = self.pos - body.pos
-                pot -= body.mass / dpos.norm()
-        return pot
+                sumpot -= body.mass / dpos.norm()
+        self.pot = sumpot
+
+    def get_pot(self):
+        return self.pot
 
     def get_ekin(self):
         """get the particle's kinetic energy"""
         self.ekin = 0.5 * self.mass * self.vel.square()
         return self.ekin
 
-    def get_epot(self, bodies):
+    def get_epot(self):
         """get the particle's potential energy"""
-        self.epot = self.mass * self.get_pot(bodies)
+        self.epot = self.mass * self.get_pot()
         return self.epot
 
     def get_etot(self):
@@ -102,6 +112,7 @@ class BlackHole(Body):
         yield self.tstep
         yield self.time
         yield self.mass
+        yield self.pot
         yield self.pos
         yield self.vel
         yield self.spin
@@ -137,8 +148,8 @@ class Universe(dict):
         self['body'].setdefault('format',
                                 [('index', '<u8'), ('nstep', '<u8'),
                                  ('tstep', '<f8'), ('time', '<f8'),
-                                 ('mass', '<f8'), ('pos', '<f8', (3,)),
-                                 ('vel', '<f8', (3,))])
+                                 ('mass', '<f8'), ('pot', '<f8'),
+                                 ('pos', '<f8', (3,)), ('vel', '<f8', (3,))])
 
         # BlackHole
         self['bh'] = {}
@@ -146,8 +157,9 @@ class Universe(dict):
         self['bh'].setdefault('format',
                               [('index', '<u8'), ('nstep', '<u8'),
                                ('tstep', '<f8'), ('time', '<f8'),
-                               ('mass', '<f8'), ('pos', '<f8', (3,)),
-                               ('vel', '<f8', (3,)), ('spin', '<f8', (3,))])
+                               ('mass', '<f8'), ('pot', '<f8'),
+                               ('pos', '<f8', (3,)), ('vel', '<f8', (3,)),
+                               ('spin', '<f8', (3,))])
 
         # Sph
         self['sph'] = {}
