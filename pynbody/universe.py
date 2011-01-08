@@ -8,12 +8,10 @@ import numpy as np
 from .vector import Vector
 
 
-class Body(tuple):
+class Body(object):
     """A base class for particles"""
 
     def __init__(self, fields=None):
-
-        tuple.__init__(self)
 
         if fields:
             (self.index,
@@ -21,6 +19,7 @@ class Body(tuple):
              self.tstep,
              self.time,
              self.mass,
+             self.eps2,
              self.pot,
              self.pos,
              self.vel) = fields
@@ -30,6 +29,7 @@ class Body(tuple):
             self.tstep = 0.0
             self.time = 0.0
             self.mass = 0.0
+            self.eps2 = 0.0
             self.pot = 0.0
             self.pos = Vector(0.0, 0.0, 0.0)
             self.vel = Vector(0.0, 0.0, 0.0)
@@ -45,12 +45,18 @@ class Body(tuple):
         yield self.tstep
         yield self.time
         yield self.mass
+        yield self.eps2
         yield self.pot
         yield self.pos
         yield self.vel
 
     def __repr__(self):
-        return '{0}'.format(self[:])
+        fields = (self.index, self.nstep,
+                  self.tstep, self.time,
+                  self.mass, self.eps2, self.pot,
+                  self.pos, self.vel)
+        return '{fields}'.format(fields=fields)
+#        return '{0}'.format(self[:])
 
     def set_acc(self, bodies):
         """set the particle's acceleration due to other bodies"""
@@ -112,13 +118,19 @@ class BlackHole(Body):
         yield self.tstep
         yield self.time
         yield self.mass
+        yield self.eps2
         yield self.pot
         yield self.pos
         yield self.vel
         yield self.spin
 
     def __repr__(self):
-        return '{0}'.format(self[:])
+        fields = (self.index, self.nstep,
+                  self.tstep, self.time,
+                  self.mass, self.eps2, self.pot,
+                  self.pos, self.vel, self.spin)
+        return '{fields}'.format(fields=fields)
+#        return '{0}'.format(self[:])
 
 
 class Sph(Body):
@@ -148,7 +160,7 @@ class Universe(dict):
         self['body'].setdefault('format',
                                 [('index', '<u8'), ('nstep', '<u8'),
                                  ('tstep', '<f8'), ('time', '<f8'),
-                                 ('mass', '<f8'), ('pot', '<f8'),
+                                 ('mass', '<f8'), ('eps2', '<f8'), ('pot', '<f8'),
                                  ('pos', '<f8', (3,)), ('vel', '<f8', (3,))])
 
         # BlackHole
@@ -157,7 +169,7 @@ class Universe(dict):
         self['bh'].setdefault('format',
                               [('index', '<u8'), ('nstep', '<u8'),
                                ('tstep', '<f8'), ('time', '<f8'),
-                               ('mass', '<f8'), ('pot', '<f8'),
+                               ('mass', '<f8'), ('eps2', '<f8'), ('pot', '<f8'),
                                ('pos', '<f8', (3,)), ('vel', '<f8', (3,)),
                                ('spin', '<f8', (3,))])
 
@@ -173,16 +185,16 @@ class Universe(dict):
 
     def set_members(self, member='', data=None):
         if 'body' in member:
-            tmp = np.ndarray(len(data), dtype=Body)
-            tmp.setfield(data, dtype=Body)
-            self['body']['array'] = np.array(tmp, dtype=Body)
-#            self['body']['array'] = data
+#            tmp = np.ndarray(len(data), dtype=Body)
+#            tmp.setfield(data, dtype=Body)
+#            self['body']['array'] = np.array(tmp, dtype=Body)
+            self['body']['array'] = data
 
         if 'bh' in member:
-            tmp = np.ndarray(len(data), dtype=BlackHole)
-            tmp.setfield(data, dtype=BlackHole)
-            self['bh']['array'] = np.array(tmp, dtype=BlackHole)
-#            self['bh']['array'] = data
+#            tmp = np.ndarray(len(data), dtype=BlackHole)
+#            tmp.setfield(data, dtype=BlackHole)
+#            self['bh']['array'] = np.array(tmp, dtype=BlackHole)
+            self['bh']['array'] = data
 
         if 'sph' in member:
             tmp = np.ndarray(len(data), dtype=Sph)

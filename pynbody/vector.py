@@ -18,8 +18,8 @@ class Vector(object):
         self.z = z
 
     def __repr__(self):
-        fmt = '[{0:s}, {1:s}, {2:s}]'
-        return fmt.format(repr(self.x), repr(self.y), repr(self.z))
+        fields = [self.x, self.y, self.z]
+        return '{fields}'.format(fields=fields)
 
     # Comparison Methods
 
@@ -68,7 +68,7 @@ class Vector(object):
         return 3
 
     def __getitem__(self, index):
-        return (self.x, self.y, self.z)[index]
+        return [self.x, self.y, self.z][index]
 
     def __setitem__(self, index, value):
         temp = [self.x, self.y, self.z]
@@ -353,9 +353,17 @@ class Vector(object):
         """Returns the square norm of the vector"""
         return (self.x * self.x + self.y * self.y + self.z * self.z)
 
+    def smoothed_square(self, eps2):
+        """Returns the square norm of the vector smoothed by a factor 'eps'"""
+        return (self.x * self.x + self.y * self.y + self.z * self.z + eps2)
+
     def norm(self):
         """Returns the norm of the vector"""
         return sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+
+    def smoothed_norm(self, eps2):
+        """Returns the norm of the vector smoothed by a factor 'eps'"""
+        return sqrt(self.x * self.x + self.y * self.y + self.z * self.z + eps2)
 
     # Unit Vector Operations
 
@@ -387,6 +395,11 @@ class Vector(object):
     def copy(self):
         """Returns a copy of the vector"""
         return Vector(self.x, self.y, self.z)
+
+
+    def to_tuple(self):
+        """Returns a copy of the vector as tuple"""
+        return (self.x, self.y, self.z)
 
 
 ########## end of file ##########

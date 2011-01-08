@@ -5,7 +5,6 @@
 
 from __future__ import (print_function, with_statement)
 from pprint import pprint
-import random
 import h5py
 import gzip
 import time
@@ -13,7 +12,8 @@ import time
 from .universe import (Universe, Body, BlackHole)
 from .vector import Vector
 
-random.seed(0)
+from .models import Plummer
+
 
 class IO():
     """  """
@@ -36,9 +36,9 @@ class IO():
                                                compression='gzip',
                                                shuffle=True)
                     if isinstance(v['array'], list):
-                        wl[:,1] = v['array']
+                        wl[:,1] = [tuple(b) for b in v['array']]
                     else:
-                        wl[:,1] = v['array'].tolist()
+                        wl[:,1] = v['array'].get_data()
 
 
 #        with h5py.File(fname+'.hdf5', 'w') as fobj:
@@ -67,33 +67,13 @@ class IO():
     def read_data(self, fname):
         print('reading data from \'{0}\''.format(fname))
 
-        bodydata = []
-        for i in xrange(10):
-            data = (i,
-                    random.randint(16, 64),
-                    0.001*random.random(),
-                    float(i),
-                    random.random(),
-                    -random.random(),
-                    Vector(random.random(), random.random(), random.random()),
-                    Vector(random.random(), random.random(), random.random()))
-#            data = Body()
-            bodydata.append(Body(data))
-        self.myuniverse.set_members('body', bodydata)
+        p = Plummer(16, seed=1)
+        p.make_plummer()
+        self.myuniverse.set_members('body', p.bodies)
 
-        bhdata = []
-        for i in xrange(3):
-            data = (i,
-                    random.randint(16, 64),
-                    0.001*random.random(),
-                    float(i),
-                    random.random(),
-                    -random.random(),
-                    Vector(random.random(), random.random(), random.random()),
-                    Vector(random.random(), random.random(), random.random()),
-                    Vector(random.random(), random.random(), random.random()))
-#            data = BlackHole()
-            bhdata.append(BlackHole(data))
+        p = Plummer(4, seed=1)
+        p.make_plummer()
+        bhdata = [BlackHole(tuple(b)+(Vector(0.0, 0.0, 0.0),)) for b in p.bodies._array.tolist()]
         self.myuniverse.set_members('bh', bhdata)
 
         return self.myuniverse
@@ -139,11 +119,11 @@ class Simulation(IO):
             t1 = time.time()
             print(t1-t0)
 
-        f_in = open('snap.hdf5', 'r')
-        f_out = gzip.open('snap.hdf5.gz', 'wb')
-        f_out.writelines(f_in)
-        f_out.close()
-        f_in.close()
+#        f_in = open('snap.hdf5', 'r')
+#        f_out = gzip.open('snap.hdf5.gz', 'wb')
+#        f_out.writelines(f_in)
+#        f_out.close()
+#        f_in.close()
 
 
         pprint(myuniverse)
