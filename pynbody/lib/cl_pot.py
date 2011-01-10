@@ -58,7 +58,7 @@ __kernel void set_pot(__global const REAL4 *pos_i,
                       __global const REAL4 *pos_j,
                       __global const REAL *mass_j,
                       __global REAL *pot_i,
-                      const uint num_bodies,
+                      const uint numBodies,
                       __local REAL4 *pblock,
                       __local REAL *mblock)
 {
@@ -79,7 +79,7 @@ __kernel void set_pot(__global const REAL4 *pos_i,
         myPot[unroll] = 0.0;
     }
 
-    for (uint j = 0; j < num_bodies; j++) {
+    for (uint j = 0; j < numBodies; j++) {
         for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
             myPot[unroll] = calc_pot(myPot[unroll], myPos[unroll],
                                      pos_j[j], mass_j[j]);
@@ -135,7 +135,7 @@ __kernel void set_pot(__global const REAL4 *pos_i,
                       __global const REAL4 *pos_j,
                       __global const REAL *mass_j,
                       __global REAL *pot_i,
-                      const uint num_bodies,
+                      const uint numBodies,
                       __local REAL4 *pblock,
                       __local REAL *mblock)
 {
@@ -156,7 +156,7 @@ __kernel void set_pot(__global const REAL4 *pos_i,
         myPot[unroll] = 0.0;
     }
 
-    uint numTiles = num_bodies / lwi_sizeX;
+    uint numTiles = numBodies / lwi_sizeX;
     for (uint tile = 0; tile < numTiles; tile++) {
 
         // load one tile into local memory
@@ -189,7 +189,7 @@ __kernel void set_pot(__global const REAL4 *pos_i,
 ##############################################################
 ## CL_KERNEL_1_DS = {'flops': int, 'name': str, 'source': str}
 ##
-CL_KERNEL_1_DS = {'flops': 25, 'name': 'set_pot', 'source': """
+CL_KERNEL_1_DS = {'flops': 57, 'name': 'set_pot', 'source': """
 #ifdef cl_khr_fp64
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #endif
@@ -210,44 +210,27 @@ typedef float2 DS;
 typedef float4 DS2;
 typedef float8 DS4;
 
-inline DS to_DS(double a) {
-  DS b;
-  b.x = (float)a;
-  b.y = (float)(a - b.x);
-  return b;
+inline DS to_DS(double a)
+{
+    DS b;
+    b.x = (float)a;
+    b.y = (float)(a - b.x);
+    return b;
 }
 
-inline double to_double(DS a) {
-  double b;
-  b = (double)((double)a.x + (double)a.y);
-  return b;
+inline double to_double(DS a)
+{
+    double b;
+    b = (double)((double)a.x + (double)a.y);
+    return b;
 }
 
-inline DS dsadd(DS a, DS b) {
-  // Compute dsa + dsb using Knuth's trick.
-  float t1 = a.x + b.x;
-  float e = t1 - a.x;
-  float t2 = ((b.x - e) + (a.x - (t1 - e))) + a.y + b.y;
-  
-  // The result is t1 + t2, after normalization.
-  DS c;
-  c.x = e = t1 + t2;
-  c.y = t2 - (e - t1);
-  return c;
-}
-
-inline DS dsmul(DS a, DS b) {
-    // Multilply a.x * b.x using Dekker's method.
-    float c11 = a.x * b.x;
-    float c21 = fma(a.x, b.x, c11);
-
-    // Compute a.x * b.y + a.y * b.x (only high-order word is needed).
-    float c2 = a.x * b.y + a.y * b.x;
-
-    // Compute (c11, c21) + c2 using Knuth's trick, also adding low-order product.
-    float t1 = c11 + c2;
-    float e = t1 - c11;
-    float t2 = ((c2 - e) + (c11 - (t1 - e))) + c21 + a.y * b.y;
+inline DS dsadd(DS a, DS b)
+{
+    // Compute dsa + dsb using Knuth's trick.
+    float t1 = a.x + b.x;
+    float e = t1 - a.x;
+    float t2 = ((b.x - e) + (a.x - (t1 - e))) + a.y + b.y;
 
     // The result is t1 + t2, after normalization.
     DS c;
@@ -256,15 +239,22 @@ inline DS dsmul(DS a, DS b) {
     return c;
 }
 
+inline float fdsadd(DS a, DS b)
+{
+    float t1 = a.x + b.x;
+    float e = t1 - a.x;
+    float t2 = ((b.x - e) + (a.x - (t1 - e))) + a.y + b.y;
+    return t1 + t2;
+}
 
 DS calc_pot(DS pot, DS4 bi, DS4 bj, DS mj)
 {
-    DS x = bi.s01 - bj.s01;                                          // 2 FLOPs
-    DS y = bi.s23 - bj.s23;                                          // 2 FLOPs
-    DS z = bi.s45 - bj.s45;                                          // 2 FLOPs
-    DS w = bi.s67 + bj.s67;                                          // 2 FLOPs
-    float4 dr = {x.x + x.y, y.x + y.y, z.x + z.y, 0.0f};             // 3 FLOPs
-    float ds2 = 0.5f * (w.x + w.y);                                  // 2 FLOPs
+    float4 dr;
+    dr.x = fdsadd(bi.s01, -bj.s01);                                  // 9 FLOPs
+    dr.y = fdsadd(bi.s23, -bj.s23);                                  // 9 FLOPs
+    dr.z = fdsadd(bi.s45, -bj.s45);                                  // 9 FLOPs
+    dr.w = fdsadd(bi.s67, +bj.s67);                                  // 9 FLOPs
+    float ds2 = 0.5f * dr.w;                                         // 1 FLOPs
     ds2 += dr.x * dr.x + dr.y * dr.y + dr.z * dr.z;                  // 6 FLOPs
     float rinv = rsqrt(ds2);                                         // 2 FLOPs
     pot = dsadd(pot, -mj * select(0.0f, rinv,
@@ -277,7 +267,7 @@ __kernel void set_pot(__global const REAL4 *pos_i,
                       __global const REAL4 *pos_j,
                       __global const REAL *mass_j,
                       __global REAL *pot_i,
-                      const uint num_bodies,
+                      const uint numBodies,
                       __local DS4 *pblock,
                       __local DS *mblock)
 {
@@ -302,7 +292,7 @@ __kernel void set_pot(__global const REAL4 *pos_i,
         myPot[unroll] = (DS){0.0, 0.0};
     }
 
-    uint numTiles = num_bodies / lwi_sizeX;
+    uint numTiles = numBodies / lwi_sizeX;
     for (uint tile = 0; tile < numTiles; tile++) {
 
         // load one tile into local memory
@@ -390,8 +380,8 @@ kernel = _setup_kernel(KERNEL['source'], KERNEL['name'])
 def _start_kernel(bi, bj, mj):
     """  """    # TODO
 
-    unroll = 1 if len(bi) < 16 else UNROLL_SIZE
-    global_size = len(bi)//unroll + len(bi)%2
+    unrollSize = 1 if (len(bi) <= 4) else UNROLL_SIZE
+    global_size = len(bi)//unrollSize + len(bi)%2
 
     block_size_x = BLOCK_SIZE_X
     while global_size % block_size_x:
@@ -401,7 +391,7 @@ def _start_kernel(bi, bj, mj):
     global_size = (global_size, BLOCK_SIZE_Y, BLOCK_SIZE_Z)
 
     print('lengths: ', (len(bi), len(bj)))
-    print('unroll: ', unroll)
+    print('unrollSize: ', unrollSize)
     print('local_size: ', local_size)
     print('global_size: ', global_size)
 
@@ -414,7 +404,8 @@ def _start_kernel(bi, bj, mj):
     local_mem_size = (BLOCK_SIZE_X * BLOCK_SIZE_Y * BLOCK_SIZE_Z)
     local_mem_size *= bj.dtype.itemsize
     exec_evt = kernel(queue, global_size, local_size,
-                      bi_buf, bj_buf, mj_buf, pot_buf, np.uint32(mj.size),
+                      bi_buf, bj_buf, mj_buf, pot_buf,
+                      np.uint32(len(mj)),
                       cl.LocalMemory(4*local_mem_size),
                       cl.LocalMemory(local_mem_size))
     exec_evt.wait()
@@ -423,6 +414,7 @@ def _start_kernel(bi, bj, mj):
     print('Execution time of kernel: {0:g} s'.format(prog_elapsed))
 
     pot = np.empty(len(bi), dtype=bi.dtype)
+
     exec_evt = cl.enqueue_read_buffer(queue, pot_buf, pot)
     exec_evt.wait()
     read_elapsed = 1e-9*(exec_evt.profile.end - exec_evt.profile.start)
@@ -462,8 +454,6 @@ def run_kernel(bi, bj):
     print('Effetive Gflops/s: {0:g}'.format(gflops))
 
     return np_pot
-
-
 
 
 
