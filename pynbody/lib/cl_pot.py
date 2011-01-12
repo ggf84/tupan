@@ -31,8 +31,6 @@ CL_KERNEL_0 = {'flops': 15, 'name': 'set_pot', 'source': """
 
 #define UNROLL_SIZE %(unroll_size)d
 
-typedef %(int_type)s INT;
-
 typedef %(fp_type)s REAL;
 //typedef %(fp_type)s3 REAL3;
 typedef %(fp_type)s4 REAL4;
@@ -48,8 +46,7 @@ REAL calc_pot(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
     REAL ds2 = 0.5 * dr.w;                                           // 1 FLOPs
     ds2 += dr.x * dr.x + dr.y * dr.y + dr.z * dr.z;                  // 6 FLOPs
     REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
-    pot -= mj * select((REAL)0.0, rinv,
-                       (INT)isnotequal(ds2, (REAL)0.0));             // 2 FLOPs
+    pot -= mj * ((ds2 != 0) ? rinv:0);                               // 2 FLOPs
     return pot;
 }
 
@@ -108,8 +105,6 @@ CL_KERNEL_1 = {'flops': 15, 'name': 'set_pot', 'source': """
 
 #define UNROLL_SIZE %(unroll_size)d
 
-typedef %(int_type)s INT;
-
 typedef %(fp_type)s REAL;
 //typedef %(fp_type)s3 REAL3;
 typedef %(fp_type)s4 REAL4;
@@ -125,8 +120,7 @@ REAL calc_pot(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
     REAL ds2 = 0.5 * dr.w;                                           // 1 FLOPs
     ds2 += dr.x * dr.x + dr.y * dr.y + dr.z * dr.z;                  // 6 FLOPs
     REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
-    pot -= mj * select((REAL)0.0, rinv,
-                       (INT)isnotequal(ds2, (REAL)0.0));             // 2 FLOPs
+    pot -= mj * ((ds2 != 0) ? rinv:0);                               // 2 FLOPs
     return pot;
 }
 
@@ -186,6 +180,342 @@ __kernel void set_pot(__global const REAL4 *pos_i,
 """}  ## CL_KERNEL_1
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################################
+## CL_KERNEL_1_MOD = {'flops': int, 'name': str, 'source': str}
+##
+CL_KERNEL_1_MOD = {'flops': 15, 'name': 'set_pot', 'source': """
+#ifdef cl_khr_fp64
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#endif
+
+#ifdef cl_amd_fp64
+    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+#endif
+
+#define UNROLL_SIZE %(unroll_size)d
+
+typedef %(fp_type)s REAL;
+//typedef %(fp_type)s3 REAL3;
+typedef %(fp_type)s4 REAL4;
+
+
+REAL calc_pot(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
+{
+    REAL4 dr;
+    dr.x = bi.x - bj.x;                                              // 1 FLOPs
+    dr.y = bi.y - bj.y;                                              // 1 FLOPs
+    dr.z = bi.z - bj.z;                                              // 1 FLOPs
+    dr.w = bi.w + bj.w;                                              // 1 FLOPs
+    REAL ds2 = 0.5 * dr.w;                                           // 1 FLOPs
+    ds2 += dr.x * dr.x + dr.y * dr.y + dr.z * dr.z;                  // 6 FLOPs
+    REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
+    pot -= mj * ((ds2 != 0) ? rinv:0);                               // 2 FLOPs
+    return pot;
+}
+
+
+__kernel void set_pot(__global const REAL4 *ipos,
+                      __global const REAL4 *jpos,
+                      __global const REAL *jmass,
+                      __global REAL *ipot,
+                      const uint ni,
+                      const uint nj,
+                      __local REAL4 *shpos,
+                      __local REAL *shmass)
+{
+    uint gwi_idX = get_global_id(0);    uint gwi_sizeX = get_global_size(0);
+    uint gwi_idY = get_global_id(1);    uint gwi_sizeY = get_global_size(1);
+    uint lwi_idX = get_local_id(0);    uint lwi_sizeX = get_local_size(0);
+    uint lwi_idY = get_local_id(1);    uint lwi_sizeY = get_local_size(1);
+    uint wg_idX = get_group_id(0);    uint wg_dimX = get_num_groups(0);
+    uint wg_idY = get_group_id(1);    uint wg_dimY = get_num_groups(1);
+
+
+    REAL4 myPos = (gwi_idX < ni) ? ipos[gwi_idX] : ipos[ni-1];
+    REAL myPot = 0.0;
+
+    for (uint tile = 0; tile < nj; tile += lwi_sizeX) {
+
+        uint jdx = tile + lwi_idX;
+        shpos[lwi_idX] = (jdx < nj) ? jpos[jdx] : (REAL4){0.0, 0.0, 0.0, 0.0};
+        shmass[lwi_idX] = (jdx < nj) ? jmass[jdx] : (REAL)0.0;
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        for (uint k = 0; k < lwi_sizeX; k++) {
+            myPot = calc_pot(myPot, myPos, shpos[k], shmass[k]);
+        }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    if (gwi_idX < ni)
+        ipot[gwi_idX] = myPot;
+}
+
+"""}  ## CL_KERNEL_1_MOD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################################
+## CL_KERNEL_1_MOD2 = {'flops': int, 'name': str, 'source': str}
+##
+CL_KERNEL_1_MOD2 = {'flops': 15, 'name': 'set_pot', 'source': """
+#ifdef cl_khr_fp64
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#endif
+
+#ifdef cl_amd_fp64
+    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+#endif
+
+#define UNROLL_SIZE %(unroll_size)d
+
+typedef %(fp_type)s REAL;
+//typedef %(fp_type)s3 REAL3;
+typedef %(fp_type)s4 REAL4;
+
+
+REAL calc_pot(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
+{
+    REAL4 dr;
+    dr.x = bi.x - bj.x;                                              // 1 FLOPs
+    dr.y = bi.y - bj.y;                                              // 1 FLOPs
+    dr.z = bi.z - bj.z;                                              // 1 FLOPs
+    dr.w = bi.w + bj.w;                                              // 1 FLOPs
+    REAL ds2 = 0.5 * dr.w;                                           // 1 FLOPs
+    ds2 += dr.x * dr.x + dr.y * dr.y + dr.z * dr.z;                  // 6 FLOPs
+    REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
+    pot -= mj * ((ds2 != 0) ? rinv:0);                               // 2 FLOPs
+    return pot;
+}
+
+
+__kernel void set_pot(__global const REAL4 *ipos,
+                      __global const REAL4 *jpos,
+                      __global const REAL *jmass,
+                      __global REAL *ipot,
+                      const uint ni,
+                      const uint nj,
+                      __local REAL4 *shpos,
+                      __local REAL *shmass)
+{
+    uint gwi_idX = get_global_id(0);    uint gwi_sizeX = get_global_size(0);
+    uint gwi_idY = get_global_id(1);    uint gwi_sizeY = get_global_size(1);
+    uint lwi_idX = get_local_id(0);    uint lwi_sizeX = get_local_size(0);
+    uint lwi_idY = get_local_id(1);    uint lwi_sizeY = get_local_size(1);
+    uint wg_idX = get_group_id(0);    uint wg_dimX = get_num_groups(0);
+    uint wg_idY = get_group_id(1);    uint wg_dimY = get_num_groups(1);
+
+
+    uint gid = UNROLL_SIZE * gwi_idX;
+    REAL4 myPos[UNROLL_SIZE];
+    REAL myPot[UNROLL_SIZE];
+    for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
+        myPos[unroll] = (gid < ni) ? ipos[gid + unroll] : ipos[ni-1];
+        myPot[unroll] = 0.0;
+    }
+
+    for (uint tile = 0; tile < nj; tile += lwi_sizeX) {
+
+        uint jdx = tile + lwi_idX;
+        shpos[lwi_idX] = (jdx < nj) ? jpos[jdx] : (REAL4){0.0, 0.0, 0.0, 0.0};
+        shmass[lwi_idX] = (jdx < nj) ? jmass[jdx] : (REAL)0.0;
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+
+        for (uint k = 0; k < lwi_sizeX; k++) {
+            for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
+                myPot[unroll] = calc_pot(myPot[unroll], myPos[unroll],
+                                         shpos[k], shmass[k]);
+            }
+        }
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    if (gid < ni) {
+        for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
+            ipot[gid + unroll] = myPot[unroll];
+        }
+    }
+}
+
+"""}  ## CL_KERNEL_1_MOD2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################################
+## CL_KERNEL_1_MOD3 = {'flops': int, 'name': str, 'source': str}
+##
+CL_KERNEL_1_MOD3 = {'flops': 15, 'name': 'set_pot', 'source': """
+#ifdef cl_khr_fp64
+    #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#endif
+
+#ifdef cl_amd_fp64
+    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+#endif
+
+#ifdef cl_amd_printf
+    #pragma OPENCL EXTENSION cl_amd_printf : enable
+#endif
+
+#define UNROLL_SIZE %(unroll_size)d
+
+typedef %(fp_type)s REAL;
+//typedef %(fp_type)s3 REAL3;
+typedef %(fp_type)s4 REAL4;
+
+
+REAL calc_pot(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
+{
+    REAL4 dr;
+    dr.x = bi.x - bj.x;                                              // 1 FLOPs
+    dr.y = bi.y - bj.y;                                              // 1 FLOPs
+    dr.z = bi.z - bj.z;                                              // 1 FLOPs
+    dr.w = bi.w + bj.w;                                              // 1 FLOPs
+    REAL ds2 = 0.5 * dr.w;                                           // 1 FLOPs
+    ds2 += dr.x * dr.x + dr.y * dr.y + dr.z * dr.z;                  // 6 FLOPs
+    REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
+    pot -= mj * ((ds2 != 0) ? rinv:0);                               // 2 FLOPs
+    return pot;
+}
+
+
+__kernel void set_pot(__global const REAL4 *ipos,
+                      __global const REAL4 *jpos,
+                      __global const REAL *jmass,
+                      __global REAL *ipot,
+                      const uint ni,
+                      const uint nj,
+                      __local REAL4 *sharedPos,
+                      __local REAL *sharedMass)
+{
+    uint tid = get_local_id(0);
+    uint gid = get_global_id(0) * UNROLL_SIZE;
+    uint localDim = get_local_size(0);
+
+    REAL4 myPos[UNROLL_SIZE];
+    REAL myPot[UNROLL_SIZE];
+    for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
+        myPos[unroll] = ipos[gid + unroll];
+        myPot[unroll] = 0.0;
+    }
+
+    uint tile;
+    uint numTiles = ((nj + localDim - 1) / localDim) - 1;
+    for (tile = 0; tile < numTiles; tile++) {
+
+        uint jdx = tile * localDim + tid;
+        sharedPos[tid] = jpos[jdx];
+        sharedMass[tid] = jmass[jdx];
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+        for (uint k = 0; k < localDim; k++) {
+            for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
+                myPot[unroll] = calc_pot(myPot[unroll], myPos[unroll],
+                                         sharedPos[k], sharedMass[k]);
+            }
+            k++;
+            for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
+                myPot[unroll] = calc_pot(myPot[unroll], myPos[unroll],
+                                         sharedPos[k], sharedMass[k]);
+            }
+            k++;
+            for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
+                myPot[unroll] = calc_pot(myPot[unroll], myPos[unroll],
+                                         sharedPos[k], sharedMass[k]);
+            }
+            k++;
+            for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
+                myPot[unroll] = calc_pot(myPot[unroll], myPos[unroll],
+                                         sharedPos[k], sharedMass[k]);
+            }
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    uint jdx = tile * localDim + tid;
+    sharedPos[tid] = jpos[jdx];
+    sharedMass[tid] = jmass[jdx];
+
+    barrier(CLK_LOCAL_MEM_FENCE);
+    for (uint k = 0; k < nj - (tile * localDim); k++) {
+        for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
+            myPot[unroll] = calc_pot(myPot[unroll], myPos[unroll],
+                                     sharedPos[k], sharedMass[k]);
+        }
+    }
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    if (gid < ni) {
+        for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
+            ipot[gid + unroll] = myPot[unroll];
+        }
+    }
+
+}
+
+"""}  ## CL_KERNEL_1_MOD3
+
+
+
+
+
+
+
+
+
+
 ##############################################################
 ## CL_KERNEL_1_DS = {'flops': int, 'name': str, 'source': str}
 ##
@@ -199,8 +529,6 @@ CL_KERNEL_1_DS = {'flops': 57, 'name': 'set_pot', 'source': """
 #endif
 
 #define UNROLL_SIZE %(unroll_size)d
-
-typedef %(int_type)s INT;
 
 typedef %(fp_type)s REAL;
 //typedef %(fp_type)s3 REAL3;
@@ -257,8 +585,7 @@ DS calc_pot(DS pot, DS4 bi, DS4 bj, DS mj)
     float ds2 = 0.5f * dr.w;                                         // 1 FLOPs
     ds2 += dr.x * dr.x + dr.y * dr.y + dr.z * dr.z;                  // 6 FLOPs
     float rinv = rsqrt(ds2);                                         // 2 FLOPs
-    pot = dsadd(pot, -mj * select(0.0f, rinv,
-                                  isnotequal(ds2, 0.0f)));           //12 FLOPs
+    pot = dsadd(pot, -mj * ((ds2 != 0) ? rinv:0));                  // 12 FLOPs
     return pot;
 }
 
@@ -331,7 +658,7 @@ __kernel void set_pot(__global const REAL4 *pos_i,
 
 
 
-KERNEL = CL_KERNEL_1
+KERNEL = CL_KERNEL_1_MOD3
 BLOCK_SIZE_X = 256
 BLOCK_SIZE_Y = 1
 BLOCK_SIZE_Z = 1
@@ -348,14 +675,11 @@ def _setup_kernel(kernel_source, kernel_name):
 
     if DOUBLE:
         fp_type = 'double'
-        int_type = 'long'
     else:
         fp_type = 'float'
-        int_type = 'int'
 
     kernel_params = {'unroll_size': UNROLL_SIZE,
-                     'fp_type': fp_type,
-                     'int_type': int_type}
+                     'fp_type': fp_type}
     prog = cl.Program(ctx, kernel_source % kernel_params)
 
     if FAST_MATH:
@@ -380,20 +704,26 @@ kernel = _setup_kernel(KERNEL['source'], KERNEL['name'])
 def _start_kernel(bi, bj, mj):
     """  """    # TODO
 
-    unrollSize = 1 if (len(bi) <= 4) else UNROLL_SIZE
-    global_size = len(bi)//unrollSize + len(bi)%2
+#    unrollSize = UNROLL_SIZE//2 if len(bi) < UNROLL_SIZE else UNROLL_SIZE
+#    global_size = (len(bi) + unrollSize - 1)//unrollSize
+#    block_size_x = BLOCK_SIZE_X
+##    while global_size % block_size_x:
+##        block_size_x -= 1
+#    global_size = ((global_size + block_size_x - 1)//block_size_x)*block_size_x
 
-    block_size_x = BLOCK_SIZE_X
-    while global_size % block_size_x:
-        block_size_x //= 2
 
-    local_size = (block_size_x, BLOCK_SIZE_Y, BLOCK_SIZE_Z)
+    global_size = (len(bi) + UNROLL_SIZE - 1)//UNROLL_SIZE
+    global_size = (global_size + BLOCK_SIZE_X - 1)//BLOCK_SIZE_X
+    global_size *= BLOCK_SIZE_X
+
+    local_size = (BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z)
     global_size = (global_size, BLOCK_SIZE_Y, BLOCK_SIZE_Z)
 
     print('lengths: ', (len(bi), len(bj)))
-    print('unrollSize: ', unrollSize)
+    print('unrollSize: ', UNROLL_SIZE)
     print('local_size: ', local_size)
     print('global_size: ', global_size)
+    print('diff: ', UNROLL_SIZE * global_size[0] - len(bi))
 
     mf = cl.mem_flags
     bi_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=bi)
@@ -405,7 +735,8 @@ def _start_kernel(bi, bj, mj):
     local_mem_size *= bj.dtype.itemsize
     exec_evt = kernel(queue, global_size, local_size,
                       bi_buf, bj_buf, mj_buf, pot_buf,
-                      np.uint32(len(mj)),
+                      np.uint32(len(bi)),
+                      np.uint32(len(bj)),
                       cl.LocalMemory(4*local_mem_size),
                       cl.LocalMemory(local_mem_size))
     exec_evt.wait()
@@ -465,7 +796,7 @@ if __name__ == "__main__":
     t0 = time.time()
 
 
-    num = 16384         # 797    # 3739     # 32749
+    num = 3739         # 797    # 3739     # 32749     # 157189
 
     p = Plummer(num, seed=1)
     p.make_plummer()
@@ -475,7 +806,7 @@ if __name__ == "__main__":
 #    pprint(bi)
 
     print('-'*25)
-    pot = run_kernel(bi[:3739], bi)
+    pot = run_kernel(bi[:7], bi)
 
     print(pot[:3].tolist())
     print(pot[-3:].tolist())
