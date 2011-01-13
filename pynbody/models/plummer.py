@@ -10,7 +10,8 @@ import numpy as np
 import random
 import math
 
-from ..particles import (Body, Bodies)
+from ..lib.elapsed import timeit
+from ..particles import Bodies
 
 
 
@@ -94,29 +95,38 @@ class Plummer(object):
         return [vx, vy, vz]                              # g = [0, 3]
 
     def set_bodies(self):
-        def gen_body(i, irand):
-            b = Body()
-            b.index = i
-            b.mass = self.set_mass()
-            b.pos = self.set_pos(irand)
-            return np.asarray(tuple(b), dtype=self.bodies._array.dtype)
+        """  """
+        @timeit
+        def gen_bodies(iarray, irandarray):
+            def gen_body(i, irand):
+                b = np.zeros(1, dtype=self.bodies._array.dtype)
+                b['index'] = i
+                b['mass'] = self.set_mass()
+                b['pos'] = self.set_pos(irand)
+                return b[0]
+            # vectorize from pyfunc
+            _gen_bodies = np.frompyfunc(gen_body, 2, 1)
+            return _gen_bodies(iarray, irandarray).tolist()
+
+        @timeit
+        def set_bodies_vel(potarray):
+            # vectorize from pyfunc
+            _set_bodies_vel = np.frompyfunc(self.set_vel, 1, 1)
+            return _set_bodies_vel(potarray).tolist()
 
         ilist = np.arange(self.num)
         irandlist = np.arange(self.num)
         np.random.shuffle(irandlist)  # shuffle to avoid index-pos correlation
 
-        # generate index, mass, pos
-        gen_bodies = np.frompyfunc(gen_body, 2, 1)  # vectorize to numpy
-        _bodies = gen_bodies(ilist, irandlist).tolist()
+        # generate bodies: set index, mass and pos
+        _bodies = gen_bodies(iarray=ilist, irandarray=irandlist)
         self.bodies.fromlist(_bodies)
 
         # calculate pot
         self.bodies.calc_pot(self.bodies)
 
-        # generate vel
-        vecset_vel = np.frompyfunc(self.set_vel, 1, 1)  # vectorize to numpy
-        self.bodies.vel = vecset_vel(self.bodies.pot).tolist()
-
+        # set vel
+        self.bodies.vel = set_bodies_vel(self.bodies.pot)
 
     def make_plummer(self):
         self.set_bodies()

@@ -1,19 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+
+"""
+
 from __future__ import (print_function, with_statement)
 import pyopencl as cl
 import numpy as np
 import time
 
-
-class timeit(object):
-    def __init__(self, f):
-        self.f = f
-    def __call__(self, *args, **kwargs):
-        tstart = time.time()
-        ret = self.f(*args, **kwargs)
-        elapsed = time.time() - tstart
-        print('time elapsed in <{name}>: {time} s'.format(name=self.f.__name__,
-                                                          time=elapsed))
-        return ret
+from pynbody.lib.elapsed import timeit
 
 
 
@@ -424,9 +421,9 @@ REAL calc_pot(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
     dr.z = bi.z - bj.z;                                              // 1 FLOPs
     dr.w = bi.w + bj.w;                                              // 1 FLOPs
     REAL ds2 = 0.5 * dr.w;                                           // 1 FLOPs
-    ds2 += dr.x * dr.x + dr.y * dr.y + dr.z * dr.z;                  // 6 FLOPs
+    ds2 += dr.z * dr.z + dr.y * dr.y + dr.x * dr.x;                  // 6 FLOPs
     REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
-    pot -= mj * ((ds2 != 0) ? rinv:0);                               // 2 FLOPs
+    pot -= mj * (ds2 ? rinv:0);                                      // 2 FLOPs
     return pot;
 }
 
@@ -704,19 +701,15 @@ kernel = _setup_kernel(KERNEL['source'], KERNEL['name'])
 def _start_kernel(bi, bj, mj):
     """  """    # TODO
 
-#    unrollSize = UNROLL_SIZE//2 if len(bi) < UNROLL_SIZE else UNROLL_SIZE
-#    global_size = (len(bi) + unrollSize - 1)//unrollSize
-#    block_size_x = BLOCK_SIZE_X
-##    while global_size % block_size_x:
-##        block_size_x -= 1
-#    global_size = ((global_size + block_size_x - 1)//block_size_x)*block_size_x
-
+    block_size_x = BLOCK_SIZE_X
+#    while block_size_x > 1 and min(len(bi), len(bj)) < block_size_x:
+#        block_size_x //= 2
 
     global_size = (len(bi) + UNROLL_SIZE - 1)//UNROLL_SIZE
-    global_size = (global_size + BLOCK_SIZE_X - 1)//BLOCK_SIZE_X
-    global_size *= BLOCK_SIZE_X
+    global_size = (global_size + block_size_x - 1)//block_size_x
+    global_size *= block_size_x
 
-    local_size = (BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z)
+    local_size = (block_size_x, BLOCK_SIZE_Y, BLOCK_SIZE_Z)
     global_size = (global_size, BLOCK_SIZE_Y, BLOCK_SIZE_Z)
 
     print('lengths: ', (len(bi), len(bj)))
@@ -769,9 +762,9 @@ def run_kernel(bi, bj):
 
     t0 = time.time()
 
-    np_bi = np.vstack((bi.pos.T, bi.eps2)).T.copy().astype(fp_type)
-    np_bj = np.vstack((bj.pos.T, bj.eps2)).T.copy().astype(fp_type)
-    np_mj = bj.mass.copy().astype(fp_type)
+    np_bi = np.vstack((bi.pos.T, bi.eps2)).T.astype(fp_type).copy()
+    np_bj = np.vstack((bj.pos.T, bj.eps2)).T.astype(fp_type).copy()
+    np_mj = bj.mass.astype(fp_type).copy()
 
     elapsed = time.time() - t0
     print('-'*25)
@@ -796,7 +789,7 @@ if __name__ == "__main__":
     t0 = time.time()
 
 
-    num = 3739         # 797    # 3739     # 32749     # 157189
+    num = 16384         # 797    # 3739     # 32749     # 157189
 
     p = Plummer(num, seed=1)
     p.make_plummer()
@@ -805,9 +798,11 @@ if __name__ == "__main__":
     bi = p.bodies
 #    pprint(bi)
 
+#    for i in range(1, 16385):
+#        pot = run_kernel(bi[:i], bi)
+
     print('-'*25)
     pot = run_kernel(bi[:7], bi)
-
     print(pot[:3].tolist())
     print(pot[-3:].tolist())
 
@@ -819,4 +814,4 @@ if __name__ == "__main__":
     print('Effetive Gflops/s of main: {0:g}\n'.format(gflops*3))
 
 
-
+########## end of file ##########
