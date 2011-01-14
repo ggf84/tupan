@@ -6,6 +6,7 @@
 """
 
 from __future__ import (print_function, with_statement)
+import sys
 import time
 
 
@@ -16,8 +17,9 @@ class timeit(object):
         tstart = time.time()
         ret = self.f(*args, **kwargs)
         elapsed = time.time() - tstart
-        print('time elapsed in <{name}>: {time} s'.format(name=self.f.__name__,
-                                                          time=elapsed))
+        name = self.f.__module__ + '.' + self.f.__name__
+        fmt = 'time elapsed in <{name}>: {time} s'
+        print(fmt.format(name=name, time=elapsed), file=sys.stderr)
         return ret
 
 

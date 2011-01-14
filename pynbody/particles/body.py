@@ -269,7 +269,7 @@ class Bodies(object):
             return _pot
 
         if HAVE_CL:
-            _pot = cl_pot.run_kernel(self, bodies)
+            _pot = cl_pot.perform_calc(self, bodies)
         else:
             _pot = py_calc_pot(self, bodies)
             _pot = np.asarray(_pot)
