@@ -8,7 +8,7 @@
 
 from . import cl_pot
 from . import cl_acc
-from . import elapsed
+from . import decorators
 
 
 ########## end of file ##########

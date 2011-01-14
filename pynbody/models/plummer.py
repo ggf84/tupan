@@ -10,7 +10,7 @@ import numpy as np
 import random
 import math
 
-from ..lib.elapsed import timeit
+from ..lib.decorators import timeit
 from ..particles import Bodies
 
 

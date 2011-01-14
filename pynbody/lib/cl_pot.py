@@ -10,7 +10,7 @@ import pyopencl as cl
 import numpy as np
 import time
 
-from pynbody.lib.elapsed import timeit
+from pynbody.lib.decorators import timeit
 
 
 
@@ -444,7 +444,7 @@ __kernel void set_pot(__global const REAL4 *ipos,
     REAL4 myPos[UNROLL_SIZE];
     REAL myPot[UNROLL_SIZE];
     for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
-        myPos[unroll] = ipos[gid + unroll];
+        myPos[unroll] = (gid + unroll < ni) ? ipos[gid + unroll] : ipos[ni-1];
         myPot[unroll] = 0.0;
     }
 
@@ -453,8 +453,8 @@ __kernel void set_pot(__global const REAL4 *ipos,
     for (tile = 0; tile < numTiles; tile++) {
 
         uint jdx = tile * localDim + tid;
-        sharedPos[tid] = jpos[jdx];
-        sharedMass[tid] = jmass[jdx];
+        sharedPos[tid] = (jdx < nj) ? jpos[jdx] : jpos[nj-1];
+        sharedMass[tid] = (jdx < nj) ? jmass[jdx] : jmass[nj-1];
 
         barrier(CLK_LOCAL_MEM_FENCE);
         for (uint k = 0; k < localDim; k++) {
@@ -482,8 +482,8 @@ __kernel void set_pot(__global const REAL4 *ipos,
     }
 
     uint jdx = tile * localDim + tid;
-    sharedPos[tid] = jpos[jdx];
-    sharedMass[tid] = jmass[jdx];
+    sharedPos[tid] = (jdx < nj) ? jpos[jdx] : jpos[nj-1];
+    sharedMass[tid] = (jdx < nj) ? jmass[jdx] : jmass[nj-1];
 
     barrier(CLK_LOCAL_MEM_FENCE);
     for (uint k = 0; k < nj - (tile * localDim); k++) {
@@ -494,12 +494,11 @@ __kernel void set_pot(__global const REAL4 *ipos,
     }
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    if (gid < ni) {
-        for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
+    for (ushort unroll = 0; unroll < UNROLL_SIZE; unroll++) {
+        if (gid + unroll < ni) {
             ipot[gid + unroll] = myPot[unroll];
         }
     }
-
 }
 
 """}  ## CL_KERNEL_1_MOD3
@@ -659,7 +658,7 @@ KERNEL = CL_KERNEL_1_MOD3
 BLOCK_SIZE_X = 256
 BLOCK_SIZE_Y = 1
 BLOCK_SIZE_Z = 1
-UNROLL_SIZE = 4
+UNROLL_SIZE = 5         # unroll for i-particles
 
 DOUBLE = True
 FAST_MATH = True
@@ -701,15 +700,11 @@ kernel = _setup_kernel(KERNEL['source'], KERNEL['name'])
 def _start_kernel(bi, bj, mj):
     """  """    # TODO
 
-    block_size_x = BLOCK_SIZE_X
-#    while block_size_x > 1 and min(len(bi), len(bj)) < block_size_x:
-#        block_size_x //= 2
+    global_size = (len(bi) + UNROLL_SIZE * BLOCK_SIZE_X - 1)
+    global_size //= UNROLL_SIZE * BLOCK_SIZE_X
+    global_size *= BLOCK_SIZE_X
 
-    global_size = (len(bi) + UNROLL_SIZE - 1)//UNROLL_SIZE
-    global_size = (global_size + block_size_x - 1)//block_size_x
-    global_size *= block_size_x
-
-    local_size = (block_size_x, BLOCK_SIZE_Y, BLOCK_SIZE_Z)
+    local_size = (BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z)
     global_size = (global_size, BLOCK_SIZE_Y, BLOCK_SIZE_Z)
 
     print('lengths: ', (len(bi), len(bj)))
