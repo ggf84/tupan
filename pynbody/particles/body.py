@@ -8,7 +8,7 @@ import numpy as np
 from math import sqrt
 from ..vector import Vector
 try:
-    from ..lib import cl_pot
+    from ..lib import (cl_acc, cl_pot)
     HAVE_CL = True
 except:
     HAVE_CL = False
@@ -245,17 +245,15 @@ class Bodies(object):
     vel = property(_get_vel, _set_vel)
 
 
-
     def get_total_mass(self):
         return self._total_mass
     def set_total_mass(self, mtot):
         self._total_mass = mtot
 
 
-
     def calc_pot(self, bodies):
         """set the all bodies' gravitational potential due to other bodies"""
-        def py_calc_pot(self, bodies):
+        def py_pot_perform_calc(self, bodies):
             _pot = []
             for bi in self._array:
                 ipot = 0.0
@@ -271,13 +269,46 @@ class Bodies(object):
         if HAVE_CL:
             _pot = cl_pot.perform_calc(self, bodies)
         else:
-            _pot = py_calc_pot(self, bodies)
+            _pot = py_pot_perform_calc(self, bodies)
             _pot = np.asarray(_pot)
 
         print(_pot)
 
         self._array['pot'] = _pot
 
+
+    def calc_acc(self, bodies):
+        """set the all bodies' acceleration due to other bodies"""
+        def py_acc_perform_calc(self, bodies):
+            _acc = []
+            for bi in self._array:
+                iacc = np.zeros(4, dtype=np.float64)
+                for bj in bodies:
+                    if bi['index'] != bj['index']:
+                        dpos = bi['pos'] - bj['pos']
+                        eps2 = 0.5*(bi['eps2'] + bj['eps2'])
+                        ds2 = np.dot(dpos, dpos) + eps2
+                        r2inv = 1.0 / ds2
+                        rinv = sqrt(r2inv)
+                        mrinv = bj['mass'] * rinv
+                        mr3inv = mrinv * r2inv
+                        iacc[3] -= mrinv
+                        iacc[0:3] -= mr3inv * dpos
+                _acc.append(iacc)
+            return _acc
+
+        if HAVE_CL:
+            _acc = cl_acc.perform_calc(self, bodies)
+        else:
+            _acc = py_acc_perform_calc(self, bodies)
+            _acc = np.asarray(_acc)
+
+        print('acc '*20)
+        print(self._array['pos'])
+        print('-'*25)
+        print(_acc)
+
+#        self._array['pot'] = _pot
 
 
     def get_ekin(self):
@@ -287,33 +318,6 @@ class Bodies(object):
     def get_epot(self):
         """get the bodies' total potential energy"""
         return np.sum(self._array['mass'] * self._array['pot'])
-
-
-
-    def calc_acc(self, bodies):
-        """set the all bodies' acceleration due to other bodies"""
-        def py_calc_acc(self, bodies):
-            _acc = []
-            for bi in self:
-                iacc = Vector(0.0, 0.0, 0.0)
-                for bj in bodies:
-                    if bi.index != bj.index:
-                        dpos = bi.pos - bj.pos
-                        eps2 = 0.5*(bi.eps2 + bj.eps2)
-                        dposinv3 = dpos.smoothed_square(eps2) ** (-1.5)
-                        iacc -= bj.mass * dpos * dposinv3
-                _acc.append(iacc)
-            return _acc
-
-        if HAVE_CL:
-            raise NotImplementedError('cl_set_acc NotImplemented')
-            _acc = cl_calc_acc(self, bodies)
-        else:
-            _acc = py_calc_acc(self, bodies)
-
-        for (b, a) in zip(self, _acc):
-            b._acc = a
-
 
 
 

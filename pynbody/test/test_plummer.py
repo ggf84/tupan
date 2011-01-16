@@ -13,6 +13,10 @@ if __name__ == "__main__":
         p.make_plummer()
 #        p.dump_to_txt()
 
+        bi = p.bodies
+        bi.calc_acc(bi)
+
+
     main()
 
 

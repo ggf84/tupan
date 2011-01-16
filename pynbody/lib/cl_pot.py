@@ -27,7 +27,7 @@ def perform_kernel_calc(iposeps2, jposeps2, jmass):
     ilen = len(iposeps2)
     jlen = len(jposeps2)
 
-    unroll = cl_kernels.UNROLL_SIZE
+    unroll = cl_kernels.UNROLL_SIZE_I
     local_size = cl_kernels.BLOCK_SIZE
 
     global_size = (ilen + unroll * local_size[0] - 1)
