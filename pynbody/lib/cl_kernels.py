@@ -309,10 +309,10 @@ REAL4 p2p_acc_kernel_core(REAL4 acc, REAL4 bi, REAL4 bj, REAL mj)
     dr.y = bi.y - bj.y;                                              // 1 FLOPs
     dr.z = bi.z - bj.z;                                              // 1 FLOPs
     dr.w = bi.w + bj.w;                                              // 1 FLOPs
-    REAL ds2 = 0;//0.5f * dr.w;                                   // 0 FLOPs
+    REAL ds2 = 0.5 * dr.w;                                           // 1 FLOPs
     ds2 += dr.z * dr.z + dr.y * dr.y + dr.x * dr.x;                  // 6 FLOPs
-
-    REAL rinv = (ds2 ? rsqrt(ds2):0);                                // 2 FLOPs
+    REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
+    rinv = (ds2 ? rinv:0);
     REAL mr3inv = mj * rinv;                                         // 1 FLOPs
     rinv *= rinv;                                                    // 1 FLOPs
     acc.w -= mr3inv;                                                 // 1 FLOPs
@@ -403,8 +403,8 @@ __kernel void p2p_acc_kernel(__global const REAL4 *ipos,
 
 
 
-UNROLL_SIZE_I = 7               # unroll for i-particles
-UNROLL_SIZE_J = 64              # unroll for j-particles
+UNROLL_SIZE_I = 5               # unroll for i-particles
+UNROLL_SIZE_J = 32              # unroll for j-particles
 BLOCK_SIZE = (256, 1, 1)
 ENABLE_FAST_MATH = True
 ENABLE_DOUBLE_PRECISION = True
