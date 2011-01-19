@@ -232,11 +232,13 @@ __kernel void p2p_pot_kernel(__global const REAL4 *ipos,
         barrier(CLK_LOCAL_MEM_FENCE);
         for (uint j = 0; j < localDim; ) {
             for (uint jj = j; jj < j + UNROLL_SIZE_J; ++jj) {
+               REAL4 otherPos = sharedPos[jj];
+               REAL otherMass = sharedMass[jj];
                for (uint ii = 0; ii < UNROLL_SIZE_I; ++ii) {
                    myPot[ii] = p2p_pot_kernel_core(myPot[ii],
                                                    myPos[ii],
-                                                   sharedPos[jj],
-                                                   sharedMass[jj]);
+                                                   otherPos,
+                                                   otherMass);
                }
             }
             j += UNROLL_SIZE_J;
@@ -250,11 +252,13 @@ __kernel void p2p_pot_kernel(__global const REAL4 *ipos,
 
     barrier(CLK_LOCAL_MEM_FENCE);
     for (uint j = 0; j < nj - (tile * localDim); ++j) {
+        REAL4 otherPos = sharedPos[j];
+        REAL otherMass = sharedMass[j];
         for (uint ii = 0; ii < UNROLL_SIZE_I; ++ii) {
                 myPot[ii] = p2p_pot_kernel_core(myPot[ii],
                                                 myPos[ii],
-                                                sharedPos[j],
-                                                sharedMass[j]);
+                                                otherPos,
+                                                otherMass);
         }
     }
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -355,11 +359,13 @@ __kernel void p2p_acc_kernel(__global const REAL4 *ipos,
         barrier(CLK_LOCAL_MEM_FENCE);
         for (uint j = 0; j < localDim; ) {
             for (uint jj = j; jj < j + UNROLL_SIZE_J; ++jj) {
+               REAL4 otherPos = sharedPos[jj];
+               REAL otherMass = sharedMass[jj];
                for (uint ii = 0; ii < UNROLL_SIZE_I; ++ii) {
                    myAcc[ii] = p2p_acc_kernel_core(myAcc[ii],
                                                    myPos[ii],
-                                                   sharedPos[jj],
-                                                   sharedMass[jj]);
+                                                   otherPos,
+                                                   otherMass);
                }
             }
             j += UNROLL_SIZE_J;
@@ -373,11 +379,13 @@ __kernel void p2p_acc_kernel(__global const REAL4 *ipos,
 
     barrier(CLK_LOCAL_MEM_FENCE);
     for (uint j = 0; j < nj - (tile * localDim); ++j) {
+        REAL4 otherPos = sharedPos[j];
+        REAL otherMass = sharedMass[j];
         for (uint ii = 0; ii < UNROLL_SIZE_I; ++ii) {
                 myAcc[ii] = p2p_acc_kernel_core(myAcc[ii],
                                                 myPos[ii],
-                                                sharedPos[j],
-                                                sharedMass[j]);
+                                                otherPos,
+                                                otherMass);
         }
     }
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -404,7 +412,7 @@ __kernel void p2p_acc_kernel(__global const REAL4 *ipos,
 
 
 UNROLL_SIZE_I = 5               # unroll for i-particles
-UNROLL_SIZE_J = 32              # unroll for j-particles
+UNROLL_SIZE_J = 16              # unroll for j-particles
 BLOCK_SIZE = (256, 1, 1)
 ENABLE_FAST_MATH = True
 ENABLE_DOUBLE_PRECISION = True
