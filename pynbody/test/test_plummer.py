@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
     @timeit
     def main():
-        numBodies = 16384
+        numBodies = 5471
         p = Plummer(numBodies, seed=1)
         p.make_plummer()
 #        p.dump_to_txt()

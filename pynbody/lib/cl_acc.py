@@ -11,13 +11,13 @@ import numpy as np
 import time
 
 from pynbody.lib.decorators import timeit
-from pynbody.lib import cl_kernels
+from pynbody.lib import kernels
 
 
-ctx = cl_kernels.ctx
-queue = cl_kernels.queue
-kernel = cl_kernels.p2p_acc_kernel['kernel']
-kernel_flops = cl_kernels.p2p_acc_kernel['flops']
+ctx = kernels.ctx
+queue = kernels.queue
+kernel = kernels.p2p_acc_kernel['kernel']
+kernel_flops = kernels.p2p_acc_kernel['flops']
 
 
 @timeit
@@ -27,8 +27,8 @@ def perform_kernel_calc(iposeps2, jposeps2, jmass):
     ilen = len(iposeps2)
     jlen = len(jposeps2)
 
-    unroll = cl_kernels.UNROLL_SIZE_I
-    local_size = cl_kernels.BLOCK_SIZE
+    unroll = kernels.IUNROLL
+    local_size = kernels.BLOCK_SIZE
 
     global_size = (ilen + unroll * local_size[0] - 1)
     global_size //= unroll * local_size[0]
@@ -79,7 +79,7 @@ def perform_kernel_calc(iposeps2, jposeps2, jmass):
 @timeit
 def perform_calc(bi, bj):
     """Performs the calculation of the potential on a CL device."""    # TODO
-    if cl_kernels.ENABLE_DOUBLE_PRECISION:
+    if kernels.ENABLE_DOUBLE_PRECISION:
         fp_type = np.float64
     else:
         fp_type = np.float32

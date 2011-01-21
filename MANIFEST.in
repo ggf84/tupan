@@ -1,4 +1,4 @@
 include MANIFEST.in
 include *.txt *.cfg
-global-include *.py
+global-include *.py *.cl
 recursive-include doc *.rst
