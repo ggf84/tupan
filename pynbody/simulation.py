@@ -3,7 +3,7 @@
 
 """The Simulation class"""
 
-from __future__ import (print_function, with_statement)
+from __future__ import print_function
 from pprint import pprint
 import h5py
 import gzip

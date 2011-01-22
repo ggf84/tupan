@@ -36,12 +36,12 @@ REAL p2p_pot_kernel_core(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
 }
 
 
-__kernel void p2p_pot_kernel(__global const REAL4 *ipos,
+__kernel void p2p_pot_kernel(const uint ni,
+                             const uint nj,
+                             __global const REAL4 *ipos,
                              __global const REAL4 *jpos,
                              __global const REAL *jmass,
                              __global REAL *ipot,
-                             const uint ni,
-                             const uint nj,
                              __local REAL4 *sharedPos,
                              __local REAL *sharedMass)
 {

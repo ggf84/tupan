@@ -45,12 +45,12 @@ REAL4 p2p_acc_kernel_core(REAL4 acc, REAL4 bi, REAL4 bj, REAL mj)
 }
 
 
-__kernel void p2p_acc_kernel_gpugems3(__global const REAL4 *ipos,
+__kernel void p2p_acc_kernel_gpugems3(const uint ni,
+                                      const uint nj,
+                                      __global const REAL4 *ipos,
                                       __global const REAL4 *jpos,
                                       __global const REAL *jmass,
                                       __global REAL4 *iacc,
-                                      const uint ni,
-                                      const uint nj,
                                       __local REAL4 *sharedPos,
                                       __local REAL *sharedMass)
 {

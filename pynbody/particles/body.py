@@ -3,7 +3,7 @@
 
 """  """
 
-from __future__ import (print_function, with_statement)
+from __future__ import print_function
 import numpy as np
 from math import sqrt
 from ..vector import Vector

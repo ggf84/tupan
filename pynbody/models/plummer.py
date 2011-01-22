@@ -5,7 +5,7 @@
 
 """
 
-from __future__ import (print_function, with_statement)
+from __future__ import print_function
 import numpy as np
 import random
 import math
