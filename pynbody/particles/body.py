@@ -8,7 +8,7 @@ import numpy as np
 from math import sqrt
 from ..vector import Vector
 try:
-    from ..lib import (cl_acc, cl_pot)
+    from ..lib.kernels import (p2p_acc_kernel, p2p_pot_kernel)
     HAVE_CL = True
 except:
     HAVE_CL = False
@@ -267,7 +267,7 @@ class Bodies(object):
             return _pot
 
         if HAVE_CL:
-            _pot = cl_pot.perform_calc(self, bodies)
+            _pot = p2p_pot_kernel.run(self, bodies)
         else:
             _pot = py_pot_perform_calc(self, bodies)
             _pot = np.asarray(_pot)
@@ -298,7 +298,7 @@ class Bodies(object):
             return _acc
 
         if HAVE_CL:
-            _acc = cl_acc.perform_calc(self, bodies)
+            _acc = p2p_acc_kernel.run(self, bodies)
         else:
             _acc = py_acc_perform_calc(self, bodies)
             _acc = np.asarray(_acc)

@@ -33,7 +33,7 @@ REAL p2p_pot_kernel_core(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
     REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
     pot -= mj * (ds2 ? rinv:0);                                      // 2 FLOPs
     return pot;
-}
+}   // Total flop count: 15
 
 
 __kernel void p2p_pot_kernel(const uint ni,
@@ -46,12 +46,12 @@ __kernel void p2p_pot_kernel(const uint ni,
                              __local REAL *sharedMass)
 {
     uint tid = get_local_id(0);
-    uint gid = get_global_id(0) * UNROLL_SIZE_I;
+    uint gid = get_global_id(0) * IUNROLL;
     uint localDim = get_local_size(0);
 
-    REAL4 myPos[UNROLL_SIZE_I];
-    REAL myPot[UNROLL_SIZE_I];
-    for (uint ii = 0; ii < UNROLL_SIZE_I; ++ii) {
+    REAL4 myPos[IUNROLL];
+    REAL myPot[IUNROLL];
+    for (uint ii = 0; ii < IUNROLL; ++ii) {
         myPos[ii] = (gid + ii < ni) ? ipos[gid + ii] : ipos[ni-1];
         myPot[ii] = 0.0;
     }
@@ -66,17 +66,17 @@ __kernel void p2p_pot_kernel(const uint ni,
 
         barrier(CLK_LOCAL_MEM_FENCE);
         for (uint j = 0; j < localDim; ) {
-            for (uint jj = j; jj < j + UNROLL_SIZE_J; ++jj) {
+            for (uint jj = j; jj < j + JUNROLL; ++jj) {
                REAL4 otherPos = sharedPos[jj];
                REAL otherMass = sharedMass[jj];
-               for (uint ii = 0; ii < UNROLL_SIZE_I; ++ii) {
+               for (uint ii = 0; ii < IUNROLL; ++ii) {
                    myPot[ii] = p2p_pot_kernel_core(myPot[ii],
                                                    myPos[ii],
                                                    otherPos,
                                                    otherMass);
                }
             }
-            j += UNROLL_SIZE_J;
+            j += JUNROLL;
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
@@ -89,7 +89,7 @@ __kernel void p2p_pot_kernel(const uint ni,
     for (uint j = 0; j < nj - (tile * localDim); ++j) {
         REAL4 otherPos = sharedPos[j];
         REAL otherMass = sharedMass[j];
-        for (uint ii = 0; ii < UNROLL_SIZE_I; ++ii) {
+        for (uint ii = 0; ii < IUNROLL; ++ii) {
                 myPot[ii] = p2p_pot_kernel_core(myPot[ii],
                                                 myPos[ii],
                                                 otherPos,
@@ -98,10 +98,10 @@ __kernel void p2p_pot_kernel(const uint ni,
     }
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    for (uint ii = 0; ii < UNROLL_SIZE_I; ++ii) {
+    for (uint ii = 0; ii < IUNROLL; ++ii) {
         if (gid + ii < ni) {
             ipot[gid + ii] = myPot[ii];
         }
     }
-}
+}   // Output shape: ({ni},)
 

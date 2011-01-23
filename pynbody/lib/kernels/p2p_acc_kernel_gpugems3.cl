@@ -42,7 +42,7 @@ REAL4 p2p_acc_kernel_core(REAL4 acc, REAL4 bi, REAL4 bj, REAL mj)
     acc.y -= mr3inv * dr.y;                                          // 2 FLOPs
     acc.z -= mr3inv * dr.z;                                          // 2 FLOPs
     return acc;
-}
+}   // Total flop count: 23
 
 
 __kernel void p2p_acc_kernel_gpugems3(const uint ni,
@@ -54,18 +54,18 @@ __kernel void p2p_acc_kernel_gpugems3(const uint ni,
                                       __local REAL4 *sharedPos,
                                       __local REAL *sharedMass)
 {
-    uint gid = get_global_id(0) * UNROLL_SIZE_I;
+    uint gid = get_global_id(0) * IUNROLL;
     uint tidx = get_local_id(0);
     uint tidy = get_local_id(1);
-    uint grpidx = get_group_id(0) * UNROLL_SIZE_I;
-    uint grpidy = get_group_id(1) * UNROLL_SIZE_I;
-    uint grpDimx = get_num_groups(0) * UNROLL_SIZE_I;
+    uint grpidx = get_group_id(0) * IUNROLL;
+    uint grpidy = get_group_id(1) * IUNROLL;
+    uint grpDimx = get_num_groups(0) * IUNROLL;
     uint localDimx = get_local_size(0);
     uint localDimy = get_local_size(1);
 
-    REAL4 myPos[UNROLL_SIZE_I];
-    REAL4 myAcc[UNROLL_SIZE_I];
-    for (uint ii = 0; ii < UNROLL_SIZE_I; ++ii) {
+    REAL4 myPos[IUNROLL];
+    REAL4 myAcc[IUNROLL];
+    for (uint ii = 0; ii < IUNROLL; ++ii) {
         myPos[ii] = (gid + ii < ni) ? ipos[gid + ii] : ipos[ni-1];
         myAcc[ii] = (REAL4){0.0, 0.0, 0.0, 0.0};
     }
@@ -82,18 +82,18 @@ __kernel void p2p_acc_kernel_gpugems3(const uint ni,
         barrier(CLK_LOCAL_MEM_FENCE);
         ulong k = 0;
         for(uint j = 0; j < localDimx; ) {
-            for (uint jj = 0; jj < UNROLL_SIZE_J; ++jj) {
+            for (uint jj = 0; jj < JUNROLL; ++jj) {
                 uint kdx = localDimx * tidy + k++;
                 REAL4 otherPos = sharedPos[kdx];
                 REAL otherMass = sharedMass[kdx];
-                for (uint ii = 0; ii < UNROLL_SIZE_I; ++ii) {
+                for (uint ii = 0; ii < IUNROLL; ++ii) {
                     myAcc[ii] = p2p_acc_kernel_core(myAcc[ii],
                                                     myPos[ii],
                                                     otherPos,
                                                     otherMass);
                 }
             }
-            j += UNROLL_SIZE_J;
+            j += JUNROLL;
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
@@ -109,7 +109,7 @@ __kernel void p2p_acc_kernel_gpugems3(const uint ni,
         uint kdx = localDimx * tidy + k++;
         REAL4 otherPos = sharedPos[kdx];
         REAL otherMass = sharedMass[kdx];
-        for (uint ii = 0; ii < UNROLL_SIZE_I; ++ii) {
+        for (uint ii = 0; ii < IUNROLL; ++ii) {
                 myAcc[ii] = p2p_acc_kernel_core(myAcc[ii],
                                                 myPos[ii],
                                                 otherPos,
@@ -118,10 +118,10 @@ __kernel void p2p_acc_kernel_gpugems3(const uint ni,
     }
     barrier(CLK_LOCAL_MEM_FENCE);
 
-    for (uint ii = 0; ii < UNROLL_SIZE_I; ++ii) {
+    for (uint ii = 0; ii < IUNROLL; ++ii) {
         if (gid + ii < ni) {
             iacc[gid + ii] = myAcc[ii];
         }
     }
-}
+}   // Output shape: ({ni},4)
 
