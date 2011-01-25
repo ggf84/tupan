@@ -3,10 +3,10 @@
 
 
 if __name__ == "__main__":
-    from pynbody.lib.decorators import timeit
+    from pynbody.lib.decorators import selftimer
     from pynbody.models import Plummer
 
-    @timeit
+    @selftimer()
     def main():
         numBodies = 5471
         p = Plummer(numBodies, seed=1)
