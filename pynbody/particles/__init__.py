@@ -5,7 +5,8 @@
 
 """
 
-from .body import (Body, Bodies, Bodies_2)
+#from .body import (Body, Bodies, Bodies_2)
+from .body import Bodies
 
 
 ########## end of file ##########

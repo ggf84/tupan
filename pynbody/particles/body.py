@@ -6,9 +6,9 @@
 from __future__ import print_function
 import numpy as np
 from math import sqrt
-from ..vector import Vector
+from pynbody.vector import Vector
 try:
-    from ..lib.kernels import (p2p_acc_kernel, p2p_pot_kernel)
+    from pynbody.lib.kernels import (p2p_acc_kernel, p2p_pot_kernel)
     HAVE_CL = True
 except:
     HAVE_CL = False
@@ -18,109 +18,109 @@ except:
 #HAVE_CL = False
 
 
-class Body(object):
-    """A base class for a Body-type particle"""
+#class Body(object):
+#    """A base class for a Body-type particle"""
 
-    def __init__(self, fields=None):
+#    def __init__(self, fields=None):
 
-        self.index = 0
-        self.nstep = 0
-        self.tstep = 0.0
-        self.time = 0.0
-        self.mass = 0.0
-        self.eps2 = 0.0
-        self.pot = 0.0
-        self.pos = Vector(0.0, 0.0, 0.0)
-        self.vel = Vector(0.0, 0.0, 0.0)
+#        self.index = 0
+#        self.nstep = 0
+#        self.tstep = 0.0
+#        self.time = 0.0
+#        self.mass = 0.0
+#        self.eps2 = 0.0
+#        self.pot = 0.0
+#        self.pos = Vector(0.0, 0.0, 0.0)
+#        self.vel = Vector(0.0, 0.0, 0.0)
 
-        if fields:  # TODO: implementar usando self.__dict__['key'] = value
-            (self.index,
-             self.nstep,
-             self.tstep,
-             self.time,
-             self.mass,
-             self.eps2,
-             self.pot,
-             self.pos,
-             self.vel) = fields
+#        if fields:  # TODO: implementar usando self.__dict__['key'] = value
+#            (self.index,
+#             self.nstep,
+#             self.tstep,
+#             self.time,
+#             self.mass,
+#             self.eps2,
+#             self.pot,
+#             self.pos,
+#             self.vel) = fields
 
-        self._acc = None
-        self._ekin = None
-        self._epot = None
+#        self._acc = None
+#        self._ekin = None
+#        self._epot = None
 
-    def __repr__(self):
-        fields = (self.index, self.nstep,
-                  self.tstep, self.time,
-                  self.mass, self.eps2, self.pot,
-                  self.pos, self.vel)
-        return '{fields}'.format(fields=fields)
+#    def __repr__(self):
+#        fields = (self.index, self.nstep,
+#                  self.tstep, self.time,
+#                  self.mass, self.eps2, self.pot,
+#                  self.pos, self.vel)
+#        return '{fields}'.format(fields=fields)
 
-    def __iter__(self):
-        yield self.index
-        yield self.nstep
-        yield self.tstep
-        yield self.time
-        yield self.mass
-        yield self.eps2
-        yield self.pot
-        yield self.pos
-        yield self.vel
+#    def __iter__(self):
+#        yield self.index
+#        yield self.nstep
+#        yield self.tstep
+#        yield self.time
+#        yield self.mass
+#        yield self.eps2
+#        yield self.pot
+#        yield self.pos
+#        yield self.vel
 
-    def set_pot(self, bodies):
-        """set the body's gravitational potential due to other bodies"""
-        def py_set_pot(self, bodies):
-            _pot = 0.0
-            for bj in bodies:
-                if self.index != bj.index:
-                    dpos = self.pos - bj.pos
-                    eps2 = 0.5*(self.eps2 + bj.eps2)
-                    _pot -= bj.mass / dpos.smoothed_norm(eps2)
-            return _pot
+#    def set_pot(self, bodies):
+#        """set the body's gravitational potential due to other bodies"""
+#        def py_set_pot(self, bodies):
+#            _pot = 0.0
+#            for bj in bodies:
+#                if self.index != bj.index:
+#                    dpos = self.pos - bj.pos
+#                    eps2 = 0.5*(self.eps2 + bj.eps2)
+#                    _pot -= bj.mass / dpos.smoothed_norm(eps2)
+#            return _pot
 
-        if HAVE_CL:
-            _pot = cl_set_pot(self, bodies)
-        else:
-            _pot = py_set_pot(self, bodies)
+#        if HAVE_CL:
+#            _pot = cl_set_pot(self, bodies)
+#        else:
+#            _pot = py_set_pot(self, bodies)
 
-        self.pot = _pot
+#        self.pot = _pot
 
-    def get_ekin(self):
-        """get the body's kinetic energy"""
-        self._ekin = 0.5 * self.mass * self.vel.square()
-        return self._ekin
+#    def get_ekin(self):
+#        """get the body's kinetic energy"""
+#        self._ekin = 0.5 * self.mass * self.vel.square()
+#        return self._ekin
 
-    def get_epot(self):
-        """get the body's potential energy"""
-        self._epot = self.mass * self.pot
-        return self._epot
+#    def get_epot(self):
+#        """get the body's potential energy"""
+#        self._epot = self.mass * self.pot
+#        return self._epot
 
-    def get_etot(self):
-        """get the body's total energy"""
-        return self._ekin + self._epot
+#    def get_etot(self):
+#        """get the body's total energy"""
+#        return self._ekin + self._epot
 
-    def set_acc(self, bodies):
-        """set the body's acceleration due to other bodies"""
-        def py_set_acc(self, bodies):
-            _acc = Vector(0.0, 0.0, 0.0)
-            for body in bodies:
-                if self.index != body.index:
-                    dpos = self.pos - body.pos
-                    eps2 = 0.5*(self.eps2 + body.eps2)
-                    dposinv3 = dpos.smoothed_square(eps2) ** (-1.5)
-                    _acc -= body.mass * dpos * dposinv3
-            return _acc
+#    def set_acc(self, bodies):
+#        """set the body's acceleration due to other bodies"""
+#        def py_set_acc(self, bodies):
+#            _acc = Vector(0.0, 0.0, 0.0)
+#            for body in bodies:
+#                if self.index != body.index:
+#                    dpos = self.pos - body.pos
+#                    eps2 = 0.5*(self.eps2 + body.eps2)
+#                    dposinv3 = dpos.smoothed_square(eps2) ** (-1.5)
+#                    _acc -= body.mass * dpos * dposinv3
+#            return _acc
 
-        if HAVE_CL:
-            raise NotImplementedError('NotImplemented')
-            _acc = cl_set_acc(self, bodies)
-        else:
-            _acc = py_set_acc(self, bodies)
+#        if HAVE_CL:
+#            raise NotImplementedError('NotImplemented')
+#            _acc = cl_set_acc(self, bodies)
+#        else:
+#            _acc = py_set_acc(self, bodies)
 
-        self._acc = _acc
+#        self._acc = _acc
 
-    def get_acc(self):
-        """get the body's acceleration"""
-        return self._acc
+#    def get_acc(self):
+#        """get the body's acceleration"""
+#        return self._acc
 
 
 
@@ -336,97 +336,97 @@ class Bodies(object):
 
 # original
 
-class Bodies_2(list):
-    """A base class for all Body-type particles"""
+#class Bodies_2(list):
+#    """A base class for all Body-type particles"""
 
-    def __new__(cls):
-        """constructor"""
-        return list.__new__(cls)
+#    def __new__(cls):
+#        """constructor"""
+#        return list.__new__(cls)
 
-    def __init__(self):
-        list.__init__(self)
+#    def __init__(self):
+#        list.__init__(self)
 
-        # total mass
-        self._total_mass = 0.0
+#        # total mass
+#        self._total_mass = 0.0
 
-    def append_member(self, body):
-        """Append a new member for bodies' list and update the total mass"""
-        self._total_mass += body.mass
-        self.append(body)
+#    def append_member(self, body):
+#        """Append a new member for bodies' list and update the total mass"""
+#        self._total_mass += body.mass
+#        self.append(body)
 
-    def pop_member(self, body_index):
-        """
-        Find the index from body-index and remove and return the member at this
-        index, updating the total mass.
-        """
-        cmpidx = lambda s: s.index == body_index
-        list_index = self.index(filter(cmpidx, self)[0])
-        self._total_mass -= self[list_index].mass
-        return self.pop(list_index)
+#    def pop_member(self, body_index):
+#        """
+#        Find the index from body-index and remove and return the member at this
+#        index, updating the total mass.
+#        """
+#        cmpidx = lambda s: s.index == body_index
+#        list_index = self.index(filter(cmpidx, self)[0])
+#        self._total_mass -= self[list_index].mass
+#        return self.pop(list_index)
 
-    def select_attribute(self, attr):
-        return [getattr(b, attr) for b in self]
+#    def select_attribute(self, attr):
+#        return [getattr(b, attr) for b in self]
 
-    def get_total_mass(self):
-        return self._total_mass
+#    def get_total_mass(self):
+#        return self._total_mass
 
-    def set_total_mass(self, mtot):
-        self._total_mass = mtot
+#    def set_total_mass(self, mtot):
+#        self._total_mass = mtot
 
-    def set_pot(self, bodies):
-        """set the all bodies' gravitational potential due to other bodies"""
-        def py_set_pot(self, bodies):
-            _pot = []
-            for bi in self:
-                ipot = 0.0
-                for bj in bodies:
-                    if bi.index != bj.index:
-                        dpos = bi.pos - bj.pos
-                        eps2 = 0.5*(bi.eps2 + bj.eps2)
-                        ipot -= bj.mass / dpos.smoothed_norm(eps2)
-                _pot.append(ipot)
-            return _pot
+#    def set_pot(self, bodies):
+#        """set the all bodies' gravitational potential due to other bodies"""
+#        def py_set_pot(self, bodies):
+#            _pot = []
+#            for bi in self:
+#                ipot = 0.0
+#                for bj in bodies:
+#                    if bi.index != bj.index:
+#                        dpos = bi.pos - bj.pos
+#                        eps2 = 0.5*(bi.eps2 + bj.eps2)
+#                        ipot -= bj.mass / dpos.smoothed_norm(eps2)
+#                _pot.append(ipot)
+#            return _pot
 
-        if HAVE_CL:
-            _pot = cl_set_pot(self, bodies)
-        else:
-            _pot = py_set_pot(self, bodies)
+#        if HAVE_CL:
+#            _pot = cl_set_pot(self, bodies)
+#        else:
+#            _pot = py_set_pot(self, bodies)
 
-        for (b, p) in zip(self, _pot):
-            b.pot = p
+#        for (b, p) in zip(self, _pot):
+#            b.pot = p
 
-    def get_ekin(self):
-        """get the bodies' total kinetic energy"""
-        return 0.5 * reduce(lambda x, y: x + y, 
-                            [b.mass * b.vel.square() for b in self])
+#    def get_ekin(self):
+#        """get the bodies' total kinetic energy"""
+#        return 0.5 * reduce(lambda x, y: x + y, 
+#                            [b.mass * b.vel.square() for b in self])
 
-    def get_epot(self):
-        """get the bodies' total potential energy"""
-        return reduce(lambda x, y: x + y, [b.mass * b.pot for b in self])
+#    def get_epot(self):
+#        """get the bodies' total potential energy"""
+#        return reduce(lambda x, y: x + y, [b.mass * b.pot for b in self])
 
-    def set_acc(self, bodies):
-        """set the all bodies' acceleration due to other bodies"""
-        def py_set_acc(self, bodies):
-            _acc = []
-            for bi in self:
-                iacc = Vector(0.0, 0.0, 0.0)
-                for bj in bodies:
-                    if bi.index != bj.index:
-                        dpos = bi.pos - bj.pos
-                        eps2 = 0.5*(bi.eps2 + bj.eps2)
-                        dposinv3 = dpos.smoothed_square(eps2) ** (-1.5)
-                        iacc -= bj.mass * dpos * dposinv3
-                _acc.append(iacc)
-            return _acc
+#    def set_acc(self, bodies):
+#        """set the all bodies' acceleration due to other bodies"""
+#        def py_set_acc(self, bodies):
+#            _acc = []
+#            for bi in self:
+#                iacc = Vector(0.0, 0.0, 0.0)
+#                for bj in bodies:
+#                    if bi.index != bj.index:
+#                        dpos = bi.pos - bj.pos
+#                        eps2 = 0.5*(bi.eps2 + bj.eps2)
+#                        dposinv3 = dpos.smoothed_square(eps2) ** (-1.5)
+#                        iacc -= bj.mass * dpos * dposinv3
+#                _acc.append(iacc)
+#            return _acc
 
-        if HAVE_CL:
-            raise NotImplementedError('cl_set_acc NotImplemented')
-            _acc = cl_set_acc(self, bodies)
-        else:
-            _acc = py_set_acc(self, bodies)
+#        if HAVE_CL:
+#            raise NotImplementedError('cl_set_acc NotImplemented')
+#            _acc = cl_set_acc(self, bodies)
+#        else:
+#            _acc = py_set_acc(self, bodies)
 
-        for (b, a) in zip(self, _acc):
-            b._acc = a
+#        for (b, a) in zip(self, _acc):
+#            b._acc = a
 
 
 ########## end of file ##########

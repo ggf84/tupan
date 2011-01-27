@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from ..vector import Vector
+from pynbody.vector import Vector
 
 def main():
     v1 = Vector(1, 2, 3)

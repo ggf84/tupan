@@ -64,10 +64,17 @@ class Kernels(object):
             self.kernel = cl.Kernel(prog, self.name)
 
     @selftimer
-    def call_kernel(self, global_size, local_size, inputargs,
-                    destshape, local_mem_size, gflops_count):
+    def call_kernel(self, queue, dev_args):
         """
         Call a kernel on a CL device.
+        """
+        self.kernel(queue, *dev_args).wait()
+
+    @selftimer
+    def kernel_manager(self, global_size, local_size, inputargs,
+                       destshape, local_mem_size, gflops_count):
+        """
+        Manages a kernel call on a CL device.
         """
         mf = cl.mem_flags
         dev_args = [global_size, local_size]
@@ -85,10 +92,9 @@ class Kernels(object):
         for size in local_mem_size:
             dev_args.append(cl.LocalMemory(size))
 
-        exec_evt = self.kernel(queue, *dev_args)
+        self.call_kernel(queue, dev_args)
 
-        exec_evt.wait()
-        elapsed = 1e-9*(exec_evt.profile.end - exec_evt.profile.start)
+        elapsed = self.call_kernel.selftimer.elapsed
         print('Execution time of CL kernel: {0:g} s'.format(elapsed))
         print('CL kernel Gflops/s: {0:g}'.format(gflops_count/elapsed))
 
@@ -130,11 +136,11 @@ class Kernels(object):
         local_mem_size = (4*mem_size, mem_size)
         gflops_count = self.flops * ni * nj * 1.0e-9
 
-        dest = self.call_kernel(global_size, local_size, inputargs,
-                                destshape, local_mem_size, gflops_count)
+        dest = self.kernel_manager(global_size, local_size, inputargs,
+                                   destshape, local_mem_size, gflops_count)
 
-        elapsed = self.call_kernel.selftimer.elapsed
-        print('Total call_kernel time: {0:g} s'.format(elapsed))
+        elapsed = self.kernel_manager.selftimer.elapsed
+        print('Total kernel_manager time: {0:g} s'.format(elapsed))
         print('call_kernel Gflops/s: {0:g}'.format(gflops_count/elapsed))
 
         return dest

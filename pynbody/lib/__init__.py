@@ -5,7 +5,5 @@
 
 """
 
-from . import decorators
-
 
 ########## end of file ##########

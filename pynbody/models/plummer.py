@@ -10,8 +10,8 @@ import numpy as np
 import random
 import math
 
-from ..lib.decorators import selftimer
-from ..particles import Bodies
+from pynbody.lib.decorators import selftimer
+from pynbody.particles import Bodies
 
 
 
