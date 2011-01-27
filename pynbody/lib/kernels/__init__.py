@@ -12,9 +12,9 @@ import time
 import numpy as np
 import pyopencl as cl
 
-from pynbody.lib.decorators import (selftimer, add_method_to)
+from pynbody.lib.decorators import (selftimer, addmethod)
 
-path = os.path.dirname(__file__)
+path = os.path.dirname(__file__) + os.sep   # '/dirname/of/file' + '/'
 
 
 IUNROLL = 5                 # unroll for i-particles
@@ -36,7 +36,7 @@ _properties = cl.command_queue_properties.PROFILING_ENABLE
 queue = cl.CommandQueue(ctx, properties=_properties)
 
 
-@selftimer()
+@selftimer
 class Kernels(object):
     """
     This class serves as an abstraction layer to manage CL kernels.
@@ -51,7 +51,7 @@ class Kernels(object):
                 if pattern in line:
                     return line.split()[-1]
         self.name = fname.split('.')[0]
-        with open(path+'/'+fname, 'r') as f:
+        with open(path+fname, 'r') as f:
             self.source = f.read()
             self.flops = int(get_from(self.source, 'Total flop count'))
             self.output_shape = get_from(self.source, 'Output shape')
@@ -63,9 +63,9 @@ class Kernels(object):
             prog.build(options=options)
             self.kernel = cl.Kernel(prog, self.name)
 
-    @selftimer()
-    def call_kernel(self, global_size, local_size, inputargs, destshape,
-                    local_mem_size, gflops_count):
+    @selftimer
+    def call_kernel(self, global_size, local_size, inputargs,
+                    destshape, local_mem_size, gflops_count):
         """
         Call a kernel on a CL device.
         """
@@ -98,7 +98,7 @@ class Kernels(object):
 
         return dest
 
-
+    @selftimer
     def run(self, bi, bj):
         """
         Runs the calculation on a CL device.
@@ -113,21 +113,16 @@ class Kernels(object):
         global_size *= local_size[0]
         global_size = (global_size, 1, 1)
 
+        print('-'*25)
         print('lengths: ', (ni, nj))
         print('unroll: ', IUNROLL)
         print('local_size: ', local_size)
         print('global_size: ', global_size)
         print('diff: ', IUNROLL * global_size[0] - ni)
 
-        t0 = time.time()
-
         iposeps2 = np.vstack((bi.pos.T, bi.eps2)).T.copy().astype(fp_type)
         jposeps2 = np.vstack((bj.pos.T, bj.eps2)).T.copy().astype(fp_type)
         jmass = bj.mass.copy().astype(fp_type)
-
-        elapsed = time.time() - t0
-        print('-'*25)
-        print('Total to numpy time: {0:g} s'.format(elapsed))
 
         inputargs = (np.uint32(ni), np.uint32(nj), iposeps2, jposeps2, jmass)
         destshape = eval(self.output_shape.format(ni=ni))
@@ -135,19 +130,14 @@ class Kernels(object):
         local_mem_size = (4*mem_size, mem_size)
         gflops_count = self.flops * ni * nj * 1.0e-9
 
-        dest = self.call_kernel(*[global_size, local_size, inputargs,
-                                  destshape, local_mem_size, gflops_count])
+        dest = self.call_kernel(global_size, local_size, inputargs,
+                                destshape, local_mem_size, gflops_count)
 
-        elapsed = self.call_kernel.func_closure[0].cell_contents.elapsed
+        elapsed = self.call_kernel.selftimer.elapsed
         print('Total call_kernel time: {0:g} s'.format(elapsed))
         print('call_kernel Gflops/s: {0:g}'.format(gflops_count/elapsed))
 
-        elapsed = time.time() - t0
-        print('Total execution time: {0:g} s'.format(elapsed))
-        print('Effetive Gflops/s: {0:g}'.format(gflops_count/elapsed))
-
         return dest
-
 
 
 
@@ -167,12 +157,13 @@ p2p_acc_kernel_gpugems3 = Kernels('p2p_acc_kernel_gpugems3.cl', options)
 
 
 
-@add_method_to(p2p_acc_kernel_gpugems3)
+@addmethod(p2p_acc_kernel_gpugems3)
+@selftimer
 def print_name(self):
     """doc of print_name"""
     print('*** name: ', self.name, self.flops, '***')
-p2p_acc_kernel_gpugems3.print_name()
 
+p2p_acc_kernel_gpugems3.print_name()
 
 
 ########## end of file ##########

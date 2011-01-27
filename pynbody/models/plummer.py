@@ -96,7 +96,7 @@ class Plummer(object):
 
     def set_bodies(self):
         """  """
-        @selftimer()
+        @selftimer
         def gen_bodies(iarray, irandarray):
             def gen_body(i, irand):
                 b = np.zeros(1, dtype=self.bodies._array.dtype)
@@ -108,7 +108,7 @@ class Plummer(object):
             _gen_bodies = np.frompyfunc(gen_body, 2, 1)
             return _gen_bodies(iarray, irandarray).tolist()
 
-        @selftimer()
+        @selftimer
         def set_bodies_vel(potarray):
             # vectorize from pyfunc
             _set_bodies_vel = np.frompyfunc(self.set_vel, 1, 1)
@@ -119,7 +119,7 @@ class Plummer(object):
         np.random.shuffle(irandlist)  # shuffle to avoid index-pos correlation
 
         # generate bodies: set index, mass and pos
-        _bodies = gen_bodies(*[ilist, irandlist])
+        _bodies = gen_bodies(ilist, irandlist)
         self.bodies.fromlist(_bodies)
 
         # calculate pot

@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
+Decorators
 
+This module implements useful decorators that can be
+used to affect the behaviour of the handlers requested.
 """
 
 from __future__ import print_function
@@ -10,12 +13,17 @@ import sys
 import time
 import types
 import atexit
+import functools
 
 
-################
-## add_method_to
+class EmptyObj(object):
+    pass
+
+
+############
+## addmethod
 ##
-def add_method_to(instance):
+def addmethod(instance):
     def wrapper(func):
         func = types.MethodType(func, instance, instance.__class__)
         setattr(instance, func.func_name, func)
@@ -26,46 +34,51 @@ def add_method_to(instance):
 ############
 ## selftimer
 ##
-quiet_atcall = False
-quiet_atexit = False
-class selftimer(object):
-    def __init__(self, _quiet_atcall=quiet_atcall, _quiet_atexit=quiet_atexit):
-        self.ncalls = 0
-        self.elapsed = 0
-        self.cumelapsed = 0
-        self.quiet_atcall = _quiet_atcall
-        if not _quiet_atexit:
-            atexit.register(self.atexit)
-
-    def __call__(self, func):
+VERBOSE_ATCALL = True
+VERBOSE_ATEXIT = True
+def selftimer(func):
+    self = EmptyObj()
+    self.ncalls = 0
+    self.elapsed = 0
+    self.total_elapsed = 0
+    self.timer = time.time
+    self.func_name = func.__module__ + '.' + func.__name__
+    try:
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            timer = time.time
-            self.func = func
-            self.ncalls += 1
             try:
-                start = timer()
-                return func(*args, **kwargs)
+                try:
+                    start = self.timer()
+                    return func(*args, **kwargs)
+                finally:
+                    self.ncalls += 1
+                    self.elapsed = self.timer() - start
+                    self.total_elapsed += self.elapsed
+                    if VERBOSE_ATCALL:
+                        fmt = '--- {0:s} [call {1}]: {2:g} s'
+                        print(fmt.format(self.func_name, self.ncalls,
+                                         self.elapsed), file=sys.stderr)
             finally:
-                self.elapsed = timer() - start
-                self.cumelapsed += self.elapsed
-                if not self.quiet_atcall:
-                    funcname = func.__module__ + '.' + func.__name__
-                    fmt = '--- {0:s}: {1:g} s'
-                    print(fmt.format(funcname, self.elapsed), file=sys.stderr)
-        wrapper.__doc__ = func.__doc__
-        wrapper.__name__ = func.__name__
-        wrapper.__module__ = func.__module__
+                wrapper.selftimer.ncalls = self.ncalls
+                wrapper.selftimer.elapsed = self.elapsed
+                wrapper.selftimer.total_elapsed = self.total_elapsed
+        wrapper.selftimer = EmptyObj()
+        wrapper.selftimer.ncalls = self.ncalls
+        wrapper.selftimer.elapsed = self.elapsed
+        wrapper.selftimer.total_elapsed = self.total_elapsed
+        wrapper.selftimer.undecorated = func
         return wrapper
-
-    def atexit(self):
-        if not self.ncalls:
-            return
-        funcname = self.func.__module__ + '.' + self.func.__name__
-        fmt = ('--- ---\n' +
-               '    {0:s}:\n' +
-               '    {1:g} s in {2:d} calls ({3:g} s per call)')
-        print(fmt.format(funcname, self.cumelapsed, self.ncalls,
-                         self.cumelapsed/self.ncalls), file=sys.stderr)
+    finally:
+        def at_exit():
+            if not self.ncalls:
+                return
+            fmt = ('--- ---\n' +
+                   '    {0:s} [after {1} calls]:\n' +
+                   '    {2:g} s ({3:g} s per call)')
+            print(fmt.format(self.func_name, self.ncalls, self.total_elapsed,
+                             self.total_elapsed/self.ncalls), file=sys.stderr)
+        if VERBOSE_ATEXIT:
+            atexit.register(at_exit)
 
 
 ########## end of file ##########

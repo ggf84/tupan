@@ -299,6 +299,7 @@ class Bodies(object):
 
         if HAVE_CL:
             _acc = p2p_acc_kernel.run(self, bodies)
+            print('************* ', p2p_acc_kernel.run.selftimer.elapsed)
         else:
             _acc = py_acc_perform_calc(self, bodies)
             _acc = np.asarray(_acc)
