@@ -16,10 +16,6 @@ import atexit
 import functools
 
 
-class EmptyObj(object):
-    pass
-
-
 ############
 ## addmethod
 ##
@@ -37,46 +33,53 @@ def addmethod(instance):
 VERBOSE_ATCALL = True
 VERBOSE_ATEXIT = True
 def selftimer(func):
-    self = EmptyObj()
-    self.ncalls = 0
-    self.elapsed = 0
-    self.total_elapsed = 0
-    self.timer = time.time
-    self.func_name = func.__module__ + '.' + func.__name__
+    """
+    Use it to decorate a callable function.
+
+    It returns the decorated function with an aditional 'selftimer'
+    attribute, wich holds the number of calls, the current elapsed
+    time and the total elapsed time in all calls of function decorated.
+    It also adds a '__wrapped__' attribute pointing to the original
+    callable function.
+    """
+    timer = time.time
+    func_name = func.__module__ + '.' + func.__name__
+    class SelfTimer(object):
+        def __init__(self):
+            self.ncalls = 0
+            self.elapsed = 0.0
+            self.total_elapsed = 0.0
     try:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             try:
-                try:
-                    start = self.timer()
-                    return func(*args, **kwargs)
-                finally:
-                    self.ncalls += 1
-                    self.elapsed = self.timer() - start
-                    self.total_elapsed += self.elapsed
-                    if VERBOSE_ATCALL:
-                        fmt = '--- {0:s} [call {1}]: {2:g} s'
-                        print(fmt.format(self.func_name, self.ncalls,
-                                         self.elapsed), file=sys.stderr)
+                start = timer()
+                return func(*args, **kwargs)
             finally:
-                wrapper.selftimer.ncalls = self.ncalls
-                wrapper.selftimer.elapsed = self.elapsed
-                wrapper.selftimer.total_elapsed = self.total_elapsed
-        wrapper.selftimer = EmptyObj()
-        wrapper.selftimer.ncalls = self.ncalls
-        wrapper.selftimer.elapsed = self.elapsed
-        wrapper.selftimer.total_elapsed = self.total_elapsed
-        wrapper.selftimer.undecorated = func
+                wrapper.selftimer.ncalls += 1
+                wrapper.selftimer.elapsed = timer() - start
+                wrapper.selftimer.total_elapsed += wrapper.selftimer.elapsed
+                if VERBOSE_ATCALL:
+                    fmt = '--- {0:s} [call {1}]: {2:g} s'
+                    print(fmt.format(func_name, wrapper.selftimer.ncalls,
+                                     wrapper.selftimer.elapsed), file=sys.stderr)
+        wrapper.selftimer = SelfTimer()
+        wrapper.__wrapped__ = func  # adds a __wrapped__ attribute pointing to
+                                    # the original callable function. It will
+                                    # becomes unnecessary with functools module
+                                    # from version 3.2 of python.
         return wrapper
     finally:
         def at_exit():
-            if not self.ncalls:
+            if not wrapper.selftimer.ncalls:
                 return
             fmt = ('--- ---\n' +
                    '    {0:s} [after {1} calls]:\n' +
                    '    {2:g} s ({3:g} s per call)')
-            print(fmt.format(self.func_name, self.ncalls, self.total_elapsed,
-                             self.total_elapsed/self.ncalls), file=sys.stderr)
+            per_call = wrapper.selftimer.total_elapsed / wrapper.selftimer.ncalls
+            print(fmt.format(func_name, wrapper.selftimer.ncalls,
+                             wrapper.selftimer.total_elapsed,
+                             per_call), file=sys.stderr)
         if VERBOSE_ATEXIT:
             atexit.register(at_exit)
 
