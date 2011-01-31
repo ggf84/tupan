@@ -6,7 +6,7 @@
 from __future__ import print_function
 import numpy as np
 from math import sqrt
-from pynbody.vector import Vector
+#from pynbody.vector import Vector
 try:
     from pynbody.lib.kernels import (p2p_acc_kernel, p2p_pot_kernel)
     HAVE_CL = True

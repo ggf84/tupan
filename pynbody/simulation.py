@@ -9,9 +9,7 @@ import h5py
 import gzip
 import time
 
-from .universe import (Universe, Body, BlackHole)
-from .vector import Vector
-
+from .universe import Universe
 from .models import Plummer
 
 
@@ -27,18 +25,16 @@ class IO():
             subgrp = {}
             for (k, v) in data.items():
                 subgrp = snap.create_group(k)
-                if len(v['array']) > 0:
-                    subgrp.attrs['format'] = str(v['format'])
-                    wl = subgrp.create_dataset('wl', (len(v['array']),3),
-                                               dtype=v['format'],
+                array = v['array']
+                if len(array) > 0:
+                    subgrp.attrs['format'] = str(array._array.dtype)
+                    wl = subgrp.create_dataset('wl', (len(array),3),
+                                               dtype=array._array.dtype,
                                                maxshape=(None,None),
                                                chunks=True,
                                                compression='gzip',
                                                shuffle=True)
-                    if isinstance(v['array'], list):
-                        wl[:,1] = [tuple(b) for b in v['array']]
-                    else:
-                        wl[:,1] = v['array'].get_data()
+                    wl[:,1] = array.get_data()
 
 
 #        with h5py.File(fname+'.hdf5', 'w') as fobj:
@@ -71,10 +67,10 @@ class IO():
         p.make_plummer()
         self.myuniverse.set_members('body', p.bodies)
 
-        p = Plummer(4, seed=1)
-        p.make_plummer()
-        bhdata = [BlackHole(tuple(b)+(Vector(0.0, 0.0, 0.0),)) for b in p.bodies._array.tolist()]
-        self.myuniverse.set_members('bh', bhdata)
+#        p = Plummer(4, seed=1)
+#        p.make_plummer()
+#        bhdata = [BlackHole(tuple(b)+([0.0, 0.0, 0.0],)) for b in p.bodies._array.tolist()]
+#        self.myuniverse.set_members('bh', bhdata)
 
         return self.myuniverse
 
