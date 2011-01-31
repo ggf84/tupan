@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""  """
+"""
+
+"""
 
 from __future__ import print_function
+import math
 import numpy as np
-from math import sqrt
-#from pynbody.vector import Vector
 try:
     from pynbody.lib.kernels import (p2p_acc_kernel, p2p_pot_kernel)
     HAVE_CL = True
@@ -18,230 +19,110 @@ except:
 #HAVE_CL = False
 
 
-#class Body(object):
-#    """A base class for a Body-type particle"""
-
-#    def __init__(self, fields=None):
-
-#        self.index = 0
-#        self.nstep = 0
-#        self.tstep = 0.0
-#        self.time = 0.0
-#        self.mass = 0.0
-#        self.eps2 = 0.0
-#        self.pot = 0.0
-#        self.pos = Vector(0.0, 0.0, 0.0)
-#        self.vel = Vector(0.0, 0.0, 0.0)
-
-#        if fields:  # TODO: implementar usando self.__dict__['key'] = value
-#            (self.index,
-#             self.nstep,
-#             self.tstep,
-#             self.time,
-#             self.mass,
-#             self.eps2,
-#             self.pot,
-#             self.pos,
-#             self.vel) = fields
-
-#        self._acc = None
-#        self._ekin = None
-#        self._epot = None
-
-#    def __repr__(self):
-#        fields = (self.index, self.nstep,
-#                  self.tstep, self.time,
-#                  self.mass, self.eps2, self.pot,
-#                  self.pos, self.vel)
-#        return '{fields}'.format(fields=fields)
-
-#    def __iter__(self):
-#        yield self.index
-#        yield self.nstep
-#        yield self.tstep
-#        yield self.time
-#        yield self.mass
-#        yield self.eps2
-#        yield self.pot
-#        yield self.pos
-#        yield self.vel
-
-#    def set_pot(self, bodies):
-#        """set the body's gravitational potential due to other bodies"""
-#        def py_set_pot(self, bodies):
-#            _pot = 0.0
-#            for bj in bodies:
-#                if self.index != bj.index:
-#                    dpos = self.pos - bj.pos
-#                    eps2 = 0.5*(self.eps2 + bj.eps2)
-#                    _pot -= bj.mass / dpos.smoothed_norm(eps2)
-#            return _pot
-
-#        if HAVE_CL:
-#            _pot = cl_set_pot(self, bodies)
-#        else:
-#            _pot = py_set_pot(self, bodies)
-
-#        self.pot = _pot
-
-#    def get_ekin(self):
-#        """get the body's kinetic energy"""
-#        self._ekin = 0.5 * self.mass * self.vel.square()
-#        return self._ekin
-
-#    def get_epot(self):
-#        """get the body's potential energy"""
-#        self._epot = self.mass * self.pot
-#        return self._epot
-
-#    def get_etot(self):
-#        """get the body's total energy"""
-#        return self._ekin + self._epot
-
-#    def set_acc(self, bodies):
-#        """set the body's acceleration due to other bodies"""
-#        def py_set_acc(self, bodies):
-#            _acc = Vector(0.0, 0.0, 0.0)
-#            for body in bodies:
-#                if self.index != body.index:
-#                    dpos = self.pos - body.pos
-#                    eps2 = 0.5*(self.eps2 + body.eps2)
-#                    dposinv3 = dpos.smoothed_square(eps2) ** (-1.5)
-#                    _acc -= body.mass * dpos * dposinv3
-#            return _acc
-
-#        if HAVE_CL:
-#            raise NotImplementedError('NotImplemented')
-#            _acc = cl_set_acc(self, bodies)
-#        else:
-#            _acc = py_set_acc(self, bodies)
-
-#        self._acc = _acc
-
-#    def get_acc(self):
-#        """get the body's acceleration"""
-#        return self._acc
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Bodies(object):
-    """A base class for all Body-type particles"""
+    """A base class for Body-type particles"""
 
     def __init__(self):
-        dtype = [('index', 'u8'), ('nstep', 'u8'),
-                 ('tstep', 'f8'), ('time', 'f8'),
-                 ('mass', 'f8'), ('eps2', 'f8'), ('pot', 'f8'),
-                 ('pos', 'f8', (3,)), ('vel', 'f8', (3,))]
-        self._array = np.array([], dtype=dtype)
+        self.array = np.array([],
+                              dtype=[('index', 'u8'), ('nstep', 'u8'),
+                                     ('tstep', 'f8'), ('time', 'f8'),
+                                     ('mass', 'f8'), ('eps2', 'f8'), ('pot', 'f8'),
+                                     ('pos', 'f8', (3,)), ('vel', 'f8', (3,))])
 
         # total mass
         self._total_mass = 0.0
 
     def __repr__(self):
-        return '{array}'.format(array=self._array)
+        return '{array}'.format(array=self.array)
 
     def __iter__(self):
-        return iter(self._array)
+        return iter(self.array)
 
     def __reversed__(self):
-        return reversed(self._array)
+        return reversed(self.array)
 
     def __len__(self):
-        return self._array.size
+        return len(self.array)
 
     def __getitem__(self, index):
         b = Bodies()
-        b.fromlist(self._array[index])
+        b.fromlist(self.array[index])
         return b
 
     def get_data(self):
-        return self._array
+        return self.array
 
     def fromlist(self, data):
-        self._array = np.asarray(data, dtype=self._array.dtype)
-        self._total_mass = np.sum(self._array['mass'])
+        self.array = np.asarray(data, dtype=self.array.dtype)
+        self._total_mass = np.sum(self.array['mass'])
 
     def insert_body(self, index, body):
         """Inserts a new body before the given index, updating the total mass"""
         self._total_mass += body.mass
-        self._array = np.insert(self._array, index, tuple(body))
+        self.array = np.insert(self.array, index, tuple(body))
 
     def remove_body(self, bindex):
         """Remove the body of index 'bindex' and update the total mass"""
-        arr = self._array
+        arr = self.array
         if arr.size < 1:
             return 'there is no more bodies to remove!'
         self._total_mass -= arr[np.where(arr['index'] == bindex)]['mass'][0]
-        self._array = arr[np.where(arr['index'] != bindex)]
+        self.array = arr[np.where(arr['index'] != bindex)]
 
     # properties
 
     def _get_index(self):
-        return self._array['index']
+        return self.array['index']
     def _set_index(self, _index):
-        self._array['index'] = _index
+        self.array['index'] = _index
     index = property(_get_index, _set_index)
 
     def _get_nstep(self):
-        return self._array['nstep']
+        return self.array['nstep']
     def _set_nstep(self, _nstep):
-        self._array['nstep'] = _nstep
+        self.array['nstep'] = _nstep
     nstep = property(_get_nstep, _set_nstep)
 
     def _get_tstep(self):
-        return self._array['tstep']
+        return self.array['tstep']
     def _set_tstep(self, _tstep):
-        self._array['tstep'] = _tstep
+        self.array['tstep'] = _tstep
     tstep = property(_get_tstep, _set_tstep)
 
     def _get_time(self):
-        return self._array['time']
+        return self.array['time']
     def _set_time(self, _time):
-        self._array['time'] = _time
+        self.array['time'] = _time
     time = property(_get_time, _set_time)
 
     def _get_mass(self):
-        return self._array['mass']
+        return self.array['mass']
     def _set_mass(self, _mass):
-        self._array['mass'] = _mass
+        self.array['mass'] = _mass
     mass = property(_get_mass, _set_mass)
 
     def _get_eps2(self):
-        return self._array['eps2']
+        return self.array['eps2']
     def _set_eps2(self, _eps2):
-        self._array['eps2'] = _eps2
+        self.array['eps2'] = _eps2
     eps2 = property(_get_eps2, _set_eps2)
 
     def _get_pot(self):
-        return self._array['pot']
+        return self.array['pot']
     def _set_pot(self, _pot):
-        self._array['pot'] = _pot
+        self.array['pot'] = _pot
     pot = property(_get_pot, _set_pot)
 
     def _get_pos(self):
-        return self._array['pos']
+        return self.array['pos']
     def _set_pos(self, _pos):
-        self._array['pos'] = _pos
+        self.array['pos'] = _pos
     pos = property(_get_pos, _set_pos)
 
     def _get_vel(self):
-        return self._array['vel']
+        return self.array['vel']
     def _set_vel(self, _vel):
-        self._array['vel'] = _vel
+        self.array['vel'] = _vel
     vel = property(_get_vel, _set_vel)
 
 
@@ -255,14 +136,14 @@ class Bodies(object):
         """set the all bodies' gravitational potential due to other bodies"""
         def py_pot_perform_calc(self, bodies):
             _pot = []
-            for bi in self._array:
+            for bi in self.array:
                 ipot = 0.0
                 for bj in bodies:
                     if bi['index'] != bj['index']:
                         dpos = bi['pos'] - bj['pos']
                         eps2 = 0.5*(bi['eps2'] + bj['eps2'])
                         ds2 = np.dot(dpos, dpos) + eps2
-                        ipot -= bj['mass'] / sqrt(ds2)
+                        ipot -= bj['mass'] / math.sqrt(ds2)
                 _pot.append(ipot)
             return _pot
 
@@ -274,14 +155,14 @@ class Bodies(object):
 
         print(_pot)
 
-        self._array['pot'] = _pot
+        self.array['pot'] = _pot
 
 
     def calc_acc(self, bodies):
         """set the all bodies' acceleration due to other bodies"""
         def py_acc_perform_calc(self, bodies):
             _acc = []
-            for bi in self._array:
+            for bi in self.array:
                 iacc = np.zeros(4, dtype=np.float64)
                 for bj in bodies:
                     if bi['index'] != bj['index']:
@@ -289,7 +170,7 @@ class Bodies(object):
                         eps2 = 0.5*(bi['eps2'] + bj['eps2'])
                         ds2 = np.dot(dpos, dpos) + eps2
                         r2inv = 1.0 / ds2
-                        rinv = sqrt(r2inv)
+                        rinv = math.sqrt(r2inv)
                         mrinv = bj['mass'] * rinv
                         mr3inv = mrinv * r2inv
                         iacc[3] -= mrinv
@@ -305,20 +186,20 @@ class Bodies(object):
             _acc = np.asarray(_acc)
 
         print('acc '*20)
-        print(self._array['pos'])
+        print(self.array['pos'])
         print('-'*25)
         print(_acc)
 
-#        self._array['pot'] = _pot
+#        self.array['pot'] = _pot
 
 
     def get_ekin(self):
         """get the bodies' total kinetic energy"""
-        return 0.5 * np.sum(self._array['mass'] * (self._array['vel']**2).T)
+        return 0.5 * np.sum(self.array['mass'] * (self.array['vel']**2).T)
 
     def get_epot(self):
         """get the bodies' total potential energy"""
-        return np.sum(self._array['mass'] * self._array['pot'])
+        return np.sum(self.array['mass'] * self.array['pot'])
 
 
 

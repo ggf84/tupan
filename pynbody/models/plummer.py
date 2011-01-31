@@ -99,7 +99,7 @@ class Plummer(object):
         @selftimer
         def gen_bodies(iarray, irandarray):
             def gen_body(i, irand):
-                b = np.zeros(1, dtype=self.bodies._array.dtype)
+                b = np.zeros(1, dtype=self.bodies.array.dtype)
                 b['index'] = i
                 b['mass'] = self.set_mass()
                 b['pos'] = self.set_pos(irand)

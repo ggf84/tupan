@@ -16,7 +16,6 @@ if __name__ == "__main__":
         bi = p.bodies
         bi.calc_acc(bi)
 
-
     main()
 
 

@@ -9,32 +9,30 @@ import h5py
 import gzip
 import time
 
-from .universe import Universe
 from .models import Plummer
+from .particles import (Particles, BlackHoles)
 
 
 class IO():
     """  """
 
     def __init__(self):
-        self.myuniverse = Universe()
+        self.myuniverse = Particles()
 
     def dump_snapshot(self, fname='snap', data=None):
         with h5py.File(fname+'.hdf5', 'w') as fobj:
             snap = fobj.create_group('snapshot')
-            subgrp = {}
             for (k, v) in data.items():
                 subgrp = snap.create_group(k)
-                array = v['array']
-                if len(array) > 0:
-                    subgrp.attrs['format'] = str(array._array.dtype)
-                    wl = subgrp.create_dataset('wl', (len(array),3),
-                                               dtype=array._array.dtype,
+                if len(v) > 0:
+                    subgrp.attrs['dtype'] = str(v.array.dtype)
+                    wl = subgrp.create_dataset('wl', (len(v),3),
+                                               dtype=v.array.dtype,
                                                maxshape=(None,None),
                                                chunks=True,
                                                compression='gzip',
                                                shuffle=True)
-                    wl[:,1] = array.get_data()
+                    wl[:,1] = v.get_data()
 
 
 #        with h5py.File(fname+'.hdf5', 'w') as fobj:
@@ -63,14 +61,16 @@ class IO():
     def read_data(self, fname):
         print('reading data from \'{0}\''.format(fname))
 
-        p = Plummer(16, seed=1)
+        p = Plummer(5471, seed=1)
         p.make_plummer()
-        self.myuniverse.set_members('body', p.bodies)
+        self.myuniverse.set_member(p.bodies)
 
-#        p = Plummer(4, seed=1)
-#        p.make_plummer()
-#        bhdata = [BlackHole(tuple(b)+([0.0, 0.0, 0.0],)) for b in p.bodies._array.tolist()]
-#        self.myuniverse.set_members('bh', bhdata)
+        p = Plummer(3, seed=1)
+        p.make_plummer()
+        bhdata = [tuple(b)+([0.0, 0.0, 0.0],) for b in p.bodies.array.tolist()]
+        bh = BlackHoles()
+        bh.fromlist(bhdata)
+        self.myuniverse.set_member(bh)
 
         return self.myuniverse
 
@@ -109,7 +109,7 @@ class Simulation(IO):
         myuniverse = io.read_data(self.icfname)
 
 
-        for i in range(5):
+        for i in range(1):
             t0 = time.time()
             io.dump_snapshot('snap', myuniverse)
             t1 = time.time()
