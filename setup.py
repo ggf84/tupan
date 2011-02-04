@@ -37,6 +37,7 @@ setup(
     author_email='gg.ferrari@gmail.com',
     packages=['pynbody',
               'pynbody.analysis',
+              'pynbody.io',
               'pynbody.lib',
               'pynbody.lib.kernels',
               'pynbody.models',

@@ -7,7 +7,7 @@ Performs a N-body Simulation
 
 import sys
 import argparse
-from pynbody import Simulation
+from pynbody.simulation import Simulation
 
 
 def process_cmdline():

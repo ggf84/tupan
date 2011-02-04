@@ -10,8 +10,9 @@ import numpy as np
 import random
 import math
 
-from pynbody.lib.decorators import selftimer
-from pynbody.particles import Bodies
+from pynbody import selftimer
+from pynbody.io import HDF5IO
+from pynbody.particles import (Bodies, Particles)
 
 
 
@@ -133,11 +134,11 @@ class Plummer(object):
         # TODO: correct to CoM
         scale_to_nbody_units(self.bodies)
 
-    def dump_to_txt(self):
-        with open('data.txt', 'w') as f:
-            for b in self.bodies:
-                print(b.index, b.mass, b.pos.x, b.pos.y, b.pos.z,
-                      b.vel.x, b.vel.y, b.vel.z, b.pot, file=f)
+    def write_snapshot(self):
+        data = Particles()
+        data.set_member(self.bodies)
+        io = HDF5IO()
+        io.write_snapshot(data, file_name='plummer')
 
 
 ########## end of file ##########
