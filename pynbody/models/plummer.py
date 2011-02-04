@@ -136,9 +136,9 @@ class Plummer(object):
 
     def write_snapshot(self):
         data = Particles()
-        data.set_member(self.bodies)
-        io = HDF5IO()
-        io.write_snapshot(data, file_name='plummer')
+        data.set_members(self.bodies)
+        io = HDF5IO('plummer.hdf5')
+        io.write_snapshot(data)
 
 
 ########## end of file ##########

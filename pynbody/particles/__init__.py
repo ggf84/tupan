@@ -38,7 +38,7 @@ class Particles(dict):
         self['blackhole'] = []
         self['sph'] = []
 
-    def set_member(self, data):
+    def set_members(self, data):
         """
         Set particle member types.
         """

@@ -4,10 +4,7 @@
 """The Simulation class"""
 
 from __future__ import print_function
-from pprint import pprint
-
-from .models import Plummer
-from .particles import (Particles, BlackHoles)
+from .io import HDF5IO
 
 
 class Diagnostic(object):
@@ -38,21 +35,17 @@ class Simulation(object):
         """Initialize a N-body simulation"""
         print('running...')
 
-        myuniverse = Particles()
+        io = HDF5IO('input.hdf5')
+        myuniverse = io.read_snapshot()
 
-        p = Plummer(5471, seed=1)
-        p.make_plummer()
-        myuniverse.set_member(p.bodies)
+        io = HDF5IO('output.hdf5')
+        io.write_snapshot(myuniverse)
+        mynewuniverse = io.read_snapshot()
 
-        p = Plummer(3, seed=1)
-        p.make_plummer()
-        bhdata = [tuple(b)+([0.0, 0.0, 0.0],) for b in p.bodies.array.tolist()]
-        bh = BlackHoles()
-        bh.fromlist(bhdata)
-        myuniverse.set_member(bh)
+        for i in zip(myuniverse['blackhole'].array, mynewuniverse['blackhole'].array):
+            for j in zip(i[0], i[1]):
+                print(j[0] == j[1])
 
-
-        pprint(myuniverse)
         print('running... done')
 
 
