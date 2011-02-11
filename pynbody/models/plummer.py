@@ -10,8 +10,8 @@ import numpy as np
 import random
 import math
 
-from pynbody import selftimer
-from pynbody.io import HDF5IO
+from pynbody.lib.decorators import selftimer
+from pynbody.io.hdf5io import HDF5IO
 from pynbody.particles import (Bodies, Particles)
 
 

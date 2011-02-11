@@ -12,7 +12,7 @@ import time
 import numpy as np
 import pyopencl as cl
 
-from pynbody import (selftimer, addmethod)
+from pynbody.lib.decorators import (selftimer, addmethod)
 
 path = os.path.dirname(__file__) + os.sep   # '/dirname/of/file' + '/'
 

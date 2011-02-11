@@ -3,7 +3,7 @@
 
 
 if __name__ == "__main__":
-    from pynbody import selftimer
+    from pynbody.lib.decorators import selftimer
     from pynbody.models import Plummer
 
     @selftimer
