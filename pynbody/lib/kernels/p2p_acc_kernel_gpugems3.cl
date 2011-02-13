@@ -30,7 +30,7 @@ REAL4 p2p_acc_kernel_core(REAL4 acc, REAL4 bi, REAL4 bj, REAL mj)
     dr.y = bi.y - bj.y;                                              // 1 FLOPs
     dr.z = bi.z - bj.z;                                              // 1 FLOPs
     dr.w = bi.w + bj.w;                                              // 1 FLOPs
-    REAL ds2 = 0.5 * dr.w;                                           // 1 FLOPs
+    REAL ds2 = dr.w;
     ds2 += dr.z * dr.z + dr.y * dr.y + dr.x * dr.x;                  // 6 FLOPs
     REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
     rinv = (ds2 ? rinv:0);
@@ -42,7 +42,7 @@ REAL4 p2p_acc_kernel_core(REAL4 acc, REAL4 bi, REAL4 bj, REAL mj)
     acc.y -= mr3inv * dr.y;                                          // 2 FLOPs
     acc.z -= mr3inv * dr.z;                                          // 2 FLOPs
     return acc;
-}   // Total flop count: 23
+}   // Total flop count: 22
 
 
 __kernel void p2p_acc_kernel_gpugems3(const uint ni,
@@ -110,10 +110,10 @@ __kernel void p2p_acc_kernel_gpugems3(const uint ni,
         REAL4 otherPos = sharedPos[kdx];
         REAL otherMass = sharedMass[kdx];
         for (uint ii = 0; ii < IUNROLL; ++ii) {
-                myAcc[ii] = p2p_acc_kernel_core(myAcc[ii],
-                                                myPos[ii],
-                                                otherPos,
-                                                otherMass);
+            myAcc[ii] = p2p_acc_kernel_core(myAcc[ii],
+                                            myPos[ii],
+                                            otherPos,
+                                            otherMass);
         }
     }
     barrier(CLK_LOCAL_MEM_FENCE);

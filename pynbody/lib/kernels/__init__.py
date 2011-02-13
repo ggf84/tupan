@@ -141,7 +141,7 @@ class Kernels(object):
 
         elapsed = self.kernel_manager.selftimer.elapsed
         print('Total kernel_manager time: {0:g} s'.format(elapsed))
-        print('call_kernel Gflops/s: {0:g}'.format(gflops_count/elapsed))
+        print('kernel_manager Gflops/s: {0:g}'.format(gflops_count/elapsed))
 
         return dest
 

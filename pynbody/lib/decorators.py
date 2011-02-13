@@ -34,21 +34,15 @@ VERBOSE_ATCALL = True
 VERBOSE_ATEXIT = True
 def selftimer(func):
     """
-    Use it to decorate a callable function.
+    Use it to decorate a function you want to measure the execution time.
 
-    It returns the decorated function with an aditional 'selftimer'
-    attribute, wich holds the number of calls, the current elapsed
-    time and the total elapsed time in all calls of function decorated.
-    It also adds a '__wrapped__' attribute pointing to the original
-    callable function.
+    It returns the decorated function with an aditional 'selftimer' attribute,
+    wich holds the number of calls, the elapsed time in the last call and the
+    total elapsed time in all calls of the decorated function. It also adds a
+    '__wrapped__' attribute pointing to the original callable function.
     """
     timer = time.time
     func_name = func.__module__ + '.' + func.__name__
-    class SelfTimer(object):
-        def __init__(self):
-            self.ncalls = 0
-            self.elapsed = 0.0
-            self.total_elapsed = 0.0
     try:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -63,7 +57,9 @@ def selftimer(func):
                     fmt = '--- {0:s} [call {1}]: {2:g} s'
                     print(fmt.format(func_name, wrapper.selftimer.ncalls,
                                      wrapper.selftimer.elapsed), file=sys.stderr)
-        wrapper.selftimer = SelfTimer()
+        wrapper.selftimer = type('selftimer', (object,),
+                                 {'elapsed': 0.0, 'ncalls': 0,
+                                  'total_elapsed': 0.0})()
         wrapper.__wrapped__ = func  # adds a __wrapped__ attribute pointing to
                                     # the original callable function. It will
                                     # becomes unnecessary with functools module

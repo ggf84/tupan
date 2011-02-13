@@ -28,12 +28,12 @@ REAL p2p_pot_kernel_core(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
     dr.y = bi.y - bj.y;                                              // 1 FLOPs
     dr.z = bi.z - bj.z;                                              // 1 FLOPs
     dr.w = bi.w + bj.w;                                              // 1 FLOPs
-    REAL ds2 = 0.5 * dr.w;                                           // 1 FLOPs
+    REAL ds2 = dr.w;
     ds2 += dr.z * dr.z + dr.y * dr.y + dr.x * dr.x;                  // 6 FLOPs
     REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
     pot -= mj * (ds2 ? rinv:0);                                      // 2 FLOPs
     return pot;
-}   // Total flop count: 15
+}   // Total flop count: 14
 
 
 __kernel void p2p_pot_kernel(const uint ni,
@@ -90,10 +90,10 @@ __kernel void p2p_pot_kernel(const uint ni,
         REAL4 otherPos = sharedPos[j];
         REAL otherMass = sharedMass[j];
         for (uint ii = 0; ii < IUNROLL; ++ii) {
-                myPot[ii] = p2p_pot_kernel_core(myPot[ii],
-                                                myPos[ii],
-                                                otherPos,
-                                                otherMass);
+            myPot[ii] = p2p_pot_kernel_core(myPot[ii],
+                                            myPos[ii],
+                                            otherPos,
+                                            otherMass);
         }
     }
     barrier(CLK_LOCAL_MEM_FENCE);

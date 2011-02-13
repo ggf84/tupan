@@ -180,17 +180,19 @@ class Bodies(object):
 
         if HAVE_CL:
             _acc = p2p_acc_kernel.run(self, bodies)
-            print('************* ', p2p_acc_kernel.run.selftimer.elapsed)
+            elapsed = p2p_acc_kernel.run.selftimer.elapsed
+            gflops_count = p2p_acc_kernel.flops * len(self) * len(bodies) * 1.0e-9
+            print(' -- '*10)
+            print('Total kernel-run time: {0:g} s'.format(elapsed))
+            print('kernel-run Gflops/s: {0:g}'.format(gflops_count/elapsed))
         else:
             _acc = py_acc_perform_calc(self, bodies)
             _acc = np.asarray(_acc)
 
-        print('acc '*20)
-        print(self.array['pos'])
-        print('-'*25)
+        print('acc - '*10)
         print(_acc)
 
-#        self.array['pot'] = _pot
+        return _acc
 
 
     def get_ekin(self):
@@ -200,114 +202,6 @@ class Bodies(object):
     def get_epot(self):
         """get the bodies' total potential energy"""
         return np.sum(self.array['mass'] * self.array['pot'])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# original
-
-#class Bodies_2(list):
-#    """A base class for all Body-type particles"""
-
-#    def __new__(cls):
-#        """constructor"""
-#        return list.__new__(cls)
-
-#    def __init__(self):
-#        list.__init__(self)
-
-#        # total mass
-#        self._total_mass = 0.0
-
-#    def append_member(self, body):
-#        """Append a new member for bodies' list and update the total mass"""
-#        self._total_mass += body.mass
-#        self.append(body)
-
-#    def pop_member(self, body_index):
-#        """
-#        Find the index from body-index and remove and return the member at this
-#        index, updating the total mass.
-#        """
-#        cmpidx = lambda s: s.index == body_index
-#        list_index = self.index(filter(cmpidx, self)[0])
-#        self._total_mass -= self[list_index].mass
-#        return self.pop(list_index)
-
-#    def select_attribute(self, attr):
-#        return [getattr(b, attr) for b in self]
-
-#    def get_total_mass(self):
-#        return self._total_mass
-
-#    def set_total_mass(self, mtot):
-#        self._total_mass = mtot
-
-#    def set_pot(self, bodies):
-#        """set the all bodies' gravitational potential due to other bodies"""
-#        def py_set_pot(self, bodies):
-#            _pot = []
-#            for bi in self:
-#                ipot = 0.0
-#                for bj in bodies:
-#                    if bi.index != bj.index:
-#                        dpos = bi.pos - bj.pos
-#                        eps2 = 0.5*(bi.eps2 + bj.eps2)
-#                        ipot -= bj.mass / dpos.smoothed_norm(eps2)
-#                _pot.append(ipot)
-#            return _pot
-
-#        if HAVE_CL:
-#            _pot = cl_set_pot(self, bodies)
-#        else:
-#            _pot = py_set_pot(self, bodies)
-
-#        for (b, p) in zip(self, _pot):
-#            b.pot = p
-
-#    def get_ekin(self):
-#        """get the bodies' total kinetic energy"""
-#        return 0.5 * reduce(lambda x, y: x + y, 
-#                            [b.mass * b.vel.square() for b in self])
-
-#    def get_epot(self):
-#        """get the bodies' total potential energy"""
-#        return reduce(lambda x, y: x + y, [b.mass * b.pot for b in self])
-
-#    def set_acc(self, bodies):
-#        """set the all bodies' acceleration due to other bodies"""
-#        def py_set_acc(self, bodies):
-#            _acc = []
-#            for bi in self:
-#                iacc = Vector(0.0, 0.0, 0.0)
-#                for bj in bodies:
-#                    if bi.index != bj.index:
-#                        dpos = bi.pos - bj.pos
-#                        eps2 = 0.5*(bi.eps2 + bj.eps2)
-#                        dposinv3 = dpos.smoothed_square(eps2) ** (-1.5)
-#                        iacc -= bj.mass * dpos * dposinv3
-#                _acc.append(iacc)
-#            return _acc
-
-#        if HAVE_CL:
-#            raise NotImplementedError('cl_set_acc NotImplemented')
-#            _acc = cl_set_acc(self, bodies)
-#        else:
-#            _acc = py_set_acc(self, bodies)
-
-#        for (b, a) in zip(self, _acc):
-#            b._acc = a
 
 
 ########## end of file ##########
