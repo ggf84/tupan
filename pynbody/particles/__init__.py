@@ -34,9 +34,12 @@ class Particles(dict):
         """
         dict.__init__(self)
 
-        self['body'] = []
-        self['blackhole'] = []
-        self['sph'] = []
+        self['body'] = None
+        self['blackhole'] = None
+        self['sph'] = None
+
+    def append_members(self):
+        pass
 
     def set_members(self, data):
         """

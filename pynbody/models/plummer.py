@@ -33,8 +33,8 @@ def scale_to_virial(bodies, ekin, epot, etot):
     scale_vel(bodies, math.sqrt(-0.25/etot))
 
 def scale_to_nbody_units(bodies):
-    scale_mass(bodies, 1.0/bodies.get_total_mass())
-    bodies.set_total_mass(1.0)
+    scale_mass(bodies, 1.0/bodies.total_mass)
+    bodies.total_mass = 1.0
 
     bodies.calc_pot(bodies)
     ekin = bodies.get_ekin()
@@ -100,7 +100,7 @@ class Plummer(object):
         @selftimer
         def gen_bodies(iarray, irandarray):
             def gen_body(i, irand):
-                b = np.zeros(1, dtype=self.bodies.array.dtype)
+                b = np.zeros(1, dtype=self.bodies.dtype)
                 b['index'] = i
                 b['mass'] = self.set_mass()
                 b['pos'] = self.set_pos(irand)
@@ -113,7 +113,7 @@ class Plummer(object):
         def set_bodies_vel(potarray):
             # vectorize from pyfunc
             _set_bodies_vel = np.frompyfunc(self.set_vel, 1, 1)
-            return _set_bodies_vel(potarray).tolist()
+            return np.asarray(_set_bodies_vel(potarray).tolist(), dtype='f8')
 
         ilist = np.arange(self.num)
         irandlist = np.arange(self.num)
@@ -128,6 +128,7 @@ class Plummer(object):
 
         # set vel
         self.bodies.vel = set_bodies_vel(self.bodies.pot)
+
 
     def make_plummer(self):
         self.set_bodies()

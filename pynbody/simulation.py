@@ -42,7 +42,7 @@ class Simulation(object):
         io.write_snapshot(myuniverse)
         mynewuniverse = io.read_snapshot()
 
-        for i in zip(myuniverse['blackhole'].array, mynewuniverse['blackhole'].array):
+        for i in zip(myuniverse['blackhole'], mynewuniverse['blackhole']):
             for j in zip(i[0], i[1]):
                 print(j[0] == j[1])
 

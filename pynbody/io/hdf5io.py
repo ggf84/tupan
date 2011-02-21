@@ -33,18 +33,18 @@ class HDF5IO(object):
             snap.attrs['snap_class'] = pickle.dumps(data.__class__)
             for (k, v) in data.items():
                 subgrp = snap.require_group(k)
-                if len(v) > 0:
-                    subgrp.attrs['num_of_particles'] = pickle.dumps(len(v))
-                    subgrp.attrs['particle_dtype'] = pickle.dumps(v.array.dtype)
-                    subgrp.attrs['particle_class'] = pickle.dumps(v.__class__)
+                if v:
+                    subgrp.attrs['num_of_objs'] = pickle.dumps(len(v))
+                    subgrp.attrs['obj_dtype'] = pickle.dumps(v.dtype)
+                    subgrp.attrs['obj_class'] = pickle.dumps(v.__class__)
                     dset = subgrp.require_dataset(dset_name,
                                                   (len(v),self.slice_size),
-                                                  dtype=v.array.dtype,
+                                                  dtype=v.dtype,
                                                   maxshape=(None,None),
                                                   chunks=True,
                                                   compression='gzip',
                                                   shuffle=True)
-                    dset[:,slice_id] = v.get_data()
+                    dset[:,slice_id] = v.to_cmpd_struct()
 
 
     @selftimer
@@ -59,14 +59,14 @@ class HDF5IO(object):
             snap_class = pickle.loads(snap.attrs['snap_class'])
             data = snap_class()
             for (k, v) in snap.items():
-                if v.attrs.keys():
-                    num_of_particles = pickle.loads(v.attrs['num_of_particles'])
-                    particle_dtype = pickle.loads(v.attrs['particle_dtype'])
-                    particle_class = pickle.loads(v.attrs['particle_class'])
+                if v.attrs:
+                    num_of_objs = pickle.loads(v.attrs['num_of_objs'])
+                    obj_dtype = pickle.loads(v.attrs['obj_dtype'])
+                    obj_class = pickle.loads(v.attrs['obj_class'])
                     dset = v.require_dataset(dset_name,
-                                             (num_of_particles, self.slice_size),
-                                             dtype=particle_dtype)
-                    members = particle_class()
+                                             (num_of_objs, self.slice_size),
+                                             dtype=obj_dtype)
+                    members = obj_class()
                     members.fromlist(dset[:,slice_id])
                     data.set_members(members)
         return data
