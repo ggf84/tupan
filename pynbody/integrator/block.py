@@ -8,10 +8,10 @@
 from __future__ import print_function
 import math
 import numpy as np
-import time
-from pprint import pprint
-
 from pynbody.particles import Particles
+
+from pprint import pprint
+from pynbody.lib.decorators import selftimer
 
 
 indent = ' '*3
@@ -69,19 +69,35 @@ class Block(object):
 
         return block_level
 
-
     def interpolate(self, at_time, particles):
         pass
 
-    def gather_from_block_levels(self, at_level):
+    @selftimer
+    def gather_from_block_levels(self, at_level, _sorted=False):
         """
 
         """
         particles = Particles()
-        for (name, obj) in particles.items():
-            for (level, obj_at_level) in self.block:
-                pass
-        return
+        for (level, particles_at_level) in self.block:
+            for (name, obj) in particles_at_level.items():
+                if particles[name]:
+                    tmp_array = np.append(particles[name].to_cmpd_struct(),
+                                          obj.to_cmpd_struct())
+                    tmp_obj = obj.__class__()
+                    tmp_obj.from_cmpd_struct(tmp_array)
+                    particles[name] = tmp_obj
+                else:
+                    particles[name] = obj
+
+        # if sorting of objects by index is desired
+        if _sorted:
+            for (name, obj) in particles.items():
+                if particles[name]:
+                    sorted_array = np.sort(obj.to_cmpd_struct(), order=['index'])
+                    tmp_obj = obj.__class__()
+                    tmp_obj.from_cmpd_struct(sorted_array)
+                    particles[name] = tmp_obj
+        return particles
 
     def scatter_on_block_levels(self, particles):
         """
@@ -148,36 +164,47 @@ class Block(object):
         """
         level, obj = block
 
-        print(indent*level, 'F'+str(level))
+#        print(indent*level, 'F'+str(level))
 
         if obj['body']:
             body = obj['body']
 
-            print(body[0])
+#            print(body[0])
+
+            body.time += 2.0**(-level+1)
+
+            print(indent*level, 'F'+str(level), body.time[0])
 
             prev_step_density = +body.step_density
             prev_acc = +body.acc
 
-            body.calc_acc(self.particles['body'])
+            particles = self.gather_from_block_levels(0)
+            body.calc_acc(particles['body'])
 #            body.calc_acc(body)
 
+            mid_step_density = +body.step_density
             mid_acc = +body.acc
             body.acc += body.acc - prev_acc
             body.step_density += body.step_density - prev_step_density
 
+#            body.time += 2.0**(-level)
+
+
+            if (body.step_density < 0).any():
+                print(' less than zero'*1000)
 #            print(prev_step_density)
 #            print(body.step_density)
 
 
-            print(self.particles['body'][body[0].index])
-            print(body[0])
+#            print(self.particles['body'][body[0].index])
+#            print(body[0])
 
             print('---'*10)
-            print(prev_acc[0])
+            print(prev_acc[0], prev_step_density[0])
             print('---')
-            print(mid_acc[0])
+            print(mid_acc[0], mid_step_density[0])
             print('---')
-            print(body.acc[0])
+            print(body.acc[0], body.step_density[0])
 
 
     def step(self, idx=0):
