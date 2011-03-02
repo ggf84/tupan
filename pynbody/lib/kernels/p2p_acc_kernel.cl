@@ -20,7 +20,10 @@ typedef float2 REAL2;
 typedef float4 REAL4;
 #endif
 
-
+/*
+XXX: dr.w foi transferido para o argumento da sqrt p/ evitar somar a contribuicao da propria particula quando dr.w != 0.0.
+XXX: verificar perda de performance e fazer reajustes necessarios.
+*/
 REAL4 p2p_acc_kernel_core(REAL4 acc, REAL4 bi, REAL4 bj, REAL mj)
 {
     REAL4 dr;
@@ -28,14 +31,14 @@ REAL4 p2p_acc_kernel_core(REAL4 acc, REAL4 bi, REAL4 bj, REAL mj)
     dr.y = bi.y - bj.y;                                              // 1 FLOPs
     dr.z = bi.z - bj.z;                                              // 1 FLOPs
     dr.w = bi.w + bj.w;                                              // 1 FLOPs
-    REAL ds2 = dr.w;
+    REAL ds2 = 0.0;
     ds2 += dr.z * dr.z + dr.y * dr.y + dr.x * dr.x;                  // 6 FLOPs
-    REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
+    REAL rinv = rsqrt(ds2 + dr.w);                                   // 2 FLOPs
     rinv = (ds2 ? rinv:0);
     REAL mr3inv = mj * rinv;                                         // 1 FLOPs
     rinv *= rinv;                                                    // 1 FLOPs
-    acc.w -= mr3inv;                                                 // 1 FLOPs
     mr3inv *= rinv;                                                  // 1 FLOPs
+    acc.w -= mr3inv;                                                 // 1 FLOPs
     acc.x -= mr3inv * dr.x;                                          // 2 FLOPs
     acc.y -= mr3inv * dr.y;                                          // 2 FLOPs
     acc.z -= mr3inv * dr.z;                                          // 2 FLOPs

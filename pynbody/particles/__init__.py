@@ -9,6 +9,7 @@ This package implements base classes for particle types in the simulation.
 
 import sys
 import traceback
+import numpy as np
 from .body import Bodies
 from .blackhole import BlackHoles
 from .sph import Sph
@@ -38,8 +39,25 @@ class Particles(dict):
         self['blackhole'] = None
         self['sph'] = None
 
-    def append_members(self):
-        pass
+
+    def any(self):
+        has_obj = False
+        for (key, obj) in self.items():
+            if obj:
+                has_obj = True
+        return has_obj
+
+
+    def append(self, data):
+        for (key, obj) in data.items():
+            if obj:
+                if self[key]:
+                    arr = np.append(self[key].to_cmpd_struct(), obj.to_cmpd_struct())
+                    self[key] = obj.__class__()
+                    self[key].from_cmpd_struct(arr)
+                else:
+                    self[key] = obj
+
 
     def set_members(self, data):
         """

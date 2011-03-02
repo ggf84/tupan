@@ -15,15 +15,18 @@ class BlackHoles(object):
 
     def __init__(self):
         self.dtype = [('index', 'u8'), ('step_number', 'u8'),
-                      ('step_density', 'f8'), ('time', 'f8'),
+                      ('curr_step_density', 'f8'), ('next_step_density', 'f8'),
+                      ('time', 'f8'), ('tstep', 'f8'),
                       ('mass', 'f8'), ('eps2', 'f8'), ('pot', 'f8'),
                       ('pos', '3f8'), ('vel', '3f8'), ('acc', '3f8'),
                       ('spin', '3f8')]
 
         self.index = np.array([], dtype='u8')
         self.step_number = np.array([], dtype='u8')
-        self.step_density = np.array([], dtype='f8')
+        self.curr_step_density = np.array([], dtype='f8')
+        self.next_step_density = np.array([], dtype='f8')
         self.time = np.array([], dtype='f8')
+        self.tstep = np.array([], dtype='f8')
         self.mass = np.array([], dtype='f8')
         self.eps2 = np.array([], dtype='f8')
         self.pot = np.array([], dtype='f8')
@@ -57,6 +60,14 @@ class BlackHoles(object):
 
     def __reversed__(self):
         return reversed(self.to_cmpd_struct())
+
+    def __getitem__(self, index):     # XXX:
+        s = self.to_cmpd_struct()[index]
+        if not isinstance(s, np.ndarray):
+            s = np.asarray([s], dtype=self.dtype)
+        obj = BlackHoles()
+        obj.from_cmpd_struct(s)
+        return obj
 
     def fromlist(self, data):
         self.from_cmpd_struct(np.asarray(data, dtype=self.dtype))

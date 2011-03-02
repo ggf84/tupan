@@ -2,14 +2,23 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+import pylab
 import time
+from pynbody.integrator import LeapFrog, BlockStep, BlockStep2
+
+
+def plot_coords(x, y, fname):
+    pylab.plot(x, y, ',')
+    pylab.savefig(fname)
+#    pylab.show()
+
 
 if __name__ == "__main__":
     from pynbody.models import Plummer
     from pynbody.particles import (Particles, BlackHoles)
-    from pynbody.integrator.block import Block
 
-    numBodies = 4096
+
+    numBodies = 8
     p = Plummer(numBodies, seed=1)
     p.make_plummer()
     p.bodies.calc_acc(p.bodies)
@@ -17,34 +26,106 @@ if __name__ == "__main__":
     particles.set_members(p.bodies)
 
 
-    # BlackHoles
-    p = Plummer(3, seed=1)
-    p.make_plummer()
-    p.bodies.calc_acc(p.bodies)
+#    # BlackHoles
+#    p = Plummer(3, seed=1)
+#    p.make_plummer()
+#    p.bodies.calc_acc(p.bodies)
 
-    bhdata = BlackHoles()
-    bhdata.fromlist([tuple(b)+([0.0, 0.0, 0.0],) for b in p.bodies])
+#    bhdata = BlackHoles()
+#    bhdata.fromlist([tuple(b)+([0.0, 0.0, 0.0],) for b in p.bodies])
 
-    particles.set_members(bhdata)
-
-#-0.264511001275
-
-    block = Block(0.015625, particles)
-
-    t0 = time.time()
-#    block.step()
-    for i in range(4):
-        block.step()
-    block.print_block()
-    elapsed = time.time() - t0
-    print('step: ', elapsed)
+#    particles.set_members(bhdata)
 
 
-    particles2 = block.gather_from_block_levels(0)
-    print(particles2['body'].time)
 
-    print(particles['body'].get_ekin()+particles['body'].get_epot())
-    print(particles2['body'].get_ekin()+particles2['body'].get_epot())
+
+    particles['body'].eps2.fill(0.0015625)
+#    particles['body'].eps2.fill(0.5*((4.0/numBodies)**2))
+    particles['body'].vel.fill(0.0)
+    particles['body'].calc_pot(particles['body'])
+    particles['body'].calc_acc(particles['body'])
+    particles['body'].next_step_density = +particles['body'].curr_step_density
+
+    x = particles['body'].pos[:,0]
+    y = particles['body'].pos[:,1]
+    plot_coords(x, y, './png/p0.png')
+
+
+    e0 = particles['body'].get_ekin()+particles['body'].get_epot()
+
+
+
+
+
+#    leapFrog = LeapFrog(0.0, 2.0**(-6), particles.copy())
+#    i = 0
+#    while leapFrog.time < 4.0:
+#        i += 1
+#        tout = +leapFrog.time
+#        while leapFrog.time-tout < 0.03125:
+#            leapFrog.step()
+#        p = leapFrog.particles.copy()
+#        x = p['body'].pos[:,0]
+#        y = p['body'].pos[:,1]
+#        plot_coords(x, y, './png/p'+str(i)+'.png')
+#        p['body'].calc_pot(p['body'])
+#        e1 = p['body'].get_ekin()+p['body'].get_epot()
+#        print('{0}: {1} {2} {3}'.format(leapFrog.time, e0, e1, (e1-e0)/e0))
+#    p = leapFrog.particles.copy()
+#    p['body'].calc_pot(p.copy()['body'])
+#    e1 = p['body'].get_ekin()+p['body'].get_epot()
+#    print('{0}: {1} {2} {3}'.format(leapFrog.time, e0, e1, (e1-e0)/e0))
+
+
+
+
+    block2 = BlockStep2(0.015625/2, particles)
+    i = 0
+    while block2.time < 4.0:
+        i += 1
+        tout = +block2.time
+        while block2.time-tout < 0.03125:
+            block2.step()
+        p = block2.gather().copy()
+        x = p['body'].pos[:,0]
+        y = p['body'].pos[:,1]
+        plot_coords(x, y, './png/p'+str(i)+'.png')
+        p['body'].calc_pot(p['body'])
+        e1 = p['body'].get_ekin()+p['body'].get_epot()
+        print('{0}: {1} {2} {3}'.format(block2.time, e0, e1, (e1-e0)/e0))
+    p = block2.gather().copy()
+    p['body'].calc_pot(p.copy()['body'])
+    e1 = p['body'].get_ekin()+p['body'].get_epot()
+    print('{0}: {1} {2} {3}'.format(block2.time, e0, e1, (e1-e0)/e0))
+
+#    block2.print_block()
+#    block2.block_list = block2.scatter(block2.gather().copy())
+#    print('-'*25)
+#    block2.print_block()
+
+
+
+
+#    block = BlockStep(0.015625, particles)
+#    i = 0
+#    while block.time < 4.0:
+#        i += 1
+#        block.step()
+#        p = block.gather_from_block_levels().copy()
+#        x = p['body'].pos[:,0]
+#        y = p['body'].pos[:,1]
+#        plot_coords(x, y, './png/p'+str(i)+'.png')
+#        p['body'].calc_pot(p['body'])
+#        e1 = p['body'].get_ekin()+p['body'].get_epot()
+#        print('{0}: {1} {2} {3}'.format(block.time, e0, e1, (e1-e0)/e0))
+#    p = block.gather_from_block_levels().copy()
+#    p['body'].calc_pot(p.copy()['body'])
+#    e1 = p['body'].get_ekin()+p['body'].get_epot()
+#    print('{0}: {1} {2} {3}'.format(block.time, e0, e1, (e1-e0)/e0))
+
+
+
+
 
 
 ########## end of file ##########

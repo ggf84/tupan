@@ -30,7 +30,7 @@ def addmethod(instance):
 ############
 ## selftimer
 ##
-VERBOSE_ATCALL = True
+VERBOSE_ATCALL = False
 VERBOSE_ATEXIT = True
 def selftimer(func):
     """

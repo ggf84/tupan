@@ -40,7 +40,7 @@ def scale_to_nbody_units(bodies):
     ekin = bodies.get_ekin()
     epot = bodies.get_epot()
     etot = ekin + epot
-    print(ekin, epot, etot)
+#    print(ekin, epot, etot)
 
     scale_to_virial(bodies, ekin, epot, etot)
 
@@ -48,7 +48,7 @@ def scale_to_nbody_units(bodies):
     ekin = bodies.get_ekin()
     epot = bodies.get_epot()
     etot = ekin + epot
-    print(ekin, epot, etot)
+#    print(ekin, epot, etot)
 
 
 

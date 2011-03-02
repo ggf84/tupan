@@ -20,7 +20,10 @@ typedef float2 REAL2;
 typedef float4 REAL4;
 #endif
 
-
+/*
+XXX: dr.w foi transferido para o argumento da sqrt p/ evitar somar a contribuicao da propria particula quando dr.w != 0.0.
+XXX: verificar perda de performance e fazer reajustes necessarios.
+*/
 REAL p2p_pot_kernel_core(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
 {
     REAL4 dr;
@@ -28,9 +31,9 @@ REAL p2p_pot_kernel_core(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
     dr.y = bi.y - bj.y;                                              // 1 FLOPs
     dr.z = bi.z - bj.z;                                              // 1 FLOPs
     dr.w = bi.w + bj.w;                                              // 1 FLOPs
-    REAL ds2 = dr.w;
+    REAL ds2 = 0.0;
     ds2 += dr.z * dr.z + dr.y * dr.y + dr.x * dr.x;                  // 6 FLOPs
-    REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
+    REAL rinv = rsqrt(ds2 + dr.w);                                   // 2 FLOPs
     pot -= mj * (ds2 ? rinv:0);                                      // 2 FLOPs
     return pot;
 }   // Total flop count: 14

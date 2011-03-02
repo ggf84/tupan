@@ -3,3 +3,5 @@ dist
 *.hdf5
 MANIFEST
 *.pyc
+pynbody/test/png
+*.png

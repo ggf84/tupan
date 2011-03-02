@@ -94,9 +94,9 @@ class Kernels(object):
 
         self.call_kernel(queue, dev_args)
 
-        elapsed = self.call_kernel.selftimer.elapsed
-        print('Execution time of CL kernel: {0:g} s'.format(elapsed))
-        print('CL kernel Gflops/s: {0:g}'.format(gflops_count/elapsed))
+#        elapsed = self.call_kernel.selftimer.elapsed
+#        print('Execution time of CL kernel: {0:g} s'.format(elapsed))
+#        print('CL kernel Gflops/s: {0:g}'.format(gflops_count/elapsed))
 
         dest = np.empty(destshape, dtype=dtype)
 
@@ -119,12 +119,12 @@ class Kernels(object):
         global_size *= local_size[0]
         global_size = (global_size, 1, 1)
 
-        print('-'*25)
-        print('lengths: ', (ni, nj))
-        print('unroll: ', IUNROLL)
-        print('local_size: ', local_size)
-        print('global_size: ', global_size)
-        print('diff: ', IUNROLL * global_size[0] - ni)
+#        print('-'*25)
+#        print('lengths: ', (ni, nj))
+#        print('unroll: ', IUNROLL)
+#        print('local_size: ', local_size)
+#        print('global_size: ', global_size)
+#        print('diff: ', IUNROLL * global_size[0] - ni)
 
         iposeps2 = np.vstack((bi.pos.T, bi.eps2)).T.copy().astype(fp_type)
         jposeps2 = np.vstack((bj.pos.T, bj.eps2)).T.copy().astype(fp_type)
@@ -139,9 +139,9 @@ class Kernels(object):
         dest = self.kernel_manager(global_size, local_size, inputargs,
                                    destshape, local_mem_size, gflops_count)
 
-        elapsed = self.kernel_manager.selftimer.elapsed
-        print('Total kernel_manager time: {0:g} s'.format(elapsed))
-        print('kernel_manager Gflops/s: {0:g}'.format(gflops_count/elapsed))
+#        elapsed = self.kernel_manager.selftimer.elapsed
+#        print('Total kernel_manager time: {0:g} s'.format(elapsed))
+#        print('kernel_manager Gflops/s: {0:g}'.format(gflops_count/elapsed))
 
         return dest
 
@@ -169,7 +169,7 @@ def print_name(self):
     """doc of print_name"""
     print('*** name: ', self.name, self.flops, '***')
 
-p2p_acc_kernel_gpugems3.print_name()
+#p2p_acc_kernel_gpugems3.print_name()
 
 
 ########## end of file ##########
