@@ -4,6 +4,7 @@
 from __future__ import print_function
 import pylab
 import time
+import numpy as np
 from pynbody.integrator import LeapFrog, BlockStep, BlockStep2
 
 
@@ -39,12 +40,19 @@ if __name__ == "__main__":
 
 
 
-    particles['body'].eps2.fill(0.0015625)
+    from pynbody.io import HDF5IO
+    io = HDF5IO('input4block.hdf5')
+    particles = io.read_snapshot()
+
+
+
+#    particles['body'].eps2.fill(0.0015625)
 #    particles['body'].eps2.fill(0.5*((4.0/numBodies)**2))
-    particles['body'].vel.fill(0.0)
+#    particles['body'].vel.fill(0.0)
     particles['body'].calc_pot(particles['body'])
     particles['body'].calc_acc(particles['body'])
     particles['body'].next_step_density = +particles['body'].curr_step_density
+
 
     x = particles['body'].pos[:,0]
     y = particles['body'].pos[:,1]
@@ -52,12 +60,13 @@ if __name__ == "__main__":
 
 
     e0 = particles['body'].get_ekin()+particles['body'].get_epot()
+    com0 = particles['body'].get_CoM()
+    linmom0 = particles['body'].get_linear_mom()
+    angmom0 = particles['body'].get_angular_mom()
 
 
 
-
-
-#    leapFrog = LeapFrog(0.0, 2.0**(-6), particles.copy())
+#    leapFrog = LeapFrog(0.0, 2.0**(-7), particles.copy())
 #    i = 0
 #    while leapFrog.time < 4.0:
 #        i += 1
@@ -70,18 +79,23 @@ if __name__ == "__main__":
 #        plot_coords(x, y, './png/p'+str(i)+'.png')
 #        p['body'].calc_pot(p['body'])
 #        e1 = p['body'].get_ekin()+p['body'].get_epot()
-#        print('{0}: {1} {2} {3}'.format(leapFrog.time, e0, e1, (e1-e0)/e0))
+#        linmom1 = p['body'].get_linear_mom()
+#        angmom1 = p['body'].get_angular_mom()
+#        print('{0}: {1} {2} {3}\n{4}\n{5}'.format(leapFrog.time, e0, e1, (e1-e0)/e0, linmom1-linmom0, angmom1-angmom0))
 #    p = leapFrog.particles.copy()
 #    p['body'].calc_pot(p.copy()['body'])
 #    e1 = p['body'].get_ekin()+p['body'].get_epot()
-#    print('{0}: {1} {2} {3}'.format(leapFrog.time, e0, e1, (e1-e0)/e0))
+#    linmom1 = p['body'].get_linear_mom()
+#    angmom1 = p['body'].get_angular_mom()
+#    print('{0}: {1} {2} {3}\n{4}\n{5}'.format(leapFrog.time, e0, e1, (e1-e0)/e0, linmom1-linmom0, angmom1-angmom0))
 
 
+#2.54227 s (0.00487959 s per call)
+#2.47433 s (0.0047492 s per call)
 
-
-    block2 = BlockStep2(0.015625/2, particles)
+    block2 = BlockStep2(1.0/2048, particles)
     i = 0
-    while block2.time < 4.0:
+    while block2.time < 80.0:
         i += 1
         tout = +block2.time
         while block2.time-tout < 0.03125:
@@ -92,11 +106,17 @@ if __name__ == "__main__":
         plot_coords(x, y, './png/p'+str(i)+'.png')
         p['body'].calc_pot(p['body'])
         e1 = p['body'].get_ekin()+p['body'].get_epot()
-        print('{0}: {1} {2} {3}'.format(block2.time, e0, e1, (e1-e0)/e0))
+        com1 = p['body'].get_CoM()
+        linmom1 = p['body'].get_linear_mom()
+        angmom1 = p['body'].get_angular_mom()
+        print('{0}: {1} {2} {3}\n{4}\n{5}\n{6}'.format(block2.time, e0, e1, (e1-e0)/e0, com1-com0, linmom1-linmom0, angmom1-angmom0))
     p = block2.gather().copy()
     p['body'].calc_pot(p.copy()['body'])
     e1 = p['body'].get_ekin()+p['body'].get_epot()
-    print('{0}: {1} {2} {3}'.format(block2.time, e0, e1, (e1-e0)/e0))
+    com1 = p['body'].get_CoM()
+    linmom1 = p['body'].get_linear_mom()
+    angmom1 = p['body'].get_angular_mom()
+    print('{0}: {1} {2} {3}\n{4}\n{5}\n{6}'.format(block2.time, e0, e1, (e1-e0)/e0, com1-com0, linmom1-linmom0, angmom1-angmom0))
 
 #    block2.print_block()
 #    block2.block_list = block2.scatter(block2.gather().copy())

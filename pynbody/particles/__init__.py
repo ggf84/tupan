@@ -42,19 +42,17 @@ class Particles(dict):
 
     def any(self):
         has_obj = False
-        for (key, obj) in self.items():
+        for obj in self.itervalues():
             if obj:
                 has_obj = True
         return has_obj
 
 
     def append(self, data):
-        for (key, obj) in data.items():
+        for (key, obj) in data.iteritems():
             if obj:
                 if self[key]:
-                    arr = np.append(self[key].to_cmpd_struct(), obj.to_cmpd_struct())
-                    self[key] = obj.__class__()
-                    self[key].from_cmpd_struct(arr)
+                    self[key] = self[key].concatenate(obj)
                 else:
                     self[key] = obj
 

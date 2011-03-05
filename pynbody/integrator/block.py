@@ -9,15 +9,14 @@ from __future__ import print_function
 import math
 import numpy as np
 from pynbody.particles import Particles
-
-from pprint import pprint
 from pynbody.lib.decorators import selftimer
+from pprint import pprint
 
 
 indent = ' '*4
 
 MIN_LEVEL = 4
-MAX_LEVEL = 24
+MAX_LEVEL = 34
 
 
 class Block(object):
@@ -36,54 +35,52 @@ class Block(object):
         fmt = 'Block({0}, {1}, {2}, {3})'
         return fmt.format(self.level, self.tstep, self.time, self.particles)
 
-
+    @selftimer
     def drift(self):
         """
 
         """
 #        print(indent*(self.level-MIN_LEVEL), 'D'+str(self.level)+':', self.tstep)
 
-        for (key, obj) in self.particles.items():
+        for obj in self.particles.itervalues():
             if obj:
                 obj.drift(self.tstep)
 
-
+    @selftimer
     def kick(self):
         """
 
         """
 #        print(indent*(self.level-MIN_LEVEL), 'K'+str(self.level)+':', self.tstep)
 
-        for (key, obj) in self.particles.items():
+        for obj in self.particles.itervalues():
             if obj:
                 obj.kick(self.tstep)
 
-
+    @selftimer
     def force(self, all_particles):
         """
 
         """
 #        print(indent*(self.level-MIN_LEVEL), 'F'+str(self.level))
 
-        for (key0, obj0) in self.particles.items():
+        for obj0 in self.particles.itervalues():
             if obj0:
-                prev_obj0_acc = obj0.acc.copy()
-                mid_obj0_acc = np.zeros_like(obj0.acc)
-                prev_obj0_step_density = obj0.curr_step_density.copy()
-                mid_obj0_step_density = np.zeros_like(obj0.curr_step_density)
-                for (key1, obj1) in all_particles.items():
+                prev_acc = obj0.acc.copy()
+                mid_acc = np.zeros_like(obj0.acc)
+                prev_step_density = obj0.curr_step_density.copy()
+                mid_step_density = np.zeros_like(obj0.curr_step_density)
+                for obj1 in all_particles.itervalues():
                     if obj1:
-                        print('level: {0}, len: {1}, {2}'.format(self.level, len(obj0), len(obj1)))
-                        obj0.calc_acc(obj1)         # obj0's acc due to obj1
-                        mid_obj0_acc += obj0.acc    # sum obj1's contribution
-                        mid_obj0_step_density += obj0.curr_step_density
-                obj0.acc = 2*mid_obj0_acc - prev_obj0_acc
+                        obj0.calc_acc(obj1)
+                        mid_acc += obj0.acc
+                        mid_step_density += obj0.curr_step_density
+                obj0.acc = 2*mid_acc - prev_acc
 
-                tmp = (mid_obj0_step_density**2) / prev_obj0_step_density
-                obj0.curr_step_density = tmp.copy()
-                tmp = (obj0.curr_step_density**2) / mid_obj0_step_density
-                obj0.next_step_density = tmp.copy()
+                obj0.curr_step_density = (mid_step_density**2) / prev_step_density
+                obj0.next_step_density = (obj0.curr_step_density**2) / mid_step_density
 
+                print('level: {0}, len: {1}'.format(self.level, len(obj0)))
 
 
 
@@ -105,12 +102,12 @@ class BlockStep2(object):
         self.min_tstep = min_tstep
         self.block_list = self.scatter(particles)
 
-
+    @selftimer
     def print_block(self):
         pprint(self.block_list)
         print('block_list length:', len(self.block_list))
 
-
+    @selftimer
     def print_levels(self, block_list=None):
         if block_list is None:
             block_list = self.block_list
@@ -119,7 +116,7 @@ class BlockStep2(object):
             levels.append(block.level)
         print(levels)
 
-
+    @selftimer
     def sorted_by_level(self, block_list):
         def cmp(x, y):
             if x.level < y.level: return -1
@@ -127,7 +124,7 @@ class BlockStep2(object):
             return 0
         return sorted(block_list, cmp=cmp)
 
-
+    @selftimer
     def is_there(self, level, block_list):
         has_level = False
         index = None
@@ -137,14 +134,14 @@ class BlockStep2(object):
                 index = block_list.index(block)
         return (has_level, index)
 
-
+    @selftimer
     def remove_empty_block(self, block_list):
         for block in block_list:
             if not block.particles.any():
                 block_list.remove(block)
         return self.sorted_by_level(block_list)
 
-
+    @selftimer
     def calc_block_level(self, obj):
         """
 
@@ -155,17 +152,13 @@ class BlockStep2(object):
         block_tstep = 2.0**power
 
         # Clamp block_tstep to range given by min_tstep, max_tstep.
-        where_lt_min = np.where(block_tstep < self.min_tstep)
-        block_tstep[where_lt_min] = self.min_tstep
-        where_gt_max = np.where(block_tstep > self.max_tstep)
-        block_tstep[where_gt_max] = self.max_tstep
+        block_tstep[np.where(block_tstep < self.min_tstep)] = self.min_tstep
+        block_tstep[np.where(block_tstep > self.max_tstep)] = self.max_tstep
 
-        # Converts from block_tstep to block_level
-        block_level = -np.log2(block_tstep).astype(np.int)
+        # Converts from block_tstep to block_level and returns
+        return -np.log2(block_tstep).astype(np.int)
 
-        return block_level
-
-
+    @selftimer
     def scatter(self, particles):
         """
 
@@ -173,7 +166,7 @@ class BlockStep2(object):
         block_list = []
         allowed_levels = range(-np.log2(self.max_tstep).astype(np.int),
                                1-np.log2(self.min_tstep).astype(np.int))
-        for (key, obj) in particles.items():
+        for (key, obj) in particles.iteritems():
             if obj:
                 block_level = self.calc_block_level(obj)
                 for level in allowed_levels:
@@ -193,7 +186,7 @@ class BlockStep2(object):
                             block_list.append(block)
         return self.sorted_by_level(block_list)
 
-
+    @selftimer
     def gather(self, block_list=None,
                interpolated_at_time=None,
                sorting_by_index=False):
@@ -207,7 +200,7 @@ class BlockStep2(object):
         if interpolated_at_time:
             def interpolate(at_time, block):
                 particle = Particles()
-                for (key, obj) in block.particles.items():
+                for (key, obj) in block.particles.iteritems():
                     if obj:
                         particle[key] = obj[:]
                         particle[key].vel += (at_time - block.time) * obj.acc
@@ -222,29 +215,29 @@ class BlockStep2(object):
 
         # if sorting of objects by index is desired
         if sorting_by_index:
-            for (key, obj) in particles.items():
-                if particles[key]:
+            for (key, obj) in particles.iteritems():
+                if obj:
                     array = np.sort(obj.to_cmpd_struct(), order=['index'])
                     particles[key] = obj.__class__()
                     particles[key].from_cmpd_struct(array)
         return particles
 
 
-
+    @selftimer
     def up_level(self, block, block_list):
         """
 
         """
 #        print(indent*(block.level-MIN_LEVEL), 'Up from '+str(block.level)+' to '+str(block.upper_level), '  -->', block.time)
 
-        for (key, obj) in block.particles.items():
+        for (key, obj) in block.particles.iteritems():
             if obj:
                 block_level = self.calc_block_level(obj)
                 where_gt_level = np.where(block_level > block.level)
                 block_level[where_gt_level] = block.upper_level
 
-                where_lt_level = np.where(block_level < block.level)
-                block_level[where_lt_level] = block.lower_level
+#                where_lt_level = np.where(block_level < block.level)
+#                block_level[where_lt_level] = block.lower_level
 
                 if block.upper_level in block_level:
                     at_level = (block_level == block.upper_level)
@@ -263,21 +256,21 @@ class BlockStep2(object):
         return self.remove_empty_block(block_list)
 
 
-
+    @selftimer
     def down_level(self, block, block_list):
         """
 
         """
 #        print(indent*(block.lower_level-MIN_LEVEL), 'Down from '+str(block.level)+' to '+str(block.lower_level))
 
-        for (key, obj) in block.particles.items():
+        for (key, obj) in block.particles.iteritems():
             if obj:
                 block_level = self.calc_block_level(obj)
                 where_lt_level = np.where(block_level < block.level)
                 block_level[where_lt_level] = block.lower_level
 
-                where_gt_level = np.where(block_level > block.level)
-                block_level[where_gt_level] = block.upper_level
+#                where_gt_level = np.where(block_level > block.level)
+#                block_level[where_gt_level] = block.upper_level
 
                 if block.lower_level in block_level:
                     at_level = (block_level == block.lower_level)
@@ -315,7 +308,7 @@ class BlockStep2(object):
                 if nextblock.time == block.time:
                     break
 
-        block.force(self.gather().copy())
+        block.force(self.gather())
 
         if (nextidx < len(self.block_list)):
             while True:
@@ -331,21 +324,11 @@ class BlockStep2(object):
         if idx == 0:
             self.time = +block.time
 
-
-
-        # XXX: up_level deve atualizar o nivel superior de block em block_list ajustando as suas particles, ou criar um novo block em block_list se este nao existe. objs que migraram para o nivel superior devem ser removidos de block. se todos os objs migrarem block deve ser removido de block_list. up_level nao retorna nada.
-        self.block_list[idx:] = self.up_level(block, self.block_list[idx:])
-
         if (nextidx < len(self.block_list)):
             nextblock = self.block_list[nextidx]
-
-#            print(indent*(block.level-MIN_LEVEL), str(block.level)+':',
-#                  block.time, '| '+str(nextblock.level)+':', nextblock.time)
-
-            # XXX: down_level deve atualizar o nivel inferior de nextblock em block_list ajustando as suas particles, ou criar um novo block em block_list se este nao existe. objs que migraram para o nivel inferior devem ser removidos de nextblock. se todos os objs migrarem nextblock deve ser removido de block_list. down_level nao retorna nada.
-
             self.block_list[idx:] = self.down_level(nextblock, self.block_list[idx:])
 
+        self.block_list[idx:] = self.up_level(block, self.block_list[idx:])
 
 
 

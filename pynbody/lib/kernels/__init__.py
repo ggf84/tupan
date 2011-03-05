@@ -17,7 +17,7 @@ from pynbody.lib.decorators import (selftimer, addmethod)
 path = os.path.dirname(__file__) + os.sep   # '/dirname/of/file' + '/'
 
 
-IUNROLL = 5                 # unroll for i-particles
+IUNROLL = 1                 # unroll for i-particles
 JUNROLL = 16                # unroll for j-particles
 BLOCK_SIZE = (256, 1, 1)
 ENABLE_FAST_MATH = True

@@ -46,14 +46,22 @@ class Bodies(object):
         self.total_mass = 0.0
 
     def from_cmpd_struct(self, _array):
-        for attr in dict(self.dtype).keys():
+        for attr in dict(self.dtype).iterkeys():
             setattr(self, attr, _array[attr])
 
     def to_cmpd_struct(self):
         _array = np.empty(len(self), dtype=self.dtype)
-        for attr in dict(self.dtype).keys():
+        for attr in dict(self.dtype).iterkeys():
             _array[attr] = getattr(self, attr)
         return _array#.view(np.recarray)
+
+    def concatenate(self, obj1):
+        new_obj = Bodies()
+        for attr in dict(self.dtype).iterkeys():
+            obj0attr = getattr(self, attr)
+            obj1attr = getattr(obj1, attr)
+            setattr(new_obj, attr, np.concatenate((obj0attr, obj1attr)))
+        return new_obj
 
     def __repr__(self):
         return '{array}'.format(array=self.to_cmpd_struct())
@@ -155,8 +163,8 @@ class Bodies(object):
 #        print(_acc)
 
         self.acc = _acc[:,:-1]
-        self.curr_step_density = np.sqrt(-_acc[:,-1])
-#        self.curr_step_density = (-_acc[:,-1])**(1.0/3.0)
+        self.curr_step_density = np.sqrt(_acc[:,-1]/len(bodies))
+#        self.curr_step_density = (_acc[:,-1]/len(bodies))**(1.0/3.0)
 
 
     def get_ekin(self):
@@ -167,6 +175,14 @@ class Bodies(object):
         """get the bodies' total potential energy"""
         return 0.5 * np.sum(self.mass * self.pot)
 
+    def get_CoM(self):
+        return (self.mass * self.pos.T).sum(1) / np.sum(self.mass)
+
+    def get_linear_mom(self):
+        return (self.mass * self.vel.T).sum(1)
+
+    def get_angular_mom(self):
+        return (self.mass * np.cross(self.pos, self.vel).T).sum(1)
 
     def drift(self, tau):
 #        self.pos += (self.tstep * self.vel.T).T
