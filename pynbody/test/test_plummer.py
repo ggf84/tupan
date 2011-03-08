@@ -14,7 +14,7 @@ if __name__ == "__main__":
         p.write_snapshot()
 
         bi = p.bodies
-        bi.calc_acc(bi)
+        bi[:].calc_acc(bi)
 
     main()
 

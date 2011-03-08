@@ -80,7 +80,7 @@ class Block(object):
                 obj0.curr_step_density = (mid_step_density**2) / prev_step_density
                 obj0.next_step_density = (obj0.curr_step_density**2) / mid_step_density
 
-                print('level: {0}, len: {1}'.format(self.level, len(obj0)))
+#                print('level: {0}, len: {1}'.format(self.level, len(obj0)))
 
 
 
@@ -135,11 +135,11 @@ class BlockStep2(object):
         return (has_level, index)
 
     @selftimer
-    def remove_empty_block(self, block_list):
+    def remove_empty_blocks(self, block_list):
         for block in block_list:
             if not block.particles.any():
                 block_list.remove(block)
-        return self.sorted_by_level(block_list)
+        return block_list
 
     @selftimer
     def calc_block_level(self, obj):
@@ -198,17 +198,24 @@ class BlockStep2(object):
 
         particles = Particles()
         if interpolated_at_time:
-            def interpolate(at_time, block):
+            def interpolate(dt, block):
                 particle = Particles()
                 for (key, obj) in block.particles.iteritems():
                     if obj:
                         particle[key] = obj[:]
-                        particle[key].vel += (at_time - block.time) * obj.acc
-                        aux_vel = obj.vel - block.tstep * obj.acc
-                        particle[key].pos += (at_time - block.time) * aux_vel
+                        if dt < 0:
+                            aux_vel = obj.vel - block.tstep * obj.acc
+                        if dt > 0:
+                            aux_vel = obj.vel + block.tstep * obj.acc
+                        particle[key].pos += dt * aux_vel
+                        particle[key].vel += dt * obj.acc
                 return particle
             for block in block_list:
-                particles.append(interpolate(interpolated_at_time, block))
+                dt = (interpolated_at_time - block.time)
+                if dt != 0:
+                    particles.append(interpolate(dt, block))
+                else:
+                    particles.append(block.particles)
         else:
             for block in block_list:
                 particles.append(block.particles)
@@ -253,7 +260,7 @@ class BlockStep2(object):
                     obj_list = obj.to_cmpd_struct()[np.where(~at_level)]
                     block.particles[key] = obj.__class__()
                     block.particles[key].from_cmpd_struct(obj_list)
-        return self.remove_empty_block(block_list)
+        return block_list
 
 
     @selftimer
@@ -286,7 +293,24 @@ class BlockStep2(object):
                     obj_list = obj.to_cmpd_struct()[np.where(~at_level)]
                     block.particles[key] = obj.__class__()
                     block.particles[key].from_cmpd_struct(obj_list)
-        return self.remove_empty_block(block_list)
+        return block_list
+
+
+
+    @selftimer
+    def update_blocks(self, nextidx, block, block_list):
+        """
+
+        """
+        new_block_list = self.up_level(block, block_list[:])
+
+        if (nextidx < len(block_list)):
+            nextblock = block_list[nextidx]
+            new_block_list = self.down_level(nextblock, new_block_list)
+
+        return self.sorted_by_level(self.remove_empty_blocks(new_block_list))
+
+
 
 
     # TODO:
@@ -308,7 +332,8 @@ class BlockStep2(object):
                 if nextblock.time == block.time:
                     break
 
-        block.force(self.gather())
+        block.force(self.gather(interpolated_at_time=block.time))
+#        block.force(self.gather())
 
         if (nextidx < len(self.block_list)):
             while True:
@@ -324,19 +349,8 @@ class BlockStep2(object):
         if idx == 0:
             self.time = +block.time
 
-        if (nextidx < len(self.block_list)):
-            nextblock = self.block_list[nextidx]
-            self.block_list[idx:] = self.down_level(nextblock, self.block_list[idx:])
 
-        self.block_list[idx:] = self.up_level(block, self.block_list[idx:])
-
-
-
-
-
-
-
-
+        self.block_list = self.update_blocks(nextidx, block, self.block_list)
 
 
 

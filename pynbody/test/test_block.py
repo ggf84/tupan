@@ -93,7 +93,7 @@ if __name__ == "__main__":
 #2.54227 s (0.00487959 s per call)
 #2.47433 s (0.0047492 s per call)
 
-    block2 = BlockStep2(1.0/2048, particles)
+    block2 = BlockStep2(1.0/1024, particles)
     i = 0
     while block2.time < 80.0:
         i += 1

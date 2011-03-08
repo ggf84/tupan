@@ -30,17 +30,19 @@ REAL4 p2p_acc_kernel_core(REAL4 acc, REAL4 bi, REAL4 bj, REAL mj)
     dr.y = bi.y - bj.y;                                              // 1 FLOPs
     dr.z = bi.z - bj.z;                                              // 1 FLOPs
     dr.w = bi.w + bj.w;                                              // 1 FLOPs
-    REAL ds2 = dr.w;
-    ds2 += dr.z * dr.z + dr.y * dr.y + dr.x * dr.x;                  // 6 FLOPs
-    REAL rinv = rsqrt(ds2);                                          // 2 FLOPs
+    REAL ds2 = dr.x * dr.x + dr.y * dr.y + dr.z * dr.z;              // 5 FLOPs
+    REAL rinv = rsqrt(ds2 + dr.w);                                   // 3 FLOPs
     rinv = (ds2 ? rinv:0);
-    REAL mr3inv = mj * rinv;                                         // 1 FLOPs
-    rinv *= rinv;                                                    // 1 FLOPs
-    acc.w -= mr3inv;                                                 // 1 FLOPs
-    mr3inv *= rinv;                                                  // 1 FLOPs
-    acc.x -= mr3inv * dr.x;                                          // 2 FLOPs
-    acc.y -= mr3inv * dr.y;                                          // 2 FLOPs
-    acc.z -= mr3inv * dr.z;                                          // 2 FLOPs
+
+/*    acc.w -= mj * rinv;                                                  // 1 FLOPs*/
+
+    REAL r3inv = rinv * rinv;                                        // 1 FLOPs
+    r3inv *= rinv;                                                   // 1 FLOPs
+    acc.w += r3inv;                                                  // 1 FLOPs
+    r3inv *= mj;                                                     // 1 FLOPs
+    acc.x -= r3inv * dr.x;                                           // 2 FLOPs
+    acc.y -= r3inv * dr.y;                                           // 2 FLOPs
+    acc.z -= r3inv * dr.z;                                           // 2 FLOPs
     return acc;
 }   // Total flop count: 22
 
@@ -57,9 +59,9 @@ __kernel void p2p_acc_kernel_gpugems3(const uint ni,
     uint gid = get_global_id(0) * IUNROLL;
     uint tidx = get_local_id(0);
     uint tidy = get_local_id(1);
-    uint grpidx = get_group_id(0) * IUNROLL;
-    uint grpidy = get_group_id(1) * IUNROLL;
-    uint grpDimx = get_num_groups(0) * IUNROLL;
+    uint grpidx = get_group_id(0);// * IUNROLL;
+    uint grpidy = get_group_id(1);// * IUNROLL;
+    uint grpDimx = get_num_groups(0);// * IUNROLL;
     uint localDimx = get_local_size(0);
     uint localDimy = get_local_size(1);
 

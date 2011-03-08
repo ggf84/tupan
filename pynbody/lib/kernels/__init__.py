@@ -114,7 +114,7 @@ class Kernels(object):
         nj = len(bj)
 
         local_size = BLOCK_SIZE
-        global_size = (ni + IUNROLL * local_size[0] - 1)
+        global_size = (nj + IUNROLL * local_size[0] - 1)
         global_size //= IUNROLL * local_size[0]
         global_size *= local_size[0]
         global_size = (global_size, 1, 1)
@@ -157,6 +157,7 @@ p2p_pot_kernel = Kernels('p2p_pot_kernel.cl', options)
 
 # setup the acceleration kernel
 p2p_acc_kernel = Kernels('p2p_acc_kernel.cl', options)
+#p2p_acc_kernel = Kernels('p2p_acc_kernel_gpugems3.cl', options)
 
 # setup the acceleration kernel (gpugems3)
 p2p_acc_kernel_gpugems3 = Kernels('p2p_acc_kernel_gpugems3.cl', options)
