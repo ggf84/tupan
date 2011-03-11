@@ -8,8 +8,10 @@
 from __future__ import print_function
 import math
 import numpy as np
+from collections import namedtuple
+from pbase import Pbase
 try:
-    from pynbody.lib.kernels import (p2p_acc_kernel, p2p_pot_kernel)
+    from pynbody.lib import (p2p_acc_kernel, p2p_pot_kernel)
     HAVE_CL = True
 except:
     HAVE_CL = False
@@ -17,6 +19,167 @@ except:
 
 
 #HAVE_CL = False
+
+
+
+class Bodies2(Pbase):
+    """
+    A base class for Body-type particles
+    """
+    def __init__(self):
+        dtype = [('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),   # eps2 -> radius
+                 ('phi', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
+                 ('vel', '3f8'), ('acc', '3f8')]
+        Pbase.__init__(self, dtype)
+
+
+    # gravity methods
+
+    def set_phi(self, objs):
+        """
+        set the all bodies' gravitational potential due to other bodies
+        """
+        def p2p_pot_pyrun(self, objs):
+            _phi = []
+            for bi in self:
+                iphi = 0.0
+                for bj in objs:
+                    if bi['index'] != bj['index']:
+                        dpos = bi['pos'] - bj['pos']
+                        eps2 = bi['eps2'] + bj['eps2']
+                        ds2 = np.dot(dpos, dpos) + eps2
+                        iphi -= bj['mass'] / math.sqrt(ds2)
+                _phi.append(iphi)
+            return _phi
+
+        if HAVE_CL:
+            _phi = p2p_pot_kernel.run(self, objs)
+        else:
+            _phi = p2p_pot_pyrun(self, objs)
+            _phi = np.asarray(_phi)
+
+#        print(_phi)
+
+        self.phi[:] = _phi
+
+
+    def set_acc(self, objs):
+        """set the all bodies' acceleration due to other bodies"""
+        def p2p_acc_pyrun(self, objs):
+            _acc = []
+            for bi in self:
+                iacc = np.zeros(4, dtype=np.float64)
+                for bj in objs:
+                    if bi['index'] != bj['index']:
+                        dpos = bi['pos'] - bj['pos']
+                        eps2 = bi['eps2'] + bj['eps2']
+                        dvel = bi['vel'] - bj['vel']
+                        M = bi['mass'] + bj['mass']
+
+                        ds2 = np.dot(dpos, dpos) + eps2
+                        dv2 = np.dot(dvel, dvel)
+
+                        rinv = math.sqrt(1.0 / ds2)
+                        r3inv = rinv * rinv * rinv
+
+#                        iacc[3] += r3inv
+
+                        e = 0.5*dv2 + M*rinv
+                        iacc[3] += (e*e*e)/(M*M)
+
+#                        iacc[3] -= rinv * bj['mass']
+
+                        r3inv *= bj['mass']
+                        iacc[0:3] -= r3inv * dpos
+                _acc.append(iacc)
+            return _acc
+
+        if HAVE_CL:
+            _acc = p2p_acc_kernel.run(self, objs)
+#            elapsed = p2p_acc_kernel.run.selftimer.elapsed
+#            gflops_count = p2p_acc_kernel.flops * len(self) * len(bodies) * 1.0e-9
+#            print(' -- '*10)
+#            print('Total kernel-run time: {0:g} s'.format(elapsed))
+#            print('kernel-run Gflops/s: {0:g}'.format(gflops_count/elapsed))
+        else:
+            _acc = p2p_acc_pyrun(self, objs)
+            _acc = np.asarray(_acc)
+
+#        print('acc - '*10)
+#        print(_acc)
+
+        self.acc[:] = _acc[:,:-1]
+        self.stepdens[:,0] = np.sqrt(_acc[:,-1]/len(objs))
+
+
+
+    # energy methods
+
+    def get_ekin(self):
+        """get the bodies' total kinetic energy"""
+        return 0.5 * np.sum(self.mass * (self.vel**2).T)
+
+    def get_epot(self):
+        """get the bodies' total potential energy"""
+        return 0.5 * np.sum(self.mass * self.phi)
+
+    def get_energies(self):
+        ekin = self.get_ekin()
+        epot = self.get_epot()
+        etot = ekin + epot
+        Energy = namedtuple('Energy', ['kin', 'pot', 'tot'])
+        energy = Energy(ekin, epot, etot)
+        return energy
+
+    # CoM methods
+
+    def get_rCoM(self):
+        return (self.mass * self.pos.T).sum(1) / np.sum(self.mass)
+
+    def get_vCoM(self):
+        return (self.mass * self.vel.T).sum(1) / np.sum(self.mass)
+
+    def reset_CoM(self):
+        self.pos -= self.get_rCoM()
+        self.vel -= self.get_vCoM()
+
+    def shift_CoM(self, rshift=None, vshift=None):
+        if rshift:
+            self.pos += rshift
+        if vshift:
+            self.vel += vshift
+
+    # momentum methods
+
+    def get_linear_mom(self):
+        return (self.mass * self.vel.T).sum(1)
+
+    def get_angular_mom(self):
+        return (self.mass * np.cross(self.pos, self.vel).T).sum(1)
+
+    # evolve methods
+
+    def drift(self, tau):
+        self.pos += tau * self.vel
+
+    def kick(self, tau):
+        self.vel += tau * self.acc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Bodies(object):
@@ -103,23 +266,23 @@ class Bodies(object):
 
     def calc_pot(self, bodies):
         """set the all bodies' gravitational potential due to other bodies"""
-        def py_pot_perform_calc(self, bodies):
+        def p2p_pot_pyrun(self, bodies):
             _pot = []
             for bi in self:
                 ipot = 0.0
                 for bj in bodies:
-                    if bi.index != bj.index:
-                        dpos = bi.pos - bj.pos
-                        eps2 = 0.5*(bi.eps2 + bj.eps2)
+                    if bi['index'] != bj['index']:
+                        dpos = bi['pos'] - bj['pos']
+                        eps2 = bi['eps2'] + bj['eps2']
                         ds2 = np.dot(dpos, dpos) + eps2
-                        ipot -= bj.mass / math.sqrt(ds2)
+                        ipot -= bj['mass'] / math.sqrt(ds2)
                 _pot.append(ipot)
             return _pot
 
         if HAVE_CL:
             _pot = p2p_pot_kernel.run(self, bodies)
         else:
-            _pot = py_pot_perform_calc(self, bodies)
+            _pot = p2p_pot_pyrun(self, bodies)
             _pot = np.asarray(_pot)
 
 #        print(_pot)
@@ -130,21 +293,32 @@ class Bodies(object):
 
     def calc_acc(self, bodies):
         """set the all bodies' acceleration due to other bodies"""
-        def py_acc_perform_calc(self, bodies):
+        def p2p_acc_pyrun(self, bodies):
             _acc = []
             for bi in self:
                 iacc = np.zeros(4, dtype=np.float64)
                 for bj in bodies:
-                    if bi.index != bj.index:
-                        dpos = bi.pos - bj.pos
-                        eps2 = 0.5*(bi.eps2 + bj.eps2)
+                    if bi['index'] != bj['index']:
+                        dpos = bi['pos'] - bj['pos']
+                        eps2 = bi['eps2'] + bj['eps2']
+                        dvel = bi['vel'] - bj['vel']
+                        M = bi['mass'] + bj['mass']
+
                         ds2 = np.dot(dpos, dpos) + eps2
-                        r2inv = 1.0 / ds2
-                        rinv = math.sqrt(r2inv)
-                        mrinv = bj.mass * rinv
-                        mr3inv = mrinv * r2inv
-                        iacc[3] -= mrinv
-                        iacc[0:3] -= mr3inv * dpos
+                        dv2 = np.dot(dvel, dvel)
+
+                        rinv = math.sqrt(1.0 / ds2)
+                        r3inv = rinv * rinv * rinv
+
+#                        iacc[3] += r3inv
+
+                        e = 0.5*dv2 + M*rinv
+                        iacc[3] += (e*e*e)/(M*M)
+
+#                        iacc[3] -= rinv * bj['mass']
+
+                        r3inv *= bj['mass']
+                        iacc[0:3] -= r3inv * dpos
                 _acc.append(iacc)
             return _acc
 
@@ -156,7 +330,7 @@ class Bodies(object):
 #            print('Total kernel-run time: {0:g} s'.format(elapsed))
 #            print('kernel-run Gflops/s: {0:g}'.format(gflops_count/elapsed))
         else:
-            _acc = py_acc_perform_calc(self, bodies)
+            _acc = p2p_acc_pyrun(self, bodies)
             _acc = np.asarray(_acc)
 
 #        print('acc - '*10)
@@ -164,6 +338,7 @@ class Bodies(object):
 
         self.acc = _acc[:,:-1]
         self.curr_step_density = np.sqrt(_acc[:,-1]/len(bodies))
+#        self.curr_step_density = np.sqrt(_acc[:,-1])
 #        self.curr_step_density = (_acc[:,-1]/len(bodies))**(1.0/3.0)
 
 
@@ -175,8 +350,27 @@ class Bodies(object):
         """get the bodies' total potential energy"""
         return 0.5 * np.sum(self.mass * self.pot)
 
-    def get_CoM(self):
+    def get_energies(self):
+        ekin = self.get_ekin()
+        epot = self.get_epot()
+        etot = ekin + epot
+        return (ekin, epot, etot)
+
+    def get_rCoM(self):
         return (self.mass * self.pos.T).sum(1) / np.sum(self.mass)
+
+    def set_rCoM(self, rshift):
+        self.pos += rshift
+
+    def get_vCoM(self):
+        return (self.mass * self.vel.T).sum(1) / np.sum(self.mass)
+
+    def set_vCoM(self, vshift):
+        self.vel += vshift
+
+    def reset_CoM(self):
+        self.pos -= self.get_rCoM()
+        self.vel -= self.get_vCoM()
 
     def get_linear_mom(self):
         return (self.mass * self.vel.T).sum(1)
@@ -185,248 +379,10 @@ class Bodies(object):
         return (self.mass * np.cross(self.pos, self.vel).T).sum(1)
 
     def drift(self, tau):
-#        self.pos += (self.tstep * self.vel.T).T
         self.pos += tau * self.vel
 
     def kick(self, tau):
-#        self.vel += (self.tstep * self.acc.T).T
         self.vel += tau * self.acc
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#class Bodies2(object):
-#    """A base class for Body-type particles"""
-
-#    def __init__(self):
-#        self.array = np.array([],
-#                              dtype=[('index', 'u8'), ('nstep', 'u8'),
-#                                     ('step_density', 'f8'), ('time', 'f8'),
-#                                     ('mass', 'f8'), ('eps2', 'f8'), ('pot', 'f8'),
-#                                     ('pos', 'f8', (3,)), ('vel', 'f8', (3,)),
-#                                     ('acc', 'f8', (3,))])
-
-#        # total mass
-#        self._total_mass = 0.0
-
-#    def __repr__(self):
-#        return '{array}'.format(array=self.array)
-
-#    def __iter__(self):
-#        return iter(self.array)
-
-#    def __reversed__(self):
-#        return reversed(self.array)
-
-#    def __len__(self):
-#        return len(self.array)
-
-#    def __getitem__(self, index):
-#        b = Bodies()
-#        b.fromlist(self.array[index])
-#        return b
-
-#    def get_data(self):
-#        return self.array
-
-#    def fromlist(self, data):
-#        self.array = np.asarray(data, dtype=self.array.dtype)
-#        self._total_mass = np.sum(self.array['mass'])
-
-#    def insert_body(self, index, body):
-#        """Inserts a new body before the given index, updating the total mass"""
-#        self._total_mass += body.mass
-#        self.array = np.insert(self.array, index, tuple(body))
-
-#    def remove_body(self, bindex):
-#        """Remove the body of index 'bindex' and update the total mass"""
-#        arr = self.array
-#        if arr.size < 1:
-#            return 'there is no more bodies to remove!'
-#        self._total_mass -= arr[np.where(arr['index'] == bindex)]['mass'][0]
-#        self.array = arr[np.where(arr['index'] != bindex)]
-
-#    # properties
-
-#    def _get_index(self):
-#        return self.array['index']
-#    def _set_index(self, _index):
-#        self.array['index'] = _index
-#    index = property(_get_index, _set_index)
-
-#    def _get_nstep(self):
-#        return self.array['nstep']
-#    def _set_nstep(self, _nstep):
-#        self.array['nstep'] = _nstep
-#    nstep = property(_get_nstep, _set_nstep)
-
-#    def _get_step_density(self):
-#        return self.array['step_density']
-#    def _set_step_density(self, _step_density):
-#        self.array['step_density'] = _step_density
-#    step_density = property(_get_step_density, _set_step_density)
-
-#    def _get_time(self):
-#        return self.array['time']
-#    def _set_time(self, _time):
-#        self.array['time'] = _time
-#    time = property(_get_time, _set_time)
-
-#    def _get_mass(self):
-#        return self.array['mass']
-#    def _set_mass(self, _mass):
-#        self.array['mass'] = _mass
-#    mass = property(_get_mass, _set_mass)
-
-#    def _get_eps2(self):
-#        return self.array['eps2']
-#    def _set_eps2(self, _eps2):
-#        self.array['eps2'] = _eps2
-#    eps2 = property(_get_eps2, _set_eps2)
-
-#    def _get_pot(self):
-#        return self.array['pot']
-#    def _set_pot(self, _pot):
-#        self.array['pot'] = _pot
-#    pot = property(_get_pot, _set_pot)
-
-#    def _get_pos(self):
-#        return self.array['pos']
-#    def _set_pos(self, _pos):
-#        self.array['pos'] = _pos
-#    pos = property(_get_pos, _set_pos)
-
-#    def _get_vel(self):
-#        return self.array['vel']
-#    def _set_vel(self, _vel):
-#        self.array['vel'] = _vel
-#    vel = property(_get_vel, _set_vel)
-
-
-#    def get_total_mass(self):
-#        return self._total_mass
-#    def set_total_mass(self, mtot):
-#        self._total_mass = mtot
-
-
-#    def calc_pot(self, bodies):
-#        """set the all bodies' gravitational potential due to other bodies"""
-#        def py_pot_perform_calc(self, bodies):
-#            _pot = []
-#            for bi in self.array:
-#                ipot = 0.0
-#                for bj in bodies:
-#                    if bi['index'] != bj['index']:
-#                        dpos = bi['pos'] - bj['pos']
-#                        eps2 = 0.5*(bi['eps2'] + bj['eps2'])
-#                        ds2 = np.dot(dpos, dpos) + eps2
-#                        ipot -= bj['mass'] / math.sqrt(ds2)
-#                _pot.append(ipot)
-#            return _pot
-
-#        if HAVE_CL:
-#            _pot = p2p_pot_kernel.run(self, bodies)
-#        else:
-#            _pot = py_pot_perform_calc(self, bodies)
-#            _pot = np.asarray(_pot)
-
-#        print(_pot)
-
-#        self.array['pot'] = _pot
-
-
-#    def calc_acc(self, bodies):
-#        """set the all bodies' acceleration due to other bodies"""
-#        def py_acc_perform_calc(self, bodies):
-#            _acc = []
-#            for bi in self.array:
-#                iacc = np.zeros(4, dtype=np.float64)
-#                for bj in bodies:
-#                    if bi['index'] != bj['index']:
-#                        dpos = bi['pos'] - bj['pos']
-#                        eps2 = 0.5*(bi['eps2'] + bj['eps2'])
-#                        ds2 = np.dot(dpos, dpos) + eps2
-#                        r2inv = 1.0 / ds2
-#                        rinv = math.sqrt(r2inv)
-#                        mrinv = bj['mass'] * rinv
-#                        mr3inv = mrinv * r2inv
-#                        iacc[3] -= mrinv
-#                        iacc[0:3] -= mr3inv * dpos
-#                _acc.append(iacc)
-#            return _acc
-
-#        if HAVE_CL:
-#            _acc = p2p_acc_kernel.run(self, bodies)
-#            elapsed = p2p_acc_kernel.run.selftimer.elapsed
-#            gflops_count = p2p_acc_kernel.flops * len(self) * len(bodies) * 1.0e-9
-#            print(' -- '*10)
-#            print('Total kernel-run time: {0:g} s'.format(elapsed))
-#            print('kernel-run Gflops/s: {0:g}'.format(gflops_count/elapsed))
-#        else:
-#            _acc = py_acc_perform_calc(self, bodies)
-#            _acc = np.asarray(_acc)
-
-#        print('acc - '*10)
-#        print(_acc)
-
-#        self.array['acc'] = _acc[:,:-1]
-#        self.array['step_density'] = -_acc[:,-1]
-
-#    def get_ekin(self):
-#        """get the bodies' total kinetic energy"""
-#        return 0.5 * np.sum(self.array['mass'] * (self.array['vel']**2).T)
-
-#    def get_epot(self):
-#        """get the bodies' total potential energy"""
-#        return np.sum(self.array['mass'] * self.array['pot'])
-
-
-#    def drift(self, tau):
-#        self.array['pos'] += tau * self.array['vel']
-
-#    def kick(self, tau):
-#        self.array['vel'] += tau * self.array['acc']
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -11,7 +11,7 @@ import random
 import math
 
 from pynbody.lib.decorators import selftimer
-from pynbody.io.hdf5io import HDF5IO
+from pynbody.io import HDF5IO
 from pynbody.particles import (Bodies, Particles)
 
 
@@ -132,7 +132,7 @@ class Plummer(object):
 
     def make_plummer(self):
         self.set_bodies()
-        # TODO: correct to CoM
+        self.bodies.reset_CoM()
         scale_to_nbody_units(self.bodies)
 
     def write_snapshot(self):

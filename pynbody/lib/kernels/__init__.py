@@ -127,13 +127,15 @@ class Kernels(object):
 #        print('diff: ', IUNROLL * global_size[0] - ni)
 
         iposeps2 = np.vstack((bi.pos.T, bi.eps2)).T.copy().astype(fp_type)
+        ivelmass = np.vstack((bi.vel.T, bi.mass)).T.copy().astype(fp_type)
         jposeps2 = np.vstack((bj.pos.T, bj.eps2)).T.copy().astype(fp_type)
-        jmass = bj.mass.copy().astype(fp_type)
+        jvelmass = np.vstack((bj.vel.T, bj.mass)).T.copy().astype(fp_type)
 
-        inputargs = (np.uint32(ni), np.uint32(nj), iposeps2, jposeps2, jmass)
+        inputargs = (np.uint32(ni), np.uint32(nj),
+                     iposeps2, ivelmass, jposeps2, jvelmass)
         destshape = eval(self.output_shape.format(ni=ni))
         mem_size = reduce(lambda x, y: x * y, local_size) * dtype.itemsize
-        local_mem_size = (4*mem_size, mem_size)
+        local_mem_size = (4*mem_size, 4*mem_size)
         gflops_count = self.flops * ni * nj * 1.0e-9
 
         dest = self.kernel_manager(global_size, local_size, inputargs,

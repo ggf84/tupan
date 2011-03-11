@@ -6,11 +6,9 @@
 """
 
 from __future__ import print_function
-import math
 import numpy as np
-from pynbody.particles import Particles
-from pynbody.lib.decorators import selftimer
 from pprint import pprint
+from pynbody.lib.decorators import selftimer
 
 
 indent = ' '*4
@@ -89,13 +87,14 @@ class Block(object):
 
 
 
-class BlockStep2(object):
+class BlockStep(object):
     """
 
     """
     def __init__(self, eta, particles, time=0.0,
                  max_tstep=2.0**(-MIN_LEVEL),
                  min_tstep=2.0**(-MAX_LEVEL)):
+        self.ParticlesClass = particles.__class__
         self.eta = eta
         self.time = time
         self.max_tstep = max_tstep
@@ -173,7 +172,7 @@ class BlockStep2(object):
                     has_level = (level == block_level)
                     if has_level.any():
                         obj_at_level = obj[np.where(has_level)]
-                        particles_at_level = Particles()
+                        particles_at_level = self.ParticlesClass()
                         particles_at_level.set_members(obj_at_level)
                         block = Block(level, 0.0, particles_at_level)
                         if block_list:
@@ -187,6 +186,20 @@ class BlockStep2(object):
         return self.sorted_by_level(block_list)
 
     @selftimer
+    def interpolate(self, dt, block):
+        particle = self.ParticlesClass()
+        for (key, obj) in block.particles.iteritems():
+            if obj:
+                particle[key] = obj[:]
+                if dt < 0:
+                    aux_vel = obj.vel - block.tstep * obj.acc
+                if dt > 0:
+                    aux_vel = obj.vel + block.tstep * obj.acc
+                particle[key].pos += dt * aux_vel
+                particle[key].vel += dt * obj.acc
+        return particle
+
+    @selftimer
     def gather(self, block_list=None,
                interpolated_at_time=None,
                sorting_by_index=False):
@@ -196,24 +209,12 @@ class BlockStep2(object):
         if block_list is None:
             block_list = self.block_list
 
-        particles = Particles()
+        particles = self.ParticlesClass()
         if interpolated_at_time:
-            def interpolate(dt, block):
-                particle = Particles()
-                for (key, obj) in block.particles.iteritems():
-                    if obj:
-                        particle[key] = obj[:]
-                        if dt < 0:
-                            aux_vel = obj.vel - block.tstep * obj.acc
-                        if dt > 0:
-                            aux_vel = obj.vel + block.tstep * obj.acc
-                        particle[key].pos += dt * aux_vel
-                        particle[key].vel += dt * obj.acc
-                return particle
             for block in block_list:
                 dt = (interpolated_at_time - block.time)
                 if dt != 0:
-                    particles.append(interpolate(dt, block))
+                    particles.append(self.interpolate(dt, block))
                 else:
                     particles.append(block.particles)
         else:
@@ -249,7 +250,7 @@ class BlockStep2(object):
                 if block.upper_level in block_level:
                     at_level = (block_level == block.upper_level)
                     obj_at_level = obj[np.where(at_level)]
-                    particles_at_level = Particles()
+                    particles_at_level = self.ParticlesClass()
                     particles_at_level.set_members(obj_at_level)
                     exist, index = self.is_there(block.upper_level, block_list)
                     if exist:
@@ -282,7 +283,7 @@ class BlockStep2(object):
                 if block.lower_level in block_level:
                     at_level = (block_level == block.lower_level)
                     obj_at_level = obj[np.where(at_level)]
-                    particles_at_level = Particles()
+                    particles_at_level = self.ParticlesClass()
                     particles_at_level.set_members(obj_at_level)
                     exist, index = self.is_there(block.lower_level, block_list)
                     if exist:
@@ -353,334 +354,6 @@ class BlockStep2(object):
         self.block_list = self.update_blocks(nextidx, block, self.block_list)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-class BlockStep(object):
-    """
-
-    """
-
-    def __init__(self, eta, particles, max_tstep=2**(-4), min_tstep=2**(-24)):
-        self.eta = eta
-        self.time = 0.0
-        self.max_tstep = max_tstep
-        self.min_tstep = min_tstep
-        self.block = self.scatter_on_block_levels(particles)
-        self.block_depth = len(self.block)
-
-
-    def print_block(self):
-        pprint(self.block)
-        print('block_depth:', self.block_depth)
-
-
-    def calc_block_level(self, obj, level=None):
-        """
-
-        """
-        # Discretizes time steps in power-of-two
-        tstep = self.eta / obj.next_step_density
-#        tstep = self.eta / obj.step_density
-        power = (np.log2(tstep) - 1).astype(np.int)
-        block_tstep = 2.0**power
-
-        # Clamp block_tstep to range given by min_tstep, max_tstep.
-        where_lt_min = np.where(block_tstep < self.min_tstep)
-        block_tstep[where_lt_min] = self.min_tstep
-        where_gt_max = np.where(block_tstep > self.max_tstep)
-        block_tstep[where_gt_max] = self.max_tstep
-
-        # Converts from block_tstep to block_level
-        block_level = -np.log2(block_tstep).astype(np.int)
-
-        if level:
-            block_level[np.where(block_level < level)] = level-1
-            block_level[np.where(block_level > level)] = level+1
-
-#        max_level = np.max(block_level)
-#        min_level = np.min(block_level)
-#        num_levels = (max_level - min_level) + 1
-#        print(block_level)
-#        print(block_tstep)
-#        print(max_level, min_level, num_levels)
-#        if max_level > 6: print(('max_level: '+str(max_level)+' ')*20)
-
-        return block_level
-
-
-    def interpolate(self, particles, at_time):
-        """
-
-        """
-        interpolated = Particles()
-        for (key, obj) in particles.items():
-            if obj:
-                interpolated[key] = obj[:]
-                interpolated[key].vel += ((at_time - obj.time) * obj.acc.T).T
-                aux_vel = obj.vel - (obj.tstep * obj.acc.T).T
-                interpolated[key].pos += ((at_time - obj.time) * aux_vel.T).T
-        return interpolated
-
-
-    def gather_from_block_levels(self, block=None, sorting=False):
-        """
-
-        """
-        if block is None:
-            block = self.block
-        particles = Particles()
-        for (level, particles_at_level) in block:
-            for (key, obj) in particles_at_level.items():
-                if particles[key]:
-                    array = np.append(particles[key].to_cmpd_struct(),
-                                      obj.to_cmpd_struct())
-                    particles[key] = obj.__class__()
-                    particles[key].from_cmpd_struct(array)
-                else:
-                    particles[key] = obj
-
-        # if sorting of objects by index is desired
-        if sorting:
-            for (key, obj) in particles.items():
-                if particles[key]:
-                    array = np.sort(obj.to_cmpd_struct(), order=['index'])
-                    particles[key] = obj.__class__()
-                    particles[key].from_cmpd_struct(array)
-        return particles
-
-
-    def scatter_on_block_levels(self, particles):
-        """
-
-        """
-        block = []
-        allowed_levels = range(-np.log2(self.max_tstep).astype(np.int),
-                               1-np.log2(self.min_tstep).astype(np.int))
-        for (key, obj) in particles.items():
-            if obj:
-                block_level = self.calc_block_level(obj)
-                for level in allowed_levels:
-                    has_level = block_level == level
-                    if has_level.any():
-                        tmp = obj[:]
-                        tmp.tstep = 2.0**(-block_level)
-                        obj_at_level = tmp[np.where(has_level)]
-                        particles_at_level = Particles()
-                        particles_at_level.set_members(obj_at_level)
-                        if block:
-                            exist_level = False
-                            level_index = None
-                            for item in block:
-                                if level in item:
-                                    exist_level = True
-                                    level_index = block.index(item)
-                            if exist_level:
-                                block[level_index][1][key] = obj_at_level
-                            else:
-                                block.append((level, particles_at_level))
-                        else:
-                            block.append((level, particles_at_level))
-        return sorted(block)
-
-
-    def drift(self, block):
-        """
-
-        """
-        level, obj = block
-
-        print(indent*(level-4), 'D'+str(level)+':', 2.0**(-level))
-
-        if obj['body']:
-            tstep = 2.0**(-level)
-            obj['body'].time += tstep  # obj['body'].tstep
-            obj['body'].drift(tstep)
-
-
-
-
-    def kick(self, block):
-        """
-
-        """
-        level, obj = block
-
-        print(indent*(level-4), 'K'+str(level)+':', 2.0**(-level))
-
-        if obj['body']:
-            tstep = 2.0**(-level)
-            obj['body'].kick(tstep)
-
-
-
-    def force(self, block):
-        """
-
-        """
-        level, obj = block
-
-        print(indent*(level-4), 'F'+str(level))
-
-        if obj['body']:
-            body = obj['body']
-
-
-            rho_prev = +body.curr_step_density
-            prev_acc = +body.acc
-
-            particles = self.gather_from_block_levels()
-#            particles = self.interpolate(particles, body.time[0])
-            body.calc_acc(particles['body'])
-
-            body.acc = 2*body.acc - prev_acc
-
-            rho_mid = +body.curr_step_density
-
-
-            body.curr_step_density = (rho_mid**2) / rho_prev
-            body.next_step_density = (body.curr_step_density**2) / rho_mid
-
-            if (body.next_step_density < 0).any():
-                print(' less than zero'*250)
-#            print(prev_step_density)
-#            print(body.step_density)
-
-#            print(rho_prev)
-#            print(rho_mid)
-#            print(body.step_density)
-#            print(body.step_density_next)
-
-
-    def has_level(self, level, block):
-        has = False
-        index = None
-        for item in block:
-            if level in item:
-                has = True
-                index = block.index(item)
-        return (has, index)
-
-
-    def remove_empty_levels(self):
-        block = self.block[:]
-        for item in block:
-            level, particles = item
-            has_particles = False
-            for (key, obj) in particles.items():
-                if obj:
-                    has_particles = True
-            if not has_particles:
-#                if item == self.block[-1]:
-                block.remove(item)
-        self.block = sorted(block)
-        self.block_depth = len(self.block)
-
-
-    def change_level(self, idx, offset):
-        """
-
-        """
-        level0, particles0 = self.block[idx]
-        next_level = level0 + offset
-        for (key, obj) in particles0.items():
-            if obj:
-                block_level = self.calc_block_level(obj, level0)
-                if next_level in block_level:
-                    has_level, level_index = self.has_level(next_level, self.block)
-                    tmp = obj[:]
-                    tmp.tstep = 2.0**(-block_level)
-                    at_level = (block_level == next_level)
-                    obj_at_level = tmp[np.where(at_level)]
-                    particles_at_level = Particles()
-                    particles_at_level.set_members(obj_at_level)
-                    if has_level:
-                        level1, particles1 = self.block[level_index]
-                        if particles1[key]:
-                            arr = np.append(particles1[key].to_cmpd_struct(),
-                                            obj_at_level.to_cmpd_struct())
-                            particles1[key] = obj.__class__()
-                            particles1[key].from_cmpd_struct(arr)
-                        else:
-                            particles1[key] = obj_at_level
-                    else:
-                        self.block.append((next_level, particles_at_level))
-                    obj_list = tmp.to_cmpd_struct()[np.where(~at_level)]
-                    particles0[key] = obj.__class__()
-                    particles0[key].from_cmpd_struct(obj_list)
-        self.remove_empty_levels()
-
-
-
-    def up_level(self, idx):
-        level0, particles0 = self.block[:][idx]
-        self.change_level(idx, +1)
-        print(indent*(level0-4),
-              'Up from '+str(level0)+' to '+str(level0+1))
-
-
-
-    def down_level(self, idx):
-        level0, particles0 = self.block[:][idx]
-        self.change_level(idx, -1)
-        print(indent*(level0-1-4),
-              'Down from '+str(level0)+' to '+str(level0-1))
-
-
-
-    def step(self, idx=0):
-        """
-
-        """
-        nextidx = idx + 1
-
-        self.drift(self.block[idx])
-        self.kick(self.block[idx])
-
-        if (nextidx < self.block_depth):
-            for i in range(2**(self.block[nextidx][0]-self.block[idx][0]-1)):
-                self.step(nextidx)
-#                self.up_level(nextidx)
-#                if (nextidx+1 < self.block_depth):
-#                    self.down_level(nextidx+1)
-
-        self.force(self.block[idx])
-
-        if (nextidx < self.block_depth):
-            for i in range(2**(self.block[nextidx][0]-self.block[idx][0]-1)):
-                self.step(nextidx)
-#                self.up_level(nextidx)
-#                if (nextidx+1 < self.block_depth):
-#                    self.down_level(nextidx+1)
-
-        self.kick(self.block[idx])
-        self.drift(self.block[idx])
-
-#        for item in self.block:
-#            print(str(item[0])+':', len(item[1]['body']))
-
-#        if (idx == 0):
-
-        self.up_level(idx)
-        if (nextidx < self.block_depth):
-            self.down_level(nextidx)
-
-#        self.up_level(idx)
-
-#        for item in self.block:
-#            print(str(item[0])+':', len(item[1]['body']))
-
-        if idx == 0:
-            self.time += 2*2.0**(-self.block[0][0])
 
 
 

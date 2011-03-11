@@ -5,7 +5,7 @@
 
 """
 
-from .block import (Block, BlockStep, BlockStep2)
+from .block import (Block, BlockStep)
 from .leapfrog import LeapFrog
 
 ########## end of file ##########

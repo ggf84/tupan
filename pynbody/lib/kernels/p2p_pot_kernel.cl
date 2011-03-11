@@ -41,11 +41,12 @@ REAL p2p_pot_kernel_core(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
 __kernel void p2p_pot_kernel(const uint ni,
                              const uint nj,
                              __global const REAL4 *ipos,
+                             __global const REAL4 *ivel,
                              __global const REAL4 *jpos,
-                             __global const REAL *jmass,
+                             __global const REAL4 *jvel,
                              __global REAL *ipot,
                              __local REAL4 *sharedPos,
-                             __local REAL *sharedMass)
+                             __local REAL4 *sharedVel)
 {
     uint tid = get_local_id(0);
     uint gid = get_global_id(0) * IUNROLL;
@@ -64,18 +65,18 @@ __kernel void p2p_pot_kernel(const uint ni,
 
         uint jdx = min(tile * localDim + tid, nj-1);
         sharedPos[tid] = jpos[jdx];
-        sharedMass[tid] = jmass[jdx];
+        sharedVel[tid] = jvel[jdx];
 
         barrier(CLK_LOCAL_MEM_FENCE);
         for (uint j = 0; j < localDim; ) {
             for (uint jj = j; jj < j + JUNROLL; ++jj) {
                REAL4 otherPos = sharedPos[jj];
-               REAL otherMass = sharedMass[jj];
+               REAL4 otherVel = sharedVel[jj];
                for (uint ii = 0; ii < IUNROLL; ++ii) {
                    myPot[ii] = p2p_pot_kernel_core(myPot[ii],
                                                    myPos[ii],
                                                    otherPos,
-                                                   otherMass);
+                                                   otherVel.w);
                }
             }
             j += JUNROLL;
@@ -85,17 +86,17 @@ __kernel void p2p_pot_kernel(const uint ni,
 
     uint jdx = min(tile * localDim + tid, nj-1);
     sharedPos[tid] = jpos[jdx];
-    sharedMass[tid] = jmass[jdx];
+    sharedVel[tid] = jvel[jdx];
 
     barrier(CLK_LOCAL_MEM_FENCE);
     for (uint j = 0; j < nj - (tile * localDim); ++j) {
         REAL4 otherPos = sharedPos[j];
-        REAL otherMass = sharedMass[j];
+        REAL4 otherVel = sharedVel[j];
         for (uint ii = 0; ii < IUNROLL; ++ii) {
             myPot[ii] = p2p_pot_kernel_core(myPot[ii],
                                             myPos[ii],
                                             otherPos,
-                                            otherMass);
+                                            otherVel.w);
         }
     }
     barrier(CLK_LOCAL_MEM_FENCE);
