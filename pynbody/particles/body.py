@@ -9,7 +9,7 @@ from __future__ import print_function
 import math
 import numpy as np
 from collections import namedtuple
-from pbase import Pbase
+from pynbody.pbase import Pbase
 try:
     from pynbody.lib import (p2p_acc_kernel, p2p_pot_kernel)
     HAVE_CL = True
@@ -33,7 +33,68 @@ class Bodies2(Pbase):
         Pbase.__init__(self, dtype)
 
 
-    # gravity methods
+    def get_mass(self):
+        return np.sum(self.mass)
+
+
+    # Momentum methods
+
+    def get_mass_mom(self):     # moment of inertia
+        return np.sum(self.mass * (self.pos**2).sum(1))
+
+    def get_linear_mom(self):
+        return (self.mass * self.vel.T).sum(1)
+
+    def get_angular_mom(self):
+        return (self.mass * np.cross(self.pos, self.vel).T).sum(1)
+
+    def get_angular_mom_squared(self):
+        amom = self.get_angular_mom()
+        return np.dot(amom, amom)
+
+
+    # Center of Mass methods
+
+    def get_rCoMass(self):
+        return (self.mass * self.pos.T).sum(1) / self.get_mass()
+
+    def get_vCoMass(self):
+        return (self.mass * self.vel.T).sum(1) / self.get_mass()
+
+    def reset_CoMass(self):
+        self.pos -= self.get_rCoMass()
+        self.vel -= self.get_vCoMass()
+
+
+    # Energy methods
+
+    def get_ekin(self):
+        """get the bodies' total kinetic energy"""
+        return 0.5 * np.sum(self.mass * (self.vel**2).sum(1))
+
+    def get_epot(self):
+        """get the bodies' total potential energy"""
+        return 0.5 * np.sum(self.mass * self.phi)
+
+    def get_energies(self):
+        ekin = self.get_ekin()
+        epot = self.get_epot()
+        etot = ekin + epot
+        Energy = namedtuple('Energy', ['kin', 'pot', 'tot'])
+        energy = Energy(ekin, epot, etot)
+        return energy
+
+
+    # Evolve methods
+
+    def drift(self, tau):
+        self.pos += tau * self.vel
+
+    def kick(self, tau):
+        self.vel += tau * self.acc
+
+
+    # Gravity methods
 
     def set_phi(self, objs):
         """
@@ -112,58 +173,6 @@ class Bodies2(Pbase):
         self.stepdens[:,0] = np.sqrt(_acc[:,-1]/len(objs))
 
 
-
-    # energy methods
-
-    def get_ekin(self):
-        """get the bodies' total kinetic energy"""
-        return 0.5 * np.sum(self.mass * (self.vel**2).T)
-
-    def get_epot(self):
-        """get the bodies' total potential energy"""
-        return 0.5 * np.sum(self.mass * self.phi)
-
-    def get_energies(self):
-        ekin = self.get_ekin()
-        epot = self.get_epot()
-        etot = ekin + epot
-        Energy = namedtuple('Energy', ['kin', 'pot', 'tot'])
-        energy = Energy(ekin, epot, etot)
-        return energy
-
-    # CoM methods
-
-    def get_rCoM(self):
-        return (self.mass * self.pos.T).sum(1) / np.sum(self.mass)
-
-    def get_vCoM(self):
-        return (self.mass * self.vel.T).sum(1) / np.sum(self.mass)
-
-    def reset_CoM(self):
-        self.pos -= self.get_rCoM()
-        self.vel -= self.get_vCoM()
-
-    def shift_CoM(self, rshift=None, vshift=None):
-        if rshift:
-            self.pos += rshift
-        if vshift:
-            self.vel += vshift
-
-    # momentum methods
-
-    def get_linear_mom(self):
-        return (self.mass * self.vel.T).sum(1)
-
-    def get_angular_mom(self):
-        return (self.mass * np.cross(self.pos, self.vel).T).sum(1)
-
-    # evolve methods
-
-    def drift(self, tau):
-        self.pos += tau * self.vel
-
-    def kick(self, tau):
-        self.vel += tau * self.acc
 
 
 
