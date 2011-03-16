@@ -19,7 +19,7 @@ if __name__ == "__main__":
     from pynbody.particles import (Particles, BlackHole)
 
 
-    numBodies = 8
+    numBodies = 256
     p = Plummer(numBodies, seed=1)
     p.make_plummer()
     p.bodies.set_acc(p.bodies)
@@ -46,17 +46,17 @@ if __name__ == "__main__":
 
 
 
-    particles['body'].eps2.fill(0.0015625)
-#    particles['body'].eps2.fill(0.5*((4.0/numBodies)**2))
-    particles['body'].vel.fill(0.0)
+#    particles['body'].eps2.fill(0.0015625)
+    particles['body'].eps2.fill(0.5*((4.0/numBodies)**2))
+#    particles['body'].vel.fill(0.0)
     particles['body'].set_phi(particles['body'])
     particles['body'].set_acc(particles['body'])
     particles['body'].stepdens[:,1] = particles['body'].stepdens[:,0].copy()
 
 
-#    x = particles['body'].pos[:,0]
-#    y = particles['body'].pos[:,1]
-#    plot_coords(x, y, './png/p0.png')
+    x = particles['body'].pos[:,0]
+    y = particles['body'].pos[:,1]
+    plot_coords(x, y, './png/p0.png')
 
 
     e0 = particles['body'].get_ekin()+particles['body'].get_epot()
@@ -66,9 +66,9 @@ if __name__ == "__main__":
 
 
 
-#    leapFrog = LeapFrog(0.0, 2.0**(-9), particles)
+#    leapFrog = LeapFrog(0.0, 2.0**(-7), particles)
 #    i = 0
-#    while leapFrog.time < 4.0:
+#    while leapFrog.time < 64.0:
 #        i += 1
 #        tout = +leapFrog.time
 #        while leapFrog.time-tout < 0.03125:

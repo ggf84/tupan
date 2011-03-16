@@ -42,17 +42,17 @@ REAL4 p2p_acc_kernel_core(REAL4 acc, REAL4 bip, REAL4 biv, REAL4 bjp, REAL4 bjv)
 
     REAL rinv = rsqrt(dr2 + dr.w);                                   // 3 FLOPs
     rinv = (dr2 ? rinv:0);
-    REAL r3inv = rinv * rinv * rinv;                                 // 2 FLOPs
+    REAL r3inv = rinv * rinv;                                        // 1 FLOPs
 
     REAL e = 0.5 * dv2 + dv.w * rinv;                                // 3 FLOPs
-    acc.w += (e * e * e) / (dv.w * dv.w);                            // 5 FLOPs
+    acc.w += e * r3inv;                                              // 2 FLOPs
 
-    r3inv *= bjv.w;                                                  // 1 FLOPs
+    r3inv *= bjv.w * rinv;                                           // 2 FLOPs
     acc.x -= r3inv * dr.x;                                           // 2 FLOPs
     acc.y -= r3inv * dr.y;                                           // 2 FLOPs
     acc.z -= r3inv * dr.z;                                           // 2 FLOPs
     return acc;
-}   // Total flop count: 38
+}   // Total flop count: 35
 
 
 __kernel void p2p_acc_kernel(const uint ni,

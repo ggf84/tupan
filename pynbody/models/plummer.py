@@ -6,13 +6,12 @@
 """
 
 from __future__ import print_function
-import numpy as np
 import random
 import math
 
 from pynbody.lib.decorators import selftimer
-from pynbody.io import HDF5IO
 from pynbody.particles import (Body, Particles)
+from pynbody.io import HDF5IO
 
 
 def scale_mass(bodies, m_scale):
@@ -60,9 +59,8 @@ class Plummer(object):
     def __init__(self, num, mfrac=0.999, seed=None):
         self.num = num
         self.mfrac = mfrac
-        self.bodies = Body()
+        self.bodies = Body(num)
         random.seed(seed)
-        np.random.seed(seed)
 
     def set_mass(self):
         return 1.0 / self.num   # equal masses
@@ -93,45 +91,29 @@ class Plummer(object):
         vz = velocity * math.cos(theta)                  # g = 2*(1-q)
         return [vx, vy, vz]                              # g = [0, 3]
 
+    @selftimer
     def set_bodies(self):
         """  """
-        @selftimer
-        def gen_bodies(iarray, irandarray):
-            def gen_body(i, irand):
-                b = np.zeros(1, dtype=self.bodies._dtype)
-                b['index'] = i
-                b['mass'] = self.set_mass()
-                b['pos'] = self.set_pos(irand)
-                return b[0]
-            # vectorize from pyfunc
-            _gen_bodies = np.frompyfunc(gen_body, 2, 1)
-            return np.asarray(_gen_bodies(iarray, irandarray).tolist(), dtype=self.bodies._dtype)
+        n = self.num
+        ilist = list(range(n))
 
-        @selftimer
-        def set_bodies_vel(potarray):
-            # vectorize from pyfunc
-            _set_bodies_vel = np.frompyfunc(self.set_vel, 1, 1)
-            return np.asarray(_set_bodies_vel(potarray).tolist(), dtype='f8')
-
-        ilist = np.arange(self.num)
-        irandlist = np.arange(self.num)
-        np.random.shuffle(irandlist)  # shuffle to avoid index-pos correlation
-
-        # generate bodies: set index, mass and pos
-        _bodies = gen_bodies(ilist, irandlist)
-        self.bodies.set_data(_bodies)
-
-        # calculate phi
+        # set index
+        self.bodies.index[:] = ilist
+        # set mass
+        self.bodies.mass[:] = [self.set_mass() for i in range(n)]
+        # set pos
+        self.bodies.pos[:] = [self.set_pos(i) for i in random.sample(ilist,n)]
+        # set phi
         self.bodies.set_phi(self.bodies)
-
         # set vel
-        self.bodies.vel[:] = set_bodies_vel(self.bodies.phi)
+        self.bodies.vel[:] = [self.set_vel(p) for p in self.bodies.phi]
 
 
     def make_plummer(self):
         self.set_bodies()
         self.bodies.reset_center_of_mass()
         scale_to_nbody_units(self.bodies)
+
 
     def write_snapshot(self):
         data = Particles()

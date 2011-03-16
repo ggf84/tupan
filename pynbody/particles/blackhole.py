@@ -15,11 +15,11 @@ class BlackHole(Pbase):
     """
     A base class for BlackHole-type particles
     """
-    def __init__(self):
+    def __init__(self, numobjs=0):
         dtype = [('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),   # eps2 -> radius
                  ('phi', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
                  ('vel', '3f8'), ('acc', '3f8'), ('spin', '3f8')]
-        Pbase.__init__(self, dtype)
+        Pbase.__init__(self, numobjs, dtype)
 
 
 

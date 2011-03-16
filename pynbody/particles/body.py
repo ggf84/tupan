@@ -26,11 +26,11 @@ class Body(Pbase):
     """
     A base class for Body-type particles
     """
-    def __init__(self):
+    def __init__(self, numobjs=0):
         dtype = [('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),   # eps2 -> radius
                  ('phi', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
                  ('vel', '3f8'), ('acc', '3f8')]
-        Pbase.__init__(self, dtype)
+        Pbase.__init__(self, numobjs, dtype)
 
 
     def get_mass(self):
@@ -67,6 +67,17 @@ class Body(Pbase):
 
 
     # Energy methods
+
+    def ekin(self):
+        return 0.5 * self.mass * (self.vel**2).sum(1)
+
+    def epot(self):
+        return self.mass * self.phi
+
+    def etot(self):
+        ekin = self.ekin()
+        epot = self.epot()
+        return ekin + epot
 
     def get_ekin(self):
         """get the bodies' total kinetic energy"""
@@ -151,10 +162,10 @@ class Body(Pbase):
                         ds2 = np.dot(dpos, dpos) + eps2
                         dv2 = np.dot(dvel, dvel)
                         rinv = math.sqrt(1.0 / ds2)
-                        r3inv = rinv * rinv * rinv
+                        r3inv = rinv * rinv
                         e = 0.5*dv2 + M*rinv
-                        iacc[3] += (e*e*e)/(M*M)
-                        r3inv *= bj['mass']
+                        iacc[3] += e * r3inv
+                        r3inv *= bj['mass'] * rinv
                         iacc[0:3] -= r3inv * dpos
                 _acc.append(iacc)
             return np.asarray(_acc)
@@ -171,10 +182,10 @@ class Body(Pbase):
                 ds2 = np.square(dpos).sum(1) + eps2
                 dv2 = np.square(dvel).sum(1)
                 rinv = np.sqrt(1.0 / ds2)
-                r3inv = rinv * rinv * rinv
+                r3inv = rinv * rinv
                 e = 0.5*dv2 + M*rinv
-                _acc[i][3] = np.sum((e*e*e)/(M*M))
-                r3inv *= bj.mass
+                _acc[i][3] = np.sum(e * r3inv)
+                r3inv *= bj.mass * rinv
                 _acc[i][:3] = -(r3inv * dpos.T).sum(1)
             return _acc
 
@@ -192,7 +203,7 @@ class Body(Pbase):
 #        print(_acc)
 
         self.acc[:] = _acc[:,:3]
-        self.stepdens[:,0] = np.sqrt(_acc[:,3]/len(objs))
+        self.stepdens[:,0] = np.sqrt(_acc[:,3]/(len(objs)-1))
 
 
 

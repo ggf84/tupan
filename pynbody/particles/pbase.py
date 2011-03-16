@@ -15,8 +15,8 @@ class Pbase(object):
     A base class implementing common functionalities for all types of particles.
     """
 
-    def __init__(self, dtype):
-        self._data = np.zeros(10, dtype=dtype)
+    def __init__(self, numobjs, dtype):
+        self._data = np.zeros(numobjs, dtype=dtype)
         self._dtype = self._data.dtype
         for attr in self._data.dtype.names:
             item = self._data[attr]

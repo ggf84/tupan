@@ -77,7 +77,7 @@ class Block(object):
                 obj0.stepdens[:,0] = (mid_stepdens**2) / prev_stepdens
                 obj0.stepdens[:,1] = (obj0.stepdens[:,0]**2) / mid_stepdens
 
-#                print('level: {0}, len: {1}'.format(self.level, len(obj0)))
+                print('level: {0}, len: {1}'.format(self.level, len(obj0)))
 
 
 
