@@ -16,23 +16,23 @@ def plot_coords(x, y, fname):
 
 if __name__ == "__main__":
     from pynbody.models import Plummer
-    from pynbody.particles import (Particles, BlackHoles)
+    from pynbody.particles import (Particles, BlackHole)
 
 
     numBodies = 8
     p = Plummer(numBodies, seed=1)
     p.make_plummer()
-    p.bodies.calc_acc(p.bodies)
+    p.bodies.set_acc(p.bodies)
     particles = Particles()
     particles.set_members(p.bodies)
 
 
-#    # BlackHoles
+#    # BlackHole
 #    p = Plummer(3, seed=1)
 #    p.make_plummer()
 #    p.bodies.calc_acc(p.bodies)
 
-#    bhdata = BlackHoles()
+#    bhdata = BlackHole()
 #    bhdata.fromlist([tuple(b)+([0.0, 0.0, 0.0],) for b in p.bodies])
 
 #    particles.set_members(bhdata)
@@ -46,12 +46,12 @@ if __name__ == "__main__":
 
 
 
-#    particles['body'].eps2.fill(0.0015625)
-    particles['body'].eps2.fill(0.5*((4.0/numBodies)**2))
-#    particles['body'].vel.fill(0.0)
-    particles['body'].calc_pot(particles['body'])
-    particles['body'].calc_acc(particles['body'])
-    particles['body'].next_step_density = +particles['body'].curr_step_density
+    particles['body'].eps2.fill(0.0015625)
+#    particles['body'].eps2.fill(0.5*((4.0/numBodies)**2))
+    particles['body'].vel.fill(0.0)
+    particles['body'].set_phi(particles['body'])
+    particles['body'].set_acc(particles['body'])
+    particles['body'].stepdens[:,1] = particles['body'].stepdens[:,0].copy()
 
 
 #    x = particles['body'].pos[:,0]
@@ -60,13 +60,13 @@ if __name__ == "__main__":
 
 
     e0 = particles['body'].get_ekin()+particles['body'].get_epot()
-    com0 = particles['body'].get_rCoM()
+    com0 = particles['body'].get_Rcenter_of_mass()
     linmom0 = particles['body'].get_linear_mom()
     angmom0 = particles['body'].get_angular_mom()
 
 
 
-#    leapFrog = LeapFrog(0.0, 2.0**(-7), particles.copy())
+#    leapFrog = LeapFrog(0.0, 2.0**(-9), particles)
 #    i = 0
 #    while leapFrog.time < 4.0:
 #        i += 1
@@ -74,16 +74,19 @@ if __name__ == "__main__":
 #        while leapFrog.time-tout < 0.03125:
 #            leapFrog.step()
 #        p = leapFrog.particles.copy()
-#        x = p['body'].pos[:,0]
-#        y = p['body'].pos[:,1]
-#        plot_coords(x, y, './png/p'+str(i)+'.png')
-#        p['body'].calc_pot(p['body'])
+##        x = p['body'].pos[:,0]
+##        y = p['body'].pos[:,1]
+##        plot_coords(x, y, './png/p'+str(i)+'.png')
+#        p['body'].set_phi(p['body'])
 #        e1 = p['body'].get_ekin()+p['body'].get_epot()
 #        linmom1 = p['body'].get_linear_mom()
 #        angmom1 = p['body'].get_angular_mom()
+
+#        plot_coords(leapFrog.time, (e1-e0)/e0, './png/p'+str(i)+'.png')
+
 #        print('{0}: {1} {2} {3}\n{4}\n{5}'.format(leapFrog.time, e0, e1, (e1-e0)/e0, linmom1-linmom0, angmom1-angmom0))
 #    p = leapFrog.particles.copy()
-#    p['body'].calc_pot(p.copy()['body'])
+#    p['body'].set_phi(p.copy()['body'])
 #    e1 = p['body'].get_ekin()+p['body'].get_epot()
 #    linmom1 = p['body'].get_linear_mom()
 #    angmom1 = p['body'].get_angular_mom()
@@ -93,7 +96,11 @@ if __name__ == "__main__":
 
 
 
-    block = BlockStep(1.0/32, particles)
+    block = BlockStep(1.0/128, particles)
+
+#    block.print_block()
+#    print(block.gather().copy())
+
     i = 0
     while block.time < 4.0:
         i += 1
@@ -101,22 +108,22 @@ if __name__ == "__main__":
         while block.time-tout < 0.03125:
             block.step()
         p = block.gather().copy()
-#        x = p['body'].pos[:,0]
-#        y = p['body'].pos[:,1]
-#        plot_coords(x, y, './png/p'+str(i)+'.png')
-        p['body'].calc_pot(p['body'])
+        x = p['body'].pos[:,0]
+        y = p['body'].pos[:,1]
+        plot_coords(x, y, './png/p'+str(i)+'.png')
+        p['body'].set_phi(p['body'])
         e1 = p['body'].get_ekin()+p['body'].get_epot()
-        com1 = p['body'].get_rCoM()
+        com1 = p['body'].get_Rcenter_of_mass()
         linmom1 = p['body'].get_linear_mom()
         angmom1 = p['body'].get_angular_mom()
 
-        plot_coords(block.time, (e1-e0)/e0, './png/p'+str(i)+'.png')
+#        plot_coords(block.time, (e1-e0)/e0, './png/p'+str(i)+'.png')
 
         print('{0}: {1} {2} {3}\n{4}\n{5}\n{6}'.format(block.time, e0, e1, (e1-e0)/e0, com1-com0, linmom1-linmom0, angmom1-angmom0))
     p = block.gather().copy()
-    p['body'].calc_pot(p.copy()['body'])
+    p['body'].set_phi(p.copy()['body'])
     e1 = p['body'].get_ekin()+p['body'].get_epot()
-    com1 = p['body'].get_rCoM()
+    com1 = p['body'].get_Rcenter_of_mass()
     linmom1 = p['body'].get_linear_mom()
     angmom1 = p['body'].get_angular_mom()
     print('{0}: {1} {2} {3}\n{4}\n{5}\n{6}'.format(block.time, e0, e1, (e1-e0)/e0, com1-com0, linmom1-linmom0, angmom1-angmom0))

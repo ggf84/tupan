@@ -9,7 +9,7 @@ from __future__ import print_function
 import math
 import numpy as np
 from collections import namedtuple
-from pynbody.pbase import Pbase
+from pynbody.particles.pbase import Pbase
 try:
     from pynbody.lib import (p2p_acc_kernel, p2p_pot_kernel)
     HAVE_CL = True
@@ -22,7 +22,7 @@ except:
 
 
 
-class Bodies2(Pbase):
+class Body(Pbase):
     """
     A base class for Body-type particles
     """
@@ -55,15 +55,15 @@ class Bodies2(Pbase):
 
     # Center of Mass methods
 
-    def get_rCoMass(self):
+    def get_Rcenter_of_mass(self):
         return (self.mass * self.pos.T).sum(1) / self.get_mass()
 
-    def get_vCoMass(self):
+    def get_Vcenter_of_mass(self):
         return (self.mass * self.vel.T).sum(1) / self.get_mass()
 
-    def reset_CoMass(self):
-        self.pos -= self.get_rCoMass()
-        self.vel -= self.get_vCoMass()
+    def reset_center_of_mass(self):
+        self.pos -= self.get_Rcenter_of_mass()
+        self.vel -= self.get_Vcenter_of_mass()
 
 
     # Energy methods
@@ -100,7 +100,8 @@ class Bodies2(Pbase):
         """
         set the all bodies' gravitational potential due to other bodies
         """
-        def p2p_pot_pyrun(self, objs):
+        # double python's for
+        def p2p_pot_pyrun_(self, objs):  # 512:5.48938   1024:22.4172
             _phi = []
             for bi in self:
                 iphi = 0.0
@@ -111,13 +112,23 @@ class Bodies2(Pbase):
                         ds2 = np.dot(dpos, dpos) + eps2
                         iphi -= bj['mass'] / math.sqrt(ds2)
                 _phi.append(iphi)
+            return np.asarray(_phi)
+
+        # python's for plus numpy
+        def p2p_pot_pyrun(self, objs):  # 512:0.51603   1024:1.74731
+            _phi = np.empty_like(self.phi)
+            for (i, bi) in zip(range(len(self)), self):
+                bj = objs[np.where(objs.index != bi['index'])]
+                dpos = bi['pos'] - bj.pos
+                eps2 = bi['eps2'] + bj.eps2
+                ds2 = np.square(dpos).sum(1) + eps2
+                _phi[i] = -np.sum(bj.mass / np.sqrt(ds2))
             return _phi
 
         if HAVE_CL:
             _phi = p2p_pot_kernel.run(self, objs)
         else:
             _phi = p2p_pot_pyrun(self, objs)
-            _phi = np.asarray(_phi)
 
 #        print(_phi)
 
@@ -126,7 +137,8 @@ class Bodies2(Pbase):
 
     def set_acc(self, objs):
         """set the all bodies' acceleration due to other bodies"""
-        def p2p_acc_pyrun(self, objs):
+        # double python's for
+        def p2p_acc_pyrun_(self, objs): # 512:13.6872   1024:53.6422
             _acc = []
             for bi in self:
                 iacc = np.zeros(4, dtype=np.float64)
@@ -136,23 +148,34 @@ class Bodies2(Pbase):
                         eps2 = bi['eps2'] + bj['eps2']
                         dvel = bi['vel'] - bj['vel']
                         M = bi['mass'] + bj['mass']
-
                         ds2 = np.dot(dpos, dpos) + eps2
                         dv2 = np.dot(dvel, dvel)
-
                         rinv = math.sqrt(1.0 / ds2)
                         r3inv = rinv * rinv * rinv
-
-#                        iacc[3] += r3inv
-
                         e = 0.5*dv2 + M*rinv
                         iacc[3] += (e*e*e)/(M*M)
-
-#                        iacc[3] -= rinv * bj['mass']
-
                         r3inv *= bj['mass']
                         iacc[0:3] -= r3inv * dpos
                 _acc.append(iacc)
+            return np.asarray(_acc)
+
+        # python's for plus numpy
+        def p2p_acc_pyrun(self, objs):  # 512:0.598859   1024:1.97784
+            _acc = np.empty((len(self.acc),4))
+            for (i, bi) in zip(range(len(self)), self):
+                bj = objs[np.where(objs.index != bi['index'])]
+                dpos = bi['pos'] - bj.pos
+                eps2 = bi['eps2'] + bj.eps2
+                dvel = bi['vel'] - bj.vel
+                M = bi['mass'] + bj.mass
+                ds2 = np.square(dpos).sum(1) + eps2
+                dv2 = np.square(dvel).sum(1)
+                rinv = np.sqrt(1.0 / ds2)
+                r3inv = rinv * rinv * rinv
+                e = 0.5*dv2 + M*rinv
+                _acc[i][3] = np.sum((e*e*e)/(M*M))
+                r3inv *= bj.mass
+                _acc[i][:3] = -(r3inv * dpos.T).sum(1)
             return _acc
 
         if HAVE_CL:
@@ -164,13 +187,12 @@ class Bodies2(Pbase):
 #            print('kernel-run Gflops/s: {0:g}'.format(gflops_count/elapsed))
         else:
             _acc = p2p_acc_pyrun(self, objs)
-            _acc = np.asarray(_acc)
 
 #        print('acc - '*10)
 #        print(_acc)
 
-        self.acc[:] = _acc[:,:-1]
-        self.stepdens[:,0] = np.sqrt(_acc[:,-1]/len(objs))
+        self.acc[:] = _acc[:,:3]
+        self.stepdens[:,0] = np.sqrt(_acc[:,3]/len(objs))
 
 
 
@@ -189,9 +211,7 @@ class Bodies2(Pbase):
 
 
 
-
-
-class Bodies(object):
+class Bodies2(object):
     """A base class for Body-type particles"""
 
     def __init__(self):
@@ -294,7 +314,7 @@ class Bodies(object):
             _pot = p2p_pot_pyrun(self, bodies)
             _pot = np.asarray(_pot)
 
-#        print(_pot)
+        print(_pot)
 
         self.pot = _pot
 
@@ -342,8 +362,8 @@ class Bodies(object):
             _acc = p2p_acc_pyrun(self, bodies)
             _acc = np.asarray(_acc)
 
-#        print('acc - '*10)
-#        print(_acc)
+        print('acc - '*10)
+        print(_acc)
 
         self.acc = _acc[:,:-1]
         self.curr_step_density = np.sqrt(_acc[:,-1]/len(bodies))

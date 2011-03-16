@@ -35,16 +35,16 @@ class HDF5IO(object):
                 subgrp = snap.require_group(k)
                 if v:
                     subgrp.attrs['num_of_objs'] = pickle.dumps(len(v))
-                    subgrp.attrs['obj_dtype'] = pickle.dumps(v.dtype)
+                    subgrp.attrs['obj_dtype'] = pickle.dumps(v._dtype)
                     subgrp.attrs['obj_class'] = pickle.dumps(v.__class__)
                     dset = subgrp.require_dataset(dset_name,
                                                   (len(v),self.slice_size),
-                                                  dtype=v.dtype,
+                                                  dtype=v._dtype,
                                                   maxshape=(None,None),
                                                   chunks=True,
                                                   compression='gzip',
                                                   shuffle=True)
-                    dset[:,slice_id] = v.to_cmpd_struct()
+                    dset[:,slice_id] = v.get_data()
 
 
     @selftimer
@@ -67,7 +67,7 @@ class HDF5IO(object):
                                              (num_of_objs, self.slice_size),
                                              dtype=obj_dtype)
                     members = obj_class()
-                    members.fromlist(dset[:,slice_id])
+                    members.set_data(dset[:,slice_id])
                     data.set_members(members)
         return data
 

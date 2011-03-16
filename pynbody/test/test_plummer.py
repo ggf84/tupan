@@ -14,7 +14,7 @@ if __name__ == "__main__":
         p.write_snapshot()
 
         bi = p.bodies
-        bi[:].calc_acc(bi)
+        bi.set_acc(bi)
 
     main()
 
@@ -24,8 +24,8 @@ if __name__ == "__main__":
 #    p = Plummer(3, seed=1)
 #    p.make_plummer()
 
-#    from pynbody.particles import BlackHoles
-#    bhdata = BlackHoles()
+#    from pynbody.particles import BlackHole
+#    bhdata = BlackHole()
 #    bhdata.fromlist([tuple(b)+([0.0, 0.0, 0.0],) for b in p.bodies])
 
 #    from pynbody.io import HDF5IO

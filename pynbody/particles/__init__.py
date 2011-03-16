@@ -10,8 +10,8 @@ This package implements base classes for particle types in the simulation.
 import sys
 import traceback
 import numpy as np
-from .body import Bodies
-from .blackhole import BlackHoles
+from .body import Body
+from .blackhole import BlackHole
 from .sph import Sph
 
 
@@ -52,7 +52,9 @@ class Particles(dict):
         for (key, obj) in data.iteritems():
             if obj:
                 if self[key]:
-                    self[key] = self[key].concatenate(obj)
+                    tmp = self[key][:]
+                    tmp.append(obj)
+                    self[key] = tmp[:]
                 else:
                     self[key] = obj
 
@@ -62,9 +64,9 @@ class Particles(dict):
         Set particle member types.
         """
         try:
-            if isinstance(data, Bodies):
+            if isinstance(data, Body):
                 self['body'] = data
-            elif isinstance(data, BlackHoles):
+            elif isinstance(data, BlackHole):
                 self['blackhole'] = data
             elif isinstance(data, Sph):
                 self['sph'] = data

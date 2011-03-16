@@ -17,6 +17,7 @@ class Pbase(object):
 
     def __init__(self, dtype):
         self._data = np.zeros(10, dtype=dtype)
+        self._dtype = self._data.dtype
         for attr in self._data.dtype.names:
             item = self._data[attr]
             setattr(self, attr, item)
@@ -35,8 +36,8 @@ class Pbase(object):
 
 
     def __getitem__(self, index):
-        if not isinstance(index, slice):
-            index = slice(index, index+1)
+#        if not isinstance(index, slice):
+#            index = slice(index, index+1)
         s = self._data[index].copy()
         ret = self.__class__()
         ret.set_data(s)
@@ -54,9 +55,6 @@ class Pbase(object):
 
     def get_data(self):
         return self._data
-
-    def fromlist(self, data):   # XXX: is it needed?
-        self.set_data(np.asarray(data, dtype=self._data.dtype))
 
 
     def append(self, obj):

@@ -12,8 +12,7 @@ import math
 
 from pynbody.lib.decorators import selftimer
 from pynbody.io import HDF5IO
-from pynbody.particles import (Bodies, Particles)
-
+from pynbody.particles import (Body, Particles)
 
 
 def scale_mass(bodies, m_scale):
@@ -33,10 +32,9 @@ def scale_to_virial(bodies, ekin, epot, etot):
     scale_vel(bodies, math.sqrt(-0.25/etot))
 
 def scale_to_nbody_units(bodies):
-    scale_mass(bodies, 1.0/bodies.total_mass)
-    bodies.total_mass = 1.0
+    scale_mass(bodies, 1.0/bodies.get_mass())
 
-    bodies.calc_pot(bodies)
+    bodies.set_phi(bodies)
     ekin = bodies.get_ekin()
     epot = bodies.get_epot()
     etot = ekin + epot
@@ -44,7 +42,7 @@ def scale_to_nbody_units(bodies):
 
     scale_to_virial(bodies, ekin, epot, etot)
 
-    bodies.calc_pot(bodies)
+    bodies.set_phi(bodies)
     ekin = bodies.get_ekin()
     epot = bodies.get_epot()
     etot = ekin + epot
@@ -62,7 +60,7 @@ class Plummer(object):
     def __init__(self, num, mfrac=0.999, seed=None):
         self.num = num
         self.mfrac = mfrac
-        self.bodies = Bodies()
+        self.bodies = Body()
         random.seed(seed)
         np.random.seed(seed)
 
@@ -100,14 +98,14 @@ class Plummer(object):
         @selftimer
         def gen_bodies(iarray, irandarray):
             def gen_body(i, irand):
-                b = np.zeros(1, dtype=self.bodies.dtype)
+                b = np.zeros(1, dtype=self.bodies._dtype)
                 b['index'] = i
                 b['mass'] = self.set_mass()
                 b['pos'] = self.set_pos(irand)
                 return b[0]
             # vectorize from pyfunc
             _gen_bodies = np.frompyfunc(gen_body, 2, 1)
-            return _gen_bodies(iarray, irandarray).tolist()
+            return np.asarray(_gen_bodies(iarray, irandarray).tolist(), dtype=self.bodies._dtype)
 
         @selftimer
         def set_bodies_vel(potarray):
@@ -121,18 +119,18 @@ class Plummer(object):
 
         # generate bodies: set index, mass and pos
         _bodies = gen_bodies(ilist, irandlist)
-        self.bodies.fromlist(_bodies)
+        self.bodies.set_data(_bodies)
 
-        # calculate pot
-        self.bodies.calc_pot(self.bodies)
+        # calculate phi
+        self.bodies.set_phi(self.bodies)
 
         # set vel
-        self.bodies.vel = set_bodies_vel(self.bodies.pot)
+        self.bodies.vel[:] = set_bodies_vel(self.bodies.phi)
 
 
     def make_plummer(self):
         self.set_bodies()
-        self.bodies.reset_CoM()
+        self.bodies.reset_center_of_mass()
         scale_to_nbody_units(self.bodies)
 
     def write_snapshot(self):

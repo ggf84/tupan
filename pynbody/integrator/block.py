@@ -66,17 +66,16 @@ class Block(object):
             if obj0:
                 prev_acc = obj0.acc.copy()
                 mid_acc = np.zeros_like(obj0.acc)
-                prev_step_density = obj0.curr_step_density.copy()
-                mid_step_density = np.zeros_like(obj0.curr_step_density)
+                prev_stepdens = obj0.stepdens[:,0].copy()
+                mid_stepdens = np.zeros_like(obj0.stepdens[:,0])
                 for obj1 in all_particles.itervalues():
                     if obj1:
-                        obj0.calc_acc(obj1)
+                        obj0.set_acc(obj1)
                         mid_acc += obj0.acc
-                        mid_step_density += obj0.curr_step_density
-                obj0.acc = 2*mid_acc - prev_acc
-
-                obj0.curr_step_density = (mid_step_density**2) / prev_step_density
-                obj0.next_step_density = (obj0.curr_step_density**2) / mid_step_density
+                        mid_stepdens += obj0.stepdens[:,0]
+                obj0.acc[:] = 2*mid_acc - prev_acc
+                obj0.stepdens[:,0] = (mid_stepdens**2) / prev_stepdens
+                obj0.stepdens[:,1] = (obj0.stepdens[:,0]**2) / mid_stepdens
 
 #                print('level: {0}, len: {1}'.format(self.level, len(obj0)))
 
@@ -146,7 +145,7 @@ class BlockStep(object):
 
         """
         # Discretizes time steps in power-of-two
-        real_tstep = self.eta / obj.next_step_density
+        real_tstep = self.eta / obj.stepdens[:,1]
         power = (np.log2(real_tstep) - 1).astype(np.int)
         block_tstep = 2.0**power
 
@@ -225,9 +224,9 @@ class BlockStep(object):
         if sorting_by_index:
             for (key, obj) in particles.iteritems():
                 if obj:
-                    array = np.sort(obj.to_cmpd_struct(), order=['index'])
+                    array = np.sort(obj.get_data(), order=['index'])
                     particles[key] = obj.__class__()
-                    particles[key].from_cmpd_struct(array)
+                    particles[key].set_data(array)
         return particles
 
 
@@ -258,9 +257,9 @@ class BlockStep(object):
                     else:
                         new_block = Block(block.upper_level, block.time, particles_at_level)
                         block_list.append(new_block)
-                    obj_list = obj.to_cmpd_struct()[np.where(~at_level)]
+                    obj_list = obj.get_data()[np.where(~at_level)]
                     block.particles[key] = obj.__class__()
-                    block.particles[key].from_cmpd_struct(obj_list)
+                    block.particles[key].set_data(obj_list)
         return block_list
 
 
@@ -291,9 +290,9 @@ class BlockStep(object):
                     else:
                         new_block = Block(block.lower_level, block.time, particles_at_level)
                         block_list.append(new_block)
-                    obj_list = obj.to_cmpd_struct()[np.where(~at_level)]
+                    obj_list = obj.get_data()[np.where(~at_level)]
                     block.particles[key] = obj.__class__()
-                    block.particles[key].from_cmpd_struct(obj_list)
+                    block.particles[key].set_data(obj_list)
         return block_list
 
 
