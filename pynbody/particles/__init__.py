@@ -54,7 +54,7 @@ class Particles(dict):
                 if self[key]:
                     tmp = self[key][:]
                     tmp.append(obj)
-                    self[key] = tmp[:]
+                    self[key] = tmp
                 else:
                     self[key] = obj
 

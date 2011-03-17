@@ -77,7 +77,7 @@ class Block(object):
                 obj0.stepdens[:,0] = (mid_stepdens**2) / prev_stepdens
                 obj0.stepdens[:,1] = (obj0.stepdens[:,0]**2) / mid_stepdens
 
-                print('level: {0}, len: {1}'.format(self.level, len(obj0)))
+#                print('level: {0}, len: {1}'.format(self.level, len(obj0)))
 
 
 
@@ -150,8 +150,7 @@ class BlockStep(object):
         block_tstep = 2.0**power
 
         # Clamp block_tstep to range given by min_tstep, max_tstep.
-        block_tstep[np.where(block_tstep < self.min_tstep)] = self.min_tstep
-        block_tstep[np.where(block_tstep > self.max_tstep)] = self.max_tstep
+        block_tstep = block_tstep.clip(self.min_tstep, self.max_tstep)
 
         # Converts from block_tstep to block_level and returns
         return -np.log2(block_tstep).astype(np.int)
@@ -186,14 +185,17 @@ class BlockStep(object):
 
     @selftimer
     def interpolate(self, dt, block):
+        """
+
+        """
+        bstep = block.tstep
+        if dt < 0:
+            bstep *= -1
         particle = self.ParticlesClass()
         for (key, obj) in block.particles.iteritems():
             if obj:
                 particle[key] = obj[:]
-                if dt < 0:
-                    aux_vel = obj.vel - block.tstep * obj.acc
-                if dt > 0:
-                    aux_vel = obj.vel + block.tstep * obj.acc
+                aux_vel = obj.vel + bstep * obj.acc
                 particle[key].pos += dt * aux_vel
                 particle[key].vel += dt * obj.acc
         return particle
