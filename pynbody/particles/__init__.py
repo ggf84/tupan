@@ -23,12 +23,6 @@ class Particles(dict):
     This class holds the particle types in the simulation.
     """
 
-    def __new__(cls):
-        """
-        Constructor
-        """
-        return dict.__new__(cls)
-
     def __init__(self):
         """
         Initializer
@@ -47,12 +41,19 @@ class Particles(dict):
                 has_obj = True
         return has_obj
 
+    def copy(self):
+        ret = self.__class__()
+        for (key, obj) in self.iteritems():
+            if obj:
+                ret[key] = obj.copy()
+        return ret
 
     def append(self, data):
         for (key, obj) in data.iteritems():
             if obj:
                 if self[key]:
-                    tmp = self[key][:]
+#                    tmp = self[key][:]
+                    tmp = self[key].copy()
                     tmp.append(obj)
                     self[key] = tmp
                 else:

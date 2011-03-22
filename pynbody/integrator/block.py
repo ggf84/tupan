@@ -33,6 +33,7 @@ class Block(object):
         fmt = 'Block({0}, {1}, {2}, {3})'
         return fmt.format(self.level, self.tstep, self.time, self.particles)
 
+
     @selftimer
     def drift(self):
         """
@@ -44,6 +45,7 @@ class Block(object):
             if obj:
                 obj.drift(self.tstep)
 
+
     @selftimer
     def kick(self):
         """
@@ -54,6 +56,26 @@ class Block(object):
         for obj in self.particles.itervalues():
             if obj:
                 obj.kick(self.tstep)
+
+
+    @selftimer
+    def interpolated(self, at_time):
+        """
+
+        """
+        dt = at_time - self.time
+        if dt != 0:
+            btstep = -self.tstep if dt < 0 else self.tstep
+            particles = self.particles.copy()
+            for obj in particles.itervalues():
+                if obj:
+                    aux_acc = obj.acc
+                    aux_vel = obj.vel + btstep * aux_acc
+                    obj.pos += dt * aux_vel
+                    obj.vel += dt * aux_acc
+            return particles
+        return self.particles
+
 
     @selftimer
     def force(self, all_particles):
@@ -184,23 +206,6 @@ class BlockStep(object):
         return self.sorted_by_level(block_list)
 
     @selftimer
-    def interpolate(self, dt, block):
-        """
-
-        """
-        bstep = block.tstep
-        if dt < 0:
-            bstep *= -1
-        particle = self.ParticlesClass()
-        for (key, obj) in block.particles.iteritems():
-            if obj:
-                particle[key] = obj[:]
-                aux_vel = obj.vel + bstep * obj.acc
-                particle[key].pos += dt * aux_vel
-                particle[key].vel += dt * obj.acc
-        return particle
-
-    @selftimer
     def gather(self, block_list=None,
                interpolated_at_time=None,
                sorting_by_index=False):
@@ -213,11 +218,8 @@ class BlockStep(object):
         particles = self.ParticlesClass()
         if interpolated_at_time:
             for block in block_list:
-                dt = (interpolated_at_time - block.time)
-                if dt != 0:
-                    particles.append(self.interpolate(dt, block))
-                else:
-                    particles.append(block.particles)
+                pinterp = block.interpolated(interpolated_at_time)
+                particles.append(pinterp)
         else:
             for block in block_list:
                 particles.append(block.particles)

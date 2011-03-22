@@ -16,11 +16,15 @@ class Pbase(object):
     """
 
     def __init__(self, numobjs, dtype):
-        self._data = np.zeros(numobjs, dtype=dtype)
-        self._dtype = self._data.dtype
-        for attr in self._data.dtype.names:
-            item = self._data[attr]
-            setattr(self, attr, item)
+        self._dtype = dtype
+        self._data = None
+        if numobjs > 0:
+            self._data = np.zeros(numobjs, dtype)
+            fields = {}
+            for attr in self._dtype['names']:
+                fields[attr] = self._data[attr]
+            self.__dict__.update(fields)
+
 
     def __repr__(self):
         return '{0}({1})'.format(self.__class__.__name__, self._data)
@@ -43,19 +47,29 @@ class Pbase(object):
         ret.set_data(s)
         return ret
 
-    def __getattribute__(self, attr):
-        _data = object.__getattribute__(self, '_data')
-        if attr in _data.dtype.names:
-            return _data[attr]
-        return object.__getattribute__(self, attr)
+#    def __getattribute__(self, attr):
+#        _dtype = object.__getattribute__(self, '_dtype')
+#        if attr in _dtype['names']:
+#            _data = object.__getattribute__(self, '_data')
+#            return _data[attr]
+#        return object.__getattribute__(self, attr)
 
 
     def set_data(self, array):
         self._data = array
+        fields = {}
+        for attr in self._dtype['names']:
+            fields[attr] = self._data[attr]
+        self.__dict__.update(fields)
+
 
     def get_data(self):
         return self._data
 
+    def copy(self):
+        ret = self.__class__()
+        ret.set_data(self._data.copy())
+        return ret
 
     def append(self, obj):
         self.set_data(np.concatenate((self._data, obj._data)))

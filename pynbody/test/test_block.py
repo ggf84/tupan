@@ -19,7 +19,7 @@ if __name__ == "__main__":
     from pynbody.particles import (Particles, BlackHole)
 
 
-    numBodies = 128
+    numBodies = 1024
     p = Plummer(numBodies, seed=1)
     p.make_plummer()
     p.bodies.set_acc(p.bodies)
@@ -102,7 +102,7 @@ if __name__ == "__main__":
 #    print(block.gather())
 
     i = 0
-    while block.time < 16.0:
+    while block.time < 4.0:
         i += 1
         tout = +block.time
         while block.time-tout < 0.03125:
