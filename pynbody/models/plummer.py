@@ -115,10 +115,10 @@ class Plummer(object):
         scale_to_nbody_units(self.bodies)
 
 
-    def write_snapshot(self):
+    def write_snapshot(self, fname='plummer.hdf5'):
         data = Particles()
         data.set_members(self.bodies)
-        io = HDF5IO('plummer.hdf5')
+        io = HDF5IO(fname, 'w')
         io.write_snapshot(data)
 
 

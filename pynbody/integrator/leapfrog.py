@@ -8,6 +8,8 @@
 from __future__ import print_function
 import numpy as np
 
+from pynbody.lib.decorators import selftimer
+
 
 class LeapFrog(object):
     """
@@ -20,6 +22,13 @@ class LeapFrog(object):
         self.tstep = eta
         self.set_tstep()
 
+
+    @selftimer
+    def gather(self):
+        return self.particles
+
+
+    @selftimer
     def set_tstep(self):
         tstep = []
         for (key, obj) in self.particles.iteritems():
@@ -28,9 +37,11 @@ class LeapFrog(object):
                 tstep.append(np.min(real_tstep))
         power = int(np.log2(min(tstep)) - 1)
         self.tstep = 2.0**power
+        while (self.time+2*self.tstep)%(2*self.tstep) != 0:
+            self.tstep /= 2
 
 
-
+    @selftimer
     def drift(self):
         """
 
@@ -40,6 +51,7 @@ class LeapFrog(object):
                 obj.drift(self.tstep)
 
 
+    @selftimer
     def kick(self):
         """
 
@@ -49,6 +61,7 @@ class LeapFrog(object):
                 obj.kick(self.tstep)
 
 
+    @selftimer
     def force(self, all_particles):
         """
 
@@ -69,11 +82,12 @@ class LeapFrog(object):
                 obj0.stepdens[:,1] = (obj0.stepdens[:,0]**2) / mid_stepdens
 
 
+    @selftimer
     def step(self):
         self.time += self.tstep
         self.drift()
         self.kick()
-        self.force(self.particles)
+        self.force(self.gather())
         self.kick()
         self.drift()
         self.time += self.tstep

@@ -112,7 +112,7 @@ class BlockStep(object):
     """
 
     """
-    def __init__(self, eta, particles, time=0.0,
+    def __init__(self, time, eta, particles,
                  max_tstep=2.0**(-MIN_LEVEL),
                  min_tstep=2.0**(-MAX_LEVEL)):
         self.ParticlesClass = particles.__class__
@@ -162,7 +162,8 @@ class BlockStep(object):
         return block_list
 
     @selftimer
-    def calc_block_level(self, obj):
+    def calc_block_level(self, currtime, obj):
+#    def calc_block_level(self, obj):
         """
 
         """
@@ -173,6 +174,13 @@ class BlockStep(object):
 
         # Clamp block_tstep to range given by min_tstep, max_tstep.
         block_tstep = block_tstep.clip(self.min_tstep, self.max_tstep)
+
+        mod = (currtime+2*block_tstep)%(2*block_tstep)
+        is_ne_zero = (mod != 0)
+        while is_ne_zero.any():
+            block_tstep[np.where(is_ne_zero)] /= 2
+            mod = (currtime+2*block_tstep)%(2*block_tstep)
+            is_ne_zero = (mod != 0)
 
         # Converts from block_tstep to block_level and returns
         return -np.log2(block_tstep).astype(np.int)
@@ -187,7 +195,8 @@ class BlockStep(object):
                                1-np.log2(self.min_tstep).astype(np.int))
         for (key, obj) in particles.iteritems():
             if obj:
-                block_level = self.calc_block_level(obj)
+                block_level = self.calc_block_level(self.time, obj)
+#                block_level = self.calc_block_level(obj)
                 for level in allowed_levels:
                     has_level = (level == block_level)
                     if has_level.any():
@@ -243,7 +252,9 @@ class BlockStep(object):
 
         for (key, obj) in block.particles.iteritems():
             if obj:
-                block_level = self.calc_block_level(obj)
+                block_level = self.calc_block_level(block.time, obj)
+#                block_level = self.calc_block_level(obj)
+
                 where_gt_level = np.where(block_level > block.level)
                 block_level[where_gt_level] = block.upper_level
 
@@ -276,7 +287,9 @@ class BlockStep(object):
 
         for (key, obj) in block.particles.iteritems():
             if obj:
-                block_level = self.calc_block_level(obj)
+                block_level = self.calc_block_level(block.time, obj)
+#                block_level = self.calc_block_level(obj)
+
                 where_lt_level = np.where(block_level < block.level)
                 block_level[where_lt_level] = block.lower_level
 
@@ -308,17 +321,21 @@ class BlockStep(object):
         """
         new_block_list = self.up_level(block, block_list[:])
 
-        if (nextidx < len(block_list)):
-            nextblock = block_list[nextidx]
-            new_block_list = self.down_level(nextblock, new_block_list)
+        if (nextidx < len(new_block_list)):
+            nextblock = new_block_list[nextidx]
+#        if (nextidx < len(block_list)):
+#            nextblock = block_list[nextidx]
+            new_block_list = self.down_level(nextblock, new_block_list[:])
 
-        return self.sorted_by_level(self.remove_empty_blocks(new_block_list))
 
+        new_block_list = self.remove_empty_blocks(new_block_list)
+        new_block_list = self.sorted_by_level(new_block_list)
+        return new_block_list
 
 
 
     # TODO:
-    def step(self, idx=0):
+    def recursive_step(self, idx=0):
         """
 
         """
@@ -332,7 +349,7 @@ class BlockStep(object):
         if (nextidx < len(self.block_list)):
             while True:
                 nextblock = self.block_list[nextidx]
-                self.step(nextidx)
+                self.recursive_step(nextidx)
                 if nextblock.time == block.time:
                     break
 
@@ -342,7 +359,7 @@ class BlockStep(object):
         if (nextidx < len(self.block_list)):
             while True:
                 nextblock = self.block_list[nextidx]
-                self.step(nextidx)
+                self.recursive_step(nextidx)
                 if nextblock.time == block.time+block.tstep:
                     break
 
@@ -353,10 +370,12 @@ class BlockStep(object):
         if idx == 0:
             self.time = +block.time
 
-
         self.block_list = self.update_blocks(nextidx, block, self.block_list)
 
 
+    @selftimer
+    def step(self):
+        self.recursive_step()
 
 
 
