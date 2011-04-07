@@ -5,6 +5,7 @@
 
 """
 
+from .imf import IMF
 from .plummer import Plummer
 
 

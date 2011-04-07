@@ -6,10 +6,6 @@
     #pragma OPENCL EXTENSION cl_amd_fp64 : enable
 #endif
 
-#ifdef cl_amd_printf
-    #pragma OPENCL EXTENSION cl_amd_printf : enable
-#endif
-
 #ifdef DOUBLE
 typedef double REAL;
 typedef double2 REAL2;
@@ -20,33 +16,26 @@ typedef float2 REAL2;
 typedef float4 REAL4;
 #endif
 
-/*
-XXX: dr.w foi transferido para o argumento da sqrt p/ evitar somar a contribuicao da propria particula quando dr.w != 0.0.
-XXX: verificar perda de performance e fazer reajustes necessarios.
-*/
+
 REAL4 p2p_acc_kernel_core(REAL4 acc, REAL4 bip, REAL4 biv, REAL4 bjp, REAL4 bjv)
 {
-    REAL4 dr;
+    REAL4 dr, dv;
     dr.x = bip.x - bjp.x;                                            // 1 FLOPs
     dr.y = bip.y - bjp.y;                                            // 1 FLOPs
     dr.z = bip.z - bjp.z;                                            // 1 FLOPs
     dr.w = bip.w + bjp.w;                                            // 1 FLOPs
-    REAL4 dv;
     dv.x = biv.x - bjv.x;                                            // 1 FLOPs
     dv.y = biv.y - bjv.y;                                            // 1 FLOPs
     dv.z = biv.z - bjv.z;                                            // 1 FLOPs
     dv.w = biv.w + bjv.w;                                            // 1 FLOPs
-
-    REAL dr2 = dr.x * dr.x + dr.y * dr.y + dr.z * dr.z;              // 5 FLOPs
-    REAL dv2 = dv.x * dv.x + dv.y * dv.y + dv.z * dv.z;              // 5 FLOPs
-
+    REAL dr2 = dr.z * dr.z + (dr.y * dr.y + dr.x * dr.x);            // 5 FLOPs
+    REAL dv2 = dv.z * dv.z + (dv.y * dv.y + dv.x * dv.x);            // 5 FLOPs
     REAL rinv = rsqrt(dr2 + dr.w);                                   // 3 FLOPs
-    rinv = (dr2 ? rinv:0);
-    REAL r3inv = rinv * rinv;                                        // 1 FLOPs
-
-    REAL e = 0.5 * dv2 + dv.w * rinv;                                // 3 FLOPs
+    REAL r3inv = rinv = ((dr2 > 0) ? rinv:0);
+    r3inv *= rinv;                                                   // 1 FLOPs
+    REAL e = 0.5 * dv2;                                              // 1 FLOPs
+    e += dv.w * rinv;                                                // 2 FLOPs
     acc.w += e * r3inv;                                              // 2 FLOPs
-
     r3inv *= bjv.w * rinv;                                           // 2 FLOPs
     acc.x -= r3inv * dr.x;                                           // 2 FLOPs
     acc.y -= r3inv * dr.y;                                           // 2 FLOPs

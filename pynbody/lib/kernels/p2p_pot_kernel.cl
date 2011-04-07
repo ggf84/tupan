@@ -6,10 +6,6 @@
     #pragma OPENCL EXTENSION cl_amd_fp64 : enable
 #endif
 
-#ifdef cl_amd_printf
-    #pragma OPENCL EXTENSION cl_amd_printf : enable
-#endif
-
 #ifdef DOUBLE
 typedef double REAL;
 typedef double2 REAL2;
@@ -20,10 +16,7 @@ typedef float2 REAL2;
 typedef float4 REAL4;
 #endif
 
-/*
-XXX: dr.w foi transferido para o argumento da sqrt p/ evitar somar a contribuicao da propria particula quando dr.w != 0.0.
-XXX: verificar perda de performance e fazer reajustes necessarios.
-*/
+
 REAL p2p_pot_kernel_core(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
 {
     REAL4 dr;
@@ -31,9 +24,9 @@ REAL p2p_pot_kernel_core(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
     dr.y = bi.y - bj.y;                                              // 1 FLOPs
     dr.z = bi.z - bj.z;                                              // 1 FLOPs
     dr.w = bi.w + bj.w;                                              // 1 FLOPs
-    REAL ds2 = dr.x * dr.x + dr.y * dr.y + dr.z * dr.z;              // 5 FLOPs
-    REAL rinv = rsqrt(ds2 + dr.w);                                   // 3 FLOPs
-    pot -= mj * (ds2 ? rinv:0);                                      // 2 FLOPs
+    REAL dr2 = dr.z * dr.z + (dr.y * dr.y + dr.x * dr.x);            // 5 FLOPs
+    REAL rinv = rsqrt(dr2 + dr.w);                                   // 3 FLOPs
+    pot -= mj * ((dr2 > 0) ? rinv:0);                                // 2 FLOPs
     return pot;
 }   // Total flop count: 14
 
