@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     @selftimer
     def main():
-        numBodies = 4096
+        numBodies = 128
 
 #        imf = IMF.equal()
 #        imf = IMF.salpeter1955(0.5, 120.0)

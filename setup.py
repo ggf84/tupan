@@ -8,7 +8,7 @@ Setup Script
 #from setuptools import setup
 from distutils.core import setup
 from distutils.command.install import USER_SITE
-
+import os
 import pynbody
 
 
@@ -22,12 +22,18 @@ Topic :: Scientific/Engineering
 """
 
 
-path = 'pynbody/lib/kernels/'
-installpath = USER_SITE + '/' + path
-data_files = []
-data_files.append(path + 'p2p_pot_kernel.cl')
-data_files.append(path + 'p2p_acc_kernel.cl')
-data_files.append(path + 'p2p_acc_kernel_gpugems3.cl')
+data_files = {}
+
+path = os.path.join('pynbody', 'lib', 'kernels') + os.sep
+installpath = USER_SITE + os.sep + path
+data_files[installpath] = [path+fname for fname in ['p2p_pot_kernel.cl',
+                                                    'p2p_acc_kernel.cl',
+                                                    'p2p_acc_kernel_gpugems3.cl']]
+path = os.path.join('pynbody', 'analysis', 'textures') + os.sep
+installpath = USER_SITE + os.sep + path
+data_files[installpath] = [path+fname for fname in ['bh.png',
+                                                    'star.png']]
+
 
 
 setup(
@@ -45,7 +51,7 @@ setup(
               'pynbody.particles',
               'pynbody.test'],
 #    include_package_data=True,
-    data_files=[(installpath, data_files)],
+    data_files=data_files.items(),
     scripts=['bin/main.py'],
     url='http://github.com/GuilhermeFerrari/PyNbody',
     license='MIT License',
