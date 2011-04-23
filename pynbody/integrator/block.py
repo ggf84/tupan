@@ -70,7 +70,7 @@ class Block(object):
             for obj in particles.itervalues():
                 if obj:
                     aux_acc = obj.acc
-                    aux_vel = obj.vel + btstep * aux_acc
+                    aux_vel = obj.vel #+ btstep * aux_acc
                     obj.pos += dt * aux_vel
                     obj.vel += dt * aux_acc
             return particles
@@ -373,9 +373,57 @@ class BlockStep(object):
         self.block_list = self.update_blocks(nextidx, block, self.block_list)
 
 
+
+
+
+
+
+
+
+    def recursive_step2(self, idx=0):
+        """
+
+        """
+        nextidx = idx + 1
+        block = self.block_list[idx]
+
+        if (nextidx < len(self.block_list)):
+            while True:
+                nextblock = self.block_list[nextidx]
+                self.recursive_step(nextidx)
+                if nextblock.time == block.time+block.tstep:
+                    break
+
+        block.time += block.tstep
+        block.drift()
+        block.kick()
+
+        block.force(self.gather(interpolated_at_time=block.time))
+#        block.force(self.gather())
+
+        block.kick()
+        block.drift()
+        block.time += block.tstep
+
+        if (nextidx < len(self.block_list)):
+            while True:
+                nextblock = self.block_list[nextidx]
+                self.recursive_step(nextidx)
+                if nextblock.time == block.time:
+                    break
+
+        if idx == 0:
+            self.time = +block.time
+
+        self.block_list = self.update_blocks(nextidx, block, self.block_list)
+
+
+
+
     @selftimer
     def step(self):
-        self.recursive_step()
+        self.recursive_step2()
+
 
 
 

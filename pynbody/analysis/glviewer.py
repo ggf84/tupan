@@ -23,8 +23,8 @@ import Image
 ESCAPE = '\033'
 FULLSCREEN = False
 RECORD = False
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 1024
+WINDOW_HEIGHT = 640
 
 WINDOW_TITLE_PREFIX = 'PyNbody Viewer'
 #file_path = os.path.dirname(__file__) + os.sep + 'textures'
@@ -100,7 +100,7 @@ def gaussian(height, center_x, center_y, width_x, width_y):
     """Returns a gaussian function with the given parameters"""
     width_x = float(width_x)
     width_y = float(width_y)
-    return lambda x, y: height*np.exp(-(((center_x-x)/width_x)**2+((center_y-y)/width_y)**2)/2)
+    return lambda x, y: height*np.exp(-(((center_x-x)/width_x)**2+((center_y-y)/width_y)**2)/2.0)
 
 
 
@@ -121,8 +121,10 @@ class GLviewer(object):
         self.textures = {}
         self.rot_x = 0.0
         self.rot_y = 0.0
+        self.rot_z = 0.0
         self.rotate_x = 0
         self.rotate_y = 0
+        self.rotate_z = 0
         self.particle = None
         self.initialize()
 #        glutMainLoop()
@@ -182,18 +184,25 @@ class GLviewer(object):
     def rotate(self, sign=1):
         self.rot_x += self.rotate_x * ROTINC
         self.rot_y += self.rotate_y * ROTINC
-        if self.rot_x > 359:
-            self.rot_x -= 359
-        elif self.rot_x < -359:
-            self.rot_x += 359
-        if self.rot_y > 359:
-            self.rot_y -= 359
-        elif self.rot_y < -359:
-            self.rot_y += 359
+        self.rot_z += self.rotate_z * ROTINC
+        if self.rot_x > 360:
+            self.rot_x -= 360
+        elif self.rot_x < 0:
+            self.rot_x += 360
+        if self.rot_y > 360:
+            self.rot_y -= 360
+        elif self.rot_y < 0:
+            self.rot_y += 360
+        if self.rot_z > 360:
+            self.rot_z -= 360
+        elif self.rot_z < 0:
+            self.rot_z += 360
         if sign > 0:
             glRotatef(self.rot_x, 1.0, 0.0, 0.0)
             glRotatef(self.rot_y, 0.0, 1.0, 0.0)
+            glRotatef(self.rot_z, 0.0, 0.0, 1.0)
         if sign < 0:
+            glRotatef(-self.rot_z, 0.0, 0.0, 1.0)
             glRotatef(-self.rot_y, 0.0, 1.0, 0.0)
             glRotatef(-self.rot_x, 1.0, 0.0, 0.0)
 
@@ -204,11 +213,16 @@ class GLviewer(object):
         if key == ' ':
             self.rotate_x = 0
             self.rotate_y = 0
+            self.rotate_z = 0
         elif key == '+':
             POINT_SIZE += 1
         elif key == '-':
             POINT_SIZE -= 1
             if POINT_SIZE < 1:  POINT_SIZE = 1
+        elif key == '<':
+            self.rotate_z -= 1
+        elif key == '>':
+            self.rotate_z += 1
         elif key == 'Z':
             ZOOM_FACTOR *= 1.01
         elif key == 'z':
@@ -239,9 +253,9 @@ class GLviewer(object):
             pass
         else:
             if key == GLUT_KEY_UP:
-                self.rotate_x -= 1
-            elif key == GLUT_KEY_DOWN:
                 self.rotate_x += 1
+            elif key == GLUT_KEY_DOWN:
+                self.rotate_x -= 1
             elif key == GLUT_KEY_LEFT:
                 self.rotate_y -= 1
             elif key == GLUT_KEY_RIGHT:
@@ -268,10 +282,10 @@ class GLviewer(object):
     def init_gl(self):
         glEnable(GL_DEPTH_TEST)
         glClearColor(0.0, 0.0, 0.0, 1.0)
-
+        glActiveTexture(GL_TEXTURE0)
         self.textures['star'] = self.load_texture(os.path.join(file_path,
-                                                               'star.png'))
-
+                                                               'glow.png'))
+        glEnable(GL_TEXTURE_2D)
         self.adjust_zoom()
 
 
@@ -304,7 +318,7 @@ class GLviewer(object):
     def draw_system(self):
 #        from pynbody.models import (IMF, Plummer)
 #        imf = IMF.padoan2007(0.075, 120.0)
-#        p = Plummer(1024, imf, epsf=4.0, seed=1)
+#        p = Plummer(2048, imf, epsf=4.0)
 #        p.make_plummer()
 #        self.particle = p._body
 
@@ -314,8 +328,8 @@ class GLviewer(object):
         points = self.particle.pos
 
         r = self.particle.ekin()/self.particle.mass
-        g = -self.particle.epot()/self.particle.mass
-        b = np.sqrt((self.particle.acc**2).sum(1))
+        g = np.sqrt((self.particle.acc**2).sum(1))
+        b = -self.particle.epot()/self.particle.mass
         r /= r.max()
         g /= g.max()
         b /= b.max()
@@ -331,15 +345,14 @@ class GLviewer(object):
 
 #        glPushMatrix()
 
-        glEnable(GL_TEXTURE_2D)
+#        glEnable(GL_TEXTURE_2D)
 #        glActiveTexture(GL_TEXTURE0)
 #        glBindTexture(GL_TEXTURE_2D, self.textures['star'])
-#        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE_NV)
+#        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+#        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE)
         glEnable(GL_BLEND)
         glDepthMask(GL_FALSE)
-
-
 
 #        glUseProgram(self.shader_program)
 
@@ -350,9 +363,9 @@ class GLviewer(object):
 
         glDepthMask(GL_TRUE)
         glDisable(GL_BLEND)
-#        glDisable(GL_VERTEX_PROGRAM_POINT_SIZE_NV)
+#        glDisable(GL_VERTEX_PROGRAM_POINT_SIZE)
 #        glBindTexture(GL_TEXTURE_2D, 0)
-        glDisable(GL_TEXTURE_2D)
+#        glDisable(GL_TEXTURE_2D)
 
 #        glPopMatrix()
 
@@ -369,27 +382,36 @@ class GLviewer(object):
 
 
     def draw_points(self, points, colors):
-        glEnable(GL_POINT_SPRITE)
-        glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE)
+#        texVertices = [(0, 0), (0, 1), (1, 1), (1, 0)]
 
         self.set_point_size()
 
-        glEnableClientState(GL_VERTEX_ARRAY)
         glVertexPointerd(points)
+        glEnableClientState(GL_VERTEX_ARRAY)
 
-        glEnableClientState(GL_COLOR_ARRAY)
+#        glTexCoordPointerd(texVertices)
+#        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
+
         glColorPointerd(colors)
+        glEnableClientState(GL_COLOR_ARRAY)
+
+        glEnable(GL_POINT_SPRITE)
+        glTexEnvf(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE)
 
         glDrawArrays(GL_POINTS, 0, len(points))
 
-        glColorPointerd(None)
-        glDisableClientState(GL_COLOR_ARRAY)
-
-        glVertexPointerd(None)
-        glDisableClientState(GL_VERTEX_ARRAY)
-
-        glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_FALSE)
+        glTexEnvf(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_FALSE)
         glDisable(GL_POINT_SPRITE)
+
+        glDisableClientState(GL_COLOR_ARRAY)
+        glColorPointerd(None)
+
+#        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
+#        glTexCoordPointerd(None)
+
+        glDisableClientState(GL_VERTEX_ARRAY)
+        glVertexPointerd(None)
+
 
 
 
@@ -399,17 +421,12 @@ class GLviewer(object):
             x = p[0]
             y = p[1]
             z = p[2]
-            size = 0.0001 * POINT_SIZE**2 #* (c[0] + c[1] + c[2])
+            size = 0.0001 * POINT_SIZE**2
 
             glMatrixMode(GL_MODELVIEW)
             glPushMatrix()
 
             glTranslatef(x, y, z)
-
-
-#            glColor3d(c[0], c[1], c[2])
-#            glutSolidSphere(size, 32, 32)
-
 
             glBegin(GL_QUADS)
 
@@ -426,12 +443,22 @@ class GLviewer(object):
 
             glEnd()
 
+
+#            glColor3d(c[0], c[1], c[2])
+#            glutSolidSphere(size, 32, 32)
+
+
             glPopMatrix()
 
 
 
 
     def load_texture(self, name):
+#        X, Y = np.mgrid[0.0:513.0, 0.0:513.0]
+#        z = gaussian(8.0, 256.0, 256.0, 16.0, 16.0)
+#        image = z(X, Y)
+#        image = Image.fromarray(image, 'RGBA')
+
         try:
             image = Image.open(name)
         except:
@@ -439,49 +466,39 @@ class GLviewer(object):
 
         ix = image.size[0]
         iy = image.size[1]
-        image = image.tostring('raw', 'RGBX', 0, -1)
-
-
-#        x = np.linspace(-1.0,1.0,num=32)
-#        y = np.linspace(-1.0,1.0,num=32)
-#        X, Y = np.meshgrid(x, y)
-#        z = gaussian(1.0, 0.0, 0.0, 0.1, 0.1)
-#        image = z(X, Y)
-#        ix, iy = image.shape
-#        image = image.tostring()
-
-
-
+        image = image.tostring('raw', 'RGBA', 0, -1)
 
 
         # Create Texture
         id = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, id)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, image)
 
-        glTexParameterf(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                                       GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
-#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
+#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+
+
+#        glTexParameterf(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE)
+#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+#                                       GL_LINEAR_MIPMAP_LINEAR)
 #        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
 #        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 #        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-
-
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
 
 
 #        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
 #        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
 #        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
 #        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE)
-
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, image)
 
 
         image = None
@@ -497,7 +514,7 @@ class GLviewer(object):
 
 from pynbody.models import (IMF, Plummer)
 imf = IMF.padoan2007(0.075, 120.0)
-p = Plummer(4096, imf, epsf=4.0, seed=1)
+p = Plummer(2048, imf, epsf=4.0, seed=1)
 p.make_plummer()
 #p.show()
 
@@ -508,83 +525,6 @@ viewer.update(p._body)
 #    viewer.update(p._body)
 #    viewer.particle = p._body[:-128]
 #    glutMainLoop()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#            coords = self.particle.pos
-#            glBindBuffer(GL_ARRAY_BUFFER, coords)
-#            glBufferData(GL_ARRAY_BUFFER,
-#                         ADT.arrayByteCount(coords),
-#                         ADT.voidDataPointer(coords),
-#                         GL_STATIC_DRAW_ARB)
-#            glVertexPointer(3, GL_DOUBLE, 0, None)
-#            glDrawArrays(GL_QUADS, 0, coords.shape[0])
-
-
-#            glPointSize(2)
-##            glColor3d(0.0, 1.0, 1.0)
-#            colors = np.ones(3*len(coords)).reshape((-1, 3)).astype(np.float32)
-#            col_vbo = vbo.VBO(data=colors,
-#                              usage=GL_DYNAMIC_DRAW,
-#                              target=GL_ARRAY_BUFFER)
-#            col_vbo.bind()
-#            pos_vbo = vbo.VBO(data=coords,
-#                              usage=GL_DYNAMIC_DRAW,
-#                              target=GL_ARRAY_BUFFER)
-#            pos_vbo.bind()
-#            glColorPointer(3, GL_FLOAT, 0, col_vbo)
-#            glVertexPointer(3, GL_DOUBLE, 0, pos_vbo)
-#            glEnableClientState(GL_COLOR_ARRAY)
-#            glEnableClientState(GL_VERTEX_ARRAY)
-#            glDrawArrays(0, 0, len(coords))
-#            glDisableClientState(GL_VERTEX_ARRAY)
-#            glDisableClientState(GL_COLOR_ARRAY)
-
-
-#            glVertexPointerd(coords)
-#            glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, (1, 1, 1, 1))
-##            glColor3d(0.0, 1.0, 1.0)
-#            glEnableClientState(GL_VERTEX_ARRAY)
-#            glDrawArrays(GL_POINTS, 0, len(coords))
-#            glDisableClientState(GL_VERTEX_ARRAY)
-
-
-
-#            vertex_vbo = GLuint(0)
-#            glGenBuffers(1, vertex_vbo)
-#            glBindBuffer(GL_ARRAY_BUFFER, coords)
-#            glBufferData(GL_ARRAY_BUFFER, ADT.arrayByteCount(coords), ADT.voidDataPointer(coords), GL_STATIC_DRAW_ARB)
-#            glBindBuffer(GL_ARRAY_BUFFER, vertex_vbo)
-#            glVertexPointer(3, GL_DOUBLE, 0, None)
-#            glDrawArrays(GL_QUADS, 0, coords.shape[0])
 
 
 

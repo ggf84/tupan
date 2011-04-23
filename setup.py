@@ -31,8 +31,7 @@ data_files[installpath] = [path+fname for fname in ['p2p_pot_kernel.cl',
                                                     'p2p_acc_kernel_gpugems3.cl']]
 path = os.path.join('pynbody', 'analysis', 'textures') + os.sep
 installpath = USER_SITE + os.sep + path
-data_files[installpath] = [path+fname for fname in ['bh.png',
-                                                    'star.png']]
+data_files[installpath] = [path+fname for fname in ['glow.png']]
 
 
 
