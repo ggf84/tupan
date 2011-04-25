@@ -74,7 +74,8 @@ class Body(Pbase):
     # Energy methods
 
     def ekin(self):
-        return 0.5 * self.mass * (self.vel**2).sum(1)
+        vcm = self.get_Vcenter_of_mass()
+        return 0.5 * self.mass * ((self.vel - vcm)**2).sum(1)
 
     def epot(self):
         return self.mass * self.phi

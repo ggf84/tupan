@@ -14,7 +14,8 @@ import pyopencl as cl
 
 from pynbody.lib.decorators import (selftimer, addmethod)
 
-path = os.path.dirname(__file__) + os.sep   # '/dirname/of/file' + '/'
+path = os.path.dirname(__file__)
+
 
 
 IUNROLL = 3                 # unroll for i-particles
@@ -51,7 +52,8 @@ class Kernels(object):
                 if pattern in line:
                     return line.split()[-1]
         self.name = fname.split('.')[0]
-        with open(path+fname, 'r') as f:
+        fname = os.path.join(path, fname)
+        with open(fname, 'r') as f:
             self.source = f.read()
             self.flops = int(get_from(self.source, 'Total flop count'))
             self.output_shape = get_from(self.source, 'Output shape')

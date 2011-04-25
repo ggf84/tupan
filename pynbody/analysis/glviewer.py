@@ -22,20 +22,20 @@ import Image
 
 ESCAPE = '\033'
 FULLSCREEN = False
-RECORD = False
+PPMSTREAM = False
 WINDOW_WIDTH = 1024
 WINDOW_HEIGHT = 640
-
 WINDOW_TITLE_PREFIX = 'PyNbody Viewer'
-#file_path = os.path.dirname(__file__) + os.sep + 'textures'
-file_path = 'textures'
+
+path = os.path.dirname(__file__)
+texture_path = os.path.join(path, 'textures')
 
 
 
 ROTINC = 0.05
-POINT_SIZE = 10.0
+POINT_SIZE = 3.0
 ZOOM_FACTOR = 1.0
-
+COLORMASK = {'r': False, 'g': False, 'b': False, 'a': False}
 
 
 
@@ -223,6 +223,27 @@ class GLviewer(object):
             self.rotate_z -= 1
         elif key == '>':
             self.rotate_z += 1
+        elif key == 'r':
+            if not COLORMASK['r']:
+                COLORMASK['r'] = True
+                COLORMASK['g'] = False
+                COLORMASK['b'] = False
+            else:
+                COLORMASK['r'] = False
+        elif key == 'g':
+            if not COLORMASK['g']:
+                COLORMASK['r'] = False
+                COLORMASK['g'] = True
+                COLORMASK['b'] = False
+            else:
+                COLORMASK['g'] = False
+        elif key == 'b':
+            if not COLORMASK['b']:
+                COLORMASK['r'] = False
+                COLORMASK['g'] = False
+                COLORMASK['b'] = True
+            else:
+                COLORMASK['b'] = False
         elif key == 'Z':
             ZOOM_FACTOR *= 1.01
         elif key == 'z':
@@ -235,12 +256,12 @@ class GLviewer(object):
             else:
                 glutReshapeWindow(WINDOW_WIDTH, WINDOW_HEIGHT)
                 FULLSCREEN = False
-        elif key == 'r' or key == 'R':
-            global RECORD
-            if not RECORD:
-                RECORD = True
+        elif key == 's' or key == 'S':
+            global PPMSTREAM
+            if not PPMSTREAM:
+                PPMSTREAM = True
             else:
-                RECORD = False
+                PPMSTREAM = False
         elif key == ESCAPE:
             glutDestroyWindow(self.window_handle)
 
@@ -282,10 +303,10 @@ class GLviewer(object):
     def init_gl(self):
         glEnable(GL_DEPTH_TEST)
         glClearColor(0.0, 0.0, 0.0, 1.0)
-        glActiveTexture(GL_TEXTURE0)
-        self.textures['star'] = self.load_texture(os.path.join(file_path,
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
+#        glActiveTexture(GL_TEXTURE0)
+        self.textures['star'] = self.load_texture(os.path.join(texture_path,
                                                                'glow.png'))
-        glEnable(GL_TEXTURE_2D)
         self.adjust_zoom()
 
 
@@ -300,6 +321,15 @@ class GLviewer(object):
 
     def render_func(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        if COLORMASK['r']:
+            glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE)
+        elif COLORMASK['g']:
+            glColorMask(GL_FALSE, GL_TRUE, GL_FALSE, GL_TRUE)
+        elif COLORMASK['b']:
+            glColorMask(GL_FALSE, GL_FALSE, GL_TRUE, GL_TRUE)
+        else:
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
+
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         glTranslatef(0.0, 0.0, -10000.05)
@@ -310,9 +340,28 @@ class GLviewer(object):
 
         glutSwapBuffers()
         glutPostRedisplay()
-        if RECORD:
+        if PPMSTREAM:
             self.output_ppm_stream()
         self.frame_count += 1
+
+
+    def set_point_size_limits(self):
+        global POINT_SIZE
+        (ps_min, ps_max) = glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE)
+        if (POINT_SIZE > ps_max):
+            POINT_SIZE = ps_max
+        if (POINT_SIZE < ps_min):
+            POINT_SIZE = ps_min
+
+
+    def get_colors(self):
+        b = self.particle.mass*np.sqrt((self.particle.acc**2).sum(1))
+        g = self.particle.ekin()
+        r = self.particle.mass
+        r /= r.max()
+        g /= g.max()
+        b /= b.max()
+        return (np.vstack((r**0.7, g**0.6, b**0.5)).T)
 
 
     def draw_system(self):
@@ -326,43 +375,45 @@ class GLviewer(object):
 #                  [0.0, 1.0, 0.0], [0.0, -1.0, 0.0]]
 
         points = self.particle.pos
+        colors = self.get_colors()
 
-        r = self.particle.ekin()/self.particle.mass
-        g = np.sqrt((self.particle.acc**2).sum(1))
-        b = -self.particle.epot()/self.particle.mass
-        r /= r.max()
-        g /= g.max()
-        b /= b.max()
-        a = ((r+g+b)/3.0).max()
-        r /= a
-        g /= a
-        b /= a
-        colors = np.vstack((r,g,b)).T
-
-
-#        print(points.shape, colors.shape)
 
 
 #        glPushMatrix()
 
 #        glEnable(GL_TEXTURE_2D)
-#        glActiveTexture(GL_TEXTURE0)
 #        glBindTexture(GL_TEXTURE_2D, self.textures['star'])
 #        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
-#        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
-        glEnable(GL_BLEND)
         glDepthMask(GL_FALSE)
 
 #        glUseProgram(self.shader_program)
 
+        self.set_point_size_limits()
+#        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+        glBlendFunc(GL_DST_ALPHA, GL_ONE)
+#        glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+
+        glEnable(GL_BLEND)
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, self.textures['star'])
+        glPointSize(POINT_SIZE)
         self.draw_points(points, colors)
 #        self.draw_quads(points, colors)
+        glPointSize(1.0)
+        glBindTexture(GL_TEXTURE_2D, 0)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_BLEND)
 
-#        glUseProgram(0)
+        glEnable(GL_BLEND)
+        glPointSize(1.0)
+        self.draw_points(points, colors)
+        glPointSize(1.0)
+        glDisable(GL_BLEND)
+
 
         glDepthMask(GL_TRUE)
-        glDisable(GL_BLEND)
+
 #        glDisable(GL_VERTEX_PROGRAM_POINT_SIZE)
 #        glBindTexture(GL_TEXTURE_2D, 0)
 #        glDisable(GL_TEXTURE_2D)
@@ -371,29 +422,12 @@ class GLviewer(object):
 
 
 
-    def set_point_size(self):
-        global POINT_SIZE
-        (ps_min, ps_max) = glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE)
-        if (POINT_SIZE > ps_max):
-            POINT_SIZE = ps_max
-        if (POINT_SIZE < ps_min):
-            POINT_SIZE = ps_min
-        glPointSize(POINT_SIZE)
-
-
     def draw_points(self, points, colors):
-#        texVertices = [(0, 0), (0, 1), (1, 1), (1, 0)]
-
-        self.set_point_size()
-
-        glVertexPointerd(points)
         glEnableClientState(GL_VERTEX_ARRAY)
+        glVertexPointerd(points)
 
-#        glTexCoordPointerd(texVertices)
-#        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
-
-        glColorPointerd(colors)
         glEnableClientState(GL_COLOR_ARRAY)
+        glColorPointerd(colors)
 
         glEnable(GL_POINT_SPRITE)
         glTexEnvf(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE)
@@ -403,16 +437,11 @@ class GLviewer(object):
         glTexEnvf(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_FALSE)
         glDisable(GL_POINT_SPRITE)
 
-        glDisableClientState(GL_COLOR_ARRAY)
         glColorPointerd(None)
+        glDisableClientState(GL_COLOR_ARRAY)
 
-#        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-#        glTexCoordPointerd(None)
-
-        glDisableClientState(GL_VERTEX_ARRAY)
         glVertexPointerd(None)
-
-
+        glDisableClientState(GL_VERTEX_ARRAY)
 
 
 
@@ -421,7 +450,7 @@ class GLviewer(object):
             x = p[0]
             y = p[1]
             z = p[2]
-            size = 0.0001 * POINT_SIZE**2
+            size = 0.001 * POINT_SIZE**2
 
             glMatrixMode(GL_MODELVIEW)
             glPushMatrix()
@@ -454,8 +483,8 @@ class GLviewer(object):
 
 
     def load_texture(self, name):
-#        X, Y = np.mgrid[0.0:513.0, 0.0:513.0]
-#        z = gaussian(8.0, 256.0, 256.0, 16.0, 16.0)
+#        X, Y = np.mgrid[0.0:129.0, 0.0:129.0]
+#        z = gaussian(1.0, 64.0, 64.0, 16.0, 16.0)
 #        image = z(X, Y)
 #        image = Image.fromarray(image, 'RGBA')
 
@@ -472,24 +501,23 @@ class GLviewer(object):
         # Create Texture
         id = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, id)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, image)
-
 
 #        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
 #        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
 #        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
 #        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+#        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+#        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 
-
-#        glTexParameterf(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE)
-#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-#                                       GL_LINEAR_MIPMAP_LINEAR)
-#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST)
+        glTexParameterf(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                                       GL_LINEAR_MIPMAP_LINEAR)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+
+#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
 #        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 #        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
@@ -499,6 +527,11 @@ class GLviewer(object):
 #        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
 #        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
 #        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE)
+#        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD)
+
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0,
+                     GL_RGBA, GL_UNSIGNED_BYTE, image)
 
 
         image = None
@@ -513,7 +546,10 @@ class GLviewer(object):
 
 
 from pynbody.models import (IMF, Plummer)
+#imf = IMF.equal()
+#imf = IMF.salpeter1955(0.5, 120.0)
 imf = IMF.padoan2007(0.075, 120.0)
+#imf = IMF.parravano2011(0.075, 120.0)
 p = Plummer(2048, imf, epsf=4.0, seed=1)
 p.make_plummer()
 #p.show()
