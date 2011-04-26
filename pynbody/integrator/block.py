@@ -96,8 +96,13 @@ class Block(object):
                         mid_acc += obj0.acc
                         mid_stepdens += obj0.stepdens[:,0]
                 obj0.acc[:] = 2*mid_acc - prev_acc
+#                obj0.stepdens[:,0] = (mid_stepdens**2) / prev_stepdens
+#                obj0.stepdens[:,1] = (obj0.stepdens[:,0]**2) / mid_stepdens
+
                 obj0.stepdens[:,0] = (mid_stepdens**2) / prev_stepdens
                 obj0.stepdens[:,1] = (obj0.stepdens[:,0]**2) / mid_stepdens
+                obj0.stepdens[:,0] = (obj0.stepdens[:,1] + prev_stepdens)/2
+
 
 #                print('level: {0}, len: {1}'.format(self.level, len(obj0)))
 
@@ -422,8 +427,8 @@ class BlockStep(object):
 
     @selftimer
     def step(self):
+#        self.recursive_step()
         self.recursive_step2()
-
 
 
 

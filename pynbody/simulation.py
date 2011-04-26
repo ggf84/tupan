@@ -8,6 +8,7 @@ import sys
 import pickle
 from pynbody.io import HDF5IO
 from pynbody.integrator import (METH_NAMES, METHS)
+from pynbody.lib.decorators import selftimer
 
 RUN_MODES = ['newrun', 'restart']
 
@@ -123,6 +124,7 @@ class Simulation(object):
         self.integrator = self.Integrator(0.0, self.args.eta, particles)
 
 
+    @selftimer
     def evolve(self):
         """
 

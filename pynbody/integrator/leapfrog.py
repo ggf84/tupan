@@ -19,8 +19,7 @@ class LeapFrog(object):
         self.time = time
         self.eta = eta
         self.particles = particles
-        self.tstep = eta
-        self.set_tstep()
+        self.tstep = self.set_nexttstep(time)
 
 
     @selftimer
@@ -29,40 +28,41 @@ class LeapFrog(object):
 
 
     @selftimer
-    def set_tstep(self):
-        tstep = []
+    def set_nexttstep(self, nexttime):
+        mintsteps = []
         for (key, obj) in self.particles.iteritems():
             if obj:
                 real_tstep = self.eta / obj.stepdens[:,1]
-                tstep.append(np.min(real_tstep))
-        power = int(np.log2(min(tstep)) - 1)
-        self.tstep = 2.0**power
-        while (self.time+2*self.tstep)%(2*self.tstep) != 0:
-            self.tstep /= 2
+                mintsteps.append(np.min(real_tstep))
+        power = int(np.log2(min(mintsteps)) - 1)
+        nexttstep = 2.0**power
+        while (nexttime+2*nexttstep)%(2*nexttstep) != 0:
+            nexttstep /= 2
+        return nexttstep
 
 
     @selftimer
-    def drift(self):
+    def drift(self, dt):
         """
 
         """
         for (key, obj) in self.particles.iteritems():
             if obj:
-                obj.drift(self.tstep)
+                obj.drift(dt)
 
 
     @selftimer
-    def kick(self):
+    def kick(self, dt):
         """
 
         """
         for (key, obj) in self.particles.iteritems():
             if obj:
-                obj.kick(self.tstep)
+                obj.kick(dt)
 
 
     @selftimer
-    def force(self, all_particles):
+    def force(self, all_particles, nexttime):
         """
 
         """
@@ -78,21 +78,28 @@ class LeapFrog(object):
                         mid_acc += obj0.acc
                         mid_stepdens += obj0.stepdens[:,0]
                 obj0.acc[:] = 2*mid_acc - prev_acc
-                obj0.stepdens[:,0] = (mid_stepdens**2) / prev_stepdens
-                obj0.stepdens[:,1] = (obj0.stepdens[:,0]**2) / mid_stepdens
+                obj0.stepdens[:,1] = (mid_stepdens**3) / (prev_stepdens**2)
+                obj0.stepdens[:,0] = (obj0.stepdens[:,1] + prev_stepdens)/2
+
+        return self.set_nexttstep(nexttime)
 
 
     @selftimer
     def step(self):
-        self.time += self.tstep
-        self.drift()
-        self.kick()
-        self.force(self.gather())
-        self.kick()
-        self.drift()
-        self.time += self.tstep
+        """
 
-        self.set_tstep()
+        """
+        currtstep = self.tstep
+
+        self.time += currtstep
+        self.drift(currtstep)
+        self.kick(currtstep)
+        nexttstep = self.force(self.gather(), self.time+currtstep)
+        self.kick(currtstep)
+        self.drift(currtstep)
+        self.time += currtstep
+
+        self.tstep = nexttstep
 
 
 
