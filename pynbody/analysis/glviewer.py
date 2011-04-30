@@ -389,8 +389,8 @@ class GLviewer(object):
 #        glUseProgram(self.shader_program)
 
         self.set_point_size_limits()
-#        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
-        glBlendFunc(GL_DST_ALPHA, GL_ONE)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+#        glBlendFunc(GL_DST_ALPHA, GL_ONE)
 #        glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 

@@ -202,7 +202,7 @@ class Plummer(object):
         ###################################
         # IMF plot
 
-        fig = plt.figure(figsize=(16, 7))
+        fig = plt.figure(figsize=(12, 5.25))
         # semilogx
         ax1 = fig.add_subplot(2,2,1)
         ax1.semilogx(linbins[:-1], hist, 'bo', label='IMF sample')

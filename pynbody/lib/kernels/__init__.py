@@ -57,13 +57,12 @@ class Kernels(object):
             self.source = f.read()
             self.flops = int(get_from(self.source, 'Total flop count'))
             self.output_shape = get_from(self.source, 'Output shape')
-            prog = cl.Program(ctx, self.source)
             if ENABLE_DOUBLE_PRECISION:
                 options += ' -D DOUBLE'
             if ENABLE_FAST_MATH:
                 options += ' -cl-fast-relaxed-math'
-            prog.build(options=options)
-            self.kernel = cl.Kernel(prog, self.name)
+            prog = cl.Program(ctx, self.source).build(options=options)
+            self.kernel = getattr(prog, self.name)
 
     @selftimer
     def call_kernel(self, queue, dev_args):
