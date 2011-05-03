@@ -20,6 +20,10 @@ import string
 import Image
 
 
+path = os.path.dirname(__file__)
+texture_path = os.path.join(path, 'textures')
+
+
 ESCAPE = '\033'
 FULLSCREEN = False
 PPMSTREAM = False
@@ -27,20 +31,14 @@ WINDOW_WIDTH = 1024
 WINDOW_HEIGHT = 640
 WINDOW_TITLE_PREFIX = 'PyNbody Viewer'
 
-path = os.path.dirname(__file__)
-texture_path = os.path.join(path, 'textures')
-
-
 
 ROTINC = 0.05
-POINT_SIZE = 3.0
 ZOOM_FACTOR = 1.0
-COLORMASK = {'r': False, 'g': False, 'b': False, 'a': False}
-
-
-
-
-
+POINT_SIZE = 3.0
+CONTRAST = 64
+SATURATE = False
+COLORSCHEME = 1
+COLORMASK = {'r': False, 'g': False, 'b': False}
 
 
 vert = '''
@@ -209,6 +207,7 @@ class GLviewer(object):
 
     def keyboard(self, key, x, y):
         global POINT_SIZE
+        global CONTRAST
         global ZOOM_FACTOR
         if key == ' ':
             self.rotate_x = 0
@@ -223,6 +222,15 @@ class GLviewer(object):
             self.rotate_z -= 1
         elif key == '>':
             self.rotate_z += 1
+        elif key in '123456':
+            global COLORSCHEME
+            COLORSCHEME = int(key)
+        elif key == 'h' or key == 'H':
+            global SATURATE
+            if not SATURATE:
+                SATURATE = True
+            else:
+                SATURATE = False
         elif key == 'r':
             if not COLORMASK['r']:
                 COLORMASK['r'] = True
@@ -244,6 +252,12 @@ class GLviewer(object):
                 COLORMASK['b'] = True
             else:
                 COLORMASK['b'] = False
+        elif key == 'c':
+            CONTRAST *= 2
+            if CONTRAST > 2**56:  CONTRAST = 2**56
+        elif key == 'C':
+            CONTRAST /= 2
+            if CONTRAST < 1:  CONTRAST = 1
         elif key == 'Z':
             ZOOM_FACTOR *= 1.01
         elif key == 'z':
@@ -304,7 +318,6 @@ class GLviewer(object):
         glEnable(GL_DEPTH_TEST)
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
-#        glActiveTexture(GL_TEXTURE0)
         self.textures['star'] = self.load_texture(os.path.join(texture_path,
                                                                'glow.png'))
         self.adjust_zoom()
@@ -355,13 +368,37 @@ class GLviewer(object):
 
 
     def get_colors(self):
-        b = self.particle.mass*np.sqrt((self.particle.acc**2).sum(1))
-        g = self.particle.ekin()
-        r = self.particle.mass
-        r /= r.max()
-        g /= g.max()
-        b /= b.max()
-        return (np.vstack((r**0.7, g**0.6, b**0.5)).T)
+        if not SATURATE:
+            r = -self.particle.epot()
+            r = self.particle.mass*(2*self.particle.ekin() + r)/r
+#            r = self.particle.ekin()
+            g = self.particle.mass
+            b = self.particle.mass*np.sqrt((self.particle.acc**2).sum(1))
+
+            r /= r.max()
+            g /= g.max()
+            b /= b.max()
+
+            maxlog10 = np.log10(1.0+CONTRAST)
+            r = np.log10(1.0+CONTRAST*r)/maxlog10
+            g = np.log10(1.0+CONTRAST*g)/maxlog10
+            b = np.log10(1.0+CONTRAST*b)/maxlog10
+
+            if COLORSCHEME == 1:
+                return (np.vstack((r, g, b)).T)
+            elif COLORSCHEME == 2:
+                return (np.vstack((g, b, r)).T)
+            elif COLORSCHEME == 3:
+                return (np.vstack((b, r, g)).T)
+            elif COLORSCHEME == 4:
+                return (np.vstack((g, r, b)).T)
+            elif COLORSCHEME == 5:
+                return (np.vstack((r, b, g)).T)
+            elif COLORSCHEME == 6:
+                return (np.vstack((b, g, r)).T)
+
+        else:
+            return np.ones((len(self.particle), 3), dtype='f8')
 
 
     def draw_system(self):
@@ -376,8 +413,6 @@ class GLviewer(object):
 
         points = self.particle.pos
         colors = self.get_colors()
-
-
 
 #        glPushMatrix()
 

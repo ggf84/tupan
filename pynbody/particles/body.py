@@ -57,6 +57,17 @@ class Body(Pbase):
         amom = self.get_angular_mom()
         return np.dot(amom, amom)
 
+    def get_mmom(self):         # XXX:
+        rcm = self.get_Rcenter_of_mass()
+        return self.mass * ((self.pos - rcm)**2).sum(1)
+
+    def get_amom(self):             # XXX:
+        return (self.mass * np.cross(self.pos, self.vel).T).T
+
+    def get_squared_amom(self):     # XXX:
+        amom = self.get_amom()
+        return (amom**2).sum(1)
+
 
     # Center of Mass methods
 
