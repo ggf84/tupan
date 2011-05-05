@@ -6,9 +6,10 @@
 from __future__ import print_function
 import sys
 import pickle
+from ggf84decor import selftimer
 from pynbody.io import HDF5IO
 from pynbody.integrator import (METH_NAMES, METHS)
-from pynbody.lib.decorators import selftimer
+
 
 RUN_MODES = ['newrun', 'restart']
 

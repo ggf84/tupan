@@ -10,7 +10,7 @@ import sys
 import random
 import math
 
-from pynbody.lib.decorators import selftimer
+from ggf84decor import selftimer
 from pynbody.particles import (Body, Particles)
 from pynbody.io import HDF5IO
 

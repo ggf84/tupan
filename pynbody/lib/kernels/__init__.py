@@ -12,7 +12,7 @@ import time
 import numpy as np
 import pyopencl as cl
 
-from pynbody.lib.decorators import (selftimer, addmethod)
+from ggf84decor import (selftimer, addmethod)
 
 path = os.path.dirname(__file__)
 

@@ -8,7 +8,7 @@
 from __future__ import print_function
 import numpy as np
 
-from pynbody.lib.decorators import selftimer
+from ggf84decor import selftimer
 
 
 class LeapFrog(object):

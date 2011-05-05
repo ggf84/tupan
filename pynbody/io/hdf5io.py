@@ -9,7 +9,7 @@ from __future__ import print_function
 import pickle
 import h5py
 
-from pynbody.lib.decorators import selftimer
+from ggf84decor import selftimer
 
 
 class HDF5IO(object):

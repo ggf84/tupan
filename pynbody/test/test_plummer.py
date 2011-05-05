@@ -3,7 +3,7 @@
 
 
 if __name__ == "__main__":
-    from pynbody.lib.decorators import selftimer
+    from ggf84decor import selftimer
     from pynbody.models import (IMF, Plummer)
     import matplotlib.pyplot as plt
     import numpy as np
