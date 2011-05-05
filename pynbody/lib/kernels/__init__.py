@@ -51,29 +51,29 @@ class Kernels(object):
             for line in source.splitlines():
                 if pattern in line:
                     return line.split()[-1]
-        self.name = fname.split('.')[0]
+        self._name = fname.split('.')[0]
         fname = os.path.join(path, fname)
         with open(fname, 'r') as f:
-            self.source = f.read()
-            self.flops = int(get_from(self.source, 'Total flop count'))
-            self.output_shape = get_from(self.source, 'Output shape')
+            self._source = f.read()
+            self._flops = int(get_from(self._source, 'Total flop count'))
+            self._output_shape = get_from(self._source, 'Output shape')
             if ENABLE_DOUBLE_PRECISION:
                 options += ' -D DOUBLE'
             if ENABLE_FAST_MATH:
                 options += ' -cl-fast-relaxed-math'
-            prog = cl.Program(ctx, self.source).build(options=options)
-            self.kernel = getattr(prog, self.name)
+            prog = cl.Program(ctx, self._source).build(options=options)
+            self._kernel = getattr(prog, self._name)
 
     @selftimer
-    def call_kernel(self, queue, dev_args):
+    def _call_kernel(self, queue, dev_args):
         """
         Call a kernel on a CL device.
         """
-        self.kernel(queue, *dev_args).wait()
+        self._kernel(queue, *dev_args).wait()
 
     @selftimer
-    def kernel_manager(self, global_size, local_size, inputargs,
-                       destshape, local_mem_size, gflops_count):
+    def _kernel_manager(self, global_size, local_size, inputargs,
+                        destshape, local_mem_size, gflops_count):
         """
         Manages a kernel call on a CL device.
         """
@@ -93,9 +93,9 @@ class Kernels(object):
         for size in local_mem_size:
             dev_args.append(cl.LocalMemory(size))
 
-        self.call_kernel(queue, dev_args)
+        self._call_kernel(queue, dev_args)
 
-#        elapsed = self.call_kernel.selftimer.elapsed
+#        elapsed = self._call_kernel.selftimer.elapsed
 #        print('Execution time of CL kernel: {0:g} s'.format(elapsed))
 #        print('CL kernel Gflops/s: {0:g}'.format(gflops_count/elapsed))
 
@@ -134,46 +134,62 @@ class Kernels(object):
 
         inputargs = (np.uint32(ni), np.uint32(nj),
                      iposeps2, ivelmass, jposeps2, jvelmass)
-        destshape = eval(self.output_shape.format(ni=ni))
+        destshape = eval(self._output_shape.format(ni=ni))
         mem_size = reduce(lambda x, y: x * y, local_size) * dtype.itemsize
         local_mem_size = (4*mem_size, 4*mem_size)
-        gflops_count = self.flops * ni * nj * 1.0e-9
+        gflops_count = self._flops * ni * nj * 1.0e-9
 
-        dest = self.kernel_manager(global_size, local_size, inputargs,
-                                   destshape, local_mem_size, gflops_count)
+        dest = self._kernel_manager(global_size, local_size, inputargs,
+                                    destshape, local_mem_size, gflops_count)
 
-#        elapsed = self.kernel_manager.selftimer.elapsed
+#        elapsed = self._kernel_manager.selftimer.elapsed
 #        print('Total kernel_manager time: {0:g} s'.format(elapsed))
 #        print('kernel_manager Gflops/s: {0:g}'.format(gflops_count/elapsed))
 
         return dest
 
 
+    def print_profile(self, ni, nj):
+        elapsed = self.run.selftimer.elapsed
+        gflops_count = self._flops * ni * nj * 1.0e-9
+        print('--  '*3)
+        print('Total kernel-run time: {0:g} s'.format(elapsed))
+        print('kernel-run Gflops/s: {0:g}'.format(gflops_count/elapsed))
 
 
 
 options = '-D IUNROLL={iunroll} -D JUNROLL={junroll}'.format(iunroll=IUNROLL,
                                                              junroll=JUNROLL)
 
-# setup the potential kernel
-p2p_pot_kernel = Kernels('p2p_pot_kernel.cl', options)
 
-# setup the acceleration kernel
-p2p_acc_kernel = Kernels('p2p_acc_kernel.cl', options)
-#p2p_acc_kernel = Kernels('p2p_acc_kernel_gpugems3.cl', options)
+class CLkernels(object):
+    """
 
-# setup the acceleration kernel (gpugems3)
-p2p_acc_kernel_gpugems3 = Kernels('p2p_acc_kernel_gpugems3.cl', options)
+    """
+    def __init__(self):
+        self.p2p_pot = Kernels('p2p_pot_kernel.cl', options)
+        self.p2p_acc = Kernels('p2p_acc_kernel.cl', options)
+        self.p2p_acc_gpugems3 = Kernels('p2p_acc_kernel_gpugems3.cl', options)
+
+
+clkernel = CLkernels()
 
 
 
-@addmethod(p2p_acc_kernel_gpugems3)
-@selftimer
-def print_name(self):
-    """doc of print_name"""
-    print('*** name: ', self.name, self.flops, '***')
 
-#p2p_acc_kernel_gpugems3.print_name()
+
+
+#@addmethod(clkernel.p2p_acc_gpugems3)
+#@selftimer
+#def print_name(self):
+#    """doc of print_name"""
+#    print('*** name: ', self.name, self.flops, '***')
+
+#clkernel.p2p_acc_gpugems3.print_name()
+
+
+
+
 
 
 ########## end of file ##########

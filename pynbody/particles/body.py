@@ -11,11 +11,12 @@ import numpy as np
 from collections import namedtuple
 from pynbody.particles.pbase import Pbase
 try:
-    from pynbody.lib.kernels import (p2p_acc_kernel, p2p_pot_kernel)
+    from pynbody.lib.kernels import clkernel
     HAVE_CL = True
-except:
+except Exception as e:
     HAVE_CL = False
-    print('computing without OpenCL')
+    print(e)
+    print('Doing calculations without OpenCL...')
 
 
 #HAVE_CL = False
@@ -154,7 +155,8 @@ class Body(Pbase):
             return _phi
 
         if HAVE_CL:
-            _phi = p2p_pot_kernel.run(self, objs)
+            _phi = clkernel.p2p_pot.run(self, objs)
+#            clkernel.p2p_pot.print_profile(len(self), len(objs))
         else:
             _phi = p2p_pot_pyrun(self, objs)
 
@@ -207,12 +209,8 @@ class Body(Pbase):
             return _acc
 
         if HAVE_CL:
-            _acc = p2p_acc_kernel.run(self, objs)
-#            elapsed = p2p_acc_kernel.run.selftimer.elapsed
-#            gflops_count = p2p_acc_kernel.flops * len(self) * len(objs) * 1.0e-9
-#            print(' -- '*10)
-#            print('Total kernel-run time: {0:g} s'.format(elapsed))
-#            print('kernel-run Gflops/s: {0:g}'.format(gflops_count/elapsed))
+            _acc = clkernel.p2p_acc.run(self, objs)
+#            clkernel.p2p_acc.print_profile(len(self), len(objs))
         else:
             _acc = p2p_acc_pyrun(self, objs)
 
