@@ -30,7 +30,7 @@ def scale_to_virial(bodies, ekin, epot, etot):
     etot = ekin + epot
     scale_pos(bodies, etot/(-0.25))
     bodies.set_phi(bodies)
-    epot = bodies.get_epot()
+    epot = bodies.get_total_epot()
     scale_vel(bodies, math.sqrt(0.5*abs(epot/etot)))
 
 
@@ -38,10 +38,10 @@ def scale_to_nbody_units(bodies):
 #    scale_mass(bodies, 1.0/bodies.get_mass())
 #    bodies.set_phi(bodies)
 
-    e = bodies.get_energies()
+    e = bodies.get_total_energies()
     print(e.kin, e.pot, e.tot)
     scale_to_virial(bodies, e.kin, e.pot, e.tot)
-    e = bodies.get_energies()
+    e = bodies.get_total_energies()
     print(e.kin, e.pot, e.tot)
 
 
@@ -133,7 +133,7 @@ class Plummer(object):
 
         # set mass
         self._body.mass[:] = self.imf.sample(n)
-        self._body.mass /= self._body.get_mass()
+        self._body.mass /= self._body.get_total_mass()
         # set eps2
         self._body.eps2[:] = self.set_eps2(self._body.mass.copy())
 
@@ -202,7 +202,7 @@ class Plummer(object):
         ###################################
         # IMF plot
 
-        fig = plt.figure(figsize=(12, 5.25))
+        fig = plt.figure(figsize=(14, 6.25))
         # semilogx
         ax1 = fig.add_subplot(2,2,1)
         ax1.semilogx(linbins[:-1], hist, 'bo', label='IMF sample')
@@ -240,7 +240,7 @@ class Plummer(object):
         # Scatter plot
 
         ax = fig.add_subplot(1,2,2)
-        ax.set_axis_bgcolor('0.75')
+#        ax.set_axis_bgcolor('0.75')
         ax.scatter(x, y, c=color, s=radius, cmap='gist_rainbow',
                    alpha=0.75, label=r'$Stars$')
         circle = Circle((0, 0), 1, facecolor='none',

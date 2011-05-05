@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     @selftimer
     def main():
-        numBodies = 128
+        numBodies = 4096
 
 #        imf = IMF.equal()
 #        imf = IMF.salpeter1955(0.5, 120.0)
@@ -25,10 +25,10 @@ if __name__ == "__main__":
 #        bi = p._body
 
 #        plt.semilogx(np.abs(bi.pos[:,0]),bi.phi,'r,')
-#        plt.semilogx(np.abs(bi.pos[:,0]),bi.ekin()/bi.mass,'r,')
-#        plt.semilogx(np.abs(bi.pos[:,0]),bi.ekin()/bi.mass+bi.phi,'r,')
-#        plt.semilogx(np.abs(bi.pos[:,0]),2*bi.ekin()/bi.mass+bi.phi,'r,')
-#        plt.semilogx(np.abs(bi.pos[:,0]),bi.ekin()/bi.mass-bi.phi,'r,')
+#        plt.semilogx(np.abs(bi.pos[:,0]),bi.get_ekin()/bi.mass,'r,')
+#        plt.semilogx(np.abs(bi.pos[:,0]),bi.get_ekin()/bi.mass+bi.phi,'r,')
+#        plt.semilogx(np.abs(bi.pos[:,0]),2*bi.get_ekin()/bi.mass+bi.phi,'r,')
+#        plt.semilogx(np.abs(bi.pos[:,0]),bi.get_ekin()/bi.mass-bi.phi,'r,')
 
 #        plt.savefig('evir2.png', bbox_inches="tight")
 #        plt.show()

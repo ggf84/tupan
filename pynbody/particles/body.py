@@ -32,86 +32,114 @@ dtype = {'names': [n for (n, f) in fields], 'formats': [f for (n, f) in fields]}
 
 class Body(Pbase):
     """
-    A base class for Body-type particles
+    A base class for Body-type particles.
     """
 
     def __init__(self, numobjs=0):
         Pbase.__init__(self, numobjs, dtype)
 
 
-    def get_mass(self):
+    def get_total_mass(self):
         return np.sum(self.mass)
+
+
+    # Center-of-Mass methods
+
+    def get_center_of_mass_pos(self):
+        """
+        Get the center-of-mass position.
+        """
+        return (self.mass * self.pos.T).sum(1) / self.get_total_mass()
+
+    def get_center_of_mass_vel(self):
+        """
+        Get the center-of-mass velocity.
+        """
+        return (self.mass * self.vel.T).sum(1) / self.get_total_mass()
+
+    def reset_center_of_mass(self):
+        """
+        Reset the center-of-mass to origin.
+        """
+        self.pos -= self.get_center_of_mass_pos()
+        self.vel -= self.get_center_of_mass_vel()
 
 
     # Momentum methods
 
-    def get_mass_mom(self):     # moment of inertia
-        return np.sum(self.mass * (self.pos**2).sum(1))
+    def get_linmom(self):
+        """
+        Get the individual linear momentum.
+        """
+        return (self.mass * self.vel.T).T
 
-    def get_linear_mom(self):
-        return (self.mass * self.vel.T).sum(1)
-
-    def get_angular_mom(self):
-        return (self.mass * np.cross(self.pos, self.vel).T).sum(1)
-
-    def get_angular_mom_squared(self):
-        amom = self.get_angular_mom()
-        return np.dot(amom, amom)
-
-    def get_mmom(self):         # XXX:
-        rcm = self.get_Rcenter_of_mass()
-        return self.mass * ((self.pos - rcm)**2).sum(1)
-
-    def get_amom(self):             # XXX:
+    def get_angmom(self):
+        """
+        Get the individual angular momentum.
+        """
         return (self.mass * np.cross(self.pos, self.vel).T).T
 
-    def get_squared_amom(self):     # XXX:
-        amom = self.get_amom()
-        return (amom**2).sum(1)
+    def get_total_linmom(self):
+        """
+        Get the total linear momentum.
+        """
+        return self.get_linmom().sum(0)
 
-
-    # Center of Mass methods
-
-    def get_Rcenter_of_mass(self):
-        return (self.mass * self.pos.T).sum(1) / self.get_mass()
-
-    def get_Vcenter_of_mass(self):
-        return (self.mass * self.vel.T).sum(1) / self.get_mass()
-
-    def reset_center_of_mass(self):
-        self.pos -= self.get_Rcenter_of_mass()
-        self.vel -= self.get_Vcenter_of_mass()
+    def get_total_angmom(self):
+        """
+        Get the total angular momentum.
+        """
+        return self.get_angmom().sum(0)
 
 
     # Energy methods
 
-    def ekin(self):
-        vcm = self.get_Vcenter_of_mass()
+    def get_ekin(self):
+        """
+        Get the individual kinetic energy in the center-of-mass frame.
+        """
+        vcm = self.get_center_of_mass_vel()
         return 0.5 * self.mass * ((self.vel - vcm)**2).sum(1)
 
-    def epot(self):
+    def get_epot(self):
+        """
+        Get the individual potential energy.
+        """
         return self.mass * self.phi
 
-    def etot(self):
-        ekin = self.ekin()
-        epot = self.epot()
-        return ekin + epot
-
-    def get_ekin(self):
-        """get the bodies' total kinetic energy"""
-        return 0.5 * np.sum(self.mass * (self.vel**2).sum(1))
-
-    def get_epot(self):
-        """get the bodies' total potential energy"""
-        return 0.5 * np.sum(self.mass * self.phi)
-
     def get_energies(self):
+        """
+        Get the individual energies 'kin', 'pot', 'tot', 'vir'.
+        """
         ekin = self.get_ekin()
         epot = self.get_epot()
         etot = ekin + epot
-        Energy = namedtuple('Energy', ['kin', 'pot', 'tot'])
-        energy = Energy(ekin, epot, etot)
-        return energy
+        Energies = namedtuple('Energies', ['kin', 'pot', 'tot', 'vir'])
+        energies = Energies(ekin, epot, etot, 2*ekin+epot)
+        return energies
+
+    def get_total_ekin(self):
+        """
+        Get the total kinetic energy.
+        """
+        return np.sum(self.get_ekin())
+
+    def get_total_epot(self):
+        """
+        Get the total potential energy.
+        """
+        return 0.5 * np.sum(self.get_epot())
+
+    def get_total_energies(self):
+        """
+        Get the total energies 'kin', 'pot', 'tot', 'vir'.
+        """
+        ekin = self.get_total_ekin()
+        epot = self.get_total_epot()
+        etot = ekin + epot
+        TotEnergies = namedtuple('TotEnergies', ['kin', 'pot', 'tot', 'vir'])
+        totenergies = TotEnergies(ekin, epot, etot, 2*ekin+epot)
+        return totenergies
 
 
     # Evolve methods
@@ -127,7 +155,7 @@ class Body(Pbase):
 
     def set_phi(self, objs):
         """
-        set the all bodies' gravitational potential due to other bodies
+        Set the individual gravitational potential due to other bodies.
         """
         # double python's for
         def p2p_pot_pyrun_(self, objs):  # 512:5.48938   1024:22.4172
@@ -166,7 +194,9 @@ class Body(Pbase):
 
 
     def set_acc(self, objs):
-        """set the all bodies' acceleration due to other bodies"""
+        """
+        Set the individual acceleration due to other bodies.
+        """
         # double python's for
         def p2p_acc_pyrun_(self, objs): # 512:13.6872   1024:53.6422
             _acc = []

@@ -31,39 +31,39 @@ class Diagnostic(object):
 
 
     def print_header(self):
-        fmt = '{0:16s} '\
-              '{1:16s} {2:12s} {3:12s} {4:11s} '\
-              '{5:10s} {6:10s} {7:10s} '\
-              '{8:10s} {9:10s} {10:10s} '\
-              '{11:10s} {12:10s} {13:10s}'
-        print(fmt.format('#time:00',
-                         '#etot:01', '#ekin:02', '#epot:03', '#eerr:04',
-                         '#rcomX:05', '#rcomY:06', '#rcomZ:07',
-                         '#lmomX:08', '#lmomY:09', '#lmomZ:10',
-                         '#amomX:11', '#amomY:12', '#amomZ:13'),
+        fmt = '{0:16s} {1:12s} {2:12s} '\
+              '{3:16s} {4:12s} {5:11s} '\
+              '{6:10s} {7:10s} {8:10s} '\
+              '{9:10s} {10:10s} {11:10s} '\
+              '{12:10s} {13:10s} {14:10s}'
+        print(fmt.format('#time:00', '#ekin:01', '#epot:02',
+                         '#etot:03', '#evir:04', '#eerr:05',
+                         '#rcomX:06', '#rcomY:07', '#rcomZ:08',
+                         '#lmomX:09', '#lmomY:10', '#lmomZ:11',
+                         '#amomX:12', '#amomY:13', '#amomZ:14'),
               file=self.fobj)
 
 
     def print_diagnostic(self, time, particles):
         particles['body'].set_phi(particles['body'])
-        e = particles['body'].get_energies()
+        e = particles['body'].get_total_energies()
         e1 = e.tot
-        rcom1 = particles['body'].get_Rcenter_of_mass()
-        lmom1 = particles['body'].get_linear_mom()
-        amom1 = particles['body'].get_angular_mom()
+        rcom1 = particles['body'].get_center_of_mass_pos()
+        lmom1 = particles['body'].get_total_linmom()
+        amom1 = particles['body'].get_total_angmom()
 
         eerr = (e1-self.e0)/abs(self.e0)
         rcom = (rcom1-self.rcom0)
         lmom = (lmom1-self.lmom0)
         amom = (amom1-self.amom0)
 
-        fmt = '{time:< 16.10g} '\
-              '{etot:< 16.10g} {ekin:< 12.6g} {epot:< 12.6g} {eerr:< 11.5g} '\
+        fmt = '{time:< 16.10g} {ekin:< 12.6g} {epot:< 12.6g} '\
+              '{etot:< 16.10g} {evir:< 12.6g} {eerr:< 11.5g} '\
               '{rcom[0]:< 10.4g} {rcom[1]:< 10.4g} {rcom[2]:< 10.4g} '\
               '{lmom[0]:< 10.4g} {lmom[1]:< 10.4g} {lmom[2]:< 10.4g} '\
               '{amom[0]:< 10.4g} {amom[1]:< 10.4g} {amom[2]:< 10.4g}'
-        print(fmt.format(time=time,
-                         etot=e.tot, ekin=e.kin, epot=e.pot, eerr=eerr,
+        print(fmt.format(time=time, ekin=e.kin, epot=e.pot,
+                         etot=e.tot, evir=e.vir, eerr=eerr,
                          rcom=rcom, lmom=lmom, amom=amom),
               file=self.fobj)
 
@@ -94,11 +94,11 @@ class Simulation(object):
             print('#'*25)
 
             self.snapcount = 16
-            e = particles['body'].get_energies()
+            e = particles['body'].get_total_energies()
             e0 = e.tot
-            rcom0 = particles['body'].get_Rcenter_of_mass()
-            lmom0 = particles['body'].get_linear_mom()
-            amom0 = particles['body'].get_angular_mom()
+            rcom0 = particles['body'].get_center_of_mass_pos()
+            lmom0 = particles['body'].get_total_linmom()
+            amom0 = particles['body'].get_total_angmom()
             self.dia = Diagnostic(self.args.log, e0, rcom0, lmom0, amom0)
         else:
             print('#'*25)
@@ -106,11 +106,11 @@ class Simulation(object):
             print('#'*25)
 
             self.snapcount = 0
-            e = particles['body'].get_energies()
+            e = particles['body'].get_total_energies()
             e0 = e.tot
-            rcom0 = particles['body'].get_Rcenter_of_mass()
-            lmom0 = particles['body'].get_linear_mom()
-            amom0 = particles['body'].get_angular_mom()
+            rcom0 = particles['body'].get_center_of_mass_pos()
+            lmom0 = particles['body'].get_total_linmom()
+            amom0 = particles['body'].get_total_angmom()
             self.dia = Diagnostic(self.args.log, e0, rcom0, lmom0, amom0)
             self.dia.print_header()
             self.dia.print_diagnostic(0.0, particles)

@@ -61,16 +61,16 @@ if __name__ == "__main__":
 #    plot_coords(x, y, './png/p0.png')
 
 
-    e0 = particles['body'].get_ekin()+particles['body'].get_epot()
-    com0 = particles['body'].get_Rcenter_of_mass()
-    linmom0 = particles['body'].get_linear_mom()
-    angmom0 = particles['body'].get_angular_mom()
+    e0 = particles['body'].get_total_ekin()+particles['body'].get_total_epot()
+    com0 = particles['body'].get_center_of_mass_pos()
+    linmom0 = particles['body'].get_total_linmom()
+    angmom0 = particles['body'].get_total_angmom()
 
 
 
 #    leapFrog = LeapFrog(0.0, 2.0**(-10), particles)
 #    i = 0
-#    while leapFrog.time < 16.0:
+#    while leapFrog.time < 4.0:
 #        i += 1
 #        tout = +leapFrog.time
 #        while leapFrog.time-tout < 0.03125:
@@ -82,19 +82,22 @@ if __name__ == "__main__":
 ##        plot_coords(x, y, './png/p'+str(i)+'.png')
 
 #        p['body'].set_phi(p['body'])
-#        e1 = p['body'].get_ekin()+p['body'].get_epot()
-#        linmom1 = p['body'].get_linear_mom()
-#        angmom1 = p['body'].get_angular_mom()
+#        e1 = p['body'].get_total_ekin()+p['body'].get_total_epot()
+#        com1 = p['body'].get_center_of_mass_pos()
+#        linmom1 = p['body'].get_total_linmom()
+#        angmom1 = p['body'].get_total_angmom()
 
 #        plot_coords(leapFrog.time, (e1-e0)/e0, './png/p'+str(i)+'.png')
 
-#        print('{0}: {1} {2} {3}\n{4}\n{5}'.format(leapFrog.time, e0, e1, (e1-e0)/e0, linmom1-linmom0, angmom1-angmom0))
+#        print('{0}: {1} {2} {3}\n{4}\n{5}\n{6}'.format(leapFrog.time, e0, e1, (e1-e0)/e0, com1-com0, linmom1-linmom0, angmom1-angmom0))
+
 #    p = leapFrog.particles.copy()
 #    p['body'].set_phi(p.copy()['body'])
-#    e1 = p['body'].get_ekin()+p['body'].get_epot()
-#    linmom1 = p['body'].get_linear_mom()
-#    angmom1 = p['body'].get_angular_mom()
-#    print('{0}: {1} {2} {3}\n{4}\n{5}'.format(leapFrog.time, e0, e1, (e1-e0)/e0, linmom1-linmom0, angmom1-angmom0))
+#    e1 = p['body'].get_total_ekin()+p['body'].get_total_epot()
+#    com1 = p['body'].get_center_of_mass_pos()
+#    linmom1 = p['body'].get_total_linmom()
+#    angmom1 = p['body'].get_total_angmom()
+#    print('{0}: {1} {2} {3}\n{4}\n{5}\n{6}'.format(leapFrog.time, e0, e1, (e1-e0)/e0, com1-com0, linmom1-linmom0, angmom1-angmom0))
 
 
 
@@ -106,7 +109,7 @@ if __name__ == "__main__":
 #    print(block.gather())
 
     i = 0
-    while block.time < 8.0:
+    while block.time < 4.0:
         i += 1
         tout = +block.time
         while block.time-tout < 0.03125:
@@ -118,20 +121,20 @@ if __name__ == "__main__":
         plot_coords(x, y, './png/p'+str(i)+'.png')
 
         p['body'].set_phi(p['body'])
-        e1 = p['body'].get_ekin()+p['body'].get_epot()
-        com1 = p['body'].get_Rcenter_of_mass()
-        linmom1 = p['body'].get_linear_mom()
-        angmom1 = p['body'].get_angular_mom()
+        e1 = p['body'].get_total_ekin()+p['body'].get_total_epot()
+        com1 = p['body'].get_center_of_mass_pos()
+        linmom1 = p['body'].get_total_linmom()
+        angmom1 = p['body'].get_total_angmom()
 
 #        plot_coords(block.time, (e1-e0)/e0, './png/p'+str(i)+'.png')
 
         print('{0}: {1} {2} {3}\n{4}\n{5}\n{6}'.format(block.time, e0, e1, (e1-e0)/e0, com1-com0, linmom1-linmom0, angmom1-angmom0))
     p = block.gather()
     p['body'].set_phi(p['body'])
-    e1 = p['body'].get_ekin()+p['body'].get_epot()
-    com1 = p['body'].get_Rcenter_of_mass()
-    linmom1 = p['body'].get_linear_mom()
-    angmom1 = p['body'].get_angular_mom()
+    e1 = p['body'].get_total_ekin()+p['body'].get_total_epot()
+    com1 = p['body'].get_center_of_mass_pos()
+    linmom1 = p['body'].get_total_linmom()
+    angmom1 = p['body'].get_total_angmom()
     print('{0}: {1} {2} {3}\n{4}\n{5}\n{6}'.format(block.time, e0, e1, (e1-e0)/e0, com1-com0, linmom1-linmom0, angmom1-angmom0))
 
 
