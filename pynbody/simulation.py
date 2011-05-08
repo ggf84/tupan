@@ -8,6 +8,7 @@ import sys
 import pickle
 from ggf84decor import selftimer
 from pynbody.io import HDF5IO
+from pynbody.analysis.glviewer import GLviewer
 from pynbody.integrator import (METH_NAMES, METHS)
 
 
@@ -133,6 +134,7 @@ class Simulation(object):
         diadt = 1.0 / self.args.dia
         io = HDF5IO('snapshots.hdf5')
         iorestart = HDF5IO('restart.hdf5', 'w')
+        viewer = GLviewer()
 
         while (self.integrator.time < self.args.tmax):
             old_restime = self.integrator.time
@@ -143,11 +145,18 @@ class Simulation(object):
                 while ((self.integrator.time - old_diatime < diadt) and
                        (self.integrator.time < self.args.tmax)):
                     self.integrator.step()
+
+                if not viewer.exitgl:
+                    viewer.set_particle(self.integrator.gather()['body'].copy())
+                    viewer.show_event()
+
                 particles = self.integrator.gather()
                 self.dia.print_diagnostic(self.integrator.time, particles)
                 io.write_snapshot(particles, group_id=self.snapcount)
             if (self.integrator.time - old_restime >= self.args.resdt):
                 iorestart.write_snapshot(particles)
+
+        viewer.enter_main_loop()
 
 
     def run(self):

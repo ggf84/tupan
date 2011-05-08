@@ -9,9 +9,6 @@ from __future__ import print_function
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-from OpenGL.raw import GL
-from OpenGL.arrays import vbo
-from OpenGL.arrays import ArrayDatatype as ADT
 import numpy as np
 import os
 import sys
@@ -34,7 +31,7 @@ WINDOW_TITLE_PREFIX = 'PyNbody Viewer'
 
 ROTINC = 0.05
 ZOOM_FACTOR = 1.0
-POINT_SIZE = 3.0
+POINT_SIZE = 8.0
 CONTRAST = 64
 SATURATE = False
 COLORSCHEME = 1
@@ -124,19 +121,28 @@ class GLviewer(object):
         self.rotate_y = 0
         self.rotate_z = 0
         self.particle = None
+        self.exitgl = False
         self.initialize()
-#        glutMainLoop()
 
 
-    def update(self, particle):
+    def set_particle(self, particle):
         self.particle = particle
-        glutMainLoop()
-        print('after close...')
+
+
+    def enter_main_loop(self):
+        if not self.exitgl:
+            glutMainLoop()
+
+
+    def show_event(self):
+        if not self.exitgl:
+            glutMainLoopEvent()
 
 
     def initialize(self):
         self.init_window()
-        print('INFO: OpenGL Version: {0}'.format(glGetString(GL_VERSION)))
+        print('INFO: OpenGL Version: {0}'.format(glGetString(GL_VERSION)),
+              file=sys.stderr)
         self.init_gl()
 
 
@@ -277,6 +283,8 @@ class GLviewer(object):
             else:
                 PPMSTREAM = False
         elif key == ESCAPE:
+            self.exitgl = True
+            glutHideWindow()
             glutDestroyWindow(self.window_handle)
 
 
@@ -298,19 +306,19 @@ class GLviewer(object):
 
 
     def init_window(self):
-        glutInit (sys.argv)
+        glutInit(sys.argv)
         glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE)
         glutInitWindowPosition((glutGet(GLUT_SCREEN_WIDTH) - self.window_width)/2,
                                (glutGet(GLUT_SCREEN_HEIGHT) - self.window_height)/2)
         glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,
-                      GLUT_ACTION_GLUTMAINLOOP_RETURNS)
+                      GLUT_ACTION_CONTINUE_EXECUTION)
         glutInitWindowSize(self.window_width, self.window_height)
         self.window_handle = glutCreateWindow(WINDOW_TITLE_PREFIX)
         glutDisplayFunc(self.render_func)
         glutReshapeFunc(self.resize_func)
         glutKeyboardFunc(self.keyboard)
         glutSpecialFunc(self.keyboard_s)
-        glutIdleFunc(self.idle)
+#        glutIdleFunc(self.idle)
         glutTimerFunc(0, self.timer_func, 0)
 
 
@@ -369,9 +377,9 @@ class GLviewer(object):
 
     def get_colors(self):
         if not SATURATE:
-            r = -self.particle.epot()
-            r = self.particle.mass*(2*self.particle.ekin() + r)/r
-#            r = self.particle.ekin()
+            r = -self.particle.get_epot()
+            r = self.particle.mass*(2*self.particle.get_ekin() + r)/r
+#            r = self.particle.get_ekin()
             g = self.particle.mass
             b = self.particle.mass*np.sqrt((self.particle.acc**2).sum(1))
 
@@ -402,15 +410,6 @@ class GLviewer(object):
 
 
     def draw_system(self):
-#        from pynbody.models import (IMF, Plummer)
-#        imf = IMF.padoan2007(0.075, 120.0)
-#        p = Plummer(2048, imf, epsf=4.0)
-#        p.make_plummer()
-#        self.particle = p._body
-
-#        points = [[1.0, 0.0, 0.0], [-1.0, 0.0, 0.0],
-#                  [0.0, 1.0, 0.0], [0.0, -1.0, 0.0]]
-
         points = self.particle.pos
         colors = self.get_colors()
 
@@ -578,24 +577,26 @@ class GLviewer(object):
 
 
 
+if __name__ == "__main__":
+    from pynbody.models import (IMF, Plummer)
+#    imf = IMF.equal()
+#    imf = IMF.salpeter1955(0.5, 120.0)
+    imf = IMF.padoan2007(0.075, 120.0)
+#    imf = IMF.parravano2011(0.075, 120.0)
+    p = Plummer(2048, imf, epsf=4.0, seed=1)
+    p.make_plummer()
+#    p.show()
 
+    viewer = GLviewer()
+#    viewer.set_particle(p._body)
+#    viewer.enter_main_loop()
 
-from pynbody.models import (IMF, Plummer)
-#imf = IMF.equal()
-#imf = IMF.salpeter1955(0.5, 120.0)
-imf = IMF.padoan2007(0.075, 120.0)
-#imf = IMF.parravano2011(0.075, 120.0)
-p = Plummer(2048, imf, epsf=4.0, seed=1)
-p.make_plummer()
-#p.show()
-
-viewer = GLviewer()
-viewer.update(p._body)
-
-#for i in range(100):
-#    viewer.update(p._body)
-#    viewer.particle = p._body[:-128]
-#    glutMainLoop()
+    for i in xrange(1000):
+        print(i)
+#        p = Plummer(8, imf, epsf=4.0)
+#        p.make_plummer()
+        viewer.set_particle(p._body)
+        viewer.show_event()
 
 
 
