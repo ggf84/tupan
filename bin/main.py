@@ -31,6 +31,12 @@ def process_cmdline():
                         help='Parameter for time step determination (type: flo'
                              'at, default: None).'
                        )
+    parser.add_argument('-g', '--gldia',
+                        type=int,
+                        default=64,
+                        help='GL event frequency per time unit (type: int, def'
+                             'ault: 64).'
+                       )
     parser.add_argument('-i', '--input',
                         type=str,
                         default=None,

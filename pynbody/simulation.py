@@ -132,6 +132,7 @@ class Simulation(object):
 
         """
         diadt = 1.0 / self.args.dia
+        gldt = 1.0 / self.args.gldia
         io = HDF5IO('snapshots.hdf5')
         iorestart = HDF5IO('restart.hdf5', 'w')
         viewer = GLviewer()
@@ -144,12 +145,14 @@ class Simulation(object):
                 old_diatime = self.integrator.time
                 while ((self.integrator.time - old_diatime < diadt) and
                        (self.integrator.time < self.args.tmax)):
-                    self.integrator.step()
-
-                if not viewer.exitgl:
-                    viewer.set_particle(self.integrator.gather()['body'].copy())
-                    viewer.show_event()
-
+                    old_gltime = self.integrator.time
+                    while ((self.integrator.time - old_gltime < gldt) and
+                           (self.integrator.time < self.args.tmax)):
+                        self.integrator.step()
+                    if not viewer.exitgl:
+#                        print(self.integrator.time)
+                        viewer.set_particle(self.integrator.gather()['body'].copy())
+                        viewer.show_event()
                 particles = self.integrator.gather()
                 self.dia.print_diagnostic(self.integrator.time, particles)
                 io.write_snapshot(particles, group_id=self.snapcount)
