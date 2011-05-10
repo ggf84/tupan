@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Performs a N-body Simulation
+Performs a N-body Simulation.
 """
 
 from __future__ import print_function
@@ -13,13 +13,17 @@ from pynbody.simulation import (Simulation, RUN_MODES, METH_NAMES)
 
 def process_cmdline():
     """
-    process command line arguments
+    Process command line arguments.
     """
     # create the parser
-    parser = argparse.ArgumentParser(description='Performs a N-body Simulation')
+    parser = argparse.ArgumentParser(description='Performs a N-body Simulation.')
 
     # add the arguments
-    parser.add_argument('-d', '--dia',
+    parser.add_argument('-a', '--animate',
+                        action='store_true',
+                        help='Enable GLviewer animation of the simulation.'
+                       )
+    parser.add_argument('-d', '--diag_freq',
                         type=int,
                         default=4,
                         help='Diagnostic frequency of the simulation per time '
@@ -28,22 +32,24 @@ def process_cmdline():
     parser.add_argument('-e', '--eta',
                         type=float,
                         default=None,
+                        required=True,
                         help='Parameter for time step determination (type: flo'
                              'at, default: None).'
                        )
-    parser.add_argument('-g', '--gldia',
+    parser.add_argument('-g', '--gl_freq',
                         type=int,
-                        default=64,
-                        help='GL event frequency per time unit (type: int, def'
-                             'ault: 64).'
+                        default=128,
+                        help='GLviewer event frequency per time unit (type: in'
+                             't, default: 128).'
                        )
     parser.add_argument('-i', '--input',
                         type=str,
                         default=None,
+                        required=True,
                         help='The file name from which the initial conditions '
                              'must be read (type: str, default: None).'
                        )
-    parser.add_argument('-l', '--log',
+    parser.add_argument('-l', '--log_file',
                         type=str,
                         default=sys.stdout,
                         help='The file name where the log should be written (t'
@@ -77,6 +83,7 @@ def process_cmdline():
     parser.add_argument('-t', '--tmax',
                         type=float,
                         default=None,
+                        required=True,
                         help='Time to stop the simulation (type: float, defaul'
                              't: None).'
                        )
@@ -84,13 +91,13 @@ def process_cmdline():
     # parse the command line
     args = parser.parse_args()
 
-    if args.log != sys.stdout:
+    if args.log_file != sys.stdout:
         # open log-file according to operation mode of the simulation
         if args.smod in RUN_MODES:
             if args.smod == 'restart':
-                args.log = open(args.log, 'a')
+                args.log_file = open(args.log_file, 'a')
             else:
-                args.log = open(args.log, 'w')
+                args.log_file = open(args.log_file, 'w')
         else:
             print('Typo or invalid operating mode for the simulation.')
             print('Available modes:', RUN_MODES)
@@ -102,7 +109,7 @@ def process_cmdline():
 
 def main():
     """
-    The top level main function
+    The top level main function.
     """
     args = process_cmdline()
     mysim = Simulation(args)

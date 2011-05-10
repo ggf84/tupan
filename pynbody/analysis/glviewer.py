@@ -24,14 +24,14 @@ texture_path = os.path.join(path, 'textures')
 ESCAPE = '\033'
 FULLSCREEN = False
 PPMSTREAM = False
-WINDOW_WIDTH = 1024
-WINDOW_HEIGHT = 640
+WINDOW_WIDTH = 768
+WINDOW_HEIGHT = 480
 WINDOW_TITLE_PREFIX = 'PyNbody Viewer'
 
 
 ROTINC = 0.05
 ZOOM_FACTOR = 1.0
-POINT_SIZE = 32.0
+POINT_SIZE = 16.0
 CONTRAST = 64
 SATURATE = False
 COLORSCHEME = 1
@@ -134,8 +134,9 @@ class GLviewer(object):
             glutMainLoop()
 
 
-    def show_event(self):
+    def show_event(self, integrator):
         if not self.exitgl:
+            self.set_particle(integrator.gather()['body'].copy())
             glutMainLoopEvent()
 
 
