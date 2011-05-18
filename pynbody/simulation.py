@@ -22,7 +22,7 @@ class Diagnostic(object):
     """
 
     """
-    def __init__(self, fobj, e0, rcom0, lmom0, amom0, ceerr=0.0, ceerr_count=0):
+    def __init__(self, e0, rcom0, lmom0, amom0, fobj, ceerr=0.0, ceerr_count=0):
         self.fobj = fobj
         self.e0 = e0
         self.rcom0 = rcom0
@@ -37,7 +37,7 @@ class Diagnostic(object):
 
 
     def print_header(self):
-        fmt = '{0:16s} '\
+        fmt = '{0:12s} '\
               '{1:12s} {2:12s} {3:16s} '\
               '{4:12s} {5:11s} {6:11s} '\
               '{7:10s} {8:10s} {9:10s} '\
@@ -68,7 +68,7 @@ class Diagnostic(object):
         lmom = (lmom1-self.lmom0)
         amom = (amom1-self.amom0)
 
-        fmt = '{time:< 16.10g} '\
+        fmt = '{time:< 12.6g} '\
               '{ekin:< 12.6g} {epot:< 12.6g} {etot:< 16.10g} '\
               '{evir:< 12.6g} {eerr:< 11.5g} {geerr:< 11.5g} '\
               '{rcom[0]:< 10.4g} {rcom[1]:< 10.4g} {rcom[2]:< 10.4g} '\
@@ -88,7 +88,7 @@ class Simulation(object):
     """
     def __init__(self, args):
         self.args = args
-        if self.args.animate:
+        if self.args.view:
             self.viewer = GLviewer()
 
         # Set the method of integration.
@@ -101,29 +101,34 @@ class Simulation(object):
             sys.exit(1)
 
 
-        io = HDF5IO(self.args.input)
-        particles = io.read_snapshot()
 
-        print('#'*25)
-        print(self.args.__dict__)
-        print('#'*25)
+        print('#'*25, file=args.debug_file)
+        print(self.args.__dict__, file=args.debug_file)
+        print('#'*25, file=args.debug_file)
+
+        self.snapcount = 0
 
         if self.args.smod == 'restart':
-            self.snapcount = 16
+            io = HDF5IO('restart.hdf5')
+            particles = io.read_snapshot()
+            self.snapcount = 16  # XXX: read snapcount
             e = particles['body'].get_total_energies()
             e0 = e.tot
             rcom0 = particles['body'].get_center_of_mass_pos()
             lmom0 = particles['body'].get_total_linmom()
             amom0 = particles['body'].get_total_angmom()
-            self.dia = Diagnostic(self.args.log_file, e0, rcom0, lmom0, amom0)
         else:
-            self.snapcount = 0
+            io = HDF5IO(self.args.input)
+            particles = io.read_snapshot()
             e = particles['body'].get_total_energies()
             e0 = e.tot
             rcom0 = particles['body'].get_center_of_mass_pos()
             lmom0 = particles['body'].get_total_linmom()
             amom0 = particles['body'].get_total_angmom()
-            self.dia = Diagnostic(self.args.log_file, e0, rcom0, lmom0, amom0)
+
+        self.dia = Diagnostic(e0, rcom0, lmom0, amom0, self.args.log_file)
+
+        if not self.args.smod == 'restart':
             self.dia.print_header()
             self.dia.print_diagnostic(0.0, particles)
             particles['body'].set_acc(particles['body'])
@@ -131,8 +136,6 @@ class Simulation(object):
             io = HDF5IO('snapshots.hdf5')
             io.write_snapshot(particles, group_id=self.snapcount)
 
-        iorestart = HDF5IO('restart.hdf5', 'w')
-        iorestart.write_snapshot(particles)
 
         self.integrator = self.Integrator(0.0, self.args.eta, particles)
 
@@ -159,7 +162,7 @@ class Simulation(object):
                     while ((self.integrator.time - old_gltime < gldt) and
                            (self.integrator.time < self.args.tmax)):
                         self.integrator.step()
-                    if self.args.animate:
+                    if self.args.view:
                         self.viewer.show_event(self.integrator)
                 particles = self.integrator.gather()
                 self.dia.print_diagnostic(self.integrator.time, particles)
@@ -167,7 +170,7 @@ class Simulation(object):
             if (self.integrator.time - old_restime >= self.args.resdt):
                 iorestart.write_snapshot(particles)
 
-        if self.args.animate:
+        if self.args.view:
             self.viewer.enter_main_loop()
 
 

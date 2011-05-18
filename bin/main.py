@@ -19,9 +19,9 @@ def process_cmdline():
     parser = argparse.ArgumentParser(description='Performs a N-body Simulation.')
 
     # add the arguments
-    parser.add_argument('-a', '--animate',
+    parser.add_argument('--view',
                         action='store_true',
-                        help='Enable GLviewer animation of the simulation.'
+                        help='Enable visualization of the simulation on the fly.'
                        )
     parser.add_argument('-d', '--diag_freq',
                         type=int,
@@ -49,11 +49,21 @@ def process_cmdline():
                         help='The file name from which the initial conditions '
                              'must be read (type: str, default: None).'
                        )
-    parser.add_argument('-l', '--log_file',
+    parser.add_argument('--log_file',
                         type=str,
                         default=sys.stdout,
-                        help='The file name where the log should be written (t'
-                             'ype: str, default: sys.stdout).'
+                        help='File name where log messages should be written ('
+                             'type: str, default: sys.stdout).'
+                       )
+    parser.add_argument('--debug_file',
+                        type=str,
+                        default=sys.stderr,
+                        help='File name where error messages should be written'
+                             ' (type: str, default: sys.stderr).'
+                       )
+    parser.add_argument('--debug',
+                        action='store_true',
+                        help='Enable debug messages.'
                        )
     parser.add_argument('-m', '--meth',
                         type=str,
@@ -91,18 +101,27 @@ def process_cmdline():
     # parse the command line
     args = parser.parse_args()
 
-    if args.log_file != sys.stdout:
+    if args.smod in RUN_MODES:
         # open log-file according to operation mode of the simulation
-        if args.smod in RUN_MODES:
-            if args.smod == 'restart':
+        if args.smod == 'restart':
+            if args.log_file != sys.stdout:
                 args.log_file = open(args.log_file, 'a')
-            else:
-                args.log_file = open(args.log_file, 'w')
+            if args.debug_file != sys.stderr:
+                args.debug_file = open(args.debug_file, 'a')
         else:
-            print('Typo or invalid operating mode for the simulation.')
-            print('Available modes:', RUN_MODES)
-            print('exiting...')
-            sys.exit(1)
+            if args.log_file != sys.stdout:
+                args.log_file = open(args.log_file, 'w')
+            if args.debug_file != sys.stderr:
+                args.debug_file = open(args.debug_file, 'w')
+    else:
+        print('Typo or invalid operating mode for the simulation.')
+        print('Available modes:', RUN_MODES)
+        print('exiting...')
+        sys.exit(1)
+
+
+
+
 
     return args
 
