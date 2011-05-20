@@ -6,7 +6,7 @@ Setup Script
 """
 
 #from setuptools import setup
-from distutils.core import setup
+from distutils.core import (setup, Extension)
 from distutils.command.install import USER_SITE
 import os
 import pynbody
@@ -34,6 +34,10 @@ installpath = USER_SITE + os.sep + path
 data_files[installpath] = [path+fname for fname in ['glow.png']]
 
 
+path = os.path.join('pynbody', 'lib') + os.sep
+ext_modules = []
+ext_modules.append(Extension('pynbody.lib.pneqs',
+                             sources=[path+'pneqs.c']))
 
 setup(
     name='PyNbody',
@@ -49,6 +53,7 @@ setup(
               'pynbody.models',
               'pynbody.particles',
               'pynbody.test'],
+    ext_modules=ext_modules,
 #    include_package_data=True,
     data_files=data_files.items(),
     scripts=['bin/main.py'],
