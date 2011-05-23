@@ -120,6 +120,7 @@ class Simulation(object):
         else:
             io = HDF5IO(self.args.input)
             particles = io.read_snapshot()
+            particles['body'].set_phi(particles['body'])
             e = particles['body'].get_total_energies()
             e0 = e.tot
             rcom0 = particles['body'].get_center_of_mass_pos()

@@ -10,16 +10,15 @@ import math
 import numpy as np
 from collections import namedtuple
 from pynbody.particles.pbase import Pbase
+from pynbody.lib import gravity
 try:
     from pynbody.lib.kernels import clkernel
     HAVE_CL = True
+#    raise
 except Exception as e:
     HAVE_CL = False
     print(e)
     print('Doing calculations without OpenCL...')
-
-
-#HAVE_CL = False
 
 
 
@@ -238,11 +237,13 @@ class Body(Pbase):
                 _acc[i][:3] = -(r3inv * dpos.T).sum(1)
             return _acc
 
-        if HAVE_CL:
-            _acc = clkernel.p2p_acc.run(self, objs)
-#            clkernel.p2p_acc.print_profile(len(self), len(objs))
-        else:
-            _acc = p2p_acc_pyrun(self, objs)
+#        if HAVE_CL:
+#            _acc = clkernel.p2p_acc.run(self, objs)
+##            clkernel.p2p_acc.print_profile(len(self), len(objs))
+#        else:
+#            _acc = p2p_acc_pyrun(self, objs)
+
+        _acc = gravity.get_acc(self, objs)
 
 #        print('acc - '*10)
 #        print(_acc)

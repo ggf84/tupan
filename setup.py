@@ -37,7 +37,11 @@ data_files[installpath] = [path+fname for fname in ['glow.png']]
 path = os.path.join('pynbody', 'lib') + os.sep
 ext_modules = []
 ext_modules.append(Extension('pynbody.lib.pneqs',
+                             libraries = ['m'],
                              sources=[path+'pneqs.c']))
+ext_modules.append(Extension('pynbody.lib._gravity',
+                             libraries = ['m'],
+                             sources=[path+'_gravity.c']))
 
 setup(
     name='PyNbody',
