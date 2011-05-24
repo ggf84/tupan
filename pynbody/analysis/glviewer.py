@@ -308,7 +308,8 @@ class GLviewer(object):
 
     def init_window(self):
         glutInit(sys.argv)
-        glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE)
+#        glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH)
+        glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA | GLUT_DEPTH)
         glutInitWindowPosition((glutGet(GLUT_SCREEN_WIDTH) - self.window_width)/2,
                                (glutGet(GLUT_SCREEN_HEIGHT) - self.window_height)/2)
         glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,
@@ -378,9 +379,9 @@ class GLviewer(object):
 
     def get_colors(self):
         if not SATURATE:
-            r = -self.particle.get_epot()
-            r = self.particle.mass*(2*self.particle.get_ekin() + r)/r
-#            r = self.particle.get_ekin()
+#            r = -self.particle.get_epot()
+#            r = self.particle.mass*(2*self.particle.get_ekin() + r)/r
+            r = self.particle.get_ekin()
             g = self.particle.mass
             b = self.particle.mass*np.sqrt((self.particle.acc**2).sum(1))
 
