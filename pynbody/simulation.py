@@ -151,6 +151,9 @@ class Simulation(object):
         io = HDF5IO('snapshots.hdf5')
         iorestart = HDF5IO('restart.hdf5', 'w')
 
+        if self.args.view:
+            self.viewer.initialize()
+
         while (self.integrator.time < self.args.tmax):
             old_restime = self.integrator.time
             while ((self.integrator.time - old_restime < self.args.resdt) and

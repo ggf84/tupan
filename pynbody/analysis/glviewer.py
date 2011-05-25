@@ -29,10 +29,10 @@ WINDOW_HEIGHT = 480
 WINDOW_TITLE_PREFIX = 'PyNbody Viewer'
 
 
-ROTINC = 0.05
+ROTINC = 0.03125
 ZOOM_FACTOR = 1.0
-POINT_SIZE = 16.0
-CONTRAST = 64
+POINT_SIZE = 10.0
+CONTRAST = 16384
 SATURATE = False
 COLORSCHEME = 1
 COLORMASK = {'r': False, 'g': False, 'b': False}
@@ -122,7 +122,6 @@ class GLviewer(object):
         self.rotate_z = 0
         self.particle = None
         self.exitgl = False
-        self.initialize()
 
 
     def set_particle(self, particle):
@@ -379,15 +378,20 @@ class GLviewer(object):
 
     def get_colors(self):
         if not SATURATE:
-#            r = -self.particle.get_epot()
-#            r = self.particle.mass*(2*self.particle.get_ekin() + r)/r
-            r = self.particle.get_ekin()
+            r = -self.particle.get_epot()
             g = self.particle.mass
             b = self.particle.mass*np.sqrt((self.particle.acc**2).sum(1))
 
-            r /= r.max()
-            g /= g.max()
-            b /= b.max()
+
+##            r = -self.particle.get_epot()
+##            r = self.particle.mass*(2*self.particle.get_ekin() + r)/r
+#            r = self.particle.get_ekin()
+#            g = self.particle.mass
+#            b = self.particle.mass*np.sqrt((self.particle.acc**2).sum(1))
+
+#            r /= r.max()
+#            g /= g.max()
+#            b /= b.max()
 
             maxlog10 = np.log10(1.0+CONTRAST)
             r = np.log10(1.0+CONTRAST*r)/maxlog10
@@ -401,11 +405,12 @@ class GLviewer(object):
             elif COLORSCHEME == 3:
                 return (np.vstack((b, r, g)).T)
             elif COLORSCHEME == 4:
-                return (np.vstack((g, r, b)).T)
+                return (np.vstack((b, g, r)).T)
             elif COLORSCHEME == 5:
                 return (np.vstack((r, b, g)).T)
             elif COLORSCHEME == 6:
-                return (np.vstack((b, g, r)).T)
+                return (np.vstack((g, r, b)).T)
+
 
         else:
             return np.ones((len(self.particle), 3), dtype='f8')
