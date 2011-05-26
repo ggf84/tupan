@@ -34,14 +34,14 @@ installpath = USER_SITE + os.sep + path
 data_files[installpath] = [path+fname for fname in ['glow.png']]
 
 
-path = os.path.join('pynbody', 'lib') + os.sep
+path = os.path.join('pynbody', 'lib', 'gravity') + os.sep
 ext_modules = []
-ext_modules.append(Extension('pynbody.lib.pneqs',
+ext_modules.append(Extension('pynbody.lib.gravity._gravpostnewton',
                              libraries = ['m'],
-                             sources=[path+'pneqs.c']))
-ext_modules.append(Extension('pynbody.lib._gravity',
+                             sources=[path+'_gravpostnewton.c']))
+ext_modules.append(Extension('pynbody.lib.gravity._gravnewton',
                              libraries = ['m'],
-                             sources=[path+'_gravity.c']))
+                             sources=[path+'_gravnewton.c']))
 
 setup(
     name='PyNbody',
@@ -53,6 +53,7 @@ setup(
               'pynbody.integrator',
               'pynbody.io',
               'pynbody.lib',
+              'pynbody.lib.gravity',
               'pynbody.lib.kernels',
               'pynbody.models',
               'pynbody.particles',

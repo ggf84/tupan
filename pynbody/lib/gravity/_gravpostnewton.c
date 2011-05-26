@@ -23,7 +23,7 @@ typedef struct clight_struct {
 
 
 
-VECT get_pnacc(unsigned long nj,
+VECT set_pnacc(unsigned long nj,
                unsigned long *jindex_array,
                double *jpos_array,
                double *jvel_array,
@@ -53,13 +53,13 @@ VECT get_pnacc(unsigned long nj,
 
 
 
-static PyObject *pneqsError;
+/*static PyObject *pneqsError;*/
 
 
 #define cast_to_ulong(p) ((unsigned long *) (((PyArrayObject *)p)->data))
 #define cast_to_double(p) ((double *) (((PyArrayObject *)p)->data))
 
-static PyObject *_get_pnacc(PyObject *_self, PyObject *_args)
+static PyObject *_set_pnacc(PyObject *_self, PyObject *_args)
 {
     CLIGHT clight;
     unsigned long nj, *iindex, *jindex_array;
@@ -85,7 +85,7 @@ static PyObject *_get_pnacc(PyObject *_self, PyObject *_args)
     jvel_array = cast_to_double(_jvel_array);
     jspin_array = cast_to_double(_jspin_array);
 
-    VECT pnacc = get_pnacc(nj,
+    VECT pnacc = set_pnacc(nj,
                            jindex_array, jpos_array,
                            jvel_array, jspin_array,
                            iindex, ipos, ivel, ispin,
@@ -96,24 +96,27 @@ static PyObject *_get_pnacc(PyObject *_self, PyObject *_args)
 }
 
 
-static PyMethodDef pneqs_meths[] = {
-    {"get_pnacc", (PyCFunction)_get_pnacc, METH_VARARGS,
-                  "returns PN corrections of accel."},
+static PyMethodDef _gravpostnewton_meths[] = {
+    {"set_pnacc", (PyCFunction)_set_pnacc, METH_VARARGS,
+                  "returns the Post-Newtonian gravitational acceleration."},
     {NULL, NULL, 0, NULL},
 };
 
 
-PyMODINIT_FUNC initpneqs(void)
+PyMODINIT_FUNC init_gravpostnewton(void)
 {
     PyObject *ret;
 
-    ret = Py_InitModule("pneqs", pneqs_meths);
+    ret = Py_InitModule3("_gravpostnewton", _gravpostnewton_meths,
+                         "A extension module for Post-Newtonian gravity.");
+
+    import_array();
 
     if (ret == NULL)
         return;
 
-    pneqsError = PyErr_NewException("pneqs.error", NULL, NULL);
-    Py_INCREF(pneqsError);
-    PyModule_AddObject(ret, "error", pneqsError);
+/*    pneqsError = PyErr_NewException("pneqs.error", NULL, NULL);*/
+/*    Py_INCREF(pneqsError);*/
+/*    PyModule_AddObject(ret, "error", pneqsError);*/
 }
 

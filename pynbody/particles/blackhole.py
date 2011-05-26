@@ -9,6 +9,7 @@ from __future__ import print_function
 import math
 import numpy as np
 from pynbody.particles.pbase import Pbase
+import pynbody.lib.gravity as gravity
 
 
 fields = [('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),   # eps2 -> radius
