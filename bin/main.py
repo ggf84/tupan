@@ -8,7 +8,7 @@ Performs a N-body Simulation.
 from __future__ import print_function
 import sys
 import argparse
-from pynbody.simulation import (Simulation, RUN_MODES, METH_NAMES)
+from pynbody.simulation import (Simulation, METH_NAMES)
 
 
 def process_cmdline():
@@ -32,7 +32,7 @@ def process_cmdline():
     parser.add_argument('-e', '--eta',
                         type=float,
                         default=None,
-                        required=True,
+#                        required=True,
                         help='Parameter for time step determination (type: flo'
                              'at, default: None).'
                        )
@@ -45,7 +45,7 @@ def process_cmdline():
     parser.add_argument('-i', '--input',
                         type=str,
                         default=None,
-                        required=True,
+#                        required=True,
                         help='The file name from which the initial conditions '
                              'must be read (type: str, default: None).'
                        )
@@ -68,6 +68,7 @@ def process_cmdline():
     parser.add_argument('-m', '--meth',
                         type=str,
                         default='leapfrog',
+                        choices=METH_NAMES,
                         help='Integration method name {0} (type: str, default:'
                              ' leapfrog).'.format(METH_NAMES)
                        )
@@ -84,16 +85,15 @@ def process_cmdline():
                         help='Time interval between rewrites of the resumption'
                              ' file. (type: float, default: 1.0).'
                        )
-    parser.add_argument('-s', '--smod',
-                        type=str,
-                        default='newrun',
-                        help='Operation mode of the simulation {0} (type: str,'
-                             ' default: newrun).'.format(RUN_MODES)
+    parser.add_argument('--restart',
+                        action='store_true',
+                        help='If enabled, reboots the simulation from the resu'
+                             'mption file.'
                        )
     parser.add_argument('-t', '--tmax',
                         type=float,
                         default=None,
-                        required=True,
+#                        required=True,
                         help='Time to stop the simulation (type: float, defaul'
                              't: None).'
                        )
@@ -101,27 +101,15 @@ def process_cmdline():
     # parse the command line
     args = parser.parse_args()
 
-    if args.smod in RUN_MODES:
-        # open log-file according to operation mode of the simulation
-        if args.smod == 'restart':
-            if args.log_file != sys.stdout:
-                args.log_file = open(args.log_file, 'a')
-            if args.debug_file != sys.stderr:
-                args.debug_file = open(args.debug_file, 'a')
-        else:
-            if args.log_file != sys.stdout:
-                args.log_file = open(args.log_file, 'w')
-            if args.debug_file != sys.stderr:
-                args.debug_file = open(args.debug_file, 'w')
-    else:
-        print('Typo or invalid operating mode for the simulation.')
-        print('Available modes:', RUN_MODES)
-        print('exiting...')
-        sys.exit(1)
+    if args.log_file == sys.stdout:
+        args.log_file = sys.stdout.name
 
+    if args.debug_file == sys.stderr:
+        args.debug_file = sys.stderr.name
 
-
-
+    args.fmode = 'w'
+    if args.restart:
+        args.fmode = 'a'
 
     return args
 
@@ -131,8 +119,16 @@ def main():
     The top level main function.
     """
     args = process_cmdline()
-    mysim = Simulation(args)
+    if args.restart:
+        import pickle
+        with open('restart.pickle', 'r') as fobj:
+            mysim = pickle.load(fobj)
+#        mysim.args.tmax = args.tmax
+#        print(mysim.args.tmax)
+    else:
+        mysim = Simulation(args)
     mysim.evolve()
+
     return 0
 
 

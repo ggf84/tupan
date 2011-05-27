@@ -1,6 +1,7 @@
 build
 dist
 *.hdf5
+*.pickle
 MANIFEST
 *.pyc
 pynbody/test/png

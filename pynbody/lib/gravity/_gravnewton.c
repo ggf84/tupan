@@ -91,7 +91,7 @@ VEC4 set_acc( unsigned long iindex,
             dv2 = ((dv.x * dv.x + dv.y * dv.y) + dv.z * dv.z);
             rinv = 1.0/sqrt(dr2);
             rinv3 = rinv * rinv;
-            elagr = 0.5 * dv2 + Mpair * rinv;
+            elagr = 0.0 * dv2 + Mpair * rinv;
             acc.w += elagr * rinv3;
             rinv3 *= jmass_array[j] * rinv;
             acc.x -= rinv3 * dr.x;

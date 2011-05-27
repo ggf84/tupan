@@ -78,9 +78,8 @@ class LeapFrog(object):
                         sum_acc += obj0.acc
                         sum_stepdens += obj0.stepdens[:,0]
                 obj0.acc[:] = 2*sum_acc - prev_acc
-                obj0.stepdens[:,1] = (sum_stepdens**3) / (prev_stepdens**2)
-                obj0.stepdens[:,0] = 0.5*(sum_stepdens + obj0.stepdens[:,1])
-                obj0.stepdens[:,1] = (obj0.stepdens[:,0]**2) / prev_stepdens
+                obj0.stepdens[:,1] = (sum_stepdens**2) / (prev_stepdens)
+                obj0.stepdens[:,0] = sum_stepdens
 
         return self.set_nexttstep(nexttime)
 
@@ -119,7 +118,7 @@ class LeapFrog(object):
                         sum_stepdens += obj0.stepdens[:,0]
                 obj0.acc[:] = sum_acc
                 obj0.stepdens[:,1] = (sum_stepdens**2) / prev_stepdens
-                obj0.stepdens[:,0] = 0.5*(prev_stepdens + obj0.stepdens[:,1])
+                obj0.stepdens[:,0] = 0.5*(sum_stepdens + obj0.stepdens[:,1])
 
         return self.set_nexttstep(nexttime)
 
@@ -146,8 +145,8 @@ class LeapFrog(object):
         """
 
         """
-        self.stepDKD()
-#        self.stepKDK()
+#        self.stepDKD()
+        self.stepKDK()
 
 
 ########## end of file ##########

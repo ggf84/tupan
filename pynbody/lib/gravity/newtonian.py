@@ -6,15 +6,19 @@
 """
 
 
+
 try:
     from pynbody.lib.kernels import clkernel as _clkernel
     _HAVE_CL = True
 #    raise
 except Exception as _e:
+    from warnings import warn
     from pynbody.lib.gravity import _gravnewton
     _HAVE_CL = False
     print(_e)
-    print('Doing calculations without OpenCL...')
+    warn("It seems that there is any problem related with the "
+            "PyOpenCL instalation. Attempting to continue with C "
+            "extensions on the CPU only.")
 
 
 def _cl_set_acc(bi, bj):
