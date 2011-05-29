@@ -44,6 +44,7 @@ class Diagnostic(object):
         self.amom0 = amom0
         self.ceerr = ceerr
         self.ceerr_count = ceerr_count
+        self.print_header()
 
 
     def __repr__(self):
@@ -103,64 +104,58 @@ class Simulation(object):
     def __init__(self, args):
         self.args = args
 
-        print('#'*25, file=sys.stderr)
-        print(self.args, file=sys.stderr)
-        print('#'*25, file=sys.stderr)
-
-
-
-
+        # Read the initial conditions.
         io = HDF5IO(self.args.input)
         particles = io.read_snapshot()
-        particles['body'].set_phi(particles['body'])
-        particles['body'].set_acc(particles['body'])
-        particles['body'].stepdens[:,1] = particles['body'].stepdens[:,0].copy()
 
-        e = particles['body'].get_total_energies()
-        e0 = e.tot
-        rcom0 = particles['body'].get_center_of_mass_pos()
-        lmom0 = particles['body'].get_total_linmom()
-        amom0 = particles['body'].get_total_angmom()
+        # Set the method of integration.
+        self.Integrator = METHS[METH_NAMES.index(self.args.meth)]
 
-        self.dia = Diagnostic(self.args.log_file, self.args.fmode,
+        # Compute the initial value of all quantities necessary for the run.
+        (e0, rcom0, lmom0, amom0) = self._setup_initial_quantities(particles)
+
+        # Initializes the integrator.
+        self.integrator = self.Integrator(0.0, self.args.eta, particles)
+
+        # Initializes the diagnostic of the simulation.
+        self.dia = Diagnostic(self.args.log_file,
+                              self.args.fmode,
                               e0, rcom0, lmom0, amom0)
+        self.dia.print_diagnostic(self.integrator.time, particles)
 
-        self.dia.print_header()
-        self.dia.print_diagnostic(0.0, particles)
-
+        # Initializes snapshots output.
+        self.iosnaps = HDF5IO('snapshots.hdf5')
+        self.iosnaps.snap_number = 0
+        self.iosnaps.write_snapshot(particles)
 
         # Set viewer if enabled.
         self.viewer = None
         if self.args.view:
             self.viewer = GLviewer()
 
-        # Set the method of integration.
-        if self.args.meth in METH_NAMES:
-            self.Integrator = METHS[METH_NAMES.index(self.args.meth)]
-        else:
-            print('Typo or invalid name of the method of integration.')
-            print('Available methods:', METH_NAMES)
-            print('exiting...')
-            sys.exit(1)
-
-        # Initialize the integrator.
-        self.integrator = self.Integrator(0.0, self.args.eta, particles)
+        # Initializes times for output a couple of things.
+        self.dt_gl = 1.0 / self.args.gl_freq
+        self.dt_dia = 1.0 / self.args.diag_freq
+        self.dt_res = 1.0 / self.args.res_freq
+        self.oldtime_gl = self.integrator.time
+        self.oldtime_dia = self.integrator.time
+        self.oldtime_res = self.integrator.time
 
 
-        self.snapcount = 0
-        self.iosnaps = HDF5IO('snapshots.hdf5')
-        self.iosnaps.write_snapshot(particles, group_id=self.snapcount)
+    def _setup_initial_quantities(self, particles):
+        """
 
+        """
+        particles['body'].set_phi(particles['body'])
+        particles['body'].set_acc(particles['body'])
+        particles['body'].stepdens[:,1] = particles['body'].stepdens[:,0].copy()
 
-        self.diadt = 1.0 / self.args.diag_freq
-        self.gldt = 1.0 / self.args.gl_freq
+        e0 = particles['body'].get_total_etot()
+        rcom0 = particles['body'].get_center_of_mass_pos()
+        lmom0 = particles['body'].get_total_linmom()
+        amom0 = particles['body'].get_total_angmom()
 
-
-        self.old_restime = self.integrator.time
-        self.old_diatime = self.integrator.time
-        self.old_gltime = self.integrator.time
-
-
+        return (e0, rcom0, lmom0, amom0)
 
 
     @selftimer
@@ -176,18 +171,18 @@ class Simulation(object):
 
         while (self.integrator.time < self.args.tmax):
             self.integrator.step()
-            if (self.integrator.time - self.old_gltime >= self.gldt):
-                self.old_gltime += self.gldt
+            if (self.integrator.time - self.oldtime_gl >= self.dt_gl):
+                self.oldtime_gl += self.dt_gl
                 if self.viewer:
                     self.viewer.show_event(self.integrator)
-            if (self.integrator.time - self.old_diatime >= self.diadt):
-                self.old_diatime += self.diadt
-                self.snapcount += 1
+            if (self.integrator.time - self.oldtime_dia >= self.dt_dia):
+                self.oldtime_dia += self.dt_dia
                 particles = self.integrator.gather()
                 self.dia.print_diagnostic(self.integrator.time, particles)
-                self.iosnaps.write_snapshot(particles, group_id=self.snapcount)
-            if (self.integrator.time - self.old_restime >= self.args.resdt):
-                self.old_restime += self.args.resdt
+                self.iosnaps.snap_number += 1
+                self.iosnaps.write_snapshot(particles)
+            if (self.integrator.time - self.oldtime_res >= self.dt_res):
+                self.oldtime_res += self.dt_res
                 with open('restart.pickle', 'w') as fobj:
                     pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
 

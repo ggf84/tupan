@@ -20,26 +20,19 @@ class HDF5IO(object):
         self.fname = fname
         self.fmode = fmode
         self.slice_size = 1
-
-
-    def write_restart_file(self):
-        pass
-
-    def read_restart_file(self):
-        pass
+        self.snap_number = None
 
 
     @selftimer
     def write_snapshot(self, data,
                        group_name='snap',
-                       group_id=None,
                        dset_name='dset',
                        slice_id=0):
         """
 
         """
-        if group_id is not None:
-            group_name += '_'+str(group_id).zfill(4)
+        if self.snap_number is not None:
+            group_name += '_'+str(self.snap_number).zfill(4)
         with h5py.File(self.fname, self.fmode) as fobj:
             snap = fobj.require_group(group_name)
             snap.attrs['snap_class'] = pickle.dumps(data.__class__)
@@ -62,14 +55,13 @@ class HDF5IO(object):
     @selftimer
     def read_snapshot(self,
                       group_name='snap',
-                      group_id=None,
                       dset_name='dset',
                       slice_id=0):
         """
 
         """
-        if group_id is not None:
-            group_name += '_'+str(group_id).zfill(4)
+        if self.snap_number is not None:
+            group_name += '_'+str(self.snap_number).zfill(4)
         with h5py.File(self.fname, 'r') as fobj:
             snap = fobj.require_group(group_name)
             snap_class = pickle.loads(snap.attrs['snap_class'])

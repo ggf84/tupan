@@ -79,11 +79,11 @@ def process_cmdline():
                              'ticle output (type: int, default: None).'
                              ' XXX: NOT IMPLEMENTED.'
                        )
-    parser.add_argument('-r', '--resdt',
-                        type=float,
-                        default=1.0,
-                        help='Time interval between rewrites of the resumption'
-                             ' file. (type: float, default: 1.0).'
+    parser.add_argument('-r', '--res_freq',
+                        type=int,
+                        default=1,
+                        help='Frequency of rewriting the resumption file per t'
+                             'ime unit. (type: int, default: 1).'
                        )
     parser.add_argument('--restart',
                         action='store_true',
@@ -119,6 +119,11 @@ def main():
     The top level main function.
     """
     args = process_cmdline()
+
+    print('#'*25, file=sys.stderr)
+    print(args, file=sys.stderr)
+    print('#'*25, file=sys.stderr)
+
     if args.restart:
         import pickle
         with open('restart.pickle', 'r') as fobj:
