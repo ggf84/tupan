@@ -5,7 +5,7 @@
 
 """
 
-
+from ggf84decor import selftimer
 
 try:
     from pynbody.lib.kernels import clkernel as _clkernel
@@ -27,8 +27,8 @@ def _cl_set_acc(bi, bj):
     return acc
 
 def _cl_set_phi(bi, bj):
-    phi = _clkernel.p2p_pot.run(bi, bj)
-#    _clkernel.p2p_pot.print_profile(len(bi), len(bj))
+    phi = _clkernel.p2p_phi.run(bi, bj)
+#    _clkernel.p2p_phi.print_profile(len(bi), len(bj))
     return phi
 
 
@@ -66,6 +66,7 @@ def _c_set_acc(bi, bj):
     return acc
 
 
+@selftimer
 def set_phi(bi, bj):
     if _HAVE_CL:
         return _cl_set_phi(bi, bj)
@@ -73,6 +74,7 @@ def set_phi(bi, bj):
         return _c_set_phi(bi, bj)
 
 
+@selftimer
 def set_acc(bi, bj):
     if _HAVE_CL:
         return _cl_set_acc(bi, bj)

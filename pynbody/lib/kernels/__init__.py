@@ -45,31 +45,40 @@ class Kernels(object):
 
     def __init__(self, fname, options=' '):
         """
-        Setup a kernel from .cl source file.
+        Setup a kernel from the *.cl source file.
         """
         def get_from(source, pattern):
             for line in source.splitlines():
                 if pattern in line:
                     return line.split()[-1]
+
+        # Build the program from the source.
         self._name = fname.split('.')[0]
         fname = os.path.join(path, fname)
-        with open(fname, 'r') as f:
-            self._source = f.read()
-            self._flops = int(get_from(self._source, 'Total flop count'))
-            self._output_shape = get_from(self._source, 'Output shape')
+        with open(fname, 'r') as fobj:
+            source = fobj.read()
+            self._output_shape = get_from(source, 'Output shape')
             if ENABLE_DOUBLE_PRECISION:
                 options += ' -D DOUBLE'
             if ENABLE_FAST_MATH:
                 options += ' -cl-fast-relaxed-math'
-            prog = cl.Program(ctx, self._source).build(options=options)
+            prog = cl.Program(ctx, source).build(options=options)
             self._kernel = getattr(prog, self._name)
+
+        # Get the flops count from the core function.
+        fname = fname.replace('.cl', '_core.h')
+        with open(fname, 'r') as fobj:
+            source = fobj.read()
+            self._flops = int(get_from(source, 'Total flop count'))
+
 
     @selftimer
     def _call_kernel(self, queue, dev_args):
         """
-        Call a kernel on a CL device.
+        Calls a kernel on a CL device.
         """
         self._kernel(queue, *dev_args).wait()
+
 
     @selftimer
     def _kernel_manager(self, global_size, local_size, inputargs,
@@ -104,6 +113,7 @@ class Kernels(object):
         cl.enqueue_read_buffer(queue, dev_dest, dest).wait()
 
         return dest
+
 
     @selftimer
     def run(self, bi, bj):
@@ -158,8 +168,10 @@ class Kernels(object):
 
 
 
-options = '-D IUNROLL={iunroll} -D JUNROLL={junroll}'.format(iunroll=IUNROLL,
-                                                             junroll=JUNROLL)
+
+options = '-I {path} -D IUNROLL={iunroll} -D JUNROLL={junroll}'.format(path=path,
+                                                                 iunroll=IUNROLL,
+                                                                 junroll=JUNROLL)
 
 
 class CLkernels(object):
@@ -167,9 +179,9 @@ class CLkernels(object):
 
     """
     def __init__(self):
-        self.p2p_pot = Kernels('p2p_pot_kernel.cl', options)
+        self.p2p_phi = Kernels('p2p_phi_kernel.cl', options)
         self.p2p_acc = Kernels('p2p_acc_kernel.cl', options)
-        self.p2p_acc_gpugems3 = Kernels('p2p_acc_kernel_gpugems3.cl', options)
+#        self.p2p_acc_gpugems3 = Kernels('p2p_acc_kernel_gpugems3.cl', options)
 
 
 clkernel = CLkernels()
@@ -183,7 +195,7 @@ clkernel = CLkernels()
 #@selftimer
 #def print_name(self):
 #    """doc of print_name"""
-#    print('*** name: ', self.name, self.flops, '***')
+#    print('*** name: ', self._name, self.flops, '***')
 
 #clkernel.p2p_acc_gpugems3.print_name()
 

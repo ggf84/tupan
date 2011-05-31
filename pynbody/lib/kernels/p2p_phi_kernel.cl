@@ -17,27 +17,16 @@ typedef float4 REAL4;
 #endif
 
 
-REAL p2p_pot_kernel_core(REAL pot, REAL4 bi, REAL4 bj, REAL mj)
-{
-    REAL4 dr;
-    dr.x = bi.x - bj.x;                                              // 1 FLOPs
-    dr.y = bi.y - bj.y;                                              // 1 FLOPs
-    dr.z = bi.z - bj.z;                                              // 1 FLOPs
-    dr.w = bi.w + bj.w;                                              // 1 FLOPs
-    REAL dr2 = dr.z * dr.z + (dr.y * dr.y + dr.x * dr.x);            // 5 FLOPs
-    REAL rinv = rsqrt(dr2 + dr.w);                                   // 3 FLOPs
-    pot -= mj * ((dr2 > 0) ? rinv:0);                                // 2 FLOPs
-    return pot;
-}   // Total flop count: 14
+#include"p2p_phi_kernel_core.h"
 
 
-__kernel void p2p_pot_kernel(const uint ni,
+__kernel void p2p_phi_kernel(const uint ni,
                              const uint nj,
                              __global const REAL4 *ipos,
                              __global const REAL4 *ivel,
                              __global const REAL4 *jpos,
                              __global const REAL4 *jvel,
-                             __global REAL *ipot,
+                             __global REAL *iphi,
                              __local REAL4 *sharedPos,
                              __local REAL4 *sharedVel)
 {
@@ -46,10 +35,10 @@ __kernel void p2p_pot_kernel(const uint ni,
     uint localDim = get_local_size(0);
 
     REAL4 myPos[IUNROLL];
-    REAL myPot[IUNROLL];
+    REAL myPhi[IUNROLL];
     for (uint ii = 0; ii < IUNROLL; ++ii) {
         myPos[ii] = (gid + ii < ni) ? ipos[gid + ii] : ipos[ni-1];
-        myPot[ii] = 0.0;
+        myPhi[ii] = 0.0;
     }
 
     uint tile;
@@ -66,7 +55,7 @@ __kernel void p2p_pot_kernel(const uint ni,
                REAL4 otherPos = sharedPos[jj];
                REAL4 otherVel = sharedVel[jj];
                for (uint ii = 0; ii < IUNROLL; ++ii) {
-                   myPot[ii] = p2p_pot_kernel_core(myPot[ii],
+                   myPhi[ii] = p2p_phi_kernel_core(myPhi[ii],
                                                    myPos[ii],
                                                    otherPos,
                                                    otherVel.w);
@@ -86,7 +75,7 @@ __kernel void p2p_pot_kernel(const uint ni,
         REAL4 otherPos = sharedPos[j];
         REAL4 otherVel = sharedVel[j];
         for (uint ii = 0; ii < IUNROLL; ++ii) {
-            myPot[ii] = p2p_pot_kernel_core(myPot[ii],
+            myPhi[ii] = p2p_phi_kernel_core(myPhi[ii],
                                             myPos[ii],
                                             otherPos,
                                             otherVel.w);
@@ -96,7 +85,7 @@ __kernel void p2p_pot_kernel(const uint ni,
 
     for (uint ii = 0; ii < IUNROLL; ++ii) {
         if (gid + ii < ni) {
-            ipot[gid + ii] = myPot[ii];
+            iphi[gid + ii] = myPhi[ii];
         }
     }
 }   // Output shape: ({ni},)

@@ -6,7 +6,6 @@
 """
 
 from __future__ import print_function
-import math
 import numpy as np
 from collections import namedtuple
 from pynbody.particles.pbase import Pbase

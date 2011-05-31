@@ -33,11 +33,10 @@ class Diagnostic(object):
     """
 
     """
-    def __init__(self, fname, fmode,
+    def __init__(self, fname,
                  e0, rcom0, lmom0, amom0,
                  ceerr=0.0, ceerr_count=0):
         self.fname = fname
-        self.fmode = fmode
         self.e0 = e0
         self.rcom0 = rcom0
         self.lmom0 = lmom0
@@ -64,7 +63,7 @@ class Diagnostic(object):
                            '#rcomX:07', '#rcomY:08', '#rcomZ:09',
                            '#lmomX:10', '#lmomY:11', '#lmomZ:12',
                            '#amomX:13', '#amomY:14', '#amomZ:15'),
-                self.fname, self.fmode)
+                self.fname, 'w')
 
 
     def print_diagnostic(self, time, particles):
@@ -119,7 +118,6 @@ class Simulation(object):
 
         # Initializes the diagnostic of the simulation.
         self.dia = Diagnostic(self.args.log_file,
-                              self.args.fmode,
                               e0, rcom0, lmom0, amom0)
         self.dia.print_diagnostic(self.integrator.time, particles)
 

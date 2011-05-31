@@ -107,10 +107,6 @@ def process_cmdline():
     if args.debug_file == sys.stderr:
         args.debug_file = sys.stderr.name
 
-    args.fmode = 'w'
-    if args.restart:
-        args.fmode = 'a'
-
     return args
 
 
