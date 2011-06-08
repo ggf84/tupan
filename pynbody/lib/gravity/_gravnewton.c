@@ -7,14 +7,20 @@
 typedef double REAL;
 
 
-typedef struct vec3_struct {
+typedef struct real2_struct {
+  REAL x;
+  REAL y;
+} REAL2, *pREAL2;
+
+
+typedef struct real3_struct {
   REAL x;
   REAL y;
   REAL z;
 } REAL3, *pREAL3;
 
 
-typedef struct vec4_struct {
+typedef struct real4_struct {
   REAL x;
   REAL y;
   REAL z;
@@ -27,145 +33,140 @@ typedef struct vec4_struct {
 #include"p2p_phi_kernel_core.h"
 
 
-REAL set_phi( unsigned long iindex,
-              double imass,
-              double ieps2,
-              double *ipos,
-              double *ivel,
-              unsigned long *jindex_array,
-              double *jmass_array,
-              double *jeps2_array,
-              double *jpos_array,
-              double *jvel_array,
-              unsigned long nj
-            )
+static PyObject *set_phi(PyObject *_self, PyObject *_bi, PyObject *_bj)
 {
+    PyObject *_ieps2 = PyObject_GetAttrString(_bi, "eps2");
+    PyObject *_ieps2_arr = PyArray_FROM_OTF(_ieps2, NPY_FLOAT64, NPY_IN_ARRAY);
+    double *ieps2 = (double *)PyArray_DATA(_ieps2_arr);
+    PyObject *_ipos = PyObject_GetAttrString(_bi, "pos");
+    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, NPY_FLOAT64, NPY_IN_ARRAY);
+    double *ipos = (double *)PyArray_DATA(_ipos_arr);
+
+    unsigned long nj = (unsigned long)PyObject_Length(_bj);
+    PyObject *_jmass = PyObject_GetAttrString(_bj, "mass");
+    PyObject *_jmass_arr = PyArray_FROM_OTF(_jmass, NPY_FLOAT64, NPY_IN_ARRAY);
+    double *jmass = (double *)PyArray_DATA(_jmass_arr);
+    PyObject *_jeps2 = PyObject_GetAttrString(_bj, "eps2");
+    PyObject *_jeps2_arr = PyArray_FROM_OTF(_jeps2, NPY_FLOAT64, NPY_IN_ARRAY);
+    double *jeps2 = (double *)PyArray_DATA(_jeps2_arr);
+    PyObject *_jpos = PyObject_GetAttrString(_bj, "pos");
+    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, NPY_FLOAT64, NPY_IN_ARRAY);
+    double *jpos = (double *)PyArray_DATA(_jpos_arr);
+
     unsigned long j, jj;
     REAL phi = 0.0;
-    REAL4 bi = {ipos[0], ipos[1], ipos[2], ieps2};
+    REAL4 bi = {ipos[0], ipos[1], ipos[2], ieps2[0]};
 
     for (j = 0; j < nj; ++j) {
         jj = 3*j;
-        REAL4 bj = {jpos_array[jj  ], jpos_array[jj+1],
-                    jpos_array[jj+2], jeps2_array[j]};
-        REAL mj = jmass_array[j];
+        REAL4 bj = {jpos[jj  ], jpos[jj+1], jpos[jj+2], jeps2[j]};
+        REAL mj = jmass[j];
         phi = p2p_phi_kernel_core(phi, bi, bj, mj);
     }
 
-    return phi;
-}
+    Py_DECREF(_ieps2_arr);
+    Py_DECREF(_ieps2);
+    Py_DECREF(_ipos_arr);
+    Py_DECREF(_ipos);
 
-
-REAL4 set_acc( unsigned long iindex,
-              double imass,
-              double ieps2,
-              double *ipos,
-              double *ivel,
-              unsigned long *jindex_array,
-              double *jmass_array,
-              double *jeps2_array,
-              double *jpos_array,
-              double *jvel_array,
-              unsigned long nj
-            )
-{
-    unsigned long j, jj;
-    REAL4 acc = {0.0, 0.0, 0.0, 0.0};
-    REAL4 bip = {ipos[0], ipos[1], ipos[2], ieps2};
-    REAL4 biv = {ivel[0], ivel[1], ivel[2], imass};
-
-    for (j = 0; j < nj; ++j) {
-        jj = 3*j;
-        REAL4 bjp = {jpos_array[jj  ], jpos_array[jj+1],
-                     jpos_array[jj+2], jeps2_array[j]};
-        REAL4 bjv = {jvel_array[jj  ], jvel_array[jj+1],
-                     jvel_array[jj+2], jmass_array[j]};
-        acc = p2p_acc_kernel_core(acc, bip, biv, bjp, bjv);
-    }
-
-    return acc;
-}
-
-
-
-/*static PyObject *_gravityError;*/
-
-
-#define pcast_to_ulong(p) ((unsigned long *) (((PyArrayObject *)p)->data))
-#define pcast_to_double(p) ((double *) (((PyArrayObject *)p)->data))
-
-static PyObject *_set_phi(PyObject *_self, PyObject *_args)
-{
-    unsigned long iindex, *jindex_array;
-    double imass, ieps2, *ipos, *ivel;
-    double *jmass_array, *jeps2_array, *jpos_array, *jvel_array;
-    PyObject *_ipos, *_ivel;
-    PyObject *_jindex_array, *_jmass_array, *_jeps2_array,
-             *_jpos_array, *_jvel_array;
-
-    if(!PyArg_ParseTuple(_args,"kddOOOOOOO",
-                           &iindex, &imass, &ieps2, &_ipos, &_ivel,
-                           &_jindex_array, &_jmass_array, &_jeps2_array,
-                           &_jpos_array, &_jvel_array)) {
-        return NULL;
-    }
-
-    unsigned long nj = (unsigned long)PyObject_Length(_jindex_array);
-
-/*    iindex = pcast_to_ulong(_iindex);*/
-/*    imass = pcast_to_double(_imass);*/
-/*    ieps2 = pcast_to_double(_ieps2);*/
-    ipos = pcast_to_double(_ipos);
-    ivel = pcast_to_double(_ivel);
-    jindex_array = pcast_to_ulong(_jindex_array);
-    jeps2_array = pcast_to_double(_jeps2_array);
-    jmass_array = pcast_to_double(_jmass_array);
-    jpos_array = pcast_to_double(_jpos_array);
-    jvel_array = pcast_to_double(_jvel_array);
-
-    double phi = set_phi(iindex, imass, ieps2, ipos, ivel,
-                         jindex_array, jmass_array, jeps2_array,
-                         jpos_array, jvel_array, nj);
+    Py_DECREF(_jmass_arr);
+    Py_DECREF(_jmass);
+    Py_DECREF(_jeps2_arr);
+    Py_DECREF(_jeps2);
+    Py_DECREF(_jpos_arr);
+    Py_DECREF(_jpos);
 
     return Py_BuildValue("d", phi);
 }
 
 
+static PyObject *set_acc(PyObject *_self, PyObject *_bi, PyObject *_bj)
+{
+    PyObject *_imass = PyObject_GetAttrString(_bi, "mass");
+    PyObject *_imass_arr = PyArray_FROM_OTF(_imass, NPY_FLOAT64, NPY_IN_ARRAY);
+    double *imass = (double *)PyArray_DATA(_imass_arr);
+    PyObject *_ieps2 = PyObject_GetAttrString(_bi, "eps2");
+    PyObject *_ieps2_arr = PyArray_FROM_OTF(_ieps2, NPY_FLOAT64, NPY_IN_ARRAY);
+    double *ieps2 = (double *)PyArray_DATA(_ieps2_arr);
+    PyObject *_ipos = PyObject_GetAttrString(_bi, "pos");
+    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, NPY_FLOAT64, NPY_IN_ARRAY);
+    double *ipos = (double *)PyArray_DATA(_ipos_arr);
+/*    PyObject *_ivel = PyObject_GetAttrString(_bi, "vel");*/
+/*    PyObject *_ivel_arr = PyArray_FROM_OTF(_ivel, NPY_FLOAT64, NPY_IN_ARRAY);*/
+/*    double *ivel = (double *)PyArray_DATA(_ivel_arr);*/
+
+    unsigned long nj = (unsigned long)PyObject_Length(_bj);
+    PyObject *_jmass = PyObject_GetAttrString(_bj, "mass");
+    PyObject *_jmass_arr = PyArray_FROM_OTF(_jmass, NPY_FLOAT64, NPY_IN_ARRAY);
+    double *jmass = (double *)PyArray_DATA(_jmass_arr);
+    PyObject *_jeps2 = PyObject_GetAttrString(_bj, "eps2");
+    PyObject *_jeps2_arr = PyArray_FROM_OTF(_jeps2, NPY_FLOAT64, NPY_IN_ARRAY);
+    double *jeps2 = (double *)PyArray_DATA(_jeps2_arr);
+    PyObject *_jpos = PyObject_GetAttrString(_bj, "pos");
+    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, NPY_FLOAT64, NPY_IN_ARRAY);
+    double *jpos = (double *)PyArray_DATA(_jpos_arr);
+/*    PyObject *_jvel = PyObject_GetAttrString(_bj, "vel");*/
+/*    PyObject *_jvel_arr = PyArray_FROM_OTF(_jvel, NPY_FLOAT64, NPY_IN_ARRAY);*/
+/*    double *jvel = (double *)PyArray_DATA(_jvel_arr);*/
+
+
+    unsigned long j, jj;
+    REAL4 acc = {0.0, 0.0, 0.0, 0.0};
+    REAL4 bip = {ipos[0], ipos[1], ipos[2], ieps2[0]};
+/*    REAL4 biv = {ivel[0], ivel[1], ivel[2], imass[0]};*/
+    REAL4 biv = {0.0, 0.0, 0.0, imass[0]};
+
+    for (j = 0; j < nj; ++j) {
+        jj = 3*j;
+        REAL4 bjp = {jpos[jj  ], jpos[jj+1], jpos[jj+2], jeps2[j]};
+/*        REAL4 bjv = {jvel[jj  ], jvel[jj+1], jvel[jj+2], jmass[j]};*/
+        REAL4 bjv = {0.0, 0.0, 0.0, jmass[j]};
+        acc = p2p_acc_kernel_core(acc, bip, biv, bjp, bjv);
+    }
+
+
+    Py_DECREF(_imass_arr);
+    Py_DECREF(_imass);
+    Py_DECREF(_ieps2_arr);
+    Py_DECREF(_ieps2);
+    Py_DECREF(_ipos_arr);
+    Py_DECREF(_ipos);
+/*    Py_DECREF(_ivel_arr);*/
+/*    Py_DECREF(_ivel);*/
+
+    Py_DECREF(_jmass_arr);
+    Py_DECREF(_jmass);
+    Py_DECREF(_jeps2_arr);
+    Py_DECREF(_jeps2);
+    Py_DECREF(_jpos_arr);
+    Py_DECREF(_jpos);
+/*    Py_DECREF(_jvel_arr);*/
+/*    Py_DECREF(_jvel);*/
+
+    return Py_BuildValue("dddd", acc.x, acc.y, acc.z, acc.w);
+}
+
+
+static PyObject *_wrapper(PyObject *_self, PyObject *_args,
+                PyObject *(*func)(PyObject *, PyObject *, PyObject *))
+{
+    PyObject *_bi=NULL, *_bj=NULL;
+    if(!PyArg_ParseTuple(_args,"OO", &_bi, &_bj)) {
+        return NULL;
+    }
+    return func(_self, _bi, _bj);
+}
+
+
+static PyObject *_set_phi(PyObject *_self, PyObject *_args)
+{
+    return _wrapper(_self, _args, set_phi);
+}
+
 
 static PyObject *_set_acc(PyObject *_self, PyObject *_args)
 {
-    unsigned long iindex, *jindex_array;
-    double imass, ieps2, *ipos, *ivel;
-    double *jmass_array, *jeps2_array, *jpos_array, *jvel_array;
-    PyObject *_ipos, *_ivel;
-    PyObject *_jindex_array, *_jmass_array, *_jeps2_array,
-             *_jpos_array, *_jvel_array;
-
-    if(!PyArg_ParseTuple(_args,"kddOOOOOOO",
-                           &iindex, &imass, &ieps2, &_ipos, &_ivel,
-                           &_jindex_array, &_jmass_array, &_jeps2_array,
-                           &_jpos_array, &_jvel_array)) {
-        return NULL;
-    }
-
-    unsigned long nj = (unsigned long)PyObject_Length(_jindex_array);
-
-/*    iindex = pcast_to_ulong(_iindex);*/
-/*    imass = pcast_to_double(_imass);*/
-/*    ieps2 = pcast_to_double(_ieps2);*/
-    ipos = pcast_to_double(_ipos);
-    ivel = pcast_to_double(_ivel);
-    jindex_array = pcast_to_ulong(_jindex_array);
-    jeps2_array = pcast_to_double(_jeps2_array);
-    jmass_array = pcast_to_double(_jmass_array);
-    jpos_array = pcast_to_double(_jpos_array);
-    jvel_array = pcast_to_double(_jvel_array);
-
-    REAL4 acc = set_acc(iindex, imass, ieps2, ipos, ivel,
-                        jindex_array, jmass_array, jeps2_array,
-                        jpos_array, jvel_array, nj);
-
-    return Py_BuildValue("dddd", acc.x, acc.y, acc.z, acc.w);
+    return _wrapper(_self, _args, set_acc);
 }
 
 
@@ -174,6 +175,7 @@ static PyMethodDef _gravnewton_meths[] = {
                 "returns the Newtonian gravitational acceleration."},
     {"set_phi", (PyCFunction)_set_phi, METH_VARARGS,
                 "returns the Newtonian gravitational potential."},
+
     {NULL, NULL, 0, NULL},
 };
 
@@ -189,9 +191,5 @@ PyMODINIT_FUNC init_gravnewton(void)
 
     if (ret == NULL)
         return;
-
-/*    _gravityError = PyErr_NewException("_gravity.error", NULL, NULL);*/
-/*    Py_INCREF(_gravityError);*/
-/*    PyModule_AddObject(ret, "error", _gravityError);*/
 }
 

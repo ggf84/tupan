@@ -6,6 +6,7 @@
 """
 
 from ggf84decor import selftimer
+import numpy as _np
 
 try:
     from pynbody.lib.kernels import clkernel as _clkernel
@@ -33,36 +34,16 @@ def _cl_set_phi(bi, bj):
 
 
 def _c_set_phi(bi, bj):
-    import numpy as np
-    phi = np.empty(len(bi), dtype='f8')
-    for (i, obj) in enumerate(bi):
-        phi[i] = _gravnewton.set_phi(obj['index'].item(),
-                                     obj['mass'].item(),
-                                     obj['eps2'].item(),
-                                     obj['pos'].copy(),
-                                     obj['vel'].copy(),
-                                     bj.index.copy(),
-                                     bj.mass.copy(),
-                                     bj.eps2.copy(),
-                                     bj.pos.copy(),
-                                     bj.vel.copy())
+    phi = _np.empty(len(bi), dtype='f8')
+    for i in range(len(bi)):
+        phi[i] = _gravnewton.set_phi(bi[i:i+1], bj)
     return phi
 
 
 def _c_set_acc(bi, bj):
-    import numpy as np
-    acc = np.empty((len(bi),4), dtype='f8')
-    for (i, obj) in enumerate(bi):
-        acc[i,:] = _gravnewton.set_acc(obj['index'].item(),
-                                       obj['mass'].item(),
-                                       obj['eps2'].item(),
-                                       obj['pos'].copy(),
-                                       obj['vel'].copy(),
-                                       bj.index.copy(),
-                                       bj.mass.copy(),
-                                       bj.eps2.copy(),
-                                       bj.pos.copy(),
-                                       bj.vel.copy())
+    acc = _np.empty((len(bi),4), dtype='f8')
+    for i in range(len(bi)):
+        acc[i,:] = _gravnewton.set_acc(bi[i:i+1], bj)
     return acc
 
 
