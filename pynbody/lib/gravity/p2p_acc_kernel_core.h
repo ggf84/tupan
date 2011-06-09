@@ -15,9 +15,15 @@ p2p_acc_kernel_core(REAL4 acc, REAL4 bip, REAL4 biv, REAL4 bjp, REAL4 bjv)
     REAL rinv = rsqrt(dr2 + dr.w);                                   // 3 FLOPs
     REAL r3inv = rinv = ((dr2 > 0) ? rinv:0);
     r3inv *= rinv;                                                   // 1 FLOPs
+
     REAL e = 0.0 * dv2;                                              // 1 FLOPs
     e += dv.w * rinv;                                                // 2 FLOPs
     acc.w += e * r3inv;                                              // 2 FLOPs
+
+//    REAL e = 2.0 * rinv;                                             // 1 FLOPs
+//    e -= dv2 / dv.w;                                                 // 2 FLOPs
+//    acc.w += dv.w * e * e * e;                                       // 2 FLOPs
+
     r3inv *= bjv.w * rinv;                                           // 2 FLOPs
     acc.x -= r3inv * dr.x;                                           // 2 FLOPs
     acc.y -= r3inv * dr.y;                                           // 2 FLOPs

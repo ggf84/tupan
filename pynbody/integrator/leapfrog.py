@@ -59,7 +59,7 @@ class LeapFrog(object):
         while (nexttime+2*nexttstep)%(2*nexttstep) != 0:
             nexttstep /= 2
         return nexttstep
-
+#        return min(mintsteps)
 
     @selftimer
     def forceDKD(self, all_particles, nexttime):
@@ -145,8 +145,8 @@ class LeapFrog(object):
         """
 
         """
-#        self.stepDKD()
-        self.stepKDK()
+        self.stepDKD()
+#        self.stepKDK()
 
 
 ########## end of file ##########

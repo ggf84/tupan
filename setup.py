@@ -7,7 +7,6 @@ Setup Script
 
 #from setuptools import setup
 from distutils.core import (setup, Extension)
-from distutils.command.install import USER_SITE
 import os
 import pynbody
 
@@ -21,33 +20,24 @@ Programming Language :: Python
 Topic :: Scientific/Engineering
 """
 
-
-data_files = {}
-
-path = os.path.join('pynbody', 'lib', 'kernels') + os.sep
-installpath = USER_SITE + os.sep + path
-data_files[installpath] = [path+fname for fname in ['p2p_phi_kernel.cl',
-                                                    'p2p_acc_kernel.cl',
-                                                    'p2p_acc_kernel_gpugems3.cl']]
-path = os.path.join('pynbody', 'lib', 'gravity') + os.sep
-data_files[installpath].extend([path+fname for fname in ['p2p_acc_kernel_core.h',
-                                                         'p2p_phi_kernel_core.h']])
-
-
-path = os.path.join('pynbody', 'analysis', 'textures') + os.sep
-installpath = USER_SITE + os.sep + path
-data_files[installpath] = [path+fname for fname in ['glow.png']]
-
-
-path = os.path.join('pynbody', 'lib', 'gravity') + os.sep
 ext_modules = []
-ext_modules.append(Extension('pynbody.lib.gravity._gravpostnewton',
-                             libraries = ['m'],
-                             sources=[path+'_gravpostnewton.c']))
+path = os.path.join('pynbody', 'lib', 'gravity')
 ext_modules.append(Extension('pynbody.lib.gravity._gravnewton',
                              include_dirs = [os.sep+path],
                              libraries = ['m'],
-                             sources=[path+'_gravnewton.c']))
+                             sources=[os.path.join(path, '_gravnewton.c')]))
+ext_modules.append(Extension('pynbody.lib.gravity._gravpostnewton',
+                             include_dirs = [os.sep+path],
+                             libraries = ['m'],
+                             sources=[os.path.join(path, '_gravpostnewton.c')]))
+
+package_data = {}
+package_data['pynbody.analysis'] = [os.path.join('textures', 'glow.png')]
+package_data['pynbody.lib.gravity'] = ['p2p_acc_kernel.cl',
+                                       'p2p_acc_kernel_core.h',
+                                       'p2p_phi_kernel.cl',
+                                       'p2p_phi_kernel_core.h',
+                                       'p2p_acc_kernel_gpugems3.cl']
 
 
 
@@ -62,13 +52,11 @@ setup(
               'pynbody.io',
               'pynbody.lib',
               'pynbody.lib.gravity',
-              'pynbody.lib.kernels',
               'pynbody.models',
               'pynbody.particles',
               'pynbody.test'],
     ext_modules=ext_modules,
-#    include_package_data=True,
-    data_files=data_files.items(),
+    package_data=package_data,
     scripts=['bin/main.py'],
     url='http://github.com/GuilhermeFerrari/PyNbody',
     license='MIT License',
@@ -76,5 +64,6 @@ setup(
     long_description=open('README.txt').read(),
     classifiers=[c for c in classifiers.split('\n') if c],
 )
+
 
 ########## end of file ##########

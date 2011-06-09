@@ -16,7 +16,6 @@ from pynbody.integrator import (METH_NAMES, METHS)
 
 
 
-
 def myprint(data, fname, fmode):
     if fname == '<stdout>':
         print(data, file=sys.stdout)

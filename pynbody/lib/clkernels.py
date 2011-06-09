@@ -8,7 +8,6 @@
 
 from __future__ import print_function
 import os
-import time
 import numpy as np
 import pyopencl as cl
 
@@ -38,7 +37,7 @@ queue = cl.CommandQueue(ctx, properties=_properties)
 
 
 @selftimer
-class Kernels(object):
+class CLKernel(object):
     """
     This class serves as an abstraction layer to manage CL kernels.
     """
@@ -53,8 +52,7 @@ class Kernels(object):
                     return line.split()[-1]
 
         # Build the program from the source.
-        self._name = fname.split('.')[0]
-        fname = os.path.join(path, fname)
+        self._name = (os.path.split(fname)[1]).split('.')[0]
         with open(fname, 'r') as fobj:
             source = fobj.read()
             self._output_shape = get_from(source, 'Output shape')
@@ -80,7 +78,6 @@ class Kernels(object):
         self._kernel(queue, *dev_args).wait()
 
 
-    @selftimer
     def _kernel_manager(self, global_size, local_size, inputargs,
                         destshape, local_mem_size, gflops_count):
         """
@@ -115,7 +112,6 @@ class Kernels(object):
         return dest
 
 
-    @selftimer
     def run(self, bi, bj):
         """
         Runs the calculation on a CL device.
@@ -169,23 +165,21 @@ class Kernels(object):
 
 
 
-options = ' -I {path}'.format(path=path)
+options = ' -I {path}'.format(path=os.path.join(path, 'gravity'))
 options += ' -D IUNROLL={iunroll}'.format(iunroll=IUNROLL)
 options += ' -D JUNROLL={junroll}'.format(junroll=JUNROLL)
 
 
-class CLkernels(object):
-    """
+print("Building OpenCL kernels... ", end='')
 
-    """
-    def __init__(self):
-        self.p2p_phi = Kernels('p2p_phi_kernel.cl', options)
-        self.p2p_acc = Kernels('p2p_acc_kernel.cl', options)
-#        self.p2p_acc_gpugems3 = Kernels('p2p_acc_kernel_gpugems3.cl', options)
+fname = os.path.join(path, 'gravity', 'p2p_phi_kernel.cl')
+p2p_phi = CLKernel(fname, options)
+fname = os.path.join(path, 'gravity', 'p2p_acc_kernel.cl')
+p2p_acc = CLKernel(fname, options)
+#fname = os.path.join(path, 'gravity', 'p2p_acc_kernel_gpugems3.cl')
+#p2p_acc_gpugems3 = CLKernel(fname, options)
 
-
-clkernel = CLkernels()
-
+print("done.")
 
 
 
