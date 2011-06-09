@@ -169,9 +169,9 @@ class Kernels(object):
 
 
 
-options = '-I {path} -D IUNROLL={iunroll} -D JUNROLL={junroll}'.format(path=path,
-                                                                 iunroll=IUNROLL,
-                                                                 junroll=JUNROLL)
+options = ' -I {path}'.format(path=path)
+options += ' -D IUNROLL={iunroll}'.format(iunroll=IUNROLL)
+options += ' -D JUNROLL={junroll}'.format(junroll=JUNROLL)
 
 
 class CLkernels(object):
