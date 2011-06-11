@@ -12,11 +12,11 @@ from pynbody.particles.pbase import Pbase
 import pynbody.lib.gravity as gravity
 
 
-fields = [('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),   # eps2 -> radius
-          ('phi', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
-          ('vel', '3f8'), ('acc', '3f8')]
-#dtype = fields
-dtype = {'names': [n for (n, f) in fields], 'formats': [f for (n, f) in fields]}
+fields = dict([('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),
+               ('phi', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
+               ('vel', '3f8'), ('acc', '3f8')])
+#dtype = fields.items()
+dtype = {'names': fields.keys(), 'formats': fields.values()}
 
 
 class Body(Pbase):

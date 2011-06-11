@@ -134,15 +134,15 @@ class CLKernel(object):
 #        print('diff: ', IUNROLL * global_size[0] - ni)
 
         iposeps2 = np.vstack((bi.pos.T, bi.eps2)).T.copy().astype(fp_type)
-        ivelmass = np.vstack((bi.vel.T, bi.mass)).T.copy().astype(fp_type)
+        imass = bi.mass.copy().astype(fp_type)
         jposeps2 = np.vstack((bj.pos.T, bj.eps2)).T.copy().astype(fp_type)
-        jvelmass = np.vstack((bj.vel.T, bj.mass)).T.copy().astype(fp_type)
+        jmass = bj.mass.copy().astype(fp_type)
 
         inputargs = (np.uint32(ni), np.uint32(nj),
-                     iposeps2, ivelmass, jposeps2, jvelmass)
+                     iposeps2, imass, jposeps2, jmass)
         destshape = eval(self._output_shape.format(ni=ni))
         mem_size = reduce(lambda x, y: x * y, local_size) * dtype.itemsize
-        local_mem_size = (4*mem_size, 4*mem_size)
+        local_mem_size = (4*mem_size, mem_size)
         gflops_count = self._flops * ni * nj * 1.0e-9
 
         dest = self._kernel_manager(global_size, local_size, inputargs,

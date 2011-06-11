@@ -6,17 +6,16 @@
 """
 
 from __future__ import print_function
-import math
 import numpy as np
 from pynbody.particles.pbase import Pbase
 
 
-fields = [('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),   # eps2 -> radius
-          ('phi', 'f8'), ('rho', 'f8'), ('press', 'f8'),
-          ('temp', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
-          ('vel', '3f8'), ('acc', '3f8')]
-#dtype = fields
-dtype = {'names': [n for (n, f) in fields], 'formats': [f for (n, f) in fields]}
+fields = dict([('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),
+               ('phi', 'f8'), ('rho', 'f8'), ('press', 'f8'),
+               ('temp', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
+               ('vel', '3f8'), ('acc', '3f8')])
+#dtype = fields.items()
+dtype = {'names': fields.keys(), 'formats': fields.values()}
 
 
 class Sph(Pbase):

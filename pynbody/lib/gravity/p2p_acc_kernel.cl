@@ -2,9 +2,6 @@
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #endif
 
-#ifdef cl_amd_fp64
-    #pragma OPENCL EXTENSION cl_amd_fp64 : enable
-#endif
 
 #ifdef DOUBLE
 typedef double REAL;
@@ -23,23 +20,23 @@ typedef float4 REAL4;
 __kernel void p2p_acc_kernel(const uint ni,
                              const uint nj,
                              __global const REAL4 *ipos,
-                             __global const REAL4 *ivel,
+                             __global const REAL *imass,
                              __global const REAL4 *jpos,
-                             __global const REAL4 *jvel,
+                             __global const REAL *jmass,
                              __global REAL4 *iacc,
                              __local REAL4 *sharedPos,
-                             __local REAL4 *sharedVel)
+                             __local REAL *sharedMass)
 {
     uint tid = get_local_id(0);
     uint gid = get_global_id(0) * IUNROLL;
     uint localDim = get_local_size(0);
 
     REAL4 myPos[IUNROLL];
-    REAL4 myVel[IUNROLL];
+    REAL myMass[IUNROLL];
     REAL4 myAcc[IUNROLL];
     for (uint ii = 0; ii < IUNROLL; ++ii) {
         myPos[ii] = (gid + ii < ni) ? ipos[gid + ii] : ipos[ni-1];
-        myVel[ii] = (gid + ii < ni) ? ivel[gid + ii] : ivel[ni-1];
+        myMass[ii] = (gid + ii < ni) ? imass[gid + ii] : imass[ni-1];
         myAcc[ii] = (REAL4){0.0, 0.0, 0.0, 0.0};
     }
 
@@ -49,19 +46,19 @@ __kernel void p2p_acc_kernel(const uint ni,
 
         uint jdx = min(tile * localDim + tid, nj-1);
         sharedPos[tid] = jpos[jdx];
-        sharedVel[tid] = jvel[jdx];
+        sharedMass[tid] = jmass[jdx];
 
         barrier(CLK_LOCAL_MEM_FENCE);
         for (uint j = 0; j < localDim; ) {
             for (uint jj = j; jj < j + JUNROLL; ++jj) {
                REAL4 otherPos = sharedPos[jj];
-               REAL4 otherVel = sharedVel[jj];
+               REAL otherMass = sharedMass[jj];
                for (uint ii = 0; ii < IUNROLL; ++ii) {
                    myAcc[ii] = p2p_acc_kernel_core(myAcc[ii],
                                                    myPos[ii],
-                                                   myVel[ii],
+                                                   myMass[ii],
                                                    otherPos,
-                                                   otherVel);
+                                                   otherMass);
                }
             }
             j += JUNROLL;
@@ -71,18 +68,18 @@ __kernel void p2p_acc_kernel(const uint ni,
 
     uint jdx = min(tile * localDim + tid, nj-1);
     sharedPos[tid] = jpos[jdx];
-    sharedVel[tid] = jvel[jdx];
+    sharedMass[tid] = jmass[jdx];
 
     barrier(CLK_LOCAL_MEM_FENCE);
     for (uint j = 0; j < nj - (tile * localDim); ++j) {
         REAL4 otherPos = sharedPos[j];
-        REAL4 otherVel = sharedVel[j];
+        REAL otherMass = sharedMass[j];
         for (uint ii = 0; ii < IUNROLL; ++ii) {
             myAcc[ii] = p2p_acc_kernel_core(myAcc[ii],
                                             myPos[ii],
-                                            myVel[ii],
+                                            myMass[ii],
                                             otherPos,
-                                            otherVel);
+                                            otherMass);
         }
     }
     barrier(CLK_LOCAL_MEM_FENCE);
