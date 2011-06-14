@@ -78,8 +78,10 @@ class LeapFrog(object):
                         sum_acc += obj0.acc
                         sum_stepdens += obj0.stepdens[:,0]
                 obj0.acc[:] = 2*sum_acc - prev_acc
-                obj0.stepdens[:,1] = (sum_stepdens**2) / (prev_stepdens)
-                obj0.stepdens[:,0] = sum_stepdens
+#                obj0.stepdens[:,1] = (sum_stepdens**2) / (prev_stepdens)
+#                obj0.stepdens[:,0] = sum_stepdens
+
+                obj0.stepdens[:,1] *= (sum_stepdens / prev_stepdens)**0.5
 
         return self.set_nexttstep(nexttime)
 
