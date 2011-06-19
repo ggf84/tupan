@@ -15,6 +15,9 @@ from pynbody.particles import (Body, Particles)
 from pynbody.io import HDF5IO
 
 
+__all__ = ['Plummer']
+
+
 def scale_mass(bodies, m_scale):
     bodies.mass *= m_scale
 

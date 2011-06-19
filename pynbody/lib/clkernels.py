@@ -13,6 +13,10 @@ import pyopencl as cl
 
 from ggf84decor import (selftimer, addmethod)
 
+
+__all__ = ['CLKernel']
+
+
 path = os.path.dirname(__file__)
 
 

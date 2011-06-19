@@ -5,4 +5,8 @@
 
 """
 
+
+from .glviewer import *
+
+
 ########## end of file ##########

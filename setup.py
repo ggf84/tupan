@@ -43,7 +43,7 @@ package_data['pynbody.lib.gravity'] = ['p2p_acc_kernel.cl',
 
 setup(
     name='PyNbody',
-    version=pynbody.version,
+    version=pynbody.version.VERSION,
     author='Guilherme G. Ferrari',
     author_email='gg.ferrari@gmail.com',
     packages=['pynbody',

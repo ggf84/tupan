@@ -11,9 +11,11 @@ import pickle
 import math
 from ggf84decor import selftimer
 from pynbody.io import HDF5IO
-from pynbody.analysis.glviewer import GLviewer
+from pynbody.analysis import GLviewer
 from pynbody.integrator import (METH_NAMES, METHS)
 
+
+__all__ = ['Simulation']
 
 
 def myprint(data, fname, fmode):

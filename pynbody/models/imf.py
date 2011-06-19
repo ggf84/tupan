@@ -12,6 +12,8 @@ import random
 import math
 
 
+__all__ = ['IMF']
+
 
 class IMFSample(object):
     """

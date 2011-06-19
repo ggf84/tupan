@@ -12,6 +12,9 @@ import h5py
 from ggf84decor import selftimer
 
 
+__all__ = ['HDF5IO']
+
+
 class HDF5IO(object):
     """
 

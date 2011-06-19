@@ -5,11 +5,12 @@
 
 """
 
-from .block import (Block, BlockStep)
-from .leapfrog import LeapFrog
+
+from .block import *
+from .leapfrog import *
 
 METHS = [LeapFrog, BlockStep]
-METH_NAMES = [obj.__name__.lower() for obj in METHS]
+METH_NAMES = map(lambda m: m.__name__.lower(), METHS)
 
 
 ########## end of file ##########

@@ -11,6 +11,9 @@ import numpy as np
 from ggf84decor import selftimer
 
 
+__all__ = ['LeapFrog']
+
+
 class LeapFrog(object):
     """
 
@@ -59,6 +62,7 @@ class LeapFrog(object):
         while (nexttime+2*nexttstep)%(2*nexttstep) != 0:
             nexttstep /= 2
         return nexttstep
+#        return min(mintsteps)
 
 
     @selftimer
@@ -81,7 +85,9 @@ class LeapFrog(object):
 #                obj0.stepdens[:,1] = (sum_stepdens**2) / (prev_stepdens)
 #                obj0.stepdens[:,0] = sum_stepdens
 
-                obj0.stepdens[:,1] *= (sum_stepdens / prev_stepdens)**0.5
+#                obj0.stepdens[:,1] *= (sum_stepdens / prev_stepdens)**0.5
+
+                obj0.stepdens[:,1] = 0.5*(sum_stepdens + prev_stepdens) * (sum_stepdens / prev_stepdens)**2.5
 
         return self.set_nexttstep(nexttime)
 

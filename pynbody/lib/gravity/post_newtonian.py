@@ -6,7 +6,7 @@
 """
 
 
-from pynbody.lib.gravity import _gravpostnewton
+import _gravpostnewton
 
 
 ########## end of file ##########

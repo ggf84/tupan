@@ -5,7 +5,8 @@
 
 """
 
-from .hdf5io import HDF5IO
+
+from .hdf5io import *
 
 
 ########## end of file ##########

@@ -17,6 +17,9 @@ import string
 import Image
 
 
+__all__ = ['GLviewer']
+
+
 path = os.path.dirname(__file__)
 texture_path = os.path.join(path, 'textures')
 

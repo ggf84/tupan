@@ -10,6 +10,9 @@ import numpy as np
 from pynbody.particles.pbase import Pbase
 
 
+__all__ = ['Sph']
+
+
 fields = dict([('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),
                ('phi', 'f8'), ('rho', 'f8'), ('press', 'f8'),
                ('temp', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),

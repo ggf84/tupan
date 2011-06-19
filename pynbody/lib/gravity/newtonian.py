@@ -13,7 +13,7 @@ try:
     _HAVE_CL = True
 #    raise
 except Exception as _e:
-    from pynbody.lib.gravity import _gravnewton
+    import _gravnewton
     print(_e)
     _ans = raw_input("A problem occurred with the loading of OpenCL kernels."
                      "\nAttempting to continue with C extensions on the CPU "

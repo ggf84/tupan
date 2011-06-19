@@ -11,6 +11,9 @@ from pynbody.particles.pbase import Pbase
 import pynbody.lib.gravity as gravity
 
 
+__all__ = ['BlackHole']
+
+
 fields = dict([('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),
                ('phi', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
                ('vel', '3f8'), ('acc', '3f8'), ('spin', '3f8')])

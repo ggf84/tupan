@@ -5,8 +5,9 @@
 
 """
 
-from .imf import IMF
-from .plummer import Plummer
+
+from .imf import *
+from .plummer import *
 
 
 ########## end of file ##########

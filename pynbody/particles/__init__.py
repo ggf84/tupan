@@ -10,9 +10,12 @@ This package implements base classes for particle types in the simulation.
 import sys
 import traceback
 import numpy as np
-from .body import Body
-from .blackhole import BlackHole
-from .sph import Sph
+from .body import *
+from .blackhole import *
+from .sph import *
+
+
+__all__ = ['Body', 'BlackHole', 'Sph', 'Particles']
 
 
 ALL_PARTICLE_TYPES = ('body', 'blackhole', 'sph')

@@ -11,6 +11,9 @@ from pprint import pprint
 from ggf84decor import selftimer
 
 
+__all__ = ['BlockStep']
+
+
 indent = ' '*4
 
 MIN_LEVEL = 4

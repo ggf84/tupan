@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 
 """
-Package Version
+Package Version.
 """
 
-version_tuple = (0, 0, 0)
-version_status = ''
-version = '.'.join(str(x) for x in version_tuple) + version_status
+
+VERSION_TUPLE = (0, 0, 0)
+VERSION_STATUS = ''
+VERSION = '.'.join(str(x) for x in VERSION_TUPLE) + VERSION_STATUS
+
 
 ########## end of file ##########
