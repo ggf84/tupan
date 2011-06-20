@@ -11,7 +11,6 @@ import random
 import math
 
 from ggf84decor import selftimer
-from pynbody.particles import (Body, Particles)
 from pynbody.io import HDF5IO
 
 
@@ -55,6 +54,7 @@ class Plummer(object):
     """  """
 
     def __init__(self, num, imf, mfrac=0.999, epsf=0.0, seed=None):
+        from pynbody.particles import Body
         self.num = num
         self.imf = imf
         self.mfrac = mfrac
@@ -164,6 +164,7 @@ class Plummer(object):
 
 
     def write_snapshot(self, fname='plummer.hdf5'):
+        from pynbody.particles import Particles
         data = Particles()
         data.set_members(self._body)
         io = HDF5IO(fname, 'w')

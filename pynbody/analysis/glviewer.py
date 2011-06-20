@@ -587,26 +587,26 @@ class GLviewer(object):
 
 
 
-if __name__ == "__main__":
-    from pynbody.models import (IMF, Plummer)
-#    imf = IMF.equal()
-#    imf = IMF.salpeter1955(0.5, 120.0)
-    imf = IMF.padoan2007(0.075, 120.0)
-#    imf = IMF.parravano2011(0.075, 120.0)
-    p = Plummer(2048, imf, epsf=4.0, seed=1)
-    p.make_plummer()
-#    p.show()
+#if __name__ == "__main__":
+#    from pynbody.models import (IMF, Plummer)
+##    imf = IMF.equal()
+##    imf = IMF.salpeter1955(0.5, 120.0)
+#    imf = IMF.padoan2007(0.075, 120.0)
+##    imf = IMF.parravano2011(0.075, 120.0)
+#    p = Plummer(2048, imf, epsf=4.0, seed=1)
+#    p.make_plummer()
+##    p.show()
 
-    viewer = GLviewer()
-#    viewer.set_particle(p._body)
-#    viewer.enter_main_loop()
+#    viewer = GLviewer()
+##    viewer.set_particle(p._body)
+##    viewer.enter_main_loop()
 
-    for i in xrange(1000):
-        print(i)
-#        p = Plummer(8, imf, epsf=4.0)
-#        p.make_plummer()
-        viewer.set_particle(p._body)
-        viewer.show_event()
+#    for i in xrange(1000):
+#        print(i)
+##        p = Plummer(8, imf, epsf=4.0)
+##        p.make_plummer()
+#        viewer.set_particle(p._body)
+#        viewer.show_event()
 
 
 

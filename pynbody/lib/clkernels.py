@@ -14,7 +14,7 @@ import pyopencl as cl
 from ggf84decor import (selftimer, addmethod)
 
 
-__all__ = ['CLKernel']
+__all__ = ['CLKernel', 'cl_p2p_acc', 'cl_p2p_phi']
 
 
 path = os.path.dirname(__file__)
@@ -35,12 +35,11 @@ if ENABLE_DOUBLE_PRECISION:
 dtype = np.dtype(fp_type)
 
 
-ctx = cl.create_some_context()
-_properties = cl.command_queue_properties.PROFILING_ENABLE
-queue = cl.CommandQueue(ctx, properties=_properties)
+#ctx = cl.create_some_context()
+#_properties = cl.command_queue_properties.PROFILING_ENABLE
+#queue = cl.CommandQueue(ctx, properties=_properties)
 
 
-@selftimer
 class CLKernel(object):
     """
     This class serves as an abstraction layer to manage CL kernels.
@@ -55,23 +54,40 @@ class CLKernel(object):
                 if pattern in line:
                     return line.split()[-1]
 
-        # Build the program from the source.
+        # Read the source program and the output shape.
         self._name = (os.path.split(fname)[1]).split('.')[0]
         with open(fname, 'r') as fobj:
-            source = fobj.read()
-            self._output_shape = get_from(source, 'Output shape')
-            if ENABLE_DOUBLE_PRECISION:
-                options += ' -D DOUBLE'
-            if ENABLE_FAST_MATH:
-                options += ' -cl-fast-relaxed-math'
-            prog = cl.Program(ctx, source).build(options=options)
-            self._kernel = getattr(prog, self._name)
+            self._source = fobj.read()
+            self._output_shape = get_from(self._source, 'Output shape')
 
-        # Get the flops count from the core function.
+        # Gets the count of flops from the core function.
         fname = fname.replace('.cl', '_core.h')
         with open(fname, 'r') as fobj:
-            source = fobj.read()
-            self._flops = int(get_from(source, 'Total flop count'))
+            core_src = fobj.read()
+            self._flops = int(get_from(core_src, 'Total flop count'))
+
+        if ENABLE_DOUBLE_PRECISION:
+            options += ' -D DOUBLE'
+        if ENABLE_FAST_MATH:
+            options += ' -cl-fast-relaxed-math'
+
+        self._options = options
+
+        self._ctx = None
+        self._queue = None
+        self._kernel = None
+
+
+    def build_kernel(self):
+        """
+        Builds CL kernels from source.
+        """
+        print("Building CL kernel '{0}'...".format(self._name))
+        self._ctx = cl.create_some_context()
+        self._queue = cl.CommandQueue(self._ctx)
+        prog = cl.Program(self._ctx, self._source).build(options=self._options)
+        self._kernel = getattr(prog, self._name)
+        print("Building CL kernel '{0}'... done.\n".format(self._name))
 
 
     @selftimer
@@ -91,19 +107,20 @@ class CLKernel(object):
         dev_args = [global_size, local_size]
         for item in inputargs:
             if isinstance(item, np.ndarray):
-                dev_args.append(cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
+                dev_args.append(cl.Buffer(
+                                self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
                                 hostbuf=item))
             else:
                 dev_args.append(item)
 
         destsize = reduce(lambda x, y: x * y, destshape) * dtype.itemsize
-        dev_dest = cl.Buffer(ctx, mf.WRITE_ONLY, size=destsize)
+        dev_dest = cl.Buffer(self._ctx, mf.WRITE_ONLY, size=destsize)
         dev_args.append(dev_dest)
 
         for size in local_mem_size:
             dev_args.append(cl.LocalMemory(size))
 
-        self._call_kernel(queue, dev_args)
+        self._call_kernel(self._queue, dev_args)
 
 #        elapsed = self._call_kernel.selftimer.elapsed
 #        print('Execution time of CL kernel: {0:g} s'.format(elapsed))
@@ -111,7 +128,7 @@ class CLKernel(object):
 
         dest = np.empty(destshape, dtype=dtype)
 
-        cl.enqueue_read_buffer(queue, dev_dest, dest).wait()
+        cl.enqueue_read_buffer(self._queue, dev_dest, dest).wait()
 
         return dest
 
@@ -174,28 +191,24 @@ options += ' -D IUNROLL={iunroll}'.format(iunroll=IUNROLL)
 options += ' -D JUNROLL={junroll}'.format(junroll=JUNROLL)
 
 
-print("Building OpenCL kernels... ", end='')
-
 fname = os.path.join(path, 'gravity', 'p2p_phi_kernel.cl')
-p2p_phi = CLKernel(fname, options)
+cl_p2p_phi = CLKernel(fname, options)
 fname = os.path.join(path, 'gravity', 'p2p_acc_kernel.cl')
-p2p_acc = CLKernel(fname, options)
+cl_p2p_acc = CLKernel(fname, options)
 #fname = os.path.join(path, 'gravity', 'p2p_acc_kernel_gpugems3.cl')
-#p2p_acc_gpugems3 = CLKernel(fname, options)
-
-print("done.")
+#cl_p2p_acc_gpugems3 = CLKernel(fname, options)
 
 
 
 
 
-#@addmethod(clkernel.p2p_acc_gpugems3)
+#@addmethod(clkernel.cl_p2p_acc_gpugems3)
 #@selftimer
 #def print_name(self):
 #    """doc of print_name"""
 #    print('*** name: ', self._name, self.flops, '***')
 
-#clkernel.p2p_acc_gpugems3.print_name()
+#clkernel.cl_p2p_acc_gpugems3.print_name()
 
 
 

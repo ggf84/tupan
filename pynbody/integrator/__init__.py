@@ -9,6 +9,10 @@
 from .block import *
 from .leapfrog import *
 
+
+__all__ = ['block', 'leapfrog']
+
+
 METHS = [LeapFrog, BlockStep]
 METH_NAMES = map(lambda m: m.__name__.lower(), METHS)
 

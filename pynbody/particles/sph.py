@@ -7,7 +7,7 @@
 
 from __future__ import print_function
 import numpy as np
-from pynbody.particles.pbase import Pbase
+from .pbase import Pbase
 
 
 __all__ = ['Sph']

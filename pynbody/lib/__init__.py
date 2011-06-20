@@ -7,7 +7,10 @@
 
 
 from .clkernels import *
-#from .gravity import *
+from .gravity import *
+
+
+__all__ = ['clkernels', 'gravity']
 
 
 ########## end of file ##########
