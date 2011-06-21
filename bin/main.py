@@ -8,10 +8,6 @@ Performs a N-body Simulation.
 from __future__ import print_function
 import sys
 import argparse
-try:
-    import pynbody.lib.clkernels as clkernels
-finally:
-    import pynbody.lib.gravity as gravity
 from pynbody.simulation import (Simulation, METH_NAMES)
 
 

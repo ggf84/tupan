@@ -9,6 +9,7 @@ from __future__ import print_function
 import numpy as np
 from collections import namedtuple
 from .pbase import Pbase
+from pynbody.lib import gravity
 
 
 __all__ = ['Body']
@@ -28,6 +29,7 @@ class Body(Pbase):
 
     def __init__(self, numobjs=0):
         Pbase.__init__(self, numobjs, dtype)
+        gravity.build_kernels()
 
 
     # Total Mass
@@ -153,15 +155,13 @@ class Body(Pbase):
         """
         Set the individual gravitational potential due to other bodies.
         """
-        from pynbody.lib.gravity import newtonian
-        self.phi[:] = newtonian.set_phi(self, objs)
+        self.phi[:] = gravity.newtonian.set_phi(self, objs)
 
     def set_acc(self, objs):
         """
         Set the individual acceleration due to other bodies.
         """
-        from pynbody.lib.gravity import newtonian
-        _acc = newtonian.set_acc(self, objs)
+        _acc = gravity.newtonian.set_acc(self, objs)
         self.acc[:] = _acc[:,:3]
         self.stepdens[:,0] = np.sqrt(_acc[:,3]/(len(objs)-1))
 

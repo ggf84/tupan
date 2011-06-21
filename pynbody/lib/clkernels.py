@@ -76,6 +76,7 @@ class CLKernel(object):
         self._ctx = None
         self._queue = None
         self._kernel = None
+        self.available = None
 
 
     def build_kernel(self):
@@ -87,7 +88,14 @@ class CLKernel(object):
         self._queue = cl.CommandQueue(self._ctx)
         prog = cl.Program(self._ctx, self._source).build(options=self._options)
         self._kernel = getattr(prog, self._name)
+        self.available = True
         print("Building CL kernel '{0}'... done.\n".format(self._name))
+
+
+    def has_built(self):
+        if self._kernel is None:
+            return False
+        return True
 
 
     @selftimer
