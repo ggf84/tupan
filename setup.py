@@ -57,7 +57,7 @@ setup(
               'pynbody.particles'],
     ext_modules=ext_modules,
     package_data=package_data,
-    scripts=['bin/main.py'],
+    scripts=['bin/pynbody'],
     url='http://github.com/GuilhermeFerrari/PyNbody',
     license='MIT License',
     description=pynbody.__doc__.strip(),

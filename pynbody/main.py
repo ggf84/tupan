@@ -8,7 +8,7 @@ Performs a N-body Simulation.
 from __future__ import print_function
 import sys
 import argparse
-from pynbody.simulation import (Simulation, METH_NAMES)
+from .simulation import (Simulation, METH_NAMES)
 
 
 def process_cmdline():
@@ -110,7 +110,7 @@ def process_cmdline():
     return args
 
 
-def main():
+def pynbody_main():
     """
     The top level main function.
     """
@@ -131,10 +131,6 @@ def main():
     mysim.evolve()
 
     return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
 
 
 ########## end of file ##########
