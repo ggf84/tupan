@@ -15,6 +15,7 @@ import sys
 import math
 import string
 import Image
+import colorsys
 
 
 __all__ = ['GLviewer']
@@ -310,10 +311,9 @@ class GLviewer(object):
 
     def init_window(self):
         glutInit(sys.argv)
-#        glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH)
-        glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA | GLUT_DEPTH)
-        glutInitWindowPosition((glutGet(GLUT_SCREEN_WIDTH) - self.window_width)/2,
-                               (glutGet(GLUT_SCREEN_HEIGHT) - self.window_height)/2)
+        glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH)
+        glutInitWindowPosition((glutGet(GLUT_SCREEN_WIDTH)-self.window_width)/2,
+                               (glutGet(GLUT_SCREEN_HEIGHT)-self.window_height)/2)
         glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,
                       GLUT_ACTION_CONTINUE_EXECUTION)
         glutInitWindowSize(self.window_width, self.window_height)
@@ -396,25 +396,39 @@ class GLviewer(object):
 #            g /= g.max()
 #            b /= b.max()
 
-            maxlog10 = np.log10(1.0+CONTRAST)
-            r = np.log10(1.0+CONTRAST*r)/maxlog10
-            g = np.log10(1.0+CONTRAST*g)/maxlog10
-            b = np.log10(1.0+CONTRAST*b)/maxlog10
+#            s = (r+g+b)/3
+#            r /= s.max()
+#            g /= s.max()
+#            b /= s.max()
 
             if COLORSCHEME == 1:
-                return (np.vstack((r, g, b)).T)
+                colors = (np.vstack((r, g, b)).T)
             elif COLORSCHEME == 2:
-                return (np.vstack((g, b, r)).T)
+                colors = (np.vstack((g, b, r)).T)
             elif COLORSCHEME == 3:
-                return (np.vstack((b, r, g)).T)
+                colors = (np.vstack((b, r, g)).T)
             elif COLORSCHEME == 4:
-                return (np.vstack((b, g, r)).T)
+                colors = (np.vstack((b, g, r)).T)
             elif COLORSCHEME == 5:
-                return (np.vstack((r, b, g)).T)
+                colors = (np.vstack((r, b, g)).T)
             elif COLORSCHEME == 6:
-                return (np.vstack((g, r, b)).T)
+                colors = (np.vstack((g, r, b)).T)
 
 
+            maxlog10 = np.log10(1.0+CONTRAST)
+            colors = np.log10(1.0+CONTRAST*colors)/maxlog10
+
+#            colors *= CONTRAST
+
+#            for i in range(len(self.particle)):
+#                colors[i] = colorsys.hls_to_rgb(*colors[i])
+#                colors[i] = colorsys.rgb_to_hsv(*colors[i])
+#                colors[i] = colorsys.hsv_to_rgb(*colors[i])
+#                colors[i] = colorsys.rgb_to_hls(*colors[i])
+#                colors[i] = colorsys.rgb_to_yiq(*colors[i])
+#                colors[i] = colorsys.yiq_to_rgb(*colors[i])
+
+            return colors
         else:
             return np.ones((len(self.particle), 3), dtype='f8')
 
@@ -581,34 +595,6 @@ class GLviewer(object):
         image = None
 
         return id
-
-
-
-
-
-
-#if __name__ == "__main__":
-#    from pynbody.models import (IMF, Plummer)
-##    imf = IMF.equal()
-##    imf = IMF.salpeter1955(0.5, 120.0)
-#    imf = IMF.padoan2007(0.075, 120.0)
-##    imf = IMF.parravano2011(0.075, 120.0)
-#    p = Plummer(2048, imf, epsf=4.0, seed=1)
-#    p.make_plummer()
-##    p.show()
-
-#    viewer = GLviewer()
-##    viewer.set_particle(p._body)
-##    viewer.enter_main_loop()
-
-#    for i in xrange(1000):
-#        print(i)
-##        p = Plummer(8, imf, epsf=4.0)
-##        p.make_plummer()
-#        viewer.set_particle(p._body)
-#        viewer.show_event()
-
-
 
 
 ########## end of file ##########
