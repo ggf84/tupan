@@ -36,7 +36,7 @@ WINDOW_TITLE_PREFIX = 'PyNbody Viewer'
 ROTINC = 0.03125
 ZOOM_FACTOR = 1.0
 POINT_SIZE = 10.0
-CONTRAST = 16384
+CONTRAST = 8192
 SATURATE = False
 COLORSCHEME = 1
 COLORMASK = {'r': False, 'g': False, 'b': False}
@@ -288,8 +288,8 @@ class GLviewer(object):
                 PPMSTREAM = False
         elif key == ESCAPE:
             self.exitgl = True
+            glutLeaveMainLoop()
             glutHideWindow()
-            glutDestroyWindow(self.window_handle)
 
 
     def keyboard_s(self, key, x, y):
@@ -383,7 +383,8 @@ class GLviewer(object):
         if not SATURATE:
             r = -self.particle.get_epot()
             g = self.particle.mass
-            b = self.particle.mass*np.sqrt((self.particle.acc**2).sum(1))
+#            b = self.particle.mass*np.sqrt((self.particle.acc**2).sum(1))
+            b = self.particle.get_ekin()
 
 
 ##            r = -self.particle.get_epot()
