@@ -152,14 +152,16 @@ class Simulation(object):
         return (e0, rcom0, lmom0, amom0)
 
 
+    def restart(self):
+        self.integrator = self.Integrator(self.integrator.time, self.args.eta,
+                                          self.integrator.gather().copy())
+
+
     @selftimer
     def evolve(self):
         """
 
         """
-        self.integrator = self.Integrator(self.integrator.time, self.args.eta,
-                                          self.integrator.gather().copy())
-
         if self.viewer:
             self.viewer.initialize()
 
@@ -177,7 +179,7 @@ class Simulation(object):
                 self.iosnaps.write_snapshot(particles)
             if (self.integrator.time - self.oldtime_res >= self.dt_res):
                 self.oldtime_res += self.dt_res
-                with open('restart.pickle', 'w') as fobj:
+                with open('restart.pkl', 'w') as fobj:
                     pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
 
         if self.viewer:

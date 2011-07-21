@@ -123,8 +123,9 @@ def pynbody_main():
 
     if args.restart:
         import pickle
-        with open('restart.pickle', 'r') as fobj:
+        with open('restart.pkl', 'r') as fobj:
             mysim = pickle.load(fobj)
+        mysim.restart()
 #        mysim.args.tmax = args.tmax
 #        print(mysim.args.tmax)
     else:
