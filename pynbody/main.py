@@ -8,6 +8,7 @@ Performs a N-body Simulation.
 from __future__ import print_function
 import sys
 import argparse
+from .analysis import GLviewer
 from .simulation import (Simulation, METH_NAMES)
 
 
@@ -127,7 +128,8 @@ def pynbody_main():
 #        mysim.args.tmax = args.tmax
 #        print(mysim.args.tmax)
     else:
-        mysim = Simulation(args)
+        viewer = GLviewer() if args.view else None
+        mysim = Simulation(args, viewer)
     mysim.evolve()
 
     return 0

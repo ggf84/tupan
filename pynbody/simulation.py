@@ -11,7 +11,6 @@ import pickle
 import math
 from ggf84decor import selftimer
 from pynbody.io import HDF5IO
-from pynbody.analysis import GLviewer
 from pynbody.integrator import (METH_NAMES, METHS)
 
 
@@ -101,8 +100,9 @@ class Simulation(object):
     """
     The Simulation class is the top level class for N-body simulations.
     """
-    def __init__(self, args):
+    def __init__(self, args, viewer):
         self.args = args
+        self.viewer = viewer
 
         # Read the initial conditions.
         io = HDF5IO(self.args.input)
@@ -126,11 +126,6 @@ class Simulation(object):
         self.iosnaps = HDF5IO('snapshots.hdf5')
         self.iosnaps.snap_number = 0
         self.iosnaps.write_snapshot(particles)
-
-        # Set viewer if enabled.
-        self.viewer = None
-        if self.args.view:
-            self.viewer = GLviewer()
 
         # Initializes times for output a couple of things.
         self.dt_gl = 1.0 / self.args.gl_freq
