@@ -36,7 +36,7 @@ WINDOW_TITLE_PREFIX = 'PyNbody Viewer'
 ROTINC = 0.03125
 ZOOM_FACTOR = 1.0
 POINT_SIZE = 10.0
-CONTRAST = 8192
+CONTRAST = 1.0
 SATURATE = False
 COLORSCHEME = 1
 COLORMASK = {'r': False, 'g': False, 'b': False}
@@ -264,10 +264,10 @@ class GLviewer(object):
                 COLORMASK['b'] = False
         elif key == 'c':
             CONTRAST *= 2
-            if CONTRAST > 2**56:  CONTRAST = 2**56
+            if CONTRAST > 2**16:  CONTRAST = 2.0**16
         elif key == 'C':
             CONTRAST /= 2
-            if CONTRAST < 1:  CONTRAST = 1
+            if CONTRAST < 2**(-16):  CONTRAST = 2.0**(-16)
         elif key == 'Z':
             ZOOM_FACTOR *= 1.01
         elif key == 'z':
@@ -393,14 +393,14 @@ class GLviewer(object):
 #            g = self.particle.mass
 #            b = self.particle.mass*np.sqrt((self.particle.acc**2).sum(1))
 
-#            r /= r.max()
-#            g /= g.max()
-#            b /= b.max()
+            r /= r.mean()
+            g /= g.mean()
+            b /= b.mean()
 
-#            s = (r+g+b)/3
-#            r /= s.max()
-#            g /= s.max()
-#            b /= s.max()
+            s = (r+g+b)/3
+            r /= s.max()
+            g /= s.max()
+            b /= s.max()
 
             if COLORSCHEME == 1:
                 colors = (np.vstack((r, g, b)).T)
@@ -415,11 +415,8 @@ class GLviewer(object):
             elif COLORSCHEME == 6:
                 colors = (np.vstack((g, r, b)).T)
 
-
-            maxlog10 = np.log10(1.0+CONTRAST)
-            colors = np.log10(1.0+CONTRAST*colors)/maxlog10
-
-#            colors *= CONTRAST
+            colors = np.log10(1.0+colors)
+            colors /= colors.mean()
 
 #            for i in range(len(self.particle)):
 #                colors[i] = colorsys.hls_to_rgb(*colors[i])
@@ -429,7 +426,7 @@ class GLviewer(object):
 #                colors[i] = colorsys.rgb_to_yiq(*colors[i])
 #                colors[i] = colorsys.yiq_to_rgb(*colors[i])
 
-            return colors
+            return colors * np.log10(1.0+CONTRAST)
         else:
             return np.ones((len(self.particle), 3), dtype='f8')
 
