@@ -21,7 +21,7 @@ path = os.path.dirname(__file__)
 
 
 
-IUNROLL = 3                 # unroll for i-particles
+IUNROLL = 1#3                 # unroll for i-particles
 JUNROLL = 64                # unroll for j-particles
 BLOCK_SIZE = (128, 1, 1)
 ENABLE_FAST_MATH = False
@@ -33,11 +33,6 @@ if ENABLE_DOUBLE_PRECISION:
     fp_type = np.float64
 
 dtype = np.dtype(fp_type)
-
-
-#ctx = cl.create_some_context()
-#_properties = cl.command_queue_properties.PROFILING_ENABLE
-#queue = cl.CommandQueue(ctx, properties=_properties)
 
 
 class CLKernel(object):
@@ -76,7 +71,7 @@ class CLKernel(object):
         self._ctx = None
         self._queue = None
         self._kernel = None
-        self.available = None
+        self.is_available = False
 
 
     def build_kernel(self):
@@ -88,7 +83,7 @@ class CLKernel(object):
         self._queue = cl.CommandQueue(self._ctx)
         prog = cl.Program(self._ctx, self._source).build(options=self._options)
         self._kernel = getattr(prog, self._name)
-        self.available = True
+        self.is_available = True
         print("Building CL kernel '{0}'... done.\n".format(self._name))
 
 

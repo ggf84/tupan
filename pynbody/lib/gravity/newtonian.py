@@ -43,7 +43,7 @@ def c_set_acc(bi, bj):
 
 @selftimer
 def set_phi(bi, bj):
-    if cl_p2p_phi.available:
+    if cl_p2p_phi.is_available:
         return cl_set_phi(bi, bj)
     else:
         return c_set_phi(bi, bj)
@@ -51,7 +51,7 @@ def set_phi(bi, bj):
 
 @selftimer
 def set_acc(bi, bj):
-    if cl_p2p_acc.available:
+    if cl_p2p_acc.is_available:
         return cl_set_acc(bi, bj)
     else:
         return c_set_acc(bi, bj)
