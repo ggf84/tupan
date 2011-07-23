@@ -8,6 +8,10 @@ Performs a N-body Simulation.
 from __future__ import print_function
 import sys
 import argparse
+try:
+   import cPickle as pickle
+except:
+   import pickle
 from .analysis import GLviewer
 from .simulation import (Simulation, METH_NAMES)
 
@@ -122,12 +126,9 @@ def pynbody_main():
     print('#'*25, file=sys.stderr)
 
     if args.restart:
-        import pickle
-        with open('restart.pkl', 'r') as fobj:
+        with open('restart.pkl', 'rb') as fobj:
             mysim = pickle.load(fobj)
-        mysim.restart()
-#        mysim.args.tmax = args.tmax
-#        print(mysim.args.tmax)
+        mysim.args.tmax = args.tmax
     else:
         viewer = GLviewer() if args.view else None
         mysim = Simulation(args, viewer)
