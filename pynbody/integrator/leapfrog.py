@@ -22,6 +22,13 @@ class LeapFrog(object):
         self.time = time
         self.eta = eta
         self.particles = particles
+
+        self.rho = [{}, {}, {}, {}]
+        for i in range(4):
+            for (key, obj) in self.particles.iteritems():
+                if obj:
+                    self.rho[i][key] = obj.stepdens[:,0].copy()
+
         self.tstep = self.set_nexttstep(time)
 
 
@@ -55,8 +62,10 @@ class LeapFrog(object):
         mintsteps = []
         for (key, obj) in self.particles.iteritems():
             if obj:
-                real_tstep = self.eta / obj.stepdens[:,1]
+#                real_tstep = self.eta / obj.stepdens[:,1]  # XXX: 4810::7056
+                real_tstep = self.eta / self.rho[3][key]
                 mintsteps.append(np.min(real_tstep))
+#                mintsteps.append(len(real_tstep)/np.sum(1.0/real_tstep))
         power = int(np.log2(min(mintsteps)) - 1)
         nexttstep = 2.0**power
         while (nexttime+2*nexttstep)%(2*nexttstep) != 0:
@@ -72,6 +81,11 @@ class LeapFrog(object):
         """
         for (key0, obj0) in self.particles.iteritems():
             if obj0:
+#                self.rho[0][key0][:] = self.rho[1][key0].copy()
+##                self.rho[1][key0][:] = (self.rho[1][key0] + self.rho[2][key0])/2
+#                self.rho[1][key0][:] = self.rho[2][key0].copy()
+#                self.rho[2][key0][:] = self.rho[3][key0].copy()
+
                 sum_acc = np.zeros_like(obj0.acc)
                 sum_stepdens = np.zeros_like(obj0.stepdens[:,0])
                 prev_acc = obj0.acc.copy()
@@ -88,6 +102,42 @@ class LeapFrog(object):
 #                obj0.stepdens[:,1] *= (sum_stepdens / prev_stepdens)**0.5
 
                 obj0.stepdens[:,1] = 0.5*(sum_stepdens + prev_stepdens) * (sum_stepdens / prev_stepdens)**2.5
+
+## XXX: 3788::5256::7353
+#                self.rho[0][key0][:] = (self.rho[1][key0] + self.rho[2][key0])/2
+#                self.rho[1][key0][:] = self.rho[2][key0].copy()
+#                self.rho[2][key0][:] = sum_stepdens.copy()
+#                self.rho[3][key0][:] = (self.rho[1][key0] * self.rho[2][key0]) / self.rho[0][key0]
+
+
+## XXX: 3668::5661::7514
+#                self.rho[0][key0][:] = (self.rho[1][key0]*self.rho[2][key0])**0.5
+#                self.rho[1][key0][:] = self.rho[2][key0].copy()
+#                self.rho[2][key0][:] = sum_stepdens.copy()
+#                self.rho[3][key0][:] = (self.rho[1][key0] * self.rho[2][key0]) / self.rho[0][key0]
+
+
+## XXX: 3670::5747::7098
+#                self.rho[0][key0][:] = (self.rho[1][key0]*self.rho[2][key0])**0.5
+#                self.rho[1][key0][:] = self.rho[2][key0].copy()
+#                self.rho[2][key0][:] = sum_stepdens.copy()
+#                self.rho[3][key0][:] = (((self.rho[1][key0] + self.rho[2][key0])/2)**2) / self.rho[0][key0]
+
+
+## XXX: 3998::5637::7132
+#                self.rho[0][key0][:] = (self.rho[1][key0] + self.rho[2][key0])/2
+#                self.rho[1][key0][:] = self.rho[2][key0].copy()
+#                self.rho[2][key0][:] = sum_stepdens.copy()
+#                self.rho[3][key0][:] = (((self.rho[1][key0] + self.rho[2][key0])/2)**2) / self.rho[0][key0]
+
+
+
+# XXX: 2925:: ::
+                self.rho[0][key0][:] = (self.rho[0][key0]*self.rho[3][key0])**0.5
+                self.rho[1][key0][:] = self.rho[2][key0].copy()
+                self.rho[2][key0][:] = sum_stepdens.copy()
+                self.rho[3][key0][:] = self.rho[0][key0] * (self.rho[2][key0] / self.rho[1][key0])
+
 
         return self.set_nexttstep(nexttime)
 
