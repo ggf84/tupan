@@ -17,6 +17,102 @@ typedef float4 REAL4;
 #include"p2p_acc_kernel_core.h"
 
 
+
+inline REAL4
+p2p_acc_kernel_main_loop(const uint nj,
+                         REAL4 myPos,
+                         REAL myMass,
+                         __global const REAL4 *jpos,
+                         __global const REAL *jmass,
+                         __local REAL4 *sharedPos,
+                         __local REAL *sharedMass)
+{
+    uint lid = get_local_id(0);
+    uint lsize = get_local_size(0);
+
+    REAL4 myAcc = (REAL4){0.0, 0.0, 0.0, 0.0};
+
+    uint tile;
+    uint numTiles = ((nj + lsize - 1) / lsize) - 1;
+    for (tile = 0; tile < numTiles; ++tile) {
+
+        uint jdx = min(tile * lsize + lid, nj-1);
+        sharedPos[lid] = jpos[jdx];
+        sharedMass[lid] = jmass[jdx];
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+        for (uint j = 0; j < lsize; ) {
+            for (uint jj = j; jj < j + JUNROLL; ++jj) {
+               REAL4 otherPos = sharedPos[jj];
+               REAL otherMass = sharedMass[jj];
+               myAcc = p2p_acc_kernel_core(myAcc,
+                                           myPos,
+                                           myMass,
+                                           otherPos,
+                                           otherMass);
+            }
+            j += JUNROLL;
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    uint jdx = min(tile * lsize + lid, nj-1);
+    sharedPos[lid] = jpos[jdx];
+    sharedMass[lid] = jmass[jdx];
+
+    barrier(CLK_LOCAL_MEM_FENCE);
+    for (uint j = 0; j < nj - (tile * lsize); ++j) {
+        REAL4 otherPos = sharedPos[j];
+        REAL otherMass = sharedMass[j];
+        myAcc = p2p_acc_kernel_core(myAcc,
+                                    myPos,
+                                    myMass,
+                                    otherPos,
+                                    otherMass);
+    }
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    return myAcc;
+}
+
+
+__kernel void p2p_acc_kernel(const uint ni,
+                             const uint nj,
+                             __global const REAL4 *ipos,
+                             __global const REAL *imass,
+                             __global const REAL4 *jpos,
+                             __global const REAL *jmass,
+                             __global REAL4 *iacc,
+                             __local REAL4 *sharedPos,
+                             __local REAL *sharedMass)
+{
+    uint gid = get_global_id(0);
+
+    if (gid < (ni+1)/2) {
+        uint ifirst = gid;
+//        printf("%ld\n", ifirst);
+        iacc[ifirst] = p2p_acc_kernel_main_loop(nj,
+                                                ipos[ifirst], imass[ifirst],
+                                                jpos, jmass,
+                                                sharedPos, sharedMass);
+        uint ilast = ni-(ifirst+1);
+        if (ilast != ifirst) {
+//            printf("%ld\n", ilast);
+            iacc[ilast] = p2p_acc_kernel_main_loop(nj,
+                                                   ipos[ilast], imass[ilast],
+                                                   jpos, jmass,
+                                                   sharedPos, sharedMass);
+        }
+    }
+}   // Output shape: ({ni},4)
+
+
+
+
+/******************************************************************************/
+
+
+/*
 __kernel void p2p_acc_kernel(const uint ni,
                              const uint nj,
                              __global const REAL4 *ipos,
@@ -90,4 +186,5 @@ __kernel void p2p_acc_kernel(const uint ni,
         }
     }
 }   // Output shape: ({ni},4)
+*/
 
