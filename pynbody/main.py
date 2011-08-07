@@ -7,6 +7,7 @@ Performs a N-body Simulation.
 
 from __future__ import print_function
 import sys
+import gzip
 import argparse
 try:
    import cPickle as pickle
@@ -126,7 +127,7 @@ def pynbody_main():
     print('#'*25, file=sys.stderr)
 
     if args.restart:
-        with open('restart.pkl', 'rb') as fobj:
+        with gzip.open('restart.pkl.gz', 'rb') as fobj:
             mysim = pickle.load(fobj)
         mysim.args.tmax = args.tmax
     else:

@@ -5,6 +5,7 @@
 
 """
 
+
 from __future__ import print_function
 import sys
 import random
@@ -12,6 +13,7 @@ import math
 
 from ggf84decor import selftimer
 from pynbody.io import HDF5IO
+from pynbody.particles import Particles
 
 
 __all__ = ['Plummer']
@@ -26,25 +28,25 @@ def scale_pos(bodies, r_scale):
 def scale_vel(bodies, v_scale):
     bodies.vel *= v_scale
 
-def scale_to_virial(bodies, ekin, epot, etot):
-    scale_vel(bodies, math.sqrt(-0.5*epot/ekin))
+def scale_to_virial(particles, ekin, epot, etot):
+    scale_vel(particles["body"], math.sqrt(-0.5*epot/ekin))
     ekin = -0.5*epot
     etot = ekin + epot
-    scale_pos(bodies, etot/(-0.25))
-    bodies.set_phi(bodies)
-    epot = bodies.get_total_epot()
-    scale_vel(bodies, math.sqrt(0.5*abs(epot/etot)))
+    scale_pos(particles["body"], etot/(-0.25))
+    particles["body"].set_phi(particles)
+    epot = particles["body"].get_total_epot()
+    scale_vel(particles["body"], math.sqrt(0.5*abs(epot/etot)))
 
 
-def scale_to_nbody_units(bodies):
-#    scale_mass(bodies, 1.0/bodies.get_mass())
-#    bodies.set_phi(bodies)
+def scale_to_nbody_units(particles):
+#    scale_mass(particles["body"], 1.0/particles["body"].get_mass())
+#    particles["body"].set_phi(particles)
 
-    e = bodies.get_total_energies()
-    print(e.kin, e.pot, e.tot)
-    scale_to_virial(bodies, e.kin, e.pot, e.tot)
-    e = bodies.get_total_energies()
-    print(e.kin, e.pot, e.tot)
+    e = particles["body"].get_total_energies()
+    print(e.kin, e.pot, e.tot, e.vir)
+    scale_to_virial(particles, e.kin, e.pot, e.tot)
+    e = particles["body"].get_total_energies()
+    print(e.kin, e.pot, e.tot, e.vir)
 
 
 
@@ -54,12 +56,11 @@ class Plummer(object):
     """  """
 
     def __init__(self, num, imf, mfrac=0.999, epsf=0.0, seed=None):
-        from pynbody.particles import Body
         self.num = num
         self.imf = imf
         self.mfrac = mfrac
         self.epsf = epsf
-        self._body = Body(num)
+        self.particles = Particles({"body": num})
         random.seed(seed)
 
 
@@ -130,45 +131,44 @@ class Plummer(object):
         ilist = list(range(n))
 
         # set index
-        self._body.index[:] = ilist
+        self.particles["body"].index[:] = ilist
 
         s = random.getstate()
 
         # set mass
-        self._body.mass[:] = self.imf.sample(n)
-        self._body.mass /= self._body.get_total_mass()
+        self.particles["body"].mass[:] = self.imf.sample(n)
+        self.particles["body"].mass /= self.particles["body"].get_total_mass()
+        self.particles["body"].update_total_mass()
+
         # set eps2
-        self._body.eps2[:] = self.set_eps2(self._body.mass.copy())
+        self.particles["body"].eps2[:] = self.set_eps2(self.particles["body"].mass.copy())
 
         random.setstate(s)
 
         # set pos
-        self._body.pos[:] = [self.set_pos(i) for i in random.sample(ilist,n)]
+        self.particles["body"].pos[:] = [self.set_pos(i) for i in random.sample(ilist,n)]
 
-#        mcum = self._body.mass.cumsum()
+#        mcum = self.particles["body"].mass.cumsum()
 #        mcum /= mcum.max()
 #        mcum *= self.mfrac
-#        self._body.pos[:] = [self.set_pos2(i) for i in random.sample(mcum, n)]
+#        self.particles["body"].pos[:] = [self.set_pos2(i) for i in random.sample(mcum, n)]
 
         # set phi
-        self._body.set_phi(self._body)
+        self.particles["body"].set_phi(self.particles)
         # set vel
-        self._body.vel[:] = [self.set_vel(p) for p in self._body.phi]
+        self.particles["body"].vel[:] = [self.set_vel(p) for p in self.particles["body"].phi]
 
 
     def make_plummer(self):
         self.set_bodies()
-        self._body.reset_center_of_mass()
-        scale_to_nbody_units(self._body)
-        self._body.set_acc(self._body)
+        self.particles.reset_center_of_mass()
+        scale_to_nbody_units(self.particles)
+        self.particles.set_acc(self.particles)
 
 
-    def write_snapshot(self, fname='plummer.hdf5'):
-        from pynbody.particles import Particles
-        data = Particles()
-        data.set_members(self._body)
-        io = HDF5IO(fname, 'w')
-        io.write_snapshot(data)
+    def write_snapshot(self, fname='plummer'):
+        io = HDF5IO(fname+'.hdf5', 'w')
+        io.write_snapshot(self.particles)
 
 
 
@@ -186,7 +186,7 @@ class Plummer(object):
         import matplotlib.pyplot as plt
         from matplotlib.patches import Circle
 
-        mass = self.imf._mtot * self._body.mass.copy()
+        mass = self.imf._mtot * self.particles["body"].mass.copy()
 
         ###################################
 
@@ -233,7 +233,7 @@ class Plummer(object):
 
         ###################################
 
-        b = self._body
+        b = self.particles["body"]
         n = len(b)
         x = b.pos[:,0]
         y = b.pos[:,1]

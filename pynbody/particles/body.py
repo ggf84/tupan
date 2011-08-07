@@ -7,19 +7,21 @@
 
 from __future__ import print_function
 import numpy as np
-from collections import namedtuple
+from collections import (namedtuple, OrderedDict)
 from .pbase import Pbase
-from pynbody.lib import gravity
 
 
 __all__ = ['Body']
 
 
-fields = dict([('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),
-               ('phi', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
-               ('vel', '3f8'), ('acc', '3f8')])
+fields = OrderedDict([('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),
+                      ('phi', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
+                      ('vel', '3f8'), ('acc', '3f8')])
 #dtype = fields.items()
 dtype = {'names': fields.keys(), 'formats': fields.values()}
+
+
+Energies = namedtuple("Energies", ["kin", "pot", "tot", "vir"])
 
 
 class Body(Pbase):
@@ -29,13 +31,19 @@ class Body(Pbase):
 
     def __init__(self, numobjs=0):
         Pbase.__init__(self, numobjs, dtype)
-        gravity.build_kernels()
+
+        self._totalmass = None
 
 
     # Total Mass
 
+    def update_total_mass(self):
+        self._totalmass = np.sum(self.mass)
+
     def get_total_mass(self):
-        return np.sum(self.mass)
+        if self._totalmass is None:
+            self.update_total_mass()
+        return self._totalmass
 
 
     # Center-of-Mass methods
@@ -93,8 +101,7 @@ class Body(Pbase):
         """
         Get the individual kinetic energy in the center-of-mass frame.
         """
-        vcm = self.get_center_of_mass_vel()
-        return 0.5 * self.mass * ((self.vel - vcm)**2).sum(1)
+        return 0.5 * self.mass * (self.vel**2).sum(1)
 
     def get_epot(self):
         """
@@ -115,8 +122,8 @@ class Body(Pbase):
         ekin = self.get_ekin()
         epot = self.get_epot()
         etot = ekin + epot
-        Energies = namedtuple('Energies', ['kin', 'pot', 'tot', 'vir'])
-        energies = Energies(ekin, epot, etot, 2*ekin+epot)
+        evir = ekin + etot
+        energies = Energies(ekin, epot, etot, evir)
         return energies
 
     def get_total_ekin(self):
@@ -144,26 +151,25 @@ class Body(Pbase):
         ekin = self.get_total_ekin()
         epot = self.get_total_epot()
         etot = ekin + epot
-        TotEnergies = namedtuple('TotEnergies', ['kin', 'pot', 'tot', 'vir'])
-        totenergies = TotEnergies(ekin, epot, etot, 2*ekin+epot)
-        return totenergies
+        evir = ekin + etot
+        energies = Energies(ekin, epot, etot, evir)
+        return energies
 
 
     # Gravity methods
 
     def set_phi(self, objs):
         """
-        Set the individual gravitational potential due to other bodies.
+        Set the individual gravitational potential due to other particles.
         """
-        self.phi[:] = gravity.newtonian.set_phi(self, objs)
+        self.phi[:] = objs._accumulate_phi_for(self)
 
     def set_acc(self, objs):
         """
-        Set the individual acceleration due to other bodies.
+        Set the individual acceleration due to other particles.
         """
-        _acc = gravity.newtonian.set_acc(self, objs)
-        self.acc[:] = _acc[:,:3]
-        self.stepdens[:,0] = np.sqrt(_acc[:,3]/(len(objs)-1))
+        (self.acc[:], rhostep) = objs._accumulate_acc_for(self)
+        return rhostep
 
 
     # Evolve methods

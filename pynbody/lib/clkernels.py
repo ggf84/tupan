@@ -22,8 +22,8 @@ path = os.path.dirname(__file__)
 
 
 IUNROLL = 1#3                 # unroll for i-particles
-JUNROLL = 16#64                # unroll for j-particles
-BLOCK_SIZE = (256, 1, 1)#(128, 1, 1)
+JUNROLL = 24#16#64                # unroll for j-particles
+BLOCK_SIZE = (192, 1, 1)#(256, 1, 1)#(128, 1, 1)
 ENABLE_FAST_MATH = False
 ENABLE_DOUBLE_PRECISION = True
 

@@ -2,7 +2,6 @@
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
 #endif
 
-
 #ifdef DOUBLE
 typedef double REAL;
 typedef double2 REAL2;
@@ -20,10 +19,10 @@ typedef float4 REAL4;
 
 inline REAL4
 p2p_acc_kernel_main_loop(const uint nj,
-                         REAL4 myPos,
-                         REAL myMass,
                          __global const REAL4 *jpos,
                          __global const REAL *jmass,
+                         REAL4 myPos,
+                         REAL myMass,
                          __local REAL4 *sharedPos,
                          __local REAL *sharedMass)
 {
@@ -86,24 +85,31 @@ __kernel void p2p_acc_kernel(const uint ni,
                              __local REAL4 *sharedPos,
                              __local REAL *sharedMass)
 {
-    uint gid = get_global_id(0);
+    uint gid = 1*get_global_id(0);
 
-    if (gid < (ni+1)/2) {
-        uint ifirst = gid;
-//        printf("%ld\n", ifirst);
-        iacc[ifirst] = p2p_acc_kernel_main_loop(nj,
-                                                ipos[ifirst], imass[ifirst],
-                                                jpos, jmass,
-                                                sharedPos, sharedMass);
-        uint ilast = ni-(ifirst+1);
-        if (ilast != ifirst) {
-//            printf("%ld\n", ilast);
-            iacc[ilast] = p2p_acc_kernel_main_loop(nj,
-                                                   ipos[ilast], imass[ilast],
-                                                   jpos, jmass,
-                                                   sharedPos, sharedMass);
-        }
-    }
+    uint i = (gid+0 < ni) ? (gid+0) : (ni-1);
+    iacc[i] = p2p_acc_kernel_main_loop(nj,
+                                        jpos, jmass,
+                                        ipos[i], imass[i],
+                                        sharedPos, sharedMass);
+
+//    uint ii = (gid+1 < ni) ? (gid+1) : (ni-1);
+//    iacc[ii] = p2p_acc_kernel_main_loop(nj,
+//                                        jpos, jmass,
+//                                        ipos[ii], imass[ii],
+//                                        sharedPos, sharedMass);
+
+//    uint iii = (gid+2 < ni) ? (gid+2) : (ni-1);
+//    iacc[iii] = p2p_acc_kernel_main_loop(nj,
+//                                        jpos, jmass,
+//                                        ipos[iii], imass[iii],
+//                                        sharedPos, sharedMass);
+
+//    uint iiii = (gid+3 < ni) ? (gid+3) : (ni-1);
+//    iacc[iiii] = p2p_acc_kernel_main_loop(nj,
+//                                        jpos, jmass,
+//                                        ipos[iiii], imass[iiii],
+//                                        sharedPos, sharedMass);
 }   // Output shape: ({ni},4)
 
 

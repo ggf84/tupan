@@ -7,8 +7,9 @@ TODO.
 
 from __future__ import print_function
 import sys
-import pickle
 import math
+import gzip
+import pickle
 from ggf84decor import selftimer
 from pynbody.io import HDF5IO
 from pynbody.integrator import (METH_NAMES, METHS)
@@ -33,16 +34,18 @@ class Diagnostic(object):
     """
 
     """
-    def __init__(self, fname,
-                 e0, rcom0, lmom0, amom0,
-                 ceerr=0.0, ceerr_count=0):
+    def __init__(self, fname, particles):
         self.fname = fname
-        self.e0 = e0
-        self.rcom0 = rcom0
-        self.lmom0 = lmom0
-        self.amom0 = amom0
-        self.ceerr = ceerr
-        self.ceerr_count = ceerr_count
+
+        particles.set_phi(particles)
+        self.e0 = particles.get_total_energies()
+        self.rcom0 = particles.get_center_of_mass_pos()
+        self.lmom0 = particles.get_total_linmom()
+        self.amom0 = particles.get_total_angmom()
+
+        self.ceerr = 0.0
+        self.count = 0
+
         self.print_header()
 
 
@@ -67,20 +70,19 @@ class Diagnostic(object):
 
 
     def print_diagnostic(self, time, particles):
-        particles['body'].set_phi(particles['body'])
-        e = particles['body'].get_total_energies()
-        e1 = e.tot
-        rcom1 = particles['body'].get_center_of_mass_pos()
-        lmom1 = particles['body'].get_total_linmom()
-        amom1 = particles['body'].get_total_angmom()
+        particles.set_phi(particles)
+        e = particles.get_total_energies()
+        rcom = particles.get_center_of_mass_pos()
+        lmom = particles.get_total_linmom()
+        amom = particles.get_total_angmom()
 
-        eerr = (e1-self.e0)/abs(self.e0)
+        eerr = (e.tot-self.e0.tot)/abs(self.e0.tot)
         self.ceerr += eerr**2
-        self.ceerr_count += 1
-        geerr = math.sqrt(self.ceerr / self.ceerr_count)
-        rcom = (rcom1-self.rcom0)
-        lmom = (lmom1-self.lmom0)
-        amom = (amom1-self.amom0)
+        self.count += 1
+        geerr = math.sqrt(self.ceerr / self.count)
+        dRcom = (rcom-self.rcom0)
+        dLmom = (lmom-self.lmom0)
+        dAmom = (amom-self.amom0)
 
         fmt = '{time:< 12.6g} '\
               '{ekin:< 12.6g} {epot:< 12.6g} {etot:< 16.10g} '\
@@ -91,7 +93,7 @@ class Diagnostic(object):
         myprint(fmt.format(time=time,
                            ekin=e.kin, epot=e.pot, etot=e.tot,
                            evir=e.vir, eerr=eerr, geerr=geerr,
-                           rcom=rcom, lmom=lmom, amom=amom),
+                           rcom=dRcom, lmom=dLmom, amom=dAmom),
                 self.fname, 'a')
 
 
@@ -111,15 +113,11 @@ class Simulation(object):
         # Set the method of integration.
         self.Integrator = METHS[METH_NAMES.index(self.args.meth)]
 
-        # Compute the initial value of all quantities necessary for the run.
-        (e0, rcom0, lmom0, amom0) = self._setup_initial_quantities(particles)
-
         # Initializes the integrator.
         self.integrator = self.Integrator(0.0, self.args.eta, particles)
 
         # Initializes the diagnostic of the simulation.
-        self.dia = Diagnostic(self.args.log_file,
-                              e0, rcom0, lmom0, amom0)
+        self.dia = Diagnostic(self.args.log_file, particles)
         self.dia.print_diagnostic(self.integrator.time, particles)
 
         # Initializes snapshots output.
@@ -134,22 +132,6 @@ class Simulation(object):
         self.oldtime_gl = self.integrator.time
         self.oldtime_dia = self.integrator.time
         self.oldtime_res = self.integrator.time
-
-
-    def _setup_initial_quantities(self, particles):
-        """
-
-        """
-        particles['body'].set_phi(particles['body'])
-        particles['body'].set_acc(particles['body'])
-        particles['body'].stepdens[:,1] = particles['body'].stepdens[:,0].copy()
-
-        e0 = particles['body'].get_total_etot()
-        rcom0 = particles['body'].get_center_of_mass_pos()
-        lmom0 = particles['body'].get_total_linmom()
-        amom0 = particles['body'].get_total_angmom()
-
-        return (e0, rcom0, lmom0, amom0)
 
 
     def __getstate__(self):
@@ -188,7 +170,7 @@ class Simulation(object):
                 self.iosnaps.write_snapshot(particles)
             if (self.integrator.time - self.oldtime_res >= self.dt_res):
                 self.oldtime_res += self.dt_res
-                with open('restart.pkl', 'wb') as fobj:
+                with gzip.open('restart.pkl.gz', 'wb') as fobj:
                     pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
 
         if self.viewer:

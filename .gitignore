@@ -1,7 +1,7 @@
 build
 dist
 *.hdf5
-*.pkl
+*.pkl.gz
 MANIFEST
 *.pyc
 pynbody/test/png
