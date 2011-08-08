@@ -11,14 +11,14 @@ from collections import (namedtuple, OrderedDict)
 from .pbase import Pbase
 
 
-__all__ = ['Body']
+__all__ = ["Body"]
 
 
-fields = OrderedDict([('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),
-                      ('phi', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
-                      ('vel', '3f8'), ('acc', '3f8')])
+fields = OrderedDict([("index", "u8"), ("mass", "f8"), ("eps2", "f8"),
+                      ("phi", "f8"), ("stepdens", "2f8"), ("pos", "3f8"),
+                      ("vel", "3f8"), ("acc", "3f8")])
 #dtype = fields.items()
-dtype = {'names': fields.keys(), 'formats': fields.values()}
+dtype = {"names": fields.keys(), "formats": fields.values()}
 
 
 Energies = namedtuple("Energies", ["kin", "pot", "tot", "vir"])
@@ -38,9 +38,15 @@ class Body(Pbase):
     # Total Mass
 
     def update_total_mass(self):
+        """
+        Updates the total mass to the current sum.
+        """
         self._totalmass = np.sum(self.mass)
 
     def get_total_mass(self):
+        """
+        Get the total mass.
+        """
         if self._totalmass is None:
             self.update_total_mass()
         return self._totalmass
@@ -99,7 +105,7 @@ class Body(Pbase):
 
     def get_ekin(self):
         """
-        Get the individual kinetic energy in the center-of-mass frame.
+        Get the individual kinetic energy.
         """
         return 0.5 * self.mass * (self.vel**2).sum(1)
 
@@ -111,13 +117,13 @@ class Body(Pbase):
 
     def get_etot(self):
         """
-        Get the individual kinetic+potential energy.
+        Get the individual "kinetic + potential" energy.
         """
         return self.get_ekin() + self.get_epot()
 
     def get_energies(self):
         """
-        Get the individual energies 'kin', 'pot', 'tot', 'vir'.
+        Get the individual energies ("kin", "pot", "tot", "vir").
         """
         ekin = self.get_ekin()
         epot = self.get_epot()
@@ -140,13 +146,13 @@ class Body(Pbase):
 
     def get_total_etot(self):
         """
-        Get the total kinetic+potential energy.
+        Get the total "kinetic + potential" energy.
         """
         return self.get_total_ekin() + self.get_total_epot()
 
     def get_total_energies(self):
         """
-        Get the total energies 'kin', 'pot', 'tot', 'vir'.
+        Get the total energies ("kin", "pot", "tot", "vir").
         """
         ekin = self.get_total_ekin()
         epot = self.get_total_epot()
@@ -172,12 +178,18 @@ class Body(Pbase):
         return rhostep
 
 
-    # Evolve methods
+    # Evolving methods
 
     def drift(self, tau):
+        """
+        Evolves position in time.
+        """
         self.pos += tau * self.vel
 
     def kick(self, tau):
+        """
+        Evolves velocity in time.
+        """
         self.vel += tau * self.acc
 
 

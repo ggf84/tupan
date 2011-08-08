@@ -59,15 +59,17 @@ class Particles(dict):
 
         self._totalmass = None
 
-        self._phi = {"sph": {"body": 0.0, "blackhole": 0.0},
-                     "body": {"sph": 0.0, "blackhole": 0.0},
-                     "blackhole": {"sph": 0.0, "body": 0.0}}
+        self._own_epot = {"sph": 0.0, "body": 0.0, "blackhole": 0.0}
 
 
 
     # Total Mass
 
     def update_total_mass(self):
+        """
+        Updates the total mass of the whole system of particles
+        to the current sum.
+        """
         mass = 0.0
         for obj in self.itervalues():
             if obj:
@@ -76,6 +78,9 @@ class Particles(dict):
         self._totalmass = mass
 
     def get_total_mass(self):
+        """
+        Get the total mass of the whole system of particles.
+        """
         if self._totalmass is None:
             self.update_total_mass()
         return self._totalmass
@@ -129,6 +134,8 @@ class Particles(dict):
         for (key, obj) in self.iteritems():
             if obj:
                 linmom[key] = obj.get_total_linmom()
+            else:
+                linmom[key] = None
         return linmom
 
     def get_angmom(self):
@@ -139,6 +146,8 @@ class Particles(dict):
         for (key, obj) in self.iteritems():
             if obj:
                 angmom[key] = obj.get_total_angmom()
+            else:
+                angmom[key] = None
         return angmom
 
     def get_total_linmom(self):
@@ -147,7 +156,8 @@ class Particles(dict):
         """
         linmom = 0.0
         for value in self.get_linmom().itervalues():
-            linmom += value
+            if value is not None:
+                linmom += value
         return linmom
 
     def get_total_angmom(self):
@@ -156,7 +166,8 @@ class Particles(dict):
         """
         angmom = 0.0
         for value in self.get_angmom().itervalues():
-            angmom += value
+            if value is not None:
+                angmom += value
         return angmom
 
 
@@ -170,6 +181,8 @@ class Particles(dict):
         for (key, obj) in self.iteritems():
             if obj:
                 energies[key] = obj.get_total_energies()
+            else:
+                energies[key] = None
         return energies
 
     def get_total_energies(self):
@@ -179,9 +192,13 @@ class Particles(dict):
         """
         ekin = 0.0
         epot = 0.0
-        for value in self.get_energies().itervalues():
-            ekin += value.kin
-            epot += value.pot   # XXX: To fix it: BoBo + BHBH + (BoBH + BHBo) +...
+        for (key, energy) in self.get_energies().iteritems():
+            if energy is not None:
+                ekin += energy.kin
+                epot += 0.5*(energy.pot + self._own_epot[key])
+#                XXX: To fix it: sum_epot = BoBo + BHBH + (BoBH + BHBo) + ...
+#                   : Now it looks OK, but it's better verify it again
+#                   : when other particles types are implemented.
         etot = ekin + epot
         evir = ekin + etot
         energies = Energies(ekin, epot, etot, evir)
@@ -196,24 +213,50 @@ class Particles(dict):
                 obj.set_phi(objs)
 
     def _accumulate_phi_for(self, iobj):
-        phi = 0
-        for (key, jobj) in self.iteritems():
-            if jobj:
-                if isinstance(iobj, Sph):
-                    pass                # XXX: to be implemented.
-                if isinstance(iobj, Body):
-                    phi += gravity.newtonian.set_phi(iobj, jobj)
-                if isinstance(iobj, BlackHole):
-                    pass                # XXX: to be implemented.
+        if isinstance(iobj, Sph):           # XXX: To be implemented.
+            phi = 0
+            for (key, jobj) in self.iteritems():
+                if isinstance(jobj, Sph):
+                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    phi += ret
+                    self._own_epot["sph"] = 0.5 * np.sum(iobj.mass * ret)
+                if isinstance(jobj, Body):
+                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    phi += ret
+                if isinstance(jobj, BlackHole):
+                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    phi += ret
+            return phi
 
-        return phi
+        if isinstance(iobj, Body):
+            phi = 0
+            for (key, jobj) in self.iteritems():
+                if isinstance(jobj, Sph):
+                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    phi += ret
+                if isinstance(jobj, Body):
+                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    phi += ret
+                    self._own_epot["body"] = 0.5 * np.sum(iobj.mass * ret)
+                if isinstance(jobj, BlackHole):
+                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    phi += ret
+            return phi
 
-
-#    def for_each_set_phi(self, objs):
-#        for key in ALL_PARTICLE_TYPES:
-#            self._phi_sph[key] = self.set_phi_sph_from(objs[key])
-#            self._phi_body[key] = self.set_phi_body_from(objs[key])
-#            self._phi_blackhole[key] = self.set_phi_blackhole_from(objs[key])
+        if isinstance(iobj, BlackHole):     # XXX: To be implemented.
+            phi = 0
+            for (key, jobj) in self.iteritems():
+                if isinstance(jobj, Sph):
+                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    phi += ret
+                if isinstance(jobj, Body):
+                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    phi += ret
+                if isinstance(jobj, BlackHole):
+                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    phi += ret
+                    self._own_epot["blackhole"] = 0.5 * np.sum(iobj.mass * ret)
+            return phi
 
 
 
@@ -227,21 +270,46 @@ class Particles(dict):
         return rhostep
 
     def _accumulate_acc_for(self, iobj):
-        acc = 0
-        rhostep = 0
-        for (key, jobj) in self.iteritems():
-            if jobj:
-                if isinstance(iobj, Sph):
-                    pass                # XXX: to be implemented.
-                if isinstance(iobj, Body):
+        if isinstance(iobj, Sph):           # XXX: To be implemented.
+            acc = 0
+            rhostep = 0
+            for (key, jobj) in self.iteritems():
+                if isinstance(jobj, Sph):
+                    pass
+                if isinstance(jobj, Body):
+                    pass
+                if isinstance(jobj, BlackHole):
+                    pass
+            return (acc, rhostep)
+
+        if isinstance(iobj, Body):
+            acc = 0
+            rhostep = 0
+            for (key, jobj) in self.iteritems():
+                if isinstance(jobj, Sph):
+                    pass
+                if isinstance(jobj, Body):
                     ret = gravity.newtonian.set_acc(iobj, jobj)
                     ret[:,3] = np.sqrt(ret[:,3]/(len(jobj)-1))
                     acc += ret[:,:3]
                     rhostep += ret[:,3]
-                if isinstance(iobj, BlackHole):
-                    pass                # XXX: to be implemented.
+                if isinstance(jobj, BlackHole):
+                    pass
+            return (acc, rhostep)
 
-        return (acc, rhostep)
+        if isinstance(iobj, BlackHole):     # XXX: To be implemented.
+            acc = 0
+            rhostep = 0
+            for (key, jobj) in self.iteritems():
+                if isinstance(jobj, Sph):
+                    pass
+                if isinstance(jobj, Body):
+                    pass
+                if isinstance(jobj, BlackHole):
+                    pass
+            return (acc, rhostep)
+
+
 
 
 

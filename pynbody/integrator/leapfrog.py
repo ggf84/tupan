@@ -63,10 +63,8 @@ class LeapFrog(object):
         mintsteps = []
         for (key, obj) in self.particles.iteritems():
             if obj:
-#                real_tstep = self.eta / obj.stepdens[:,1]  # XXX: 4810::7056
                 real_tstep = self.eta / self.rho[3][key]
                 mintsteps.append(np.min(real_tstep))
-#                mintsteps.append(len(real_tstep)/np.sum(1.0/real_tstep))
         power = int(np.log2(min(mintsteps)) - 1)
         nexttstep = 2.0**power
         while (nexttime+2*nexttstep)%(2*nexttstep) != 0:
@@ -84,8 +82,7 @@ class LeapFrog(object):
             if obj:
                 prev_acc = obj.acc.copy()
                 rhostep = obj.set_acc(other_particles)
-                obj.acc[:] = 2*obj.acc - prev_acc
-#                obj.acc += obj.acc - prev_acc
+                obj.acc += obj.acc - prev_acc
 
                 self.rho[0][key][:] = (self.rho[0][key] * self.rho[3][key])**0.5
                 self.rho[1][key][:] = self.rho[2][key]
