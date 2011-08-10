@@ -61,9 +61,9 @@ class LeapFrog(object):
     @selftimer
     def set_nexttstep(self, nexttime):
         mintsteps = []
-        for (key, obj) in self.particles.iteritems():
-            if obj:
-                real_tstep = self.eta / self.rho[3][key]
+        for value in self.rho[3].itervalues():
+            if value is not None:
+                real_tstep = self.eta / value
                 mintsteps.append(np.min(real_tstep))
         power = int(np.log2(min(mintsteps)) - 1)
         nexttstep = 2.0**power

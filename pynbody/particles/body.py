@@ -34,6 +34,8 @@ class Body(Pbase):
 
         self._totalmass = None
 
+        self._own_total_epot = 0.0
+
 
     # Total Mass
 
@@ -142,7 +144,7 @@ class Body(Pbase):
         """
         Get the total potential energy.
         """
-        return 0.5 * np.sum(self.get_epot())
+        return np.sum(self.get_epot()) - self._own_total_epot
 
     def get_total_etot(self):
         """
@@ -168,7 +170,7 @@ class Body(Pbase):
         """
         Set the individual gravitational potential due to other particles.
         """
-        self.phi[:] = objs._accumulate_phi_for(self)
+        (self.phi[:], self._own_total_epot) = objs._accumulate_phi_for(self)
 
     def set_acc(self, objs):
         """

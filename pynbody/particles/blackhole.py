@@ -11,91 +11,188 @@ from collections import (namedtuple, OrderedDict)
 from .pbase import Pbase
 
 
-__all__ = ['BlackHole']
+__all__ = ["BlackHole"]
 
 
-fields = OrderedDict([('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),
-                      ('phi', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
-                      ('vel', '3f8'), ('acc', '3f8'), ('spin', '3f8')])
+fields = OrderedDict([("index", "u8"), ("mass", "f8"), ("eps2", "f8"),
+                      ("phi", "f8"), ("stepdens", "2f8"), ("pos", "3f8"),
+                      ("vel", "3f8"), ("acc", "3f8"), ("spin", "3f8")])
 #dtype = fields.items()
-dtype = {'names': fields.keys(), 'formats': fields.values()}
+dtype = {"names": fields.keys(), "formats": fields.values()}
+
+
+Energies = namedtuple("Energies", ["kin", "pot", "tot", "vir"])
 
 
 class BlackHole(Pbase):
     """
-    A base class for BlackHole-type particles
+    A base class for BlackHole-type particles.
     """
+
     def __init__(self, numobjs=0):
         Pbase.__init__(self, numobjs, dtype)
 
+        self._totalmass = None
+
+        self._own_total_epot = 0.0
 
 
+    # Total Mass
+
+    def update_total_mass(self):
+        """
+        Updates the total mass to the current sum.
+        """
+        self._totalmass = np.sum(self.mass)
+
+    def get_total_mass(self):
+        """
+        Get the total mass.
+        """
+        if self._totalmass is None:
+            self.update_total_mass()
+        return self._totalmass
 
 
+    # Center-of-Mass methods
 
-#class BlackHoles(object):
-#    """A base class for BH-type particles"""
+    def get_center_of_mass_pos(self):
+        """
+        Get the center-of-mass position.
+        """
+        return (self.mass * self.pos.T).sum(1) / self.get_total_mass()
 
-#    def __init__(self):
-#        self.dtype = [('index', 'u8'), ('step_number', 'u8'),
-#                      ('curr_step_density', 'f8'), ('next_step_density', 'f8'),
-#                      ('time', 'f8'), ('tstep', 'f8'),
-#                      ('mass', 'f8'), ('eps2', 'f8'), ('pot', 'f8'),
-#                      ('pos', '3f8'), ('vel', '3f8'), ('acc', '3f8'),
-#                      ('spin', '3f8')]
+    def get_center_of_mass_vel(self):
+        """
+        Get the center-of-mass velocity.
+        """
+        return (self.mass * self.vel.T).sum(1) / self.get_total_mass()
 
-#        self.index = np.array([], dtype='u8')
-#        self.step_number = np.array([], dtype='u8')
-#        self.curr_step_density = np.array([], dtype='f8')
-#        self.next_step_density = np.array([], dtype='f8')
-#        self.time = np.array([], dtype='f8')
-#        self.tstep = np.array([], dtype='f8')
-#        self.mass = np.array([], dtype='f8')
-#        self.eps2 = np.array([], dtype='f8')
-#        self.pot = np.array([], dtype='f8')
-#        self.pos = np.array([], dtype='3f8')
-#        self.vel = np.array([], dtype='3f8')
-#        self.acc = np.array([], dtype='3f8')
-#        self.spin = np.array([], dtype='3f8')
-
-#        # total mass
-#        self.total_mass = 0.0
+    def reset_center_of_mass(self):
+        """
+        Reset the center-of-mass to origin.
+        """
+        self.pos -= self.get_center_of_mass_pos()
+        self.vel -= self.get_center_of_mass_vel()
 
 
-#    def from_cmpd_struct(self, _array):
-#        for attr in dict(self.dtype).keys():
-#            setattr(self, attr, _array[attr])
+    # Momentum methods
 
-#    def to_cmpd_struct(self):
-#        _array = np.empty(len(self), dtype=self.dtype)
-#        for attr in dict(self.dtype).keys():
-#            _array[attr] = getattr(self, attr)
-#        return _array
+    def get_linmom(self):
+        """
+        Get the individual linear momentum.
+        """
+        return (self.mass * self.vel.T).T
 
-#    def __repr__(self):
-#        return '{array}'.format(array=self.to_cmpd_struct())
+    def get_angmom(self):
+        """
+        Get the individual angular momentum.
+        """
+        return (self.mass * np.cross(self.pos, self.vel).T).T
 
-#    def __iter__(self):
-#        return iter(self.to_cmpd_struct())
+    def get_total_linmom(self):
+        """
+        Get the total linear momentum.
+        """
+        return self.get_linmom().sum(0)
 
-#    def __len__(self):
-#        return len(self.index)
+    def get_total_angmom(self):
+        """
+        Get the total angular momentum.
+        """
+        return self.get_angmom().sum(0)
 
-#    def __reversed__(self):
-#        return reversed(self.to_cmpd_struct())
 
-#    def __getitem__(self, index):     # XXX:
-#        s = self.to_cmpd_struct()[index]
-#        if not isinstance(s, np.ndarray):
-#            s = np.asarray([s], dtype=self.dtype)
-#        obj = BlackHoles()
-#        obj.from_cmpd_struct(s)
-#        return obj
+    # Energy methods
 
-#    def fromlist(self, data):
-#        self.from_cmpd_struct(np.asarray(data, dtype=self.dtype))
-#        self.total_mass = np.sum(self.mass)
+    def get_ekin(self):
+        """
+        Get the individual kinetic energy.
+        """
+        return 0.5 * self.mass * (self.vel**2).sum(1)
 
+    def get_epot(self):
+        """
+        Get the individual potential energy.
+        """
+        return self.mass * self.phi
+
+    def get_etot(self):
+        """
+        Get the individual "kinetic + potential" energy.
+        """
+        return self.get_ekin() + self.get_epot()
+
+    def get_energies(self):
+        """
+        Get the individual energies ("kin", "pot", "tot", "vir").
+        """
+        ekin = self.get_ekin()
+        epot = self.get_epot()
+        etot = ekin + epot
+        evir = ekin + etot
+        energies = Energies(ekin, epot, etot, evir)
+        return energies
+
+    def get_total_ekin(self):
+        """
+        Get the total kinetic energy.
+        """
+        return np.sum(self.get_ekin())
+
+    def get_total_epot(self):
+        """
+        Get the total potential energy.
+        """
+        return np.sum(self.get_epot()) - self._own_total_epot
+
+    def get_total_etot(self):
+        """
+        Get the total "kinetic + potential" energy.
+        """
+        return self.get_total_ekin() + self.get_total_epot()
+
+    def get_total_energies(self):
+        """
+        Get the total energies ("kin", "pot", "tot", "vir").
+        """
+        ekin = self.get_total_ekin()
+        epot = self.get_total_epot()
+        etot = ekin + epot
+        evir = ekin + etot
+        energies = Energies(ekin, epot, etot, evir)
+        return energies
+
+
+    # Gravity methods
+
+    def set_phi(self, objs):
+        """
+        Set the individual gravitational potential due to other particles.
+        """
+        (self.phi[:], self._own_total_epot) = objs._accumulate_phi_for(self)
+
+    def set_acc(self, objs):
+        """
+        Set the individual acceleration due to other particles.
+        """
+        (self.acc[:], rhostep) = objs._accumulate_acc_for(self)
+        return rhostep
+
+
+    # Evolving methods
+
+    def drift(self, tau):
+        """
+        Evolves position in time.
+        """
+        self.pos += tau * self.vel
+
+    def kick(self, tau):
+        """
+        Evolves velocity in time.
+        """
+        self.vel += tau * self.acc
 
 
 ########## end of file ##########

@@ -89,6 +89,15 @@ class Pbase(object):
 #        self.set_data(np.delete(self.get_data(), index))
 
 
+    def fromlist(self, data, dtype):
+        self._dtype = dtype
+        self._data = None
+        if len(data) > 0:
+            self._data = np.array(data, dtype)
+            fields = {}
+            for attr in self._dtype['names']:
+                fields[attr] = self._data[attr]
+            self.__dict__.update(fields)
 
 
 

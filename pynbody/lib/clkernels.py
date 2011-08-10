@@ -145,7 +145,7 @@ class CLKernel(object):
         nj = len(bj)
 
         local_size = BLOCK_SIZE
-        global_size = (nj + IUNROLL * local_size[0] - 1)
+        global_size = (ni + IUNROLL * local_size[0] - 1)
         global_size //= IUNROLL * local_size[0]
         global_size *= local_size[0]
         global_size = (global_size, 1, 1)
