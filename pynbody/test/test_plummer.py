@@ -10,16 +10,16 @@ if __name__ == "__main__":
 
     @selftimer
     def main():
-        numBodies = 4096
+        numBodies = 256
 
 #        imf = IMF.equal()
 #        imf = IMF.salpeter1955(0.5, 120.0)
 #        imf = IMF.parravano2011(0.075, 120.0)
         imf = IMF.padoan2007(0.075, 120.0)
 
-        p = Plummer(numBodies, imf, epsf=4.0, seed=1)
+        p = Plummer(numBodies, imf, epsf=4.0, epstype='b', seed=1)
         p.make_plummer()
-        p.write_snapshot()
+        p.write_snapshot("plummer"+str(numBodies).zfill(4)+'b')
         p.show()
 
 #        bi = p._body

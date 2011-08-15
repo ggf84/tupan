@@ -55,18 +55,33 @@ def scale_to_nbody_units(particles):
 class Plummer(object):
     """  """
 
-    def __init__(self, num, imf, mfrac=0.999, epsf=0.0, seed=None):
+    def __init__(self, num, imf, mfrac=0.999, epsf=0.0, epstype='b', seed=None):
         self.num = num
         self.imf = imf
         self.mfrac = mfrac
         self.epsf = epsf
+        self.epstype = epstype
         self.particles = Particles({"body": num})
         random.seed(seed)
 
 
     def set_eps2(self, mass):
-        eps = self.epsf * mass
-        return 0.5 * (eps**2)
+        n = self.num
+
+        eps_a = self.epsf * mass
+        eps_b = (self.epsf / (n * (n * mass)**0.5))
+
+        eps_a_mean = ((mass*(eps_a**2)).sum())**0.5
+        eps_b_mean = ((mass*(eps_b**2)).sum())**0.5
+
+        eps_a *= (eps_b_mean / eps_a_mean)
+
+        if 'a' in self.epstype:
+            return eps_a
+        elif 'b' in self.epstype:
+            return eps_b
+        else:
+            return 0
 
 
     def set_pos2(self, mrand):
@@ -166,8 +181,8 @@ class Plummer(object):
         self.particles.set_acc(self.particles)
 
 
-    def write_snapshot(self, fname='plummer'):
-        io = HDF5IO(fname+'.hdf5', 'w')
+    def write_snapshot(self, fname="plummer"):
+        io = HDF5IO(fname+".hdf5", 'w')
         io.write_snapshot(self.particles)
 
 
@@ -237,7 +252,7 @@ class Plummer(object):
         n = len(b)
         x = b.pos[:,0]
         y = b.pos[:,1]
-        radius = 0.5 * n * np.sqrt(b.eps2)
+        radius = 2 * n * b.mass
         color = n * b.mass
 
         ###################################

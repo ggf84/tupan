@@ -114,7 +114,7 @@ class Simulation(object):
         self.Integrator = METHS[METH_NAMES.index(self.args.meth)]
 
         # Initializes the integrator.
-        self.integrator = self.Integrator(0.0, self.args.eta, particles)
+        self.integrator = self.Integrator(self.args.eta, 0.0, particles)
 
         # Initializes the diagnostic of the simulation.
         self.dia = Diagnostic(self.args.log_file, particles)

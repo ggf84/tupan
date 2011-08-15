@@ -120,7 +120,7 @@ class BlockStep(object):
     """
 
     """
-    def __init__(self, time, eta, particles,
+    def __init__(self, eta, time, particles,
                  max_tstep=2.0**(-MIN_LEVEL),
                  min_tstep=2.0**(-MAX_LEVEL)):
         self.ParticlesClass = particles.__class__

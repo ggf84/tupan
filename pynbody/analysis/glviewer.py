@@ -38,6 +38,7 @@ ZOOM_FACTOR = 1.0
 POINT_SIZE = 10.0
 CONTRAST = 1.0
 SATURATE = False
+TRACEORBITS = False
 COLORSCHEME = 1
 COLORMASK = {'r': False, 'g': False, 'b': False}
 
@@ -272,6 +273,12 @@ class GLviewer(object):
             ZOOM_FACTOR *= 1.01
         elif key == 'z':
             ZOOM_FACTOR /= 1.01
+        elif key == 'o' or key == 'O':
+            global TRACEORBITS
+            if not TRACEORBITS:
+                TRACEORBITS = True
+            else:
+                TRACEORBITS = False
         elif key == 'f' or key == 'F':
             global FULLSCREEN
             if not FULLSCREEN:
@@ -345,7 +352,10 @@ class GLviewer(object):
 
 
     def render_func(self):
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        if not TRACEORBITS:
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        else:
+            glClear(GL_DEPTH_BUFFER_BIT)
         if COLORMASK['r']:
             glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE)
         elif COLORMASK['g']:
