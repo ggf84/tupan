@@ -288,13 +288,17 @@ class Particles(dict):
                     pass
                 if isinstance(jobj, Body):
                     ret = gravity.newtonian.set_acc(iobj, jobj)
-                    acc += ret[:,:3]
-                    rhostep += ret[:,3]
+#                    acc += ret[:,:3]
+#                    rhostep += ret[:,3]
+                    acc += ret[0]
+                    rhostep += ret[1]
                     sum_nj += len(jobj)-1
                 if isinstance(jobj, BlackHole):     # XXX: To be modified.
                     ret = gravity.newtonian.set_acc(iobj, jobj)
-                    acc += ret[:,:3]
-                    rhostep += ret[:,3]
+#                    acc += ret[:,:3]
+#                    rhostep += ret[:,3]
+                    acc += ret[0]
+                    rhostep += ret[1]
                     sum_nj += len(jobj)
             return (acc, np.sqrt(rhostep/sum_nj))
 
@@ -307,13 +311,17 @@ class Particles(dict):
                     pass
                 if isinstance(jobj, Body):          # XXX: To be modified.
                     ret = gravity.newtonian.set_acc(iobj, jobj)
-                    acc += ret[:,:3]
-                    rhostep += ret[:,3]
+#                    acc += ret[:,:3]
+#                    rhostep += ret[:,3]
+                    acc += ret[0]
+                    rhostep += ret[1]
                     sum_nj += len(jobj)
                 if isinstance(jobj, BlackHole):     # XXX: To be modified.
                     ret = gravity.newtonian.set_acc(iobj, jobj)
-                    acc += ret[:,:3]
-                    rhostep += ret[:,3]
+#                    acc += ret[:,:3]
+#                    rhostep += ret[:,3]
+                    acc += ret[0]
+                    rhostep += ret[1]
                     sum_nj += len(jobj)-1
             return (acc, np.sqrt(rhostep/sum_nj))
 

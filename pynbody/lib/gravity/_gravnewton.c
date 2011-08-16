@@ -137,7 +137,8 @@ static PyObject *set_acc(PyObject *_self, PyObject *_bi, PyObject *_bj)
     Py_DECREF(_jpos_arr);
     Py_DECREF(_jpos);
 
-    return Py_BuildValue("dddd", acc.x, acc.y, acc.z, acc.w);
+/*    return Py_BuildValue("dddd", acc.x, acc.y, acc.z, acc.w);*/
+    return Py_BuildValue("(ddd)d", acc.x, acc.y, acc.z, acc.w);
 }
 
 
@@ -165,9 +166,9 @@ static PyObject *_set_acc(PyObject *_self, PyObject *_args)
 
 
 static PyMethodDef _gravnewton_meths[] = {
-    {"set_acc", (PyCFunction)_set_acc, METH_VARARGS,
+    {"c_p2p_acc", (PyCFunction)_set_acc, METH_VARARGS,
                 "returns the Newtonian gravitational acceleration."},
-    {"set_phi", (PyCFunction)_set_phi, METH_VARARGS,
+    {"c_p2p_phi", (PyCFunction)_set_phi, METH_VARARGS,
                 "returns the Newtonian gravitational potential."},
 
     {NULL, NULL, 0, NULL},

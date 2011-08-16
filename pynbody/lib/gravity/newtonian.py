@@ -17,7 +17,8 @@ __all__ = ['set_acc', 'set_phi']
 def cl_set_acc(bi, bj):
     acc = cl_p2p_acc.run(bi, bj)
 #    cl_p2p_acc.print_profile(len(bi), len(bj))
-    return acc
+#    return acc
+    return acc[:,:3], acc[:,3]
 
 def cl_set_phi(bi, bj):
     phi = cl_p2p_phi.run(bi, bj)
@@ -26,19 +27,20 @@ def cl_set_phi(bi, bj):
 
 
 def c_set_phi(bi, bj):
-    from _gravnewton import set_phi as c_p2p_phi
-    phi = _np.empty(len(bi), dtype='f8')
+    from _gravnewton import c_p2p_phi
+    phi = _np.empty_like(bi.phi)
     for i in range(len(bi)):
         phi[i] = c_p2p_phi(bi[i:i+1], bj)
     return phi
 
 
 def c_set_acc(bi, bj):
-    from _gravnewton import set_acc as c_p2p_acc
-    acc = _np.empty((len(bi),4), dtype='f8')
+    from _gravnewton import c_p2p_acc
+    acc = _np.empty_like(bi.acc)
+    rhostep = _np.empty(len(bi), dtype='f8')
     for i in range(len(bi)):
-        acc[i,:] = c_p2p_acc(bi[i:i+1], bj)
-    return acc
+        acc[i,:], rhostep[i] = c_p2p_acc(bi[i:i+1], bj)
+    return acc, rhostep
 
 
 @selftimer
