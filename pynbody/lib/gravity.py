@@ -1,0 +1,294 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+This module implements a minimal class for gravitational interactions between
+different particle types at Newtonian and post-Newtonian approach.
+"""
+
+
+import sys
+import numpy as np
+from collections import namedtuple
+
+from pynbody.lib.clkernels import (cl_p2p_acc, cl_p2p_phi)
+try:
+    from pynbody.lib.libgravity import (c_p2p_acc, c_p2p_phi)
+except:
+    pass
+
+__all__ = ['Gravity']
+
+
+KERNELS = None
+HAS_BUILT = False
+Kernels = namedtuple("Kernels", ["set_acc", "set_phi"])
+
+
+
+
+def cl_set_acc(bi, bj):
+    ret = cl_p2p_acc.run(bi, bj)
+    return ret[:,:3], ret[:,3]
+
+def cl_set_phi(bi, bj):
+    phi = cl_p2p_phi.run(bi, bj)
+    return phi
+
+
+def c_set_phi(bi, bj):
+    phi = np.empty_like(bi.phi)
+    for i in range(len(bi)):
+        phi[i] = c_p2p_phi(bi[i:i+1], bj)
+    return phi
+
+
+def c_set_acc(bi, bj):
+    acc = np.empty_like(bi.acc)
+    rhostep = np.empty(len(bi), dtype='f8')
+    for i in range(len(bi)):
+        acc[i,:], rhostep[i] = c_p2p_acc(bi[i:i+1], bj)
+    return acc, rhostep
+
+
+
+
+
+
+
+
+
+
+class Newtonian(object):
+    """
+    A base class for newtonian gravity.
+    """
+    def __init__(self, kernels):
+        self._set_acc = kernels.set_acc
+        self._set_phi = kernels.set_phi
+
+    # body-body
+    def set_acc_b2b(self, iobj, jobj):
+        """
+        Set body-body acc.
+        """
+        return self._set_acc(iobj, jobj)
+
+    def set_phi_b2b(self, iobj, jobj):
+        """
+        Set body-body phi.
+        """
+        return self._set_phi(iobj, jobj)
+
+    # body-blackhole
+    def set_acc_b2bh(self, iobj, jobj):
+        """
+        Set body-blackhole acc.
+        """
+        return self._set_acc(iobj, jobj)
+
+    def set_phi_b2bh(self, iobj, jobj):
+        """
+        Set body-blackhole phi.
+        """
+        return self._set_phi(iobj, jobj)
+
+    # body-sph
+    def set_acc_b2sph(self, iobj, jobj):
+        """
+        Set body-sph acc.
+        """
+        return self._set_acc(iobj, jobj)
+
+    def set_phi_b2sph(self, iobj, jobj):
+        """
+        Set body-sph phi.
+        """
+        return self._set_phi(iobj, jobj)
+
+
+#        # body-all
+#        def set_acc_b2sph(self, iobj, jobj):
+#            """
+#            Set body-sph acc.
+#            """
+#            return self._set_acc(iobj, jobj)
+
+#        def set_phi_b2sph(self, iobj, jobj):
+#            """
+#            Set body-sph phi.
+#            """
+#            return self._set_phi(iobj, jobj)
+
+
+    # blackhole-blackhole
+    def set_acc_bh2bh(self, iobj, jobj):
+        """
+        Set blackhole-blackhole acc.
+        """
+        return self._set_acc(iobj, jobj)
+
+    def set_phi_bh2bh(self, iobj, jobj):
+        """
+        Set blackhole-blackhole phi.
+        """
+        return self._set_phi(iobj, jobj)
+
+    # blackhole-body
+    def set_acc_bh2b(self, iobj, jobj):
+        """
+        Set blackhole-body acc.
+        """
+        return self._set_acc(iobj, jobj)
+
+    def set_phi_bh2b(self, iobj, jobj):
+        """
+        Set blackhole-body phi.
+        """
+        return self._set_phi(iobj, jobj)
+
+    # blackhole-sph
+    def set_acc_bh2sph(self, iobj, jobj):
+        """
+        Set blackhole-sph acc.
+        """
+        return self._set_acc(iobj, jobj)
+
+    def set_phi_bh2sph(self, iobj, jobj):
+        """
+        Set blackhole-sph phi.
+        """
+        return self._set_phi(iobj, jobj)
+
+
+    # sph-sph
+    def set_acc_sph2sph(self, iobj, jobj):
+        """
+        Set sph-sph acc.
+        """
+        return self._set_acc(iobj, jobj)
+
+    def set_phi_sph2sph(self, iobj, jobj):
+        """
+        Set sph-sph phi.
+        """
+        return self._set_phi(iobj, jobj)
+
+    # sph-body
+    def set_acc_sph2b(self, iobj, jobj):
+        """
+        Set sph-body acc.
+        """
+        return self._set_acc(iobj, jobj)
+
+    def set_phi_sph2b(self, iobj, jobj):
+        """
+        Set sph-body phi.
+        """
+        return self._set_phi(iobj, jobj)
+
+    # sph-blackhole
+    def set_acc_sph2bh(self, iobj, jobj):
+        """
+        Set sph-blackhole acc.
+        """
+        return self._set_acc(iobj, jobj)
+
+    def set_phi_sph2bh(self, iobj, jobj):
+        """
+        Set sph-blackhole phi.
+        """
+        return self._set_phi(iobj, jobj)
+
+
+class PostNewtonian(object):
+    """
+    A base class for post-newtonian gravity.
+    """
+    def __init__(self, kernels):
+        self._set_acc = kernels.set_acc
+        self._set_phi = kernels.set_phi
+
+    # blackhole-blackhole
+    def set_acc_bh2bh(self, iobj, jobj):
+        """
+        Set blackhole-blackhole pn-acc.
+        """
+        return None
+
+    def set_phi_bh2bh(self, iobj, jobj):
+        """
+        Set blackhole-blackhole pn-phi.
+        """
+        return None
+
+
+
+
+
+class Gravity(object):
+    """
+    A base class for gravitational interaction between different particle types.
+    """
+    def __init__(self):
+        self.newtonian = None
+        self.post_newtonian = None
+
+        print('-'*10)
+        print(KERNELS)
+        print('-'*10)
+        print(self.__dict__)
+        print('-'*10)
+
+
+
+    def build_kernels(self):
+        global HAS_BUILT
+        if not HAS_BUILT:
+            try:
+                if not cl_p2p_acc.has_built():
+                    cl_p2p_acc.build_kernel()
+                if not cl_p2p_phi.has_built():
+                    cl_p2p_phi.build_kernel()
+#                raise
+            except Exception as e:
+                cl_p2p_acc.is_available = False
+                cl_p2p_phi.is_available = False
+                print(e)
+                ans = raw_input("A problem occurred with the loading of the OpenCL "
+                                "kernels.\nAttempting to continue with C extensions "
+                                "on the CPU only.\nDo you want to continue ([y]/n)? ")
+                ans = ans.lower()
+                if ans == 'n' or ans == 'no':
+                    print('exiting...')
+                    sys.exit(0)
+            HAS_BUILT = True
+
+        global KERNELS
+        if not KERNELS:
+            if cl_p2p_phi.is_available:
+                set_phi = cl_set_phi
+            else:
+                set_phi = c_set_phi
+
+            if cl_p2p_acc.is_available:
+                set_acc = cl_set_acc
+            else:
+                set_acc = c_set_acc
+
+            KERNELS = Kernels(set_acc, set_phi)
+
+        kernels = KERNELS
+        self.newtonian = Newtonian(kernels)
+        self.post_newtonian = PostNewtonian(kernels)
+
+
+        print('-'*10)
+        print(KERNELS)
+        print('-'*10)
+        print(self.__dict__)
+        print('-'*10)
+
+
+
+########## end of file ##########

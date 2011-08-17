@@ -165,7 +165,7 @@ static PyObject *_set_acc(PyObject *_self, PyObject *_args)
 }
 
 
-static PyMethodDef _gravnewton_meths[] = {
+static PyMethodDef libgravity_meths[] = {
     {"c_p2p_acc", (PyCFunction)_set_acc, METH_VARARGS,
                 "returns the Newtonian gravitational acceleration."},
     {"c_p2p_phi", (PyCFunction)_set_phi, METH_VARARGS,
@@ -175,11 +175,11 @@ static PyMethodDef _gravnewton_meths[] = {
 };
 
 
-PyMODINIT_FUNC init_gravnewton(void)
+PyMODINIT_FUNC initlibgravity(void)
 {
     PyObject *ret;
 
-    ret = Py_InitModule3("_gravnewton", _gravnewton_meths,
+    ret = Py_InitModule3("libgravity", libgravity_meths,
                          "A extension module for Newtonian gravity.");
 
     import_array();

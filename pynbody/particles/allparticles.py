@@ -11,11 +11,12 @@ import sys
 import traceback
 import numpy as np
 from collections import namedtuple
+from ggf84decor import selftimer
 from .sph import Sph
 from .body import Body
 from .blackhole import BlackHole
-from pynbody.lib import gravity
-
+from pynbody.lib.gravity import Gravity
+gravity = Gravity()
 
 
 __all__ = ["Particles"]
@@ -207,55 +208,60 @@ class Particles(dict):
 
     # Gravity methods
 
+    @selftimer
     def set_phi(self, objs):
         for (key, obj) in self.iteritems():
             if obj:
                 obj.set_phi(objs)
 
     def _accumulate_phi_for(self, iobj):
-        if isinstance(iobj, Sph):                   # XXX: To be implemented.
+        if isinstance(iobj, Sph):
             phi = 0
             for (key, jobj) in self.iteritems():
                 if isinstance(jobj, Sph):
-                    pass
+                    ret = gravity.newtonian.set_phi_sph2sph(iobj, jobj)
+                    phi += ret
+                    self._own_epot["sph"] = 0.5 * np.sum(iobj.mass * ret)
                 if isinstance(jobj, Body):
-                    pass
+                    ret = gravity.newtonian.set_phi_sph2b(iobj, jobj)
+                    phi += ret
                 if isinstance(jobj, BlackHole):
-                    pass
+                    ret = gravity.newtonian.set_phi_sph2bh(iobj, jobj)
+                    phi += ret
             return (phi, self._own_epot["sph"])
 
         if isinstance(iobj, Body):
             phi = 0
             for (key, jobj) in self.iteritems():
                 if isinstance(jobj, Sph):
-                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    ret = gravity.newtonian.set_phi_b2sph(iobj, jobj)
                     phi += ret
                 if isinstance(jobj, Body):
-                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    ret = gravity.newtonian.set_phi_b2b(iobj, jobj)
                     phi += ret
                     self._own_epot["body"] = 0.5 * np.sum(iobj.mass * ret)
                 if isinstance(jobj, BlackHole):
-                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    ret = gravity.newtonian.set_phi_b2bh(iobj, jobj)
                     phi += ret
             return (phi, self._own_epot["body"])
 
-        if isinstance(iobj, BlackHole):             # XXX: To be modified.
+        if isinstance(iobj, BlackHole):
             phi = 0
             for (key, jobj) in self.iteritems():
                 if isinstance(jobj, Sph):
-                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    ret = gravity.newtonian.set_phi_bh2sph(iobj, jobj)
                     phi += ret
                 if isinstance(jobj, Body):
-                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    ret = gravity.newtonian.set_phi_bh2b(iobj, jobj)
                     phi += ret
                 if isinstance(jobj, BlackHole):
-                    ret = gravity.newtonian.set_phi(iobj, jobj)
+                    ret = gravity.newtonian.set_phi_bh2bh(iobj, jobj)
                     phi += ret
                     self._own_epot["blackhole"] = 0.5 * np.sum(iobj.mass * ret)
             return (phi, self._own_epot["blackhole"])
 
 
-
+    @selftimer
     def set_acc(self, objs):
         rhostep = {}
         for (key, obj) in self.iteritems():
@@ -266,17 +272,26 @@ class Particles(dict):
         return rhostep
 
     def _accumulate_acc_for(self, iobj):
-        if isinstance(iobj, Sph):                   # XXX: To be implemented.
+        if isinstance(iobj, Sph):
             acc = 0
             rhostep = 0
             sum_nj = 0
             for (key, jobj) in self.iteritems():
                 if isinstance(jobj, Sph):
-                    pass
+                    ret = gravity.newtonian.set_acc_sph2sph(iobj, jobj)
+                    acc += ret[0]
+                    rhostep += ret[1]
+                    sum_nj += len(jobj)-1
                 if isinstance(jobj, Body):
-                    pass
+                    ret = gravity.newtonian.set_acc_sph2b(iobj, jobj)
+                    acc += ret[0]
+                    rhostep += ret[1]
+                    sum_nj += len(jobj)
                 if isinstance(jobj, BlackHole):
-                    pass
+                    ret = gravity.newtonian.set_acc_sph2bh(iobj, jobj)
+                    acc += ret[0]
+                    rhostep += ret[1]
+                    sum_nj += len(jobj)
             return (acc, np.sqrt(rhostep/sum_nj))
 
         if isinstance(iobj, Body):
@@ -284,19 +299,18 @@ class Particles(dict):
             rhostep = 0
             sum_nj = 0
             for (key, jobj) in self.iteritems():
-                if isinstance(jobj, Sph):           # XXX: To be implemented.
-                    pass
+                if isinstance(jobj, Sph):
+                    ret = gravity.newtonian.set_acc_b2sph(iobj, jobj)
+                    acc += ret[0]
+                    rhostep += ret[1]
+                    sum_nj += len(jobj)
                 if isinstance(jobj, Body):
-                    ret = gravity.newtonian.set_acc(iobj, jobj)
-#                    acc += ret[:,:3]
-#                    rhostep += ret[:,3]
+                    ret = gravity.newtonian.set_acc_b2b(iobj, jobj)
                     acc += ret[0]
                     rhostep += ret[1]
                     sum_nj += len(jobj)-1
-                if isinstance(jobj, BlackHole):     # XXX: To be modified.
-                    ret = gravity.newtonian.set_acc(iobj, jobj)
-#                    acc += ret[:,:3]
-#                    rhostep += ret[:,3]
+                if isinstance(jobj, BlackHole):
+                    ret = gravity.newtonian.set_acc_b2bh(iobj, jobj)
                     acc += ret[0]
                     rhostep += ret[1]
                     sum_nj += len(jobj)
@@ -307,19 +321,18 @@ class Particles(dict):
             rhostep = 0
             sum_nj = 0
             for (key, jobj) in self.iteritems():
-                if isinstance(jobj, Sph):           # XXX: To be implemented.
-                    pass
-                if isinstance(jobj, Body):          # XXX: To be modified.
-                    ret = gravity.newtonian.set_acc(iobj, jobj)
-#                    acc += ret[:,:3]
-#                    rhostep += ret[:,3]
+                if isinstance(jobj, Sph):
+                    ret = gravity.newtonian.set_acc_bh2sph(iobj, jobj)
                     acc += ret[0]
                     rhostep += ret[1]
                     sum_nj += len(jobj)
-                if isinstance(jobj, BlackHole):     # XXX: To be modified.
-                    ret = gravity.newtonian.set_acc(iobj, jobj)
-#                    acc += ret[:,:3]
-#                    rhostep += ret[:,3]
+                if isinstance(jobj, Body):
+                    ret = gravity.newtonian.set_acc_bh2b(iobj, jobj)
+                    acc += ret[0]
+                    rhostep += ret[1]
+                    sum_nj += len(jobj)
+                if isinstance(jobj, BlackHole):
+                    ret = gravity.newtonian.set_acc_bh2bh(iobj, jobj)
                     acc += ret[0]
                     rhostep += ret[1]
                     sum_nj += len(jobj)-1

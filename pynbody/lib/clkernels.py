@@ -189,16 +189,16 @@ class CLKernel(object):
 
 
 
-options = ' -I {path}'.format(path=os.path.join(path, 'gravity'))
+options = ' -I {path}'.format(path=os.path.join(path, 'ext'))
 options += ' -D IUNROLL={iunroll}'.format(iunroll=IUNROLL)
 options += ' -D JUNROLL={junroll}'.format(junroll=JUNROLL)
 
 
-fname = os.path.join(path, 'gravity', 'p2p_phi_kernel.cl')
+fname = os.path.join(path, 'ext', 'p2p_phi_kernel.cl')
 cl_p2p_phi = CLKernel(fname, options)
-fname = os.path.join(path, 'gravity', 'p2p_acc_kernel.cl')
+fname = os.path.join(path, 'ext', 'p2p_acc_kernel.cl')
 cl_p2p_acc = CLKernel(fname, options)
-#fname = os.path.join(path, 'gravity', 'p2p_acc_kernel_gpugems3.cl')
+#fname = os.path.join(path, 'ext', 'p2p_acc_kernel_gpugems3.cl')
 #cl_p2p_acc_gpugems3 = CLKernel(fname, options)
 
 
