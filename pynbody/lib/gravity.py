@@ -29,26 +29,19 @@ Kernels = namedtuple("Kernels", ["set_acc", "set_phi"])
 
 def cl_set_acc(bi, bj):
     ret = cl_p2p_acc.run(bi, bj)
-    return ret[:,:3], ret[:,3]
+    return (ret[:,:3], ret[:,3])
 
 def cl_set_phi(bi, bj):
     phi = cl_p2p_phi.run(bi, bj)
     return phi
 
+def c_set_acc(bi, bj):
+    ret = c_p2p_acc(bi, bj)
+    return (ret[:,:3], ret[:,3])
 
 def c_set_phi(bi, bj):
-    phi = np.empty_like(bi.phi)
-    for i in range(len(bi)):
-        phi[i] = c_p2p_phi(bi[i:i+1], bj)
+    phi = c_p2p_phi(bi, bj)
     return phi
-
-
-def c_set_acc(bi, bj):
-    acc = np.empty_like(bi.acc)
-    rhostep = np.empty(len(bi), dtype='f8')
-    for i in range(len(bi)):
-        acc[i,:], rhostep[i] = c_p2p_acc(bi[i:i+1], bj)
-    return acc, rhostep
 
 
 
@@ -246,6 +239,7 @@ class Gravity(object):
         global HAS_BUILT
         if not HAS_BUILT:
             try:
+#                raise
                 if not cl_p2p_acc.has_built():
                     cl_p2p_acc.build_kernel()
                 if not cl_p2p_phi.has_built():

@@ -144,6 +144,12 @@ class CLKernel(object):
         ni = len(bi)
         nj = len(bj)
 
+#        local_size = list(BLOCK_SIZE)
+#        while (local_size[0]/JUNROLL > ni/local_size[0]
+#                and local_size[0] >= 2*JUNROLL):
+#            local_size[0] /= 2
+#        local_size = tuple(local_size)
+
         local_size = BLOCK_SIZE
         global_size = (ni + IUNROLL * local_size[0] - 1)
         global_size //= IUNROLL * local_size[0]
