@@ -10,18 +10,19 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
 
+    numBodies = 256
+
     @selftimer
     def main():
-        numBodies = 16
 
 #        imf = IMF.equal()
 #        imf = IMF.salpeter1955(0.5, 120.0)
 #        imf = IMF.parravano2011(0.075, 120.0)
         imf = IMF.padoan2007(0.075, 120.0)
 
-        p = Plummer(numBodies, imf, epsf=4.0, seed=1)
+        p = Plummer(numBodies, imf, epsf=4.0, epstype='b', seed=1)
         p.make_plummer()
-        p.write_snapshot()
+        p.write_snapshot("plummer"+str(numBodies).zfill(4)+'b')
 #        p.show()
 
         return p.particles.copy()
@@ -29,19 +30,21 @@ if __name__ == "__main__":
 
     p0 = main()
 
+    n_bh = 47
 
     p = Particles({"body": 1, "blackhole": 1})
 
-    p["body"] = p0["body"][:-2]
+    p["body"] = p0["body"][:-n_bh]
 
     from pynbody.particles.blackhole import dtype
 
-    p["blackhole"].fromlist([tuple(b)+([0.0, 0.0, 0.0],) for b in p0["body"][14:]],
+    p["blackhole"].fromlist([tuple(b)+([0.0, 0.0, 0.0],)
+                            for b in p0["body"][numBodies-n_bh:]],
                             dtype=dtype)
 
 
     from pynbody.io import HDF5IO
-    io = HDF5IO('plummer0016bh.hdf5')
+    io = HDF5IO("plummer"+str(numBodies-n_bh).zfill(4)+'b'+'-'+str(n_bh)+"bh"+".hdf5")
     io.write_snapshot(p)
 
 

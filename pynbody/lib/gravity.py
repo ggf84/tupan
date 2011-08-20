@@ -13,7 +13,7 @@ from collections import namedtuple
 
 from pynbody.lib.clkernels import (cl_p2p_acc, cl_p2p_phi)
 try:
-    from pynbody.lib.libgravity import (c_p2p_acc, c_p2p_phi)
+    from pynbody.lib.libgravity import (c_p2p_acc, c_p2p_phi, c_p2p_pnacc)
 except:
     pass
 
@@ -22,7 +22,7 @@ __all__ = ['Gravity']
 
 KERNELS = None
 HAS_BUILT = False
-Kernels = namedtuple("Kernels", ["set_acc", "set_phi"])
+Kernels = namedtuple("Kernels", ["set_acc", "set_phi", "set_pnacc"])
 
 
 
@@ -43,6 +43,9 @@ def c_set_phi(bi, bj):
     phi = c_p2p_phi(bi, bj)
     return phi
 
+def c_set_pnacc(bi, bj):
+    ret = c_p2p_pnacc(bi, bj)
+    return (ret[:,:3], ret[:,3])
 
 
 
@@ -199,21 +202,21 @@ class PostNewtonian(object):
     A base class for post-newtonian gravity.
     """
     def __init__(self, kernels):
-        self._set_acc = kernels.set_acc
-        self._set_phi = kernels.set_phi
+        self._set_pnacc = kernels.set_pnacc
+        self._set_pnphi = kernels.set_phi
 
     # blackhole-blackhole
     def set_acc_bh2bh(self, iobj, jobj):
         """
         Set blackhole-blackhole pn-acc.
         """
-        return None
+        return self._set_pnacc(iobj, jobj)
 
     def set_phi_bh2bh(self, iobj, jobj):
         """
         Set blackhole-blackhole pn-phi.
         """
-        return None
+        return self._set_pnphi(iobj, jobj)
 
 
 
@@ -270,7 +273,9 @@ class Gravity(object):
             else:
                 set_acc = c_set_acc
 
-            KERNELS = Kernels(set_acc, set_phi)
+            set_pnacc = c_set_pnacc
+
+            KERNELS = Kernels(set_acc, set_phi, set_pnacc)
 
         kernels = KERNELS
         self.newtonian = Newtonian(kernels)
