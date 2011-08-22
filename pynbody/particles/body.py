@@ -188,11 +188,13 @@ class Body(Pbase):
         """
         self.pos += tau * self.vel
 
-    def kick(self, tau):
+    def kick(self, dvel):
+#    def kick(self, tau):
         """
         Evolves velocity in time.
         """
-        self.vel += tau * self.acc
+        self.vel += dvel
+#        self.vel += tau * self.acc
 
 
 ########## end of file ##########

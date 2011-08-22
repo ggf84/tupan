@@ -69,14 +69,14 @@ class Diagnostic(object):
                 self.fname, 'w')
 
 
-    def print_diagnostic(self, time, particles):
+    def print_diagnostic(self, time, e_jump, particles):
         particles.set_phi(particles)
         e = particles.get_total_energies()
         rcom = particles.get_center_of_mass_pos()
         lmom = particles.get_total_linmom()
         amom = particles.get_total_angmom()
 
-        eerr = (e.tot-self.e0.tot)/abs(self.e0.tot)
+        eerr = ((e.tot+e_jump)-self.e0.tot)/abs(self.e0.tot)
         self.ceerr += eerr**2
         self.count += 1
         geerr = math.sqrt(self.ceerr / self.count)
@@ -118,7 +118,9 @@ class Simulation(object):
 
         # Initializes the diagnostic of the simulation.
         self.dia = Diagnostic(self.args.log_file, particles)
-        self.dia.print_diagnostic(self.integrator.time, particles)
+        self.dia.print_diagnostic(self.integrator.time,
+                                  self.integrator.e_jump,
+                                  particles)
 
         # Initializes snapshots output.
         self.iosnaps = HDF5IO('snapshots.hdf5')
@@ -165,7 +167,9 @@ class Simulation(object):
             if (self.integrator.time - self.oldtime_dia >= self.dt_dia):
                 self.oldtime_dia += self.dt_dia
                 particles = self.integrator.gather()
-                self.dia.print_diagnostic(self.integrator.time, particles)
+                self.dia.print_diagnostic(self.integrator.time,
+                                          self.integrator.e_jump,
+                                          particles)
                 self.iosnaps.snap_number += 1
                 self.iosnaps.write_snapshot(particles)
             if (self.integrator.time - self.oldtime_res >= self.dt_res):

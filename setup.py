@@ -29,11 +29,9 @@ ext_modules.append(Extension('pynbody.lib.libgravity',
 
 package_data = {}
 package_data['pynbody.analysis'] = [os.path.join('textures', 'glow.png')]
-package_data['pynbody.lib'] = [os.path.join('ext', 'p2p_acc_kernel.cl'),
-                               os.path.join('ext', 'p2p_acc_kernel_core.h'),
-                               os.path.join('ext', 'p2p_phi_kernel.cl'),
-                               os.path.join('ext', 'p2p_phi_kernel_core.h'),
-                               os.path.join('ext', 'p2p_acc_kernel_gpugems3.cl')]
+package_data['pynbody.lib'] = [os.path.join('ext', '*.c'),
+                               os.path.join('ext', '*.h'),
+                               os.path.join('ext', '*.cl')]
 
 
 

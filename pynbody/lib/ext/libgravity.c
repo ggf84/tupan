@@ -27,6 +27,16 @@ typedef struct real4_struct {
   REAL w;
 } REAL4, *pREAL4;
 
+typedef struct clight_struct {
+  REAL inv1;
+  REAL inv2;
+  REAL inv3;
+  REAL inv4;
+  REAL inv5;
+  REAL inv6;
+  REAL inv7;
+} CLIGHT, *pCLIGHT;
+
 
 
 #include"p2p_acc_kernel_core.h"
@@ -183,9 +193,9 @@ static PyObject *_set_pnacc(PyObject *_self, PyObject *_bi, PyObject *_bj)
     PyObject *_imass = PyObject_GetAttrString(_bi, "mass");
     PyObject *_imass_arr = PyArray_FROM_OTF(_imass, NPY_FLOAT64, NPY_IN_ARRAY);
     double *imass = (double *)PyArray_DATA(_imass_arr);
-    PyObject *_ieps2 = PyObject_GetAttrString(_bi, "eps2");
-    PyObject *_ieps2_arr = PyArray_FROM_OTF(_ieps2, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *ieps2 = (double *)PyArray_DATA(_ieps2_arr);
+/*    PyObject *_ieps2 = PyObject_GetAttrString(_bi, "eps2");*/
+/*    PyObject *_ieps2_arr = PyArray_FROM_OTF(_ieps2, NPY_FLOAT64, NPY_IN_ARRAY);*/
+/*    double *ieps2 = (double *)PyArray_DATA(_ieps2_arr);*/
     PyObject *_ipos = PyObject_GetAttrString(_bi, "pos");
     PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, NPY_FLOAT64, NPY_IN_ARRAY);
     double *ipos = (double *)PyArray_DATA(_ipos_arr);
@@ -198,15 +208,19 @@ static PyObject *_set_pnacc(PyObject *_self, PyObject *_bi, PyObject *_bj)
     PyObject *_jmass = PyObject_GetAttrString(_bj, "mass");
     PyObject *_jmass_arr = PyArray_FROM_OTF(_jmass, NPY_FLOAT64, NPY_IN_ARRAY);
     double *jmass = (double *)PyArray_DATA(_jmass_arr);
-    PyObject *_jeps2 = PyObject_GetAttrString(_bj, "eps2");
-    PyObject *_jeps2_arr = PyArray_FROM_OTF(_jeps2, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *jeps2 = (double *)PyArray_DATA(_jeps2_arr);
+/*    PyObject *_jeps2 = PyObject_GetAttrString(_bj, "eps2");*/
+/*    PyObject *_jeps2_arr = PyArray_FROM_OTF(_jeps2, NPY_FLOAT64, NPY_IN_ARRAY);*/
+/*    double *jeps2 = (double *)PyArray_DATA(_jeps2_arr);*/
     PyObject *_jpos = PyObject_GetAttrString(_bj, "pos");
     PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, NPY_FLOAT64, NPY_IN_ARRAY);
     double *jpos = (double *)PyArray_DATA(_jpos_arr);
     PyObject *_jvel = PyObject_GetAttrString(_bj, "vel");
     PyObject *_jvel_arr = PyArray_FROM_OTF(_jvel, NPY_FLOAT64, NPY_IN_ARRAY);
     double *jvel = (double *)PyArray_DATA(_jvel_arr);
+
+    int pn_order = 5;
+    REAL cinv = 0.04;
+    CLIGHT clight = {cinv, cinv*cinv, cinv*cinv*cinv, cinv*cinv*cinv*cinv, cinv*cinv*cinv*cinv*cinv, cinv*cinv*cinv*cinv*cinv*cinv, cinv*cinv*cinv*cinv*cinv*cinv*cinv};
 
     /* allocate a PyArrayObject to be returned */
     npy_intp dims[2] = {ni, 4};
@@ -221,20 +235,21 @@ static PyObject *_set_pnacc(PyObject *_self, PyObject *_bi, PyObject *_bj)
         REAL iv2 = ivel[ii  ] * ivel[ii  ]
                  + ivel[ii+1] * ivel[ii+1]
                  + ivel[ii+2] * ivel[ii+2];
-        REAL4 bip = {ipos[ii  ], ipos[ii+1], ipos[ii+2], ieps2[i]};
-/*        REAL4 bip = {ipos[ii  ], ipos[ii+1], ipos[ii+2], imass[i]};*/
-        REAL4 biv = {ivel[ii  ], ivel[ii+1], ivel[ii+2], imass[i]};
-/*        REAL4 biv = {ivel[ii  ], ivel[ii+1], ivel[ii+2], iv2};*/
+/*        REAL4 bip = {ipos[ii  ], ipos[ii+1], ipos[ii+2], ieps2[i]};*/
+        REAL4 bip = {ipos[ii  ], ipos[ii+1], ipos[ii+2], imass[i]};
+/*        REAL4 biv = {ivel[ii  ], ivel[ii+1], ivel[ii+2], imass[i]};*/
+        REAL4 biv = {ivel[ii  ], ivel[ii+1], ivel[ii+2], iv2};
         for (j = 0; j < nj; ++j) {
             jj = 3*j;
             REAL jv2 = jvel[jj  ] * jvel[jj  ]
                      + jvel[jj+1] * jvel[jj+1]
                      + jvel[jj+2] * jvel[jj+2];
-            REAL4 bjp = {jpos[jj  ], jpos[jj+1], jpos[jj+2], jeps2[j]};
-/*            REAL4 bjp = {jpos[jj  ], jpos[jj+1], jpos[jj+2], jmass[j]};*/
-            REAL4 bjv = {jvel[jj  ], jvel[jj+1], jvel[jj+2], jmass[j]};
-/*            REAL4 bjv = {jvel[jj  ], jvel[jj+1], jvel[jj+2], jv2};*/
-            iret = p2p_pnacc_kernel_core(iret, bip, biv, bjp, bjv);
+/*            REAL4 bjp = {jpos[jj  ], jpos[jj+1], jpos[jj+2], jeps2[j]};*/
+            REAL4 bjp = {jpos[jj  ], jpos[jj+1], jpos[jj+2], jmass[j]};
+/*            REAL4 bjv = {jvel[jj  ], jvel[jj+1], jvel[jj+2], jmass[j]};*/
+            REAL4 bjv = {jvel[jj  ], jvel[jj+1], jvel[jj+2], jv2};
+            iret = p2p_pnacc_kernel_core(iret, bip, biv, bjp, bjv,
+                                         clight, pn_order);
         }
         iii = 4*i;
         ret_ptr[iii  ] = iret.x;
@@ -246,8 +261,8 @@ static PyObject *_set_pnacc(PyObject *_self, PyObject *_bi, PyObject *_bj)
     /* Decrement the reference counts for i-objects */
     Py_DECREF(_imass_arr);
     Py_DECREF(_imass);
-    Py_DECREF(_ieps2_arr);
-    Py_DECREF(_ieps2);
+/*    Py_DECREF(_ieps2_arr);*/
+/*    Py_DECREF(_ieps2);*/
     Py_DECREF(_ipos_arr);
     Py_DECREF(_ipos);
     Py_DECREF(_ivel_arr);
@@ -256,8 +271,8 @@ static PyObject *_set_pnacc(PyObject *_self, PyObject *_bi, PyObject *_bj)
     /* Decrement the reference counts for j-objects */
     Py_DECREF(_jmass_arr);
     Py_DECREF(_jmass);
-    Py_DECREF(_jeps2_arr);
-    Py_DECREF(_jeps2);
+/*    Py_DECREF(_jeps2_arr);*/
+/*    Py_DECREF(_jeps2);*/
     Py_DECREF(_jpos_arr);
     Py_DECREF(_jpos);
     Py_DECREF(_jvel_arr);

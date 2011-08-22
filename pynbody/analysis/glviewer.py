@@ -141,6 +141,7 @@ class GLviewer(object):
     def show_event(self, integrator):
         if not self.exitgl:
             self.set_particle(integrator.gather()['body'].copy())
+#            self.set_particle(integrator.gather()['blackhole'].copy())
             glutMainLoopEvent()
 
 

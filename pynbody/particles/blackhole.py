@@ -36,6 +36,8 @@ class BlackHole(Pbase):
 
         self._own_total_epot = 0.0
 
+        self._pnacc = 0.0
+
 
     # Total Mass
 
@@ -176,6 +178,7 @@ class BlackHole(Pbase):
         """
         Set the individual acceleration due to other particles.
         """
+        self._pnacc *= 0.0
         (self.acc[:], rhostep) = objs._accumulate_acc_for(self)
         return rhostep
 
@@ -188,11 +191,13 @@ class BlackHole(Pbase):
         """
         self.pos += tau * self.vel
 
-    def kick(self, tau):
+    def kick(self, dvel):
+#    def kick(self, tau):
         """
         Evolves velocity in time.
         """
-        self.vel += tau * self.acc
+        self.vel += dvel
+#        self.vel += tau * (self.acc + self._pnacc)
 
 
 ########## end of file ##########

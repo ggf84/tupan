@@ -10,17 +10,17 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
 
-    numBodies = 256
+    numBodies = 2
 
     @selftimer
     def main():
 
-#        imf = IMF.equal()
+        imf = IMF.equal()
 #        imf = IMF.salpeter1955(0.5, 120.0)
 #        imf = IMF.parravano2011(0.075, 120.0)
-        imf = IMF.padoan2007(0.075, 120.0)
+#        imf = IMF.padoan2007(0.075, 120.0)
 
-        p = Plummer(numBodies, imf, epsf=4.0, epstype='b', seed=1)
+        p = Plummer(numBodies, imf, epsf=0.0, epstype='b', seed=1)
         p.make_plummer()
         p.write_snapshot("plummer"+str(numBodies).zfill(4)+'b')
 #        p.show()
@@ -30,7 +30,9 @@ if __name__ == "__main__":
 
     p0 = main()
 
-    n_bh = 47
+    p0["body"].vel /= 2
+
+    n_bh = 2
 
     p = Particles({"body": 1, "blackhole": 1})
 

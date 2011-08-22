@@ -332,7 +332,9 @@ class Particles(dict):
                     rhostep += ret[1]
                     sum_nj += len(jobj)
                 if isinstance(jobj, BlackHole):
-                    ret = gravity.post_newtonian.set_acc_bh2bh(iobj, jobj)
+                    ret = gravity.newtonian.set_acc_bh2bh(iobj, jobj)
+                    pnret = gravity.post_newtonian.set_acc_bh2bh(iobj, jobj)
+                    iobj._pnacc += pnret[0]
                     acc += ret[0]
                     rhostep += ret[1]
                     sum_nj += len(jobj)-1
