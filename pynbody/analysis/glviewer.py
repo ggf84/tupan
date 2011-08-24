@@ -140,8 +140,7 @@ class GLviewer(object):
 
     def show_event(self, integrator):
         if not self.exitgl:
-            self.set_particle(integrator.gather()['body'].copy())
-#            self.set_particle(integrator.gather()['blackhole'].copy())
+            self.set_particle(integrator.gather().copy())
             glutMainLoopEvent()
 
 
@@ -390,19 +389,20 @@ class GLviewer(object):
             POINT_SIZE = ps_min
 
 
-    def get_colors(self):
+    def get_colors(self, obj):
         if not SATURATE:
-            r = -self.particle.get_epot()
-            g = self.particle.mass
-#            b = self.particle.mass*np.sqrt((self.particle.acc**2).sum(1))
-            b = self.particle.get_ekin()
+            bodies = self.particle['body']
+            r = -obj.get_epot()
+            g = obj.mass
+#            b = obj.mass*np.sqrt((obj.acc**2).sum(1))
+            b = obj.get_ekin()
 
 
-##            r = -self.particle.get_epot()
-##            r = self.particle.mass*(2*self.particle.get_ekin() + r)/r
-#            r = self.particle.get_ekin()
-#            g = self.particle.mass
-#            b = self.particle.mass*np.sqrt((self.particle.acc**2).sum(1))
+##            r = -obj.get_epot()
+##            r = obj.mass*(2*obj.get_ekin() + r)/r
+#            r = obj.get_ekin()
+#            g = obj.mass
+#            b = obj.mass*np.sqrt((obj.acc**2).sum(1))
 
             r /= r.mean()
             g /= g.mean()
@@ -429,7 +429,7 @@ class GLviewer(object):
             colors = np.log10(1.0+colors)
             colors /= colors.mean()
 
-#            for i in range(len(self.particle)):
+#            for i in range(len(obj)):
 #                colors[i] = colorsys.hls_to_rgb(*colors[i])
 #                colors[i] = colorsys.rgb_to_hsv(*colors[i])
 #                colors[i] = colorsys.hsv_to_rgb(*colors[i])
@@ -439,53 +439,70 @@ class GLviewer(object):
 
             return colors * np.log10(1.0+CONTRAST)
         else:
-            return np.ones((len(self.particle), 3), dtype='f8')
+            return np.ones((len(obj), 3), dtype='f8')
 
 
     def draw_system(self):
-        points = self.particle.pos
-        colors = self.get_colors()
+        bodies = self.particle['body']
+        if bodies:
+            points = bodies.pos
+            colors = self.get_colors(bodies)
 
-#        glPushMatrix()
+#            glPushMatrix()
 
-#        glEnable(GL_TEXTURE_2D)
-#        glBindTexture(GL_TEXTURE_2D, self.textures['star'])
-#        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
-        glDepthMask(GL_FALSE)
+#            glEnable(GL_TEXTURE_2D)
+#            glBindTexture(GL_TEXTURE_2D, self.textures['star'])
+#            glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+            glDepthMask(GL_FALSE)
 
-#        glUseProgram(self.shader_program)
+#            glUseProgram(self.shader_program)
 
-        self.set_point_size_limits()
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
-#        glBlendFunc(GL_DST_ALPHA, GL_ONE)
-#        glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-
-        glEnable(GL_BLEND)
-        glEnable(GL_TEXTURE_2D)
-        glBindTexture(GL_TEXTURE_2D, self.textures['star'])
-        glPointSize(POINT_SIZE)
-        self.draw_points(points, colors)
-#        self.draw_quads(points, colors)
-        glPointSize(1.0)
-        glBindTexture(GL_TEXTURE_2D, 0)
-        glDisable(GL_TEXTURE_2D)
-        glDisable(GL_BLEND)
-
-        glEnable(GL_BLEND)
-        glPointSize(1.0)
-        self.draw_points(points, colors)
-        glPointSize(1.0)
-        glDisable(GL_BLEND)
+            self.set_point_size_limits()
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+#            glBlendFunc(GL_DST_ALPHA, GL_ONE)
+#            glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 
-        glDepthMask(GL_TRUE)
+            glEnable(GL_BLEND)
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, self.textures['star'])
+            glPointSize(POINT_SIZE)
+            self.draw_points(points, colors)
+#            self.draw_quads(points, colors)
+            glPointSize(1.0)
+            glBindTexture(GL_TEXTURE_2D, 0)
+            glDisable(GL_TEXTURE_2D)
+            glDisable(GL_BLEND)
 
-#        glDisable(GL_VERTEX_PROGRAM_POINT_SIZE)
-#        glBindTexture(GL_TEXTURE_2D, 0)
-#        glDisable(GL_TEXTURE_2D)
+            glEnable(GL_BLEND)
+            glPointSize(1.0)
+            self.draw_points(points, colors)
+            glPointSize(1.0)
+            glDisable(GL_BLEND)
 
-#        glPopMatrix()
+            glDepthMask(GL_TRUE)
+
+#            glDisable(GL_VERTEX_PROGRAM_POINT_SIZE)
+#            glBindTexture(GL_TEXTURE_2D, 0)
+#            glDisable(GL_TEXTURE_2D)
+
+#            glPopMatrix()
+
+
+        blackholes = self.particle['blackhole']
+        if blackholes:
+            points = blackholes.pos
+            colors = self.get_colors(blackholes)
+            colors[:] = (1,0,0)
+            glPointSize(POINT_SIZE)
+            self.draw_quads(points, colors)
+            glPointSize(1.0)
+            glPointSize(1.0)
+            self.draw_points(points, colors)
+            glPointSize(1.0)
+
+
+
 
 
 
@@ -517,31 +534,32 @@ class GLviewer(object):
             x = p[0]
             y = p[1]
             z = p[2]
-            size = 0.001 * POINT_SIZE**2
+            size = 0.005 * POINT_SIZE * ZOOM_FACTOR
 
             glMatrixMode(GL_MODELVIEW)
             glPushMatrix()
 
             glTranslatef(x, y, z)
 
-            glBegin(GL_QUADS)
+#            glBegin(GL_QUADS)
 
-            glColor3d(c[0], c[1], c[2])
+#            glColor3d(c[0], c[1], c[2])
 
-            glTexCoord2d(0, 0)
-            glVertex3d(-size, +size, 0.0)
-            glTexCoord2d(0, 1)
-            glVertex3d(+size, +size, 0.0)
-            glTexCoord2d(1, 1)
-            glVertex3d(+size, -size, 0.0)
-            glTexCoord2d(1, 0)
-            glVertex3d(-size, -size, 0.0)
+#            glTexCoord2d(0, 0)
+#            glVertex3d(-size, +size, 0.0)
+#            glTexCoord2d(0, 1)
+#            glVertex3d(+size, +size, 0.0)
+#            glTexCoord2d(1, 1)
+#            glVertex3d(+size, -size, 0.0)
+#            glTexCoord2d(1, 0)
+#            glVertex3d(-size, -size, 0.0)
 
-            glEnd()
+#            glEnd()
 
 
 #            glColor3d(c[0], c[1], c[2])
-#            glutSolidSphere(size, 32, 32)
+            glColor3d(1.0, 0.0, 0.0)
+            glutSolidSphere(size, 32, 32)
 
 
             glPopMatrix()

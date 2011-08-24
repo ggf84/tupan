@@ -76,7 +76,7 @@ class Diagnostic(object):
         lmom = particles.get_total_linmom()
         amom = particles.get_total_angmom()
 
-        eerr = ((e.tot+e_jump)-self.e0.tot)/abs(self.e0.tot)
+        eerr = ((e.tot+e_jump)-self.e0.tot)/(-e.pot)
         self.ceerr += eerr**2
         self.count += 1
         geerr = math.sqrt(self.ceerr / self.count)

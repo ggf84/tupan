@@ -230,11 +230,11 @@ class Gravity(object):
         self.newtonian = None
         self.post_newtonian = None
 
-        print('-'*10)
-        print(KERNELS)
-        print('-'*10)
-        print(self.__dict__)
-        print('-'*10)
+#        print('-'*10)
+#        print(KERNELS)
+#        print('-'*10)
+#        print(self.__dict__)
+#        print('-'*10)
 
 
 
@@ -282,11 +282,11 @@ class Gravity(object):
         self.post_newtonian = PostNewtonian(kernels)
 
 
-        print('-'*10)
-        print(KERNELS)
-        print('-'*10)
-        print(self.__dict__)
-        print('-'*10)
+#        print('-'*10)
+#        print(KERNELS)
+#        print('-'*10)
+#        print(self.__dict__)
+#        print('-'*10)
 
 
 
