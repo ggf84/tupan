@@ -104,8 +104,8 @@ p2p_pnterms(REAL mi, REAL mj,
             REAL3 n, REAL3 v, REAL v2,
             REAL vi2, REAL3 vi,
             REAL vj2, REAL3 vj,
-            CLIGHT clight,
-            int pn_order)
+            int pn_order,
+            CLIGHT clight)
 {
     REAL2 pn1 = {0.0, 0.0};
     REAL2 pn2 = {0.0, 0.0};
@@ -174,17 +174,16 @@ p2p_pnterms(REAL mi, REAL mj,
 
 inline REAL4
 p2p_pnacc_kernel_core(REAL4 pnacc, REAL4 bip, REAL4 biv, REAL4 bjp, REAL4 bjv,
-                      CLIGHT clight, int pn_order)
+                      int pn_order, CLIGHT clight)
 {
-    REAL3 dr;               /* XXX: REAL4 -> REAL3 */
+    REAL3 dr;
     dr.x = bip.x - bjp.x;                                            // 1 FLOPs
     dr.y = bip.y - bjp.y;                                            // 1 FLOPs
     dr.z = bip.z - bjp.z;                                            // 1 FLOPs
-//    dr.w = bip.w + bjp.w;   /* XXX: this line will be discarded */   // 1 FLOPs
     REAL dr2 = dr.z * dr.z + (dr.y * dr.y + dr.x * dr.x);            // 5 FLOPs
 
-    REAL mi = bip.w;        /* XXX: biv -> bip */
-    REAL mj = bjp.w;        /* XXX: bjv -> bjp */
+    REAL mi = bip.w;
+    REAL mj = bjp.w;
 
     REAL3 dv;
     dv.x = biv.x - bjv.x;                                            // 1 FLOPs
@@ -198,7 +197,6 @@ p2p_pnacc_kernel_core(REAL4 pnacc, REAL4 bip, REAL4 biv, REAL4 bjp, REAL4 bjv,
     REAL3 vi = {biv.x, biv.y, biv.z};
     REAL3 vj = {bjv.x, bjv.y, bjv.z};
 
-//    REAL rinv = rsqrt(dr2 + dr.w);                                   // 3 FLOPs
     REAL rinv = rsqrt(dr2);                                          // 2 FLOPs
     rinv = ((dr2 > 0) ? rinv:0);
     REAL r2inv = rinv * rinv;                                        // 1 FLOPs
@@ -213,8 +211,8 @@ p2p_pnacc_kernel_core(REAL4 pnacc, REAL4 bip, REAL4 biv, REAL4 bjp, REAL4 bjv,
                            n, dv, dv2,
                            vi2, vi,
                            vj2, vj,
-                           clight,
-                           pn_order);                                // 3 FLOPs
+                           pn_order,
+                           clight);                                  // ? FLOPs
 
     pnacc.x += pn.x * n.x + pn.y * dv.x;                             // 4 FLOPs
     pnacc.y += pn.x * n.y + pn.y * dv.y;                             // 4 FLOPs
@@ -223,5 +221,5 @@ p2p_pnacc_kernel_core(REAL4 pnacc, REAL4 bip, REAL4 biv, REAL4 bjp, REAL4 bjv,
     pnacc.w += (mi + mj) * rinv * r2inv;                             // 4 FLOPs
 
     return pnacc;
-}   // Total flop count: 43
+}   // Total flop count: 38
 

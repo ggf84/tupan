@@ -43,14 +43,28 @@ def c_set_phi(bi, bj):
     phi = c_p2p_phi(bi, bj)
     return phi
 
-def c_set_pnacc(bi, bj):
-    ret = c_p2p_pnacc(bi, bj)
+def c_set_pnacc(bi, bj, *optargs):
+    ret = c_p2p_pnacc(bi, bj, optargs)
     return (ret[:,:3], ret[:,3])
 
 
 
 
 
+
+class Clight(object):
+    """
+
+    """
+    def __init__(self, clight):
+        self._clight = clight
+        self.inv1 = 1.0/clight
+        self.inv2 = self.inv1**2
+        self.inv3 = self.inv1**3
+        self.inv4 = self.inv1**4
+        self.inv5 = self.inv1**5
+        self.inv6 = self.inv1**6
+        self.inv7 = self.inv1**7
 
 
 
@@ -101,20 +115,6 @@ class Newtonian(object):
         Set body-sph phi.
         """
         return self._set_phi(iobj, jobj)
-
-
-#        # body-all
-#        def set_acc_b2sph(self, iobj, jobj):
-#            """
-#            Set body-sph acc.
-#            """
-#            return self._set_acc(iobj, jobj)
-
-#        def set_phi_b2sph(self, iobj, jobj):
-#            """
-#            Set body-sph phi.
-#            """
-#            return self._set_phi(iobj, jobj)
 
 
     # blackhole-blackhole
@@ -201,16 +201,22 @@ class PostNewtonian(object):
     """
     A base class for post-newtonian gravity.
     """
-    def __init__(self, kernels):
+    def __init__(self, kernels, pn_order, clight):
         self._set_pnacc = kernels.set_pnacc
         self._set_pnphi = kernels.set_phi
+        self._pn_order = pn_order
+        self._clight = clight
 
     # blackhole-blackhole
     def set_acc_bh2bh(self, iobj, jobj):
         """
         Set blackhole-blackhole pn-acc.
         """
-        return self._set_pnacc(iobj, jobj)
+        return self._set_pnacc(iobj, jobj, self._pn_order,
+                               self._clight.inv1, self._clight.inv2,
+                               self._clight.inv3, self._clight.inv4,
+                               self._clight.inv5, self._clight.inv6,
+                               self._clight.inv7)
 
     def set_phi_bh2bh(self, iobj, jobj):
         """
@@ -226,17 +232,11 @@ class Gravity(object):
     """
     A base class for gravitational interaction between different particle types.
     """
-    def __init__(self):
+    def __init__(self, pn_order=4, clight=25.0):
         self.newtonian = None
         self.post_newtonian = None
-
-#        print('-'*10)
-#        print(KERNELS)
-#        print('-'*10)
-#        print(self.__dict__)
-#        print('-'*10)
-
-
+        self._pn_order = pn_order
+        self._clight = Clight(clight)
 
     def build_kernels(self):
         global HAS_BUILT
@@ -279,15 +279,7 @@ class Gravity(object):
 
         kernels = KERNELS
         self.newtonian = Newtonian(kernels)
-        self.post_newtonian = PostNewtonian(kernels)
-
-
-#        print('-'*10)
-#        print(KERNELS)
-#        print('-'*10)
-#        print(self.__dict__)
-#        print('-'*10)
-
+        self.post_newtonian = PostNewtonian(kernels, self._pn_order, self._clight)
 
 
 ########## end of file ##########
