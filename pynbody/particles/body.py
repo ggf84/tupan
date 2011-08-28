@@ -33,7 +33,6 @@ class Body(Pbase):
         Pbase.__init__(self, numobjs, dtype)
 
         self._totalmass = None
-
         self._own_total_epot = 0.0
 
 
@@ -60,13 +59,15 @@ class Body(Pbase):
         """
         Get the center-of-mass position.
         """
-        return (self.mass * self.pos.T).sum(1) / self.get_total_mass()
+        mtot = self.get_total_mass()
+        return (self.mass * self.pos.T).sum(1) / mtot
 
     def get_center_of_mass_vel(self):
         """
         Get the center-of-mass velocity.
         """
-        return (self.mass * self.vel.T).sum(1) / self.get_total_mass()
+        mtot = self.get_total_mass()
+        return (self.mass * self.vel.T).sum(1) / mtot
 
     def reset_center_of_mass(self):
         """
@@ -189,12 +190,10 @@ class Body(Pbase):
         self.pos += tau * self.vel
 
     def kick(self, dvel):
-#    def kick(self, tau):
         """
         Evolves velocity in time.
         """
         self.vel += dvel
-#        self.vel += tau * self.acc
 
 
 ########## end of file ##########

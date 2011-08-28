@@ -40,6 +40,7 @@ class Diagnostic(object):
         particles.set_phi(particles)
         self.e0 = particles.get_total_energies()
         self.rcom0 = particles.get_center_of_mass_pos()
+        self.vcom0 = particles.get_center_of_mass_vel()
         self.lmom0 = particles.get_total_linmom()
         self.amom0 = particles.get_total_angmom()
 
@@ -54,46 +55,51 @@ class Diagnostic(object):
 
 
     def print_header(self):
-        fmt = '{0:12s} '\
-              '{1:12s} {2:12s} {3:16s} '\
-              '{4:12s} {5:11s} {6:11s} '\
-              '{7:10s} {8:10s} {9:10s} '\
-              '{10:10s} {11:10s} {12:10s} '\
-              '{13:10s} {14:10s} {15:10s}'
-        myprint(fmt.format('#time:00',
-                           '#ekin:01', '#epot:02', '#etot:03',
-                           '#evir:04', '#eerr:05', '#geerr:06',
-                           '#rcomX:07', '#rcomY:08', '#rcomZ:09',
-                           '#lmomX:10', '#lmomY:11', '#lmomZ:12',
-                           '#amomX:13', '#amomY:14', '#amomZ:15'),
+        fmt = '{0:10s} '\
+              '{1:10s} {2:10s} {3:13s} '\
+              '{4:10s} {5:10s} {6:10s} '\
+              '{7:9s} {8:9s} {9:9s} '\
+              '{10:9s} {11:9s} {12:9s} '\
+              '{13:9s} {14:9s} {15:9s} '\
+              '{16:9s} {17:9s} {18:9s}'
+        myprint(fmt.format('#00:time',
+                           '#01:ekin', '#02:epot', '#03:etot',
+                           '#04:evir', '#05:eerr', '#06:geerr',
+                           '#07:rcomX', '#08:rcomY', '#09:rcomZ',
+                           '#10:vcomX', '#11:vcomY', '#12:vcomZ',
+                           '#13:lmomX', '#14:lmomY', '#15:lmomZ',
+                           '#16:amomX', '#17:amomY', '#18:amomZ'),
                 self.fname, 'w')
 
 
-    def print_diagnostic(self, time, e_jump, particles):
+    def print_diagnostic(self, time, particles):
         particles.set_phi(particles)
         e = particles.get_total_energies()
         rcom = particles.get_center_of_mass_pos()
+        vcom = particles.get_center_of_mass_vel()
         lmom = particles.get_total_linmom()
         amom = particles.get_total_angmom()
 
-        eerr = ((e.tot+e_jump)-self.e0.tot)/(-e.pot)
+        eerr = (e.tot-self.e0.tot)/(-e.pot)
         self.ceerr += eerr**2
         self.count += 1
         geerr = math.sqrt(self.ceerr / self.count)
         dRcom = (rcom-self.rcom0)
+        dVcom = (vcom-self.vcom0)
         dLmom = (lmom-self.lmom0)
         dAmom = (amom-self.amom0)
 
-        fmt = '{time:< 12.6g} '\
-              '{ekin:< 12.6g} {epot:< 12.6g} {etot:< 16.10g} '\
-              '{evir:< 12.6g} {eerr:< 11.5g} {geerr:< 11.5g} '\
-              '{rcom[0]:< 10.4g} {rcom[1]:< 10.4g} {rcom[2]:< 10.4g} '\
-              '{lmom[0]:< 10.4g} {lmom[1]:< 10.4g} {lmom[2]:< 10.4g} '\
-              '{amom[0]:< 10.4g} {amom[1]:< 10.4g} {amom[2]:< 10.4g}'
+        fmt = '{time:< 10.3e} '\
+              '{ekin:< 10.3e} {epot:< 10.3e} {etot:< 13.6e} '\
+              '{evir:< 10.3e} {eerr:< 10.3e} {geerr:< 10.3e} '\
+              '{rcom[0]:< 9.2e} {rcom[1]:< 9.2e} {rcom[2]:< 9.2e} '\
+              '{vcom[0]:< 9.2e} {vcom[1]:< 9.2e} {vcom[2]:< 9.2e} '\
+              '{lmom[0]:< 9.2e} {lmom[1]:< 9.2e} {lmom[2]:< 9.2e} '\
+              '{amom[0]:< 9.2e} {amom[1]:< 9.2e} {amom[2]:< 9.2e}'
         myprint(fmt.format(time=time,
                            ekin=e.kin, epot=e.pot, etot=e.tot,
                            evir=e.vir, eerr=eerr, geerr=geerr,
-                           rcom=dRcom, lmom=dLmom, amom=dAmom),
+                           rcom=dRcom, vcom=dVcom, lmom=dLmom, amom=dAmom),
                 self.fname, 'a')
 
 
@@ -118,9 +124,7 @@ class Simulation(object):
 
         # Initializes the diagnostic of the simulation.
         self.dia = Diagnostic(self.args.log_file, particles)
-        self.dia.print_diagnostic(self.integrator.time,
-                                  self.integrator.e_jump,
-                                  particles)
+        self.dia.print_diagnostic(self.integrator.time, particles)
 
         # Initializes snapshots output.
         self.iosnaps = HDF5IO('snapshots.hdf5')
@@ -167,9 +171,7 @@ class Simulation(object):
             if (self.integrator.time - self.oldtime_dia >= self.dt_dia):
                 self.oldtime_dia += self.dt_dia
                 particles = self.integrator.gather()
-                self.dia.print_diagnostic(self.integrator.time,
-                                          self.integrator.e_jump,
-                                          particles)
+                self.dia.print_diagnostic(self.integrator.time, particles)
                 self.iosnaps.snap_number += 1
                 self.iosnaps.write_snapshot(particles)
             if (self.integrator.time - self.oldtime_res >= self.dt_res):

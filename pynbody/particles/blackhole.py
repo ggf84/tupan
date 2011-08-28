@@ -33,10 +33,14 @@ class BlackHole(Pbase):
         Pbase.__init__(self, numobjs, dtype)
 
         self._totalmass = None
-
         self._own_total_epot = 0.0
 
         self._pnacc = 0.0
+        self._ejump = 0.0
+        self._rcomjump = 0.0
+        self._vcomjump = 0.0
+        self._linmomjump = 0.0
+        self._angmomjump = 0.0
 
 
     # Total Mass
@@ -62,13 +66,15 @@ class BlackHole(Pbase):
         """
         Get the center-of-mass position.
         """
-        return (self.mass * self.pos.T).sum(1) / self.get_total_mass()
+        mtot = self.get_total_mass()
+        return (self.mass * self.pos.T).sum(1) / mtot + self._rcomjump
 
     def get_center_of_mass_vel(self):
         """
         Get the center-of-mass velocity.
         """
-        return (self.mass * self.vel.T).sum(1) / self.get_total_mass()
+        mtot = self.get_total_mass()
+        return (self.mass * self.vel.T).sum(1) / mtot + self._vcomjump
 
     def reset_center_of_mass(self):
         """
@@ -84,13 +90,13 @@ class BlackHole(Pbase):
         """
         Get the individual linear momentum.
         """
-        return (self.mass * self.vel.T).T
+        return (self.mass * self.vel.T).T + self._linmomjump
 
     def get_angmom(self):
         """
         Get the individual angular momentum.
         """
-        return (self.mass * np.cross(self.pos, self.vel).T).T
+        return (self.mass * np.cross(self.pos, self.vel).T).T + self._angmomjump
 
     def get_total_linmom(self):
         """
@@ -111,7 +117,7 @@ class BlackHole(Pbase):
         """
         Get the individual kinetic energy.
         """
-        return 0.5 * self.mass * (self.vel**2).sum(1)
+        return 0.5 * self.mass * (self.vel**2).sum(1) + self._ejump
 
     def get_epot(self):
         """
@@ -192,12 +198,10 @@ class BlackHole(Pbase):
         self.pos += tau * self.vel
 
     def kick(self, dvel):
-#    def kick(self, tau):
         """
         Evolves velocity in time.
         """
         self.vel += dvel
-#        self.vel += tau * (self.acc + self._pnacc)
 
 
 ########## end of file ##########

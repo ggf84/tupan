@@ -64,8 +64,6 @@ class LeapFrog(object):
         rhostep = particles.set_acc(particles)
         self.particles = particles
         self.e0 = self.particles.get_total_energies()
-        self.e_jump = 0.0
-        self.e_jump2 = self.e0.kin - self.e0.tot
 
         self.dvel = {}
 #        varstep = 1.0
@@ -90,13 +88,14 @@ class LeapFrog(object):
         """
         e = self.particles.get_total_energies()
 #        varstep = 1.0
-        varstep = 0.5 / ((e.kin + self.e_jump) - self.e0.tot)
-#        varstep = 1.0 / ((e.kin + self.e_jump) + (self.e_jump2 - self.e0.tot))
+        varstep = 0.5 / (e.kin - self.e0.tot)
         tau = 0.5 * stepcoef * self.eta
         self.time += tau * varstep
         for (key, obj) in self.particles.iteritems():
             if obj:
                 obj.drift(tau * varstep)
+                if hasattr(obj, "_rcomjump"):
+                    obj._rcomjump += tau * varstep * obj._vcomjump
 
 
     @selftimer
@@ -121,8 +120,6 @@ class LeapFrog(object):
         e = self.particles.get_total_energies()
 #        varstep = 1.0
         varstep = 0.5 / (-e.pot)
-        e_jump = 0.0
-        e_jump2 = 0.0
         tau = stepcoef * self.eta
         for (key, obj) in self.particles.iteritems():
             if obj:
@@ -133,12 +130,20 @@ class LeapFrog(object):
                     _acc = obj.acc
                 self.dvel[key] = 2 * varstep * _acc - self.dvel[key]
                 g1 = self.dvel[key].copy()
-                v12 = obj.vel + 0.25 * tau * (g1-g0)
-                e_jump += np.sum(obj.mass * (v12 * (obj.acc - _acc)).sum(1))
-                e_jump2 += np.sum(obj.mass * (v12 * obj.acc).sum(1))
-
-        self.e_jump += tau * varstep * e_jump
-        self.e_jump2 += tau * varstep * e_jump2
+                force_ext = (obj.mass * (obj.acc - _acc).T).T
+                if hasattr(obj, "_ejump"):
+                    v12 = obj.vel + 0.25 * tau * (g1-g0)
+                    ejump = (v12 * force_ext).sum(1)
+                    obj._ejump += tau * varstep * ejump
+                if hasattr(obj, "_vcomjump"):
+                    vcomjump = force_ext.sum(0) / obj.get_total_mass()
+                    obj._vcomjump += tau * varstep * vcomjump
+                if hasattr(obj, "_linmomjump"):
+                    linmomjump = force_ext
+                    obj._linmomjump += tau * varstep * linmomjump
+                if hasattr(obj, "_angmomjump"):
+                    angmomjump = np.cross(obj.pos, force_ext)
+                    obj._angmomjump += tau * varstep * angmomjump
 
 
     def stepDKD(self, stepcoef):
