@@ -16,6 +16,7 @@ import math
 import string
 import Image
 import colorsys
+import subprocess
 
 
 __all__ = ['GLviewer']
@@ -27,15 +28,15 @@ texture_path = os.path.join(path, 'textures')
 
 ESCAPE = '\033'
 FULLSCREEN = False
-PPMSTREAM = False
+RECORDSCREEN = False
 WINDOW_WIDTH = 768
-WINDOW_HEIGHT = 480
+WINDOW_HEIGHT = 432
 WINDOW_TITLE_PREFIX = 'PyNbody Viewer'
 
 
-ROTINC = 0.03125
+ROTINC = 0.0625
 ZOOM_FACTOR = 1.0
-POINT_SIZE = 10.0
+POINT_SIZE = 6.0
 CONTRAST = 1.0
 SATURATE = False
 TRACEORBITS = False
@@ -128,6 +129,18 @@ class GLviewer(object):
         self.particle = None
         self.exitgl = False
 
+        cmdstring = ["ffmpeg", "-y",
+                     "-r", "60",
+                     "-b", "10M",
+                     "-f", "image2pipe",
+                     "-vcodec", "ppm",
+                     "-i", "pipe:",
+                     "movie.mp4"]
+        self.ffmpeg = subprocess.Popen(cmdstring,
+                                       stdin=subprocess.PIPE,
+                                       stdout=open(os.devnull, 'w'),
+                                       stderr=subprocess.STDOUT)
+
 
     def set_particle(self, particle):
         self.particle = particle
@@ -166,13 +179,13 @@ class GLviewer(object):
     def timer_func(self, value):
         if value != 0:
             tmp = ('{0}: {1} fps @ {2} x {3}').format(WINDOW_TITLE_PREFIX,
-                                                      self.frame_count * 4,
+                                                      self.frame_count * 2,
                                                       self.window_width,
                                                       self.window_height)
             glutSetWindow(self.window_handle)
             glutSetWindowTitle(tmp)
         self.frame_count = 0
-        glutTimerFunc(250, self.timer_func, 1)
+        glutTimerFunc(500, self.timer_func, 1)
 
 
     def adjust_zoom(self):
@@ -270,9 +283,9 @@ class GLviewer(object):
             CONTRAST /= 2
             if CONTRAST < 2**(-16):  CONTRAST = 2.0**(-16)
         elif key == 'Z':
-            ZOOM_FACTOR *= 1.01
+            ZOOM_FACTOR *= 1.0078125
         elif key == 'z':
-            ZOOM_FACTOR /= 1.01
+            ZOOM_FACTOR /= 1.0078125
         elif key == 'o' or key == 'O':
             global TRACEORBITS
             if not TRACEORBITS:
@@ -288,11 +301,11 @@ class GLviewer(object):
                 glutReshapeWindow(WINDOW_WIDTH, WINDOW_HEIGHT)
                 FULLSCREEN = False
         elif key == 's' or key == 'S':
-            global PPMSTREAM
-            if not PPMSTREAM:
-                PPMSTREAM = True
+            global RECORDSCREEN
+            if not RECORDSCREEN:
+                RECORDSCREEN = True
             else:
-                PPMSTREAM = False
+                RECORDSCREEN = False
         elif key == ESCAPE:
             self.exitgl = True
             glutLeaveMainLoop()
@@ -342,13 +355,13 @@ class GLviewer(object):
         self.adjust_zoom()
 
 
-    def output_ppm_stream(self):
+    def record_screen(self):
+        glPixelStorei(GL_PACK_ALIGNMENT,8)
         screenshot = glReadPixels(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
                                   GL_RGBA, GL_UNSIGNED_BYTE)
         im = Image.frombuffer('RGBA', (WINDOW_WIDTH, WINDOW_HEIGHT),
                               screenshot, 'raw', 'RGBA', 0, 1)
-#        im.resize((320,240))
-        im.save(sys.stdout, format='ppm')
+        im.save(self.ffmpeg.stdin, format='ppm')
 
 
     def render_func(self):
@@ -373,11 +386,12 @@ class GLviewer(object):
 
         self.draw_system()
 
+        if RECORDSCREEN:
+            self.record_screen()
+        self.frame_count += 1
+
         glutSwapBuffers()
         glutPostRedisplay()
-        if PPMSTREAM:
-            self.output_ppm_stream()
-        self.frame_count += 1
 
 
     def set_point_size_limits(self):
@@ -582,45 +596,19 @@ class GLviewer(object):
         iy = image.size[1]
         image = image.tostring('raw', 'RGBA', 0, -1)
 
-
         # Create Texture
         id = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, id)
-
-#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
-#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-#        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-#        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-
-        glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST)
-        glTexParameterf(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                                       GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-
-#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-
-#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-
-
-#        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
-#        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
-#        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
-#        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE)
-#        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD)
-
-
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+#        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0,
                      GL_RGBA, GL_UNSIGNED_BYTE, image)
 
-
         image = None
-
         return id
 
 
