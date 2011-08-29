@@ -35,12 +35,12 @@ class BlackHole(Pbase):
         self._totalmass = None
         self._own_total_epot = 0.0
 
-        self._pnacc = 0.0
-        self._ejump = 0.0
-        self._rcomjump = 0.0
-        self._vcomjump = 0.0
-        self._linmomjump = 0.0
-        self._angmomjump = 0.0
+        self._pnacc = None
+        self._energy_jump = 0.0
+        self._com_pos_jump = 0.0
+        self._com_vel_jump = 0.0
+        self._linmom_jump = 0.0
+        self._angmom_jump = 0.0
 
 
     # Total Mass
@@ -67,14 +67,14 @@ class BlackHole(Pbase):
         Get the center-of-mass position.
         """
         mtot = self.get_total_mass()
-        return (self.mass * self.pos.T).sum(1) / mtot + self._rcomjump
+        return (self.mass * self.pos.T).sum(1) / mtot + self._com_pos_jump
 
     def get_center_of_mass_vel(self):
         """
         Get the center-of-mass velocity.
         """
         mtot = self.get_total_mass()
-        return (self.mass * self.vel.T).sum(1) / mtot + self._vcomjump
+        return (self.mass * self.vel.T).sum(1) / mtot + self._com_vel_jump
 
     def reset_center_of_mass(self):
         """
@@ -90,13 +90,13 @@ class BlackHole(Pbase):
         """
         Get the individual linear momentum.
         """
-        return (self.mass * self.vel.T).T + self._linmomjump
+        return (self.mass * self.vel.T).T + self._linmom_jump
 
     def get_angmom(self):
         """
         Get the individual angular momentum.
         """
-        return (self.mass * np.cross(self.pos, self.vel).T).T + self._angmomjump
+        return (self.mass * np.cross(self.pos, self.vel).T).T + self._angmom_jump
 
     def get_total_linmom(self):
         """
@@ -117,7 +117,7 @@ class BlackHole(Pbase):
         """
         Get the individual kinetic energy.
         """
-        return 0.5 * self.mass * (self.vel**2).sum(1) + self._ejump
+        return 0.5 * self.mass * (self.vel**2).sum(1) + self._energy_jump
 
     def get_epot(self):
         """
@@ -184,24 +184,55 @@ class BlackHole(Pbase):
         """
         Set the individual acceleration due to other particles.
         """
-        self._pnacc *= 0.0
-        (self.acc[:], rhostep) = objs._accumulate_acc_for(self)
+        if self._pnacc == None:
+            self._pnacc = np.zeros_like(self.acc)
+        (self.acc[:], self._pnacc[:], rhostep) = objs._accumulate_acc_for(self)
         return rhostep
 
 
     # Evolving methods
 
-    def drift(self, tau):
+    def evolve_pos(self, dpos):
         """
-        Evolves position in time.
+        Evolves position by dpos.
         """
-        self.pos += tau * self.vel
+        self.pos += dpos
 
-    def kick(self, dvel):
+    def evolve_vel(self, dvel):
         """
-        Evolves velocity in time.
+        Evolves velocity by dvel.
         """
         self.vel += dvel
+
+    def evolve_energy_jump(self, denergy_jump):
+        """
+        Evolves energy jump by denergy_jump.
+        """
+        self._energy_jump += denergy_jump
+
+    def evolve_com_pos_jump(self, dcom_pos_jump):
+        """
+        Evolves center of mass position jump by dcom_pos_jump.
+        """
+        self._com_pos_jump += dcom_pos_jump
+
+    def evolve_com_vel_jump(self, dcom_vel_jump):
+        """
+        Evolves center of mass velocity jump by dcom_vel_jump.
+        """
+        self._com_vel_jump += dcom_vel_jump
+
+    def evolve_linmom_jump(self, dlinmom_jump):
+        """
+        Evolves linear momentum jump by dlinmom_jump.
+        """
+        self._linmom_jump += dlinmom_jump
+
+    def evolve_angmom_jump(self, dangmom_jump):
+        """
+        Evolves angular momentum jump by dangmom_jump.
+        """
+        self._angmom_jump += dangmom_jump
 
 
 ########## end of file ##########

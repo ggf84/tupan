@@ -183,15 +183,15 @@ class Body(Pbase):
 
     # Evolving methods
 
-    def drift(self, tau):
+    def evolve_pos(self, dpos):
         """
-        Evolves position in time.
+        Evolves position by dpos.
         """
-        self.pos += tau * self.vel
+        self.pos += dpos
 
-    def kick(self, dvel):
+    def evolve_vel(self, dvel):
         """
-        Evolves velocity in time.
+        Evolves velocity by dvel.
         """
         self.vel += dvel
 

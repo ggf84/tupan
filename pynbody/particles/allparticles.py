@@ -318,6 +318,7 @@ class Particles(dict):
 
         if isinstance(iobj, BlackHole):
             acc = 0
+            pnacc = 0
             rhostep = 0
             sum_nj = 0
             for (key, jobj) in self.iteritems():
@@ -332,13 +333,13 @@ class Particles(dict):
                     rhostep += ret[1]
                     sum_nj += len(jobj)
                 if isinstance(jobj, BlackHole):
-                    ret = gravity.newtonian.set_acc_bh2bh(iobj, jobj)
                     pnret = gravity.post_newtonian.set_acc_bh2bh(iobj, jobj)
-                    iobj._pnacc += pnret[0]
-                    acc += ret[0]
+                    ret = gravity.newtonian.set_acc_bh2bh(iobj, jobj)
+                    pnacc += pnret[0]
+                    acc += ret[0] + pnret[0]
                     rhostep += ret[1]
                     sum_nj += len(jobj)-1
-            return (acc, np.sqrt(rhostep/sum_nj))
+            return (acc, pnacc, np.sqrt(rhostep/sum_nj))
 
 
 
