@@ -131,10 +131,12 @@ class GLviewer(object):
 
         cmdstring = ["ffmpeg", "-y",
                      "-r", "60",
-                     "-b", "10M",
+                     "-b", "10000K",
                      "-f", "image2pipe",
                      "-vcodec", "ppm",
                      "-i", "pipe:",
+                     "-vcodec", "libx264",
+                     "-vpre", "slow",
                      "movie.mp4"]
         self.ffmpeg = subprocess.Popen(cmdstring,
                                        stdin=subprocess.PIPE,
