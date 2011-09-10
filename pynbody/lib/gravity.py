@@ -17,6 +17,8 @@ try:
 except:
     pass
 
+from ggf84decor import selftimer
+
 __all__ = ['Gravity']
 
 
@@ -35,10 +37,12 @@ def cl_set_phi(bi, bj):
     phi = cl_p2p_phi.run(bi, bj)
     return phi
 
+@selftimer
 def c_set_acc(bi, bj):
     ret = c_p2p_acc(bi, bj)
     return (ret[:,:3], ret[:,3])
 
+@selftimer
 def c_set_phi(bi, bj):
     phi = c_p2p_phi(bi, bj)
     return phi
@@ -83,6 +87,15 @@ class Newtonian(object):
         Set body-body acc.
         """
         return self._set_acc(iobj, jobj)
+
+#        ret = self._set_acc(iobj, jobj)
+
+#        elapsed = self._set_acc.selftimer.elapsed
+#        print('Execution time of C kernel: {0:g} s'.format(elapsed))
+#        print('C kernel Gflops/s: {0:g}'.format(24*len(iobj)*len(jobj)/(elapsed*1e9)))
+
+#        return ret
+
 
     def set_phi_b2b(self, iobj, jobj):
         """

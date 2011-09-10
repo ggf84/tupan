@@ -221,30 +221,17 @@ class Plummer(object):
         ###################################
         # IMF plot
 
-        fig = plt.figure(figsize=(14, 6.25))
-        # semilogx
-        ax1 = fig.add_subplot(2,2,1)
-        ax1.semilogx(linbins[:-1], hist, 'bo', label='IMF sample')
-        ax1.semilogx(x, y, 'r--', linewidth=1, label='IMF distribution')
+        fig = plt.figure(figsize=(13.5, 6))
+        ax1 = fig.add_subplot(1,2,1)
+        ax1.plot(bins[where_gt_zero], np.log10(hist[where_gt_zero]),
+                 'bo', label='IMF sample')
+        ax1.plot(np.log10(x), np.log10(y), 'r--',
+                 label='IMF distribution', linewidth=1.5)
         ax1.grid(True)
-        ax1.set_ylabel(r'$dN/d\log(m)$')
-        ax1.legend(loc='upper right', borderaxespad=1.5, shadow=True, fancybox=True)
-        # loglog
-        ax2 = fig.add_subplot(2,2,3, sharex=ax1)
-        ax2.loglog(linbins[:-1], hist, 'bo', label='IMF sample')
-        ax2.loglog(x, y, 'r--', linewidth=1, label='IMF distribution')
-        ax2.grid(True)
-        ax2.set_xlabel(r'$\log(m)$')
-        ax2.set_ylabel(r'$\log(dN/d\log(m))$')
-        ax2.text(0.25, 0.2,
-                 '{0} bins\n{1} stars'.format(nbins, self.num),
-                 fontsize=14,
-                 horizontalalignment='center',
-                 verticalalignment='center',
-                 transform=ax2.transAxes)
-
-        fig.subplots_adjust(hspace=0)
-        plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
+        ax1.set_xlabel(r'$\log_{10}(m)$', fontsize=18)
+        ax1.set_ylabel(r'$\log_{10}(dN/d\log_{10}(m))$', fontsize=18)
+        ax1.legend(loc='lower left', shadow=True,
+                   fancybox=True, borderaxespad=0.75)
 
         ###################################
 
@@ -258,26 +245,26 @@ class Plummer(object):
         ###################################
         # Scatter plot
 
-        ax = fig.add_subplot(1,2,2)
+        ax2 = fig.add_subplot(1,2,2)
 #        ax.set_axis_bgcolor('0.75')
-        ax.scatter(x, y, c=color, s=radius, cmap='gist_rainbow',
-                   alpha=0.75, label=r'$Stars$')
+        ax2.scatter(x, y, c=color, s=radius, cmap='gist_rainbow',
+                    alpha=0.75, label=r'$Stars$')
         circle = Circle((0, 0), 1, facecolor='none',
-                        edgecolor=(1,0.25,0), linewidth=1, label=r'$R_{Vir}$')
-        ax.add_patch(circle)
+                        edgecolor=(1,0.25,0), linewidth=1.5, label=r'$R_{Vir}$')
+        ax2.add_patch(circle)
 
-        ax.set_xlim(-4, +4)
-        ax.set_ylim(-4, +4)
+        ax2.set_xlim(-4, +4)
+        ax2.set_ylim(-4, +4)
 
-        ax.set_xlabel(r'$x$')
-        ax.set_ylabel(r'$y$')
-        ax.legend(loc='upper right', borderaxespad=1.5, shadow=True, fancybox=True)
-
-        fig.subplots_adjust(left=0.08, right=0.95, bottom=0.11, top=0.95)
+        ax2.set_xlabel(r'$x$', fontsize=18)
+        ax2.set_ylabel(r'$y$', fontsize=18)
+        ax2.legend(loc='upper right', shadow=True,
+                   fancybox=True, borderaxespad=0.75)
 
         ###################################
         # Show
         plt.savefig('show.png', bbox_inches="tight")
+#        plt.savefig('show.pdf', bbox_inches="tight")
         plt.show()
         plt.close()
 
