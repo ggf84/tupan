@@ -138,10 +138,28 @@ class GLviewer(object):
                      "-vcodec", "libx264",
                      "-vpre", "slow",
                      "movie.mp4"]
+
         self.ffmpeg = subprocess.Popen(cmdstring,
                                        stdin=subprocess.PIPE,
                                        stdout=open(os.devnull, 'w'),
                                        stderr=subprocess.STDOUT)
+
+#        cmdstring = ["mencoder",
+#                     "-",
+#                     "-demuxer", "rawvideo",
+#                     "-rawvideo",
+#                     "w={0}:h={1}:fps={2}:format={3}".format(WINDOW_WIDTH,
+#                                                             WINDOW_HEIGHT,
+#                                                             60, "rgba"),
+#                     "-ovc", "lavc",
+#                     "-of", "rawvideo",
+#                     "-lavcopts", "vcodec=mpeg2video:vbitrate=10000",
+#                     "-o", "video.mp4"]
+
+#        self.mencoder = subprocess.Popen(cmdstring,
+#                                         stdin=subprocess.PIPE,
+#                                         stdout=open(os.devnull, 'w'),
+#                                         stderr=subprocess.STDOUT)
 
 
     def set_particle(self, particle):
@@ -364,6 +382,7 @@ class GLviewer(object):
         im = Image.frombuffer('RGBA', (WINDOW_WIDTH, WINDOW_HEIGHT),
                               screenshot, 'raw', 'RGBA', 0, 1)
         im.save(self.ffmpeg.stdin, format='ppm')
+#        self.mencoder.stdin.write(im.tostring())
 
 
     def render_func(self):
