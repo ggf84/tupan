@@ -13,6 +13,7 @@ import numpy as np
 import os
 import sys
 import math
+import time
 import string
 import Image
 import colorsys
@@ -38,7 +39,6 @@ ROTINC = 0.0625
 ZOOM_FACTOR = 1.0
 POINT_SIZE = 6.0
 CONTRAST = 1.0
-SATURATE = False
 TRACEORBITS = False
 COLORSCHEME = 1
 COLORMASK = {'r': False, 'g': False, 'b': False}
@@ -106,6 +106,28 @@ def gaussian(height, center_x, center_y, width_x, width_y):
 
 
 
+class Timer(object):
+    """
+
+    """
+    def __init__(self):
+        self.tic = 0.0
+        self.toc = 0.0
+        self.stopped = False
+
+    def start(self):
+        self.stopped = False
+        self.tic = time.time()
+
+    def stop(self):
+        self.stopped = True
+        self.toc = time.time()
+
+    def elapsed(self):
+        if not self.stopped:
+            self.toc = time.time()
+        return self.toc - self.tic
+
 
 
 
@@ -128,6 +150,9 @@ class GLviewer(object):
         self.rotate_z = 0
         self.particle = None
         self.exitgl = False
+        self.timer = Timer()
+        self.timer.start()
+        self._body_colors = None
 
         cmdstring = ["ffmpeg", "-y",
                      "-r", "60",
@@ -196,16 +221,19 @@ class GLviewer(object):
         glViewport(0, 0, width, height)
 
 
-    def timer_func(self, value):
-        if value != 0:
-            tmp = ('{0}: {1} fps @ {2} x {3}').format(WINDOW_TITLE_PREFIX,
-                                                      self.frame_count * 2,
-                                                      self.window_width,
-                                                      self.window_height)
+    def show_fps(self, secs=0.0):
+        elapsed_time = self.timer.elapsed()
+        if elapsed_time < secs:
+            self.frame_count += 1
+        else:
+            fmt = "{0}: {1:.1f} fps @ {2} x {3}"
+            win_title = fmt.format(WINDOW_TITLE_PREFIX,
+                                   self.frame_count / elapsed_time,
+                                   self.window_width, self.window_height)
             glutSetWindow(self.window_handle)
-            glutSetWindowTitle(tmp)
-        self.frame_count = 0
-        glutTimerFunc(500, self.timer_func, 1)
+            glutSetWindowTitle(win_title)
+            self.frame_count = 0
+            self.timer.start()
 
 
     def adjust_zoom(self):
@@ -266,15 +294,9 @@ class GLviewer(object):
             self.rotate_z -= 1
         elif key == '>':
             self.rotate_z += 1
-        elif key in '123456':
+        elif key in '0123456789':
             global COLORSCHEME
             COLORSCHEME = int(key)
-        elif key == 'h' or key == 'H':
-            global SATURATE
-            if not SATURATE:
-                SATURATE = True
-            else:
-                SATURATE = False
         elif key == 'r':
             if not COLORMASK['r']:
                 COLORMASK['r'] = True
@@ -363,13 +385,12 @@ class GLviewer(object):
         glutKeyboardFunc(self.keyboard)
         glutSpecialFunc(self.keyboard_s)
 #        glutIdleFunc(self.idle)
-        glutTimerFunc(0, self.timer_func, 0)
 
 
     def init_gl(self):
         glEnable(GL_DEPTH_TEST)
-        glClearColor(0.0, 0.0, 0.0, 1.0)
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
+        glClearColor(0.0, 0.0, 0.0, 0.0)
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
         self.textures['star'] = self.load_texture(os.path.join(texture_path,
                                                                'glow.png'))
         self.adjust_zoom()
@@ -391,13 +412,13 @@ class GLviewer(object):
         else:
             glClear(GL_DEPTH_BUFFER_BIT)
         if COLORMASK['r']:
-            glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE)
+            glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE)
         elif COLORMASK['g']:
-            glColorMask(GL_FALSE, GL_TRUE, GL_FALSE, GL_TRUE)
+            glColorMask(GL_FALSE, GL_TRUE, GL_FALSE, GL_FALSE)
         elif COLORMASK['b']:
-            glColorMask(GL_FALSE, GL_FALSE, GL_TRUE, GL_TRUE)
+            glColorMask(GL_FALSE, GL_FALSE, GL_TRUE, GL_FALSE)
         else:
-            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
 
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
@@ -409,7 +430,8 @@ class GLviewer(object):
 
         if RECORDSCREEN:
             self.record_screen()
-        self.frame_count += 1
+
+        self.show_fps(1.0)
 
         glutSwapBuffers()
         glutPostRedisplay()
@@ -425,59 +447,49 @@ class GLviewer(object):
 
 
     def get_colors(self, obj):
-        if not SATURATE:
-            bodies = self.particle['body']
-            r = -obj.get_epot()
-            g = obj.mass
-#            b = obj.mass*np.sqrt((obj.acc**2).sum(1))
-            b = obj.get_ekin()
+        if self._body_colors is None:
+            m = obj.mass
 
-
-##            r = -obj.get_epot()
-##            r = obj.mass*(2*obj.get_ekin() + r)/r
-#            r = obj.get_ekin()
-#            g = obj.mass
-#            b = obj.mass*np.sqrt((obj.acc**2).sum(1))
+            r = m**0.5
+            g = m
+            b = m**2.0
 
             r /= r.mean()
             g /= g.mean()
             b /= b.mean()
 
-            s = (r+g+b)/3
-            r /= s.max()
-            g /= s.max()
-            b /= s.max()
+            self._body_colors = (r, g, b)
 
-            if COLORSCHEME == 1:
-                colors = (np.vstack((r, g, b)).T)
-            elif COLORSCHEME == 2:
-                colors = (np.vstack((g, b, r)).T)
-            elif COLORSCHEME == 3:
-                colors = (np.vstack((b, r, g)).T)
-            elif COLORSCHEME == 4:
-                colors = (np.vstack((b, g, r)).T)
-            elif COLORSCHEME == 5:
-                colors = (np.vstack((r, b, g)).T)
-            elif COLORSCHEME == 6:
-                colors = (np.vstack((g, r, b)).T)
+        (r, g, b) = self._body_colors
 
-            colors = np.log10(1.0+colors)
-            colors /= colors.mean()
+        if COLORSCHEME == 0:
+            colors = np.ones((len(obj), 3), dtype='f8')
+        elif COLORSCHEME == 1:
+            colors = (np.vstack((r, g, b)).T)
+        elif COLORSCHEME == 2:
+            colors = (np.vstack((b, g, r)).T)
+        elif COLORSCHEME == 3:
+            colors = (np.vstack((g, b, r)).T)
+        elif COLORSCHEME == 4:
+            colors = (np.vstack((g, r, b)).T)
+        elif COLORSCHEME == 5:
+            colors = (np.vstack((b, r, g)).T)
+        elif COLORSCHEME == 6:
+            colors = (np.vstack((r, b, g)).T)
+        elif COLORSCHEME == 7:
+            colors = (np.vstack((r, r, r)).T)
+        elif COLORSCHEME == 8:
+            colors = (np.vstack((g, g, g)).T)
+        elif COLORSCHEME == 9:
+            colors = (np.vstack((b, b, b)).T)
 
-#            for i in range(len(obj)):
-#                colors[i] = colorsys.hls_to_rgb(*colors[i])
-#                colors[i] = colorsys.rgb_to_hsv(*colors[i])
-#                colors[i] = colorsys.hsv_to_rgb(*colors[i])
-#                colors[i] = colorsys.rgb_to_hls(*colors[i])
-#                colors[i] = colorsys.rgb_to_yiq(*colors[i])
-#                colors[i] = colorsys.yiq_to_rgb(*colors[i])
-
-            return colors * np.log10(1.0+CONTRAST)
-        else:
-            return np.ones((len(obj), 3), dtype='f8')
+        colors *= np.log10(1.0+CONTRAST)/3
+        return colors
 
 
     def draw_system(self):
+        self.set_point_size_limits()
+
         bodies = self.particle['body']
         if bodies:
             points = bodies.pos
@@ -488,33 +500,20 @@ class GLviewer(object):
 #            glEnable(GL_TEXTURE_2D)
 #            glBindTexture(GL_TEXTURE_2D, self.textures['star'])
 #            glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
-            glDepthMask(GL_FALSE)
 
 #            glUseProgram(self.shader_program)
 
-            self.set_point_size_limits()
             glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+#            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 #            glBlendFunc(GL_DST_ALPHA, GL_ONE)
 #            glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-
+            glDepthMask(GL_FALSE)
             glEnable(GL_BLEND)
-            glEnable(GL_TEXTURE_2D)
-            glBindTexture(GL_TEXTURE_2D, self.textures['star'])
-            glPointSize(POINT_SIZE)
-            self.draw_points(points, colors)
-#            self.draw_quads(points, colors)
-            glPointSize(1.0)
-            glBindTexture(GL_TEXTURE_2D, 0)
-            glDisable(GL_TEXTURE_2D)
-            glDisable(GL_BLEND)
 
-            glEnable(GL_BLEND)
-            glPointSize(1.0)
-            self.draw_points(points, colors)
-            glPointSize(1.0)
-            glDisable(GL_BLEND)
+            self.draw_points(points, colors, self.textures['star'])
 
+            glDisable(GL_BLEND)
             glDepthMask(GL_TRUE)
 
 #            glDisable(GL_VERTEX_PROGRAM_POINT_SIZE)
@@ -527,79 +526,40 @@ class GLviewer(object):
         blackholes = self.particle['blackhole']
         if blackholes:
             points = blackholes.pos
-            colors = self.get_colors(blackholes)
-            colors[:] = (1,0,0)
-            glPointSize(POINT_SIZE)
-            self.draw_quads(points, colors)
-            glPointSize(1.0)
-            glPointSize(1.0)
-            self.draw_points(points, colors)
-            glPointSize(1.0)
+            colors = np.zeros((len(blackholes), 3), dtype='f8')
+            colors[:,0].fill(1)
+            self.draw_points(points, colors, self.textures['star'])
 
 
 
-
-
-
-    def draw_points(self, points, colors):
+    def draw_points(self, points, colors, texture):
         glEnableClientState(GL_VERTEX_ARRAY)
         glVertexPointerd(points)
 
         glEnableClientState(GL_COLOR_ARRAY)
         glColorPointerd(colors)
 
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, texture)
         glEnable(GL_POINT_SPRITE)
         glTexEnvf(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE)
 
+        glPointSize(POINT_SIZE)
         glDrawArrays(GL_POINTS, 0, len(points))
 
         glTexEnvf(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_FALSE)
         glDisable(GL_POINT_SPRITE)
+        glBindTexture(GL_TEXTURE_2D, 0)
+        glDisable(GL_TEXTURE_2D)
+
+        glPointSize(1.0)
+        glDrawArrays(GL_POINTS, 0, len(points))
 
         glColorPointerd(None)
         glDisableClientState(GL_COLOR_ARRAY)
 
         glVertexPointerd(None)
         glDisableClientState(GL_VERTEX_ARRAY)
-
-
-
-    def draw_quads(self, points, colors):
-        for p,c in zip(points, colors):
-            x = p[0]
-            y = p[1]
-            z = p[2]
-            size = 0.005 * POINT_SIZE * ZOOM_FACTOR
-
-            glMatrixMode(GL_MODELVIEW)
-            glPushMatrix()
-
-            glTranslatef(x, y, z)
-
-#            glBegin(GL_QUADS)
-
-#            glColor3d(c[0], c[1], c[2])
-
-#            glTexCoord2d(0, 0)
-#            glVertex3d(-size, +size, 0.0)
-#            glTexCoord2d(0, 1)
-#            glVertex3d(+size, +size, 0.0)
-#            glTexCoord2d(1, 1)
-#            glVertex3d(+size, -size, 0.0)
-#            glTexCoord2d(1, 0)
-#            glVertex3d(-size, -size, 0.0)
-
-#            glEnd()
-
-
-#            glColor3d(c[0], c[1], c[2])
-            glColor3d(1.0, 0.0, 0.0)
-            glutSolidSphere(size, 32, 32)
-
-
-            glPopMatrix()
-
-
 
 
     def load_texture(self, name):
