@@ -80,14 +80,15 @@ class Diagnostic(object):
         lmom = particles.get_total_linmom()
         amom = particles.get_total_angmom()
 
-        eerr = (e.tot-self.e0.tot)/(-e.pot)
+        ejump = particles.get_total_energy_jump()
+        eerr = ((e.tot-self.e0.tot) + ejump)/(-e.pot)
         self.ceerr += eerr**2
         self.count += 1
         geerr = math.sqrt(self.ceerr / self.count)
-        dRcom = (rcom-self.rcom0)
-        dVcom = (vcom-self.vcom0)
-        dLmom = (lmom-self.lmom0)
-        dAmom = (amom-self.amom0)
+        dRcom = (rcom-self.rcom0) + particles.get_com_pos_jump()
+        dVcom = (vcom-self.vcom0) + particles.get_com_vel_jump()
+        dLmom = (lmom-self.lmom0) + particles.get_total_linmom_jump()
+        dAmom = (amom-self.amom0) + particles.get_total_angmom_jump()
 
         fmt = '{time:< 10.3e} '\
               '{ekin:< 10.3e} {epot:< 10.3e} {etot:< 13.6e} '\
@@ -97,9 +98,10 @@ class Diagnostic(object):
               '{lmom[0]:< 9.2e} {lmom[1]:< 9.2e} {lmom[2]:< 9.2e} '\
               '{amom[0]:< 9.2e} {amom[1]:< 9.2e} {amom[2]:< 9.2e}'
         myprint(fmt.format(time=time,
-                           ekin=e.kin, epot=e.pot, etot=e.tot,
-                           evir=e.vir, eerr=eerr, geerr=geerr,
-                           rcom=dRcom, vcom=dVcom, lmom=dLmom, amom=dAmom),
+                           ekin=e.kin+ejump, epot=e.pot,
+                           etot=e.tot+ejump, evir=e.vir+ejump,
+                           eerr=eerr, geerr=geerr, rcom=dRcom,
+                           vcom=dVcom, lmom=dLmom, amom=dAmom),
                 self.fname, 'a')
 
 

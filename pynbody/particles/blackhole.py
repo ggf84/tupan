@@ -40,11 +40,11 @@ class BlackHole(Pbase):
         self._own_total_epot = 0.0
 
         self._pnacc = None
-        self._energy_jump = 0.0
-        self._com_pos_jump = 0.0
-        self._com_vel_jump = 0.0
-        self._linmom_jump = 0.0
-        self._angmom_jump = 0.0
+        self._energy_jump = None
+        self._com_pos_jump = np.zeros(3, dtype="f8")
+        self._com_vel_jump = np.zeros(3, dtype="f8")
+        self._linmom_jump = None
+        self._angmom_jump = None
 
 
     # Total Mass
@@ -71,14 +71,20 @@ class BlackHole(Pbase):
         Get the center-of-mass position.
         """
         mtot = self.get_total_mass()
-        return (self.mass * self.pos.T).sum(1) / mtot + self._com_pos_jump
+        return (self.mass * self.pos.T).sum(1) / mtot #+ self._com_pos_jump
+
+    def get_com_pos_jump(self):
+        return self._com_pos_jump
 
     def get_center_of_mass_vel(self):
         """
         Get the center-of-mass velocity.
         """
         mtot = self.get_total_mass()
-        return (self.mass * self.vel.T).sum(1) / mtot + self._com_vel_jump
+        return (self.mass * self.vel.T).sum(1) / mtot #+ self._com_vel_jump
+
+    def get_com_vel_jump(self):
+        return self._com_vel_jump
 
     def reset_center_of_mass(self):
         """
@@ -94,13 +100,23 @@ class BlackHole(Pbase):
         """
         Get the individual linear momentum.
         """
-        return (self.mass * self.vel.T).T + self._linmom_jump
+        return (self.mass * self.vel.T).T #+ self._linmom_jump
+
+    def get_linmom_jump(self):
+        if self._linmom_jump == None:
+            self._linmom_jump = np.zeros_like(self.acc)
+        return self._linmom_jump
 
     def get_angmom(self):
         """
         Get the individual angular momentum.
         """
-        return (self.mass * np.cross(self.pos, self.vel).T).T + self._angmom_jump
+        return (self.mass * np.cross(self.pos, self.vel).T).T #+ self._angmom_jump
+
+    def get_angmom_jump(self):
+        if self._angmom_jump == None:
+            self._angmom_jump = np.zeros_like(self.acc)
+        return self._angmom_jump
 
     def get_total_linmom(self):
         """
@@ -108,11 +124,17 @@ class BlackHole(Pbase):
         """
         return self.get_linmom().sum(0)
 
+    def get_total_linmom_jump(self):
+        return self.get_linmom_jump().sum(0)
+
     def get_total_angmom(self):
         """
         Get the total angular momentum.
         """
         return self.get_angmom().sum(0)
+
+    def get_total_angmom_jump(self):
+        return self.get_angmom_jump().sum(0)
 
 
     # Energy methods
@@ -121,7 +143,7 @@ class BlackHole(Pbase):
         """
         Get the individual kinetic energy.
         """
-        return 0.5 * self.mass * (self.vel**2).sum(1) + self._energy_jump
+        return 0.5 * self.mass * (self.vel**2).sum(1) #+ self._energy_jump
 
     def get_epot(self):
         """
@@ -134,6 +156,11 @@ class BlackHole(Pbase):
         Get the individual "kinetic + potential" energy.
         """
         return self.get_ekin() + self.get_epot()
+
+    def get_energy_jump(self):
+        if self._energy_jump == None:
+            self._energy_jump = np.zeros_like(self.phi)
+        return self._energy_jump
 
     def get_energies(self):
         """
@@ -163,6 +190,9 @@ class BlackHole(Pbase):
         Get the total "kinetic + potential" energy.
         """
         return self.get_total_ekin() + self.get_total_epot()
+
+    def get_total_energy_jump(self):
+        return np.sum(self.get_energy_jump())
 
     def get_total_energies(self):
         """
@@ -230,12 +260,16 @@ class BlackHole(Pbase):
         """
         Evolves linear momentum jump by dlinmom_jump.
         """
+        if self._linmom_jump == None:
+            self._linmom_jump = np.zeros_like(self.acc)
         self._linmom_jump += dlinmom_jump
 
     def evolve_angmom_jump(self, dangmom_jump):
         """
         Evolves angular momentum jump by dangmom_jump.
         """
+        if self._angmom_jump == None:
+            self._angmom_jump = np.zeros_like(self.acc)
         self._angmom_jump += dangmom_jump
 
 

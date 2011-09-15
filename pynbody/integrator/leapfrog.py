@@ -84,8 +84,9 @@ class LeapFrog(object):
 
         """
         e = self.particles.get_total_energies()
+        ejump = self.particles.get_total_energy_jump()
 #        varstep = 1.0
-        varstep = 0.5 / (e.kin - self.e0.tot)
+        varstep = 0.5 / ((e.kin - self.e0.tot) + ejump)
         tau = 0.5 * stepcoef * self.eta * varstep
         self.time += tau
         for (key, obj) in self.particles.iteritems():

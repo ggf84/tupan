@@ -9,8 +9,8 @@
 from __future__ import print_function
 import sys
 import traceback
-import numpy as np
 from collections import namedtuple
+import numpy as np
 from ggf84decor import selftimer
 from .sph import Sph
 from .body import Body
@@ -63,7 +63,6 @@ class Particles(dict):
         self._own_epot = {"sph": 0.0, "body": 0.0, "blackhole": 0.0}
 
 
-
     # Total Mass
 
     def update_total_mass(self):
@@ -101,6 +100,12 @@ class Particles(dict):
                 comPos += pos * mass
         return (comPos / self.get_total_mass())
 
+    def get_com_pos_jump(self):
+        comPosJump = sum((obj.get_com_pos_jump() * obj.get_total_mass()
+                          for obj in self.itervalues()
+                          if hasattr(obj, "get_com_pos_jump")))
+        return (comPosJump / self.get_total_mass())
+
     def get_center_of_mass_vel(self):
         """
         Get the center-of-mass velocity.
@@ -112,6 +117,12 @@ class Particles(dict):
                 vel = obj.get_center_of_mass_vel()
                 comVel += vel * mass
         return (comVel / self.get_total_mass())
+
+    def get_com_vel_jump(self):
+        comVelJump = sum((obj.get_com_vel_jump() * obj.get_total_mass()
+                          for obj in self.itervalues()
+                          if hasattr(obj, "get_com_vel_jump")))
+        return (comVelJump / self.get_total_mass())
 
     def reset_center_of_mass(self):
         """
@@ -139,6 +150,15 @@ class Particles(dict):
                 linmom[key] = None
         return linmom
 
+    def get_linmom_jump(self):
+        linmom = {}
+        for (key, obj) in self.iteritems():
+            if hasattr(obj, "get_total_linmom_jump"):
+                linmom[key] = obj.get_total_linmom_jump()
+            else:
+                linmom[key] = None
+        return linmom
+
     def get_angmom(self):
         """
         Get the total angular momentum for each particle type.
@@ -147,6 +167,15 @@ class Particles(dict):
         for (key, obj) in self.iteritems():
             if obj:
                 angmom[key] = obj.get_total_angmom()
+            else:
+                angmom[key] = None
+        return angmom
+
+    def get_angmom_jump(self):
+        angmom = {}
+        for (key, obj) in self.iteritems():
+            if hasattr(obj, "get_total_angmom_jump"):
+                angmom[key] = obj.get_total_angmom_jump()
             else:
                 angmom[key] = None
         return angmom
@@ -161,6 +190,11 @@ class Particles(dict):
                 linmom += value
         return linmom
 
+    def get_total_linmom_jump(self):
+        linmom_jump = self.get_linmom_jump()
+        return sum((value for value in linmom_jump.itervalues()
+                    if value is not None))
+
     def get_total_angmom(self):
         """
         Get the total angular momentum for the whole system of particles.
@@ -170,6 +204,11 @@ class Particles(dict):
             if value is not None:
                 angmom += value
         return angmom
+
+    def get_total_angmom_jump(self):
+        angmom_jump = self.get_angmom_jump()
+        return sum((value for value in angmom_jump.itervalues()
+                    if value is not None))
 
 
     # Energy methods
@@ -185,6 +224,15 @@ class Particles(dict):
             else:
                 energies[key] = None
         return energies
+
+    def get_energy_jump(self):
+        energy_jump = {}
+        for (key, obj) in self.iteritems():
+            if hasattr(obj, "get_total_energy_jump"):
+                energy_jump[key] = obj.get_total_energy_jump()
+            else:
+                energy_jump[key] = None
+        return energy_jump
 
     def get_total_energies(self):
         """
@@ -204,6 +252,11 @@ class Particles(dict):
         evir = ekin + etot
         energies = Energies(ekin, epot, etot, evir)
         return energies
+
+    def get_total_energy_jump(self):
+        energy_jump = self.get_energy_jump()
+        return sum((value for value in energy_jump.itervalues()
+                    if value is not None))
 
 
     # Gravity methods
