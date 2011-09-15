@@ -127,8 +127,15 @@ def pynbody_main():
     print('#'*25, file=sys.stderr)
 
     if args.restart:
-        with gzip.open('restart.pkl.gz', 'rb') as fobj:
-            mysim = pickle.load(fobj)
+#        with gzip.open('restart.pkl.gz', 'rb') as fobj:
+#            mysim = pickle.load(fobj)
+
+        # <py2.6>
+        fobj = gzip.open('restart.pkl.gz', 'rb')
+        mysim = pickle.load(fobj)
+        fobj.close()
+        # </py2.6>
+
         mysim.args.tmax = args.tmax
     else:
         viewer = GLviewer() if args.view else None

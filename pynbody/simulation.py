@@ -176,8 +176,14 @@ class Simulation(object):
                 self.iosnaps.write_snapshot(particles)
             if (self.integrator.time - self.oldtime_res >= self.dt_res):
                 self.oldtime_res += self.dt_res
-                with gzip.open('restart.pkl.gz', 'wb') as fobj:
-                    pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
+#                with gzip.open('restart.pkl.gz', 'wb') as fobj:
+#                    pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
+
+                # <py2.6>
+                fobj = gzip.open('restart.pkl.gz', 'wb')
+                pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
+                fobj.close()
+                # </py2.6>
 
         if self.viewer:
             self.viewer.enter_main_loop()

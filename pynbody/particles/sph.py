@@ -6,20 +6,27 @@
 """
 
 from __future__ import print_function
+from collections import namedtuple
+#from collections import (namedtuple, OrderedDict)
 import numpy as np
-from collections import (namedtuple, OrderedDict)
 from .pbase import Pbase
 
 
 __all__ = ['Sph']
 
 
-fields = OrderedDict([('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),
-                      ('phi', 'f8'), ('rho', 'f8'), ('press', 'f8'),
-                      ('temp', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
-                      ('vel', '3f8'), ('acc', '3f8')])
-#dtype = fields.items()
-dtype = {'names': fields.keys(), 'formats': fields.values()}
+dtype = {"names":   ["index", "mass", "eps2", "phi", "rho", "press", "temp", "stepdens", "pos", "vel", "acc"],
+         "formats": ["u8",    "f8",   "f8",   "f8",  "f8",  "f8",    "f8",  "2f8",      "3f8", "3f8", "3f8"]}
+
+#fields = OrderedDict([('index', 'u8'), ('mass', 'f8'), ('eps2', 'f8'),
+#                      ('phi', 'f8'), ('rho', 'f8'), ('press', 'f8'),
+#                      ('temp', 'f8'), ('stepdens', '2f8'), ('pos', '3f8'),
+#                      ('vel', '3f8'), ('acc', '3f8')])
+##dtype = fields.items()
+#dtype = {'names': fields.keys(), 'formats': fields.values()}
+
+
+Energies = namedtuple("Energies", ["kin", "pot", "tot", "vir"])
 
 
 class Sph(Pbase):
