@@ -196,9 +196,9 @@ class GLviewer(object):
             glutMainLoop()
 
 
-    def show_event(self, integrator):
+    def show_event(self, particles):
         if not self.exitgl:
-            self.set_particle(integrator.gather().copy())
+            self.set_particle(particles)
             glutMainLoopEvent()
 
 

@@ -70,6 +70,7 @@ class Pbase(object):
 
     def copy(self):
         ret = self.__class__()
+        ret.__dict__.update(self.__dict__)
         ret.set_data(self._data.copy())
         return ret
 

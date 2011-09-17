@@ -410,6 +410,7 @@ class Particles(dict):
 
     def copy(self):
         ret = self.__class__()
+        ret.__dict__.update(self.__dict__)
         for (key, obj) in self.iteritems():
             if obj:
                 ret[key] = obj.copy()
@@ -446,6 +447,18 @@ class Particles(dict):
                             sys.exc_info()[2].tb_frame.f_back, None), None)
             print("TypeError: {0}".format(msg))
             sys.exit(-1)
+
+
+
+    # Pickle-related methods
+
+    def __getstate__(self):
+        sdict = self.__dict__.copy()
+        return sdict
+
+    def __setstate__(self, sdict):
+        self.__dict__.update(sdict)
+        self = self.copy()
 
 
 ########## end of file ##########

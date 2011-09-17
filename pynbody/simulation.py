@@ -142,20 +142,6 @@ class Simulation(object):
         self.oldtime_res = self.integrator.time
 
 
-    def __getstate__(self):
-        # This is just a method of pickle-related behavior.
-        sdict = self.__dict__.copy()
-        return sdict
-
-
-    def __setstate__(self, sdict):
-        # This is just a method of pickle-related behavior.
-        integrator = sdict["integrator"]
-        integrator.particles = integrator.gather().copy()
-        self.__dict__.update(sdict)
-        self.integrator = integrator
-
-
     @selftimer
     def evolve(self):
         """
@@ -169,7 +155,8 @@ class Simulation(object):
             if (self.integrator.time - self.oldtime_gl >= self.dt_gl):
                 self.oldtime_gl += self.dt_gl
                 if self.viewer:
-                    self.viewer.show_event(self.integrator)
+                    particles = self.integrator.gather()
+                    self.viewer.show_event(particles.copy())
             if (self.integrator.time - self.oldtime_dia >= self.dt_dia):
                 self.oldtime_dia += self.dt_dia
                 particles = self.integrator.gather()

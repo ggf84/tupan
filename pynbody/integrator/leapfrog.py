@@ -164,8 +164,15 @@ class LeapFrog(object):
 
 
 
+    # Pickle-related methods
 
+    def __getstate__(self):
+        sdict = self.__dict__.copy()
+        return sdict
 
+    def __setstate__(self, sdict):
+        self.__dict__.update(sdict)
+        self.particles = self.particles.copy()
 
 
 ########## end of file ##########
