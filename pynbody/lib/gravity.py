@@ -10,14 +10,13 @@ different particle types at Newtonian and post-Newtonian approach.
 import sys
 import numpy as np
 from collections import namedtuple
-
+from pynbody.lib.utils import timings
 from pynbody.lib.clkernels import (cl_p2p_acc, cl_p2p_phi)
 try:
     from pynbody.lib.libgravity import (c_p2p_acc, c_p2p_phi, c_p2p_pnacc)
 except:
     pass
 
-from ggf84decor import selftimer
 
 __all__ = ['Gravity']
 
@@ -37,12 +36,12 @@ def cl_set_phi(bi, bj):
     phi = cl_p2p_phi.run(bi, bj)
     return phi
 
-@selftimer
+@timings
 def c_set_acc(bi, bj):
     ret = c_p2p_acc(bi, bj)
     return (ret[:,:3], ret[:,3])
 
-@selftimer
+@timings
 def c_set_phi(bi, bj):
     phi = c_p2p_phi(bi, bj)
     return phi

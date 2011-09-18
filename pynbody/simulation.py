@@ -9,8 +9,11 @@ from __future__ import print_function
 import sys
 import math
 import gzip
-import pickle
-from ggf84decor import selftimer
+try:
+   import cPickle as pickle
+except:
+   import pickle
+from pynbody.lib.utils import timings
 from pynbody.io import HDF5IO
 from pynbody.integrator import (METH_NAMES, METHS)
 
@@ -18,6 +21,7 @@ from pynbody.integrator import (METH_NAMES, METHS)
 __all__ = ['Simulation']
 
 
+@timings
 def myprint(data, fname, fmode):
     if fname == '<stdout>':
         print(data, file=sys.stdout)
@@ -71,7 +75,7 @@ class Diagnostic(object):
                            '#16:amomX', '#17:amomY', '#18:amomZ'),
                 self.fname, 'w')
 
-
+    @timings
     def print_diagnostic(self, time, particles):
         particles.set_phi(particles)
         e = particles.get_total_energies()
@@ -110,6 +114,7 @@ class Simulation(object):
     """
     The Simulation class is the top level class for N-body simulations.
     """
+    @timings
     def __init__(self, args, viewer):
         self.args = args
         self.viewer = viewer
@@ -142,7 +147,7 @@ class Simulation(object):
         self.oldtime_res = self.integrator.time
 
 
-    @selftimer
+    @timings
     def evolve(self):
         """
 
@@ -176,6 +181,10 @@ class Simulation(object):
 
         if self.viewer:
             self.viewer.enter_main_loop()
+
+
+    def print_timings(self):
+        print(timings, file=sys.stderr)
 
 
 ########## end of file ##########

@@ -3,12 +3,10 @@
 
 
 if __name__ == "__main__":
-    from ggf84decor import selftimer
     from pynbody.models import (IMF, Plummer)
     import matplotlib.pyplot as plt
     import numpy as np
 
-    @selftimer
     def main():
         numBodies = 256
 

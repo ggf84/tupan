@@ -11,10 +11,10 @@ import sys
 import traceback
 from collections import namedtuple
 import numpy as np
-from ggf84decor import selftimer
 from .sph import Sph
 from .body import Body
 from .blackhole import BlackHole
+from pynbody.lib.utils import timings
 from pynbody.lib.gravity import Gravity
 gravity = Gravity()
 
@@ -261,7 +261,7 @@ class Particles(dict):
 
     # Gravity methods
 
-    @selftimer
+    @timings
     def set_phi(self, objs):
         for (key, obj) in self.iteritems():
             if obj:
@@ -314,7 +314,7 @@ class Particles(dict):
             return (phi, self._own_epot["blackhole"])
 
 
-    @selftimer
+    @timings
     def set_acc(self, objs):
         rhostep = {}
         for (key, obj) in self.iteritems():

@@ -7,8 +7,7 @@
 
 from __future__ import print_function
 import numpy as np
-
-from ggf84decor import selftimer
+from pynbody.lib.utils import timings
 
 
 __all__ = ["LeapFrog"]
@@ -73,12 +72,12 @@ class LeapFrog(object):
                 self.dvel[key] = varstep * obj.acc
 
 
-    @selftimer
+    @timings
     def gather(self):
         return self.particles
 
 
-    @selftimer
+    @timings
     def drift(self, stepcoef):
         """
 
@@ -96,7 +95,7 @@ class LeapFrog(object):
                 obj.evolve_com_pos_jump(tau * obj._com_vel_jump)
 
 
-    @selftimer
+    @timings
     def kick(self, stepcoef):
         """
 
@@ -107,7 +106,7 @@ class LeapFrog(object):
                 obj.evolve_vel(tau * self.dvel[key])
 
 
-    @selftimer
+    @timings
     def forceDKD(self, jparticles, stepcoef):
         """
 
@@ -153,7 +152,7 @@ class LeapFrog(object):
         self.drift(stepcoef)
 
 
-    @selftimer
+    @timings
     def step(self):
         """
 

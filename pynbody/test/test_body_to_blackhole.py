@@ -4,7 +4,6 @@
 from __future__ import print_function
 
 if __name__ == "__main__":
-    from ggf84decor import selftimer
     from pynbody.models import (IMF, Plummer)
     from pynbody.particles import Particles
     import matplotlib.pyplot as plt
@@ -12,7 +11,6 @@ if __name__ == "__main__":
 
     numBodies = 256
 
-    @selftimer
     def main():
 
 #        imf = IMF.equal()

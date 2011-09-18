@@ -141,6 +141,7 @@ def pynbody_main():
         viewer = GLviewer() if args.view else None
         mysim = Simulation(args, viewer)
     mysim.evolve()
+    mysim.print_timings()
 
     return 0
 

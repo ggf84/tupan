@@ -13,11 +13,10 @@ import numpy as np
 import os
 import sys
 import math
-import time
 import string
 import Image
-import colorsys
 import subprocess
+from pynbody.lib.utils import (Timer, timings)
 
 
 __all__ = ['GLviewer']
@@ -102,31 +101,6 @@ def gaussian(height, center_x, center_y, width_x, width_y):
     width_x = float(width_x)
     width_y = float(width_y)
     return lambda x, y: height*np.exp(-(((center_x-x)/width_x)**2+((center_y-y)/width_y)**2)/2.0)
-
-
-
-
-class Timer(object):
-    """
-
-    """
-    def __init__(self):
-        self.tic = 0.0
-        self.toc = 0.0
-        self.stopped = False
-
-    def start(self):
-        self.stopped = False
-        self.tic = time.time()
-
-    def stop(self):
-        self.stopped = True
-        self.toc = time.time()
-
-    def elapsed(self):
-        if not self.stopped:
-            self.toc = time.time()
-        return self.toc - self.tic
 
 
 
@@ -406,6 +380,7 @@ class GLviewer(object):
 #        self.mencoder.stdin.write(im.tostring())
 
 
+    @timings
     def render_func(self):
         if not TRACEORBITS:
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

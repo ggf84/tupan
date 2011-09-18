@@ -46,6 +46,7 @@ setup(
               'pynbody.integrator',
               'pynbody.io',
               'pynbody.lib',
+              'pynbody.lib.utils',
               'pynbody.models',
               'pynbody.particles'],
     ext_modules=ext_modules,

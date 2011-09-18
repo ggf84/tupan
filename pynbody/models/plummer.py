@@ -11,7 +11,7 @@ import sys
 import random
 import math
 
-from ggf84decor import selftimer
+from pynbody.lib.utils import timings
 from pynbody.io import HDF5IO
 from pynbody.particles import Particles
 
@@ -139,7 +139,7 @@ class Plummer(object):
 #        return (vx, vy, vz)
 
 
-    @selftimer
+    @timings
     def set_bodies(self):
         """  """
         n = self.num

@@ -8,7 +8,7 @@
 from __future__ import print_function
 import numpy as np
 from pprint import pprint
-from ggf84decor import selftimer
+from pynbody.lib.utils import timings
 
 
 __all__ = ['BlockStep']
@@ -37,7 +37,7 @@ class Block(object):
         return fmt.format(self.level, self.tstep, self.time, self.particles)
 
 
-    @selftimer
+    @timings
     def drift(self):
         """
 
@@ -49,7 +49,7 @@ class Block(object):
                 obj.drift(self.tstep)
 
 
-    @selftimer
+    @timings
     def kick(self):
         """
 
@@ -61,7 +61,7 @@ class Block(object):
                 obj.kick(self.tstep)
 
 
-    @selftimer
+    @timings
     def interpolated(self, at_time):
         """
 
@@ -80,7 +80,7 @@ class Block(object):
         return self.particles
 
 
-    @selftimer
+    @timings
     def force(self, all_particles):
         """
 
@@ -130,12 +130,12 @@ class BlockStep(object):
         self.min_tstep = min_tstep
         self.block_list = self.scatter(particles)
 
-    @selftimer
+    @timings
     def print_block(self):
         pprint(self.block_list)
         print('block_list length:', len(self.block_list))
 
-    @selftimer
+    @timings
     def print_levels(self, block_list=None):
         if block_list is None:
             block_list = self.block_list
@@ -144,7 +144,7 @@ class BlockStep(object):
             levels.append(block.level)
         print(levels)
 
-    @selftimer
+    @timings
     def sorted_by_level(self, block_list):
         def cmp(x, y):
             if x.level < y.level: return -1
@@ -152,7 +152,7 @@ class BlockStep(object):
             return 0
         return sorted(block_list, cmp=cmp)
 
-    @selftimer
+    @timings
     def is_there(self, level, block_list):
         has_level = False
         index = None
@@ -162,14 +162,14 @@ class BlockStep(object):
                 index = block_list.index(block)
         return (has_level, index)
 
-    @selftimer
+    @timings
     def remove_empty_blocks(self, block_list):
         for block in block_list:
             if not block.particles.any():
                 block_list.remove(block)
         return block_list
 
-    @selftimer
+    @timings
     def calc_block_level(self, currtime, obj):
 #    def calc_block_level(self, obj):
         """
@@ -193,7 +193,7 @@ class BlockStep(object):
         # Converts from block_tstep to block_level and returns
         return -np.log2(block_tstep).astype(np.int)
 
-    @selftimer
+    @timings
     def scatter(self, particles):
         """
 
@@ -222,7 +222,7 @@ class BlockStep(object):
                             block_list.append(block)
         return self.sorted_by_level(block_list)
 
-    @selftimer
+    @timings
     def gather(self, block_list=None,
                interpolated_at_time=None,
                sorting_by_index=False):
@@ -251,7 +251,7 @@ class BlockStep(object):
         return particles
 
 
-    @selftimer
+    @timings
     def up_level(self, block, block_list):
         """
 
@@ -286,7 +286,7 @@ class BlockStep(object):
         return block_list
 
 
-    @selftimer
+    @timings
     def down_level(self, block, block_list):
         """
 
@@ -322,7 +322,7 @@ class BlockStep(object):
 
 
 
-    @selftimer
+    @timings
     def update_blocks(self, nextidx, block, block_list):
         """
 
@@ -428,7 +428,7 @@ class BlockStep(object):
 
 
 
-    @selftimer
+    @timings
     def step(self):
 #        self.recursive_step()
         self.recursive_step2()

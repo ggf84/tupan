@@ -8,8 +8,7 @@
 from __future__ import print_function
 import pickle
 import h5py
-
-from ggf84decor import selftimer
+from pynbody.lib.utils import timings
 
 
 __all__ = ['HDF5IO']
@@ -26,7 +25,7 @@ class HDF5IO(object):
         self.snap_number = None
 
 
-    @selftimer
+    @timings
     def write_snapshot(self, data,
                        group_name='snap',
                        dset_name='dset',
@@ -55,7 +54,7 @@ class HDF5IO(object):
                     dset[:,slice_id] = v.get_data()
 
 
-    @selftimer
+    @timings
     def read_snapshot(self,
                       group_name='snap',
                       dset_name='dset',

@@ -10,8 +10,7 @@ from __future__ import print_function
 import os
 import numpy as np
 import pyopencl as cl
-
-from ggf84decor import (selftimer, addmethod)
+from pynbody.lib.utils import timings
 
 
 __all__ = ['CLKernel', 'cl_p2p_acc', 'cl_p2p_phi']
@@ -93,7 +92,7 @@ class CLKernel(object):
         return True
 
 
-    @selftimer
+    @timings
     def _call_kernel(self, queue, dev_args):
         """
         Calls a kernel on a CL device.
@@ -206,22 +205,6 @@ fname = os.path.join(path, 'ext', 'p2p_acc_kernel.cl')
 cl_p2p_acc = CLKernel(fname, options)
 #fname = os.path.join(path, 'ext', 'p2p_acc_kernel_gpugems3.cl')
 #cl_p2p_acc_gpugems3 = CLKernel(fname, options)
-
-
-
-
-
-#@addmethod(clkernel.cl_p2p_acc_gpugems3)
-#@selftimer
-#def print_name(self):
-#    """doc of print_name"""
-#    print('*** name: ', self._name, self.flops, '***')
-
-#clkernel.cl_p2p_acc_gpugems3.print_name()
-
-
-
-
 
 
 ########## end of file ##########
