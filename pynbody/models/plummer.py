@@ -8,9 +8,9 @@
 
 from __future__ import print_function
 import sys
-import random
 import math
-
+import random
+import numpy as np
 from pynbody.lib.utils import timings
 from pynbody.io import HDF5IO
 from pynbody.particles import Particles
@@ -71,8 +71,8 @@ class Plummer(object):
         eps_a = self.epsf * mass
         eps_b = (self.epsf / (n * (n * mass)**0.5))
 
-        eps_a_mean = ((mass*(eps_a**2)).sum())**0.5
-        eps_b_mean = ((mass*(eps_b**2)).sum())**0.5
+        eps_a_mean = float(np.sum(mass*(eps_a**2)))**0.5
+        eps_b_mean = float(np.sum(mass*(eps_b**2)))**0.5
 
         eps_a *= (eps_b_mean / eps_a_mean)
 
@@ -182,7 +182,7 @@ class Plummer(object):
 
 
     def write_snapshot(self, fname="plummer"):
-        io = HDF5IO(fname+".hdf5", 'w')
+        io = HDF5IO(fname, 'w')
         io.write_snapshot(self.particles)
 
 
@@ -196,7 +196,6 @@ class Plummer(object):
 
 
     def show(self, nbins=32):
-        import numpy as np
         from scipy import optimize
         import matplotlib.pyplot as plt
         from matplotlib.patches import Circle

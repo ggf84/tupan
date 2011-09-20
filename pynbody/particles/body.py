@@ -46,7 +46,7 @@ class Body(Pbase):
         """
         Updates the total mass to the current sum.
         """
-        self._totalmass = np.sum(self.mass)
+        self._totalmass = float(np.sum(self.mass))
 
     def get_total_mass(self):
         """
@@ -143,13 +143,13 @@ class Body(Pbase):
         """
         Get the total kinetic energy.
         """
-        return np.sum(self.get_ekin())
+        return float(np.sum(self.get_ekin()))
 
     def get_total_epot(self):
         """
         Get the total potential energy.
         """
-        return np.sum(self.get_epot()) - self._own_total_epot
+        return float(np.sum(self.get_epot())) - self._own_total_epot
 
     def get_total_etot(self):
         """

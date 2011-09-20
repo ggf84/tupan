@@ -274,7 +274,7 @@ class Particles(dict):
                 if isinstance(jobj, Sph):
                     ret = gravity.newtonian.set_phi_sph2sph(iobj, jobj)
                     phi += ret
-                    self._own_epot["sph"] = 0.5 * np.sum(iobj.mass * ret)
+                    self._own_epot["sph"] = 0.5 * float(np.sum(iobj.mass * ret))
                 if isinstance(jobj, Body):
                     ret = gravity.newtonian.set_phi_sph2b(iobj, jobj)
                     phi += ret
@@ -292,7 +292,7 @@ class Particles(dict):
                 if isinstance(jobj, Body):
                     ret = gravity.newtonian.set_phi_b2b(iobj, jobj)
                     phi += ret
-                    self._own_epot["body"] = 0.5 * np.sum(iobj.mass * ret)
+                    self._own_epot["body"] = 0.5 * float(np.sum(iobj.mass * ret))
                 if isinstance(jobj, BlackHole):
                     ret = gravity.newtonian.set_phi_b2bh(iobj, jobj)
                     phi += ret
@@ -310,7 +310,7 @@ class Particles(dict):
                 if isinstance(jobj, BlackHole):
                     ret = gravity.post_newtonian.set_phi_bh2bh(iobj, jobj)
                     phi += ret
-                    self._own_epot["blackhole"] = 0.5 * np.sum(iobj.mass * ret)
+                    self._own_epot["blackhole"] = 0.5 * float(np.sum(iobj.mass * ret))
             return (phi, self._own_epot["blackhole"])
 
 

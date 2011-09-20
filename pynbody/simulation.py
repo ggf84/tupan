@@ -120,8 +120,8 @@ class Simulation(object):
         self.viewer = viewer
 
         # Read the initial conditions.
-        io = HDF5IO(self.args.input)
-        particles = io.read_snapshot()
+        ic = HDF5IO(self.args.input)
+        particles = ic.read_snapshot()
 
         # Set the method of integration.
         self.Integrator = METHS[METH_NAMES.index(self.args.meth)]
@@ -134,9 +134,10 @@ class Simulation(object):
         self.dia.print_diagnostic(self.integrator.time, particles)
 
         # Initializes snapshots output.
-        self.iosnaps = HDF5IO('snapshots.hdf5')
-        self.iosnaps.snap_number = 0
-        self.iosnaps.write_snapshot(particles)
+        self.io = HDF5IO("snapshots")
+        self.snap_count = 0
+        snap_name = "snap_" + str(self.snap_count).zfill(5)
+        self.io.write_snapshot(particles, snap_name, self.integrator.time)
 
         # Initializes times for output a couple of things.
         self.dt_gl = 1.0 / self.args.gl_freq
@@ -166,8 +167,10 @@ class Simulation(object):
                 self.oldtime_dia += self.dt_dia
                 particles = self.integrator.gather()
                 self.dia.print_diagnostic(self.integrator.time, particles)
-                self.iosnaps.snap_number += 1
-                self.iosnaps.write_snapshot(particles)
+                self.snap_count += 1
+                snap_name = "snap_" + str(self.snap_count).zfill(5)
+                self.io.write_snapshot(particles, snap_name,
+                                       self.integrator.time)
             if (self.integrator.time - self.oldtime_res >= self.dt_res):
                 self.oldtime_res += self.dt_res
 #                with gzip.open('restart.pkl.gz', 'wb') as fobj:

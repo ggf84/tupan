@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
 
     from pynbody.io import HDF5IO
-    io = HDF5IO("plummer"+str(numBodies-n_bh).zfill(4)+'b'+'-'+str(n_bh)+"bh"+".hdf5")
+    io = HDF5IO("plummer"+str(numBodies-n_bh).zfill(4)+'b'+'-'+str(n_bh)+"bh")
     io.write_snapshot(p)
 
 
