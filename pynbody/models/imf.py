@@ -6,10 +6,9 @@
 """
 
 from __future__ import print_function
-from scipy import (integrate, optimize)
 import numpy as np
-import random
-import math
+from scipy import (integrate, optimize)
+from pynbody.lib.utils import timings
 
 
 __all__ = ['IMF']
@@ -50,21 +49,19 @@ class IMFSample(object):
         self._mtot = None
 
 
-    def sample(self, n=0):
-        if n:
-            msample = []
-            for i in range(n):
-                ran_imf = self.peak
-                ran_mass = self.mhigh
-                while (ran_imf > self.func(ran_mass)):
-                    ran_imf = random.uniform(0.0, self.peak)
-                    ran_mass = math.exp(random.uniform(math.log(self.mlow),
-                                                       math.log(self.mhigh)))
-                msample.append(ran_mass)
-            self._sample = np.array(msample, dtype=np.float64)
-            self._mtot = np.sum(self._sample)
+    @timings
+    def sample(self, n):
+        size = n
+        ran_mass = []
+        while len(ran_mass) < n:
+            ran_imf = np.random.uniform(0.0, self.peak, size=size)
+            ran_mass = np.exp(np.random.uniform(np.log(self.mlow),
+                                                np.log(self.mhigh), size=size))
+            ran_mass = ran_mass[np.where((ran_imf < self.func(ran_mass)))]
+            size *= int(1+n/len(ran_mass))
+        self._sample = ran_mass[:n]
+        self._mtot = float(np.sum(self._sample))
         return self._sample
-
 
 
 
@@ -116,9 +113,6 @@ class IMF(object):
         max_mhigh = 120.0
         imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
         return imf
-
-
-
 
 
 ########## end of file ##########

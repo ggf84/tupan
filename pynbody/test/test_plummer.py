@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+
 
 if __name__ == "__main__":
+    from pynbody.lib.utils import timings
     from pynbody.models import (IMF, Plummer)
     import matplotlib.pyplot as plt
     import numpy as np
@@ -20,7 +23,14 @@ if __name__ == "__main__":
         p.write_snapshot("plummer"+str(numBodies).zfill(4)+'b')
         p.show()
 
-#        bi = p._body
+#        from pynbody.analysis import GLviewer
+#        viewer = GLviewer()
+#        viewer.initialize()
+#        viewer.set_particle(p.particles.copy())
+#        viewer.enter_main_loop()
+
+
+#        bi = p.particles['body']
 
 #        plt.semilogx(np.abs(bi.pos[:,0]),bi.phi,'r,')
 #        plt.semilogx(np.abs(bi.pos[:,0]),bi.get_ekin()/bi.mass,'r,')
@@ -34,6 +44,7 @@ if __name__ == "__main__":
 
 
     main()
+    print(timings)
 
 
 ########## end of file ##########

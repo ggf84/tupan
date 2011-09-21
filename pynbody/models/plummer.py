@@ -6,10 +6,9 @@
 """
 
 
-from __future__ import print_function
+from __future__ import (print_function, division)
 import sys
 import math
-import random
 import numpy as np
 from pynbody.lib.utils import timings
 from pynbody.io import HDF5IO
@@ -62,9 +61,9 @@ class Plummer(object):
         self.epsf = epsf
         self.epstype = epstype
         self.particles = Particles({"body": num})
-        random.seed(seed)
+        np.random.seed(seed)
 
-
+    @timings
     def set_eps2(self, mass):
         n = self.num
 
@@ -84,71 +83,50 @@ class Plummer(object):
             return 0
 
 
-    def set_pos2(self, mrand):
-        radius = 1.0 / math.sqrt(math.pow(mrand, -2.0/3.0) - 1.0)
-        theta = math.acos(random.uniform(-1.0, 1.0))
-        phi = random.uniform(0.0, 2.0 * math.pi)
-        rx = radius * math.sin(theta) * math.cos(phi)
-        ry = radius * math.sin(theta) * math.sin(phi)
-        rz = radius * math.cos(theta)
-        return (rx, ry, rz)
-
-
-
+    @timings
     def set_pos(self, irand):
-        m_min = (irand * self.mfrac) / self.num
-        m_max = ((irand+1) * self.mfrac) / self.num
-        mrand = random.uniform(m_min, m_max)
-        radius = 1.0 / math.sqrt(math.pow(mrand, -2.0/3.0) - 1.0)
-        theta = math.acos(random.uniform(-1.0, 1.0))
-        phi = random.uniform(0.0, 2.0 * math.pi)
-        rx = radius * math.sin(theta) * math.cos(phi)
-        ry = radius * math.sin(theta) * math.sin(phi)
-        rz = radius * math.cos(theta)
-        return (rx, ry, rz)
+        n = self.num
+        mfrac = self.mfrac
+        mrand = (irand + np.random.random(n)) * mfrac / n
+        radius = 1.0 / np.sqrt(np.power(mrand, -2.0/3.0) - 1.0)
+        theta = np.arccos(np.random.uniform(-1.0, 1.0, size=n))
+        phi = np.random.uniform(0.0, 2.0 * np.pi, size=n)
+        rx = radius * np.sin(theta) * np.cos(phi)
+        ry = radius * np.sin(theta) * np.sin(phi)
+        rz = radius * np.cos(theta)
+        return np.vstack((rx, ry, rz)).T
 
 
+    @timings
     def set_vel(self, pot):
-        q = 1.0
-        g = 1.0
-        while (g > (q - 1)):
-            q = random.uniform(0.0, 1.0)
-            g = random.uniform(-0.75, 0.0)
-        velocity = math.sqrt(2 * (q - 1) * pot)
-        theta = math.acos(random.uniform(-1.0, 1.0))
-        phi = random.uniform(0.0, 2.0 * math.pi)
-        vx = velocity * math.sin(theta) * math.cos(phi)
-        vy = velocity * math.sin(theta) * math.sin(phi)
-        vz = velocity * math.cos(theta)
-        return (vx, vy, vz)
-
-
-
-#    def set_vel(self, pot):
-#        q = 1.0
-#        g = 2.0
-#        while (g > (1 - q)):
-#            q = random.uniform(-1.0, 1.0)
-#            g = random.uniform(0.0, 2.0)
-#        velocity = math.sqrt(-g * pot)
-#        theta = math.acos(random.uniform(-1.0, 1.0))
-#        phi = random.uniform(0.0, 2.0 * math.pi)
-#        vx = velocity * math.sin(theta) * math.cos(phi)
-#        vy = velocity * math.sin(theta) * math.sin(phi)
-#        vz = velocity * math.cos(theta)
-#        return (vx, vy, vz)
+        count = 0
+        n = self.num
+        rnd = np.empty(n)
+        while count < n:
+            r1 = np.random.random()
+            r2 = np.random.random()
+            if (r2 < r1):
+                rnd[count] = r2
+                count += 1
+        velocity = np.sqrt(-2 * rnd * pot)
+        theta = np.arccos(np.random.uniform(-1.0, 1.0, size=n))
+        phi = np.random.uniform(0.0, 2.0 * np.pi, size=n)
+        vx = velocity * np.sin(theta) * np.cos(phi)
+        vy = velocity * np.sin(theta) * np.sin(phi)
+        vz = velocity * np.cos(theta)
+        return np.vstack((vx, vy, vz)).T
 
 
     @timings
     def set_bodies(self):
         """  """
         n = self.num
-        ilist = list(range(n))
+        ilist = np.arange(n)
 
         # set index
         self.particles["body"].index[:] = ilist
 
-        s = random.getstate()
+        srand = np.random.get_state()
 
         # set mass
         self.particles["body"].mass[:] = self.imf.sample(n)
@@ -156,22 +134,18 @@ class Plummer(object):
         self.particles["body"].update_total_mass()
 
         # set eps2
-        self.particles["body"].eps2[:] = self.set_eps2(self.particles["body"].mass.copy())
+        self.particles["body"].eps2[:] = self.set_eps2(self.particles["body"].mass)
 
-        random.setstate(s)
+        np.random.set_state(srand)
 
         # set pos
-        self.particles["body"].pos[:] = [self.set_pos(i) for i in random.sample(ilist,n)]
-
-#        mcum = self.particles["body"].mass.cumsum()
-#        mcum /= mcum.max()
-#        mcum *= self.mfrac
-#        self.particles["body"].pos[:] = [self.set_pos2(i) for i in random.sample(mcum, n)]
+        self.particles["body"].pos[:] = self.set_pos(np.random.permutation(ilist))
 
         # set phi
-        self.particles["body"].set_phi(self.particles)
+        self.particles.set_phi(self.particles)
+
         # set vel
-        self.particles["body"].vel[:] = [self.set_vel(p) for p in self.particles["body"].phi]
+        self.particles["body"].vel[:] = self.set_vel(self.particles["body"].phi)
 
 
     def make_plummer(self):
