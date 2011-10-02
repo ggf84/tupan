@@ -76,7 +76,10 @@ class Newtonian(object):
     """
     A base class for newtonian gravity.
     """
-    def __init__(self, kernels):
+    def __init__(self):
+        pass
+
+    def setup_kernels(self, kernels):
         self._set_acc = kernels.set_acc
         self._set_phi = kernels.set_phi
 
@@ -213,11 +216,13 @@ class PostNewtonian(object):
     """
     A base class for post-newtonian gravity.
     """
-    def __init__(self, kernels, pn_order, clight):
-        self._set_pnacc = kernels.set_pnacc
-        self._set_pnphi = kernels.set_phi
+    def __init__(self, pn_order, clight):
         self._pn_order = pn_order
         self._clight = clight
+
+    def setup_kernels(self, kernels):
+        self._set_pnacc = kernels.set_pnacc
+        self._set_pnphi = kernels.set_phi
 
     # blackhole-blackhole
     def set_acc_bh2bh(self, iobj, jobj):
@@ -245,10 +250,9 @@ class Gravity(object):
     A base class for gravitational interaction between different particle types.
     """
     def __init__(self, pn_order=4, clight=25.0):
-        self.newtonian = None
-        self.post_newtonian = None
-        self._pn_order = pn_order
-        self._clight = Clight(clight)
+        self.newtonian = Newtonian()
+        self.post_newtonian = PostNewtonian(pn_order, Clight(clight))
+
 
     def build_kernels(self):
         global HAS_BUILT
@@ -290,8 +294,8 @@ class Gravity(object):
             KERNELS = Kernels(set_acc, set_phi, set_pnacc)
 
         kernels = KERNELS
-        self.newtonian = Newtonian(kernels)
-        self.post_newtonian = PostNewtonian(kernels, self._pn_order, self._clight)
+        self.newtonian.setup_kernels(kernels)
+        self.post_newtonian.setup_kernels(kernels)
 
 
 ########## end of file ##########
