@@ -16,6 +16,7 @@ import math
 import string
 import Image
 import subprocess
+from matplotlib import cm
 from pynbody.lib.utils import (Timer, timings)
 
 
@@ -37,9 +38,9 @@ WINDOW_TITLE_PREFIX = 'PyNbody Viewer'
 ROTINC = 0.0625
 ZOOM_FACTOR = 1.0
 POINT_SIZE = 6.0
-CONTRAST = 1.0
+ALPHA = 0.5
+COLORMAP = 1
 TRACEORBITS = False
-COLORSCHEME = 1
 COLORMASK = {'r': False, 'g': False, 'b': False}
 
 
@@ -126,7 +127,6 @@ class GLviewer(object):
         self.exitgl = False
         self.timer = Timer()
         self.timer.start()
-        self._body_colors = None
 
         cmdstring = ["ffmpeg", "-y",
                      "-r", "60",
@@ -252,25 +252,36 @@ class GLviewer(object):
 
 
     def keyboard(self, key, x, y):
+        global ALPHA
+        global COLORMAP
+        global FULLSCREEN
         global POINT_SIZE
-        global CONTRAST
+        global RECORDSCREEN
+        global TRACEORBITS
         global ZOOM_FACTOR
+        (ps_min, ps_max) = glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE)
         if key == ' ':
             self.rotate_x = 0
             self.rotate_y = 0
             self.rotate_z = 0
         elif key == '+':
             POINT_SIZE += 1
+            if POINT_SIZE > ps_max:  POINT_SIZE = ps_max
         elif key == '-':
             POINT_SIZE -= 1
-            if POINT_SIZE < 1:  POINT_SIZE = 1
+            if POINT_SIZE < ps_min:  POINT_SIZE = ps_min
         elif key == '<':
             self.rotate_z -= 1
         elif key == '>':
             self.rotate_z += 1
         elif key in '0123456789':
-            global COLORSCHEME
-            COLORSCHEME = int(key)
+            COLORMAP = int(key)
+        elif key == 'a':
+            ALPHA /= 1.03125
+            if ALPHA < 0.0:  ALPHA = 0.0
+        elif key == 'A':
+            ALPHA *= 1.03125
+            if ALPHA > 1.0:  ALPHA = 1.0
         elif key == 'r':
             if not COLORMASK['r']:
                 COLORMASK['r'] = True
@@ -292,24 +303,16 @@ class GLviewer(object):
                 COLORMASK['b'] = True
             else:
                 COLORMASK['b'] = False
-        elif key == 'c':
-            CONTRAST *= 2
-            if CONTRAST > 2**16:  CONTRAST = 2.0**16
-        elif key == 'C':
-            CONTRAST /= 2
-            if CONTRAST < 2**(-16):  CONTRAST = 2.0**(-16)
         elif key == 'Z':
             ZOOM_FACTOR *= 1.0078125
         elif key == 'z':
             ZOOM_FACTOR /= 1.0078125
         elif key == 'o' or key == 'O':
-            global TRACEORBITS
             if not TRACEORBITS:
                 TRACEORBITS = True
             else:
                 TRACEORBITS = False
         elif key == 'f' or key == 'F':
-            global FULLSCREEN
             if not FULLSCREEN:
                 glutFullScreen()
                 FULLSCREEN = True
@@ -317,7 +320,6 @@ class GLviewer(object):
                 glutReshapeWindow(WINDOW_WIDTH, WINDOW_HEIGHT)
                 FULLSCREEN = False
         elif key == 's' or key == 'S':
-            global RECORDSCREEN
             if not RECORDSCREEN:
                 RECORDSCREEN = True
             else:
@@ -412,63 +414,38 @@ class GLviewer(object):
         glutPostRedisplay()
 
 
-    def set_point_size_limits(self):
-        global POINT_SIZE
-        (ps_min, ps_max) = glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE)
-        if (POINT_SIZE > ps_max):
-            POINT_SIZE = ps_max
-        if (POINT_SIZE < ps_min):
-            POINT_SIZE = ps_min
+    def get_colors(self, qty):
+        qty /= qty.mean()
 
+        if COLORMAP == 0:
+            rgba = cm.gray(qty, alpha=ALPHA)
+        elif COLORMAP == 1:
+            rgba = cm.copper(qty, alpha=ALPHA)
+        elif COLORMAP == 2:
+            rgba = cm.hot(qty, alpha=ALPHA)
+        elif COLORMAP == 3:
+            rgba = cm.autumn(qty, alpha=ALPHA)
+        elif COLORMAP == 4:
+            rgba = cm.jet(qty, alpha=ALPHA)
+        elif COLORMAP == 5:
+            rgba = cm.cool(qty, alpha=ALPHA)
+        elif COLORMAP == 6:
+            rgba = cm.gist_rainbow(qty, alpha=ALPHA)
+        elif COLORMAP == 7:
+            rgba = cm.gist_stern(qty, alpha=ALPHA)
+        elif COLORMAP == 8:
+            rgba = cm.spectral(qty, alpha=ALPHA)
+        elif COLORMAP == 9:
+            rgba = cm.summer(qty, alpha=ALPHA)
 
-    def get_colors(self, obj):
-        if self._body_colors is None:
-            m = obj.mass
-
-            r = m**0.5
-            g = m
-            b = m**2.0
-
-            r /= r.mean()
-            g /= g.mean()
-            b /= b.mean()
-
-            self._body_colors = (r, g, b)
-
-        (r, g, b) = self._body_colors
-
-        if COLORSCHEME == 0:
-            colors = np.ones((len(obj), 3), dtype='f8')
-        elif COLORSCHEME == 1:
-            colors = (np.vstack((r, g, b)).T)
-        elif COLORSCHEME == 2:
-            colors = (np.vstack((b, g, r)).T)
-        elif COLORSCHEME == 3:
-            colors = (np.vstack((g, b, r)).T)
-        elif COLORSCHEME == 4:
-            colors = (np.vstack((g, r, b)).T)
-        elif COLORSCHEME == 5:
-            colors = (np.vstack((b, r, g)).T)
-        elif COLORSCHEME == 6:
-            colors = (np.vstack((r, b, g)).T)
-        elif COLORSCHEME == 7:
-            colors = (np.vstack((r, r, r)).T)
-        elif COLORSCHEME == 8:
-            colors = (np.vstack((g, g, g)).T)
-        elif COLORSCHEME == 9:
-            colors = (np.vstack((b, b, b)).T)
-
-        colors *= np.log10(1.0+CONTRAST)/3
-        return colors
+        return rgba
 
 
     def draw_system(self):
-        self.set_point_size_limits()
-
         bodies = self.particle['body']
         if bodies:
             points = bodies.pos
-            colors = self.get_colors(bodies)
+            colors = self.get_colors(bodies.mass)
 
 #            glPushMatrix()
 
