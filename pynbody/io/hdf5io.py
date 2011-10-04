@@ -65,7 +65,7 @@ class HDF5IO(object):
                 data_name = snap_grp.listnames()[0]
                 data_grp = snap_grp.require_group(data_name)
             else:
-                data_name = fobj.listnames()[0]
+                data_name = fobj.keys()[0]
                 data_grp = fobj.require_group(data_name)
             data = pickle.loads(data_grp.attrs['Class'])()
             for (k, v) in data_grp.items():

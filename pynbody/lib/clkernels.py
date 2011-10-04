@@ -130,7 +130,7 @@ class CLKernel(object):
 
         dest = np.empty(destshape, dtype=dtype)
 
-        cl.enqueue_read_buffer(self._queue, dev_dest, dest).wait()
+        cl.enqueue_copy(self._queue, dest, dev_dest)
 
         return dest
 
