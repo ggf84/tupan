@@ -58,6 +58,7 @@ class LeapFrog(object):
     def __init__(self, eta, time, particles, coefs=_coefs):
         self.eta = eta
         self.time = time
+        self.tstep = eta
         self.coefs = coefs
         particles.set_phi(particles)
         rhostep = particles.set_acc(particles)
@@ -70,6 +71,10 @@ class LeapFrog(object):
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "acc"):
                 self.dvel[key] = varstep * obj.acc
+
+
+        self.rstep = -self.e0.pot
+
 
 
     @timings
@@ -86,8 +91,10 @@ class LeapFrog(object):
         ejump = self.particles.get_total_energy_jump()
 #        varstep = 1.0
         varstep = 0.5 / ((e.kin - self.e0.tot) + ejump)
+#        varstep = 0.5 / self.rstep
         tau = 0.5 * stepcoef * self.eta * varstep
         self.time += tau
+        self.tstep += tau
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "evolve_pos"):
                 obj.evolve_pos(tau * obj.vel)
@@ -141,6 +148,10 @@ class LeapFrog(object):
                         obj.evolve_angmom_jump(tau * angmom_jump)
 
 
+        self.rstep = (2.0*(-e.pot))-self.rstep
+
+
+
     def stepDKD(self, stepcoef):
         """
 
@@ -157,6 +168,7 @@ class LeapFrog(object):
         """
 
         """
+        self.tstep = 0.0
         ncoefs = len(self.coefs)
         for coef in self.coefs:
             self.stepDKD(ncoefs*coef)

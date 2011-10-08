@@ -66,19 +66,15 @@ class Plummer(object):
     @timings
     def set_eps2(self, mass):
         n = self.num
-
-        eps_a = self.epsf * mass
-        eps_b = (self.epsf / (n * (n * mass)**0.5))
-
-        eps_a_mean = float(np.sum(mass*(eps_a**2)))**0.5
-        eps_b_mean = float(np.sum(mass*(eps_b**2)))**0.5
-
-        eps_a *= (eps_b_mean / eps_a_mean)
-
+        eps_a = mass
+        eps_b = (1.0 / (n * (n * mass)**0.5))
         if 'a' in self.epstype:
-            return eps_a
+            eps_a_mean = float(np.sum(mass*(eps_a**2)))**0.5
+            eps_b_mean = float(np.sum(mass*(eps_b**2)))**0.5
+            ratio = (eps_b_mean / eps_a_mean)
+            return self.epsf * ratio * eps_a
         elif 'b' in self.epstype:
-            return eps_b
+            return self.epsf * eps_b
         else:
             return 0
 
