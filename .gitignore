@@ -1,8 +1,9 @@
 build
 dist
+*.dat
+*.pyc
+*.png
 *.hdf5
 *.pkl.gz
 MANIFEST
-*.pyc
 pynbody/test/png
-*.png

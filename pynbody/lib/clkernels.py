@@ -8,6 +8,7 @@
 
 from __future__ import print_function
 import os
+from functools import reduce
 import numpy as np
 import pyopencl as cl
 from pynbody.lib.utils import timings

@@ -46,6 +46,7 @@ class Pbase(object):
 #            index = slice(index, index+1)
         s = self._data[index].copy()
         ret = self.__class__()
+        ret.__dict__.update(self.__dict__)
         ret.set_data(s)
         return ret
 

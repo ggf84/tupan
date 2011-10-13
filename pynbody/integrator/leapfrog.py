@@ -75,6 +75,8 @@ class LeapFrog(object):
 
         self.rstep = -self.e0.pot
 
+        self.dt = varstep
+
 
 
     @timings
@@ -90,8 +92,9 @@ class LeapFrog(object):
         e = self.particles.get_total_energies()
         ejump = self.particles.get_total_energy_jump()
 #        varstep = 1.0
-        varstep = 0.5 / ((e.kin - self.e0.tot) + ejump)
+#        varstep = 0.5 / ((e.kin - self.e0.tot) + ejump)
 #        varstep = 0.5 / self.rstep
+        varstep = self.dt
         tau = 0.5 * stepcoef * self.eta * varstep
         self.time += tau
         self.tstep += tau
@@ -125,11 +128,20 @@ class LeapFrog(object):
 #        varstep = 1.0
         varstep = 0.5 / (-e.pot)
         tau = stepcoef * self.eta * varstep
+
+        vdotf = 0.0
+
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "acc"):
                 g0 = self.dvel[key].copy()
                 self.dvel[key][:] = 2 * varstep * obj.acc - self.dvel[key]
                 g1 = self.dvel[key].copy()
+
+
+                v12 = obj.vel + 0.25 * tau * (g1-g0) / varstep
+                vdotf += np.sum(obj.mass * (v12*obj.acc).sum(1))
+
+
                 if hasattr(obj, "_pnacc"):
                     force_ext = -(obj.mass * obj._pnacc.T).T
                     if hasattr(obj, "evolve_energy_jump"):
@@ -150,6 +162,14 @@ class LeapFrog(object):
 
         self.rstep = (2.0*(-e.pot))-self.rstep
 
+#        self.dt = 2.0*varstep-self.dt
+#        self.dt = varstep*varstep/self.dt
+
+        dtau_dt = -((2 * varstep) * tau) * vdotf
+#        self.dt = varstep/(1.0 - 0.5 * dtau_dt)
+        self.dt = varstep * (dtau_dt + np.sqrt(dtau_dt**2 + 4.0))/2.0
+
+        self.dt = float(self.dt)
 
 
     def stepDKD(self, stepcoef):
