@@ -6,11 +6,11 @@
 """
 
 
-from .clkernels import *
+from .extensions import *
 from .gravity import *
 
 
-__all__ = ['clkernels', 'gravity']
+__all__ = ['extensions', 'gravity']
 
 
 ########## end of file ##########

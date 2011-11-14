@@ -16,6 +16,9 @@ import pyopencl as cl
 from pynbody.lib.utils import timings
 
 
+__all__ = ["Extensions"]
+
+
 def get_pattern(pattern, src_code):
     for line in src_code.splitlines():
         if pattern in line:
@@ -254,7 +257,6 @@ class Extensions(object):
 
 
 
-
 def build_kernels():
     dirname = os.path.dirname(__file__)
     abspath = os.path.abspath(dirname)
@@ -262,18 +264,6 @@ def build_kernels():
 
     # -------------------------------------------
     # Build kernels
-
-    cext_phi = Extensions(path)
-    cext_phi.load_source("p2p_phi_kernel.c")
-    cext_phi.build(dtype='d')
-
-    # -------------------------------------------
-
-    cext_acc = Extensions(path)
-    cext_acc.load_source("p2p_acc_kernel.c")
-    cext_acc.build(dtype='d')
-
-    # -------------------------------------------
 
     clext_phi = Extensions(path)
     clext_phi.load_source("p2p_phi_kernel.cl")
@@ -287,13 +277,34 @@ def build_kernels():
 
     # -------------------------------------------
 
+    cext_phi = Extensions(path)
+    cext_phi.load_source("p2p_phi_kernel.c")
+    cext_phi.build(dtype='d')
+
+    # -------------------------------------------
+
+    cext_acc = Extensions(path)
+    cext_acc.load_source("p2p_acc_kernel.c")
+    cext_acc.build(dtype='d')
+
+    # -------------------------------------------
+
     cext_pnacc = Extensions(path)
     cext_pnacc.load_source("p2p_pnacc_kernel.c")
     cext_pnacc.build(dtype='d')
 
     # -------------------------------------------
 
-    return cext_phi, cext_acc, clext_phi, clext_acc, cext_pnacc
+    kernels = {}
+    kernels["cl_lib64_p2p_phi_kernel"] = clext_phi
+    kernels["cl_lib64_p2p_acc_kernel"] = clext_acc
+    kernels["c_lib64_p2p_phi_kernel"] = cext_phi
+    kernels["c_lib64_p2p_acc_kernel"] = cext_acc
+    kernels["c_lib64_p2p_pnacc_kernel"] = cext_pnacc
+
+    # -------------------------------------------
+
+    return kernels
 
 
 
@@ -550,8 +561,7 @@ def set_particles(npart):
 def test_pnacc(cext, bi, bj):
     from pynbody.lib.gravity import Clight
 
-    clight = Clight(25.0)
-    pn_order = 4
+    clight = Clight(4, 25.0)
 
     # -------------------------------------------
 
@@ -563,8 +573,7 @@ def test_pnacc(cext, bi, bj):
             np.uint32(nj),
             iposmass, bi.vel,
             jposmass, bj.vel,
-            np.uint32(pn_order),
-            np.float64(clight.inv1),
+            np.uint32(clight.pn_order), np.float64(clight.inv1),
             np.float64(clight.inv2), np.float64(clight.inv3),
             np.float64(clight.inv4), np.float64(clight.inv5),
             np.float64(clight.inv6), np.float64(clight.inv7)
@@ -584,18 +593,17 @@ def test_pnacc(cext, bi, bj):
 
 
 
-
 if __name__ == "__main__":
 
     bi = set_particles(256)
 
-    cext_phi, cext_acc, clext_phi, clext_acc, cext_pnacc = build_kernels()
+    kernels = build_kernels()
 
-    compare(test_phi, cext_phi, clext_phi, bi)
-    compare(test_acc, cext_acc, clext_acc, bi)
+    compare(test_phi, kernels["c_lib64_p2p_phi_kernel"], kernels["cl_lib64_p2p_phi_kernel"], bi)
+    compare(test_acc, kernels["c_lib64_p2p_acc_kernel"], kernels["cl_lib64_p2p_acc_kernel"], bi)
 
-    performance_test(cext_phi, clext_phi, bi, output_shape="({ni},)")
-    performance_test(cext_acc, clext_acc, bi, output_shape="({ni},4)")
+    performance_test(kernels["c_lib64_p2p_phi_kernel"], kernels["cl_lib64_p2p_phi_kernel"], bi, output_shape="({ni},)")
+    performance_test(kernels["c_lib64_p2p_acc_kernel"], kernels["cl_lib64_p2p_acc_kernel"], bi, output_shape="({ni},4)")
 
 
 ##############################################
@@ -607,7 +615,7 @@ if __name__ == "__main__":
 #    bi = p['blackhole']
 #    print(bi._pnacc)
 
-#    pnacc = test_pnacc(cext_pnacc, bi, bi.copy())
+#    pnacc = test_pnacc(kernels["c_lib64_p2p_pnacc_kernel"], bi, bi.copy())
 
 #    print(pnacc[:,:3])
 

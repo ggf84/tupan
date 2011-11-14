@@ -5,10 +5,16 @@
 Setup Script
 """
 
-#from setuptools import setup
-from distutils.core import (setup, Extension)
+from distutils.core import setup
 import os
 import pynbody
+
+
+package_data = {}
+package_data['pynbody.analysis'] = [os.path.join('textures', 'glow.png')]
+package_data['pynbody.lib'] = [os.path.join('ext2', '*.c'),
+                               os.path.join('ext2', '*.h'),
+                               os.path.join('ext2', '*.cl')]
 
 
 classifiers = """
@@ -19,20 +25,6 @@ Programming Language :: C
 Programming Language :: Python
 Topic :: Scientific/Engineering
 """
-
-ext_modules = []
-path = os.path.join('pynbody', 'lib', 'ext')
-ext_modules.append(Extension('pynbody.lib.libgravity',
-                             include_dirs = [os.sep+path],
-                             libraries = ['m'],
-                             sources=[os.path.join(path, 'libgravity.c')]))
-
-package_data = {}
-package_data['pynbody.analysis'] = [os.path.join('textures', 'glow.png')]
-package_data['pynbody.lib'] = [os.path.join('ext', '*.c'),
-                               os.path.join('ext', '*.h'),
-                               os.path.join('ext', '*.cl')]
-
 
 
 setup(
@@ -49,7 +41,6 @@ setup(
               'pynbody.lib.utils',
               'pynbody.models',
               'pynbody.particles'],
-    ext_modules=ext_modules,
     package_data=package_data,
     scripts=['bin/pynbody'],
     url='http://github.com/GuilhermeFerrari/PyNbody',

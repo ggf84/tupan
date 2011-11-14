@@ -15,8 +15,7 @@ from .sph import Sph
 from .body import Body
 from .blackhole import BlackHole
 from pynbody.lib.utils import timings
-from pynbody.lib.gravity import Gravity
-gravity = Gravity()
+from pynbody.lib.gravity import gravity_kernels as gravity
 
 
 __all__ = ["Particles"]
@@ -38,7 +37,7 @@ class Particles(dict):
         Initializer
         """
         dict.__init__(self)
-        gravity.build_kernels()
+        gravity.build()
 
         self["sph"] = None
         self["body"] = None

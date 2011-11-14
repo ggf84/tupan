@@ -11,57 +11,20 @@ import sys
 import numpy as np
 from collections import namedtuple
 from pynbody.lib.utils import timings
-from pynbody.lib.clkernels import (cl_p2p_acc, cl_p2p_phi)
-try:
-    from pynbody.lib.libgravity import (c_p2p_acc, c_p2p_phi, c_p2p_pnacc)
-except:
-    pass
+from pynbody.lib import extensions
 
 
-__all__ = ['Gravity']
-
-
-KERNELS = None
-HAS_BUILT = False
-Kernels = namedtuple("Kernels", ["set_acc", "set_phi", "set_pnacc"])
-
-
-
-
-def cl_set_acc(bi, bj):
-    ret = cl_p2p_acc.run(bi, bj)
-    return (ret[:,:3], ret[:,3])
-
-def cl_set_phi(bi, bj):
-    phi = cl_p2p_phi.run(bi, bj)
-    return phi
-
-@timings
-def c_set_acc(bi, bj):
-    ret = c_p2p_acc(bi, bj)
-    return (ret[:,:3], ret[:,3])
-
-@timings
-def c_set_phi(bi, bj):
-    phi = c_p2p_phi(bi, bj)
-    return phi
-
-def c_set_pnacc(bi, bj, *optargs):
-    ret = c_p2p_pnacc(bi, bj, optargs)
-    return (ret[:,:3], ret[:,3])
-
-
-
-
+__all__ = ["Gravity", "gravity_kernels"]
 
 
 class Clight(object):
     """
 
     """
-    def __init__(self, clight):
-        self._clight = clight
-        self.inv1 = 1.0/clight
+    def __init__(self, pn_order, clight):
+        self.pn_order = int(pn_order)
+        self._clight = float(clight)
+        self.inv1 = 1.0/self._clight
         self.inv2 = self.inv1**2
         self.inv3 = self.inv1**3
         self.inv4 = self.inv1**4
@@ -70,18 +33,62 @@ class Clight(object):
         self.inv7 = self.inv1**7
 
 
-
-
 class Newtonian(object):
     """
     A base class for newtonian gravity.
     """
-    def __init__(self):
-        pass
+    def __init__(self, acc_kernel, phi_kernel):
+        self._acc_kernel = acc_kernel
+        self._phi_kernel = phi_kernel
 
-    def setup_kernels(self, kernels):
-        self._set_acc = kernels.set_acc
-        self._set_phi = kernels.set_phi
+
+    def _set_acc(self, iobj, jobj):
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        data = (np.uint32(ni),
+                np.uint32(nj),
+                iposmass, iobj.eps2,
+                jposmass, jobj.eps2)
+
+        output_buf = np.empty((ni,4))
+
+        # Adjusts global_size to be an integer multiple of local_size
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+        self._acc_kernel.load_data(*data, global_size=global_size,
+                                     local_size=local_size,
+                                     output_buf=output_buf)
+        self._acc_kernel.execute()
+        ret = self._acc_kernel.get_result()
+        return (ret[:,:3], ret[:,3])
+
+
+    def _set_phi(self, iobj, jobj):
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        data = (np.uint32(ni),
+                np.uint32(nj),
+                iposmass, iobj.eps2,
+                jposmass, jobj.eps2)
+
+        output_buf = np.empty(ni)
+
+        # Adjusts global_size to be an integer multiple of local_size
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+        self._phi_kernel.load_data(*data, global_size=global_size,
+                                     local_size=local_size,
+                                     output_buf=output_buf)
+        self._phi_kernel.execute()
+        ret = self._phi_kernel.get_result()
+        return ret
+
 
     # body-body
     def set_acc_b2b(self, iobj, jobj):
@@ -89,15 +96,6 @@ class Newtonian(object):
         Set body-body acc.
         """
         return self._set_acc(iobj, jobj)
-
-#        ret = self._set_acc(iobj, jobj)
-
-#        elapsed = self._set_acc.selftimer.elapsed
-#        print('Execution time of C kernel: {0:g} s'.format(elapsed))
-#        print('C kernel Gflops/s: {0:g}'.format(24*len(iobj)*len(jobj)/(elapsed*1e9)))
-
-#        return ret
-
 
     def set_phi_b2b(self, iobj, jobj):
         """
@@ -216,33 +214,62 @@ class PostNewtonian(object):
     """
     A base class for post-newtonian gravity.
     """
-    def __init__(self, pn_order, clight):
-        self._pn_order = pn_order
+    def __init__(self, clight, pnacc_kernel, pnphi_kernel):
         self._clight = clight
+        self._pnacc_kernel = pnacc_kernel
+        self._pnphi_kernel = pnphi_kernel
 
-    def setup_kernels(self, kernels):
-        self._set_pnacc = kernels.set_pnacc
-        self._set_pnphi = kernels.set_phi
 
     # blackhole-blackhole
     def set_acc_bh2bh(self, iobj, jobj):
         """
         Set blackhole-blackhole pn-acc.
         """
-        return self._set_pnacc(iobj, jobj, self._pn_order,
-                               self._clight.inv1, self._clight.inv2,
-                               self._clight.inv3, self._clight.inv4,
-                               self._clight.inv5, self._clight.inv6,
-                               self._clight.inv7)
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        clight = self._clight
+        data = (np.uint32(ni),
+                np.uint32(nj),
+                iposmass, iobj.vel,
+                jposmass, jobj.vel,
+                np.uint32(clight.pn_order), np.float64(clight.inv1),
+                np.float64(clight.inv2), np.float64(clight.inv3),
+                np.float64(clight.inv4), np.float64(clight.inv5),
+                np.float64(clight.inv6), np.float64(clight.inv7)
+               )
+        self._pnacc_kernel.load_data(*data)
+        self._pnacc_kernel.execute()
+        ret = self._pnacc_kernel.get_result()
+        return (ret[:,:3], ret[:,3])
+
 
     def set_phi_bh2bh(self, iobj, jobj):
         """
         Set blackhole-blackhole pn-phi.
         """
-        return self._set_pnphi(iobj, jobj)
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        data = (np.uint32(ni),
+                np.uint32(nj),
+                iposmass, iobj.eps2,
+                jposmass, jobj.eps2)
 
+        output_buf = np.empty(ni)
 
+        # Adjusts global_size to be an integer multiple of local_size
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
 
+        self._pnphi_kernel.load_data(*data, global_size=global_size,
+                                     local_size=local_size,
+                                     output_buf=output_buf)
+        self._pnphi_kernel.execute()
+        ret = self._pnphi_kernel.get_result()
+        return ret
 
 
 class Gravity(object):
@@ -250,52 +277,25 @@ class Gravity(object):
     A base class for gravitational interaction between different particle types.
     """
     def __init__(self, pn_order=4, clight=25.0):
-        self.newtonian = Newtonian()
-        self.post_newtonian = PostNewtonian(pn_order, Clight(clight))
+        self._clight = Clight(pn_order, clight)
+        self.newtonian = None
+        self.post_newtonian = None
+        self._has_built = False
 
 
-    def build_kernels(self):
-        global HAS_BUILT
-        if not HAS_BUILT:
-            try:
-#                raise
-                if not cl_p2p_acc.has_built():
-                    cl_p2p_acc.build_kernel()
-                if not cl_p2p_phi.has_built():
-                    cl_p2p_phi.build_kernel()
-#                raise
-            except Exception as e:
-                cl_p2p_acc.is_available = False
-                cl_p2p_phi.is_available = False
-                print(e)
-                ans = raw_input("A problem occurred with the loading of the OpenCL "
-                                "kernels.\nAttempting to continue with C extensions "
-                                "on the CPU only.\nDo you want to continue ([y]/n)? ")
-                ans = ans.lower()
-                if ans == 'n' or ans == 'no':
-                    print('exiting...')
-                    sys.exit(0)
-            HAS_BUILT = True
+    def build(self):
+        if not self._has_built:
+            kernels = extensions.build_kernels()
+            clight = self._clight
+            self.newtonian = Newtonian(kernels["cl_lib64_p2p_acc_kernel"],
+                                       kernels["cl_lib64_p2p_phi_kernel"])
+            self.post_newtonian = PostNewtonian(clight,
+                                                kernels["c_lib64_p2p_pnacc_kernel"],
+                                                kernels["cl_lib64_p2p_phi_kernel"])
+            self._has_built = True
 
-        global KERNELS
-        if not KERNELS:
-            if cl_p2p_phi.is_available:
-                set_phi = cl_set_phi
-            else:
-                set_phi = c_set_phi
 
-            if cl_p2p_acc.is_available:
-                set_acc = cl_set_acc
-            else:
-                set_acc = c_set_acc
-
-            set_pnacc = c_set_pnacc
-
-            KERNELS = Kernels(set_acc, set_phi, set_pnacc)
-
-        kernels = KERNELS
-        self.newtonian.setup_kernels(kernels)
-        self.post_newtonian.setup_kernels(kernels)
+gravity_kernels = Gravity()
 
 
 ########## end of file ##########
