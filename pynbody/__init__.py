@@ -6,14 +6,14 @@ A Python Toolkit for Astrophysical N-Body Simulations.
 """
 
 
-import analysis
-import integrator
-import io
-import lib
-import models
-import particles
-import simulation
-import version
+from . import analysis
+from . import integrator
+from . import io
+from . import lib
+from . import models
+from . import particles
+from . import simulation
+from . import version
 
 
 ########## end of file ##########
