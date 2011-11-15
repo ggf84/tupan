@@ -13,7 +13,7 @@ from warnings import warn
 from functools import reduce
 import numpy as np
 import pyopencl as cl
-from pynbody.lib.utils import timings
+from pynbody.lib.utils import (timings, Timer)
 
 
 __all__ = ["Extensions"]
@@ -468,7 +468,6 @@ def compare(test, cext, clext, bi):
 
 
 def performance_test(cext, clext, bi, output_shape, nsamples=5):
-    from pynbody.lib.utils.timing import Timer
     timer = Timer()
 
     bj = bi.copy()
