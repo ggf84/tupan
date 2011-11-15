@@ -10,8 +10,8 @@ from __future__ import (print_function, division)
 import sys
 import math
 import numpy as np
-from pynbody.lib.utils import timings
-from pynbody.io import HDF5IO
+from pynbody.lib.utils.timing import timings
+from pynbody.io.hdf5io import HDF5IO
 from pynbody.particles import Particles
 
 

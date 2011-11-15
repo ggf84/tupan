@@ -8,7 +8,7 @@
 from __future__ import print_function
 import numpy as np
 from scipy import (integrate, optimize)
-from pynbody.lib.utils import timings
+from pynbody.lib.utils.timing import timings
 
 
 __all__ = ['IMF']
@@ -87,7 +87,7 @@ class IMF(object):
     @classmethod
     def salpeter1955(self, mlow, mhigh):
         imf_func = lambda m: m**(-1.35)
-        min_mlow = 0.5
+        min_mlow = 0.4
         max_mhigh = 120.0
         imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
         return imf

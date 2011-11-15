@@ -4,7 +4,8 @@
 from __future__ import print_function
 
 if __name__ == "__main__":
-    from pynbody.models import (IMF, Plummer)
+    from pynbody.models.imf import IMF
+    from pynbody.models.plummer import Plummer
     from pynbody.particles import Particles
     import matplotlib.pyplot as plt
     import numpy as np
@@ -45,7 +46,7 @@ if __name__ == "__main__":
     p["blackhole"].eps2 *= 0
 
 
-    from pynbody.io import HDF5IO
+    from pynbody.io.hdf5io import HDF5IO
     io = HDF5IO("plummer"+str(numBodies-n_bh).zfill(4)+'b'+'-'+str(n_bh)+"bh")
     io.write_snapshot(p)
 

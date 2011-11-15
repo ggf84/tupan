@@ -5,8 +5,9 @@ from __future__ import print_function
 
 
 if __name__ == "__main__":
-    from pynbody.lib.utils import timings
-    from pynbody.models import (IMF, Plummer)
+    from pynbody.lib.utils.timing import timings
+    from pynbody.models.imf import IMF
+    from pynbody.models.plummer import Plummer
     import matplotlib.pyplot as plt
     import numpy as np
 

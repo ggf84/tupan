@@ -6,10 +6,7 @@
 """
 
 
-from .glviewer import *
-
-
-__all__ = ['glviewer']
+from . import glviewer
 
 
 ########## end of file ##########

@@ -6,14 +6,11 @@
 """
 
 
-from .block import *
-from .leapfrog import *
+from . import block
+from . import leapfrog
 
 
-__all__ = ['block', 'leapfrog']
-
-
-METHS = [LeapFrog, BlockStep]
+METHS = [leapfrog.LeapFrog, block.BlockStep]
 METH_NAMES = map(lambda m: m.__name__.lower(), METHS)
 
 

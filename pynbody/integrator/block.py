@@ -8,7 +8,7 @@
 from __future__ import print_function
 import numpy as np
 from pprint import pprint
-from pynbody.lib.utils import timings
+from pynbody.lib.utils.timing import timings
 
 
 __all__ = ['BlockStep']

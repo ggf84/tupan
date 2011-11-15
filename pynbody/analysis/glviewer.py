@@ -17,7 +17,7 @@ import string
 import Image
 import subprocess
 from matplotlib import cm
-from pynbody.lib.utils import (Timer, timings)
+from pynbody.lib.utils.timing import (Timer, timings)
 
 
 __all__ = ['GLviewer']

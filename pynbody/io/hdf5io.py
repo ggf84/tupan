@@ -8,7 +8,7 @@
 from __future__ import print_function
 import pickle
 import h5py
-from pynbody.lib.utils import timings
+from pynbody.lib.utils.timing import timings
 
 
 __all__ = ['HDF5IO']

@@ -10,8 +10,8 @@ different particle types at Newtonian and post-Newtonian approach.
 import sys
 import numpy as np
 from collections import namedtuple
-from pynbody.lib.utils import timings
-from pynbody.lib import extensions
+from .utils.timing import timings
+from . import extensions
 
 
 __all__ = ["Gravity", "gravity_kernels"]

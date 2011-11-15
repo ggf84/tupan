@@ -13,7 +13,7 @@ try:
    import cPickle as pickle
 except:
    import pickle
-from .analysis import GLviewer
+from .analysis.glviewer import GLviewer
 from .simulation import (Simulation, METH_NAMES)
 
 

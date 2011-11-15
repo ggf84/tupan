@@ -14,7 +14,7 @@ import numpy as np
 from .sph import Sph
 from .body import Body
 from .blackhole import BlackHole
-from pynbody.lib.utils import timings
+from pynbody.lib.utils.timing import timings
 from pynbody.lib.gravity import gravity_kernels as gravity
 
 

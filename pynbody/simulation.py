@@ -13,8 +13,8 @@ try:
    import cPickle as pickle
 except:
    import pickle
-from pynbody.lib.utils import timings
-from pynbody.io import HDF5IO
+from pynbody.lib.utils.timing import timings
+from pynbody.io.hdf5io import HDF5IO
 from pynbody.integrator import (METH_NAMES, METHS)
 
 

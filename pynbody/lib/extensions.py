@@ -13,7 +13,7 @@ from warnings import warn
 from functools import reduce
 import numpy as np
 import pyopencl as cl
-from pynbody.lib.utils import (timings, Timer)
+from .utils.timing import (Timer, timings)
 
 
 __all__ = ["Extensions"]

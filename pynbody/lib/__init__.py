@@ -6,11 +6,8 @@
 """
 
 
-from .extensions import *
-from .gravity import *
-
-
-__all__ = ['extensions', 'gravity']
+from . import extensions
+from . import gravity
 
 
 ########## end of file ##########

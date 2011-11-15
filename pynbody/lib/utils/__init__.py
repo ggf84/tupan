@@ -6,10 +6,7 @@
 """
 
 
-from .timing import *
-
-
-__all__ = ["timing"]
+from . import timing
 
 
 ########## end of file ##########

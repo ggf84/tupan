@@ -6,11 +6,8 @@
 """
 
 
-from .imf import *
-from .plummer import *
-
-
-__all__ = ['imf', 'plummer']
+from . import imf
+from . import plummer
 
 
 ########## end of file ##########
