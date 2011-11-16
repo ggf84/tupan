@@ -13,6 +13,7 @@ from . import lib
 from . import models
 from . import particles
 from . import simulation
+from . import tests
 from . import version
 
 

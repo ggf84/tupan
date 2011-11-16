@@ -6,4 +6,7 @@ Test Suite
 """
 
 
+from . import test_extensions
+
+
 ########## end of file ##########
