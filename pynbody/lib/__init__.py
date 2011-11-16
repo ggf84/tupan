@@ -8,6 +8,7 @@
 
 from . import extensions
 from . import gravity
+from . import utils
 
 
 ########## end of file ##########
