@@ -13,9 +13,9 @@ try:
    import cPickle as pickle
 except:
    import pickle
-from pynbody.lib.utils.timing import timings
-from pynbody.io.hdf5io import HDF5IO
-from pynbody.integrator import (METH_NAMES, METHS)
+from .io.hdf5io import HDF5IO
+from .integrator import Integrator
+from .lib.utils.timing import timings
 
 
 __all__ = ['Simulation']
@@ -123,18 +123,15 @@ class Simulation(object):
         ic = HDF5IO(self.args.input)
         particles = ic.read_snapshot()
 
-        # Set the method of integration.
-        self.Integrator = METHS[METH_NAMES.index(self.args.meth)]
-
         # Initializes the integrator.
-        self.integrator = self.Integrator(self.args.eta, 0.0, particles)
+        self.integrator = Integrator(self.args.eta, 0.0, particles,
+                                     meth=self.args.meth)
 
         # Initializes the diagnostic of the simulation.
         self.dia = Diagnostic(self.args.log_file, particles)
         self.dia.print_diagnostic(self.integrator.time,
                                   self.integrator.tstep,
                                   particles)
-
 
         # Initializes snapshots output.
         self.io = HDF5IO("snapshots")
@@ -164,11 +161,11 @@ class Simulation(object):
             if (self.integrator.time - self.oldtime_gl >= self.dt_gl):
                 self.oldtime_gl += self.dt_gl
                 if self.viewer:
-                    particles = self.integrator.gather()
+                    particles = self.integrator.particles
                     self.viewer.show_event(particles.copy())
             if (self.integrator.time - self.oldtime_dia >= self.dt_dia):
                 self.oldtime_dia += self.dt_dia
-                particles = self.integrator.gather()
+                particles = self.integrator.particles
                 self.dia.print_diagnostic(self.integrator.time,
                                           self.integrator.tstep,
                                           particles)

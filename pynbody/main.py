@@ -13,8 +13,9 @@ try:
    import cPickle as pickle
 except:
    import pickle
+from .integrator import Integrator
+from .simulation import Simulation
 from .analysis.glviewer import GLviewer
-from .simulation import (Simulation, METH_NAMES)
 
 
 def process_cmdline():
@@ -74,9 +75,9 @@ def process_cmdline():
     parser.add_argument('-m', '--meth',
                         type=str,
                         default='leapfrog',
-                        choices=METH_NAMES,
+                        choices=Integrator.METHS.keys(),
                         help='Integration method name {0} (type: str, default:'
-                             ' leapfrog).'.format(METH_NAMES)
+                             ' leapfrog).'.format(Integrator.METHS.keys())
                        )
     parser.add_argument('-o', '--out',
                         type=int,
