@@ -6,9 +6,9 @@
 """
 
 from __future__ import print_function
-from OpenGL.GL import *
-from OpenGL.GLU import *
-from OpenGL.GLUT import *
+import OpenGL.GL as gl
+import OpenGL.GLU as glu
+import OpenGL.GLUT as glut
 import numpy as np
 import os
 import sys
@@ -61,32 +61,32 @@ void main() {
 
 
 def define_shader():
-    shader_program = glCreateProgram()
+    shader_program = gl.glCreateProgram()
 
-#    glProgramParameteri(shader_program, GL_GEOMETRY_INPUT_TYPE_EXT, gl.GL_POINTS )
-#    glProgramParameteri(shader_program, GL_GEOMETRY_OUTPUT_TYPE_EXT, gl.GL_TRIANGLE_STRIP )
-#    glProgramParameteri(shader_program, GL_GEOMETRY_VERTICES_OUT_EXT, 4 )
+#    gl.glProgramParameteri(shader_program, gl.GL_GEOMETRY_INPUT_TYPE_EXT, gl.GL_POINTS )
+#    glProgramParameteri(shader_program, gl.GL_GEOMETRY_OUTPUT_TYPE_EXT, gl.GL_TRIANGLE_STRIP )
+#    glProgramParameteri(shader_program, gl.GL_GEOMETRY_VERTICES_OUT_EXT, 4 )
 
-    vobj = glCreateShader(GL_VERTEX_SHADER)
-    glShaderSource(vobj, vert)
-    glCompileShader(vobj)
-    print(glGetShaderInfoLog(vobj))
-    glAttachShader(shader_program, vobj)
+    vobj = gl.glCreateShader(gl.GL_VERTEX_SHADER)
+    gl.glShaderSource(vobj, vert)
+    gl.glCompileShader(vobj)
+    print(gl.glGetShaderInfoLog(vobj))
+    gl.glAttachShader(shader_program, vobj)
 
-#    gobj = glCreateShader(GL_GEOMETRY_SHADER)
-#    glShaderSource(gobj, geom)
-#    glCompileShader(gobj)
-#    print glGetShaderInfoLog(gobj)
-#    glAttachShader(shader_program, gobj)
+#    gobj = gl.glCreateShader(gl.GL_GEOMETRY_SHADER)
+#    gl.glShaderSource(gobj, geom)
+#    gl.glCompileShader(gobj)
+#    print gl.glGetShaderInfoLog(gobj)
+#    gl.glAttachShader(shader_program, gobj)
 
-    fobj = glCreateShader(GL_FRAGMENT_SHADER)
-    glShaderSource(fobj, frag)
-    glCompileShader(fobj)
-    print(glGetShaderInfoLog(fobj))
-    glAttachShader(shader_program, fobj)
+    fobj = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
+    gl.glShaderSource(fobj, frag)
+    gl.glCompileShader(fobj)
+    print(gl.glGetShaderInfoLog(fobj))
+    gl.glAttachShader(shader_program, fobj)
 
-    glLinkProgram(shader_program)
-    print(glGetProgramInfoLog(shader_program))
+    gl.glLinkProgram(shader_program)
+    print(gl.glGetProgramInfoLog(shader_program))
 
     return shader_program
 
@@ -129,13 +129,14 @@ class GLviewer(object):
         self.timer.start()
 
         cmdstring = ["ffmpeg", "-y",
-                     "-r", "60",
-                     "-b", "10000K",
+                     "-r", "30",
                      "-f", "image2pipe",
                      "-vcodec", "ppm",
                      "-i", "pipe:",
                      "-vcodec", "libx264",
                      "-vpre", "slow",
+                     "-qmin", "1",
+                     "-qmax", "11",
                      "movie.mp4"]
 
         self.ffmpeg = subprocess.Popen(cmdstring,
@@ -167,24 +168,24 @@ class GLviewer(object):
 
     def enter_main_loop(self):
         if not self.exitgl:
-            glutMainLoop()
+            glut.glutMainLoop()
 
 
     def show_event(self, particles):
         if not self.exitgl:
             self.set_particle(particles)
-            glutMainLoopEvent()
+            glut.glutMainLoopEvent()
 
 
     def initialize(self):
         self.init_window()
-        print('INFO: OpenGL Version: {0}'.format(glGetString(GL_VERSION)),
+        print('INFO: OpenGL Version: {0}'.format(gl.glGetString(gl.GL_VERSION)),
               file=sys.stderr)
         self.init_gl()
 
 
     def idle(self):
-        glutPostRedisplay()
+        glut.glutPostRedisplay()
 
 
     def resize_func(self, width, height):
@@ -192,7 +193,7 @@ class GLviewer(object):
             height = 1
         self.window_width = width
         self.window_height = height
-        glViewport(0, 0, width, height)
+        gl.glViewport(0, 0, width, height)
 
 
     def show_fps(self, secs=0.0):
@@ -204,8 +205,8 @@ class GLviewer(object):
             win_title = fmt.format(WINDOW_TITLE_PREFIX,
                                    self.frame_count / elapsed_time,
                                    self.window_width, self.window_height)
-            glutSetWindow(self.window_handle)
-            glutSetWindowTitle(win_title)
+            glut.glutSetWindow(self.window_handle)
+            glut.glutSetWindowTitle(win_title)
             self.frame_count = 0
             self.timer.start()
 
@@ -218,11 +219,11 @@ class GLviewer(object):
         if (ZOOM_FACTOR < 0.0001/beta):
             ZOOM_FACTOR = 0.0001/beta
         theta = beta * ZOOM_FACTOR
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
         ratio = float(self.window_width)/float(self.window_height)
-        gluPerspective(theta, ratio, 0.1, 20000.0)
-        glMatrixMode(GL_MODELVIEW)
+        glu.gluPerspective(theta, ratio, 0.1, 20000.0)
+        gl.glMatrixMode(gl.GL_MODELVIEW)
 
 
     def rotate(self, sign=1):
@@ -242,13 +243,13 @@ class GLviewer(object):
         elif self.rot_z < 0:
             self.rot_z += 360
         if sign > 0:
-            glRotatef(self.rot_x, 1.0, 0.0, 0.0)
-            glRotatef(self.rot_y, 0.0, 1.0, 0.0)
-            glRotatef(self.rot_z, 0.0, 0.0, 1.0)
+            gl.glRotatef(self.rot_x, 1.0, 0.0, 0.0)
+            gl.glRotatef(self.rot_y, 0.0, 1.0, 0.0)
+            gl.glRotatef(self.rot_z, 0.0, 0.0, 1.0)
         if sign < 0:
-            glRotatef(-self.rot_z, 0.0, 0.0, 1.0)
-            glRotatef(-self.rot_y, 0.0, 1.0, 0.0)
-            glRotatef(-self.rot_x, 1.0, 0.0, 0.0)
+            gl.glRotatef(-self.rot_z, 0.0, 0.0, 1.0)
+            gl.glRotatef(-self.rot_y, 0.0, 1.0, 0.0)
+            gl.glRotatef(-self.rot_x, 1.0, 0.0, 0.0)
 
 
     def keyboard(self, key, x, y):
@@ -259,7 +260,7 @@ class GLviewer(object):
         global RECORDSCREEN
         global TRACEORBITS
         global ZOOM_FACTOR
-        (ps_min, ps_max) = glGetFloatv(GL_ALIASED_POINT_SIZE_RANGE)
+        (ps_min, ps_max) = gl.glGetFloatv(gl.GL_ALIASED_POINT_SIZE_RANGE)
         if key == ' ':
             self.rotate_x = 0
             self.rotate_y = 0
@@ -314,10 +315,10 @@ class GLviewer(object):
                 TRACEORBITS = False
         elif key == 'f' or key == 'F':
             if not FULLSCREEN:
-                glutFullScreen()
+                glut.glutFullScreen()
                 FULLSCREEN = True
             else:
-                glutReshapeWindow(WINDOW_WIDTH, WINDOW_HEIGHT)
+                glut.glutReshapeWindow(WINDOW_WIDTH, WINDOW_HEIGHT)
                 FULLSCREEN = False
         elif key == 's' or key == 'S':
             if not RECORDSCREEN:
@@ -326,56 +327,57 @@ class GLviewer(object):
                 RECORDSCREEN = False
         elif key == ESCAPE:
             self.exitgl = True
-            glutLeaveMainLoop()
-            glutHideWindow()
+            glut.glutLeaveMainLoop()
+            glut.glutHideWindow()
 
 
     def keyboard_s(self, key, x, y):
-        mkey = glutGetModifiers()
-        if mkey == GLUT_ACTIVE_CTRL:
+        mkey = glut.glutGetModifiers()
+        if mkey == glut.GLUT_ACTIVE_CTRL:
             pass
-        elif mkey == GLUT_ACTIVE_ALT:
+        elif mkey == glut.GLUT_ACTIVE_ALT:
             pass
         else:
-            if key == GLUT_KEY_UP:
+            if key == glut.GLUT_KEY_UP:
                 self.rotate_x += 1
-            elif key == GLUT_KEY_DOWN:
+            elif key == glut.GLUT_KEY_DOWN:
                 self.rotate_x -= 1
-            elif key == GLUT_KEY_LEFT:
+            elif key == glut.GLUT_KEY_LEFT:
                 self.rotate_y -= 1
-            elif key == GLUT_KEY_RIGHT:
+            elif key == glut.GLUT_KEY_RIGHT:
                 self.rotate_y += 1
 
 
     def init_window(self):
-        glutInit(sys.argv)
-        glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH)
-        glutInitWindowPosition((glutGet(GLUT_SCREEN_WIDTH)-self.window_width)/2,
-                               (glutGet(GLUT_SCREEN_HEIGHT)-self.window_height)/2)
-        glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,
-                      GLUT_ACTION_CONTINUE_EXECUTION)
-        glutInitWindowSize(self.window_width, self.window_height)
-        self.window_handle = glutCreateWindow(WINDOW_TITLE_PREFIX)
-        glutDisplayFunc(self.render_func)
-        glutReshapeFunc(self.resize_func)
-        glutKeyboardFunc(self.keyboard)
-        glutSpecialFunc(self.keyboard_s)
-#        glutIdleFunc(self.idle)
+        glut.glutInit(sys.argv)
+        glut.glutInitDisplayMode(glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_DEPTH)
+        glut.glutInitWindowPosition(
+                    (glut.glutGet(glut.GLUT_SCREEN_WIDTH)-self.window_width)/2,
+                    (glut.glutGet(glut.GLUT_SCREEN_HEIGHT)-self.window_height)/2)
+        glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE,
+                           glut.GLUT_ACTION_CONTINUE_EXECUTION)
+        glut.glutInitWindowSize(self.window_width, self.window_height)
+        self.window_handle = glut.glutCreateWindow(WINDOW_TITLE_PREFIX)
+        glut.glutDisplayFunc(self.render_func)
+        glut.glutReshapeFunc(self.resize_func)
+        glut.glutKeyboardFunc(self.keyboard)
+        glut.glutSpecialFunc(self.keyboard_s)
+#        glut.glutIdleFunc(self.idle)
 
 
     def init_gl(self):
-        glEnable(GL_DEPTH_TEST)
-        glClearColor(0.0, 0.0, 0.0, 0.0)
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glClearColor(0.0, 0.0, 0.0, 0.0)
+        gl.glColorMask(gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE, gl.GL_FALSE)
         self.textures['star'] = self.load_texture(os.path.join(texture_path,
                                                                'glow.png'))
         self.adjust_zoom()
 
 
     def record_screen(self):
-        glPixelStorei(GL_PACK_ALIGNMENT,8)
-        screenshot = glReadPixels(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
-                                  GL_RGBA, GL_UNSIGNED_BYTE)
+        gl.glPixelStorei(gl.GL_PACK_ALIGNMENT,8)
+        screenshot = gl.glReadPixels(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
+                                     gl.GL_RGBA, gl.GL_UNSIGNED_BYTE)
         im = Image.frombuffer('RGBA', (WINDOW_WIDTH, WINDOW_HEIGHT),
                               screenshot, 'raw', 'RGBA', 0, 1)
         im.save(self.ffmpeg.stdin, format='ppm')
@@ -385,21 +387,21 @@ class GLviewer(object):
     @timings
     def render_func(self):
         if not TRACEORBITS:
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         else:
-            glClear(GL_DEPTH_BUFFER_BIT)
+            gl.glClear(gl.GL_DEPTH_BUFFER_BIT)
         if COLORMASK['r']:
-            glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE)
+            gl.glColorMask(gl.GL_TRUE, gl.GL_FALSE, gl.GL_FALSE, gl.GL_FALSE)
         elif COLORMASK['g']:
-            glColorMask(GL_FALSE, GL_TRUE, GL_FALSE, GL_FALSE)
+            gl.glColorMask(gl.GL_FALSE, gl.GL_TRUE, gl.GL_FALSE, gl.GL_FALSE)
         elif COLORMASK['b']:
-            glColorMask(GL_FALSE, GL_FALSE, GL_TRUE, GL_FALSE)
+            gl.glColorMask(gl.GL_FALSE, gl.GL_FALSE, gl.GL_TRUE, gl.GL_FALSE)
         else:
-            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE)
+            gl.glColorMask(gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE, gl.GL_FALSE)
 
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-        glTranslatef(0.0, 0.0, -10000.05)
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glLoadIdentity()
+        gl.glTranslatef(0.0, 0.0, -10000.05)
         self.adjust_zoom()
         self.rotate(1)
 
@@ -410,12 +412,12 @@ class GLviewer(object):
 
         self.show_fps(1.0)
 
-        glutSwapBuffers()
-        glutPostRedisplay()
+        glut.glutSwapBuffers()
+        glut.glutPostRedisplay()
 
 
     def get_colors(self, qty):
-        qty /= qty.mean()
+        qty = np.sqrt(qty/qty.mean())
 
         if COLORMAP == 0:
             rgba = cm.gray(qty, alpha=ALPHA)
@@ -426,17 +428,17 @@ class GLviewer(object):
         elif COLORMAP == 3:
             rgba = cm.autumn(qty, alpha=ALPHA)
         elif COLORMAP == 4:
-            rgba = cm.jet(qty, alpha=ALPHA)
-        elif COLORMAP == 5:
-            rgba = cm.cool(qty, alpha=ALPHA)
-        elif COLORMAP == 6:
-            rgba = cm.gist_rainbow(qty, alpha=ALPHA)
-        elif COLORMAP == 7:
-            rgba = cm.gist_stern(qty, alpha=ALPHA)
-        elif COLORMAP == 8:
-            rgba = cm.spectral(qty, alpha=ALPHA)
-        elif COLORMAP == 9:
             rgba = cm.summer(qty, alpha=ALPHA)
+        elif COLORMAP == 5:
+            rgba = cm.gist_stern(qty, alpha=ALPHA)
+        elif COLORMAP == 6:
+            rgba = cm.cool(qty, alpha=ALPHA)
+        elif COLORMAP == 7:
+            rgba = cm.spectral(qty, alpha=ALPHA)
+        elif COLORMAP == 8:
+            rgba = cm.jet(qty, alpha=ALPHA)
+        elif COLORMAP == 9:
+            rgba = cm.gist_rainbow(qty, alpha=ALPHA)
 
         return rgba
 
@@ -447,32 +449,32 @@ class GLviewer(object):
             points = bodies.pos
             colors = self.get_colors(bodies.mass)
 
-#            glPushMatrix()
+#            gl.glPushMatrix()
 
-#            glEnable(GL_TEXTURE_2D)
-#            glBindTexture(GL_TEXTURE_2D, self.textures['star'])
-#            glEnable(GL_VERTEX_PROGRAM_POINT_SIZE)
+#            gl.glEnable(gl.GL_TEXTURE_2D)
+#            gl.glBindTexture(gl.GL_TEXTURE_2D, self.textures['star'])
+#            gl.glEnable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
 
-#            glUseProgram(self.shader_program)
+#            gl.glUseProgram(self.shader_program)
 
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE)
-#            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-#            glBlendFunc(GL_DST_ALPHA, GL_ONE)
-#            glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+#            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+#            gl.glBlendFunc(gl.GL_DST_ALPHA, gl.GL_ONE)
+#            gl.glBlendFunc(gl.GL_DST_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
-            glDepthMask(GL_FALSE)
-            glEnable(GL_BLEND)
+            gl.glDepthMask(gl.GL_FALSE)
+            gl.glEnable(gl.GL_BLEND)
 
             self.draw_points(points, colors, self.textures['star'])
 
-            glDisable(GL_BLEND)
-            glDepthMask(GL_TRUE)
+            gl.glDisable(gl.GL_BLEND)
+            gl.glDepthMask(gl.GL_TRUE)
 
-#            glDisable(GL_VERTEX_PROGRAM_POINT_SIZE)
-#            glBindTexture(GL_TEXTURE_2D, 0)
-#            glDisable(GL_TEXTURE_2D)
+#            gl.glDisable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
+#            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+#            gl.glDisable(gl.GL_TEXTURE_2D)
 
-#            glPopMatrix()
+#            gl.glPopMatrix()
 
 
         blackholes = self.particle['blackhole']
@@ -485,33 +487,33 @@ class GLviewer(object):
 
 
     def draw_points(self, points, colors, texture):
-        glEnableClientState(GL_VERTEX_ARRAY)
-        glVertexPointerd(points)
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glVertexPointerd(points)
 
-        glEnableClientState(GL_COLOR_ARRAY)
-        glColorPointerd(colors)
+        gl.glEnableClientState(gl.GL_COLOR_ARRAY)
+        gl.glColorPointerd(colors)
 
-        glEnable(GL_TEXTURE_2D)
-        glBindTexture(GL_TEXTURE_2D, texture)
-        glEnable(GL_POINT_SPRITE)
-        glTexEnvf(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE)
+        gl.glEnable(gl.GL_TEXTURE_2D)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
+        gl.glEnable(gl.GL_POINT_SPRITE)
+        gl.glTexEnvf(gl.GL_POINT_SPRITE, gl.GL_COORD_REPLACE, gl.GL_TRUE)
 
-        glPointSize(POINT_SIZE)
-        glDrawArrays(GL_POINTS, 0, len(points))
+        gl.glPointSize(POINT_SIZE)
+        gl.glDrawArrays(gl.GL_POINTS, 0, len(points))
 
-        glTexEnvf(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_FALSE)
-        glDisable(GL_POINT_SPRITE)
-        glBindTexture(GL_TEXTURE_2D, 0)
-        glDisable(GL_TEXTURE_2D)
+        gl.glTexEnvf(gl.GL_POINT_SPRITE, gl.GL_COORD_REPLACE, gl.GL_FALSE)
+        gl.glDisable(gl.GL_POINT_SPRITE)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+        gl.glDisable(gl.GL_TEXTURE_2D)
 
-        glPointSize(1.0)
-        glDrawArrays(GL_POINTS, 0, len(points))
+        gl.glPointSize(1.0)
+        gl.glDrawArrays(gl.GL_POINTS, 0, len(points))
 
-        glColorPointerd(None)
-        glDisableClientState(GL_COLOR_ARRAY)
+        gl.glColorPointerd(None)
+        gl.glDisableClientState(gl.GL_COLOR_ARRAY)
 
-        glVertexPointerd(None)
-        glDisableClientState(GL_VERTEX_ARRAY)
+        gl.glVertexPointerd(None)
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
 
 
     def load_texture(self, name):
@@ -530,16 +532,16 @@ class GLviewer(object):
         image = image.tostring('raw', 'RGBA', 0, -1)
 
         # Create Texture
-        id = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, id)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-#        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0,
-                     GL_RGBA, GL_UNSIGNED_BYTE, image)
+        id = gl.glGenTextures(1)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, id)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+#        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_GENERATE_MIPMAP, gl.GL_TRUE)
+        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, ix, iy, 0,
+                        gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, image)
 
         image = None
         return id
