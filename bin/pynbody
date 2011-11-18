@@ -6,8 +6,11 @@
 """
 
 
-from pynbody.main import pynbody_main
-pynbody_main()
+from pynbody import _main as main
+
+
+if __name__ == "__main__":
+    main()
 
 
 ########## end of file ##########

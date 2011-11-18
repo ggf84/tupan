@@ -9,10 +9,8 @@ from __future__ import print_function
 import sys
 import math
 import gzip
-try:
-   import cPickle as pickle
-except:
-   import pickle
+import pickle
+from pprint import pprint
 from .io.hdf5io import HDF5IO
 from .integrator import Integrator
 from .lib.utils.timing import timings
@@ -118,6 +116,10 @@ class Simulation(object):
     def __init__(self, args, viewer):
         self.args = args
         self.viewer = viewer
+
+        print('#'*40, file=sys.stderr)
+        pprint(args.__dict__, stream=sys.stderr)
+        print('#'*40, file=sys.stderr)
 
         # Read the initial conditions.
         ic = HDF5IO(self.args.input)
