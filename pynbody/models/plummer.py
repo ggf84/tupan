@@ -10,9 +10,9 @@ from __future__ import (print_function, division)
 import sys
 import math
 import numpy as np
-from pynbody.lib.utils.timing import timings
-from pynbody.io.hdf5io import HDF5IO
+from pynbody.io import IO
 from pynbody.particles import Particles
+from pynbody.lib.utils.timing import timings
 
 
 __all__ = ['Plummer']
@@ -152,7 +152,7 @@ class Plummer(object):
 
 
     def write_snapshot(self, fname="plummer"):
-        io = HDF5IO(fname, 'w')
+        io = IO(fname, fmode='w', interface="hdf5io")
         io.write_snapshot(self.particles)
 
 

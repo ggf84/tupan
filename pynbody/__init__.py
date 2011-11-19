@@ -20,48 +20,15 @@ from . import tests
 from . import version
 
 
-def _newrun_main(args):
-
-    if args.log_file == _sys.stdout:
-        args.log_file = _sys.stdout.name
-
-    if args.debug_file == _sys.stderr:
-        args.debug_file = _sys.stderr.name
-
-    # --------------------------------------------------------------------------
-
-    viewer = analysis.glviewer.GLviewer() if args.view else None
-    mysim = simulation.Simulation(args, viewer)
-    mysim.evolve()
-    mysim.print_timings()
-    return 0
-
-
-def _restart_main(args):
-    import gzip
-    import pickle
-#    with gzip.open("restart.pkl.gz", "rb") as fobj:
-#        mysim = pickle.load(fobj)
-
-    # <py2.6>
-    fobj = gzip.open(args.restart_file, "rb")
-    mysim = pickle.load(fobj)
-    fobj.close()
-    # </py2.6>
-
-    # update args
-    mysim.args.tmax = args.tmax
-    if not args.eta is None:
-        mysim.integrator._meth.eta = args.eta
-
-    mysim.evolve()
-    mysim.print_timings()
-    return 0
-
-
 def _main():
     """
-    Process command line arguments.
+    The PyNbody's main function.
+
+    Here we process command line arguments and call specific functions to run a
+    new N-body simulation or restart from a previous run.
+
+    NOTE: You shouldn't be able to call this function from a python session.
+          Instead you must call pynbody's script directly from a unix shell.
     """
     import argparse
 
@@ -96,13 +63,19 @@ def _main():
                          help="Time to end the simulation (type: float, default"
                               ": None)."
                        )
-    meth_names = integrator.Integrator.METHS.keys()
     newrun.add_argument("-m", "--meth",
                         type=str,
                         default="leapfrog",
-                        choices=meth_names,
-                        help="Integration method name {0} (type: str, default:"
-                             " leapfrog).".format(meth_names)
+                        choices=integrator.Integrator.METHS.keys(),
+                        help="Integration method name (type: str, default:"
+                             " 'leapfrog')."
+                       )
+    newrun.add_argument("--io_interface",
+                        type=str,
+                        default="hdf5io",
+                        choices=io.IO.INTERFACES.keys(),
+                        help="Data Input/Output Interface (type: str, default: "
+                             "'hdf5io')."
                        )
     newrun.add_argument("--log_file",
                         type=str,
@@ -149,7 +122,7 @@ def _main():
 #                             "ticle output (type: int, default: None)."
 #                             " XXX: NOT IMPLEMENTED."
 #                       )
-    newrun.set_defaults(func=_newrun_main)
+    newrun.set_defaults(func=_main_newrun)
 
     # --------------------------------------------------------------------------
     # add subparser restart
@@ -176,7 +149,7 @@ def _main():
                               "from (type: str, default: 'restart.pkl.gz')."
                         )
 
-    restart.set_defaults(func=_restart_main)
+    restart.set_defaults(func=_main_restart)
 
     # --------------------------------------------------------------------------
     # parse the command line
@@ -184,6 +157,45 @@ def _main():
 
     # call the appropriate function
     args.func(args)
+
+
+def _main_newrun(args):
+
+    if args.log_file == _sys.stdout:
+        args.log_file = _sys.stdout.name
+
+    if args.debug_file == _sys.stderr:
+        args.debug_file = _sys.stderr.name
+
+    # --------------------------------------------------------------------------
+
+    viewer = analysis.glviewer.GLviewer() if args.view else None
+    mysim = simulation.Simulation(args, viewer)
+    mysim.evolve()
+    mysim.print_timings()
+    return 0
+
+
+def _main_restart(args):
+    import gzip
+    import pickle
+#    with gzip.open("restart.pkl.gz", "rb") as fobj:
+#        mysim = pickle.load(fobj)
+
+    # <py2.6>
+    fobj = gzip.open(args.restart_file, "rb")
+    mysim = pickle.load(fobj)
+    fobj.close()
+    # </py2.6>
+
+    # update args
+    mysim.args.tmax = args.tmax
+    if not args.eta is None:
+        mysim.integrator._meth.eta = args.eta
+
+    mysim.evolve()
+    mysim.print_timings()
+    return 0
 
 
 ########## end of file ##########

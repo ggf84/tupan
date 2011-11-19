@@ -11,7 +11,7 @@ import math
 import gzip
 import pickle
 from pprint import pprint
-from .io.hdf5io import HDF5IO
+from .io import IO
 from .integrator import Integrator
 from .lib.utils.timing import timings
 
@@ -122,7 +122,7 @@ class Simulation(object):
         print('#'*40, file=sys.stderr)
 
         # Read the initial conditions.
-        ic = HDF5IO(self.args.input)
+        ic = IO(self.args.input, interface=self.args.io_interface)
         particles = ic.read_snapshot()
 
         # Initializes the integrator.
@@ -136,7 +136,7 @@ class Simulation(object):
                                   particles)
 
         # Initializes snapshots output.
-        self.io = HDF5IO("snapshots")
+        self.io = IO("snapshots", interface=self.args.io_interface)
         self.snap_count = 0
         snap_name = "snap_" + str(self.snap_count).zfill(5)
         self.io.write_snapshot(particles, snap_name, self.integrator.time)

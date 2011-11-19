@@ -46,8 +46,9 @@ if __name__ == "__main__":
     p["blackhole"].eps2 *= 0
 
 
-    from pynbody.io.hdf5io import HDF5IO
-    io = HDF5IO("plummer"+str(numBodies-n_bh).zfill(4)+'b'+'-'+str(n_bh)+"bh")
+    from pynbody.io import IO
+    io = IO("plummer"+str(numBodies-n_bh).zfill(4)+'b'+'-'+str(n_bh)+"bh",
+            interface="hdf5io")
     io.write_snapshot(p)
 
 
