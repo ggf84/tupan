@@ -2,170 +2,36 @@
 # -*- coding: utf-8 -*-
 
 """
-This module implements a minimal class for gravitational interactions between
-different particle types at Newtonian and post-Newtonian approach.
+This module implements a minimal class for gravitational interactions
+between particles in Newtonian and post-Newtonian approach.
 """
 
 
 import sys
 import numpy as np
 from collections import namedtuple
-from .utils.timing import timings
 from . import extensions
+from .utils.timing import timings
 
 
-__all__ = ["Gravity", "gravity_kernels"]
+__all__ = ["Gravity", "gravity_methods"]
 
 
 class Newtonian(object):
     """
-    A base class for newtonian gravity.
+    This class holds base methods for newtonian gravity.
     """
     def __init__(self, set_phi, set_acc):
-        self._set_phi = set_phi
-        self._set_acc = set_acc
-
-
-    # body-body
-    def set_acc_b2b(self, iobj, jobj):
-        """
-        Set body-body acc.
-        """
-        return self._set_acc(iobj, jobj)
-
-    def set_phi_b2b(self, iobj, jobj):
-        """
-        Set body-body phi.
-        """
-        return self._set_phi(iobj, jobj)
-
-    # body-blackhole
-    def set_acc_b2bh(self, iobj, jobj):
-        """
-        Set body-blackhole acc.
-        """
-        return self._set_acc(iobj, jobj)
-
-    def set_phi_b2bh(self, iobj, jobj):
-        """
-        Set body-blackhole phi.
-        """
-        return self._set_phi(iobj, jobj)
-
-    # body-sph
-    def set_acc_b2sph(self, iobj, jobj):
-        """
-        Set body-sph acc.
-        """
-        return self._set_acc(iobj, jobj)
-
-    def set_phi_b2sph(self, iobj, jobj):
-        """
-        Set body-sph phi.
-        """
-        return self._set_phi(iobj, jobj)
-
-
-    # blackhole-blackhole
-    def set_acc_bh2bh(self, iobj, jobj):
-        """
-        Set blackhole-blackhole acc.
-        """
-        return self._set_acc(iobj, jobj)
-
-    def set_phi_bh2bh(self, iobj, jobj):
-        """
-        Set blackhole-blackhole phi.
-        """
-        return self._set_phi(iobj, jobj)
-
-    # blackhole-body
-    def set_acc_bh2b(self, iobj, jobj):
-        """
-        Set blackhole-body acc.
-        """
-        return self._set_acc(iobj, jobj)
-
-    def set_phi_bh2b(self, iobj, jobj):
-        """
-        Set blackhole-body phi.
-        """
-        return self._set_phi(iobj, jobj)
-
-    # blackhole-sph
-    def set_acc_bh2sph(self, iobj, jobj):
-        """
-        Set blackhole-sph acc.
-        """
-        return self._set_acc(iobj, jobj)
-
-    def set_phi_bh2sph(self, iobj, jobj):
-        """
-        Set blackhole-sph phi.
-        """
-        return self._set_phi(iobj, jobj)
-
-
-    # sph-sph
-    def set_acc_sph2sph(self, iobj, jobj):
-        """
-        Set sph-sph acc.
-        """
-        return self._set_acc(iobj, jobj)
-
-    def set_phi_sph2sph(self, iobj, jobj):
-        """
-        Set sph-sph phi.
-        """
-        return self._set_phi(iobj, jobj)
-
-    # sph-body
-    def set_acc_sph2b(self, iobj, jobj):
-        """
-        Set sph-body acc.
-        """
-        return self._set_acc(iobj, jobj)
-
-    def set_phi_sph2b(self, iobj, jobj):
-        """
-        Set sph-body phi.
-        """
-        return self._set_phi(iobj, jobj)
-
-    # sph-blackhole
-    def set_acc_sph2bh(self, iobj, jobj):
-        """
-        Set sph-blackhole acc.
-        """
-        return self._set_acc(iobj, jobj)
-
-    def set_phi_sph2bh(self, iobj, jobj):
-        """
-        Set sph-blackhole phi.
-        """
-        return self._set_phi(iobj, jobj)
+        self.set_phi = set_phi
+        self.set_acc = set_acc
 
 
 class PostNewtonian(object):
     """
-    A base class for post-newtonian gravity.
+    This class holds base methods for post-newtonian gravity.
     """
-    def __init__(self, set_phi, set_pnacc):
-        self._set_phi = set_phi
-        self._set_pnacc = set_pnacc
-
-
-    def set_acc_bh2bh(self, iobj, jobj):
-        """
-        Set blackhole-blackhole pn-acc.
-        """
-        return self._set_pnacc(iobj, jobj)
-
-    def set_phi_bh2bh(self, iobj, jobj):
-        """
-        Set blackhole-blackhole pn-phi.
-        """
-        return self._set_phi(iobj, jobj)
+    def __init__(self, set_acc):
+        self.set_acc = set_acc
 
 
 class Clight(object):
@@ -185,7 +51,7 @@ class Clight(object):
 
 class Gravity(object):
     """
-    A base class for gravitational interaction between different particle types.
+    A base class for gravitational interaction between particles.
     """
     def __init__(self, pn_order=4, clight=25.0):
         self._clight = Clight(pn_order, clight)
@@ -205,7 +71,7 @@ class Gravity(object):
         if not self._has_built:
             self._setup()
             self.newtonian = Newtonian(self._set_phi, self._set_acc)
-            self.post_newtonian = PostNewtonian(self._set_phi, self._set_pnacc)
+            self.post_newtonian = PostNewtonian(self._set_pnacc)
             self._has_built = True
 
 
@@ -287,7 +153,7 @@ class Gravity(object):
         return (ret[:,:3], ret[:,3])
 
 
-gravity_kernels = Gravity()
+gravity_methods = Gravity()
 
 
 ########## end of file ##########

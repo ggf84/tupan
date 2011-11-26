@@ -10,6 +10,7 @@ from collections import namedtuple
 #from collections import (namedtuple, OrderedDict)
 import numpy as np
 from .pbase import Pbase
+from ..lib.interactor import interact
 
 
 __all__ = ["BlackHole"]
@@ -37,7 +38,7 @@ class BlackHole(Pbase):
         Pbase.__init__(self, numobjs, dtype)
 
         self._totalmass = None
-        self._own_total_epot = 0.0
+        self._self_total_epot = 0.0
 
         self._pnacc = None
         self._energy_jump = None
@@ -183,7 +184,7 @@ class BlackHole(Pbase):
         """
         Get the total potential energy.
         """
-        return float(np.sum(self.get_epot())) - self._own_total_epot
+        return float(np.sum(self.get_epot())) - self._self_total_epot
 
     def get_total_etot(self):
         """
@@ -212,7 +213,9 @@ class BlackHole(Pbase):
         """
         Set the individual gravitational potential due to other particles.
         """
-        (self.phi[:], self._own_total_epot) = objs._accumulate_phi_for(self)
+        (iphi, self_phi) = interact.phi_blackhole(self, objs)
+        self.phi[:] = iphi
+        self._self_total_epot = 0.5 * float(np.sum(self.mass * self_phi))
 
     def set_acc(self, objs):
         """
@@ -220,8 +223,10 @@ class BlackHole(Pbase):
         """
         if self._pnacc == None:
             self._pnacc = np.zeros_like(self.acc)
-        (self.acc[:], self._pnacc[:], rhostep) = objs._accumulate_acc_for(self)
-        return rhostep
+        (iacc, ipnacc, irhostep) = interact.acc_blackhole(self, objs)
+        self.acc[:] = iacc
+        self._pnacc[:] = ipnacc
+        return irhostep
 
 
     # Evolving methods

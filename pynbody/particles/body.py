@@ -10,6 +10,7 @@ from collections import namedtuple
 #from collections import (namedtuple, OrderedDict)
 import numpy as np
 from .pbase import Pbase
+from ..lib.interactor import interact
 
 
 __all__ = ["Body"]
@@ -37,7 +38,7 @@ class Body(Pbase):
         Pbase.__init__(self, numobjs, dtype)
 
         self._totalmass = None
-        self._own_total_epot = 0.0
+        self._self_total_epot = 0.0
 
 
     # Total Mass
@@ -149,7 +150,7 @@ class Body(Pbase):
         """
         Get the total potential energy.
         """
-        return float(np.sum(self.get_epot())) - self._own_total_epot
+        return float(np.sum(self.get_epot())) - self._self_total_epot
 
     def get_total_etot(self):
         """
@@ -175,14 +176,17 @@ class Body(Pbase):
         """
         Set the individual gravitational potential due to other particles.
         """
-        (self.phi[:], self._own_total_epot) = objs._accumulate_phi_for(self)
+        (iphi, self_phi) = interact.phi_body(self, objs)
+        self.phi[:] = iphi
+        self._self_total_epot = 0.5 * float(np.sum(self.mass * self_phi))
 
     def set_acc(self, objs):
         """
         Set the individual acceleration due to other particles.
         """
-        (self.acc[:], rhostep) = objs._accumulate_acc_for(self)
-        return rhostep
+        (iacc, irhostep) = interact.acc_body(self, objs)
+        self.acc[:] = iacc
+        return irhostep
 
 
     # Evolving methods
