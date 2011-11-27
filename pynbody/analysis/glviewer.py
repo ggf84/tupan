@@ -422,23 +422,23 @@ class GLviewer(object):
         if COLORMAP == 0:
             rgba = cm.gray(qty, alpha=ALPHA)
         elif COLORMAP == 1:
-            rgba = cm.copper(qty, alpha=ALPHA)
+            rgba = cm.afmhot(qty, alpha=ALPHA)
         elif COLORMAP == 2:
             rgba = cm.hot(qty, alpha=ALPHA)
         elif COLORMAP == 3:
-            rgba = cm.autumn(qty, alpha=ALPHA)
+            rgba = cm.gist_heat(qty, alpha=ALPHA)
         elif COLORMAP == 4:
-            rgba = cm.summer(qty, alpha=ALPHA)
+            rgba = cm.copper(qty, alpha=ALPHA)
         elif COLORMAP == 5:
-            rgba = cm.gist_stern(qty, alpha=ALPHA)
+            rgba = cm.gnuplot2(qty, alpha=ALPHA)
         elif COLORMAP == 6:
-            rgba = cm.cool(qty, alpha=ALPHA)
+            rgba = cm.gnuplot(qty, alpha=ALPHA)
         elif COLORMAP == 7:
-            rgba = cm.spectral(qty, alpha=ALPHA)
+            rgba = cm.gist_stern(qty, alpha=ALPHA)
         elif COLORMAP == 8:
-            rgba = cm.jet(qty, alpha=ALPHA)
+            rgba = cm.gist_earth(qty, alpha=ALPHA)
         elif COLORMAP == 9:
-            rgba = cm.gist_rainbow(qty, alpha=ALPHA)
+            rgba = cm.spectral(qty, alpha=ALPHA)
 
         return rgba
 
@@ -481,9 +481,28 @@ class GLviewer(object):
         if blackholes:
             points = blackholes.pos
             colors = np.zeros((len(blackholes), 3), dtype='f8')
-            colors[:,0].fill(1)
+            colors[:,1].fill(1)
             self.draw_points(points, colors, self.textures['star'])
+#            self.draw_circle(points, blackholes.mass)
 
+    def draw_circle(self, points, mass):
+        nsegs = 16
+        for pos, size in zip(points, mass):
+            x = pos[0]
+            y = pos[1]
+            z = pos[2]
+            radius = size * POINT_SIZE
+            gl.glPushMatrix()
+            gl.glColor3f(0.0, 1.0, 0.0)
+            gl.glBegin(gl.GL_LINE_LOOP)
+            for i in range(nsegs):
+                angle = 2*np.pi*i/nsegs
+                xx = x + (np.cos(angle) * radius)
+                yy = y + (np.sin(angle) * radius)
+                zz = z
+                gl.glVertex3f(xx, yy, zz)
+            gl.glEnd()
+            gl.glPopMatrix()
 
 
     def draw_points(self, points, colors, texture):
