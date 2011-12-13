@@ -40,5 +40,24 @@ acc_smooth(REAL r2, REAL hi2, REAL hj2)
 //    return 0.5*(acc_plummer_smooth(r2, 2*hi2) + acc_plummer_smooth(r2, 2*hj2));
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+// rho smoothing
+
+inline REAL
+rho_plummer_smooth(REAL r2, REAL h2)
+{
+    REAL rinv = rsqrt(r2 + h2);
+    REAL h2_rinv5 = THREE_FOURPI * h2 * rinv * rinv * rinv * rinv * rinv;
+    return ((r2 > 0) ? h2_rinv5:0);
+}
+
+inline REAL
+rho_smooth(REAL r2, REAL hi2, REAL hj2)
+{
+    return rho_plummer_smooth(r2, hi2 + hj2);
+//    return 0.5*(rho_plummer_smooth(r2, 2*hi2) + rho_plummer_smooth(r2, 2*hj2));
+}
+
 #endif  // SMOOTHING_H
 
