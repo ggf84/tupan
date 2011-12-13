@@ -16,9 +16,11 @@
     #ifdef DOUBLE
     typedef double REAL;
     #define rsqrt(x) (1.0/sqrt(x))
+//    #define rsqrt(x) (sqrt(1.0/(x)))
     #else
     typedef float REAL;
     #define rsqrt(x) (1.0/sqrtf(x))
+//    #define rsqrt(x) (sqrt(1.0/(x)))
     #endif
     #define min(a, b) ({ __typeof__ (a) _a = (a); \
                          __typeof__ (b) _b = (b); \

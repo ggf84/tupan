@@ -45,12 +45,19 @@ def compare_ret_C_vs_CL(kernels):
 
 
 def performance_C_vs_CL(kernels):
-    bi = set_particles(4096)
+    bi = set_particles(8192)
+    print("\n\nDouble Precision Performance:")
+    print("-----------------------------")
     performance_test(kernels["c_lib64_p2p_phi_kernel"],
                      kernels["cl_lib64_p2p_phi_kernel"], bi, output_shape="({ni},)")
     performance_test(kernels["c_lib64_p2p_acc_kernel"],
                      kernels["cl_lib64_p2p_acc_kernel"], bi, output_shape="({ni},4)")
-
+    print("\n\nSingle Precision Performance:")
+    print("-----------------------------")
+    performance_test(kernels["c_lib32_p2p_phi_kernel"],
+                     kernels["cl_lib32_p2p_phi_kernel"], bi, output_shape="({ni},)")
+    performance_test(kernels["c_lib32_p2p_acc_kernel"],
+                     kernels["cl_lib32_p2p_acc_kernel"], bi, output_shape="({ni},4)")
 
 
 
@@ -266,7 +273,8 @@ def performance_test(cext, clext, bi, output_shape, nsamples=5):
 
     c_gflops = cext.flops_count * ni * nj * 1.0e-9
     c_metrics = {"time": c_elapsed,
-                 "gflops": c_gflops/c_elapsed,
+                 "npart/s": np.sqrt(ni*nj)/c_elapsed,
+                 "gflop/s": c_gflops/c_elapsed,
                  "src_name": cext.src_name[0]}
     print("C metrics :", c_metrics)
 
@@ -285,7 +293,8 @@ def performance_test(cext, clext, bi, output_shape, nsamples=5):
 
     cl_gflops = clext.flops_count * ni * nj * 1.0e-9
     cl_metrics = {"time": cl_elapsed,
-                  "gflops": cl_gflops/cl_elapsed,
+                  "npart/s": np.sqrt(ni*nj)/cl_elapsed,
+                  "gflop/s": cl_gflops/cl_elapsed,
                   "src_name": clext.src_name[0]}
     print("CL metrics:", cl_metrics)
 
