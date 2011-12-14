@@ -9,7 +9,13 @@ Welcome to PyNbody's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
+
+    particles
+    models
+    io
+    integrator
+
 
 Indices and tables
 ==================
