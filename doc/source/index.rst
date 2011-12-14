@@ -33,7 +33,8 @@ with the growth of PyNbody.
 .. toctree::
     :maxdepth: 2
 
-    pynbody
+    user/index
+    api/index
 
 Indices and tables
 ==================
