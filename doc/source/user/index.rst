@@ -6,4 +6,5 @@ User Guide
 
     user.intro
     user.install
+    user.usage
 

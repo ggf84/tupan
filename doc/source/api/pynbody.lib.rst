@@ -41,6 +41,7 @@ Subpackages
 -----------
 
 .. toctree::
+    :maxdepth: 2
 
     pynbody.lib.utils
 

@@ -32,6 +32,7 @@ Subpackages
 -----------
 
 .. toctree::
+    :maxdepth: 2
 
     pynbody.analysis
     pynbody.integrator
