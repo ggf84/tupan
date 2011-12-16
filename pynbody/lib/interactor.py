@@ -110,7 +110,8 @@ class Interactor(object):
             irhostep += ret[1]
             sum_nj += len(jobj)
 
-        return (iacc, np.sqrt(irhostep/sum_nj))
+#        return (iacc, np.sqrt(irhostep/sum_nj))
+        return (iacc, irhostep)
 
 
     def acc_blackhole(self, iobj, objs):
@@ -138,7 +139,8 @@ class Interactor(object):
             irhostep += ret[1]
             sum_nj += len(jobj)
 
-        return (iacc, ipnacc, np.sqrt(irhostep/sum_nj))
+#        return (iacc, ipnacc, np.sqrt(irhostep/sum_nj))
+        return (iacc, ipnacc, irhostep)
 
 
     def acc_sph(self, iobj, objs):
@@ -164,7 +166,8 @@ class Interactor(object):
             irhostep += ret[1]
             sum_nj += len(jobj)
 
-        return (iacc, np.sqrt(irhostep/sum_nj))
+#        return (iacc, np.sqrt(irhostep/sum_nj))
+        return (iacc, irhostep)
 
 
 interact = Interactor()

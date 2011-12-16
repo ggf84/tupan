@@ -247,6 +247,8 @@ class BlackHole(Pbase):
         """
         Evolves energy jump by denergy_jump.
         """
+        if self._energy_jump == None:
+            self._energy_jump = np.zeros_like(self.phi)
         self._energy_jump += denergy_jump
 
     def evolve_com_pos_jump(self, dcom_pos_jump):

@@ -7,7 +7,7 @@
 
 from __future__ import print_function
 import numpy as np
-from pynbody.lib.utils.timing import timings
+from ..lib.utils.timing import timings
 
 
 __all__ = ["LeapFrog"]
@@ -60,23 +60,18 @@ class LeapFrog(object):
         self.time = time
         self.tstep = eta
         self.coefs = coefs
-        particles.set_phi(particles)
         rhostep = particles.set_acc(particles)
         self.particles = particles
-        self.e0 = self.particles.get_total_energies()
 
-#        varstep = 1.0
-        varstep = 0.5 / (-self.e0.pot)
+        self.gamma = 1.0
+
+        omega = self.get_omega(rhostep)
+        self.tau = self.get_tau(omega)
+
         self.dvel = {}
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "acc"):
-                self.dvel[key] = varstep * obj.acc
-
-
-        self.rstep = -self.e0.pot
-
-        self.dt = varstep
-
+                self.dvel[key] = self.tau * obj.acc
 
 
     @timings
@@ -84,25 +79,33 @@ class LeapFrog(object):
         return self.particles
 
 
+    def get_omega(self, rhostep):
+        omega = 0.0
+        for (key, value) in rhostep.items():
+            if value is not None:
+                omega += value.sum()
+        return omega
+
+    def get_tau(self, omega):
+        return float(self.eta / omega**self.gamma)
+
+    def get_dtau_dt(self, tau, omega, vdotf):
+        return -self.gamma * (tau/omega) * vdotf
+
+
     @timings
     def drift(self, stepcoef):
         """
 
         """
-        e = self.particles.get_total_energies()
-        ejump = self.particles.get_total_energy_jump()
-#        varstep = 1.0
-#        varstep = 0.5 / ((e.kin - self.e0.tot) + ejump)
-#        varstep = 0.5 / self.rstep
-        varstep = self.dt
-        tau = 0.5 * stepcoef * self.eta * varstep
-        self.time += tau
-        self.tstep += tau
+        varstep = 0.5 * stepcoef * self.tau
+        self.time += varstep
+        self.tstep += varstep
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "evolve_pos"):
-                obj.evolve_pos(tau * obj.vel)
+                obj.evolve_pos(varstep * obj.vel)
             if hasattr(obj, "evolve_com_pos_jump"):
-                obj.evolve_com_pos_jump(tau * obj._com_vel_jump)
+                obj.evolve_com_pos_jump(varstep * obj._com_vel_jump)
 
 
     @timings
@@ -110,10 +113,9 @@ class LeapFrog(object):
         """
 
         """
-        tau = 0.5 * stepcoef * self.eta
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "evolve_vel"):
-                obj.evolve_vel(tau * self.dvel[key])
+                obj.evolve_vel(0.5 * stepcoef * self.dvel[key])
 
 
     @timings
@@ -122,54 +124,45 @@ class LeapFrog(object):
 
         """
         rhostep = self.particles.set_acc(jparticles)
-        self.particles.set_phi(jparticles)
+        omega = self.get_omega(rhostep)
 
-        e = self.particles.get_total_energies()
-#        varstep = 1.0
-        varstep = 0.5 / (-e.pot)
-        tau = stepcoef * self.eta * varstep
+        self.tau = self.get_tau(omega)
+        varstep = stepcoef * self.tau
 
         vdotf = 0.0
 
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "acc"):
                 g0 = self.dvel[key].copy()
-                self.dvel[key][:] = 2 * varstep * obj.acc - self.dvel[key]
+                self.dvel[key][:] = 2 * self.tau * obj.acc - self.dvel[key]
                 g1 = self.dvel[key].copy()
 
-
-                v12 = obj.vel + 0.25 * tau * (g1-g0) / varstep
-                vdotf += np.sum(obj.mass * (v12*obj.acc).sum(1))
-
+                v12 = obj.vel + 0.25 * stepcoef * (g1-g0)
 
                 if hasattr(obj, "_pnacc"):
                     force_ext = -(obj.mass * obj._pnacc.T).T
                     if hasattr(obj, "evolve_energy_jump"):
-                        v12 = obj.vel + 0.25 * tau * (g1-g0) / varstep
                         energy_jump = (v12 * force_ext).sum(1)
-                        obj.evolve_energy_jump(tau * energy_jump)
+                        obj.evolve_energy_jump(varstep * energy_jump)
                     if hasattr(obj, "evolve_com_vel_jump"):
                         mtot = obj.get_total_mass()
                         com_vel_jump = force_ext.sum(0) / mtot
-                        obj.evolve_com_vel_jump(tau * com_vel_jump)
+                        obj.evolve_com_vel_jump(varstep * com_vel_jump)
                     if hasattr(obj, "evolve_linmom_jump"):
                         linmom_jump = force_ext
-                        obj.evolve_linmom_jump(tau * linmom_jump)
+                        obj.evolve_linmom_jump(varstep * linmom_jump)
                     if hasattr(obj, "evolve_angmom_jump"):
                         angmom_jump = np.cross(obj.pos, force_ext)
-                        obj.evolve_angmom_jump(tau * angmom_jump)
+                        obj.evolve_angmom_jump(varstep * angmom_jump)
 
+                vdotf += 2 * np.sum(obj.mass * (v12*obj.acc).sum(1))
 
-        self.rstep = (2.0*(-e.pot))-self.rstep
+        dtau_dt = self.get_dtau_dt(varstep, omega, vdotf)
 
-#        self.dt = 2.0*varstep-self.dt
-#        self.dt = varstep*varstep/self.dt
+#        symm_factor = 1.0/(1.0 - 0.5 * dtau_dt)
+        symm_factor = (dtau_dt + np.sqrt(dtau_dt**2 + 4.0))/2.0
 
-        dtau_dt = -((2 * varstep) * tau) * vdotf
-#        self.dt = varstep/(1.0 - 0.5 * dtau_dt)
-        self.dt = varstep * (dtau_dt + np.sqrt(dtau_dt**2 + 4.0))/2.0
-
-        self.dt = float(self.dt)
+        self.tau *= float(symm_factor)
 
 
     def stepDKD(self, stepcoef):
