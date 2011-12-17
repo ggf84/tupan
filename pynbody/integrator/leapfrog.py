@@ -69,7 +69,7 @@ class LeapFrog(object):
         vdotf = 0.0
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "acc"):
-                vdotf += 2 * np.sum(obj.mass * (obj.vel*obj.acc).sum(1))
+                vdotf += 4 * np.sum(obj.mass * (obj.vel*obj.acc).sum(1))
         omega = self.get_omega(rhostep)
         tau = self.get_tau(omega)
         dtau_dt = self.get_dtau_dt(tau, omega, vdotf) #* methcoef
@@ -160,7 +160,8 @@ class LeapFrog(object):
                         angmom_jump = np.cross(obj.pos, force_ext)
                         obj.evolve_angmom_jump(fullstep * angmom_jump)
 
-                vdotf += 2 * np.sum(obj.mass * (v12*obj.acc).sum(1))
+#                vdotf += 4 * np.sum(obj.mass * (obj.vel*obj.acc).sum(1))
+                vdotf += 4 * np.sum(obj.mass * (v12*obj.acc).sum(1))
 
         omega = self.get_omega(rhostep)
         tau = self.get_tau(omega)
