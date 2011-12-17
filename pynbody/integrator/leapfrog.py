@@ -60,13 +60,23 @@ class LeapFrog(object):
         self.time = time
         self.tstep = eta
         self.coefs = coefs
-        rhostep = particles.set_acc(particles)
         self.particles = particles
 
         self.gamma = 1.0
+        methcoef = len(self.coefs) * self.coefs[0]
+        rhostep = self.particles.set_acc(particles)
 
+        vdotf = 0.0
+        for (key, obj) in self.particles.iteritems():
+            if hasattr(obj, "acc"):
+                vdotf += 2 * np.sum(obj.mass * (obj.vel*obj.acc).sum(1))
         omega = self.get_omega(rhostep)
-        self.tau = self.get_tau(omega)
+        tau = self.get_tau(omega)
+        dtau_dt = self.get_dtau_dt(tau, omega, vdotf) #* methcoef
+        symm_factor = (dtau_dt + np.sqrt(dtau_dt**2 + 4.0))/2.0
+#        symm_factor = 1.0/(1.0 - 0.5 * dtau_dt)
+        self.tau = tau * float(symm_factor)
+
 
         self.dvel = {}
         for (key, obj) in self.particles.iteritems():
@@ -94,86 +104,85 @@ class LeapFrog(object):
 
 
     @timings
-    def drift(self, stepcoef):
+    def drift(self, step):
         """
 
         """
-        varstep = 0.5 * stepcoef * self.tau
-        self.time += varstep
-        self.tstep += varstep
+        self.tstep += step
+        self.time += step
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "evolve_pos"):
-                obj.evolve_pos(varstep * obj.vel)
+                obj.evolve_pos(step * obj.vel)
             if hasattr(obj, "evolve_com_pos_jump"):
-                obj.evolve_com_pos_jump(varstep * obj._com_vel_jump)
+                obj.evolve_com_pos_jump(step * obj._com_vel_jump)
 
 
     @timings
-    def kick(self, stepcoef):
+    def kick(self, step):
         """
 
         """
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "evolve_vel"):
-                obj.evolve_vel(0.5 * stepcoef * self.dvel[key])
+                obj.evolve_vel(step * self.dvel[key])
 
 
     @timings
-    def forceDKD(self, jparticles, stepcoef):
+    def forceDKD(self, jparticles, methcoef, currstep):
         """
 
         """
-        rhostep = self.particles.set_acc(jparticles)
-        omega = self.get_omega(rhostep)
-
-        self.tau = self.get_tau(omega)
-        varstep = stepcoef * self.tau
-
         vdotf = 0.0
+        fullstep = methcoef * currstep
+        rhostep = self.particles.set_acc(jparticles)
 
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "acc"):
                 g0 = self.dvel[key].copy()
-                self.dvel[key][:] = 2 * self.tau * obj.acc - self.dvel[key]
+                self.dvel[key][:] = 2 * currstep * obj.acc - self.dvel[key]
                 g1 = self.dvel[key].copy()
 
-                v12 = obj.vel + 0.25 * stepcoef * (g1-g0)
+                v12 = obj.vel + 0.25 * methcoef * (g1-g0)
 
                 if hasattr(obj, "_pnacc"):
                     force_ext = -(obj.mass * obj._pnacc.T).T
                     if hasattr(obj, "evolve_energy_jump"):
                         energy_jump = (v12 * force_ext).sum(1)
-                        obj.evolve_energy_jump(varstep * energy_jump)
+                        obj.evolve_energy_jump(fullstep * energy_jump)
                     if hasattr(obj, "evolve_com_vel_jump"):
                         mtot = obj.get_total_mass()
                         com_vel_jump = force_ext.sum(0) / mtot
-                        obj.evolve_com_vel_jump(varstep * com_vel_jump)
+                        obj.evolve_com_vel_jump(fullstep * com_vel_jump)
                     if hasattr(obj, "evolve_linmom_jump"):
                         linmom_jump = force_ext
-                        obj.evolve_linmom_jump(varstep * linmom_jump)
+                        obj.evolve_linmom_jump(fullstep * linmom_jump)
                     if hasattr(obj, "evolve_angmom_jump"):
                         angmom_jump = np.cross(obj.pos, force_ext)
-                        obj.evolve_angmom_jump(varstep * angmom_jump)
+                        obj.evolve_angmom_jump(fullstep * angmom_jump)
 
                 vdotf += 2 * np.sum(obj.mass * (v12*obj.acc).sum(1))
 
-        dtau_dt = self.get_dtau_dt(varstep, omega, vdotf)
-
-#        symm_factor = 1.0/(1.0 - 0.5 * dtau_dt)
+        omega = self.get_omega(rhostep)
+        tau = self.get_tau(omega)
+        dtau_dt = self.get_dtau_dt(tau, omega, vdotf) #* methcoef
         symm_factor = (dtau_dt + np.sqrt(dtau_dt**2 + 4.0))/2.0
+#        symm_factor = 1.0/(1.0 - 0.5 * dtau_dt)
 
-        self.tau *= float(symm_factor)
+        nexttau = tau * float(symm_factor)
+        return nexttau
 
 
-    def stepDKD(self, stepcoef):
+    def stepDKD(self, methcoef):
         """
 
         """
-        self.drift(stepcoef)
-        self.kick(stepcoef)
-        self.forceDKD(self.gather(), stepcoef)
-        self.kick(stepcoef)
-        self.drift(stepcoef)
+        currstep = self.tau
+        self.drift(0.5 * methcoef * currstep)
+        self.kick(0.5 * methcoef)
+        nextstep = self.forceDKD(self.gather(), methcoef, currstep)
+        self.kick(0.5 * methcoef)
+        self.drift(0.5 * methcoef * currstep)
+        self.tau = nextstep
 
 
     @timings
