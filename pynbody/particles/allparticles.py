@@ -263,11 +263,11 @@ class Particles(dict):
                 obj.set_phi(objs)
 
     @timings
-    def set_acc(self, objs):
+    def set_acc(self, objs, eta):
         rhostep = {}
         for (key, obj) in self.iteritems():
             if obj:
-                rhostep[key] = obj.set_acc(objs)
+                rhostep[key] = obj.set_acc(objs, eta)
             else:
                 rhostep[key] = None
         return rhostep

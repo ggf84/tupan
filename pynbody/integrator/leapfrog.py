@@ -58,25 +58,16 @@ class LeapFrog(object):
     def __init__(self, eta, time, particles, coefs=_coefs):
         self.eta = eta
         self.time = time
-        self.tstep = eta
         self.coefs = coefs
         self.particles = particles
 
-        self.gamma = 1.0
+        self.gamma = 0.5
         methcoef = len(self.coefs) * self.coefs[0]
-        rhostep = self.particles.set_acc(particles)
+        omega = self.particles.set_acc(particles, 0.0)
 
-        vdotf = 0.0
-        for (key, obj) in self.particles.iteritems():
-            if hasattr(obj, "acc"):
-                vdotf += 4 * np.sum(obj.mass * (obj.vel*obj.acc).sum(1))
-        omega = self.get_omega(rhostep)
-        tau = self.get_tau(omega)
-        dtau_dt = self.get_dtau_dt(tau, omega, vdotf) #* methcoef
-        symm_factor = (dtau_dt + np.sqrt(dtau_dt**2 + 4.0))/2.0
-#        symm_factor = 1.0/(1.0 - 0.5 * dtau_dt)
-        self.tau = tau * float(symm_factor)
-
+        reduced_omega = self.reduce_omega(omega)
+        self.tau = self.get_tau(reduced_omega)
+        self.tstep = self.tau
 
         self.dvel = {}
         for (key, obj) in self.particles.iteritems():
@@ -89,7 +80,7 @@ class LeapFrog(object):
         return self.particles
 
 
-    def get_omega(self, rhostep):
+    def reduce_omega(self, rhostep):
         omega = 0.0
         for (key, value) in rhostep.items():
             if value is not None:
@@ -98,9 +89,6 @@ class LeapFrog(object):
 
     def get_tau(self, omega):
         return float(self.eta / omega**self.gamma)
-
-    def get_dtau_dt(self, tau, omega, vdotf):
-        return -self.gamma * (tau/omega) * vdotf
 
 
     @timings
@@ -132,9 +120,8 @@ class LeapFrog(object):
         """
 
         """
-        vdotf = 0.0
         fullstep = methcoef * currstep
-        rhostep = self.particles.set_acc(jparticles)
+        omega = self.particles.set_acc(jparticles, self.eta)
 
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "acc"):
@@ -142,11 +129,10 @@ class LeapFrog(object):
                 self.dvel[key][:] = 2 * currstep * obj.acc - self.dvel[key]
                 g1 = self.dvel[key].copy()
 
-                v12 = obj.vel + 0.25 * methcoef * (g1-g0)
-
                 if hasattr(obj, "_pnacc"):
                     force_ext = -(obj.mass * obj._pnacc.T).T
                     if hasattr(obj, "evolve_energy_jump"):
+                        v12 = obj.vel + 0.25 * methcoef * (g1-g0)
                         energy_jump = (v12 * force_ext).sum(1)
                         obj.evolve_energy_jump(fullstep * energy_jump)
                     if hasattr(obj, "evolve_com_vel_jump"):
@@ -160,17 +146,9 @@ class LeapFrog(object):
                         angmom_jump = np.cross(obj.pos, force_ext)
                         obj.evolve_angmom_jump(fullstep * angmom_jump)
 
-#                vdotf += 4 * np.sum(obj.mass * (obj.vel*obj.acc).sum(1))
-                vdotf += 4 * np.sum(obj.mass * (v12*obj.acc).sum(1))
-
-        omega = self.get_omega(rhostep)
-        tau = self.get_tau(omega)
-        dtau_dt = self.get_dtau_dt(tau, omega, vdotf) #* methcoef
-        symm_factor = (dtau_dt + np.sqrt(dtau_dt**2 + 4.0))/2.0
-#        symm_factor = 1.0/(1.0 - 0.5 * dtau_dt)
-
-        nexttau = tau * float(symm_factor)
-        return nexttau
+        reduced_omega = self.reduce_omega(omega)
+        tau = self.get_tau(reduced_omega)
+        return tau
 
 
     def stepDKD(self, methcoef):

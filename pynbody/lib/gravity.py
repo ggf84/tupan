@@ -102,7 +102,7 @@ class Gravity(object):
         return ret
 
 
-    def _set_acc(self, iobj, jobj):
+    def _set_acc(self, iobj, jobj, eta):
         """
         Set obj-obj acc.
         """
@@ -110,10 +110,13 @@ class Gravity(object):
         nj = len(jobj)
         iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
         jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-        data = (np.uint32(ni),
+        iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
+        jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
+        data = (iposmass, iveleps2,
+                jposmass, jveleps2,
+                np.uint32(ni),
                 np.uint32(nj),
-                iposmass, iobj.eps2,
-                jposmass, jobj.eps2)
+                np.float64(eta))
 
         output_buf = np.empty((ni,4))
 

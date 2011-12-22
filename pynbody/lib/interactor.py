@@ -87,87 +87,84 @@ class Interactor(object):
 
     # Acceleration methods
 
-    def acc_body(self, iobj, objs):
+    def acc_body(self, iobj, objs, eta):
 
         jobj = objs["body"]
 #        if jobj:
-        ret = gravity.newtonian.set_acc(iobj, jobj)
+        ret = gravity.newtonian.set_acc(iobj, jobj, eta)
         iacc = ret[0]
-        irhostep = ret[1]
+        iomega = ret[1]
         sum_nj = len(jobj)-1
 
         jobj = objs["blackhole"]
         if jobj:
-            ret = gravity.newtonian.set_acc(iobj, jobj)
+            ret = gravity.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
-            irhostep += ret[1]
+            iomega += ret[1]
             sum_nj += len(jobj)
 
         jobj = objs["sph"]
         if jobj:
-            ret = gravity.newtonian.set_acc(iobj, jobj)
+            ret = gravity.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
-            irhostep += ret[1]
+            iomega += ret[1]
             sum_nj += len(jobj)
 
-#        return (iacc, np.sqrt(irhostep/sum_nj))
-        return (iacc, irhostep)
+        return (iacc, iomega/sum_nj)
 
 
-    def acc_blackhole(self, iobj, objs):
+    def acc_blackhole(self, iobj, objs, eta):
 
         jobj = objs["blackhole"]
 #        if jobj:
-        ret = gravity.newtonian.set_acc(iobj, jobj)
+        ret = gravity.newtonian.set_acc(iobj, jobj, eta)
         pnret = gravity.post_newtonian.set_acc(iobj, jobj)
         iacc = ret[0] + pnret[0]
         ipnacc = pnret[0]
-        irhostep = ret[1]
+        iomega = ret[1]
         sum_nj = len(jobj)-1
 
         jobj = objs["body"]
         if jobj:
-            ret = gravity.newtonian.set_acc(iobj, jobj)
+            ret = gravity.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
-            irhostep += ret[1]
+            iomega += ret[1]
             sum_nj += len(jobj)
 
         jobj = objs["sph"]
         if jobj:
-            ret = gravity.newtonian.set_acc(iobj, jobj)
+            ret = gravity.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
-            irhostep += ret[1]
+            iomega += ret[1]
             sum_nj += len(jobj)
 
-#        return (iacc, ipnacc, np.sqrt(irhostep/sum_nj))
-        return (iacc, ipnacc, irhostep)
+        return (iacc, ipnacc, iomega/sum_nj)
 
 
-    def acc_sph(self, iobj, objs):
+    def acc_sph(self, iobj, objs, eta):
 
         jobj = objs["sph"]
 #        if jobj:
-        ret = gravity.newtonian.set_acc(iobj, jobj)
+        ret = gravity.newtonian.set_acc(iobj, jobj, eta)
         iacc = ret[0]
-        irhostep = ret[1]
+        iomega = ret[1]
         sum_nj = len(jobj)-1
 
         jobj = objs["body"]
         if jobj:
-            ret = gravity.newtonian.set_acc(iobj, jobj)
+            ret = gravity.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
-            irhostep += ret[1]
+            iomega += ret[1]
             sum_nj += len(jobj)
 
         jobj = objs["blackhole"]
         if jobj:
-            ret = gravity.newtonian.set_acc(iobj, jobj)
+            ret = gravity.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
-            irhostep += ret[1]
+            iomega += ret[1]
             sum_nj += len(jobj)
 
-#        return (iacc, np.sqrt(irhostep/sum_nj))
-        return (iacc, irhostep)
+        return (iacc, iomega/sum_nj)
 
 
 interact = Interactor()
