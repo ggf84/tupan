@@ -65,8 +65,7 @@ class LeapFrog(object):
         methcoef = len(self.coefs) * self.coefs[0]
         omega = self.particles.set_acc(particles, 0.0)
 
-        reduced_omega = self.reduce_omega(omega)
-        self.tau = self.get_tau(reduced_omega)
+        self.tau = self.get_tau(omega)
         self.tstep = self.tau
 
         self.dvel = {}
@@ -80,15 +79,12 @@ class LeapFrog(object):
         return self.particles
 
 
-    def reduce_omega(self, rhostep):
-        omega = 0.0
-        for (key, value) in rhostep.items():
-            if value is not None:
-                omega += value.sum()
-        return omega
-
     def get_tau(self, omega):
-        return float(self.eta / omega**self.gamma)
+        omega_sum = 0.0
+        for (key, value) in omega.items():
+            if value is not None:
+                omega_sum += value.sum()
+        return float(self.eta / omega_sum**self.gamma)
 
 
     @timings
@@ -146,8 +142,7 @@ class LeapFrog(object):
                         angmom_jump = np.cross(obj.pos, force_ext)
                         obj.evolve_angmom_jump(fullstep * angmom_jump)
 
-        reduced_omega = self.reduce_omega(omega)
-        tau = self.get_tau(reduced_omega)
+        tau = self.get_tau(omega)
         return tau
 
 
