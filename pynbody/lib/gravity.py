@@ -83,10 +83,10 @@ class Gravity(object):
         nj = len(jobj)
         iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
         jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-        data = (np.uint32(ni),
-                np.uint32(nj),
-                iposmass, iobj.eps2,
-                jposmass, jobj.eps2)
+        data = (iposmass, iobj.eps2,
+                jposmass, jobj.eps2,
+                np.uint32(ni),
+                np.uint32(nj))
 
         output_buf = np.empty(ni)
 
@@ -141,10 +141,10 @@ class Gravity(object):
         iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
         jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
         clight = self._clight
-        data = (np.uint32(ni),
-                np.uint32(nj),
-                iposmass, iobj.vel,
+        data = (iposmass, iobj.vel,
                 jposmass, jobj.vel,
+                np.uint32(ni),
+                np.uint32(nj),
                 np.uint32(clight.pn_order), np.float64(clight.inv1),
                 np.float64(clight.inv2), np.float64(clight.inv3),
                 np.float64(clight.inv4), np.float64(clight.inv5),
@@ -153,7 +153,7 @@ class Gravity(object):
         self._pnacc_kernel.load_data(*data)
         self._pnacc_kernel.execute()
         ret = self._pnacc_kernel.get_result()
-        return (ret[:,:3], ret[:,3])
+        return ret
 
 
 gravity_methods = Gravity()

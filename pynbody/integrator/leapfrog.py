@@ -117,7 +117,7 @@ class LeapFrog(object):
 
         """
         fullstep = methcoef * currstep
-        omega = self.particles.set_acc(jparticles, self.eta)
+        omega = self.particles.set_acc(jparticles, 0.5 * self.eta)
 
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "acc"):

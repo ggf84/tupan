@@ -43,15 +43,14 @@ p2p_acc_kernel_main_loop(const REAL4 myPos,
                                            eta);
             }
         }
-        j = jj;
-        for (; j < nb; ++j) {
-           myAcc = p2p_acc_kernel_core(myAcc,
-                                       myPos,
-                                       myVel,
-                                       sharedPos[j],
-                                       sharedVel[j],
-                                       eta);
-        }
+            for (j = jj; j < nb; ++j) {
+               myAcc = p2p_acc_kernel_core(myAcc,
+                                           myPos,
+                                           myVel,
+                                           sharedPos[j],
+                                           sharedVel[j],
+                                           eta);
+            }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 

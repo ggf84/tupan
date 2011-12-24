@@ -13,9 +13,9 @@ p2p_pnacc_kernel(PyObject *_args)
     PyObject *_ipos = NULL, *_ivel = NULL;
     PyObject *_jpos = NULL, *_jvel = NULL;
 
-    if (!PyArg_ParseTuple(_args, "IIOOOOIddddddd", &ni, &nj,
-                                                   &_ipos, &_ivel,
+    if (!PyArg_ParseTuple(_args, "OOOOIIIddddddd", &_ipos, &_ivel,
                                                    &_jpos, &_jvel,
+                                                   &ni, &nj,
                                                    &clight.order, &clight.inv1,
                                                    &clight.inv2, &clight.inv3,
                                                    &clight.inv4, &clight.inv5,
@@ -35,7 +35,7 @@ p2p_pnacc_kernel(PyObject *_args)
     double *jvel_ptr = (double *)PyArray_DATA(_jvel_arr);
 
     // allocate a PyArrayObject to be returned
-    npy_intp dims[2] = {ni, 4};
+    npy_intp dims[2] = {ni, 3};
     PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(2, dims, NPY_FLOAT64, 0);
     double *ret_ptr = (double *)PyArray_DATA(ret);
 
@@ -44,30 +44,29 @@ p2p_pnacc_kernel(PyObject *_args)
     for (i = 0; i < ni; ++i) {
         iii = 3*i;
         iiii = 4*i;
-        REAL4 ipnacc = {0.0, 0.0, 0.0, 0.0};
-        REAL iv2 = ivel_ptr[iii  ] * ivel_ptr[iii  ]
+        REAL3 ipnacc = {0.0, 0.0, 0.0};
+        REAL vi2 = ivel_ptr[iii  ] * ivel_ptr[iii  ]
                  + ivel_ptr[iii+1] * ivel_ptr[iii+1]
                  + ivel_ptr[iii+2] * ivel_ptr[iii+2];
-        REAL4 bip = {ipos_ptr[iiii  ], ipos_ptr[iiii+1],
-                     ipos_ptr[iiii+2], ipos_ptr[iiii+3]};
-        REAL4 biv = {ivel_ptr[iii  ], ivel_ptr[iii+1],
-                     ivel_ptr[iii+2], iv2};
+        REAL4 ri = {ipos_ptr[iiii  ], ipos_ptr[iiii+1],
+                    ipos_ptr[iiii+2], ipos_ptr[iiii+3]};
+        REAL4 vi = {ivel_ptr[iii  ], ivel_ptr[iii+1],
+                    ivel_ptr[iii+2], vi2};
         for (j = 0; j < nj; ++j) {
             jjj = 3*j;
             jjjj = 4*j;
-            REAL jv2 = jvel_ptr[jjj  ] * jvel_ptr[jjj  ]
+            REAL vj2 = jvel_ptr[jjj  ] * jvel_ptr[jjj  ]
                      + jvel_ptr[jjj+1] * jvel_ptr[jjj+1]
                      + jvel_ptr[jjj+2] * jvel_ptr[jjj+2];
-            REAL4 bjp = {jpos_ptr[jjjj  ], jpos_ptr[jjjj+1],
-                         jpos_ptr[jjjj+2], jpos_ptr[jjjj+3]};
-            REAL4 bjv = {jvel_ptr[jjj  ], jvel_ptr[jjj+1],
-                         jvel_ptr[jjj+2], jv2};
-            ipnacc = p2p_pnacc_kernel_core(ipnacc, bip, biv, bjp, bjv, clight);
+            REAL4 rj = {jpos_ptr[jjjj  ], jpos_ptr[jjjj+1],
+                        jpos_ptr[jjjj+2], jpos_ptr[jjjj+3]};
+            REAL4 vj = {jvel_ptr[jjj  ], jvel_ptr[jjj+1],
+                        jvel_ptr[jjj+2], vj2};
+            ipnacc = p2p_pnacc_kernel_core(ipnacc, ri, vi, rj, vj, clight);
         }
-        ret_ptr[iiii  ] = ipnacc.x;
-        ret_ptr[iiii+1] = ipnacc.y;
-        ret_ptr[iiii+2] = ipnacc.z;
-        ret_ptr[iiii+3] = ipnacc.w;
+        ret_ptr[iii  ] = ipnacc.x;
+        ret_ptr[iii+1] = ipnacc.y;
+        ret_ptr[iii+2] = ipnacc.z;
     }
 
     // Decrement the reference counts for i-objects

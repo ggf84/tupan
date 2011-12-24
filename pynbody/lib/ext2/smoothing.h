@@ -15,10 +15,9 @@ phi_plummer_smooth(REAL r2, REAL h2)
 }
 
 inline REAL
-phi_smooth(REAL r2, REAL hi2, REAL hj2)
+phi_smooth(REAL r2, REAL h2)
 {
-    return phi_plummer_smooth(r2, hi2 + hj2);
-//    return 0.5*(phi_plummer_smooth(r2, 2*hi2) + phi_plummer_smooth(r2, 2*hj2));
+    return phi_plummer_smooth(r2, h2);
 }
 
 
@@ -34,10 +33,9 @@ acc_plummer_smooth(REAL r2, REAL h2)
 }
 
 inline REAL
-acc_smooth(REAL r2, REAL hi2, REAL hj2)
+acc_smooth(REAL r2, REAL h2)
 {
-    return acc_plummer_smooth(r2, hi2 + hj2);
-//    return 0.5*(acc_plummer_smooth(r2, 2*hi2) + acc_plummer_smooth(r2, 2*hj2));
+    return acc_plummer_smooth(r2, h2);
 }
 
 
@@ -53,10 +51,9 @@ rho_plummer_smooth(REAL r2, REAL h2)
 }
 
 inline REAL
-rho_smooth(REAL r2, REAL hi2, REAL hj2)
+rho_smooth(REAL r2, REAL h2)
 {
-    return rho_plummer_smooth(r2, hi2 + hj2);
-//    return 0.5*(rho_plummer_smooth(r2, 2*hi2) + rho_plummer_smooth(r2, 2*hj2));
+    return rho_plummer_smooth(r2, h2);
 }
 
 #endif  // SMOOTHING_H

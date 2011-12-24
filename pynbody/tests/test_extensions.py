@@ -46,18 +46,47 @@ def compare_ret_C_vs_CL(kernels):
 
 def performance_C_vs_CL(kernels):
     bi = set_particles(8192)
+    bj = bi.copy()
+
+    # -------------------------------------------
+
+    ni = len(bi)
+    nj = len(bj)
+    iposmass = np.vstack((bi.pos.T, bi.mass)).T
+    jposmass = np.vstack((bj.pos.T, bj.mass)).T
+    phi_data = (iposmass, bi.eps2,
+                jposmass, bj.eps2,
+                np.uint32(ni),
+                np.uint32(nj))
+
+    iposmass = np.vstack((bi.pos.T, bi.mass)).T
+    jposmass = np.vstack((bj.pos.T, bj.mass)).T
+    iveleps2 = np.vstack((bi.vel.T, bi.eps2)).T
+    jveleps2 = np.vstack((bj.vel.T, bj.eps2)).T
+    acc_data = (iposmass, iveleps2,
+                jposmass, jveleps2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.float64(0.0))
+
+    # -------------------------------------------
+
     print("\n\nDouble Precision Performance:")
     print("-----------------------------")
     performance_test(kernels["c_lib64_p2p_phi_kernel"],
-                     kernels["cl_lib64_p2p_phi_kernel"], bi, output_shape="({ni},)")
+                     kernels["cl_lib64_p2p_phi_kernel"], ni, nj, phi_data,
+                     output_shape="({ni},)")
     performance_test(kernels["c_lib64_p2p_acc_kernel"],
-                     kernels["cl_lib64_p2p_acc_kernel"], bi, output_shape="({ni},4)")
+                     kernels["cl_lib64_p2p_acc_kernel"], ni, nj, acc_data,
+                     output_shape="({ni},4)")
     print("\n\nSingle Precision Performance:")
     print("-----------------------------")
     performance_test(kernels["c_lib32_p2p_phi_kernel"],
-                     kernels["cl_lib32_p2p_phi_kernel"], bi, output_shape="({ni},)")
+                     kernels["cl_lib32_p2p_phi_kernel"], ni, nj, phi_data,
+                     output_shape="({ni},)")
     performance_test(kernels["c_lib32_p2p_acc_kernel"],
-                     kernels["cl_lib32_p2p_acc_kernel"], bi, output_shape="({ni},4)")
+                     kernels["cl_lib32_p2p_acc_kernel"], ni, nj, acc_data,
+                     output_shape="({ni},4)")
 
 
 
@@ -82,10 +111,10 @@ def test_phi(cext, clext, bi, bj):
     nj = len(bj)
     iposmass = np.vstack((bi.pos.T, bi.mass)).T
     jposmass = np.vstack((bj.pos.T, bj.mass)).T
-    data = (np.uint32(ni),
-            np.uint32(nj),
-            iposmass, bi.eps2,
-            jposmass, bj.eps2)
+    data = (iposmass, bi.eps2,
+            jposmass, bj.eps2,
+            np.uint32(ni),
+            np.uint32(nj))
 
     output_buf = np.empty_like(bi.phi)
 
@@ -129,10 +158,13 @@ def test_acc(cext, clext, bi, bj):
     nj = len(bj)
     iposmass = np.vstack((bi.pos.T, bi.mass)).T
     jposmass = np.vstack((bj.pos.T, bj.mass)).T
-    data = (np.uint32(ni),
+    iveleps2 = np.vstack((bi.vel.T, bi.eps2)).T
+    jveleps2 = np.vstack((bj.vel.T, bj.eps2)).T
+    data = (iposmass, iveleps2,
+            jposmass, jveleps2,
+            np.uint32(ni),
             np.uint32(nj),
-            iposmass, bi.eps2,
-            jposmass, bj.eps2)
+            np.float64(0.0))
 
     output_buf = np.empty((len(bi.acc),4))
 
@@ -231,21 +263,8 @@ def compare(test, cext, clext, bi):
 
 
 
-def performance_test(cext, clext, bi, output_shape, nsamples=5):
+def performance_test(cext, clext, ni, nj, data, output_shape, nsamples=5):
     timer = Timer()
-
-    bj = bi.copy()
-
-    # -------------------------------------------
-
-    ni = len(bi)
-    nj = len(bj)
-    iposmass = np.vstack((bi.pos.T, bi.mass)).T
-    jposmass = np.vstack((bj.pos.T, bj.mass)).T
-    data = (np.uint32(ni),
-            np.uint32(nj),
-            iposmass, bi.eps2,
-            jposmass, bj.eps2)
 
     output_buf = np.empty(eval(output_shape.format(ni=ni)))
 

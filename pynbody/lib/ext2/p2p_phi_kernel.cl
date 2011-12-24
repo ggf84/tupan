@@ -8,11 +8,11 @@
 
 
 inline REAL
-p2p_phi_kernel_main_loop(REAL4 myPos,
-                         REAL myEps2,
-                         const uint nj,
+p2p_phi_kernel_main_loop(const REAL4 myPos,
+                         const REAL myEps2,
                          __global const REAL4 *jpos,
                          __global const REAL *jeps2,
+                         const uint nj,
                          __local REAL4 *sharedPos,
                          __local REAL *sharedEps2)
 {
@@ -41,14 +41,13 @@ p2p_phi_kernel_main_loop(REAL4 myPos,
                                            sharedEps2[j]);
             }
         }
-        j = jj;
-        for (; j < nb; ++j) {
-           myPhi = p2p_phi_kernel_core(myPhi,
-                                       myPos,
-                                       myEps2,
-                                       sharedPos[j],
-                                       sharedEps2[j]);
-        }
+            for (j = jj; j < nb; ++j) {
+               myPhi = p2p_phi_kernel_core(myPhi,
+                                           myPos,
+                                           myEps2,
+                                           sharedPos[j],
+                                           sharedEps2[j]);
+            }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
@@ -56,12 +55,12 @@ p2p_phi_kernel_main_loop(REAL4 myPos,
 }
 
 
-__kernel void p2p_phi_kernel(const uint ni,
-                             const uint nj,
-                             __global const REAL4 *ipos,
+__kernel void p2p_phi_kernel(__global const REAL4 *ipos,
                              __global const REAL *ieps2,
                              __global const REAL4 *jpos,
                              __global const REAL *jeps2,
+                             const uint ni,
+                             const uint nj,
                              __global REAL *iphi,
                              __local REAL4 *sharedPos,
                              __local REAL *sharedEps2)
@@ -69,7 +68,8 @@ __kernel void p2p_phi_kernel(const uint ni,
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);
     iphi[i] = p2p_phi_kernel_main_loop(ipos[i], ieps2[i],
-                                       nj, jpos, jeps2,
+                                       jpos, jeps2,
+                                       nj,
                                        sharedPos, sharedEps2);
 }
 

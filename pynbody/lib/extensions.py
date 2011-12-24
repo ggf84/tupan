@@ -182,6 +182,8 @@ class Extensions(object):
                 dev_args.append(cl.Buffer(self._cl_ctx,
                                           mf.READ_ONLY | mf.COPY_HOST_PTR,
                                           hostbuf=hostbuf))
+            elif isinstance(item, np.floating):
+                dev_args.append(item.astype(self.dtype))
             else:
                 dev_args.append(item)
 

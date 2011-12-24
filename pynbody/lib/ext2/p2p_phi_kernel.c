@@ -12,9 +12,9 @@ p2p_phi_kernel(PyObject *_args)
     PyObject *_ipos = NULL, *_ieps2 = NULL;
     PyObject *_jpos = NULL, *_jeps2 = NULL;
 
-    if (!PyArg_ParseTuple(_args, "IIOOOO", &ni, &nj,
-                                           &_ipos, &_ieps2,
-                                           &_jpos, &_jeps2))
+    if (!PyArg_ParseTuple(_args, "OOOOII", &_ipos, &_ieps2,
+                                           &_jpos, &_jeps2,
+                                           &ni, &nj))
         return NULL;
 
     // i-data
@@ -39,15 +39,15 @@ p2p_phi_kernel(PyObject *_args)
     for (i = 0; i < ni; ++i) {
         iiii = 4*i;
         REAL iphi = 0.0;
-        REAL4 bi = {ipos_ptr[iiii  ], ipos_ptr[iiii+1],
+        REAL4 ri = {ipos_ptr[iiii  ], ipos_ptr[iiii+1],
                     ipos_ptr[iiii+2], ipos_ptr[iiii+3]};
         REAL ieps2 = ieps2_ptr[i];
         for (j = 0; j < nj; ++j) {
             jjjj = 4*j;
-            REAL4 bj = {jpos_ptr[jjjj  ], jpos_ptr[jjjj+1],
+            REAL4 rj = {jpos_ptr[jjjj  ], jpos_ptr[jjjj+1],
                         jpos_ptr[jjjj+2], jpos_ptr[jjjj+3]};
             REAL jeps2 = jeps2_ptr[j];
-            iphi = p2p_phi_kernel_core(iphi, bi, ieps2, bj, jeps2);
+            iphi = p2p_phi_kernel_core(iphi, ri, ieps2, rj, jeps2);
         }
         ret_ptr[i] = iphi;
     }
