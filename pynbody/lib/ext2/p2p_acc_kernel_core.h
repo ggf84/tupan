@@ -28,9 +28,10 @@ p2p_acc_kernel_core(REAL4 acc,
     REAL omega2 = (r.w * inv_r3);                                    // 1 FLOPs
 
     REAL dln_omega = -1.5 * rv / (r2 + v.w);                         // 3 FLOPs
-    dln_omega = ((r2 > 0) ? dln_omega:0);
-    REAL symm_factor = (1.0 + eta * dln_omega);                      // 2 FLOPs
-    omega2 *= (symm_factor * symm_factor);                           // 2 FLOPs
+    dln_omega = (r2 > 0) ? (dln_omega):(0);
+    dln_omega = (dln_omega < 0) ? (-dln_omega):(dln_omega);
+    REAL symm_factor = 1 + eta * dln_omega;                          // 2 FLOPs
+    omega2 *= symm_factor;                                           // 1 FLOPs
 
     acc.w += omega2;                                                 // 1 FLOPs
 
@@ -40,7 +41,7 @@ p2p_acc_kernel_core(REAL4 acc,
     acc.z -= inv_r3 * r.z;                                           // 2 FLOPs
     return acc;
 }
-// Total flop count: 39
+// Total flop count: 38
 
 #endif  // P2P_ACC_KERNEL_CORE_H
 

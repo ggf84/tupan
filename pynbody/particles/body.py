@@ -16,11 +16,11 @@ from ..lib.interactor import interact
 __all__ = ["Body"]
 
 
-dtype = {"names":   ["index", "mass", "eps2", "phi", "stepdens", "pos", "vel", "acc"],
-         "formats": ["u8",    "f8",   "f8",   "f8",  "2f8",      "3f8", "3f8", "3f8"]}
+dtype = {"names":   ["index", "mass", "eps2", "phi", "pos", "vel", "acc"],
+         "formats": ["u8",    "f8",   "f8",   "f8",  "3f8", "3f8", "3f8"]}
 
 #fields = OrderedDict([("index", "u8"), ("mass", "f8"), ("eps2", "f8"),
-#                      ("phi", "f8"), ("stepdens", "2f8"), ("pos", "3f8"),
+#                      ("phi", "f8"), ("pos", "3f8"),
 #                      ("vel", "3f8"), ("acc", "3f8")])
 ##dtype = fields.items()
 #dtype = {"names": fields.keys(), "formats": fields.values()}
