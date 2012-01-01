@@ -58,6 +58,14 @@ class Particles(dict):
         self._totalmass = None
 
 
+    def get_total_num_of_particles(self):
+        nb = 0.0
+        for obj in self.values():
+            if obj:
+                nb += len(obj)
+        return nb
+
+
     # Total Mass
 
     def update_total_mass(self):

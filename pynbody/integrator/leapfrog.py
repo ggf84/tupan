@@ -82,10 +82,14 @@ class LeapFrog(object):
 
     def get_tau(self, omega):
         omega_sum = 0.0
+        ni_sum = 0
         for (key, value) in omega.items():
             if value is not None:
                 omega_sum += value.sum()
-        return float(self.eta / omega_sum**self.gamma)
+                ni_sum += len(value)
+        omega_sum /= ni_sum
+        tau = float(self.eta / omega_sum**self.gamma)
+        return tau
 
 
     @timings

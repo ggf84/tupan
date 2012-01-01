@@ -110,7 +110,8 @@ class Interactor(object):
             iomega += ret[1]
             sum_nj += len(jobj)
 
-        return (iacc, iomega/sum_nj)
+#        return (iacc, iomega/sum_nj)
+        return (iacc, iomega)
 
 
     def acc_blackhole(self, iobj, objs, eta):
@@ -138,7 +139,8 @@ class Interactor(object):
             iomega += ret[1]
             sum_nj += len(jobj)
 
-        return (iacc, ipnacc, iomega/sum_nj)
+#        return (iacc, ipnacc, iomega/sum_nj)
+        return (iacc, ipnacc, iomega)
 
 
     def acc_sph(self, iobj, objs, eta):
@@ -164,7 +166,8 @@ class Interactor(object):
             iomega += ret[1]
             sum_nj += len(jobj)
 
-        return (iacc, iomega/sum_nj)
+#        return (iacc, iomega/sum_nj)
+        return (iacc, iomega)
 
 
 interact = Interactor()
