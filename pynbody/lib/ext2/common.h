@@ -8,24 +8,22 @@
 
 #ifdef OPENCL_EXTENSION
     #ifdef DOUBLE
-    typedef double REAL;
-    typedef double2 REAL2;
-    typedef double4 REAL4;
+        typedef double REAL;
+        typedef double2 REAL2;
+        typedef double4 REAL4;
     #else
-    typedef float REAL;
-    typedef float2 REAL2;
-    typedef float4 REAL4;
+        typedef float REAL;
+        typedef float2 REAL2;
+        typedef float4 REAL4;
     #endif
 #else
     #include<math.h>
     #ifdef DOUBLE
-    typedef double REAL;
-    #define rsqrt(x) (1.0/sqrt(x))
-//    #define rsqrt(x) (sqrt(1.0/(x)))
+        typedef double REAL;
+        #define rsqrt(x) (1.0/sqrt(x))
     #else
-    typedef float REAL;
-    #define rsqrt(x) (1.0/sqrtf(x))
-//    #define rsqrt(x) (sqrt(1.0/(x)))
+        typedef float REAL;
+        #define rsqrt(x) (1.0/sqrtf(x))
     #endif
     #define min(a, b) ({ __typeof__ (a) _a = (a); \
                          __typeof__ (b) _b = (b); \
@@ -56,7 +54,7 @@
         REAL inv5;
         REAL inv6;
         REAL inv7;
-        unsigned int order;
+        uint order;
     } CLIGHT, *pCLIGHT;
 #endif // OPENCL_EXTENSION
 

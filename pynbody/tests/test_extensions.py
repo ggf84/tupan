@@ -6,6 +6,7 @@ Test suite for extensions module.
 """
 
 
+import sys
 import numpy as np
 from pynbody.lib import extensions
 from pynbody.lib.utils.timing import (Timer, timings)
@@ -75,18 +76,18 @@ def performance_C_vs_CL(kernels):
     print("-----------------------------")
     performance_test(kernels["c_lib64_p2p_phi_kernel"],
                      kernels["cl_lib64_p2p_phi_kernel"], ni, nj, phi_data,
-                     output_shape="({ni},)")
+                     output_shape="({ni},)", lmem_layout=(4, 1))
     performance_test(kernels["c_lib64_p2p_acc_kernel"],
                      kernels["cl_lib64_p2p_acc_kernel"], ni, nj, acc_data,
-                     output_shape="({ni},4)")
+                     output_shape="({ni},4)", lmem_layout=(4, 4))
     print("\n\nSingle Precision Performance:")
     print("-----------------------------")
     performance_test(kernels["c_lib32_p2p_phi_kernel"],
                      kernels["cl_lib32_p2p_phi_kernel"], ni, nj, phi_data,
-                     output_shape="({ni},)")
+                     output_shape="({ni},)", lmem_layout=(4, 1))
     performance_test(kernels["c_lib32_p2p_acc_kernel"],
                      kernels["cl_lib32_p2p_acc_kernel"], ni, nj, acc_data,
-                     output_shape="({ni},4)")
+                     output_shape="({ni},4)", lmem_layout=(4, 4))
 
 
 
@@ -117,6 +118,7 @@ def test_phi(cext, clext, bi, bj):
             np.uint32(nj))
 
     output_buf = np.empty_like(bi.phi)
+    lmem_layout = (4, 1)
 
     # Adjusts global_size to be an integer multiple of local_size
     local_size = 384
@@ -127,7 +129,8 @@ def test_phi(cext, clext, bi, bj):
     # XXX: kw has no efects with C extensions!
     cext.load_data(*data, global_size=global_size,
                           local_size=local_size,
-                          output_buf=output_buf)
+                          output_buf=output_buf,
+                          lmem_layout=lmem_layout)
     cext.execute()
     cres = cext.get_result()
     cepot = 0.5 * np.sum(bi.mass * cres)
@@ -136,7 +139,8 @@ def test_phi(cext, clext, bi, bj):
 
     clext.load_data(*data, global_size=global_size,
                            local_size=local_size,
-                           output_buf=output_buf)
+                           output_buf=output_buf,
+                           lmem_layout=lmem_layout)
     clext.execute()
     clres = clext.get_result()
     clepot = 0.5 * np.sum(bi.mass * clres)
@@ -167,6 +171,7 @@ def test_acc(cext, clext, bi, bj):
             np.float64(0.0))
 
     output_buf = np.empty((len(bi.acc),4))
+    lmem_layout = (4, 4)
 
     # Adjusts global_size to be an integer multiple of local_size
     local_size = 384
@@ -177,7 +182,8 @@ def test_acc(cext, clext, bi, bj):
     # XXX: kw has no efects with C extensions!
     cext.load_data(*data, global_size=global_size,
                           local_size=local_size,
-                          output_buf=output_buf)
+                          output_buf=output_buf,
+                          lmem_layout=lmem_layout)
     cext.execute()
     cres = cext.get_result()
     c_com_force = (bi.mass * cres[:,:3].T).sum(1)
@@ -187,7 +193,8 @@ def test_acc(cext, clext, bi, bj):
 
     clext.load_data(*data, global_size=global_size,
                            local_size=local_size,
-                           output_buf=output_buf)
+                           output_buf=output_buf,
+                           lmem_layout=lmem_layout)
     clext.execute()
     clres = clext.get_result()
     cl_com_force = (bi.mass * clres[:,:3].T).sum(1)
@@ -263,7 +270,7 @@ def compare(test, cext, clext, bi):
 
 
 
-def performance_test(cext, clext, ni, nj, data, output_shape, nsamples=5):
+def performance_test(cext, clext, ni, nj, data, output_shape, lmem_layout, nsamples=5):
     timer = Timer()
 
     output_buf = np.empty(eval(output_shape.format(ni=ni)))
@@ -281,7 +288,8 @@ def performance_test(cext, clext, ni, nj, data, output_shape, nsamples=5):
     # XXX: kw has no efects with C extensions!
     cext.load_data(*data, global_size=global_size,
                           local_size=local_size,
-                          output_buf=output_buf)
+                          output_buf=output_buf,
+                          lmem_layout=lmem_layout)
     c_elapsed = 0.0
     for i in range(nsamples):
         timer.start()
@@ -301,7 +309,8 @@ def performance_test(cext, clext, ni, nj, data, output_shape, nsamples=5):
 
     clext.load_data(*data, global_size=global_size,
                            local_size=local_size,
-                           output_buf=output_buf)
+                           output_buf=output_buf,
+                           lmem_layout=lmem_layout)
     cl_elapsed = 0.0
     for i in range(nsamples):
         timer.start()

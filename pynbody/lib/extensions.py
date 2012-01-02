@@ -168,6 +168,8 @@ class Extensions(object):
 
         output_buf = kwargs.pop("output_buf")
 
+        lmem_layout = kwargs.pop("lmem_layout")
+
         if kwargs:
             msg = "{0}._cl_load_data received unexpected keyword arguments: {1}."
             raise TypeError(msg.format(self.__class__.__name__,
@@ -197,7 +199,7 @@ class Extensions(object):
         # Set local memory sizes on CL device
         base_mem_size = reduce(lambda x, y: x * y, local_size)
         base_mem_size *= self.dtype.itemsize
-        local_mem_size_list = (4*base_mem_size, base_mem_size)
+        local_mem_size_list = (i * base_mem_size for i in lmem_layout)
         for size in local_mem_size_list:
             dev_args.append(cl.LocalMemory(size))
 
@@ -276,7 +278,7 @@ def build_kernels():
         key = ext+"_lib64_"+name
         kernels[key] = Extensions(path)
         kernels[key].load_source(src)
-        kernels[key].build(dtype='d', junroll=16)
+        kernels[key].build(dtype='d', junroll=8)
     print("### ...done.", file=sys.stderr)
     print("#"*40, file=sys.stderr)
 
@@ -289,7 +291,7 @@ def build_kernels():
         key = ext+"_lib32_"+name
         kernels[key] = Extensions(path)
         kernels[key].load_source(src)
-        kernels[key].build(dtype='f', junroll=16)
+        kernels[key].build(dtype='f', junroll=8)
     print("### ...done.", file=sys.stderr)
     print("#"*40, file=sys.stderr)
 

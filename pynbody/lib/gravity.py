@@ -89,14 +89,16 @@ class Gravity(object):
                 np.uint32(nj))
 
         output_buf = np.empty(ni)
+        lmem_layout = (4, 1)
 
         # Adjusts global_size to be an integer multiple of local_size
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
         self._phi_kernel.load_data(*data, global_size=global_size,
-                                     local_size=local_size,
-                                     output_buf=output_buf)
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
         self._phi_kernel.execute()
         ret = self._phi_kernel.get_result()
         return ret
@@ -119,14 +121,16 @@ class Gravity(object):
                 np.float64(eta))
 
         output_buf = np.empty((ni,4))
+        lmem_layout = (4, 4)
 
         # Adjusts global_size to be an integer multiple of local_size
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
         self._acc_kernel.load_data(*data, global_size=global_size,
-                                     local_size=local_size,
-                                     output_buf=output_buf)
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
         self._acc_kernel.execute()
         ret = self._acc_kernel.get_result()
         return (ret[:,:3], ret[:,3])
