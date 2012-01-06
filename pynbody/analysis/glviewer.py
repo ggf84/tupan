@@ -37,7 +37,7 @@ ROTINC = 0.0625
 ZOOM_FACTOR = 5.0
 POINT_SIZE = 64.0
 ALPHA = 1.0
-CONTRAST = 0.25
+CONTRAST = 2.0
 COLORMAP = 1
 TRACEORBITS = False
 COLORMASK = {'r': False, 'g': False, 'b': False}
@@ -230,13 +230,13 @@ class GLviewer(object):
             if ALPHA > 1.0:
                 ALPHA = 1.0
         elif key == 'c':
-            CONTRAST /= 1.015625
-            if CONTRAST < 2.0**(-8):
-                CONTRAST = 2.0**(-8)
-        elif key == 'C':
             CONTRAST *= 1.015625
-            if CONTRAST > 16.0:
-                CONTRAST = 16.0
+            if CONTRAST > 256.0:
+                CONTRAST = 256.0
+        elif key == 'C':
+            CONTRAST /= 1.015625
+            if CONTRAST < 0.0625:
+                CONTRAST = 0.0625
         elif key == 'r':
             if not COLORMASK['r']:
                 COLORMASK['r'] = True
@@ -361,7 +361,7 @@ class GLviewer(object):
     def init_window(self):
         glut.glutInit(sys.argv)
         glut.glutInitDisplayMode(
-            glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_DEPTH)
+            glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_ALPHA | glut.GLUT_DEPTH)
         glut.glutInitWindowPosition(
             (glut.glutGet(glut.GLUT_SCREEN_WIDTH) - self.window_width) // 2,
             (glut.glutGet(glut.GLUT_SCREEN_HEIGHT) - self.window_height) // 2)
@@ -379,17 +379,18 @@ class GLviewer(object):
 
 
     def init_gl(self):
-        gl.glClearColor(0.0, 0.0, 0.0, 0.0)
-        gl.glDepthMask(gl.GL_TRUE)
         gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_ALPHA_TEST)
+        gl.glClearColor(0.0, 0.0, 0.0, 1.0)
+        gl.glColorMask(gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE)
 
-        gl.glColorMask(gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE, gl.GL_FALSE)
         self.textures['star'] = self.load_texture(
                                     os.path.join(texture_path, 'star.png'))
         self.textures['sph'] = self.load_texture(
                                    os.path.join(texture_path, 'sph.png'))
         self.textures['blackhole'] = self.load_texture(
                                          os.path.join(texture_path, 'blackhole.png'))
+
         self.adjust_zoom()
 
 
@@ -411,13 +412,16 @@ class GLviewer(object):
         else:
             gl.glClear(gl.GL_DEPTH_BUFFER_BIT)
         if COLORMASK['r']:
-            gl.glColorMask(gl.GL_TRUE, gl.GL_FALSE, gl.GL_FALSE, gl.GL_FALSE)
+            gl.glColorMask(gl.GL_TRUE, gl.GL_FALSE, gl.GL_FALSE, gl.GL_TRUE)
         elif COLORMASK['g']:
-            gl.glColorMask(gl.GL_FALSE, gl.GL_TRUE, gl.GL_FALSE, gl.GL_FALSE)
+            gl.glColorMask(gl.GL_FALSE, gl.GL_TRUE, gl.GL_FALSE, gl.GL_TRUE)
         elif COLORMASK['b']:
-            gl.glColorMask(gl.GL_FALSE, gl.GL_FALSE, gl.GL_TRUE, gl.GL_FALSE)
+            gl.glColorMask(gl.GL_FALSE, gl.GL_FALSE, gl.GL_TRUE, gl.GL_TRUE)
         else:
-            gl.glColorMask(gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE, gl.GL_FALSE)
+            gl.glColorMask(gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE)
+
+
+        gl.glAlphaFunc(gl.GL_GREATER, 0)
 
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
@@ -429,9 +433,9 @@ class GLviewer(object):
         self.adjust_zoom()
         self.adjust_rotation(1)
 
-        gl.glDisable(gl.GL_DEPTH_TEST)
+        gl.glDepthMask(gl.GL_FALSE)
         self.draw_system()
-        gl.glDisable(gl.GL_DEPTH_TEST)
+        gl.glDepthMask(gl.GL_TRUE)
 
         if RECORDSCREEN:
             self.record_screen()
@@ -451,7 +455,7 @@ class GLviewer(object):
         qty -= minqty
         qty /= (maxqty - minqty)
 
-        qty = np.power(qty, CONTRAST)
+        qty = np.power(qty, 1.0/CONTRAST)
 
         if COLORMAP == 0:
             rgba = cm.gray(qty, alpha=ALPHA)
@@ -480,7 +484,7 @@ class GLviewer(object):
     def draw_system(self):
 
 ##        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ZERO)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+#        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
 ##        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_SRC_COLOR)
 ##        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_COLOR)
 ##        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_DST_COLOR)
@@ -508,11 +512,15 @@ class GLviewer(object):
             colors[:, 3].fill(1)
             sizes = np.sqrt(blackholes.mass * Ntot)
 
+#            gl.glAlphaFunc(gl.GL_EQUAL, 1)
+            gl.glDepthMask(gl.GL_TRUE)
             gl.glEnable(gl.GL_BLEND)
-
+            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ZERO)
             self.draw_points(points, colors, sizes, self.textures['blackhole'])
-
             gl.glDisable(gl.GL_BLEND)
+            gl.glDepthMask(gl.GL_FALSE)
+#            gl.glAlphaFunc(gl.GL_GREATER, 0)
+
 
         bodies = self.particle['body']
         if bodies:
@@ -521,9 +529,21 @@ class GLviewer(object):
             sizes = np.sqrt(bodies.eps2 * Ntot)
 
             gl.glEnable(gl.GL_BLEND)
-
+#            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
             self.draw_points(points, colors, sizes, self.textures['star'])
+            gl.glDisable(gl.GL_BLEND)
 
+
+        sph = self.particle['sph']
+        if sph:
+            points = sph.pos
+            colors = self.get_colors(sph.mass)
+            sizes = np.sqrt(sph.eps2 * Ntot)
+
+            gl.glEnable(gl.GL_BLEND)
+            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+            self.draw_points(points, colors, sizes, self.textures['sph'])
             gl.glDisable(gl.GL_BLEND)
 
 
@@ -597,6 +617,13 @@ class GLviewer(object):
         gl.glTexParameteri(gl.GL_TEXTURE_2D,
                            gl.GL_TEXTURE_MIN_FILTER,
                            gl.GL_LINEAR)
+
+        gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                           gl.GL_TEXTURE_WRAP_S,
+                           gl.GL_CLAMP_TO_EDGE)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D,
+                           gl.GL_TEXTURE_WRAP_T,
+                           gl.GL_CLAMP_TO_EDGE)
 
         gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, ix, iy, 0,
                         gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, image)
