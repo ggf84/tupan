@@ -57,14 +57,12 @@ class LeapFrog(object):
     """
     def __init__(self, eta, time, particles, coefs=_coefs):
         self.eta = eta
-        self.symm_eta = 2.5 * self.eta
+        self.symm_eta = (1.0/6) * self.eta
         self.time = time
         self.coefs = coefs
         self.particles = particles
 
-        self.gamma = 0.5
-        methcoef = len(self.coefs) * self.coefs[0]
-        omega = self.particles.set_acc(particles, 0.5 * self.symm_eta)
+        omega = self.particles.set_acc(particles, 0 * self.symm_eta)
 
         self.tau = self.get_tau(omega)
         self.tstep = self.tau
@@ -82,13 +80,10 @@ class LeapFrog(object):
 
     def get_tau(self, omega):
         omega_sum = 0.0
-        ni_sum = 0
         for (key, value) in omega.items():
             if value is not None:
-                omega_sum += value.sum()
-                ni_sum += len(value)
-        omega_sum /= ni_sum
-        tau = float(self.eta / omega_sum**self.gamma)
+                omega_sum = max(omega_sum, value.max())
+        tau = float(self.eta / omega_sum**0.5)
         return tau
 
 

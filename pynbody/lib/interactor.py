@@ -94,23 +94,19 @@ class Interactor(object):
         ret = gravity.newtonian.set_acc(iobj, jobj, eta)
         iacc = ret[0]
         iomega = ret[1]
-        sum_nj = len(jobj)-1
 
         jobj = objs["blackhole"]
         if jobj:
             ret = gravity.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
             iomega += ret[1]
-            sum_nj += len(jobj)
 
         jobj = objs["sph"]
         if jobj:
             ret = gravity.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
             iomega += ret[1]
-            sum_nj += len(jobj)
 
-#        return (iacc, iomega/sum_nj)
         return (iacc, iomega)
 
 
@@ -123,23 +119,19 @@ class Interactor(object):
         iacc = ret[0] + pnret
         ipnacc = pnret
         iomega = ret[1]
-        sum_nj = len(jobj)-1
 
         jobj = objs["body"]
         if jobj:
             ret = gravity.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
             iomega += ret[1]
-            sum_nj += len(jobj)
 
         jobj = objs["sph"]
         if jobj:
             ret = gravity.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
             iomega += ret[1]
-            sum_nj += len(jobj)
 
-#        return (iacc, ipnacc, iomega/sum_nj)
         return (iacc, ipnacc, iomega)
 
 
@@ -150,23 +142,19 @@ class Interactor(object):
         ret = gravity.newtonian.set_acc(iobj, jobj, eta)
         iacc = ret[0]
         iomega = ret[1]
-        sum_nj = len(jobj)-1
 
         jobj = objs["body"]
         if jobj:
             ret = gravity.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
             iomega += ret[1]
-            sum_nj += len(jobj)
 
         jobj = objs["blackhole"]
         if jobj:
             ret = gravity.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
             iomega += ret[1]
-            sum_nj += len(jobj)
 
-#        return (iacc, iomega/sum_nj)
         return (iacc, iomega)
 
 

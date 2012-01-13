@@ -8,6 +8,26 @@
 
 
 inline REAL4
+p2p_accum_acc(REAL4 myAcc,
+              const REAL4 myPos,
+              const REAL4 myVel,
+              const REAL eta,
+              uint j_begin,
+              uint j_end,
+              __local REAL4 *sharedPos,
+              __local REAL4 *sharedVel)
+{
+    uint j;
+    for (j = j_begin; j < j_end; ++j) {
+       myAcc = p2p_acc_kernel_core(myAcc, myPos, myVel,
+                                   sharedPos[j], sharedVel[j],
+                                   eta);
+    }
+    return myAcc;
+}
+
+
+inline REAL4
 p2p_acc_kernel_main_loop(const REAL4 myPos,
                          const REAL4 myVel,
                          __global const REAL4 *jpos,
@@ -31,26 +51,17 @@ p2p_acc_kernel_main_loop(const REAL4 myPos,
         e[1] = async_work_group_copy(sharedVel, jvel + tile * lsize, nb, 0);
         wait_group_events(2, e);
 
-        uint j, jj = 0;
-        uint jjmax = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
-        for (; jj < jjmax; jj += JUNROLL) {
-            for (j = jj; j < jj + JUNROLL; ++j) {
-               myAcc = p2p_acc_kernel_core(myAcc,
-                                           myPos,
-                                           myVel,
-                                           sharedPos[j],
-                                           sharedVel[j],
-                                           eta);
-            }
+        uint j = 0;
+        uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
+        for (; j < j_max; j += JUNROLL) {
+            myAcc = p2p_accum_acc(myAcc, myPos, myVel,
+                                  eta, j, j + JUNROLL,
+                                  sharedPos, sharedVel);
         }
-            for (j = jj; j < nb; ++j) {
-               myAcc = p2p_acc_kernel_core(myAcc,
-                                           myPos,
-                                           myVel,
-                                           sharedPos[j],
-                                           sharedVel[j],
-                                           eta);
-            }
+        myAcc = p2p_accum_acc(myAcc, myPos, myVel,
+                              eta, j, nb,
+                              sharedPos, sharedVel);
+
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 

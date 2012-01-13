@@ -28,14 +28,15 @@ p2p_acc_kernel_core(REAL4 acc,
     REAL inv_r = sqrt(inv_r2);                                       // 1 FLOPs
     REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
 
-    REAL omega2 = (r.w * inv_r3);                                    // 1 FLOPs
+    REAL omega2 = r.w * inv_r3;                                      // 1 FLOPs
 
-    REAL dln_omega = -((REAL)1.5) * rv * inv_r2;                     // 2 FLOPs
+    REAL dln_omega = -3 * rv * inv_r2;                               // 2 FLOPs
     dln_omega = (dln_omega < 0) ? (-dln_omega):(dln_omega);
     REAL symm_factor = 1 + eta * dln_omega;                          // 2 FLOPs
     omega2 *= symm_factor;                                           // 1 FLOPs
 
     inv_r3 *= rj.w;                                                  // 1 FLOPs
+
     acc.x -= inv_r3 * r.x;                                           // 2 FLOPs
     acc.y -= inv_r3 * r.y;                                           // 2 FLOPs
     acc.z -= inv_r3 * r.z;                                           // 2 FLOPs

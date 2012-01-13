@@ -37,7 +37,7 @@ ROTINC = 0.0625
 ZOOM_FACTOR = 5.0
 POINT_SIZE = 64.0
 ALPHA = 1.0
-CONTRAST = 2.0
+CONTRAST = 8.0
 COLORMAP = 1
 TRACEORBITS = False
 COLORMASK = {'r': False, 'g': False, 'b': False}
@@ -333,14 +333,15 @@ class GLviewer(object):
         dy = 2 * (old_y - y) / self.window_height
         aspect_ratio = self.window_width / self.window_height
 
-        if self.mouse_button == glut.GLUT_RIGHT_BUTTON:
+        if self.mouse_button == glut.GLUT_LEFT_BUTTON:
             if self.mouse_state == glut.GLUT_DOWN:
                 self.trans['x'] += dx * ZOOM_FACTOR * aspect_ratio
                 self.trans['y'] += dy * ZOOM_FACTOR
                 glut.glutPostRedisplay()
             if self.mouse_state == glut.GLUT_UP:
                 pass
-        if self.mouse_button == glut.GLUT_LEFT_BUTTON:
+
+        if self.mouse_button == glut.GLUT_RIGHT_BUTTON:
             if self.mouse_state == glut.GLUT_DOWN:
                 self.rot['y'] -= 90 * dx
                 self.rot['x'] -= 90 * dy
@@ -349,11 +350,13 @@ class GLviewer(object):
                 glut.glutPostRedisplay()
             if self.mouse_state == glut.GLUT_UP:
                 pass
+
         if self.mouse_button == glut.GLUT_MIDDLE_BUTTON:
             if self.mouse_state == glut.GLUT_DOWN:
                 pass
             if self.mouse_state == glut.GLUT_UP:
                 pass
+
         self.mouse_x = x
         self.mouse_y = y
 
@@ -452,8 +455,9 @@ class GLviewer(object):
 
         maxqty = qty.max()
         minqty = qty.min()
-        qty -= minqty
-        qty /= (maxqty - minqty)
+        if maxqty > minqty:
+            qty -= minqty
+            qty /= (maxqty - minqty)
 
         qty = np.power(qty, 1.0/CONTRAST)
 
