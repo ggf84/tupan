@@ -4,6 +4,7 @@ dist
 *.pyc
 *.png
 *.hdf5
+*.psdf
 *.pkl.gz
 MANIFEST
 pynbody/test/png

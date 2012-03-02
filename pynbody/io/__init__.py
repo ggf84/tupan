@@ -7,40 +7,68 @@
 
 
 from . import hdf5io
+from . import psdfio
 
 
 class IO(object):
     """
 
     """
-    __INTERFACES__ = [hdf5io.HDF5IO,
-                     ]
-    INTERFACES = dict([(i.__name__.lower(), i) for i in __INTERFACES__])
-    del i
-    del __INTERFACES__
 
-    def __init__(self, fname, **kwargs):
-        fmode = kwargs.pop("fmode", 'a')
-        interface = kwargs.pop("interface", 'hdf5io')
-        if not interface in self.INTERFACES:
-            msg = "{0}.__init__ received unexpected interface name: '{1}'."
-            raise TypeError(msg.format(self.__class__.__name__, interface))
+    PROVIDED_FORMATS = ['hdf5', 'psdf']
 
-        if kwargs:
-            msg = "{0}.__init__ received unexpected keyword arguments: {1}."
-            raise TypeError(msg.format(self.__class__.__name__,
-                                       ", ".join(kwargs.keys())))
-
-        Interface = self.INTERFACES[interface]
-        self._io = Interface(fname, fmode)
+    def __init__(self, fname, output_format=None):
+        self.fname = fname
+        self.output_format = output_format
 
 
-    def write_snapshot(self, *args, **kwargs):
-        self._io.write_snapshot(*args, **kwargs)
+    def dump(self, *args, **kwargs):
+        fname = self.fname
+        if self.output_format == "psdf":
+            if not fname.endswith(".psdf"):
+                fname += ".psdf"
+            psdfio.PSDFIO(fname).dump(*args, **kwargs)
+        elif self.output_format == "hdf5":
+            if not fname.endswith(".hdf5"):
+                fname += ".hdf5"
+            hdf5io.HDF5IO(fname).dump(*args, **kwargs)
+        else:
+            raise NotImplementedError('Unknown format: {}. '
+                                      'Choose from: {}'.format(self.output_format,
+                                       self.PROVIDED_FORMATS))
 
 
-    def read_snapshot(self, *args, **kwargs):
-        return self._io.read_snapshot(*args, **kwargs)
+    def load(self, *args, **kwargs):
+        fname = self.fname
+        loaders = (psdfio.PSDFIO, hdf5io.HDF5IO,)
+        for loader in loaders:
+            try:
+                return loader(fname).load(*args, **kwargs)
+            except Exception:
+                pass
+        raise ValueError("File not in a supported format.")
+
+
+    def to_psdf(self):
+        fname = self.fname
+        loaders = (hdf5io.HDF5IO,)
+        for loader in loaders:
+            try:
+                return loader(fname).to_psdf()
+            except Exception:
+                pass
+        raise ValueError('This file is already in \'psdf\' format!')
+
+
+    def to_hdf5(self):
+        fname = self.fname
+        loaders = (psdfio.PSDFIO,)
+        for loader in loaders:
+            try:
+                return loader(fname).to_hdf5()
+            except Exception:
+                pass
+        raise ValueError('This file is already in \'hdf5\' format!')
 
 
 ########## end of file ##########

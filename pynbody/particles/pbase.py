@@ -21,7 +21,7 @@ class Pbase(object):
         interactor.build()
         self._dtype = dtype
         self._data = None
-        if numobjs > 0:
+        if numobjs >= 0:
             self._data = np.zeros(numobjs, dtype)
             fields = {}
             for attr in self._dtype['names']:

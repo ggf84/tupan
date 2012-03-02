@@ -8,6 +8,7 @@ if __name__ == "__main__":
     from pynbody.lib.utils.timing import timings
     from pynbody.models.imf import IMF
     from pynbody.models.plummer import Plummer
+    from pynbody.io import IO
     import matplotlib.pyplot as plt
     import numpy as np
 
@@ -21,7 +22,11 @@ if __name__ == "__main__":
 
         p = Plummer(numBodies, imf, epsf=4.0, epstype='b', seed=1)
         p.make_plummer()
-        p.write_snapshot("plummer"+str(numBodies).zfill(4)+'b')
+
+        fname = "plummer"+str(numBodies).zfill(4)+'b'+'.hdf5'
+        io = IO(fname)
+        io.dump(p.particles, fmode='w')
+
         p.show()
 
 #        from pynbody.analysis import GLviewer
@@ -45,7 +50,6 @@ if __name__ == "__main__":
 
 
     main()
-    print(timings)
 
 
 ########## end of file ##########

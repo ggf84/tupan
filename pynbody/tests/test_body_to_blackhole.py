@@ -7,6 +7,7 @@ if __name__ == "__main__":
     from pynbody.models.imf import IMF
     from pynbody.models.plummer import Plummer
     from pynbody.particles import Particles
+    from pynbody.io import IO
     import matplotlib.pyplot as plt
     import numpy as np
 
@@ -21,7 +22,11 @@ if __name__ == "__main__":
 
         p = Plummer(numBodies, imf, epsf=4.0, epstype='b', seed=1)
         p.make_plummer()
-        p.write_snapshot("plummer"+str(numBodies).zfill(4)+'b')
+
+        fname = "plummer"+str(numBodies).zfill(4)+'b'+'.hdf5'
+        io = IO(fname)
+        io.dump(p.particles, fmode='w')
+
 #        p.show()
 
         return p.particles.copy()
@@ -46,10 +51,9 @@ if __name__ == "__main__":
     p["blackhole"].eps2 *= 0
 
 
-    from pynbody.io import IO
-    io = IO("plummer"+str(numBodies-n_bh).zfill(4)+'b'+'-'+str(n_bh)+"bh",
-            interface="hdf5io")
-    io.write_snapshot(p)
+    fname = "plummer"+str(numBodies-n_bh).zfill(4)+'b'+'-'+str(n_bh)+"bh"+'.hdf5'
+    io = IO(fname)
+    io.dump(p, fmode='w')
 
 
 ########## end of file ##########

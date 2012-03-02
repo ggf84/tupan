@@ -124,8 +124,8 @@ class Simulation(object):
         print('#'*40, file=sys.stderr)
 
         # Read the initial conditions.
-        ic = IO(self.args.input, interface=self.args.io_interface)
-        particles = ic.read_snapshot()
+        fname = self.args.input_file
+        particles = IO(fname).load()
 
         # Initializes the integrator.
         self.integrator = Integrator(self.args.eta, 0.0, particles,
@@ -138,10 +138,8 @@ class Simulation(object):
                                   particles)
 
         # Initializes snapshots output.
-        self.io = IO("snapshots", interface=self.args.io_interface)
-        self.snap_count = 0
-        snap_name = "snap_" + str(self.snap_count).zfill(5)
-        self.io.write_snapshot(particles, snap_name, self.integrator.time)
+        self.io = IO("snapshots", output_format=self.args.output_format)
+        self.io.dump(particles)
 
         # Initializes times for output a couple of things.
         self.gl_steps = self.args.gl_freq
@@ -183,10 +181,7 @@ class Simulation(object):
                 self.dia.print_diagnostic(self.integrator.time,
                                           self.integrator.tstep,
                                           particles)
-                self.snap_count += 1
-                snap_name = "snap_" + str(self.snap_count).zfill(5)
-                self.io.write_snapshot(particles, snap_name,
-                                       self.integrator.time)
+                self.io.dump(particles)
             self.res_steps += 1
             if (self.res_steps >= self.args.res_freq):
                 self.res_steps -= self.args.res_freq
@@ -254,12 +249,13 @@ def main():
     newrun = subparser.add_parser("newrun",
                                   description="Performs a new N-body simulation.")
     # add the arguments to newrun
-    newrun.add_argument("-i", "--input",
+    newrun.add_argument("-i", "--input_file",
                         type=str,
                         default=None,
                         required=True,
                         help="The name of the initial conditions file which "
-                             "must be read from (type: str, default: None)."
+                             "must be read from. The file format, if supported, "
+                             "is automatically discovered (type: str, default: None)."
                        )
     newrun.add_argument("-e", "--eta",
                         type=float,
@@ -282,12 +278,12 @@ def main():
                         help="Integration method name (type: str, default:"
                              " 'leapfrog')."
                        )
-    newrun.add_argument("--io_interface",
+    newrun.add_argument("-o", "--output_format",
                         type=str,
-                        default="hdf5io",
-                        choices=IO.INTERFACES.keys(),
-                        help="Data Input/Output Interface (type: str, default: "
-                             "'hdf5io')."
+                        default="hdf5",
+                        choices=IO.PROVIDED_FORMATS,
+                        help="Output format to store the particle stream. "
+                             "(type: str, default: 'hdf5')."
                        )
     newrun.add_argument("--log_file",
                         type=str,
@@ -327,13 +323,6 @@ def main():
                         help="File name where error messages should be written"
                              " (type: str, default: sys.stderr)."
                        )
-#    newrun.add_argument("-o", "--out",
-#                        type=int,
-#                        default=None,
-#                        help="Number of individual time steps between each par"
-#                             "ticle output (type: int, default: None)."
-#                             " XXX: NOT IMPLEMENTED."
-#                       )
     newrun.set_defaults(func=_main_newrun)
 
     # --------------------------------------------------------------------------

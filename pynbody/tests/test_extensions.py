@@ -33,8 +33,6 @@ def run_all():
 
 ##############################################
 
-    print(timings)
-
 
 
 def compare_ret_C_vs_CL(kernels):

@@ -10,7 +10,6 @@ from __future__ import (print_function, division)
 import sys
 import math
 import numpy as np
-from pynbody.io import IO
 from pynbody.particles import Particles
 from pynbody.lib.utils.timing import timings
 
@@ -149,13 +148,6 @@ class Plummer(object):
         self.particles.reset_center_of_mass()
         scale_to_nbody_units(self.particles)
         self.particles.set_acc(self.particles, 0.0)
-
-
-    def write_snapshot(self, fname="plummer"):
-        io = IO(fname, fmode='w', interface="hdf5io")
-        io.write_snapshot(self.particles)
-
-
 
 
 

@@ -18,63 +18,65 @@ class HDF5IO(object):
     """
 
     """
-    def __init__(self, fname, fmode='a'):
-        if not fname.endswith(".hdf5"):
-            fname += ".hdf5"
+    DSET_LENGTH = {'body': 0, 'blackhole': 0, 'sph': 0}
+
+    def __init__(self, fname):
         self.fname = fname
-        self.fmode = fmode
+#        self.DSET_LENGTH = {'body': 0, 'blackhole': 0, 'sph': 0}
 
 
     @timings
-    def write_snapshot(self, data, snap_name=None, snap_time=None):
+    def dump(self, particles, fmode='a'):
         """
 
         """
-        with h5py.File(self.fname, self.fmode) as fobj:
-            data_name = data.__class__.__name__
-            if isinstance(snap_name, str):
-                snap_grp = fobj.require_group(snap_name)
-                snap_grp.attrs['Time'] = pickle.dumps(snap_time)
-                data_grp = snap_grp.require_group(data_name)
-            else:
-                data_grp = fobj.require_group(data_name)
-            data_grp.attrs['Class'] = pickle.dumps(data.__class__)
-            for (k, v) in data.items():
+        with h5py.File(self.fname, fmode) as fobj:
+            group_name = particles.__class__.__name__
+            group = fobj.require_group(group_name)
+            group.attrs['Class'] = pickle.dumps(particles.__class__)
+            for (k, v) in particles.items():
                 if v:
                     dset_name = v.__class__.__name__
-                    dset = data_grp.require_dataset(dset_name,
-                                                    (len(v),),
-                                                    dtype=v._dtype,
-                                                    maxshape=(None,),
-                                                    chunks=True,
-                                                    compression='gzip',
-                                                    shuffle=True)
+                    dset = group.require_dataset(dset_name,
+                                                 (self.DSET_LENGTH[k],),
+                                                 dtype=v._dtype,
+                                                 maxshape=(None,),
+                                                 chunks=True,
+                                                 compression='gzip',
+                                                 shuffle=True)
                     dset.attrs['Class'] = pickle.dumps(v.__class__)
-                    dset[:] = v.get_data()
+                    olen = len(dset)
+                    dset.resize((olen+len(v),))
+                    nlen = len(dset)
+                    dset[olen:nlen] = v.get_data()
+                    self.DSET_LENGTH[k] = nlen
 
 
     @timings
-    def read_snapshot(self, snap_name=None):
+    def load(self):
         """
 
         """
         with h5py.File(self.fname, 'r') as fobj:
-            if isinstance(snap_name, str):
-                snap_grp = fobj.require_group(snap_name)
-                snap_time = pickle.loads(snap_grp.attrs['Time'])
-                data_name = snap_grp.listnames()[0]
-                data_grp = snap_grp.require_group(data_name)
-            else:
-                data_name = fobj.keys()[0]
-                data_grp = fobj.require_group(data_name)
-            data = pickle.loads(data_grp.attrs['Class'])()
-            for (k, v) in data_grp.items():
+            group_name = fobj.keys()[0]
+            group = fobj.require_group(group_name)
+            particles = pickle.loads(group.attrs['Class'])()
+            for (k, v) in group.items():
                 obj = pickle.loads(v.attrs['Class'])()
                 obj.set_data(v[:])
-                data.set_members(obj)
-        if isinstance(snap_name, str):
-            return (data, snap_time)
-        return data
+                particles.set_members(obj)
+        return particles
+
+
+    def to_psdf(self):
+        """
+        Converts a HDF5 stream into a YAML one.
+        """
+        from . import psdfio
+        fname = self.fname.replace('.hdf5', '.psdf')
+        stream = psdfio.PSDFIO(fname)
+        p = self.load()
+        stream.dump(p, fmode='w')
 
 
 ########## end of file ##########
