@@ -18,11 +18,8 @@ class HDF5IO(object):
     """
 
     """
-    DSET_LENGTH = {'body': 0, 'blackhole': 0, 'sph': 0}
-
     def __init__(self, fname):
         self.fname = fname
-#        self.DSET_LENGTH = {'body': 0, 'blackhole': 0, 'sph': 0}
 
 
     @timings
@@ -30,15 +27,21 @@ class HDF5IO(object):
         """
 
         """
+        dset_length = {'body': 0, 'blackhole': 0, 'sph': 0}
         with h5py.File(self.fname, fmode) as fobj:
-            group_name = particles.__class__.__name__
+            group_name = particles.__class__.__name__.lower()
             group = fobj.require_group(group_name)
             group.attrs['Class'] = pickle.dumps(particles.__class__)
+            for (k, v) in group.items():
+                if v:
+                    dset_length[k] = len(v)
+                else:
+                    dset_length[k] = 0
             for (k, v) in particles.items():
                 if v:
-                    dset_name = v.__class__.__name__
+                    dset_name = v.__class__.__name__.lower()
                     dset = group.require_dataset(dset_name,
-                                                 (self.DSET_LENGTH[k],),
+                                                 (dset_length[k],),
                                                  dtype=v._dtype,
                                                  maxshape=(None,),
                                                  chunks=True,
@@ -49,7 +52,6 @@ class HDF5IO(object):
                     dset.resize((olen+len(v),))
                     nlen = len(dset)
                     dset[olen:nlen] = v.get_data()
-                    self.DSET_LENGTH[k] = nlen
 
 
     @timings

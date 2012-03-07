@@ -39,7 +39,13 @@ class IO(object):
 
 
     def load(self, *args, **kwargs):
+        import os
+        import sys
+        from warnings import warn
         fname = self.fname
+        if not os.path.exists(fname):
+            warn("No such file or directory: '{}'".format(fname), stacklevel=2)
+            sys.exit()
         loaders = (psdfio.PSDFIO, hdf5io.HDF5IO,)
         for loader in loaders:
             try:
