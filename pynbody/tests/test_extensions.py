@@ -13,7 +13,7 @@ from pynbody.lib.utils.timing import (Timer, timings)
 
 
 def run_all():
-    kernels = extensions.build_kernels()
+    kernels = extensions.kernels
     compare_ret_C_vs_CL(kernels)
     performance_C_vs_CL(kernels)
 
@@ -300,7 +300,7 @@ def performance_test(cext, clext, ni, nj, data, output_shape, lmem_layout, nsamp
     c_metrics = {"time": c_elapsed,
                  "npart/s": np.sqrt(ni*nj)/c_elapsed,
                  "gflop/s": c_gflops/c_elapsed,
-                 "src_name": cext.src_name[0]}
+                 "kernel_name": cext.kernel_name}
     print("C metrics :", c_metrics)
 
     # -------------------------------------------
@@ -321,7 +321,7 @@ def performance_test(cext, clext, ni, nj, data, output_shape, lmem_layout, nsamp
     cl_metrics = {"time": cl_elapsed,
                   "npart/s": np.sqrt(ni*nj)/cl_elapsed,
                   "gflop/s": cl_gflops/cl_elapsed,
-                  "src_name": clext.src_name[0]}
+                  "kernel_name": clext.kernel_name}
     print("CL metrics:", cl_metrics)
 
 

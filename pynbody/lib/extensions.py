@@ -36,6 +36,7 @@ class Extensions(object):
         self._cl_devbuf_res = None
 
 
+
     # --------------------------------------------------------------------------
     # Load source
 
@@ -50,11 +51,6 @@ class Extensions(object):
         with open(fname, 'r') as fobj:
             self.src_code = fobj.read()
 
-        # read flops count from core function
-        fname = os.path.join(self.path, self.src_name[0]+"_core.h")
-        with open(fname, 'r') as fobj:
-            self.flops_count = int(get_pattern("Total flop count", fobj.read()))
-
 
 
     # --------------------------------------------------------------------------
@@ -63,13 +59,13 @@ class Extensions(object):
     def _c_build(self, **kwargs):
         ctype = kwargs.pop("dtype", 'f')
         if not (ctype is 'd' or ctype is 'f'):
-            msg = "{0}._cl_build received unexpected dtype: '{1}'."
+            msg = "{0}._c_build received unexpected dtype: '{1}'."
             raise TypeError(msg.format(self.__class__.__name__, ctype))
 
         dummy = kwargs.pop("junroll", 1)    # Only meaningful on CL kernels.
 
         if kwargs:
-            msg = "{0}._cl_build received unexpected keyword arguments: {1}."
+            msg = "{0}._c_build received unexpected keyword arguments: {1}."
             raise TypeError(msg.format(self.__class__.__name__,
                                        ", ".join(kwargs.keys())))
 
@@ -82,15 +78,14 @@ class Extensions(object):
 
         try:
             from instant import build_module
-            prog = build_module(source_directory=self.path,
-                                code=self.src_code,
-                                init_code='import_array();',
-                                system_headers=["numpy/arrayobject.h"],
-                                include_dirs=[np.get_include(),self.path],
-                                libraries=["m"],
-                                cppargs=cppargs,
-                                signature=signature)
-            self.program = getattr(prog, self.src_name[0])
+            self.program = build_module(source_directory=self.path,
+                                        code=self.src_code,
+                                        init_code='import_array();',
+                                        system_headers=["numpy/arrayobject.h"],
+                                        include_dirs=[np.get_include(),self.path],
+                                        libraries=["m"],
+                                        cppargs=cppargs,
+                                        signature=signature)
             self.ext_type = "C_EXTENSION"
         except Exception as c_build_except:
             warn("{0}".format(c_build_except), stacklevel=2)
@@ -124,8 +119,7 @@ class Extensions(object):
         try:
             self._cl_ctx = cl.create_some_context()
             self._cl_queue = cl.CommandQueue(self._cl_ctx)
-            prog = cl.Program(self._cl_ctx, self.src_code).build(options=options)
-            self.program = getattr(prog, self.src_name[0])
+            self.program = cl.Program(self._cl_ctx, self.src_code).build(options=options)
             self.ext_type = "CL_EXTENSION"
         except Exception as cl_build_except:
             warn("{0}".format(cl_build_except), RuntimeWarning, stacklevel=2)
@@ -148,6 +142,18 @@ class Extensions(object):
                     sys.exit(0)
                 self.load_source(self.src_name[0]+".c")
                 self._c_build(**kwargs)
+
+
+
+    def get_kernel(self, kernel_name):
+        import copy
+        self.kernel_func = getattr(self.program, kernel_name)
+        self.kernel_name = kernel_name
+        # read flops count from core function
+        fname = os.path.join(self.path, kernel_name+"_core.h")
+        with open(fname, 'r') as fobj:
+            self.flops_count = int(get_pattern("Total flop count", fobj.read()))
+        return copy.copy(self)
 
 
 
@@ -220,12 +226,12 @@ class Extensions(object):
 
     def _c_execute(self):
         args = self._kernelargs
-        self._hostbuf_output = self.program(*args)
+        self._hostbuf_output = self.kernel_func(*args)
 
 
     def _cl_execute(self):
         args = self._kernelargs
-        self.program(self._cl_queue, *args).wait()
+        self.kernel_func(self._cl_queue, *args).wait()
 
 
     def execute(self):
@@ -261,41 +267,30 @@ class Extensions(object):
 def build_kernels():
     dirname = os.path.dirname(__file__)
     abspath = os.path.abspath(dirname)
-    path = os.path.join(abspath, "ext2")
+    path = os.path.join(abspath, "ext")
 
-    sources = ["p2p_phi_kernel.cl", "p2p_acc_kernel.cl",
-               "p2p_phi_kernel.c", "p2p_acc_kernel.c",
-               "p2p_pnacc_kernel.c"]
+    print("building C kernels...", file=sys.stderr)
+    extension_program = Extensions(path)
+    extension_program.load_source("gravity_kernels.c")
+    extension_program.build(dtype='d', junroll=8)
+    for name in ("p2p_phi_kernel", "p2p_acc_kernel", "p2p_pnacc_kernel"):
+        kernels["c_lib64_"+name] = extension_program.get_kernel(name)
+    extension_program.build(dtype='f', junroll=8)
+    for name in ("p2p_phi_kernel", "p2p_acc_kernel", "p2p_pnacc_kernel"):
+        kernels["c_lib32_"+name] = extension_program.get_kernel(name)
 
-    kernels = {}
+    print("building CL kernels...", file=sys.stderr)
+    extension_program = Extensions(path)
+    extension_program.load_source("gravity_kernels.cl")
+    extension_program.build(dtype='d', junroll=8)
+    for name in ("p2p_phi_kernel", "p2p_acc_kernel"):
+        kernels["cl_lib64_"+name] = extension_program.get_kernel(name)
+    extension_program.build(dtype='f', junroll=8)
+    for name in ("p2p_phi_kernel", "p2p_acc_kernel"):
+        kernels["cl_lib32_"+name] = extension_program.get_kernel(name)
 
-    # build double precision kernels
-    print("#"*40, file=sys.stderr)
-    print("### building double precision kernels...", file=sys.stderr)
-    for src in sources:
-        name, ext = os.path.splitext(src)
-        ext = ext.strip('.')
-        key = ext+"_lib64_"+name
-        kernels[key] = Extensions(path)
-        kernels[key].load_source(src)
-        kernels[key].build(dtype='d', junroll=8)
-    print("### ...done.", file=sys.stderr)
-    print("#"*40, file=sys.stderr)
 
-    # build single precision kernels
-    print("#"*40, file=sys.stderr)
-    print("### building single precision kernels...", file=sys.stderr)
-    for src in sources:
-        name, ext = os.path.splitext(src)
-        ext = ext.strip('.')
-        key = ext+"_lib32_"+name
-        kernels[key] = Extensions(path)
-        kernels[key].load_source(src)
-        kernels[key].build(dtype='f', junroll=8)
-    print("### ...done.", file=sys.stderr)
-    print("#"*40, file=sys.stderr)
-
-    return kernels
-
+kernels = {}
+build_kernels()
 
 ########## end of file ##########

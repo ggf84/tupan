@@ -7,18 +7,10 @@
 
 
 import numpy as np
-from .gravity import gravity_methods as gravity
+from .gravity import gravitation
 
 
 __all__ = ["Interactor", "interact"]
-
-
-_has_built = False
-def build():
-    global _has_built
-    if not _has_built:
-        gravity.build()
-        _has_built = True
 
 
 class Interactor(object):
@@ -35,16 +27,16 @@ class Interactor(object):
 
         jobj = objs["body"]
 #        if jobj:
-        iphi = gravity.newtonian.set_phi(iobj, jobj)
+        iphi = gravitation.newtonian.set_phi(iobj, jobj)
         self_phi = iphi.copy()
 
         jobj = objs["blackhole"]
         if jobj:
-            iphi += gravity.newtonian.set_phi(iobj, jobj)
+            iphi += gravitation.newtonian.set_phi(iobj, jobj)
 
         jobj = objs["sph"]
         if jobj:
-            iphi += gravity.newtonian.set_phi(iobj, jobj)
+            iphi += gravitation.newtonian.set_phi(iobj, jobj)
 
         return (iphi, self_phi)
 
@@ -53,16 +45,16 @@ class Interactor(object):
 
         jobj = objs["blackhole"]
 #        if jobj:
-        iphi = gravity.newtonian.set_phi(iobj, jobj)
+        iphi = gravitation.newtonian.set_phi(iobj, jobj)
         self_phi = iphi.copy()
 
         jobj = objs["body"]
         if jobj:
-            iphi += gravity.newtonian.set_phi(iobj, jobj)
+            iphi += gravitation.newtonian.set_phi(iobj, jobj)
 
         jobj = objs["sph"]
         if jobj:
-            iphi += gravity.newtonian.set_phi(iobj, jobj)
+            iphi += gravitation.newtonian.set_phi(iobj, jobj)
 
         return (iphi, self_phi)
 
@@ -71,16 +63,16 @@ class Interactor(object):
 
         jobj = objs["sph"]
 #        if jobj:
-        iphi = gravity.newtonian.set_phi(iobj, jobj)
+        iphi = gravitation.newtonian.set_phi(iobj, jobj)
         self_phi = iphi.copy()
 
         jobj = objs["body"]
         if jobj:
-            iphi += gravity.newtonian.set_phi(iobj, jobj)
+            iphi += gravitation.newtonian.set_phi(iobj, jobj)
 
         jobj = objs["blackhole"]
         if jobj:
-            iphi += gravity.newtonian.set_phi(iobj, jobj)
+            iphi += gravitation.newtonian.set_phi(iobj, jobj)
 
         return (iphi, self_phi)
 
@@ -91,19 +83,19 @@ class Interactor(object):
 
         jobj = objs["body"]
 #        if jobj:
-        ret = gravity.newtonian.set_acc(iobj, jobj, eta)
+        ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
         iacc = ret[0]
         iomega = ret[1]
 
         jobj = objs["blackhole"]
         if jobj:
-            ret = gravity.newtonian.set_acc(iobj, jobj, eta)
+            ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
             iomega += ret[1]
 
         jobj = objs["sph"]
         if jobj:
-            ret = gravity.newtonian.set_acc(iobj, jobj, eta)
+            ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
             iomega += ret[1]
 
@@ -114,21 +106,21 @@ class Interactor(object):
 
         jobj = objs["blackhole"]
 #        if jobj:
-        ret = gravity.newtonian.set_acc(iobj, jobj, eta)
-        pnret = gravity.post_newtonian.set_acc(iobj, jobj)
+        ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
+        pnret = gravitation.post_newtonian.set_acc(iobj, jobj)
         iacc = ret[0] + pnret
         ipnacc = pnret
         iomega = ret[1]
 
         jobj = objs["body"]
         if jobj:
-            ret = gravity.newtonian.set_acc(iobj, jobj, eta)
+            ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
             iomega += ret[1]
 
         jobj = objs["sph"]
         if jobj:
-            ret = gravity.newtonian.set_acc(iobj, jobj, eta)
+            ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
             iomega += ret[1]
 
@@ -139,19 +131,19 @@ class Interactor(object):
 
         jobj = objs["sph"]
 #        if jobj:
-        ret = gravity.newtonian.set_acc(iobj, jobj, eta)
+        ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
         iacc = ret[0]
         iomega = ret[1]
 
         jobj = objs["body"]
         if jobj:
-            ret = gravity.newtonian.set_acc(iobj, jobj, eta)
+            ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
             iomega += ret[1]
 
         jobj = objs["blackhole"]
         if jobj:
-            ret = gravity.newtonian.set_acc(iobj, jobj, eta)
+            ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
             iacc += ret[0]
             iomega += ret[1]
 

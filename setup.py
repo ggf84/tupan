@@ -12,9 +12,9 @@ import pynbody
 
 package_data = {}
 package_data['pynbody.analysis'] = [os.path.join('textures', '*.png')]
-package_data['pynbody.lib'] = [os.path.join('ext2', '*.c'),
-                               os.path.join('ext2', '*.h'),
-                               os.path.join('ext2', '*.cl')]
+package_data['pynbody.lib'] = [os.path.join('ext', '*.c'),
+                               os.path.join('ext', '*.h'),
+                               os.path.join('ext', '*.cl')]
 
 
 classifiers = """

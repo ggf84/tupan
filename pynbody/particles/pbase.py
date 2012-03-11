@@ -7,7 +7,6 @@
 
 from __future__ import print_function
 import numpy as np
-from ..lib import interactor
 
 
 __all__ = ['Pbase']
@@ -18,7 +17,6 @@ class Pbase(object):
     A base class implementing common functionalities for all types of particles.
     """
     def __init__(self, numobjs, dtype):
-        interactor.build()
         self._dtype = dtype
         self._data = None
         if numobjs >= 0:

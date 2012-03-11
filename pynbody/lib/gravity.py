@@ -10,74 +10,24 @@ between particles in Newtonian and post-Newtonian approach.
 import sys
 import numpy as np
 from collections import namedtuple
-from . import extensions
 from .utils.timing import timings
 
 
-__all__ = ["Gravity", "gravity_methods"]
+__all__ = ["Gravity", "gravitation"]
 
 
 class Newtonian(object):
     """
     This class holds base methods for newtonian gravity.
     """
-    def __init__(self, set_phi, set_acc):
-        self.set_phi = set_phi
-        self.set_acc = set_acc
+    def __init__(self, phi_kernel, acc_kernel):
+        self._phi_kernel = phi_kernel
+        self._acc_kernel = acc_kernel
 
 
-class PostNewtonian(object):
-    """
-    This class holds base methods for post-newtonian gravity.
-    """
-    def __init__(self, set_acc):
-        self.set_acc = set_acc
-
-
-class Clight(object):
-    """
-    This class holds the PN-order and some inverse powers of clight.
-    """
-    def __init__(self, pn_order, clight):
-        self.pn_order = int(pn_order)
-        self.inv1 = 1.0/float(clight)
-        self.inv2 = self.inv1**2
-        self.inv3 = self.inv1**3
-        self.inv4 = self.inv1**4
-        self.inv5 = self.inv1**5
-        self.inv6 = self.inv1**6
-        self.inv7 = self.inv1**7
-
-
-class Gravity(object):
-    """
-    A base class for gravitational interaction between particles.
-    """
-    def __init__(self, pn_order=4, clight=25.0):
-        self._clight = Clight(pn_order, clight)
-        self.newtonian = None
-        self.post_newtonian = None
-        self._has_built = False
-
-
-    def _setup(self):
-        kernels = extensions.build_kernels()
-        self._phi_kernel = kernels["cl_lib64_p2p_phi_kernel"]
-        self._acc_kernel = kernels["cl_lib64_p2p_acc_kernel"]
-        self._pnacc_kernel = kernels["c_lib64_p2p_pnacc_kernel"]
-
-
-    def build(self):
-        if not self._has_built:
-            self._setup()
-            self.newtonian = Newtonian(self._set_phi, self._set_acc)
-            self.post_newtonian = PostNewtonian(self._set_pnacc)
-            self._has_built = True
-
-
-    def _set_phi(self, iobj, jobj):
+    def set_phi(self, iobj, jobj):
         """
-        Set obj-obj phi.
+        Set obj-obj newtonian phi.
         """
         ni = len(iobj)
         nj = len(jobj)
@@ -104,9 +54,9 @@ class Gravity(object):
         return ret
 
 
-    def _set_acc(self, iobj, jobj, eta):
+    def set_acc(self, iobj, jobj, eta):
         """
-        Set obj-obj acc.
+        Set obj-obj newtonian acc.
         """
         ni = len(iobj)
         nj = len(jobj)
@@ -136,15 +86,24 @@ class Gravity(object):
         return (ret[:,:3], ret[:,3])
 
 
-    def _set_pnacc(self, iobj, jobj):
+class PostNewtonian(object):
+    """
+    This class holds base methods for post-newtonian gravity.
+    """
+    def __init__(self, clight, pnacc_kernel):
+        self.clight = clight
+        self._pnacc_kernel = pnacc_kernel
+
+
+    def set_acc(self, iobj, jobj):
         """
-        Set blackhole-blackhole pn-acc.
+        Set blackhole-blackhole post-newtonian acc.
         """
         ni = len(iobj)
         nj = len(jobj)
         iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
         jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-        clight = self._clight
+        clight = self.clight
         data = (iposmass, iobj.vel,
                 jposmass, jobj.vel,
                 np.uint32(ni),
@@ -160,7 +119,37 @@ class Gravity(object):
         return ret
 
 
-gravity_methods = Gravity()
+class Clight(object):
+    """
+    This class holds the PN-order and some inverse powers of clight.
+    """
+    def __init__(self, pn_order, clight):
+        self.pn_order = int(pn_order)
+        self.inv1 = 1.0/float(clight)
+        self.inv2 = self.inv1**2
+        self.inv3 = self.inv1**3
+        self.inv4 = self.inv1**4
+        self.inv5 = self.inv1**5
+        self.inv6 = self.inv1**6
+        self.inv7 = self.inv1**7
+
+
+class Gravity(object):
+    """
+    A base class for gravitational interaction between particles.
+    """
+    def __init__(self, pn_order=4, clight=25.0):
+        from . import extensions
+        kernels = extensions.kernels
+        self._phi_kernel = kernels["cl_lib64_p2p_phi_kernel"]
+        self._acc_kernel = kernels["cl_lib64_p2p_acc_kernel"]
+        self._pnacc_kernel = kernels["c_lib64_p2p_pnacc_kernel"]
+        self._clight = Clight(pn_order, clight)
+        self.newtonian = Newtonian(self._phi_kernel, self._acc_kernel)
+        self.post_newtonian = PostNewtonian(self._clight, self._pnacc_kernel)
+
+
+gravitation = Gravity()
 
 
 ########## end of file ##########
