@@ -8,6 +8,8 @@
 
 from . import imf
 from . import plummer
+from . import pythagorean
+from . import figure_eight_orbit
 
 
 ########## end of file ##########
