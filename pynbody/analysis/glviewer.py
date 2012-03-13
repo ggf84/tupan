@@ -453,11 +453,7 @@ class GLviewer(object):
 
     def get_colors(self, qty):
 
-        maxqty = qty.max()
-        minqty = qty.min()
-        if maxqty > minqty:
-            qty -= minqty
-            qty /= (maxqty - minqty)
+        qty /= qty.max()
 
         qty = np.power(qty, 1.0/CONTRAST)
 
