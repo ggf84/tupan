@@ -140,10 +140,10 @@ class Gravity(object):
     """
     def __init__(self, pn_order=4, clight=25.0):
         from . import extensions
-        kernels = extensions.kernels
-        self._phi_kernel = kernels["cl_lib64_p2p_phi_kernel"]
-        self._acc_kernel = kernels["cl_lib64_p2p_acc_kernel"]
-        self._pnacc_kernel = kernels["c_lib64_p2p_pnacc_kernel"]
+        kernels = extensions.KERNELS
+        self._phi_kernel = kernels["p2p_phi_kernel"]
+        self._acc_kernel = kernels["p2p_acc_kernel"]
+        self._pnacc_kernel = kernels["p2p_pnacc_kernel"]
         self._clight = Clight(pn_order, clight)
         self.newtonian = Newtonian(self._phi_kernel, self._acc_kernel)
         self.post_newtonian = PostNewtonian(self._clight, self._pnacc_kernel)

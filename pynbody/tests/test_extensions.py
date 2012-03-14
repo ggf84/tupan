@@ -13,7 +13,7 @@ from pynbody.lib.utils.timing import (Timer, timings)
 
 
 def run_all():
-    kernels = extensions.kernels
+    kernels = extensions.ALL_KERNELS
     compare_ret_C_vs_CL(kernels)
     performance_C_vs_CL(kernels)
 

@@ -264,10 +264,12 @@ class Extensions(object):
 
 
 
-def build_kernels():
+def build_kernels(device='gpu'):
     dirname = os.path.dirname(__file__)
     abspath = os.path.abspath(dirname)
     path = os.path.join(abspath, "ext")
+
+    kernels = {}
 
     print("building C kernels...", file=sys.stderr)
     extension_program = Extensions(path)
@@ -290,7 +292,24 @@ def build_kernels():
         kernels["cl_lib32_"+name] = extension_program.get_kernel(name)
 
 
-kernels = {}
-build_kernels()
+    all_kernels = kernels
+    kernels = {}
+    if device == 'gpu':
+        kernels['p2p_phi_kernel'] = all_kernels['cl_lib64_p2p_phi_kernel']
+        kernels['p2p_acc_kernel'] = all_kernels['cl_lib64_p2p_acc_kernel']
+        kernels['p2p_pnacc_kernel'] = all_kernels['c_lib64_p2p_pnacc_kernel']
+    elif device == 'cpu':
+        kernels['p2p_phi_kernel'] = all_kernels['c_lib64_p2p_phi_kernel']
+        kernels['p2p_acc_kernel'] = all_kernels['c_lib64_p2p_acc_kernel']
+        kernels['p2p_pnacc_kernel'] = all_kernels['c_lib64_p2p_pnacc_kernel']
+    else:
+        print('Unsupported device...')
+        sys.exit()
+
+    return kernels, all_kernels
+
+
+KERNELS, ALL_KERNELS = build_kernels()
+
 
 ########## end of file ##########
