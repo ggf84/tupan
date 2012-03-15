@@ -12,6 +12,25 @@
 // Phi methods
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL
+p2p_accum_phi(REAL myPhi,
+              const REAL4 myPos,
+              const REAL myEps2,
+              uint j_begin,
+              uint j_end,
+              __local REAL4 *sharedPos,
+              __local REAL *sharedEps2)
+{
+    uint j;
+    for (j = j_begin; j < j_end; ++j) {
+       myPhi = p2p_phi_kernel_core(myPhi, myPos, myEps2,
+                                   sharedPos[j], sharedEps2[j]);
+
+    }
+    return myPhi;
+}
+
+
+inline REAL
 p2p_phi_kernel_main_loop(const REAL4 myPos,
                          const REAL myEps2,
                          __global const REAL4 *jpos,
@@ -34,24 +53,17 @@ p2p_phi_kernel_main_loop(const REAL4 myPos,
         e[1] = async_work_group_copy(sharedEps2, jeps2 + tile * lsize, nb, 0);
         wait_group_events(2, e);
 
-        uint j, jj = 0;
-        uint jjmax = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
-        for (; jj < jjmax; jj += JUNROLL) {
-            for (j = jj; j < jj + JUNROLL; ++j) {
-               myPhi = p2p_phi_kernel_core(myPhi,
-                                           myPos,
-                                           myEps2,
-                                           sharedPos[j],
-                                           sharedEps2[j]);
-            }
+        uint j = 0;
+        uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
+        for (; j < j_max; j += JUNROLL) {
+            myPhi = p2p_accum_phi(myPhi, myPos, myEps2,
+                                  j, j + JUNROLL,
+                                  sharedPos, sharedEps2);
         }
-            for (j = jj; j < nb; ++j) {
-               myPhi = p2p_phi_kernel_core(myPhi,
-                                           myPos,
-                                           myEps2,
-                                           sharedPos[j],
-                                           sharedEps2[j]);
-            }
+        myPhi = p2p_accum_phi(myPhi, myPos, myEps2,
+                              j, nb,
+                              sharedPos, sharedEps2);
+
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 

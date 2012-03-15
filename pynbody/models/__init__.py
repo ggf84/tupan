@@ -8,6 +8,7 @@
 
 from . import imf
 from . import plummer
+from . import keplerian_binary
 from . import pythagorean
 from . import figure_eight_orbit
 
