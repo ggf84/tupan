@@ -415,9 +415,9 @@ p2p_pnacc_kernel_core(REAL3 pnacc,
     REAL3 vixyz = {vi.x, vi.y, vi.z};
     REAL3 vjxyz = {vj.x, vj.y, vj.z};
 
-    REAL inv_r = rsqrt(r2);                                          // 2 FLOPs
-    inv_r = ((r2 > 0) ? inv_r:0);
-    REAL inv_r2 = inv_r * inv_r;                                     // 1 FLOPs
+    REAL inv_r2 = 1 / r2;                                            // 1 FLOPs
+    inv_r2 = (r2 > 0) ? (inv_r2):(0);
+    REAL inv_r = sqrt(inv_r2);                                       // 1 FLOPs
 
     REAL3 n;
     n.x = r.x * inv_r;                                               // 1 FLOPs

@@ -125,21 +125,21 @@ def test_phi(cext, clext, bi, bj):
     # -------------------------------------------
 
     # XXX: kw has no efects with C extensions!
-    cext.load_data(*data, global_size=global_size,
-                          local_size=local_size,
-                          output_buf=output_buf,
-                          lmem_layout=lmem_layout)
-    cext.execute()
+    cext.set_kernel_args(*data, global_size=global_size,
+                                local_size=local_size,
+                                output_buf=output_buf,
+                                lmem_layout=lmem_layout)
+    cext.run()
     cres = cext.get_result()
     cepot = 0.5 * np.sum(bi.mass * cres)
 
     # -------------------------------------------
 
-    clext.load_data(*data, global_size=global_size,
-                           local_size=local_size,
-                           output_buf=output_buf,
-                           lmem_layout=lmem_layout)
-    clext.execute()
+    clext.set_kernel_args(*data, global_size=global_size,
+                                 local_size=local_size,
+                                 output_buf=output_buf,
+                                 lmem_layout=lmem_layout)
+    clext.run()
     clres = clext.get_result()
     clepot = 0.5 * np.sum(bi.mass * clres)
 
@@ -178,22 +178,22 @@ def test_acc(cext, clext, bi, bj):
     # -------------------------------------------
 
     # XXX: kw has no efects with C extensions!
-    cext.load_data(*data, global_size=global_size,
-                          local_size=local_size,
-                          output_buf=output_buf,
-                          lmem_layout=lmem_layout)
-    cext.execute()
+    cext.set_kernel_args(*data, global_size=global_size,
+                                local_size=local_size,
+                                output_buf=output_buf,
+                                lmem_layout=lmem_layout)
+    cext.run()
     cres = cext.get_result()
     c_com_force = (bi.mass * cres[:,:3].T).sum(1)
     c_com_force = np.dot(c_com_force, c_com_force)**0.5
 
     # -------------------------------------------
 
-    clext.load_data(*data, global_size=global_size,
-                           local_size=local_size,
-                           output_buf=output_buf,
-                           lmem_layout=lmem_layout)
-    clext.execute()
+    clext.set_kernel_args(*data, global_size=global_size,
+                                 local_size=local_size,
+                                 output_buf=output_buf,
+                                 lmem_layout=lmem_layout)
+    clext.run()
     clres = clext.get_result()
     cl_com_force = (bi.mass * clres[:,:3].T).sum(1)
     cl_com_force = np.dot(cl_com_force, cl_com_force)**0.5
@@ -284,14 +284,14 @@ def performance_test(cext, clext, ni, nj, data, output_shape, lmem_layout, nsamp
     # -------------------------------------------
 
     # XXX: kw has no efects with C extensions!
-    cext.load_data(*data, global_size=global_size,
-                          local_size=local_size,
-                          output_buf=output_buf,
-                          lmem_layout=lmem_layout)
+    cext.set_kernel_args(*data, global_size=global_size,
+                                local_size=local_size,
+                                output_buf=output_buf,
+                                lmem_layout=lmem_layout)
     c_elapsed = 0.0
     for i in range(nsamples):
         timer.start()
-        cext.execute()
+        cext.run()
         c_elapsed += timer.elapsed()
     cres = cext.get_result()
     c_elapsed /= nsamples
@@ -305,14 +305,14 @@ def performance_test(cext, clext, ni, nj, data, output_shape, lmem_layout, nsamp
 
     # -------------------------------------------
 
-    clext.load_data(*data, global_size=global_size,
-                           local_size=local_size,
-                           output_buf=output_buf,
-                           lmem_layout=lmem_layout)
+    clext.set_kernel_args(*data, global_size=global_size,
+                                 local_size=local_size,
+                                 output_buf=output_buf,
+                                 lmem_layout=lmem_layout)
     cl_elapsed = 0.0
     for i in range(nsamples):
         timer.start()
-        clext.execute()
+        clext.run()
         cl_elapsed += timer.elapsed()
     clres = clext.get_result()
     cl_elapsed /= nsamples
@@ -362,8 +362,8 @@ def test_pnacc(cext, bi, bj):
     # -------------------------------------------
 
     # XXX: kw has no efects with C extensions!
-    cext.load_data(*data)
-    cext.execute()
+    cext.set_kernel_args(*data)
+    cext.run()
     cres = cext.get_result()
 
     # -------------------------------------------

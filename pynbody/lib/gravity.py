@@ -10,6 +10,7 @@ between particles in Newtonian and post-Newtonian approach.
 import sys
 import numpy as np
 from collections import namedtuple
+from .extensions import kernel_library
 from .utils.timing import timings
 
 
@@ -20,9 +21,8 @@ class Newtonian(object):
     """
     This class holds base methods for newtonian gravity.
     """
-    def __init__(self, phi_kernel, acc_kernel):
-        self._phi_kernel = phi_kernel
-        self._acc_kernel = acc_kernel
+    def __init__(self):
+        pass
 
 
     def set_phi(self, iobj, jobj):
@@ -45,12 +45,14 @@ class Newtonian(object):
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
-        self._phi_kernel.load_data(*data, global_size=global_size,
+        phi_kernel = kernel_library.get_kernel("p2p_phi_kernel")
+
+        phi_kernel.set_kernel_args(*data, global_size=global_size,
                                           local_size=local_size,
                                           output_buf=output_buf,
                                           lmem_layout=lmem_layout)
-        self._phi_kernel.execute()
-        ret = self._phi_kernel.get_result()
+        phi_kernel.run()
+        ret = phi_kernel.get_result()
         return ret
 
 
@@ -77,12 +79,14 @@ class Newtonian(object):
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
-        self._acc_kernel.load_data(*data, global_size=global_size,
+        acc_kernel = kernel_library.get_kernel("p2p_acc_kernel")
+
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
                                           local_size=local_size,
                                           output_buf=output_buf,
                                           lmem_layout=lmem_layout)
-        self._acc_kernel.execute()
-        ret = self._acc_kernel.get_result()
+        acc_kernel.run()
+        ret = acc_kernel.get_result()
         return (ret[:,:3], ret[:,3])
 
 
@@ -90,9 +94,8 @@ class PostNewtonian(object):
     """
     This class holds base methods for post-newtonian gravity.
     """
-    def __init__(self, clight, pnacc_kernel):
-        self.clight = clight
-        self._pnacc_kernel = pnacc_kernel
+    def __init__(self, pn_order, clight):
+        self.clight = Clight(pn_order, clight)
 
 
     def set_acc(self, iobj, jobj):
@@ -103,20 +106,39 @@ class PostNewtonian(object):
         nj = len(jobj)
         iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
         jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        iveliv2 = np.vstack((iobj.vel.T, (iobj.vel**2).sum(1))).T
+        jveljv2 = np.vstack((jobj.vel.T, (jobj.vel**2).sum(1))).T
         clight = self.clight
-        data = (iposmass, iobj.vel,
-                jposmass, jobj.vel,
+        data = (iposmass, iveliv2,
+                jposmass, jveljv2,
                 np.uint32(ni),
                 np.uint32(nj),
                 np.uint32(clight.pn_order), np.float64(clight.inv1),
                 np.float64(clight.inv2), np.float64(clight.inv3),
                 np.float64(clight.inv4), np.float64(clight.inv5),
-                np.float64(clight.inv6), np.float64(clight.inv7)
+                np.float64(clight.inv6), np.float64(clight.inv7),
                )
-        self._pnacc_kernel.load_data(*data)
-        self._pnacc_kernel.execute()
-        ret = self._pnacc_kernel.get_result()
-        return ret
+
+        output_buf = np.empty((ni,4))   # XXX: forcing shape = (ni, 4) due to
+                                        #      a bug using __global REAL3 in
+                                        #      AMD's OpenCL implementation.
+        lmem_layout = (4, 4)
+
+        # Adjusts global_size to be an integer multiple of local_size
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+        pnacc_kernel = kernel_library.get_kernel("p2p_pnacc_kernel")
+
+        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
+                                            local_size=local_size,
+                                            output_buf=output_buf,
+                                            lmem_layout=lmem_layout)
+        pnacc_kernel.run()
+        ret = pnacc_kernel.get_result()
+        return ret[:,:3]                # XXX: forcing return shape = (ni, 3).
+                                        #      see comment about a bug using
+                                        #      __global REAL3 in OpenCL.
 
 
 class Clight(object):
@@ -139,14 +161,8 @@ class Gravity(object):
     A base class for gravitational interaction between particles.
     """
     def __init__(self, pn_order=4, clight=25.0):
-        from . import extensions
-        kernels = extensions.KERNELS
-        self._phi_kernel = kernels["p2p_phi_kernel"]
-        self._acc_kernel = kernels["p2p_acc_kernel"]
-        self._pnacc_kernel = kernels["p2p_pnacc_kernel"]
-        self._clight = Clight(pn_order, clight)
-        self.newtonian = Newtonian(self._phi_kernel, self._acc_kernel)
-        self.post_newtonian = PostNewtonian(self._clight, self._pnacc_kernel)
+        self.newtonian = Newtonian()
+        self.post_newtonian = PostNewtonian(pn_order, clight)
 
 
 gravitation = Gravity()
