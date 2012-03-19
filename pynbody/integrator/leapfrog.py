@@ -57,12 +57,11 @@ class LeapFrog(object):
     """
     def __init__(self, eta, time, particles, coefs=_coefs):
         self.eta = eta
-        self.symm_eta = (1.0/6) * self.eta
         self.time = time
         self.coefs = coefs
         self.particles = particles
 
-        omega = self.particles.set_acc(particles, 0 * self.symm_eta)
+        omega = self.particles.set_acc(particles, 0.0)
 
         self.tau = self.get_tau(omega)
         self.tstep = self.tau
@@ -117,7 +116,7 @@ class LeapFrog(object):
 
         """
         fullstep = methcoef * currstep
-        omega = self.particles.set_acc(jparticles, self.symm_eta)
+        omega = self.particles.set_acc(jparticles, currstep)
 
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "acc"):

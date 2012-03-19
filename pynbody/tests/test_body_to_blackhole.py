@@ -23,8 +23,8 @@ if __name__ == "__main__":
         p = Plummer(numBodies, imf, epsf=4.0, epstype='b', seed=1)
         p.make_plummer()
 
-        fname = "plummer"+str(numBodies).zfill(4)+'b'+'.hdf5'
-        io = IO(fname)
+        fname = "plummer"+str(numBodies).zfill(4)+'b'
+        io = IO(fname, 'hdf5')
         io.dump(p.particles, fmode='w')
 
 #        p.show()
@@ -51,8 +51,8 @@ if __name__ == "__main__":
     p["blackhole"].eps2 *= 0
 
 
-    fname = "plummer"+str(numBodies-n_bh).zfill(4)+'b'+'-'+str(n_bh)+"bh"+'.hdf5'
-    io = IO(fname)
+    fname = "plummer"+str(numBodies-n_bh).zfill(4)+'b'+'-'+str(n_bh)+"bh"
+    io = IO(fname, 'hdf5')
     io.dump(p, fmode='w')
 
 
