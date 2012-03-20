@@ -6,10 +6,384 @@ Test suite for extensions module.
 """
 
 
+from __future__ import print_function
 import sys
 import numpy as np
+import unittest
 from pynbody.lib import extensions
+from pynbody.lib.extensions import NewExtensions
 from pynbody.lib.utils.timing import (Timer, timings)
+
+
+
+print('setup: ...')
+cext32 = NewExtensions(dtype='f', junroll=8)
+cext64 = NewExtensions(dtype='d', junroll=8)
+clext32 = NewExtensions(dtype='f', junroll=8)
+clext64 = NewExtensions(dtype='d', junroll=8)
+cext32.build_kernels(device='cpu')
+cext64.build_kernels(device='cpu')
+clext32.build_kernels(device='gpu')
+clext64.build_kernels(device='gpu')
+def set_particles(npart):
+    if npart < 2: npart = 2
+    from pynbody.models.imf import IMF
+    from pynbody.models.plummer import Plummer
+    imf = IMF.padoan2007(0.075, 120.0)
+    p = Plummer(npart, imf, epsf=0.0, epstype='b', seed=1)
+    p.make_plummer()
+    bi = p.particles['body']
+    return bi
+small_system = set_particles(64)
+large_system = set_particles(8192)
+
+
+
+class TestCase(unittest.TestCase):
+
+
+    def test1(self):
+        print('\ntest1: mean gravitational phi deviation (single precision on CPU and GPU):', end=' ')
+
+        phi = {'cpu_result': None, 'gpu_result': None}
+
+        # setup data
+        iobj = small_system.copy()
+        jobj = small_system.copy()
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        data = (iposmass, iobj.eps2,
+                jposmass, jobj.eps2,
+                np.uint32(ni),
+                np.uint32(nj))
+
+        output_buf = np.empty(ni)
+        lmem_layout = (4, 1)
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+
+        # calculating on CPU
+        phi_kernel = cext32.get_kernel("p2p_phi_kernel")
+        phi_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        phi_kernel.run()
+        phi['cpu_result'] = phi_kernel.get_result()
+
+
+        # calculating on GPU
+        phi_kernel = clext32.get_kernel("p2p_phi_kernel")
+        phi_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        phi_kernel.run()
+        phi['gpu_result'] = phi_kernel.get_result()
+
+        # calculating diff of result
+        phi_deviation = np.abs(phi['cpu_result'] - phi['gpu_result'])
+        print(phi_deviation.mean())
+
+
+
+    def test2(self):
+        print('\ntest2: mean gravitational phi deviation (double precision on CPU and GPU):', end=' ')
+
+        phi = {'cpu_result': None, 'gpu_result': None}
+
+        # setup data
+        iobj = small_system.copy()
+        jobj = small_system.copy()
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        data = (iposmass, iobj.eps2,
+                jposmass, jobj.eps2,
+                np.uint32(ni),
+                np.uint32(nj))
+
+        output_buf = np.empty(ni)
+        lmem_layout = (4, 1)
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+
+        # calculating on CPU
+        phi_kernel = cext64.get_kernel("p2p_phi_kernel")
+        phi_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        phi_kernel.run()
+        phi['cpu_result'] = phi_kernel.get_result()
+
+
+        # calculating on GPU
+        phi_kernel = clext64.get_kernel("p2p_phi_kernel")
+        phi_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        phi_kernel.run()
+        phi['gpu_result'] = phi_kernel.get_result()
+
+        # calculating diff of result
+        phi_deviation = np.abs(phi['cpu_result'] - phi['gpu_result'])
+        print(phi_deviation.mean())
+
+
+    def test3(self):
+        print('\ntest3: mean gravitational acc deviation (single precision on CPU and GPU):', end=' ')
+
+        acc = {'cpu_result': None, 'gpu_result': None}
+
+        # setup data
+        iobj = small_system.copy()
+        jobj = small_system.copy()
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
+        jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
+        data = (iposmass, iveleps2,
+                jposmass, jveleps2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.float64(0.0))
+
+        output_buf = np.empty((ni,4))
+        lmem_layout = (4, 4)
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+
+        # calculating on CPU
+        acc_kernel = cext32.get_kernel("p2p_acc_kernel")
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        acc_kernel.run()
+        acc['cpu_result'] = acc_kernel.get_result()[:,:3]
+
+
+        # calculating on GPU
+        acc_kernel = clext32.get_kernel("p2p_acc_kernel")
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        acc_kernel.run()
+        acc['gpu_result'] = acc_kernel.get_result()[:,:3]
+
+        # calculating diff of result
+        acc_deviation = np.abs(  np.sqrt((acc['cpu_result']**2).sum(1))
+                               - np.sqrt((acc['gpu_result']**2).sum(1)))
+        print(acc_deviation.mean())
+
+
+    def test4(self):
+        print('\ntest4: mean gravitational acc deviation (double precision on CPU and GPU):', end=' ')
+
+        acc = {'cpu_result': None, 'gpu_result': None}
+
+        # setup data
+        iobj = small_system.copy()
+        jobj = small_system.copy()
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
+        jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
+        data = (iposmass, iveleps2,
+                jposmass, jveleps2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.float64(0.0))
+
+        output_buf = np.empty((ni,4))
+        lmem_layout = (4, 4)
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+
+        # calculating on CPU
+        acc_kernel = cext64.get_kernel("p2p_acc_kernel")
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        acc_kernel.run()
+        acc['cpu_result'] = acc_kernel.get_result()[:,:3]
+
+
+        # calculating on GPU
+        acc_kernel = clext64.get_kernel("p2p_acc_kernel")
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        acc_kernel.run()
+        acc['gpu_result'] = acc_kernel.get_result()[:,:3]
+
+        # calculating diff of result
+        acc_deviation = np.abs(  np.sqrt((acc['cpu_result']**2).sum(1))
+                               - np.sqrt((acc['gpu_result']**2).sum(1)))
+        print(acc_deviation.mean())
+
+
+    def test5(self):
+        print('\ntest5: mean gravitational pnacc deviation (single precision on CPU and GPU):', end=' ')
+
+        pnacc = {'cpu_result': None, 'gpu_result': None}
+
+        # setup data
+        iobj = small_system.copy()
+        jobj = small_system.copy()
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        iveliv2 = np.vstack((iobj.vel.T, (iobj.vel**2).sum(1))).T
+        jveljv2 = np.vstack((jobj.vel.T, (jobj.vel**2).sum(1))).T
+        from pynbody.lib.gravity import Clight
+        clight = Clight(7, 128)
+        data = (iposmass, iveliv2,
+                jposmass, jveljv2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.uint32(clight.pn_order), np.float64(clight.inv1),
+                np.float64(clight.inv2), np.float64(clight.inv3),
+                np.float64(clight.inv4), np.float64(clight.inv5),
+                np.float64(clight.inv6), np.float64(clight.inv7),
+               )
+
+        output_buf = np.empty((ni,4))
+        lmem_layout = (4, 4)
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+
+        # calculating on CPU
+        pnacc_kernel = cext32.get_kernel("p2p_pnacc_kernel")
+        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        pnacc_kernel.run()
+        pnacc['cpu_result'] = pnacc_kernel.get_result()[:,:3]
+
+
+        # calculating on GPU
+        pnacc_kernel = clext32.get_kernel("p2p_pnacc_kernel")
+        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        pnacc_kernel.run()
+        pnacc['gpu_result'] = pnacc_kernel.get_result()[:,:3]
+
+        # calculating diff of result
+        pnacc_deviation = np.abs(  np.sqrt((pnacc['cpu_result']**2).sum(1))
+                                 - np.sqrt((pnacc['gpu_result']**2).sum(1)))
+        print(pnacc_deviation.mean())
+
+
+    def test6(self):
+        print('\ntest6: mean gravitational pnacc deviation (double precision on CPU and GPU):', end=' ')
+
+        pnacc = {'cpu_result': None, 'gpu_result': None}
+
+        # setup data
+        iobj = small_system.copy()
+        jobj = small_system.copy()
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        iveliv2 = np.vstack((iobj.vel.T, (iobj.vel**2).sum(1))).T
+        jveljv2 = np.vstack((jobj.vel.T, (jobj.vel**2).sum(1))).T
+        from pynbody.lib.gravity import Clight
+        clight = Clight(7, 128)
+        data = (iposmass, iveliv2,
+                jposmass, jveljv2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.uint32(clight.pn_order), np.float64(clight.inv1),
+                np.float64(clight.inv2), np.float64(clight.inv3),
+                np.float64(clight.inv4), np.float64(clight.inv5),
+                np.float64(clight.inv6), np.float64(clight.inv7),
+               )
+
+        output_buf = np.empty((ni,4))
+        lmem_layout = (4, 4)
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+
+        # calculating on CPU
+        pnacc_kernel = cext64.get_kernel("p2p_pnacc_kernel")
+        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        pnacc_kernel.run()
+        pnacc['cpu_result'] = pnacc_kernel.get_result()[:,:3]
+
+
+        # calculating on GPU
+        pnacc_kernel = clext64.get_kernel("p2p_pnacc_kernel")
+        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        pnacc_kernel.run()
+        pnacc['gpu_result'] = pnacc_kernel.get_result()[:,:3]
+
+        # calculating diff of result
+        pnacc_deviation = np.abs(  np.sqrt((pnacc['cpu_result']**2).sum(1))
+                                 - np.sqrt((pnacc['gpu_result']**2).sum(1)))
+        print(pnacc_deviation.mean())
+
+
+    def test7(self):
+        print('\ntest7: stupid test')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def run_all():
@@ -374,7 +748,8 @@ def test_pnacc(cext, bi, bj):
 
 
 if __name__ == "__main__":
-    run_all()
+#    run_all()
+    unittest.main(verbosity=1)
 
 
 ########## end of file ##########
