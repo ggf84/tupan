@@ -1,11 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define PI 3.141592653589793
-#define TWOPI 6.283185307179586
-#define FOURPI 12.566370614359172
-#define THREE_FOURPI 0.238732414637843
-
 #ifdef OPENCL_EXTENSION
     #ifdef DOUBLE
         typedef double REAL;
@@ -81,6 +76,14 @@
         REAL sf;
     } REAL16, *pREAL16;
 #endif // OPENCL_EXTENSION
+
+
+#define PI ((REAL)3.141592653589793)
+#define PI2	((REAL)9.869604401089358)
+#define TWOPI ((REAL)6.283185307179586)
+#define FOURPI ((REAL)12.566370614359172)
+#define THREE_FOURPI ((REAL)0.238732414637843)
+
 
 typedef struct clight_struct {
     REAL inv1;

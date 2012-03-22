@@ -101,7 +101,6 @@ p2p_pn5(REAL mi, REAL mj, REAL inv_r, REAL v2, REAL nv, CLIGHT clight)
 }   // 7+5+4 == 16 FLOPs
 
 
-#define PI2	9.869604401089358
 inline REAL2
 p2p_pn6(REAL mi, REAL mj, REAL mi2, REAL mj2, REAL mimj, REAL inv_r, REAL inv_r2,
         REAL v2, REAL vi2, REAL vj2, REAL vj4, REAL vivj, REAL vivjvivj,
