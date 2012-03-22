@@ -79,34 +79,34 @@ class Interactor(object):
 
     # Acceleration methods
 
-    def acc_body(self, iobj, objs, eta):
+    def acc_body(self, iobj, objs, tstep):
 
         jobj = objs["body"]
 #        if jobj:
-        ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
+        ret = gravitation.newtonian.set_acc(iobj, jobj, tstep)
         iacc = ret[0]
         iomega = ret[1]
 
         jobj = objs["blackhole"]
         if jobj:
-            ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
+            ret = gravitation.newtonian.set_acc(iobj, jobj, tstep)
             iacc += ret[0]
             iomega += ret[1]
 
         jobj = objs["sph"]
         if jobj:
-            ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
+            ret = gravitation.newtonian.set_acc(iobj, jobj, tstep)
             iacc += ret[0]
             iomega += ret[1]
 
         return (iacc, iomega)
 
 
-    def acc_blackhole(self, iobj, objs, eta):
+    def acc_blackhole(self, iobj, objs, tstep):
 
         jobj = objs["blackhole"]
 #        if jobj:
-        ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
+        ret = gravitation.newtonian.set_acc(iobj, jobj, tstep)
         pnret = gravitation.post_newtonian.set_acc(iobj, jobj)
         iacc = ret[0] + pnret
         ipnacc = pnret
@@ -114,36 +114,36 @@ class Interactor(object):
 
         jobj = objs["body"]
         if jobj:
-            ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
+            ret = gravitation.newtonian.set_acc(iobj, jobj, tstep)
             iacc += ret[0]
             iomega += ret[1]
 
         jobj = objs["sph"]
         if jobj:
-            ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
+            ret = gravitation.newtonian.set_acc(iobj, jobj, tstep)
             iacc += ret[0]
             iomega += ret[1]
 
         return (iacc, ipnacc, iomega)
 
 
-    def acc_sph(self, iobj, objs, eta):
+    def acc_sph(self, iobj, objs, tstep):
 
         jobj = objs["sph"]
 #        if jobj:
-        ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
+        ret = gravitation.newtonian.set_acc(iobj, jobj, tstep)
         iacc = ret[0]
         iomega = ret[1]
 
         jobj = objs["body"]
         if jobj:
-            ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
+            ret = gravitation.newtonian.set_acc(iobj, jobj, tstep)
             iacc += ret[0]
             iomega += ret[1]
 
         jobj = objs["blackhole"]
         if jobj:
-            ret = gravitation.newtonian.set_acc(iobj, jobj, eta)
+            ret = gravitation.newtonian.set_acc(iobj, jobj, tstep)
             iacc += ret[0]
             iomega += ret[1]
 

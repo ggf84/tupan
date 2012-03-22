@@ -9,7 +9,7 @@ inline REAL4
 p2p_acc_kernel_core(REAL4 acc,
                     const REAL4 ri, const REAL4 vi,
                     const REAL4 rj, const REAL4 vj,
-                    const REAL eta)
+                    const REAL tstep)
 {
     REAL4 r;
     r.x = ri.x - rj.x;                                               // 1 FLOPs
@@ -31,7 +31,7 @@ p2p_acc_kernel_core(REAL4 acc,
     REAL omega2 = r.w * inv_r3;                                      // 1 FLOPs
 
     REAL dln_omega = -3 * rv * inv_r2;                               // 2 FLOPs
-    REAL symm_factor = 1 + eta * dln_omega;                          // 2 FLOPs
+    REAL symm_factor = 1 + tstep * dln_omega;                        // 2 FLOPs
     omega2 *= symm_factor;                                           // 1 FLOPs
 
     inv_r3 *= rj.w;                                                  // 1 FLOPs

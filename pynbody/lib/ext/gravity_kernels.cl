@@ -98,7 +98,7 @@ inline REAL4
 p2p_accum_acc(REAL4 myAcc,
               const REAL4 myPos,
               const REAL4 myVel,
-              const REAL eta,
+              const REAL tstep,
               uint j_begin,
               uint j_end,
               __local REAL4 *sharedPos,
@@ -108,7 +108,7 @@ p2p_accum_acc(REAL4 myAcc,
     for (j = j_begin; j < j_end; ++j) {
        myAcc = p2p_acc_kernel_core(myAcc, myPos, myVel,
                                    sharedPos[j], sharedVel[j],
-                                   eta);
+                                   tstep);
     }
     return myAcc;
 }
@@ -120,7 +120,7 @@ p2p_acc_kernel_main_loop(const REAL4 myPos,
                          __global const REAL4 *jpos,
                          __global const REAL4 *jvel,
                          const uint nj,
-                         const REAL eta,
+                         const REAL tstep,
                          __local REAL4 *sharedPos,
                          __local REAL4 *sharedVel)
 {
@@ -142,11 +142,11 @@ p2p_acc_kernel_main_loop(const REAL4 myPos,
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
             myAcc = p2p_accum_acc(myAcc, myPos, myVel,
-                                  eta, j, j + JUNROLL,
+                                  tstep, j, j + JUNROLL,
                                   sharedPos, sharedVel);
         }
         myAcc = p2p_accum_acc(myAcc, myPos, myVel,
-                              eta, j, nb,
+                              tstep, j, nb,
                               sharedPos, sharedVel);
 
         barrier(CLK_LOCAL_MEM_FENCE);
@@ -162,7 +162,7 @@ __kernel void p2p_acc_kernel(__global const REAL4 *ipos,
                              __global const REAL4 *jvel,
                              const uint ni,
                              const uint nj,
-                             const REAL eta,
+                             const REAL tstep,
                              __global REAL4 *iacc,
                              __local REAL4 *sharedPos,
                              __local REAL4 *sharedVel)
@@ -171,7 +171,7 @@ __kernel void p2p_acc_kernel(__global const REAL4 *ipos,
     uint i = (gid < ni) ? (gid) : (ni-1);
     iacc[i] = p2p_acc_kernel_main_loop(ipos[i], ivel[i],
                                        jpos, jvel,
-                                       nj, eta,
+                                       nj, tstep,
                                        sharedPos, sharedVel);
 }
 

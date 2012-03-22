@@ -77,13 +77,13 @@ static PyObject *
 _p2p_acc_kernel(PyObject *_args)
 {
     unsigned int ni, nj;
-    double eta;
+    double tstep;
     PyObject *_ipos = NULL, *_ivel = NULL;
     PyObject *_jpos = NULL, *_jvel = NULL;
 
     if (!PyArg_ParseTuple(_args, "OOOOIId", &_ipos, &_ivel,
                                             &_jpos, &_jvel,
-                                            &ni, &nj, &eta))
+                                            &ni, &nj, &tstep))
         return NULL;
 
     // i-data
@@ -118,7 +118,7 @@ _p2p_acc_kernel(PyObject *_args)
                         jpos_ptr[jjjj+2], jpos_ptr[jjjj+3]};
             REAL4 vj = {jvel_ptr[jjjj  ], jvel_ptr[jjjj+1],
                         jvel_ptr[jjjj+2], jvel_ptr[jjjj+3]};
-            iacc = p2p_acc_kernel_core(iacc, ri, vi, rj, vj, eta);
+            iacc = p2p_acc_kernel_core(iacc, ri, vi, rj, vj, tstep);
         }
         ret_ptr[iiii  ] = iacc.x;
         ret_ptr[iiii+1] = iacc.y;

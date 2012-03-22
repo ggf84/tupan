@@ -56,7 +56,7 @@ class Newtonian(object):
         return ret
 
 
-    def set_acc(self, iobj, jobj, eta):
+    def set_acc(self, iobj, jobj, tstep):
         """
         Set obj-obj newtonian acc.
         """
@@ -70,7 +70,7 @@ class Newtonian(object):
                 jposmass, jveleps2,
                 np.uint32(ni),
                 np.uint32(nj),
-                np.float64(eta))
+                np.float64(tstep))
 
         output_buf = np.empty((ni,4))
         lmem_layout = (4, 4)

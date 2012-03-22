@@ -217,13 +217,13 @@ class BlackHole(Pbase):
         self.phi[:] = iphi
         self._self_total_epot = 0.5 * float(np.sum(self.mass * self_phi))
 
-    def set_acc(self, objs, eta):
+    def set_acc(self, objs, tstep):
         """
         Set the individual acceleration due to other particles.
         """
         if self._pnacc == None:
             self._pnacc = np.zeros_like(self.acc)
-        (iacc, ipnacc, iomega) = interact.acc_blackhole(self, objs, eta)
+        (iacc, ipnacc, iomega) = interact.acc_blackhole(self, objs, tstep)
         self.acc[:] = iacc
         self._pnacc[:] = ipnacc
         return iomega
