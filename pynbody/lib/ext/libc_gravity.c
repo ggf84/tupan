@@ -17,9 +17,16 @@ _p2p_phi_kernel(PyObject *_args)
     PyObject *_ipos = NULL, *_ieps2 = NULL;
     PyObject *_jpos = NULL, *_jeps2 = NULL;
 
-    if (!PyArg_ParseTuple(_args, "OOOOII", &_ipos, &_ieps2,
-                                           &_jpos, &_jeps2,
-                                           &ni, &nj))
+    char *fmt = NULL;
+    if (sizeof(REAL) == sizeof(double)) {
+        fmt = "OOOOII";
+    } else if (sizeof(REAL) == sizeof(float)) {
+        fmt = "OOOOII";
+    }
+
+    if (!PyArg_ParseTuple(_args, fmt, &_ipos, &_ieps2,
+                                      &_jpos, &_jeps2,
+                                      &ni, &nj))
         return NULL;
 
     // i-data
@@ -77,13 +84,20 @@ static PyObject *
 _p2p_acc_kernel(PyObject *_args)
 {
     unsigned int ni, nj;
-    double tstep;
+    REAL tstep;
     PyObject *_ipos = NULL, *_ivel = NULL;
     PyObject *_jpos = NULL, *_jvel = NULL;
 
-    if (!PyArg_ParseTuple(_args, "OOOOIId", &_ipos, &_ivel,
-                                            &_jpos, &_jvel,
-                                            &ni, &nj, &tstep))
+    char *fmt = NULL;
+    if (sizeof(REAL) == sizeof(double)) {
+        fmt = "OOOOIId";
+    } else if (sizeof(REAL) == sizeof(float)) {
+        fmt = "OOOOIIf";
+    }
+
+    if (!PyArg_ParseTuple(_args, fmt, &_ipos, &_ivel,
+                                      &_jpos, &_jvel,
+                                      &ni, &nj, &tstep))
         return NULL;
 
     // i-data
@@ -150,13 +164,20 @@ _p2p_pnacc_kernel(PyObject *_args)
     PyObject *_ipos = NULL, *_ivel = NULL;
     PyObject *_jpos = NULL, *_jvel = NULL;
 
-    if (!PyArg_ParseTuple(_args, "OOOOIIIddddddd", &_ipos, &_ivel,
-                                                   &_jpos, &_jvel,
-                                                   &ni, &nj,
-                                                   &clight.order, &clight.inv1,
-                                                   &clight.inv2, &clight.inv3,
-                                                   &clight.inv4, &clight.inv5,
-                                                   &clight.inv6, &clight.inv7))
+    char *fmt = NULL;
+    if (sizeof(REAL) == sizeof(double)) {
+        fmt = "OOOOIIIddddddd";
+    } else if (sizeof(REAL) == sizeof(float)) {
+        fmt = "OOOOIIIfffffff";
+    }
+
+    if (!PyArg_ParseTuple(_args, fmt, &_ipos, &_ivel,
+                                      &_jpos, &_jvel,
+                                      &ni, &nj,
+                                      &clight.order, &clight.inv1,
+                                      &clight.inv2, &clight.inv3,
+                                      &clight.inv4, &clight.inv5,
+                                      &clight.inv6, &clight.inv7))
         return NULL;
 
     // i-data
