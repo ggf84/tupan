@@ -96,62 +96,7 @@ class TestCase(unittest.TestCase):
 
 
     def test02(self):
-        print('\ntest02: max deviation of grav-phi (in DP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
-
-        npart = len(small_system)
-        deviations = []
-
-        for i in range(1, npart+1):
-            for j in range(1, npart+1):
-                phi = {'cpu_result': None, 'gpu_result': None}
-
-                # setup data
-                iobj = small_system[:i].copy()
-                jobj = small_system[:j].copy()
-                ni = len(iobj)
-                nj = len(jobj)
-                iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
-                jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-                data = (iposmass, iobj.eps2,
-                        jposmass, jobj.eps2,
-                        np.uint32(ni),
-                        np.uint32(nj))
-
-                output_buf = np.empty(ni)
-                lmem_layout = (4, 1)
-                local_size = 384
-                global_size = ((ni-1)//local_size + 1) * local_size
-
-
-                # calculating on CPU
-                phi_kernel = cext64.get_kernel("p2p_phi_kernel")
-                phi_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  output_buf=output_buf,
-                                                  lmem_layout=lmem_layout)
-                phi_kernel.run()
-                phi['cpu_result'] = phi_kernel.get_result()
-
-
-                # calculating on GPU
-                phi_kernel = clext64.get_kernel("p2p_phi_kernel")
-                phi_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  output_buf=output_buf,
-                                                  lmem_layout=lmem_layout)
-                phi_kernel.run()
-                phi['gpu_result'] = phi_kernel.get_result()
-
-                # calculating diff of result
-                phi_deviation = np.abs(phi['cpu_result'] - phi['gpu_result'])
-                deviations.append(phi_deviation.max())
-
-        deviations = np.array(deviations)
-        print(deviations.max())
-
-
-    def test03(self):
-        print('\ntest03: max deviation of grav-acc (in SP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
+        print('\ntest02: max deviation of grav-acc (in SP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
 
         npart = len(small_system)
         deviations = []
@@ -209,67 +154,8 @@ class TestCase(unittest.TestCase):
         print(deviations.max())
 
 
-    def test04(self):
-        print('\ntest04: max deviation of grav-acc (in DP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
-
-        npart = len(small_system)
-        deviations = []
-
-        for i in range(1, npart+1):
-            for j in range(1, npart+1):
-                acc = {'cpu_result': None, 'gpu_result': None}
-
-                # setup data
-                iobj = small_system[:i].copy()
-                jobj = small_system[:j].copy()
-                ni = len(iobj)
-                nj = len(jobj)
-                iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
-                jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-                iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
-                jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
-                data = (iposmass, iveleps2,
-                        jposmass, jveleps2,
-                        np.uint32(ni),
-                        np.uint32(nj),
-                        np.float64(0.0))
-
-                output_buf = np.empty((ni,4))
-                lmem_layout = (4, 4)
-                local_size = 384
-                global_size = ((ni-1)//local_size + 1) * local_size
-
-
-                # calculating on CPU
-                acc_kernel = cext64.get_kernel("p2p_acc_kernel")
-                acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  output_buf=output_buf,
-                                                  lmem_layout=lmem_layout)
-                acc_kernel.run()
-                acc['cpu_result'] = acc_kernel.get_result()[:,:3]
-
-
-                # calculating on GPU
-                acc_kernel = clext64.get_kernel("p2p_acc_kernel")
-                acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  output_buf=output_buf,
-                                                  lmem_layout=lmem_layout)
-                acc_kernel.run()
-                acc['gpu_result'] = acc_kernel.get_result()[:,:3]
-
-                # calculating diff of result
-                acc_deviation = np.abs(  np.sqrt((acc['cpu_result']**2).sum(1))
-                                       - np.sqrt((acc['gpu_result']**2).sum(1)))
-                deviations.append(acc_deviation.max())
-
-        deviations = np.array(deviations)
-        print(deviations.max())
-
-
-    def test05(self):
-        print('\ntest05: max deviation of grav-pnacc (in SP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
+    def test03(self):
+        print('\ntest03: max deviation of grav-pnacc (in SP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
 
         npart = len(small_system)
         deviations = []
@@ -328,6 +214,120 @@ class TestCase(unittest.TestCase):
                 pnacc_deviation = np.abs(  np.sqrt((pnacc['cpu_result']**2).sum(1))
                                          - np.sqrt((pnacc['gpu_result']**2).sum(1)))
                 deviations.append(pnacc_deviation.max())
+
+        deviations = np.array(deviations)
+        print(deviations.max())
+
+
+    def test04(self):
+        print('\ntest04: max deviation of grav-phi (in DP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
+
+        npart = len(small_system)
+        deviations = []
+
+        for i in range(1, npart+1):
+            for j in range(1, npart+1):
+                phi = {'cpu_result': None, 'gpu_result': None}
+
+                # setup data
+                iobj = small_system[:i].copy()
+                jobj = small_system[:j].copy()
+                ni = len(iobj)
+                nj = len(jobj)
+                iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+                jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+                data = (iposmass, iobj.eps2,
+                        jposmass, jobj.eps2,
+                        np.uint32(ni),
+                        np.uint32(nj))
+
+                output_buf = np.empty(ni)
+                lmem_layout = (4, 1)
+                local_size = 384
+                global_size = ((ni-1)//local_size + 1) * local_size
+
+
+                # calculating on CPU
+                phi_kernel = cext64.get_kernel("p2p_phi_kernel")
+                phi_kernel.set_kernel_args(*data, global_size=global_size,
+                                                  local_size=local_size,
+                                                  output_buf=output_buf,
+                                                  lmem_layout=lmem_layout)
+                phi_kernel.run()
+                phi['cpu_result'] = phi_kernel.get_result()
+
+
+                # calculating on GPU
+                phi_kernel = clext64.get_kernel("p2p_phi_kernel")
+                phi_kernel.set_kernel_args(*data, global_size=global_size,
+                                                  local_size=local_size,
+                                                  output_buf=output_buf,
+                                                  lmem_layout=lmem_layout)
+                phi_kernel.run()
+                phi['gpu_result'] = phi_kernel.get_result()
+
+                # calculating diff of result
+                phi_deviation = np.abs(phi['cpu_result'] - phi['gpu_result'])
+                deviations.append(phi_deviation.max())
+
+        deviations = np.array(deviations)
+        print(deviations.max())
+
+
+    def test05(self):
+        print('\ntest05: max deviation of grav-acc (in DP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
+
+        npart = len(small_system)
+        deviations = []
+
+        for i in range(1, npart+1):
+            for j in range(1, npart+1):
+                acc = {'cpu_result': None, 'gpu_result': None}
+
+                # setup data
+                iobj = small_system[:i].copy()
+                jobj = small_system[:j].copy()
+                ni = len(iobj)
+                nj = len(jobj)
+                iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+                jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+                iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
+                jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
+                data = (iposmass, iveleps2,
+                        jposmass, jveleps2,
+                        np.uint32(ni),
+                        np.uint32(nj),
+                        np.float64(0.0))
+
+                output_buf = np.empty((ni,4))
+                lmem_layout = (4, 4)
+                local_size = 384
+                global_size = ((ni-1)//local_size + 1) * local_size
+
+
+                # calculating on CPU
+                acc_kernel = cext64.get_kernel("p2p_acc_kernel")
+                acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                                  local_size=local_size,
+                                                  output_buf=output_buf,
+                                                  lmem_layout=lmem_layout)
+                acc_kernel.run()
+                acc['cpu_result'] = acc_kernel.get_result()[:,:3]
+
+
+                # calculating on GPU
+                acc_kernel = clext64.get_kernel("p2p_acc_kernel")
+                acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                                  local_size=local_size,
+                                                  output_buf=output_buf,
+                                                  lmem_layout=lmem_layout)
+                acc_kernel.run()
+                acc['gpu_result'] = acc_kernel.get_result()[:,:3]
+
+                # calculating diff of result
+                acc_deviation = np.abs(  np.sqrt((acc['cpu_result']**2).sum(1))
+                                       - np.sqrt((acc['gpu_result']**2).sum(1)))
+                deviations.append(acc_deviation.max())
 
         deviations = np.array(deviations)
         print(deviations.max())
