@@ -399,18 +399,376 @@ class TestCase(unittest.TestCase):
         print(deviations.max())
 
 
+    def test07(self):
+        print('\ntest07: performance of grav-phi (in SP and DP on CPU):', end=' ')
+
+        nsamples = 5
+        timer = Timer()
+
+        timings = {'cpu_single': None, 'cpu_double': None}
+
+        # setup data
+        iobj = large_system.copy()
+        jobj = large_system.copy()
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        data = (iposmass, iobj.eps2,
+                jposmass, jobj.eps2,
+                np.uint32(ni),
+                np.uint32(nj))
+
+        output_buf = np.empty(ni)
+        lmem_layout = (4, 1)
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
 
 
+        # calculating using SP on CPU
+        phi_kernel = cext32.get_kernel("p2p_phi_kernel")
+        phi_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        elapsed_sum = 0.0
+        for i in range(nsamples):
+            timer.start()
+            phi_kernel.run()
+            elapsed_sum += timer.elapsed()
+        ret = phi_kernel.get_result()
+        timings['cpu_single'] = elapsed_sum / nsamples
 
 
+        # calculating using DP on CPU
+        phi_kernel = cext64.get_kernel("p2p_phi_kernel")
+        phi_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        elapsed_sum = 0.0
+        for i in range(nsamples):
+            timer.start()
+            phi_kernel.run()
+            elapsed_sum += timer.elapsed()
+        ret = phi_kernel.get_result()
+        timings['cpu_double'] = elapsed_sum / nsamples
+
+        print(timings)
 
 
+    def test08(self):
+        print('\ntest08: performance of grav-acc (in SP and DP on CPU):', end=' ')
+
+        nsamples = 5
+        timer = Timer()
+
+        timings = {'cpu_single': None, 'cpu_double': None}
+
+        # setup data
+        iobj = large_system.copy()
+        jobj = large_system.copy()
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
+        jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
+        data = (iposmass, iveleps2,
+                jposmass, jveleps2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.float64(0.0))
+
+        output_buf = np.empty((ni,4))
+        lmem_layout = (4, 4)
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
 
 
+        # calculating using SP on CPU
+        acc_kernel = cext32.get_kernel("p2p_acc_kernel")
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        elapsed_sum = 0.0
+        for i in range(nsamples):
+            timer.start()
+            acc_kernel.run()
+            elapsed_sum += timer.elapsed()
+        ret = acc_kernel.get_result()
+        timings['cpu_single'] = elapsed_sum / nsamples
 
 
+        # calculating using DP on CPU
+        acc_kernel = cext64.get_kernel("p2p_acc_kernel")
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        elapsed_sum = 0.0
+        for i in range(nsamples):
+            timer.start()
+            acc_kernel.run()
+            elapsed_sum += timer.elapsed()
+        ret = acc_kernel.get_result()
+        timings['cpu_double'] = elapsed_sum / nsamples
+
+        print(timings)
 
 
+    def test09(self):
+        print('\ntest09: performance of grav-pnacc (in SP and DP on CPU):', end=' ')
+
+        nsamples = 5
+        timer = Timer()
+
+        timings = {'cpu_single': None, 'cpu_double': None}
+
+        # setup data
+        iobj = large_system.copy()
+        jobj = large_system.copy()
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        iveliv2 = np.vstack((iobj.vel.T, (iobj.vel**2).sum(1))).T
+        jveljv2 = np.vstack((jobj.vel.T, (jobj.vel**2).sum(1))).T
+        from pynbody.lib.gravity import Clight
+        clight = Clight(7, 128)
+        data = (iposmass, iveliv2,
+                jposmass, jveljv2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.uint32(clight.pn_order), np.float64(clight.inv1),
+                np.float64(clight.inv2), np.float64(clight.inv3),
+                np.float64(clight.inv4), np.float64(clight.inv5),
+                np.float64(clight.inv6), np.float64(clight.inv7),
+               )
+
+        output_buf = np.empty((ni,4))
+        lmem_layout = (4, 4)
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+
+        # calculating using SP on CPU
+        pnacc_kernel = cext32.get_kernel("p2p_pnacc_kernel")
+        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
+                                            local_size=local_size,
+                                            output_buf=output_buf,
+                                            lmem_layout=lmem_layout)
+        elapsed_sum = 0.0
+        for i in range(nsamples):
+            timer.start()
+            pnacc_kernel.run()
+            elapsed_sum += timer.elapsed()
+        ret = pnacc_kernel.get_result()
+        timings['cpu_single'] = elapsed_sum / nsamples
+
+
+        # calculating using DP on CPU
+        pnacc_kernel = cext64.get_kernel("p2p_pnacc_kernel")
+        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
+                                            local_size=local_size,
+                                            output_buf=output_buf,
+                                            lmem_layout=lmem_layout)
+        elapsed_sum = 0.0
+        for i in range(nsamples):
+            timer.start()
+            pnacc_kernel.run()
+            elapsed_sum += timer.elapsed()
+        ret = pnacc_kernel.get_result()
+        timings['cpu_double'] = elapsed_sum / nsamples
+
+        print(timings)
+
+
+    def test10(self):
+        print('\ntest10: performance of grav-phi (in SP and DP on GPU):', end=' ')
+
+        nsamples = 5
+        timer = Timer()
+
+        timings = {'gpu_single': None, 'gpu_double': None}
+
+        # setup data
+        iobj = large_system.copy()
+        jobj = large_system.copy()
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        data = (iposmass, iobj.eps2,
+                jposmass, jobj.eps2,
+                np.uint32(ni),
+                np.uint32(nj))
+
+        output_buf = np.empty(ni)
+        lmem_layout = (4, 1)
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+
+        # calculating using SP on GPU
+        phi_kernel = clext32.get_kernel("p2p_phi_kernel")
+        phi_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        elapsed_sum = 0.0
+        for i in range(nsamples):
+            timer.start()
+            phi_kernel.run()
+            elapsed_sum += timer.elapsed()
+        ret = phi_kernel.get_result()
+        timings['gpu_single'] = elapsed_sum / nsamples
+
+
+        # calculating using DP on GPU
+        phi_kernel = clext64.get_kernel("p2p_phi_kernel")
+        phi_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        elapsed_sum = 0.0
+        for i in range(nsamples):
+            timer.start()
+            phi_kernel.run()
+            elapsed_sum += timer.elapsed()
+        ret = phi_kernel.get_result()
+        timings['gpu_double'] = elapsed_sum / nsamples
+
+        print(timings)
+
+
+    def test11(self):
+        print('\ntest11: performance of grav-acc (in SP and DP on GPU):', end=' ')
+
+        nsamples = 5
+        timer = Timer()
+
+        timings = {'gpu_single': None, 'gpu_double': None}
+
+        # setup data
+        iobj = large_system.copy()
+        jobj = large_system.copy()
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
+        jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
+        data = (iposmass, iveleps2,
+                jposmass, jveleps2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.float64(0.0))
+
+        output_buf = np.empty((ni,4))
+        lmem_layout = (4, 4)
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+
+        # calculating using SP on GPU
+        acc_kernel = clext32.get_kernel("p2p_acc_kernel")
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        elapsed_sum = 0.0
+        for i in range(nsamples):
+            timer.start()
+            acc_kernel.run()
+            elapsed_sum += timer.elapsed()
+        ret = acc_kernel.get_result()
+        timings['gpu_single'] = elapsed_sum / nsamples
+
+
+        # calculating using DP on GPU
+        acc_kernel = clext64.get_kernel("p2p_acc_kernel")
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        elapsed_sum = 0.0
+        for i in range(nsamples):
+            timer.start()
+            acc_kernel.run()
+            elapsed_sum += timer.elapsed()
+        ret = acc_kernel.get_result()
+        timings['gpu_double'] = elapsed_sum / nsamples
+
+        print(timings)
+
+
+    def test12(self):
+        print('\ntest12: performance of grav-pnacc (in SP and DP on GPU):', end=' ')
+
+        nsamples = 5
+        timer = Timer()
+
+        timings = {'gpu_single': None, 'gpu_double': None}
+
+        # setup data
+        iobj = large_system.copy()
+        jobj = large_system.copy()
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        iveliv2 = np.vstack((iobj.vel.T, (iobj.vel**2).sum(1))).T
+        jveljv2 = np.vstack((jobj.vel.T, (jobj.vel**2).sum(1))).T
+        from pynbody.lib.gravity import Clight
+        clight = Clight(7, 128)
+        data = (iposmass, iveliv2,
+                jposmass, jveljv2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.uint32(clight.pn_order), np.float64(clight.inv1),
+                np.float64(clight.inv2), np.float64(clight.inv3),
+                np.float64(clight.inv4), np.float64(clight.inv5),
+                np.float64(clight.inv6), np.float64(clight.inv7),
+               )
+
+        output_buf = np.empty((ni,4))
+        lmem_layout = (4, 4)
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+
+        # calculating using SP on GPU
+        pnacc_kernel = clext32.get_kernel("p2p_pnacc_kernel")
+        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
+                                            local_size=local_size,
+                                            output_buf=output_buf,
+                                            lmem_layout=lmem_layout)
+        elapsed_sum = 0.0
+        for i in range(nsamples):
+            timer.start()
+            pnacc_kernel.run()
+            elapsed_sum += timer.elapsed()
+        ret = pnacc_kernel.get_result()
+        timings['gpu_single'] = elapsed_sum / nsamples
+
+
+        # calculating using DP on GPU
+        pnacc_kernel = clext64.get_kernel("p2p_pnacc_kernel")
+        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
+                                            local_size=local_size,
+                                            output_buf=output_buf,
+                                            lmem_layout=lmem_layout)
+        elapsed_sum = 0.0
+        for i in range(nsamples):
+            timer.start()
+            pnacc_kernel.run()
+            elapsed_sum += timer.elapsed()
+        ret = pnacc_kernel.get_result()
+        timings['gpu_double'] = elapsed_sum / nsamples
+
+        print(timings)
 
 
 
