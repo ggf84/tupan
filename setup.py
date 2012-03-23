@@ -12,7 +12,7 @@ import pynbody
 
 
 extension_modules = []
-path = os.path.join('pynbody', 'lib', 'ext')
+path = os.path.join('pynbody', 'lib', 'src')
 extension_modules.append(Extension('pynbody.lib.libc32_gravity',
                              define_macros = [],
                              include_dirs = [os.sep+path],
@@ -26,9 +26,9 @@ extension_modules.append(Extension('pynbody.lib.libc64_gravity',
 
 package_data = {}
 package_data['pynbody.analysis'] = [os.path.join('textures', '*.png')]
-package_data['pynbody.lib'] = [os.path.join('ext', '*.c'),
-                               os.path.join('ext', '*.h'),
-                               os.path.join('ext', '*.cl')]
+package_data['pynbody.lib'] = [os.path.join('src', '*.c'),
+                               os.path.join('src', '*.h'),
+                               os.path.join('src', '*.cl')]
 
 classifiers = """
 Development Status :: 1 - Planning

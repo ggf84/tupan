@@ -34,8 +34,8 @@ class CLExtensions(object):
 
         dirname = os.path.dirname(__file__)
         abspath = os.path.abspath(dirname)
-        self._path = os.path.join(abspath, "ext")
-        self._cl_source_name = "gravity_kernels.cl"
+        self._path = os.path.join(abspath, "src")
+        self._cl_source_name = "libcl_gravity.cl"
 
 
     def build_kernels(self):
