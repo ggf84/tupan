@@ -5,10 +5,13 @@
 Setup Script
 """
 
+
+import os
 from distutils.core import setup
 from distutils.core import Extension
-import os
-import pynbody
+
+
+execfile(os.path.join('pynbody', 'version.py'))
 
 
 extension_modules = []
@@ -24,11 +27,13 @@ extension_modules.append(Extension('pynbody.lib.libc64_gravity',
                              libraries = ['m'],
                              sources=[os.path.join(path, 'libc_gravity.c')]))
 
+
 package_data = {}
 package_data['pynbody.analysis'] = [os.path.join('textures', '*.png')]
 package_data['pynbody.lib'] = [os.path.join('src', '*.c'),
                                os.path.join('src', '*.h'),
                                os.path.join('src', '*.cl')]
+
 
 classifiers = """
 Development Status :: 1 - Planning
@@ -42,9 +47,10 @@ Topic :: Scientific/Engineering
 
 setup(
     name='PyNbody',
-    version=pynbody.version.VERSION,
+    version=VERSION,
     author='Guilherme G. Ferrari',
     author_email='gg.ferrari@gmail.com',
+    description="A Python Toolkit for Astrophysical N-Body Simulations.",
     packages=['pynbody',
               'pynbody.analysis',
               'pynbody.integrator',
@@ -60,7 +66,6 @@ setup(
     scripts=['bin/pynbody'],
     url='http://github.com/GuilhermeFerrari/PyNbody',
     license='MIT License',
-    description=pynbody.__doc__.strip(),
     long_description=open('README.txt').read(),
     classifiers=[c for c in classifiers.split('\n') if c],
 )
