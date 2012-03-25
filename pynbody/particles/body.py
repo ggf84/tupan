@@ -191,17 +191,17 @@ class Body(Pbase):
 
     # Evolving methods
 
-    def evolve_pos(self, dpos):
+    def evolve_pos(self, tstep):
         """
-        Evolves position by dpos.
+        Evolves position in time.
         """
-        self.pos += dpos
+        self.pos += tstep * self.vel
 
-    def evolve_vel(self, dvel):
+    def evolve_vel(self, tstep):
         """
-        Evolves velocity by dvel.
+        Evolves velocity in time.
         """
-        self.vel += dvel
+        self.vel += tstep * self.acc
 
 
 ########## end of file ##########

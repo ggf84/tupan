@@ -66,11 +66,6 @@ class LeapFrog(object):
         self.tau = self.get_tau(omega)
         self.tstep = self.tau
 
-        self.dvel = {}
-        for (key, obj) in self.particles.iteritems():
-            if hasattr(obj, "acc"):
-                self.dvel[key] = self.tau * obj.acc
-
 
     @timings
     def gather(self):
@@ -95,9 +90,34 @@ class LeapFrog(object):
         self.time += step
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "evolve_pos"):
-                obj.evolve_pos(step * obj.vel)
+                obj.evolve_pos(step)
             if hasattr(obj, "evolve_com_pos_jump"):
-                obj.evolve_com_pos_jump(step * obj._com_vel_jump)
+                obj.evolve_com_pos_jump(step)
+
+
+    @timings
+    def forceDKD(self, jparticles, step):
+        """
+
+        """
+        prev_acc = {}
+        prev_pnacc = {}
+        for (key, obj) in self.particles.items():
+            if hasattr(obj, "acc"):
+                prev_acc[key] = obj.acc.copy()
+            if hasattr(obj, "pnacc"):
+                prev_pnacc[key] = obj.pnacc.copy()
+
+        omega = self.particles.set_acc(jparticles, step)
+
+        for (key, obj) in self.particles.items():
+            if hasattr(obj, "acc"):
+                obj.acc[:] = 2 * obj.acc - prev_acc[key]
+            if hasattr(obj, "pnacc"):
+                obj.pnacc[:] = 2 * obj.pnacc - prev_pnacc[key]
+
+        tau = self.get_tau(omega)
+        return tau
 
 
     @timings
@@ -106,43 +126,36 @@ class LeapFrog(object):
 
         """
         for (key, obj) in self.particles.iteritems():
+            if hasattr(obj, "pnacc"):
+                external_force = -(obj.mass * obj.pnacc.T).T
+                if hasattr(obj, "evolve_com_vel_jump"):
+                    obj.evolve_com_vel_jump(0.5 * step, external_force)
+                if hasattr(obj, "evolve_linmom_jump"):
+                    obj.evolve_linmom_jump(0.5 * step, external_force)
+                if hasattr(obj, "evolve_angmom_jump"):
+                    obj.evolve_angmom_jump(0.5 * step, external_force)
+                if hasattr(obj, "evolve_energy_jump"):
+                    obj.evolve_energy_jump(0.5 * step, external_force)
             if hasattr(obj, "evolve_vel"):
-                obj.evolve_vel(step * self.dvel[key])
+                obj.evolve_vel(0.5 * step)
 
-
-    @timings
-    def forceDKD(self, jparticles, methcoef, currstep):
-        """
-
-        """
-        fullstep = methcoef * currstep
-        omega = self.particles.set_acc(jparticles, currstep)
+        nextstep = self.forceDKD(self.gather(), step)
 
         for (key, obj) in self.particles.iteritems():
-            if hasattr(obj, "acc"):
-                g0 = self.dvel[key].copy()
-                self.dvel[key][:] = 2 * currstep * obj.acc - self.dvel[key]
-                g1 = self.dvel[key].copy()
+            if hasattr(obj, "evolve_vel"):
+                obj.evolve_vel(0.5 * step)
+            if hasattr(obj, "pnacc"):
+                external_force = -(obj.mass * obj.pnacc.T).T
+                if hasattr(obj, "evolve_com_vel_jump"):
+                    obj.evolve_com_vel_jump(0.5 * step, external_force)
+                if hasattr(obj, "evolve_linmom_jump"):
+                    obj.evolve_linmom_jump(0.5 * step, external_force)
+                if hasattr(obj, "evolve_angmom_jump"):
+                    obj.evolve_angmom_jump(0.5 * step, external_force)
+                if hasattr(obj, "evolve_energy_jump"):
+                    obj.evolve_energy_jump(0.5 * step, external_force)
 
-                if hasattr(obj, "_pnacc"):
-                    force_ext = -(obj.mass * obj._pnacc.T).T
-                    if hasattr(obj, "evolve_energy_jump"):
-                        v12 = obj.vel + 0.25 * methcoef * (g1-g0)
-                        energy_jump = (v12 * force_ext).sum(1)
-                        obj.evolve_energy_jump(fullstep * energy_jump)
-                    if hasattr(obj, "evolve_com_vel_jump"):
-                        mtot = obj.get_total_mass()
-                        com_vel_jump = force_ext.sum(0) / mtot
-                        obj.evolve_com_vel_jump(fullstep * com_vel_jump)
-                    if hasattr(obj, "evolve_linmom_jump"):
-                        linmom_jump = force_ext
-                        obj.evolve_linmom_jump(fullstep * linmom_jump)
-                    if hasattr(obj, "evolve_angmom_jump"):
-                        angmom_jump = np.cross(obj.pos, force_ext)
-                        obj.evolve_angmom_jump(fullstep * angmom_jump)
-
-        tau = self.get_tau(omega)
-        return tau
+        return nextstep
 
 
     def stepDKD(self, methcoef):
@@ -151,9 +164,7 @@ class LeapFrog(object):
         """
         currstep = self.tau
         self.drift(0.5 * methcoef * currstep)
-        self.kick(0.5 * methcoef)
-        nextstep = self.forceDKD(self.gather(), methcoef, currstep)
-        self.kick(0.5 * methcoef)
+        nextstep = self.kick(methcoef * currstep)
         self.drift(0.5 * methcoef * currstep)
         self.tau = nextstep
 

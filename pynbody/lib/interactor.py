@@ -108,7 +108,7 @@ class Interactor(object):
 #        if jobj:
         ret = gravitation.newtonian.set_acc(iobj, jobj, tstep)
         pnret = gravitation.post_newtonian.set_acc(iobj, jobj)
-        iacc = ret[0] + pnret
+        iacc = ret[0]
         ipnacc = pnret
         iomega = ret[1]
 

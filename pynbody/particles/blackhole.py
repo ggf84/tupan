@@ -40,10 +40,10 @@ class BlackHole(Pbase):
         self._totalmass = None
         self._self_total_epot = 0.0
 
-        self._pnacc = None
+        self.pnacc = None
         self._energy_jump = None
-        self._com_pos_jump = np.zeros(3, dtype="f8")
-        self._com_vel_jump = np.zeros(3, dtype="f8")
+        self._com_pos_jump = None
+        self._com_vel_jump = None
         self._linmom_jump = None
         self._angmom_jump = None
 
@@ -72,9 +72,11 @@ class BlackHole(Pbase):
         Get the center-of-mass position.
         """
         mtot = self.get_total_mass()
-        return (self.mass * self.pos.T).sum(1) / mtot #+ self._com_pos_jump
+        return (self.mass * self.pos.T).sum(1) / mtot
 
     def get_com_pos_jump(self):
+        if self._com_pos_jump == None:
+            self._com_pos_jump = np.zeros(3, dtype="f8")
         return self._com_pos_jump
 
     def get_center_of_mass_vel(self):
@@ -82,9 +84,11 @@ class BlackHole(Pbase):
         Get the center-of-mass velocity.
         """
         mtot = self.get_total_mass()
-        return (self.mass * self.vel.T).sum(1) / mtot #+ self._com_vel_jump
+        return (self.mass * self.vel.T).sum(1) / mtot
 
     def get_com_vel_jump(self):
+        if self._com_vel_jump == None:
+            self._com_vel_jump = np.zeros(3, dtype="f8")
         return self._com_vel_jump
 
     def reset_center_of_mass(self):
@@ -101,7 +105,7 @@ class BlackHole(Pbase):
         """
         Get the individual linear momentum.
         """
-        return (self.mass * self.vel.T).T #+ self._linmom_jump
+        return (self.mass * self.vel.T).T
 
     def get_linmom_jump(self):
         if self._linmom_jump == None:
@@ -112,7 +116,7 @@ class BlackHole(Pbase):
         """
         Get the individual angular momentum.
         """
-        return (self.mass * np.cross(self.pos, self.vel).T).T #+ self._angmom_jump
+        return (self.mass * np.cross(self.pos, self.vel).T).T
 
     def get_angmom_jump(self):
         if self._angmom_jump == None:
@@ -144,7 +148,7 @@ class BlackHole(Pbase):
         """
         Get the individual kinetic energy.
         """
-        return 0.5 * self.mass * (self.vel**2).sum(1) #+ self._energy_jump
+        return 0.5 * self.mass * (self.vel**2).sum(1)
 
     def get_epot(self):
         """
@@ -221,63 +225,67 @@ class BlackHole(Pbase):
         """
         Set the individual acceleration due to other particles.
         """
-        if self._pnacc == None:
-            self._pnacc = np.zeros_like(self.acc)
+        if self.pnacc == None:
+            self.pnacc = np.zeros_like(self.acc)
         (iacc, ipnacc, iomega) = interact.acc_blackhole(self, objs, tstep)
         self.acc[:] = iacc
-        self._pnacc[:] = ipnacc
+        self.pnacc[:] = ipnacc
         return iomega
 
 
     # Evolving methods
 
-    def evolve_pos(self, dpos):
+    def evolve_pos(self, tstep):
         """
-        Evolves position by dpos.
+        Evolves position in time.
         """
-        self.pos += dpos
+        self.pos += tstep * self.vel
 
-    def evolve_vel(self, dvel):
+    def evolve_vel(self, tstep):
         """
-        Evolves velocity by dvel.
+        Evolves velocity in time.
         """
-        self.vel += dvel
+        self.vel += tstep * (self.acc + self.pnacc)
 
-    def evolve_energy_jump(self, denergy_jump):
+    def evolve_com_pos_jump(self, tstep):
         """
-        Evolves energy jump by denergy_jump.
+        Evolves center of mass position jump due to an external force.
+        """
+        if self._com_pos_jump == None:
+            self._com_pos_jump = np.zeros(3, dtype="f8")
+        self._com_pos_jump += tstep * self._com_vel_jump
+
+    def evolve_com_vel_jump(self, tstep, external_force):
+        """
+        Evolves center of mass velocity jump due to an external force.
+        """
+        if self._com_vel_jump == None:
+            self._com_vel_jump = np.zeros(3, dtype="f8")
+        self._com_vel_jump += tstep * external_force.sum(0) / self.get_total_mass()
+
+    def evolve_energy_jump(self, tstep, external_force):
+        """
+        Evolves energy jump due to an external force.
         """
         if self._energy_jump == None:
             self._energy_jump = np.zeros_like(self.phi)
-        self._energy_jump += denergy_jump
+        self._energy_jump += tstep * (self.vel * external_force).sum(1)
 
-    def evolve_com_pos_jump(self, dcom_pos_jump):
+    def evolve_linmom_jump(self, tstep, external_force):
         """
-        Evolves center of mass position jump by dcom_pos_jump.
-        """
-        self._com_pos_jump += dcom_pos_jump
-
-    def evolve_com_vel_jump(self, dcom_vel_jump):
-        """
-        Evolves center of mass velocity jump by dcom_vel_jump.
-        """
-        self._com_vel_jump += dcom_vel_jump
-
-    def evolve_linmom_jump(self, dlinmom_jump):
-        """
-        Evolves linear momentum jump by dlinmom_jump.
+        Evolves linear momentum jump due to an external force.
         """
         if self._linmom_jump == None:
-            self._linmom_jump = np.zeros_like(self.acc)
-        self._linmom_jump += dlinmom_jump
+            self._linmom_jump = np.zeros_like(self.pnacc)
+        self._linmom_jump += tstep * external_force
 
-    def evolve_angmom_jump(self, dangmom_jump):
+    def evolve_angmom_jump(self, tstep, external_force):
         """
-        Evolves angular momentum jump by dangmom_jump.
+        Evolves angular momentum jump due to an external force.
         """
         if self._angmom_jump == None:
-            self._angmom_jump = np.zeros_like(self.acc)
-        self._angmom_jump += dangmom_jump
+            self._angmom_jump = np.zeros_like(self.pnacc)
+        self._angmom_jump += tstep * np.cross(self.pos, external_force)
 
 
 ########## end of file ##########
