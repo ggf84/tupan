@@ -5,6 +5,6 @@ dist
 *.png
 *.hdf5
 *.psdf
-*.pkl.gz
+*.pkl
 MANIFEST
 pynbody/test/png

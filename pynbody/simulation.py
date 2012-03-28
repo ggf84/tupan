@@ -8,7 +8,6 @@ TODO.
 from __future__ import print_function
 import sys
 import math
-import gzip
 import pickle
 import argparse
 from pprint import pprint
@@ -151,10 +150,10 @@ class Simulation(object):
     @timings
     def dump_restart_file(self):
         if sys.version_info >= (2, 7):
-            with gzip.open('restart.pkl.gz', 'wb') as fobj:
+            with open(self.args.restart_file, 'wb') as fobj:
                 pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
         else:
-            fobj = gzip.open('restart.pkl.gz', 'wb')
+            fobj = open(self.args.restart_file, 'wb')
             pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
             fobj.close()
 
@@ -212,10 +211,10 @@ def _main_newrun(args):
 
 def _main_restart(args):
     if sys.version_info >= (2, 7):
-        with gzip.open(args.restart_file, "rb") as fobj:
+        with open(args.restart_file, "rb") as fobj:
             mysim = pickle.load(fobj)
     else:
-        fobj = gzip.open(args.restart_file, "rb")
+        fobj = open(args.restart_file, "rb")
         mysim = pickle.load(fobj)
         fobj.close()
 
@@ -323,6 +322,12 @@ def main():
                         help="File name where error messages should be written"
                              " (type: str, default: sys.stderr)."
                        )
+    newrun.add_argument("--restart_file",
+                        type=str,
+                        default="restart.pkl",
+                        help="The name of the restart file which must be read "
+                             "from (type: str, default: 'restart.pkl')."
+                       )
     newrun.set_defaults(func=_main_newrun)
 
     # --------------------------------------------------------------------------
@@ -343,11 +348,11 @@ def main():
                          help="Parameter for time step determination (type: flo"
                               "at, default: obtained from the restart file)."
                         )
-    restart.add_argument("-r", "--restart_file",
+    restart.add_argument("--restart_file",
                          type=str,
-                         default="restart.pkl.gz",
+                         default="restart.pkl",
                          help="The name of the restart file which must be read "
-                              "from (type: str, default: 'restart.pkl.gz')."
+                              "from (type: str, default: 'restart.pkl')."
                         )
     restart.set_defaults(func=_main_restart)
 
