@@ -9,6 +9,7 @@
 from __future__ import print_function
 import os
 import sys
+import logging
 from warnings import warn
 from functools import reduce
 import numpy as np
@@ -16,6 +17,11 @@ import pyopencl as cl
 
 
 __all__ = ["Extensions"]
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='spam.log', filemode='w',
+                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                     level=logging.DEBUG)
 
 
 class CLExtensions(object):
@@ -184,7 +190,7 @@ class Extensions(object):
 
 
     def build_kernels(self, device='cpu'):
-        print("building kernels...")
+        logger.debug("Building kernels...")
         self.cext.build_kernels()
         try:
             self.clext.build_kernels()
@@ -194,10 +200,10 @@ class Extensions(object):
 
         if device == 'cpu':
             self.extension = self.cext
-            print("Using C extensions", file=sys.stderr)
+            logger.debug("Using C extensions.")
         elif device == 'gpu' and has_cl:
             self.extension = self.clext
-            print("Using CL extensions", file=sys.stderr)
+            logger.debug("Using CL extensions.")
         if device == 'gpu' and not has_cl:
             msg = ("Sorry, a problem occurred while trying to build OpenCL extensions."
                    "\nDo you want to continue with C extensions ([y]/n)? ")
@@ -207,8 +213,7 @@ class Extensions(object):
                 print('Exiting...', file=sys.stderr)
                 sys.exit(0)
             self.extension = self.cext
-            print("Using C extensions", file=sys.stderr)
-
+            logger.debug("Using C extensions.")
 
     def get_kernel(self, kernel_name):
         return self.extension.get_kernel(kernel_name)

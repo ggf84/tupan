@@ -1,10 +1,11 @@
 build
 dist
-*.dat
-*.pyc
-*.png
-*.hdf5
-*.psdf
-*.pkl
 MANIFEST
+*.dat
+*.hdf5
+*.log
+*.pkl
+*.png
+*.psdf
+*.pyc
 pynbody/test/png

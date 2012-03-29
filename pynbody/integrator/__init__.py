@@ -14,41 +14,37 @@ class Integrator(object):
     """
 
     """
-    __METHS__ = [leapfrog.LeapFrog,
-                 block.BlockStep,
-                ]
-    METHS = dict([(m.__name__.lower(), m) for m in __METHS__])
-    del m
-    del __METHS__
+    PROVIDED_METHODS = ['leapfrog', 'blockstep']
 
-    def __init__(self, eta, time, particles, **kwargs):
-        meth_name = kwargs.pop("meth", "leapfrog")
-        if not meth_name in self.METHS:
-            msg = "{0}.__init__ received unexpected meth name: '{1}'."
-            raise TypeError(msg.format(self.__class__.__name__, meth_name))
+    def __init__(self, eta, current_time, particles, method_name="leapfrog", **kwargs):
+        import logging
+        logger = logging.getLogger(__name__)
 
-        if kwargs:
-            msg = "{0}.__init__ received unexpected keyword arguments: {1}."
-            raise TypeError(msg.format(self.__class__.__name__,
-                                       ", ".join(kwargs.keys())))
+        self.integrator = None
+        if method_name == "leapfrog":
+            logger.info("Using 'leapfrog' integrator.")
+            self.integrator = leapfrog.LeapFrog(eta, current_time, particles)
+        elif method_name == "blockstep":
+            logger.info("Using 'blockstep' integrator.")
+            self.integrator = leapfrog.BlockStep(eta, current_time, particles)
+        else:
+            logger.critical("Unexpected integrator name: '%s'. Provided methods: %s", method_name, str(self.PROVIDED_METHODS))
 
-        Meth = self.METHS[meth_name]
-        self._meth = Meth(eta, time, particles)
 
     def step(self):
-        self._meth.step()
+        self.integrator.step()
 
     @property
     def tstep(self):
-        return self._meth.tstep
+        return self.integrator.tstep
 
     @property
-    def time(self):
-        return self._meth.time
+    def current_time(self):
+        return self.integrator.current_time
 
     @property
     def particles(self):
-        return self._meth.particles
+        return self.integrator.particles
 
 
 ########## end of file ##########

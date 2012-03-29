@@ -132,7 +132,7 @@ class Simulation(object):
 
         # Initializes the diagnostic of the simulation.
         self.dia = Diagnostic(self.args.log_file, particles)
-        self.dia.print_diagnostic(self.integrator.time,
+        self.dia.print_diagnostic(self.integrator.current_time,
                                   self.integrator.tstep,
                                   particles)
 
@@ -144,7 +144,7 @@ class Simulation(object):
         self.gl_steps = self.args.gl_freq
         self.res_steps = self.args.res_freq
         self.dt_dia = 1.0 / self.args.diag_freq
-        self.oldtime_dia = self.integrator.time
+        self.oldtime_dia = self.integrator.current_time
 
 
     @timings
@@ -166,7 +166,7 @@ class Simulation(object):
         if self.viewer:
             self.viewer.initialize()
 
-        while (self.integrator.time < self.args.tmax):
+        while (self.integrator.current_time < self.args.tmax):
             self.integrator.step()
             self.gl_steps += 1
             if (self.gl_steps >= self.args.gl_freq):
@@ -174,10 +174,10 @@ class Simulation(object):
                 if self.viewer:
                     particles = self.integrator.particles
                     self.viewer.show_event(particles.copy())
-            if (self.integrator.time - self.oldtime_dia >= self.dt_dia):
+            if (self.integrator.current_time - self.oldtime_dia >= self.dt_dia):
                 self.oldtime_dia += self.dt_dia
                 particles = self.integrator.particles
-                self.dia.print_diagnostic(self.integrator.time,
+                self.dia.print_diagnostic(self.integrator.current_time,
                                           self.integrator.tstep,
                                           particles)
                 self.io.dump(particles)
@@ -273,7 +273,7 @@ def main():
     newrun.add_argument("-m", "--meth",
                         type=str,
                         default="leapfrog",
-                        choices=Integrator.METHS.keys(),
+                        choices=Integrator.PROVIDED_METHODS,
                         help="Integration method name (type: str, default:"
                              " 'leapfrog')."
                        )

@@ -55,9 +55,9 @@ class LeapFrog(object):
     """
 
     """
-    def __init__(self, eta, time, particles, coefs=_coefs):
+    def __init__(self, eta, current_time, particles, coefs=_coefs):
         self.eta = eta
-        self.time = time
+        self.current_time = current_time
         self.coefs = coefs
         self.particles = particles
 
@@ -87,7 +87,7 @@ class LeapFrog(object):
 
         """
         self.tstep += step
-        self.time += step
+        self.current_time += step
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "evolve_pos"):
                 obj.evolve_pos(step)
