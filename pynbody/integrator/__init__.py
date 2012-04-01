@@ -16,19 +16,20 @@ class Integrator(object):
     """
     PROVIDED_METHODS = ['leapfrog', 'blockstep']
 
-    def __init__(self, eta, current_time, particles, method_name="leapfrog", **kwargs):
+    def __init__(self, eta, time, particles, method="leapfrog", **kwargs):
         import logging
         logger = logging.getLogger(__name__)
 
         self.integrator = None
-        if method_name == "leapfrog":
+        if method == "leapfrog":
             logger.info("Using 'leapfrog' integrator.")
-            self.integrator = leapfrog.LeapFrog(eta, current_time, particles)
-        elif method_name == "blockstep":
+            self.integrator = leapfrog.LeapFrog(eta, time, particles)
+        elif method == "blockstep":
             logger.info("Using 'blockstep' integrator.")
-            self.integrator = leapfrog.BlockStep(eta, current_time, particles)
+            self.integrator = leapfrog.BlockStep(eta, time, particles)
         else:
-            logger.critical("Unexpected integrator name: '%s'. Provided methods: %s", method_name, str(self.PROVIDED_METHODS))
+            logger.critical("Unexpected integrator method: '%s'. Provided methods: %s",
+                            method, str(self.PROVIDED_METHODS))
 
 
     def step(self):
@@ -40,7 +41,7 @@ class Integrator(object):
 
     @property
     def current_time(self):
-        return self.integrator.current_time
+        return self.integrator.time
 
     @property
     def particles(self):

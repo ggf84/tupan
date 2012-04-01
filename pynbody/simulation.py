@@ -128,7 +128,7 @@ class Simulation(object):
 
         # Initializes the integrator.
         self.integrator = Integrator(self.args.eta, 0.0, particles,
-                                     meth=self.args.meth)
+                                     method=self.args.meth)
 
         # Initializes the diagnostic of the simulation.
         self.dia = Diagnostic(self.args.log_file, particles)

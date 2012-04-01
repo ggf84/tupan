@@ -28,7 +28,7 @@ def set_particles(npart):
     from pynbody.models.imf import IMF
     from pynbody.models.plummer import Plummer
     imf = IMF.padoan2007(0.075, 120.0)
-    p = Plummer(npart, imf, epsf=0.0, epstype='b', seed=1)
+    p = Plummer(npart, imf, eps=0.0, seed=1)
     p.make_plummer()
     bi = p.particles['body']
     return bi

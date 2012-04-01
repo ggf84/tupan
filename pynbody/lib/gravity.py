@@ -56,7 +56,7 @@ class Newtonian(object):
         return ret
 
 
-    def set_acc(self, iobj, jobj, tstep):
+    def set_acc(self, iobj, jobj, tau):
         """
         Set obj-obj newtonian acc.
         """
@@ -70,7 +70,7 @@ class Newtonian(object):
                 jposmass, jveleps2,
                 np.uint32(ni),
                 np.uint32(nj),
-                np.float64(tstep))
+                np.float64(tau))
 
         output_buf = np.empty((ni,4))
         lmem_layout = (4, 4)
@@ -88,6 +88,40 @@ class Newtonian(object):
         acc_kernel.run()
         ret = acc_kernel.get_result()
         return (ret[:,:3], ret[:,3])
+
+
+    def set_tstep(self, iobj, jobj, tau):
+        """
+        Set timestep.
+        """
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
+        jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
+        data = (iposmass, iveleps2,
+                jposmass, jveleps2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.float64(tau))
+
+        output_buf = np.empty(ni)
+        lmem_layout = (4, 4)
+
+        # Adjusts global_size to be an integer multiple of local_size
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+        tstep_kernel = kernel_library.get_kernel("p2p_tstep_kernel")
+
+        tstep_kernel.set_kernel_args(*data, global_size=global_size,
+                                            local_size=local_size,
+                                            output_buf=output_buf,
+                                            lmem_layout=lmem_layout)
+        tstep_kernel.run()
+        ret = tstep_kernel.get_result()
+        return ret
 
 
 class PostNewtonian(object):
