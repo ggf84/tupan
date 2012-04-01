@@ -9,12 +9,15 @@
 from __future__ import (print_function, division)
 import sys
 import math
+import logging
 import numpy as np
 from pynbody.particles import Particles
 from pynbody.lib.utils.timing import timings
 
 
 __all__ = ['Plummer']
+
+logger = logging.getLogger(__name__)
 
 
 def scale_mass(bodies, m_scale):
@@ -48,34 +51,40 @@ def scale_to_nbody_units(particles):
 
 
 
-
-
 class Plummer(object):
     """  """
 
-    def __init__(self, num, imf, mfrac=0.999, epsf=0.0, epstype='b', seed=None):
+    def __init__(self, num, imf, mfrac=0.999, eps=0.0, eps_parametrization=0, seed=None):
         self.num = num
         self.imf = imf
         self.mfrac = mfrac
-        self.epsf = epsf
-        self.epstype = epstype
+        self.eps2 = eps*eps
+        self.eps_parametrization = eps_parametrization
         self.particles = Particles({"body": num})
         np.random.seed(seed)
 
     @timings
     def set_eps2(self, mass):
         n = self.num
-        eps_a = mass
-        eps_b = (1.0 / (n * (n * mass)**0.5))
-        if 'a' in self.epstype:
-            eps_a_mean = float(np.sum(mass*(eps_a**2)))**0.5
-            eps_b_mean = float(np.sum(mass*(eps_b**2)))**0.5
-            ratio = (eps_b_mean / eps_a_mean)
-            return self.epsf * ratio * eps_a
-        elif 'b' in self.epstype:
-            return self.epsf * eps_b
+        if self.eps_parametrization == 0:       # eps2 ~ cte
+            eps2 = np.ones(n)
+        elif self.eps_parametrization == 1:     # eps2 ~ m^2 ~ 1/n^2 if m ~ 1/n
+            eps2 = mass**2
+        elif self.eps_parametrization == 2:     # eps2 ~ m/n ~ 1/n^2 if m ~ 1/n
+            eps2 = mass / n
+        elif self.eps_parametrization == 3:     # eps2 ~ (m/n^2)^(2/3) ~ 1/n^2 if m ~ 1/n
+            eps2 = (mass / n**2)**(2.0/3)
+        elif self.eps_parametrization == 4:     # eps2 ~ (1/(m*n^2))^2 ~ 1/n^2 if m ~ 1/n
+            eps2 = (1.0 / (mass * n**2))**2
         else:
-            return 0
+            logger.critical("Unexpected value for eps_parametrization: %d.", self.eps_parametrization)
+            raise ValueError("Unexpected value for eps_parametrization: {}.".format(self.eps_parametrization))
+
+        # normalizes by the provided scale of eps2
+        eps2 *= self.eps2 / np.mean(eps2)
+
+        # return half of real value in order to avoid to do this in force loop.
+        return eps2/2
 
 
     @timings

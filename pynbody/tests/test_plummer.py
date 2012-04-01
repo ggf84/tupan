@@ -20,10 +20,10 @@ if __name__ == "__main__":
 #        imf = IMF.parravano2011(0.075, 120.0)
         imf = IMF.padoan2007(0.075, 120.0)
 
-        p = Plummer(numBodies, imf, epsf=4.0, epstype='b', seed=1)
+        p = Plummer(numBodies, imf, eps=4.0/numBodies, eps_parametrization=0, seed=1)
         p.make_plummer()
 
-        fname = "plummer"+str(numBodies).zfill(4)+'b'
+        fname = "plummer"+str(numBodies).zfill(4)
         io = IO(fname, 'hdf5')
         io.dump(p.particles, fmode='w')
 
