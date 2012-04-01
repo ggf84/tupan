@@ -180,11 +180,18 @@ class Body(Pbase):
         self.phi[:] = iphi
         self._self_total_epot = 0.5 * float(np.sum(self.mass * self_phi))
 
-    def set_acc(self, objs, tau):
+    def set_acc(self, objs):
         """
         Set the individual acceleration due to other particles.
         """
-        (iacc, iomega) = interact.acc_body(self, objs, tau)
+        iacc = interact.acc_body(self, objs)
+        self.acc[:] = iacc
+
+    def set_acctstep(self, objs, tau):
+        """
+        Set the individual acceleration and timesteps due to other particles.
+        """
+        (iacc, iomega) = interact.acctstep_body(self, objs, tau)
         self.acc[:] = iacc
         return iomega
 

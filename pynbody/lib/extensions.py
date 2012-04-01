@@ -195,8 +195,9 @@ class Extensions(object):
         try:
             self.clext.build_kernels()
             has_cl = True
-        except:
+        except Exception as exc:
             has_cl = False
+            logger.exception(exc)
 
         if device == 'cpu':
             self.extension = self.cext

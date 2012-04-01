@@ -56,9 +56,44 @@ class Newtonian(object):
         return ret
 
 
-    def set_acc(self, iobj, jobj, tau):
+    def set_acc(self, iobj, jobj):
         """
         Set obj-obj newtonian acc.
+        """
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
+        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
+        data = (iposmass, iobj.eps2,
+                jposmass, jobj.eps2,
+                np.uint32(ni),
+                np.uint32(nj))
+
+        output_buf = np.empty((ni,4))   # XXX: forcing shape = (ni, 4) due to
+                                        #      a bug using __global REAL3 in
+                                        #      AMD's OpenCL implementation.
+        lmem_layout = (4, 1)
+
+        # Adjusts global_size to be an integer multiple of local_size
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+        acc_kernel = kernel_library.get_kernel("p2p_acc_kernel")
+
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          output_buf=output_buf,
+                                          lmem_layout=lmem_layout)
+        acc_kernel.run()
+        ret = acc_kernel.get_result()
+        return ret[:,:3]                # XXX: forcing return shape = (ni, 3).
+                                        #      see comment about a bug using
+                                        #      __global REAL3 in OpenCL.
+
+
+    def set_acctstep(self, iobj, jobj, tau):
+        """
+        Set obj-obj newtonian acc and timestep.
         """
         ni = len(iobj)
         nj = len(jobj)
@@ -79,7 +114,7 @@ class Newtonian(object):
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
-        acc_kernel = kernel_library.get_kernel("p2p_acc_kernel")
+        acc_kernel = kernel_library.get_kernel("p2p_acctstep_kernel")
 
         acc_kernel.set_kernel_args(*data, global_size=global_size,
                                           local_size=local_size,

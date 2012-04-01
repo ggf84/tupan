@@ -21,17 +21,12 @@ class LeapFrog(object):
         self.eta = eta
         self.time = time
         self.tstep = 0.0
-        particles.set_acc(particles, 0.0)
+        particles.set_acc(particles)
         self.particles = particles
 
 
-    @timings
-    def gather(self):
-        return self.particles
-
-
     def get_min_tstep(self, old_tstep):
-        inv_tstep = self.particles.set_tstep(self.gather(), old_tstep)
+        inv_tstep = self.particles.set_tstep(self.particles, old_tstep)
         max_inv_tstep = 0.0
         for (key, value) in inv_tstep.items():
             if value is not None:
@@ -66,7 +61,7 @@ class LeapFrog(object):
             if hasattr(obj, "pnacc"):
                 prev_pnacc[key] = obj.pnacc.copy()
 
-        self.particles.set_acc(jparticles, 0.0)
+        self.particles.set_acc(jparticles)
 
         for (key, obj) in self.particles.items():
             if hasattr(obj, "acc"):
@@ -94,7 +89,7 @@ class LeapFrog(object):
             if hasattr(obj, "evolve_vel"):
                 obj.evolve_vel(0.5 * tstep)
 
-        self.forceDKD(self.gather())
+        self.forceDKD(self.particles)
 
         for (key, obj) in self.particles.iteritems():
             if hasattr(obj, "evolve_vel"):
