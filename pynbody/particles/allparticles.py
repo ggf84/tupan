@@ -216,6 +216,39 @@ class Particles(dict):
 
     # Energy methods
 
+    def get_total_ekin(self):
+        """
+        Get the total kinectic energy for the whole system of particles.
+        """
+        ekin = 0.0
+        for (key, obj) in self.items():
+            if obj:
+                ekin += obj.get_total_ekin()
+        return ekin
+
+    def get_total_epot(self):
+        """
+        Get the total potential energy for the whole system of particles.
+        """
+        epot = 0.0
+        for (key, obj) in self.items():
+            if obj:
+                value = obj.get_total_epot()
+                epot += 0.5*(value + obj._self_total_epot)
+        return epot
+
+    def get_total_etot(self):
+        ekin = self.get_total_ekin()
+        epot = self.get_total_epot()
+        etot = ekin + epot
+        return etot
+
+    def get_total_evir(self):
+        ekin = self.get_total_ekin()
+        epot = self.get_total_epot()
+        evir = ekin + (ekin + epot)
+        return evir
+
     def get_energies(self):
         """
         Get the energies ("kin", "pot", "tot", "vir") for each particle type.
