@@ -320,14 +320,10 @@ class Particles(dict):
         return rhostep
 
     @timings
-    def set_tstep(self, objs, tau):
-        rhostep = {}
+    def set_tstep(self, objs, eta, old_tstep):
         for (key, obj) in self.iteritems():
             if obj:
-                rhostep[key] = obj.set_tstep(objs, tau)
-            else:
-                rhostep[key] = None
-        return rhostep
+                obj.set_tstep(objs, eta, old_tstep)
 
 
 

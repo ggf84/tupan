@@ -25,23 +25,20 @@ class LeapFrog(object):
         self.particles = particles
 
 
-    def get_min_tstep(self, old_tau):
-        inv_tau = self.particles.set_tstep(self.particles, old_tau)
-        max_inv_tau = 0.0
-        for (key, value) in inv_tau.items():
-            if value is not None:
-                max_inv_tau = max(max_inv_tau, value.max())
-        new_tau = float(self.eta / max_inv_tau**0.5)
-        return new_tau
+    def get_min_tstep(self):
+        min_tstep = 1.0
+        for (key, obj) in self.particles.items():
+            if obj:
+                min_tstep = min(min_tstep, obj.tstep.min())
+        return min_tstep
 
 
     @timings
-    def drift(self, p, tau):
+    def drift(self, ip, tau):
         """
 
         """
-        self.time += tau
-        for (key, obj) in p.items():
+        for (key, obj) in ip.items():
             if hasattr(obj, "evolve_pos"):
                 obj.evolve_pos(tau)
             if hasattr(obj, "evolve_com_pos_jump"):
@@ -106,25 +103,40 @@ class LeapFrog(object):
                     obj.evolve_energy_jump(0.5 * tau, external_force)
 
 
-    def stepDKD(self, ip, jp, tau):
+    def stepDKD(self, slow, fast, tau):
         """
 
         """
-        self.drift(ip, 0.5 * tau)
-        if jp: self.kick(jp, ip, tau)
-        self.kick(ip, ip, tau)
-        if jp: self.kick(ip, jp, tau)
-        self.drift(ip, 0.5 * tau)
+        if not fast.any(): self.time += 0.5 * tau
+        self.drift(slow, 0.5 * tau)
+        if fast.any(): self.kick(fast, slow, tau)
+        self.kick(slow, slow, tau)
+        if fast.any(): self.kick(slow, fast, tau)
+        self.drift(slow, 0.5 * tau)
+        if not fast.any(): self.time += 0.5 * tau
 
+    def update_tstep(self, ip, jp, tau):
+        ip.set_tstep(jp, self.eta, tau)
 
+    def split_by(self, tau, p):
+        slow = p.__class__()
+        fast = p.__class__()
+        for (key, obj) in p.items():
+            if obj:
+                is_less = obj.tstep < tau
+                is_greater = ~is_less
+                slow[key] = obj[np.where(is_greater)]   # XXX: known bug: numpy fancy indexing returns a copy
+                fast[key] = obj[np.where(is_less)]      #      but which we want is a view.
+
+        return slow, fast
 
     def rstep(self, p, tau, update):
-        if update: self.update_tstep(p, p, tau)
-        slow, fast = self.split(tau, p)
+        if update: self.update_tstep(p, p, tau/2)
+        slow, fast = self.split_by(tau, p)
 
-        if fast: self.rstep(fast, tau/2, False)
-        if slow: self.stepDKD(slow, fast, tau)
-        if fast: self.rstep(fast, tau/2, True)
+        if fast.any(): self.rstep(fast, tau/2, False)
+        if slow.any(): self.stepDKD(slow, fast, tau)
+        if fast.any(): self.rstep(fast, tau/2, True)
 
 
     @timings
@@ -132,10 +144,13 @@ class LeapFrog(object):
         """
 
         """
-        self.tstep = self.get_min_tstep(0.5 * self.tstep)
-        self.stepDKD(self.particles, [], self.tstep)
+        old_tstep = 0.5 * self.tstep
+        self.particles.set_tstep(self.particles, self.eta, old_tstep)
+        self.tstep = self.get_min_tstep()
+        self.stepDKD(self.particles, np.array([]), self.tstep)
 
-#        self.rstep(self.particles, 0.125, True)
+#        tau = 0.015625
+#        self.rstep(self.particles, tau, True)
 
 
     # Pickle-related methods

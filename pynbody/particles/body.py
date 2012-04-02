@@ -16,8 +16,8 @@ from ..lib.interactor import interact
 __all__ = ["Body"]
 
 
-dtype = {"names":   ["index", "mass", "eps2", "phi", "pos", "vel", "acc"],
-         "formats": ["u8",    "f8",   "f8",   "f8",  "3f8", "3f8", "3f8"]}
+dtype = {"names":   ["id", "mass", "radius", "tstep", "eps2", "phi", "pos", "vel", "acc"],
+         "formats": ["u8", "f8",   "f8",     "f8",    "f8",   "f8",  "3f8", "3f8", "3f8"]}
 
 #fields = OrderedDict([("index", "u8"), ("mass", "f8"), ("eps2", "f8"),
 #                      ("phi", "f8"), ("pos", "3f8"),
@@ -195,12 +195,12 @@ class Body(Pbase):
         self.acc[:] = iacc
         return iomega
 
-    def set_tstep(self, objs, tau):
+    def set_tstep(self, objs, eta, old_tstep):
         """
         Set the individual timesteps due to other particles.
         """
-        iomega = interact.tstep_body(self, objs, tau)
-        return iomega
+        itstep = interact.tstep_body(self, objs, eta, old_tstep)
+        self.tstep[:] = itstep
 
 
     # Evolving methods

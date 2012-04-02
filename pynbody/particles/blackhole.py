@@ -16,8 +16,8 @@ from ..lib.interactor import interact
 __all__ = ["BlackHole"]
 
 
-dtype = {"names":   ["index", "mass", "eps2", "phi", "pos", "vel", "acc", "spin"],
-         "formats": ["u8",    "f8",   "f8",   "f8",  "3f8", "3f8", "3f8", "3f8"]}
+dtype = {"names":   ["id", "mass", "radius", "tstep", "eps2", "phi", "pos", "vel", "acc", "spin"],
+         "formats": ["u8", "f8",   "f8",     "f8",    "f8",   "f8",  "3f8", "3f8", "3f8", "3f8"]}
 
 #fields = OrderedDict([("index", "u8"), ("mass", "f8"), ("eps2", "f8"),
 #                      ("phi", "f8"), ("pos", "3f8"),
@@ -242,12 +242,12 @@ class BlackHole(Pbase):
         self.pnacc[:] = ipnacc
         return iomega
 
-    def set_tstep(self, objs, tau):
+    def set_tstep(self, objs, eta, old_tstep):
         """
         Set the individual timesteps due to other particles.
         """
-        iomega = interact.tstep_blackhole(self, objs, tau)
-        return iomega
+        itstep = interact.tstep_blackhole(self, objs, eta, old_tstep)
+        self.tstep[:] = itstep
 
 
     # Evolving methods
