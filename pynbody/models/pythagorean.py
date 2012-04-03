@@ -34,7 +34,7 @@ def make_system(particles_as_type='body', **kwargs):
         particles[_type].spin[:] = kwargs.pop("spin", spin)
 
     particles.set_phi(particles)
-    particles.set_acc(particles, 0.0)
+    particles.set_acc(particles)
 
     return particles
         
