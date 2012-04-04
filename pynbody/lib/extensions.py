@@ -222,7 +222,7 @@ class Extensions(object):
 
 
 kernel_library = Extensions(dtype='d', junroll=8)
-kernel_library.build_kernels(device='gpu')
+kernel_library.build_kernels(device='cpu')
 
 
 ########## end of file ##########

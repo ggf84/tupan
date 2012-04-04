@@ -124,13 +124,21 @@ p2p_tstep_kernel_core(REAL inv_tstep,
     REAL inv_r = sqrt(inv_r2);                                       // 1 FLOPs
     REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
 
-    REAL omega2 = r.w * inv_r3;                                      // 1 FLOPs
+//    REAL omega2 = r.w * inv_r3;                                      // 1 FLOPs
 
-    REAL dln_omega = -3 * rv * inv_r2;                               // 2 FLOPs
-    REAL symm_factor = 1 + tau * dln_omega;                          // 2 FLOPs
-    omega2 *= symm_factor;                                           // 1 FLOPs
+//    REAL dln_omega = -3 * rv * inv_r2;                               // 2 FLOPs
+//    REAL symm_factor = 1 + tau * dln_omega;                          // 2 FLOPs
+//    omega2 *= symm_factor;                                           // 1 FLOPs
 
-    inv_tstep += omega2;                                             // 1 FLOPs
+//    inv_tstep += omega2;                                             // 1 FLOPs
+
+
+    REAL dln_omega = -(3./2) * rv * inv_r2;                          // 2 FLOPs
+    REAL omega = sqrt(r.w * inv_r3);                                      // 1 FLOPs
+    omega += 0.5 * tau * dln_omega;
+
+    inv_tstep += omega*omega;                                             // 1 FLOPs
+
 
     return inv_tstep;
 }

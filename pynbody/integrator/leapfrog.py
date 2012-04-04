@@ -69,10 +69,9 @@ class LeapFrog(object):
 
         ip.set_acc(jp)
 
-        ni = len(ip['body'])
-        nj = len(jp['body'])
+        ni = ip.get_nbody()
+        nj = jp.get_nbody()
         self.n2_sum += ni*nj
-
         ntot = self.particles.get_nbody()
         if ni == ntot and nj == ntot:
             print(ni, nj, self.n2_sum)
@@ -138,20 +137,20 @@ class LeapFrog(object):
         """
 
         """
-#        old_tstep = 0.5 * self.tstep
+#        old_tstep = self.eta#0.5 * self.tstep
 #        self.particles.set_tstep(self.particles, self.eta, old_tstep)
 #        self.tstep = self.get_min_tstep()
 #        self.stepDKD(self.particles, self.particles.__class__(), self.tstep)
 
-        tau = self.eta
+        tau = self.eta/4
         self.rstep(self.particles, tau, True)
 
 
 
 
 
-    def update_tstep(self, ip, jp, tau):
-        ip.set_tstep(jp, self.eta, tau)
+    def update_tstep(self, ip, jp):
+        ip.set_tstep(jp, self.eta, self.eta)
 
 
     def split_by(self, tau, p):
@@ -197,7 +196,7 @@ class LeapFrog(object):
 
 
     def rstep(self, p, tau, update):
-        if update: self.update_tstep(p, p, tau/2.0)
+        if update: self.update_tstep(p, p)
         slow, fast, indexing = self.split_by(tau, p)
 
         if fast.get_nbody() == 1: logger.error("fast level contains only *one* particle.")

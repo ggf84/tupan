@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
 #    p0["body"].vel /= 2
 
-    n_bh = 4
+    n_bh = 3
 
     p = Particles({"body": 1, "blackhole": 1})
 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     from pynbody.particles.blackhole import dtype
 
-    p["blackhole"].fromlist([tuple(b)+([0.0, 0.0, 0.0],)
+    p["blackhole"].fromlist([tuple(b)+([0.0, 0.0, 0.0],[0.0, 0.0, 0.0],)
                             for b in p0["body"][numBodies-n_bh:]],
                             dtype=dtype)
 

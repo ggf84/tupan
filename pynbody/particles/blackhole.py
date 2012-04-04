@@ -16,8 +16,8 @@ from ..lib.interactor import interact
 __all__ = ["BlackHole"]
 
 
-dtype = {"names":   ["id", "mass", "radius", "tstep", "eps2", "phi", "pos", "vel", "acc", "spin"],
-         "formats": ["u8", "f8",   "f8",     "f8",    "f8",   "f8",  "3f8", "3f8", "3f8", "3f8"]}
+dtype = {"names":   ["id", "mass", "radius", "tstep", "eps2", "phi", "pos", "vel", "acc", "pnacc", "spin"],
+         "formats": ["u8", "f8",   "f8",     "f8",    "f8",   "f8",  "3f8", "3f8", "3f8", "3f8",   "3f8"]}
 
 #fields = OrderedDict([("index", "u8"), ("mass", "f8"), ("eps2", "f8"),
 #                      ("phi", "f8"), ("pos", "3f8"),
@@ -40,7 +40,6 @@ class BlackHole(Pbase):
         self._totalmass = None
         self._self_total_epot = 0.0
 
-        self.pnacc = None
         self._energy_jump = None
         self._com_pos_jump = None
         self._com_vel_jump = None
@@ -225,8 +224,6 @@ class BlackHole(Pbase):
         """
         Set the individual acceleration due to other particles.
         """
-        if self.pnacc == None:
-            self.pnacc = np.zeros_like(self.acc)
         (iacc, ipnacc) = interact.acc_blackhole(self, objs)
         self.acc[:] = iacc
         self.pnacc[:] = ipnacc
@@ -235,8 +232,6 @@ class BlackHole(Pbase):
         """
         Set the individual acceleration and timesteps due to other particles.
         """
-        if self.pnacc == None:
-            self.pnacc = np.zeros_like(self.acc)
         (iacc, ipnacc, iomega) = interact.acctstep_blackhole(self, objs, tau)
         self.acc[:] = iacc
         self.pnacc[:] = ipnacc
