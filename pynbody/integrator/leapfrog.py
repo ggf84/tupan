@@ -20,9 +20,10 @@ class LeapFrog(object):
     def __init__(self, eta, time, particles):
         self.eta = eta
         self.time = time
-        self.tstep = 0.0
         particles.set_acc(particles)
+        particles.set_tstep(particles, eta, 0.0)
         self.particles = particles
+        self.tstep = self.get_min_tstep()
         self.n2_sum = 0
 
 
@@ -31,6 +32,10 @@ class LeapFrog(object):
         for (key, obj) in self.particles.items():
             if obj:
                 min_tstep = min(min_tstep, obj.tstep.min())
+
+#        power = (np.log2(min_tstep) - 1).astype(np.int)
+#        min_tstep = 2.0**power
+
         return min_tstep
 
 
@@ -113,13 +118,13 @@ class LeapFrog(object):
         """
 
         """
-        if not fast.any(): self.time += 0.5 * tau
+        if fast.get_nbody() == 0: self.time += 0.5 * tau
         self.drift(slow, 0.5 * tau)
-        if fast.any(): self.kick(fast, slow, tau)
+        if fast.get_nbody() > 0: self.kick(slow, fast, tau)
         self.kick(slow, slow, tau)
-        if fast.any(): self.kick(slow, fast, tau)
+        if fast.get_nbody() > 0: self.kick(fast, slow, tau)
         self.drift(slow, 0.5 * tau)
-        if not fast.any(): self.time += 0.5 * tau
+        if fast.get_nbody() == 0: self.time += 0.5 * tau
 
 
     @timings
@@ -130,9 +135,9 @@ class LeapFrog(object):
         old_tstep = 0.5 * self.tstep
         self.particles.set_tstep(self.particles, self.eta, old_tstep)
         self.tstep = self.get_min_tstep()
-        self.stepDKD(self.particles, np.array([]), self.tstep)
+        self.stepDKD(self.particles, self.particles.__class__(), self.tstep)
 
-#        tau = 1.0/64
+#        tau = self.eta
 #        self.rstep(self.particles, tau, True)
 
 
@@ -152,7 +157,7 @@ class LeapFrog(object):
                 is_fast = obj.tstep < tau
                 is_slow = ~is_fast
                 slow[key] = obj[np.where(is_slow)]   # XXX: known bug: numpy fancy indexing returns a copy
-                fast[key] = obj[np.where(is_fast)]      #      but which we want is a view.
+                fast[key] = obj[np.where(is_fast)]   #      but which we want is a view.
                 indexing[key] = {'is_slow': is_slow, 'is_fast': is_fast}
             else:
                 indexing[key] = {'is_slow': None, 'is_fast': None}
@@ -171,12 +176,12 @@ class LeapFrog(object):
 
 
     def rstep(self, p, tau, update):
-        if update: self.update_tstep(p, p, tau/2)
+        if update: self.update_tstep(p, p, tau/2.0)
         slow, fast, indexing = self.split_by(tau, p)
 
-        if fast.any(): self.rstep(fast, tau/2, False)
-        if slow.any(): self.stepDKD(slow, fast, tau)
-        if fast.any(): self.rstep(fast, tau/2, True)
+        if fast.get_nbody() > 0: self.rstep(fast, tau/2, True)
+        if slow.get_nbody() > 0: self.stepDKD(slow, fast, tau)
+        if fast.get_nbody() > 0: self.rstep(fast, tau/2, True)
 
         self.commit_new_state(p, slow, fast, indexing)
 

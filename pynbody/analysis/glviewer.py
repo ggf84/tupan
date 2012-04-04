@@ -500,7 +500,7 @@ class GLviewer(object):
 
         gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_MODULATE)
 
-        Ntot = self.particle.get_total_num_of_particles()
+        Ntot = self.particle.get_nbody()
 
         blackholes = self.particle['blackhole']
         if blackholes:
