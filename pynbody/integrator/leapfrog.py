@@ -6,11 +6,14 @@
 """
 
 from __future__ import print_function
+import logging
 import numpy as np
 from ..lib.utils.timing import timings
 
 
 __all__ = ["LeapFrog"]
+
+logger = logging.getLogger(__name__)
 
 
 class LeapFrog(object):
@@ -66,10 +69,13 @@ class LeapFrog(object):
 
         ip.set_acc(jp)
 
-#        ni = len(ip['body'])
-#        nj = len(jp['body'])
-#        self.n2_sum += ni*nj
-#        print(ni, nj, self.n2_sum)
+        ni = len(ip['body'])
+        nj = len(jp['body'])
+        self.n2_sum += ni*nj
+
+        ntot = self.particles.get_nbody()
+        if ni == ntot and nj == ntot:
+            print(ni, nj, self.n2_sum)
 
         for (key, obj) in ip.items():
             if hasattr(obj, "acc"):
@@ -132,13 +138,13 @@ class LeapFrog(object):
         """
 
         """
-        old_tstep = 0.5 * self.tstep
-        self.particles.set_tstep(self.particles, self.eta, old_tstep)
-        self.tstep = self.get_min_tstep()
-        self.stepDKD(self.particles, self.particles.__class__(), self.tstep)
+#        old_tstep = 0.5 * self.tstep
+#        self.particles.set_tstep(self.particles, self.eta, old_tstep)
+#        self.tstep = self.get_min_tstep()
+#        self.stepDKD(self.particles, self.particles.__class__(), self.tstep)
 
-#        tau = self.eta
-#        self.rstep(self.particles, tau, True)
+        tau = self.eta
+        self.rstep(self.particles, tau, True)
 
 
 
@@ -156,6 +162,21 @@ class LeapFrog(object):
             if obj:
                 is_fast = obj.tstep < tau
                 is_slow = ~is_fast
+
+                # prevents the occurrence of a slow level with only one particle.
+                obj_fast = obj[np.where(is_fast)]
+                obj_slow = obj[np.where(is_slow)]
+                if len(obj_slow) == 1:
+                    is_slow[np.where(is_slow)] = False
+                    is_fast[np.where(~is_fast)] = True
+
+                # prevents the occurrence of a fast level with only one particle.
+                obj_fast = obj[np.where(is_fast)]
+                obj_slow = obj[np.where(is_slow)]
+                if len(obj_fast) == 1:
+                    is_fast[np.where(is_fast)] = False
+                    is_slow[np.where(~is_slow)] = True
+
                 slow[key] = obj[np.where(is_slow)]   # XXX: known bug: numpy fancy indexing returns a copy
                 fast[key] = obj[np.where(is_fast)]   #      but which we want is a view.
                 indexing[key] = {'is_slow': is_slow, 'is_fast': is_fast}
@@ -178,6 +199,9 @@ class LeapFrog(object):
     def rstep(self, p, tau, update):
         if update: self.update_tstep(p, p, tau/2.0)
         slow, fast, indexing = self.split_by(tau, p)
+
+        if fast.get_nbody() == 1: logger.error("fast level contains only *one* particle.")
+        if slow.get_nbody() == 1: logger.error("slow level contains only *one* particle.")
 
         if fast.get_nbody() > 0: self.rstep(fast, tau/2, True)
         if slow.get_nbody() > 0: self.stepDKD(slow, fast, tau)
