@@ -177,7 +177,7 @@ inline REAL4
 p2p_accum_acctstep(REAL4 myAccTstep,
                    const REAL4 myPos,
                    const REAL4 myVel,
-                   const REAL tau,
+                   const REAL eta,
                    uint j_begin,
                    uint j_end,
                    __local REAL4 *sharedPos,
@@ -187,7 +187,7 @@ p2p_accum_acctstep(REAL4 myAccTstep,
     for (j = j_begin; j < j_end; ++j) {
        myAccTstep = p2p_acctstep_kernel_core(myAccTstep, myPos, myVel,
                                              sharedPos[j], sharedVel[j],
-                                             tau);
+                                             eta);
     }
     return myAccTstep;
 }
@@ -199,7 +199,7 @@ p2p_acctstep_kernel_main_loop(const REAL4 myPos,
                               __global const REAL4 *jpos,
                               __global const REAL4 *jvel,
                               const uint nj,
-                              const REAL tau,
+                              const REAL eta,
                               __local REAL4 *sharedPos,
                               __local REAL4 *sharedVel)
 {
@@ -221,11 +221,11 @@ p2p_acctstep_kernel_main_loop(const REAL4 myPos,
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
             myAccTstep = p2p_accum_acctstep(myAccTstep, myPos, myVel,
-                                            tau, j, j + JUNROLL,
+                                            eta, j, j + JUNROLL,
                                             sharedPos, sharedVel);
         }
         myAccTstep = p2p_accum_acctstep(myAccTstep, myPos, myVel,
-                                        tau, j, nb,
+                                        eta, j, nb,
                                         sharedPos, sharedVel);
 
         barrier(CLK_LOCAL_MEM_FENCE);
@@ -241,7 +241,7 @@ __kernel void p2p_acctstep_kernel(__global const REAL4 *ipos,
                                   __global const REAL4 *jvel,
                                   const uint ni,
                                   const uint nj,
-                                  const REAL tau,
+                                  const REAL eta,
                                   __global REAL4 *iacctstep,
                                   __local REAL4 *sharedPos,
                                   __local REAL4 *sharedVel)
@@ -250,7 +250,7 @@ __kernel void p2p_acctstep_kernel(__global const REAL4 *ipos,
     uint i = (gid < ni) ? (gid) : (ni-1);
     iacctstep[i] = p2p_acctstep_kernel_main_loop(ipos[i], ivel[i],
                                                  jpos, jvel,
-                                                 nj, tau,
+                                                 nj, eta,
                                                  sharedPos, sharedVel);
 }
 
@@ -262,7 +262,7 @@ inline REAL
 p2p_accum_tstep(REAL myInvTstep,
                 const REAL4 myPos,
                 const REAL4 myVel,
-                const REAL tau,
+                const REAL eta,
                 uint j_begin,
                 uint j_end,
                 __local REAL4 *sharedPos,
@@ -272,7 +272,7 @@ p2p_accum_tstep(REAL myInvTstep,
     for (j = j_begin; j < j_end; ++j) {
        myInvTstep = p2p_tstep_kernel_core(myInvTstep, myPos, myVel,
                                           sharedPos[j], sharedVel[j],
-                                          tau);
+                                          eta);
     }
     return myInvTstep;
 }
@@ -284,7 +284,7 @@ p2p_tstep_kernel_main_loop(const REAL4 myPos,
                            __global const REAL4 *jpos,
                            __global const REAL4 *jvel,
                            const uint nj,
-                           const REAL tau,
+                           const REAL eta,
                            __local REAL4 *sharedPos,
                            __local REAL4 *sharedVel)
 {
@@ -306,11 +306,11 @@ p2p_tstep_kernel_main_loop(const REAL4 myPos,
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
             myInvTstep = p2p_accum_tstep(myInvTstep, myPos, myVel,
-                                         tau, j, j + JUNROLL,
+                                         eta, j, j + JUNROLL,
                                          sharedPos, sharedVel);
         }
         myInvTstep = p2p_accum_tstep(myInvTstep, myPos, myVel,
-                                     tau, j, nb,
+                                     eta, j, nb,
                                      sharedPos, sharedVel);
 
         barrier(CLK_LOCAL_MEM_FENCE);
@@ -326,7 +326,7 @@ __kernel void p2p_tstep_kernel(__global const REAL4 *ipos,
                                __global const REAL4 *jvel,
                                const uint ni,
                                const uint nj,
-                               const REAL tau,
+                               const REAL eta,
                                __global REAL *iinv_tstep,
                                __local REAL4 *sharedPos,
                                __local REAL4 *sharedVel)
@@ -335,7 +335,7 @@ __kernel void p2p_tstep_kernel(__global const REAL4 *ipos,
     uint i = (gid < ni) ? (gid) : (ni-1);
     iinv_tstep[i] = p2p_tstep_kernel_main_loop(ipos[i], ivel[i],
                                                jpos, jvel,
-                                               nj, tau,
+                                               nj, eta,
                                                sharedPos, sharedVel);
 }
 

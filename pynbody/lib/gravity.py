@@ -91,7 +91,7 @@ class Newtonian(object):
                                         #      __global REAL3 in OpenCL.
 
 
-    def set_acctstep(self, iobj, jobj, tau):
+    def set_acctstep(self, iobj, jobj, eta):
         """
         Set obj-obj newtonian acc and timestep.
         """
@@ -105,7 +105,7 @@ class Newtonian(object):
                 jposmass, jveleps2,
                 np.uint32(ni),
                 np.uint32(nj),
-                np.float64(tau))
+                np.float64(eta))
 
         output_buf = np.empty((ni,4))
         lmem_layout = (4, 4)
@@ -125,7 +125,7 @@ class Newtonian(object):
         return (ret[:,:3], ret[:,3])
 
 
-    def set_tstep(self, iobj, jobj, tau):
+    def set_tstep(self, iobj, jobj, eta):
         """
         Set timestep.
         """
@@ -139,7 +139,7 @@ class Newtonian(object):
                 jposmass, jveleps2,
                 np.uint32(ni),
                 np.uint32(nj),
-                np.float64(tau))
+                np.float64(eta))
 
         output_buf = np.empty(ni)
         lmem_layout = (4, 4)

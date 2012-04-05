@@ -62,7 +62,7 @@ inline REAL4
 p2p_acctstep_kernel_core(REAL4 acctstep,
                          const REAL4 ri, const REAL4 vi,
                          const REAL4 rj, const REAL4 vj,
-                         const REAL tau)
+                         const REAL eta)
 {
     REAL4 r;
     r.x = ri.x - rj.x;                                               // 1 FLOPs
@@ -81,18 +81,16 @@ p2p_acctstep_kernel_core(REAL4 acctstep,
     REAL inv_r = sqrt(inv_r2);                                       // 1 FLOPs
     REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
 
-    REAL omega2 = r.w * inv_r3;                                      // 1 FLOPs
-
-    REAL dln_omega = -3 * rv * inv_r2;                               // 2 FLOPs
-    REAL symm_factor = 1 + tau * dln_omega;                          // 2 FLOPs
-    omega2 *= symm_factor;                                           // 1 FLOPs
+    REAL dln_omega = -rv * inv_r2;  // factor 3/2 included in 'eta'  // 1 FLOPs
+    REAL omega = sqrt(r.w * inv_r3);                                 // 2 FLOPs
+    omega += eta * dln_omega;       // factor 1/2 included in 'eta'  // 2 FLOPs
 
     inv_r3 *= rj.w;                                                  // 1 FLOPs
 
     acctstep.x -= inv_r3 * r.x;                                      // 2 FLOPs
     acctstep.y -= inv_r3 * r.y;                                      // 2 FLOPs
     acctstep.z -= inv_r3 * r.z;                                      // 2 FLOPs
-    acctstep.w += omega2;                                            // 1 FLOPs
+    acctstep.w += omega*omega;                                       // 2 FLOPs
     return acctstep;
 }
 // Total flop count: 36
@@ -105,7 +103,7 @@ inline REAL
 p2p_tstep_kernel_core(REAL inv_tstep,
                       const REAL4 ri, const REAL4 vi,
                       const REAL4 rj, const REAL4 vj,
-                      const REAL tau)
+                      const REAL eta)
 {
     REAL4 r;
     r.x = ri.x - rj.x;                                               // 1 FLOPs
@@ -124,21 +122,11 @@ p2p_tstep_kernel_core(REAL inv_tstep,
     REAL inv_r = sqrt(inv_r2);                                       // 1 FLOPs
     REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
 
-//    REAL omega2 = r.w * inv_r3;                                      // 1 FLOPs
+    REAL dln_omega = -rv * inv_r2;  // factor 3/2 included in 'eta'  // 1 FLOPs
+    REAL omega = sqrt(r.w * inv_r3);                                 // 2 FLOPs
+    omega += eta * dln_omega;       // factor 1/2 included in 'eta'  // 2 FLOPs
 
-//    REAL dln_omega = -3 * rv * inv_r2;                               // 2 FLOPs
-//    REAL symm_factor = 1 + tau * dln_omega;                          // 2 FLOPs
-//    omega2 *= symm_factor;                                           // 1 FLOPs
-
-//    inv_tstep += omega2;                                             // 1 FLOPs
-
-
-    REAL dln_omega = -(3./2) * rv * inv_r2;                          // 2 FLOPs
-    REAL omega = sqrt(r.w * inv_r3);                                      // 1 FLOPs
-    omega += 0.5 * tau * dln_omega;
-
-    inv_tstep += omega*omega;                                             // 1 FLOPs
-
+    inv_tstep += omega*omega;                                        // 2 FLOPs
 
     return inv_tstep;
 }

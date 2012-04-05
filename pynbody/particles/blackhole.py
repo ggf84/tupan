@@ -228,20 +228,20 @@ class BlackHole(Pbase):
         self.acc[:] = iacc
         self.pnacc[:] = ipnacc
 
-    def set_acctstep(self, objs, tau):
+    def set_acctstep(self, objs, eta):
         """
         Set the individual acceleration and timesteps due to other particles.
         """
-        (iacc, ipnacc, iomega) = interact.acctstep_blackhole(self, objs, tau)
+        (iacc, ipnacc, itstep) = interact.acctstep_blackhole(self, objs, eta)
         self.acc[:] = iacc
         self.pnacc[:] = ipnacc
-        return iomega
+        self.tstep[:] = itstep
 
-    def set_tstep(self, objs, eta, old_tstep):
+    def set_tstep(self, objs, eta):
         """
         Set the individual timesteps due to other particles.
         """
-        itstep = interact.tstep_blackhole(self, objs, eta, old_tstep)
+        itstep = interact.tstep_blackhole(self, objs, eta)
         self.tstep[:] = itstep
 
 

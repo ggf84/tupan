@@ -310,20 +310,16 @@ class Particles(dict):
                 obj.set_acc(objs)
 
     @timings
-    def set_acctstep(self, objs, tau):
-        rhostep = {}
+    def set_acctstep(self, objs, eta):
         for (key, obj) in self.iteritems():
             if obj:
-                rhostep[key] = obj.set_acctstep(objs, tau)
-            else:
-                rhostep[key] = None
-        return rhostep
+                obj.set_acctstep(objs, eta)
 
     @timings
-    def set_tstep(self, objs, eta, old_tstep):
+    def set_tstep(self, objs, eta):
         for (key, obj) in self.iteritems():
             if obj:
-                obj.set_tstep(objs, eta, old_tstep)
+                obj.set_tstep(objs, eta)
 
 
 

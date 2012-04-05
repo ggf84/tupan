@@ -155,7 +155,7 @@ static PyObject *
 _p2p_acctstep_kernel(PyObject *_args)
 {
     unsigned int ni, nj;
-    REAL tau;
+    REAL eta;
     PyObject *_ipos = NULL, *_ivel = NULL;
     PyObject *_jpos = NULL, *_jvel = NULL;
 
@@ -168,7 +168,7 @@ _p2p_acctstep_kernel(PyObject *_args)
 
     if (!PyArg_ParseTuple(_args, fmt, &_ipos, &_ivel,
                                       &_jpos, &_jvel,
-                                      &ni, &nj, &tau))
+                                      &ni, &nj, &eta))
         return NULL;
 
     // i-data
@@ -203,7 +203,7 @@ _p2p_acctstep_kernel(PyObject *_args)
                         jpos_ptr[jjjj+2], jpos_ptr[jjjj+3]};
             REAL4 vj = {jvel_ptr[jjjj  ], jvel_ptr[jjjj+1],
                         jvel_ptr[jjjj+2], jvel_ptr[jjjj+3]};
-            iacctstep = p2p_acctstep_kernel_core(iacctstep, ri, vi, rj, vj, tau);
+            iacctstep = p2p_acctstep_kernel_core(iacctstep, ri, vi, rj, vj, eta);
         }
         ret_ptr[iiii  ] = iacctstep.x;
         ret_ptr[iiii+1] = iacctstep.y;
@@ -231,7 +231,7 @@ static PyObject *
 _p2p_tstep_kernel(PyObject *_args)
 {
     unsigned int ni, nj;
-    REAL tau;
+    REAL eta;
     PyObject *_ipos = NULL, *_ivel = NULL;
     PyObject *_jpos = NULL, *_jvel = NULL;
 
@@ -244,7 +244,7 @@ _p2p_tstep_kernel(PyObject *_args)
 
     if (!PyArg_ParseTuple(_args, fmt, &_ipos, &_ivel,
                                       &_jpos, &_jvel,
-                                      &ni, &nj, &tau))
+                                      &ni, &nj, &eta))
         return NULL;
 
     // i-data
@@ -279,7 +279,7 @@ _p2p_tstep_kernel(PyObject *_args)
                         jpos_ptr[jjjj+2], jpos_ptr[jjjj+3]};
             REAL4 vj = {jvel_ptr[jjjj  ], jvel_ptr[jjjj+1],
                         jvel_ptr[jjjj+2], jvel_ptr[jjjj+3]};
-            iinv_tstep = p2p_tstep_kernel_core(iinv_tstep, ri, vi, rj, vj, tau);
+            iinv_tstep = p2p_tstep_kernel_core(iinv_tstep, ri, vi, rj, vj, eta);
         }
         ret_ptr[i] = iinv_tstep;
     }

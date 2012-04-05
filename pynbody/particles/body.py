@@ -187,19 +187,19 @@ class Body(Pbase):
         iacc = interact.acc_body(self, objs)
         self.acc[:] = iacc
 
-    def set_acctstep(self, objs, tau):
+    def set_acctstep(self, objs, eta):
         """
         Set the individual acceleration and timesteps due to other particles.
         """
-        (iacc, iomega) = interact.acctstep_body(self, objs, tau)
+        (iacc, itstep) = interact.acctstep_body(self, objs, eta)
         self.acc[:] = iacc
-        return iomega
+        self.tstep[:] = itstep
 
-    def set_tstep(self, objs, eta, old_tstep):
+    def set_tstep(self, objs, eta):
         """
         Set the individual timesteps due to other particles.
         """
-        itstep = interact.tstep_body(self, objs, eta, old_tstep)
+        itstep = interact.tstep_body(self, objs, eta)
         self.tstep[:] = itstep
 
 
