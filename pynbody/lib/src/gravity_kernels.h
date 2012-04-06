@@ -90,10 +90,10 @@ p2p_acctstep_kernel_core(REAL4 acctstep,
     acctstep.x -= inv_r3 * r.x;                                      // 2 FLOPs
     acctstep.y -= inv_r3 * r.y;                                      // 2 FLOPs
     acctstep.z -= inv_r3 * r.z;                                      // 2 FLOPs
-    acctstep.w += omega*omega;                                       // 2 FLOPs
+    acctstep.w = max(acctstep.w, omega);
     return acctstep;
 }
-// Total flop count: 36
+// Total flop count: 34
 
 
 //
@@ -126,11 +126,10 @@ p2p_tstep_kernel_core(REAL inv_tstep,
     REAL omega = sqrt(r.w * inv_r3);                                 // 2 FLOPs
     omega += eta * dln_omega;       // factor 1/2 included in 'eta'  // 2 FLOPs
 
-    inv_tstep += omega*omega;                                        // 2 FLOPs
-
+    inv_tstep = max(inv_tstep, omega);
     return inv_tstep;
 }
-// Total flop count: 29
+// Total flop count: 27
 
 
 //

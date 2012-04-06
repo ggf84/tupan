@@ -25,11 +25,11 @@ class LeapFrog(object):
         self.time = time
         particles.set_acctstep(particles, eta)
         self.particles = particles
-        self.tstep = self.get_min_tstep()
+        self.tstep = self.get_min_block_tstep()
         self.n2_sum = 0
 
 
-    def get_min_tstep(self):
+    def get_min_block_tstep(self):
         min_tstep = 1.0
         for (key, obj) in self.particles.items():
             if obj:
@@ -37,6 +37,9 @@ class LeapFrog(object):
 
         power = (np.log2(min_tstep) - 1).astype(np.int)
         min_tstep = 2.0**power
+
+        if (self.time+min_tstep)%(min_tstep) != 0:
+            min_tstep /= 2
 
         return min_tstep
 
@@ -123,13 +126,13 @@ class LeapFrog(object):
         """
 
         """
-        if fast.get_nbody() == 0: self.time += 0.5 * tau
-        self.drift(slow, 0.5 * tau)
-        if fast.get_nbody() > 0: self.kick(slow, fast, tau)
-        self.kick(slow, slow, tau)
+        if fast.get_nbody() == 0: self.time += tau/2
+        self.drift(slow, tau/2)
         if fast.get_nbody() > 0: self.kick(fast, slow, tau)
-        self.drift(slow, 0.5 * tau)
-        if fast.get_nbody() == 0: self.time += 0.5 * tau
+        self.kick(slow, slow, tau)
+        if fast.get_nbody() > 0: self.kick(slow, fast, tau)
+        self.drift(slow, tau/2)
+        if fast.get_nbody() == 0: self.time += tau/2
 
 
     @timings
@@ -138,10 +141,10 @@ class LeapFrog(object):
 
         """
 #        self.particles.set_tstep(self.particles, self.eta)
-#        self.tstep = self.get_min_tstep()
+#        self.tstep = self.get_min_block_tstep()
 #        self.stepDKD(self.particles, self.particles.__class__(), self.tstep)
 
-        tau = self.eta/2
+        tau = 1.0/8
         self.rstep(self.particles, tau, True)
 
 
@@ -198,7 +201,7 @@ class LeapFrog(object):
         if slow.get_nbody() == 1: logger.error("slow level contains only *one* particle.")
 
         # meth 1:
-        if fast.get_nbody() > 0: self.rstep(fast, tau/2, True)
+        if fast.get_nbody() > 0: self.rstep(fast, tau/2, False)
         if slow.get_nbody() > 0: self.stepDKD(slow, fast, tau)
         if fast.get_nbody() > 0: self.rstep(fast, tau/2, True)
 

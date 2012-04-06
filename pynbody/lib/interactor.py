@@ -165,7 +165,7 @@ class Interactor(object):
             iacc += ret[0]
             iomega += ret[1]
 
-        return (iacc, eta/iomega**0.5)
+        return (iacc, eta/iomega)
 
 
     def acctstep_blackhole(self, iobj, objs, eta):
@@ -192,7 +192,7 @@ class Interactor(object):
             iacc += ret[0]
             iomega += ret[1]
 
-        return (iacc, ipnacc, eta/iomega**0.5)
+        return (iacc, ipnacc, eta/iomega)
 
 
     def acctstep_sph(self, iobj, objs, eta):
@@ -217,7 +217,7 @@ class Interactor(object):
             iacc += ret[0]
             iomega += ret[1]
 
-        return (iacc, eta/iomega**0.5)
+        return (iacc, eta/iomega)
 
 
     # Timestep methods
@@ -241,7 +241,7 @@ class Interactor(object):
             ret = gravitation.newtonian.set_tstep(iobj, jobj, eta34)
             iomega += ret
 
-        return eta/iomega**0.5
+        return eta/iomega
 
 
     def tstep_blackhole(self, iobj, objs, eta):
@@ -263,7 +263,7 @@ class Interactor(object):
             ret = gravitation.newtonian.set_tstep(iobj, jobj, eta34)
             iomega += ret
 
-        return eta/iomega**0.5
+        return eta/iomega
 
 
     def tstep_sph(self, iobj, objs, eta):
@@ -285,7 +285,7 @@ class Interactor(object):
             ret = gravitation.newtonian.set_tstep(iobj, jobj, eta34)
             iomega += ret
 
-        return eta/iomega**0.5
+        return eta/iomega
 
 
 interact = Interactor()
