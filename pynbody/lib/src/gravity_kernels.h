@@ -75,25 +75,32 @@ p2p_acctstep_kernel_core(REAL4 acctstep,
     v.z = vi.z - vj.z;                                               // 1 FLOPs
     v.w = vi.w + vj.w;                                               // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
+    REAL v2 = v.x * v.x + v.y * v.y + v.z * v.z;                     // 5 FLOPs
     REAL rv = r.x * v.x + r.y * v.y + r.z * v.z;                     // 5 FLOPs
     REAL inv_r2 = 1 / (r2 + v.w);                                    // 2 FLOPs
     inv_r2 = (r2 > 0) ? (inv_r2):(0);
     REAL inv_r = sqrt(inv_r2);                                       // 1 FLOPs
     REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
 
-    REAL dln_omega = -rv * inv_r2;  // factor 3/2 included in 'eta'  // 1 FLOPs
-    REAL omega = sqrt(r.w * inv_r3);                                 // 2 FLOPs
-    omega += eta * dln_omega;       // factor 1/2 included in 'eta'  // 2 FLOPs
+    REAL omega2_a = v2 * inv_r2;                                     // 1 FLOPs
+    REAL omega2_b = r.w * inv_r3;                                    // 1 FLOPs
+    REAL omega2 = omega2_a + omega2_b;                               // 1 FLOPs
+    REAL inv_32omega2 = 3 / (2 * omega2);                            // 2 FLOPs
+    inv_32omega2 = (r2 > 0) ? (inv_32omega2):(0);
+    REAL weighting = (1 + omega2_b * inv_32omega2);                  // 2 FLOPs
+    REAL dln_omega = -weighting * rv * inv_r2;                       // 2 FLOPs
+    REAL omega = sqrt(omega2);                                       // 1 FLOPs
+    omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
 
     inv_r3 *= rj.w;                                                  // 1 FLOPs
 
     acctstep.x -= inv_r3 * r.x;                                      // 2 FLOPs
     acctstep.y -= inv_r3 * r.y;                                      // 2 FLOPs
     acctstep.z -= inv_r3 * r.z;                                      // 2 FLOPs
-    acctstep.w = max(acctstep.w, omega);
+    acctstep.w = (omega > acctstep.w) ? (omega):(acctstep.w);
     return acctstep;
 }
-// Total flop count: 34
+// Total flop count: 46
 
 
 //
@@ -116,20 +123,27 @@ p2p_tstep_kernel_core(REAL inv_tstep,
     v.z = vi.z - vj.z;                                               // 1 FLOPs
     v.w = vi.w + vj.w;                                               // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
+    REAL v2 = v.x * v.x + v.y * v.y + v.z * v.z;                     // 5 FLOPs
     REAL rv = r.x * v.x + r.y * v.y + r.z * v.z;                     // 5 FLOPs
     REAL inv_r2 = 1 / (r2 + v.w);                                    // 2 FLOPs
     inv_r2 = (r2 > 0) ? (inv_r2):(0);
     REAL inv_r = sqrt(inv_r2);                                       // 1 FLOPs
     REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
 
-    REAL dln_omega = -rv * inv_r2;  // factor 3/2 included in 'eta'  // 1 FLOPs
-    REAL omega = sqrt(r.w * inv_r3);                                 // 2 FLOPs
-    omega += eta * dln_omega;       // factor 1/2 included in 'eta'  // 2 FLOPs
+    REAL omega2_a = v2 * inv_r2;                                     // 1 FLOPs
+    REAL omega2_b = r.w * inv_r3;                                    // 1 FLOPs
+    REAL omega2 = omega2_a + omega2_b;                               // 1 FLOPs
+    REAL inv_32omega2 = 3 / (2 * omega2);                            // 2 FLOPs
+    inv_32omega2 = (r2 > 0) ? (inv_32omega2):(0);
+    REAL weighting = (1 + omega2_b * inv_32omega2);                  // 2 FLOPs
+    REAL dln_omega = -weighting * rv * inv_r2;                       // 2 FLOPs
+    REAL omega = sqrt(omega2);                                       // 1 FLOPs
+    omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
 
-    inv_tstep = max(inv_tstep, omega);
+    inv_tstep = (omega > inv_tstep) ? (omega):(inv_tstep);
     return inv_tstep;
 }
-// Total flop count: 27
+// Total flop count: 39
 
 
 //

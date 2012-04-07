@@ -145,23 +145,23 @@ class Interactor(object):
 
     def acctstep_body(self, iobj, objs, eta):
 
-        eta34 = (3.0/4) * eta
+        eta_2 = eta/2
 
         jobj = objs["body"]
 #        if jobj:
-        ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta34)
+        ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta_2)
         iacc = ret[0]
         iomega = ret[1]
 
         jobj = objs["blackhole"]
         if jobj:
-            ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta34)
+            ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta_2)
             iacc += ret[0]
             iomega += ret[1]
 
         jobj = objs["sph"]
         if jobj:
-            ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta34)
+            ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta_2)
             iacc += ret[0]
             iomega += ret[1]
 
@@ -170,11 +170,11 @@ class Interactor(object):
 
     def acctstep_blackhole(self, iobj, objs, eta):
 
-        eta34 = (3.0/4) * eta
+        eta_2 = eta/2
 
         jobj = objs["blackhole"]
 #        if jobj:
-        ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta34)
+        ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta_2)
         pnret = gravitation.post_newtonian.set_acc(iobj, jobj)
         iacc = ret[0]
         ipnacc = pnret
@@ -182,13 +182,13 @@ class Interactor(object):
 
         jobj = objs["body"]
         if jobj:
-            ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta34)
+            ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta_2)
             iacc += ret[0]
             iomega += ret[1]
 
         jobj = objs["sph"]
         if jobj:
-            ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta34)
+            ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta_2)
             iacc += ret[0]
             iomega += ret[1]
 
@@ -197,23 +197,23 @@ class Interactor(object):
 
     def acctstep_sph(self, iobj, objs, eta):
 
-        eta34 = (3.0/4) * eta
+        eta_2 = eta/2
 
         jobj = objs["sph"]
 #        if jobj:
-        ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta34)
+        ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta_2)
         iacc = ret[0]
         iomega = ret[1]
 
         jobj = objs["body"]
         if jobj:
-            ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta34)
+            ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta_2)
             iacc += ret[0]
             iomega += ret[1]
 
         jobj = objs["blackhole"]
         if jobj:
-            ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta34)
+            ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta_2)
             iacc += ret[0]
             iomega += ret[1]
 
@@ -224,21 +224,21 @@ class Interactor(object):
 
     def tstep_body(self, iobj, objs, eta):
 
-        eta34 = (3.0/4) * eta
+        eta_2 = eta/2
 
         jobj = objs["body"]
 #        if jobj:
-        ret = gravitation.newtonian.set_tstep(iobj, jobj, eta34)
+        ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
         iomega = ret
 
         jobj = objs["blackhole"]
         if jobj:
-            ret = gravitation.newtonian.set_tstep(iobj, jobj, eta34)
+            ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
             iomega += ret
 
         jobj = objs["sph"]
         if jobj:
-            ret = gravitation.newtonian.set_tstep(iobj, jobj, eta34)
+            ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
             iomega += ret
 
         return eta/iomega
@@ -246,21 +246,21 @@ class Interactor(object):
 
     def tstep_blackhole(self, iobj, objs, eta):
 
-        eta34 = (3.0/4) * eta
+        eta_2 = eta/2
 
         jobj = objs["blackhole"]
 #        if jobj:
-        ret = gravitation.newtonian.set_tstep(iobj, jobj, eta34)
+        ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
         iomega = ret
 
         jobj = objs["body"]
         if jobj:
-            ret = gravitation.newtonian.set_tstep(iobj, jobj, eta34)
+            ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
             iomega += ret
 
         jobj = objs["sph"]
         if jobj:
-            ret = gravitation.newtonian.set_tstep(iobj, jobj, eta34)
+            ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
             iomega += ret
 
         return eta/iomega
@@ -268,21 +268,21 @@ class Interactor(object):
 
     def tstep_sph(self, iobj, objs, eta):
 
-        eta34 = (3.0/4) * eta
+        eta_2 = eta/2
 
         jobj = objs["sph"]
 #        if jobj:
-        ret = gravitation.newtonian.set_tstep(iobj, jobj, eta34)
+        ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
         iomega = ret
 
         jobj = objs["body"]
         if jobj:
-            ret = gravitation.newtonian.set_tstep(iobj, jobj, eta34)
+            ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
             iomega += ret
 
         jobj = objs["blackhole"]
         if jobj:
-            ret = gravitation.newtonian.set_tstep(iobj, jobj, eta34)
+            ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
             iomega += ret
 
         return eta/iomega
