@@ -35,7 +35,7 @@ class LeapFrog(object):
             if obj:
                 min_tstep = min(min_tstep, obj.tstep.min())
 
-        power = (np.log2(min_tstep) - 1).astype(np.int)
+        power = int(np.log2(min_tstep) - 1)
         min_tstep = 2.0**power
 
         if (self.time+min_tstep)%(min_tstep) != 0:
@@ -161,20 +161,20 @@ class LeapFrog(object):
                 is_slow = ~is_fast
 
                 # prevents the occurrence of a slow level with only one particle.
-                obj_slow = obj[np.where(is_slow)]
+                obj_slow = obj[is_slow]
                 if len(obj_slow) == 1:
-                    is_slow[np.where(is_slow)] = False
-                    is_fast[np.where(~is_fast)] = True
-                    obj_slow = obj[np.where(is_slow)]
-                    obj_fast = obj[np.where(is_fast)]
+                    is_slow[is_slow] = False
+                    is_fast[~is_fast] = True
+                    obj_slow = obj[is_slow]
+                    obj_fast = obj[is_fast]
 
                 # prevents the occurrence of a fast level with only one particle.
-                obj_fast = obj[np.where(is_fast)]
+                obj_fast = obj[is_fast]
                 if len(obj_fast) == 1:
-                    is_fast[np.where(is_fast)] = False
-                    is_slow[np.where(~is_slow)] = True
-                    obj_fast = obj[np.where(is_fast)]
-                    obj_slow = obj[np.where(is_slow)]
+                    is_fast[is_fast] = False
+                    is_slow[~is_slow] = True
+                    obj_fast = obj[is_fast]
+                    obj_slow = obj[is_slow]
 
                 slow[key] = obj_slow   # XXX: known bug: numpy fancy indexing returns a copy
                 fast[key] = obj_fast   #      but which we want is a view.
@@ -189,10 +189,10 @@ class LeapFrog(object):
         for (key, obj) in p.items():
             if obj:
                 if indexing[key]['is_slow'] is not None:
-                    obj._data[np.where(indexing[key]['is_slow'])] = slow[key]._data[:]
+                    obj._data[indexing[key]['is_slow']] = slow[key]._data
 
                 if indexing[key]['is_fast'] is not None:
-                    obj._data[np.where(indexing[key]['is_fast'])] = fast[key]._data[:]
+                    obj._data[indexing[key]['is_fast']] = fast[key]._data
 
 
     def rstep(self, p, tau, update_tstep):
