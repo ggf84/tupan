@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     from pynbody.particles.blackhole import dtype
 
-    p["blackhole"].fromlist([tuple(b)+([0.0, 0.0, 0.0],[0.0, 0.0, 0.0],)
+    p["blackhole"].fromlist([tuple(b)+([0.0, 0.0, 0.0],[0.0, 0.0, 0.0],0.0,[0.0, 0.0, 0.0],[0.0, 0.0, 0.0],)
                             for b in p0["body"][numBodies-n_bh:]],
                             dtype=dtype)
 
