@@ -37,9 +37,9 @@ class Particles(dict):
         """
         dict.__init__(self)
 
-        self["sph"] = None
-        self["body"] = None
-        self["blackhole"] = None
+        self["sph"] = None #Sph()
+        self["body"] = None #Body()
+        self["blackhole"] = None #Blackhole()
 
 
         if types:
@@ -93,13 +93,9 @@ class Particles(dict):
                 total_mass += mass
                 pos = obj.get_center_of_mass_position()
                 com_pos += pos * mass
+                if hasattr(obj, "get_pn_correction_for_center_of_mass_position"):
+                    com_pos += obj.get_pn_correction_for_center_of_mass_position()
         return (com_pos / total_mass)
-
-    def get_com_pos_jump(self):     ### :FIXME: ###
-        comPosJump = sum((obj.get_com_pos_jump() * obj.get_total_mass()
-                          for obj in self.itervalues()
-                          if hasattr(obj, "get_com_pos_jump")))
-        return (comPosJump / self.get_total_mass())
 
     def get_center_of_mass_velocity(self):
         """
@@ -113,13 +109,9 @@ class Particles(dict):
                 total_mass += mass
                 vel = obj.get_center_of_mass_velocity()
                 com_vel += vel * mass
+                if hasattr(obj, "get_pn_correction_for_center_of_mass_velocity"):
+                    com_vel += obj.get_pn_correction_for_center_of_mass_velocity()
         return (com_vel / total_mass)
-
-    def get_com_vel_jump(self):     ### :FIXME: ###
-        comVelJump = sum((obj.get_com_vel_jump() * obj.get_total_mass()
-                          for obj in self.itervalues()
-                          if hasattr(obj, "get_com_vel_jump")))
-        return (comVelJump / self.get_total_mass())
 
     def correct_center_of_mass(self):
         """
@@ -135,48 +127,6 @@ class Particles(dict):
 
     # Momentum methods
 
-    def get_linmom(self):       ### is it necessary? ###
-        """
-        Get the total linear momentum for each particle type.
-        """
-        linmom = {}
-        for (key, obj) in self.iteritems():
-            if obj:
-                linmom[key] = obj.get_total_linmom()
-            else:
-                linmom[key] = None
-        return linmom
-
-    def get_linmom_jump(self):     ### :FIXME: ###      ### is it necessary? ###
-        linmom = {}
-        for (key, obj) in self.iteritems():
-            if hasattr(obj, "get_total_linmom_jump"):
-                linmom[key] = obj.get_total_linmom_jump()
-            else:
-                linmom[key] = None
-        return linmom
-
-    def get_angmom(self):       ### is it necessary? ###
-        """
-        Get the total angular momentum for each particle type.
-        """
-        angmom = {}
-        for (key, obj) in self.iteritems():
-            if obj:
-                angmom[key] = obj.get_total_angmom()
-            else:
-                angmom[key] = None
-        return angmom
-
-    def get_angmom_jump(self):     ### :FIXME: ###      ### is it necessary? ###
-        angmom = {}
-        for (key, obj) in self.iteritems():
-            if hasattr(obj, "get_total_angmom_jump"):
-                angmom[key] = obj.get_total_angmom_jump()
-            else:
-                angmom[key] = None
-        return angmom
-
     def get_total_linear_momentum(self):
         """
         Get the total linear momentum for the whole system of particles.
@@ -185,12 +135,9 @@ class Particles(dict):
         for obj in self.values():
             if obj:
                 lin_mom += obj.get_total_linear_momentum()
+                if hasattr(obj, "get_pn_correction_for_total_linear_momentum"):
+                    lin_mom += obj.get_pn_correction_for_total_linear_momentum()
         return lin_mom
-
-    def get_total_linmom_jump(self):     ### :FIXME: ###
-        linmom_jump = self.get_linmom_jump()
-        return sum((value for value in linmom_jump.itervalues()
-                    if value is not None))
 
     def get_total_angular_momentum(self):
         """
@@ -200,12 +147,10 @@ class Particles(dict):
         for obj in self.values():
             if obj:
                 ang_mom += obj.get_total_angular_momentum()
+                if hasattr(obj, "get_pn_correction_for_total_angular_momentum"):
+                    ang_mom += obj.get_pn_correction_for_total_angular_momentum()
         return ang_mom
 
-    def get_total_angmom_jump(self):     ### :FIXME: ###
-        angmom_jump = self.get_angmom_jump()
-        return sum((value for value in angmom_jump.itervalues()
-                    if value is not None))
 
 
     # Energy methods

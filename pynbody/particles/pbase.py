@@ -18,8 +18,8 @@ class Pbase(object):
     """
 
     """
-    def __init__(self, dtypes, n):
-        self.data = np.zeros(n, dtypes)
+    def __init__(self, dtype, n):
+        self.data = np.zeros(n, dtype)
 
     #
     # common basic methods
@@ -39,6 +39,12 @@ class Pbase(object):
 
     def copy(self):
         return copy.deepcopy(self)
+
+#    def copy(self):
+#        ret = self.__class__()
+#        ret.__dict__.update(self.__dict__)
+#        ret.data = self.data.copy()
+#        return ret
 
     def append(self, objs):
         self.data = np.append(self.data, objs.data)
@@ -60,7 +66,7 @@ class Pbase(object):
     # common attributes
     #
 
-    #### key ####
+    ### key
 
     @property
     def key(self):
@@ -75,7 +81,7 @@ class Pbase(object):
         raise NotImplementedError()
 
 
-    #### mass ####
+    ### mass
 
     @property
     def mass(self):
@@ -90,7 +96,7 @@ class Pbase(object):
         raise NotImplementedError()
 
 
-    #### pos ####
+    ### pos
 
     @property
     def pos(self):
@@ -105,7 +111,7 @@ class Pbase(object):
         raise NotImplementedError()
 
 
-    #### vel ####
+    ### vel
 
     @property
     def vel(self):
@@ -120,7 +126,7 @@ class Pbase(object):
         raise NotImplementedError()
 
 
-    #### acc ####
+    ### acc
 
     @property
     def acc(self):
@@ -135,7 +141,7 @@ class Pbase(object):
         raise NotImplementedError()
 
 
-    #### phi ####
+    ### phi
 
     @property
     def phi(self):
@@ -150,7 +156,7 @@ class Pbase(object):
         raise NotImplementedError()
 
 
-    #### eps2 ####
+    ### eps2
 
     @property
     def eps2(self):
@@ -165,7 +171,7 @@ class Pbase(object):
         raise NotImplementedError()
 
 
-    #### tcurr ####
+    ### tcurr
 
     @property
     def tcurr(self):
@@ -180,7 +186,7 @@ class Pbase(object):
         raise NotImplementedError()
 
 
-    #### tnext ####
+    ### tnext
 
     @property
     def tnext(self):
@@ -199,7 +205,7 @@ class Pbase(object):
     # common methods
     #
 
-    #### center-of-mass ####
+    ### center-of-mass
 
     def get_total_mass(self):
         """
@@ -229,7 +235,7 @@ class Pbase(object):
         self.vel -= self.get_center_of_mass_velocity()
 
 
-    #### linear momentum ####
+    ### linear momentum
 
     def get_individual_linear_momentum(self):
         """
@@ -244,7 +250,7 @@ class Pbase(object):
         return self.get_individual_linear_momentum().sum(0)
 
 
-    #### angular momentum ####
+    ### angular momentum
 
     def get_individual_angular_momentum(self):
         """
@@ -259,7 +265,7 @@ class Pbase(object):
         return self.get_individual_angular_momentum().sum(0)
 
 
-    #### kinetic energy ####
+    ### kinetic energy
 
     def get_individual_kinetic_energy(self):
         """
@@ -274,7 +280,7 @@ class Pbase(object):
         return float(np.sum(self.get_individual_kinetic_energy()))
 
 
-    #### potential energy ####
+    ### potential energy
 
     def get_individual_potential_energy(self):
         """
@@ -289,13 +295,13 @@ class Pbase(object):
         return 0.5 * float(np.sum(self.get_individual_potential_energy()))
 
 
-    #### gravity ####
+    ### gravity
 
     def update_phi(self, objs):
         """
         Update the individual gravitational potential due to other particles.
         """
-        self.phi = interact.phi_body(self, objs)[0]     # XXX: phi_body should return only 'phi'
+        self.phi = interact.phi_body(self, objs)
 
     def update_acc(self, objs):
         """
@@ -316,7 +322,7 @@ class Pbase(object):
         self.tstep = interact.tstep_body(self, objs, eta)
 
 
-    #### evolve ####
+    ### evolve
 
     def evolve_pos(self, tstep):
         """
@@ -329,8 +335,6 @@ class Pbase(object):
         Evolves velocity in time.
         """
         self.vel += tstep * self.acc
-
-
 
 
 

@@ -35,23 +35,22 @@ if __name__ == "__main__":
     p0 = main()
 
 #    p0["body"].vel /= 2
+#    n_bh = 3
+#    p = Particles({"body": 1, "blackhole": 1})
+#    p["body"] = p0["body"][:-n_bh]
 
-    n_bh = 3
+    from pynbody.models import *
+    p = figure_eight_orbit.make_system('blackhole')
+    p['body'] = p0["body"]
 
-    p = Particles({"body": 1, "blackhole": 1})
-
-    p["body"] = p0["body"][:-n_bh]
-
-    from pynbody.particles.blackhole import dtype
-
-    p["blackhole"].fromlist([tuple(b)+([0.0, 0.0, 0.0],[0.0, 0.0, 0.0],0.0,[0.0, 0.0, 0.0],[0.0, 0.0, 0.0],)
-                            for b in p0["body"][numBodies-n_bh:]],
-                            dtype=dtype)
-
-    p["blackhole"].eps2 *= 0
+#    from pynbody.particles.blackhole import dtype
+#    p["blackhole"].fromlist([tuple(b)+([0.0, 0.0, 0.0],0.0,0.0,)
+#                            for b in p0["body"][numBodies-n_bh:]],
+#                            dtype=dtype)
+#    p["blackhole"].eps2 *= 0
 
 
-    fname = "plummer"+str(numBodies-n_bh).zfill(4)+'-'+str(n_bh)+"bh"
+    fname = "plummer"+str(numBodies).zfill(4)+'-'+"3bh"
     io = IO(fname, 'hdf5')
     io.dump(p, fmode='w')
 

@@ -7,7 +7,6 @@
 
 from __future__ import print_function
 from collections import namedtuple
-from collections import OrderedDict
 import numpy as np
 from .pbase import Pbase
 from ..lib.interactor import interact
@@ -47,7 +46,7 @@ class Body(Pbase):
     # specific attributes
     #
 
-    #### age ####
+    ### age
 
     @property
     def age(self):
@@ -62,7 +61,7 @@ class Body(Pbase):
         raise NotImplementedError()
 
 
-    #### radius ####
+    ### radius
 
     @property
     def radius(self):
@@ -77,7 +76,7 @@ class Body(Pbase):
         raise NotImplementedError()
 
 
-    #### metallicity ####
+    ### metallicity
 
     @property
     def metallicity(self):
@@ -95,7 +94,7 @@ class Body(Pbase):
     # auxiliary attributes
     #
 
-    #### tstep ####
+    ### tstep
 
     @property
     def tstep(self):
@@ -111,26 +110,24 @@ class Body(Pbase):
 
 
     #
-    # overridden methods
-    #
-
-    # ...
-
-
-    #
     # specific methods
     #
 
-    # ...
+    ### ...
 
 
     #
     # auxiliary methods
     #
 
-    # ...
+    ### ...
 
 
+    #
+    # overridden methods
+    #
+
+    ### ...
 
 
 

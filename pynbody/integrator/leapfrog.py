@@ -53,8 +53,8 @@ class LeapFrog(object):
             if obj:
                 if hasattr(obj, "evolve_pos"):
                     obj.evolve_pos(tau)
-                if hasattr(obj, "evolve_com_pos_jump"):
-                    obj.evolve_com_pos_jump(tau)
+                if hasattr(obj, "evolve_center_of_mass_position_due_to_pncorrection"):
+                    obj.evolve_center_of_mass_position_due_to_pncorrection(tau)
 
 
     @timings
@@ -93,33 +93,33 @@ class LeapFrog(object):
         """
 
         """
-        for (key, obj) in ip.iteritems():
+        for (key, obj) in ip.items():
             if obj:
-                if hasattr(obj, "evolve_linmom_jump"):
-                    obj.evolve_linmom_jump(tau / 2)
-                if hasattr(obj, "evolve_angmom_jump"):
-                    obj.evolve_angmom_jump(tau / 2)
-                if hasattr(obj, "evolve_energy_jump"):
-                    obj.evolve_energy_jump(tau / 2)
-                if hasattr(obj, "evolve_com_vel_jump"):
-                    obj.evolve_com_vel_jump(tau / 2)
+                if hasattr(obj, "evolve_linear_momentum_due_to_pncorrection"):
+                    obj.evolve_linear_momentum_due_to_pncorrection(tau / 2)
+                if hasattr(obj, "evolve_angular_momentum_due_to_pncorrection"):
+                    obj.evolve_angular_momentum_due_to_pncorrection(tau / 2)
+                if hasattr(obj, "evolve_energy_due_to_pncorrection"):
+                    obj.evolve_energy_due_to_pncorrection(tau / 2)
+                if hasattr(obj, "evolve_center_of_mass_velocity_due_to_pncorrection"):
+                    obj.evolve_center_of_mass_velocity_due_to_pncorrection(tau / 2)
                 if hasattr(obj, "evolve_vel"):
                     obj.evolve_vel(tau / 2)
 
         self.forceDKD(ip, jp)
 
-        for (key, obj) in ip.iteritems():
+        for (key, obj) in ip.items():
             if obj:
                 if hasattr(obj, "evolve_vel"):
                     obj.evolve_vel(tau / 2)
-                if hasattr(obj, "evolve_linmom_jump"):
-                    obj.evolve_linmom_jump(tau / 2)
-                if hasattr(obj, "evolve_angmom_jump"):
-                    obj.evolve_angmom_jump(tau / 2)
-                if hasattr(obj, "evolve_energy_jump"):
-                    obj.evolve_energy_jump(tau / 2)
-                if hasattr(obj, "evolve_com_vel_jump"):
-                    obj.evolve_com_vel_jump(tau / 2)
+                if hasattr(obj, "evolve_linear_momentum_due_to_pncorrection"):
+                    obj.evolve_linear_momentum_due_to_pncorrection(tau / 2)
+                if hasattr(obj, "evolve_angular_momentum_due_to_pncorrection"):
+                    obj.evolve_angular_momentum_due_to_pncorrection(tau / 2)
+                if hasattr(obj, "evolve_energy_due_to_pncorrection"):
+                    obj.evolve_energy_due_to_pncorrection(tau / 2)
+                if hasattr(obj, "evolve_center_of_mass_velocity_due_to_pncorrection"):
+                    obj.evolve_center_of_mass_velocity_due_to_pncorrection(tau / 2)
 
 
     @timings

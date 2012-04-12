@@ -26,12 +26,10 @@ class Interactor(object):
     def phi_body(self, iobj, objs):
 
         iphi = 0.0
-        self_phi = 0.0
 
         jobj = objs["body"]
         if jobj:
             iphi += gravitation.newtonian.set_phi(iobj, jobj)
-            self_phi += iphi.copy()
 
         jobj = objs["blackhole"]
         if jobj:
@@ -41,18 +39,16 @@ class Interactor(object):
         if jobj:
             iphi += gravitation.newtonian.set_phi(iobj, jobj)
 
-        return (iphi, self_phi)
+        return iphi
 
 
     def phi_blackhole(self, iobj, objs):
 
         iphi = 0.0
-        self_phi = 0.0
 
         jobj = objs["blackhole"]
         if jobj:
             iphi += gravitation.newtonian.set_phi(iobj, jobj)
-            self_phi += iphi.copy()
 
         jobj = objs["body"]
         if jobj:
@@ -62,18 +58,16 @@ class Interactor(object):
         if jobj:
             iphi += gravitation.newtonian.set_phi(iobj, jobj)
 
-        return (iphi, self_phi)
+        return iphi
 
 
     def phi_sph(self, iobj, objs):
 
         iphi = 0.0
-        self_phi = 0.0
 
         jobj = objs["sph"]
         if jobj:
             iphi += gravitation.newtonian.set_phi(iobj, jobj)
-            self_phi += iphi.copy()
 
         jobj = objs["body"]
         if jobj:
@@ -83,7 +77,7 @@ class Interactor(object):
         if jobj:
             iphi += gravitation.newtonian.set_phi(iobj, jobj)
 
-        return (iphi, self_phi)
+        return iphi
 
 
     # Acceleration methods

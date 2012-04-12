@@ -92,15 +92,15 @@ class Diagnostic(object):
         lmom = particles.get_total_linear_momentum()
         amom = particles.get_total_angular_momentum()
 
-        ejump = 0.0 #particles.get_total_energy_jump()     ### :FIXME: ###
+        ejump = 0.0 #particles['blackhole'].get_total_energy_jump()     ### :FIXME: ###
         eerr = ((te-self.te0) + ejump)/(-pe)
         self.ceerr += eerr**2
         self.count += 1
         geerr = math.sqrt(self.ceerr / self.count)
-        dRcom = (rcom-self.rcom0) #+ particles.get_com_pos_jump()     ### :FIXME: ###
-        dVcom = (vcom-self.vcom0) #+ particles.get_com_vel_jump()     ### :FIXME: ###
-        dLmom = (lmom-self.lmom0) #+ particles.get_total_linmom_jump()     ### :FIXME: ###
-        dAmom = (amom-self.amom0) #+ particles.get_total_angmom_jump()     ### :FIXME: ###
+        dRcom = (rcom-self.rcom0)
+        dVcom = (vcom-self.vcom0)
+        dLmom = (lmom-self.lmom0)
+        dAmom = (amom-self.amom0)
 
         fmt = '{time:< 10.3e} {tstep:< 10.3e} '\
               '{ke:< 10.3e} {pe:< 10.3e} {te:< 13.6e} '\
