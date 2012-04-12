@@ -40,12 +40,16 @@ class Diagnostic(object):
     def __init__(self, fname, particles):
         self.fname = fname
 
-        particles.set_phi(particles)
-        self.e0 = particles.get_total_energies()
-        self.rcom0 = particles.get_center_of_mass_pos()
-        self.vcom0 = particles.get_center_of_mass_vel()
-        self.lmom0 = particles.get_total_linmom()
-        self.amom0 = particles.get_total_angmom()
+        particles.update_phi(particles)
+        self.ke0 = particles.get_total_kinetic_energy()
+        self.pe0 = particles.get_total_potential_energy()
+        self.te0 = self.ke0 + self.pe0
+        self.ve0 = self.ke0 + self.te0
+
+        self.rcom0 = particles.get_center_of_mass_position()
+        self.vcom0 = particles.get_center_of_mass_velocity()
+        self.lmom0 = particles.get_total_linear_momentum()
+        self.amom0 = particles.get_total_angular_momentum()
 
         self.ceerr = 0.0
         self.count = 0
@@ -76,33 +80,38 @@ class Diagnostic(object):
 
     @timings
     def print_diagnostic(self, time, tstep, particles):
-        particles.set_phi(particles)
-        e = particles.get_total_energies()
-        rcom = particles.get_center_of_mass_pos()
-        vcom = particles.get_center_of_mass_vel()
-        lmom = particles.get_total_linmom()
-        amom = particles.get_total_angmom()
 
-        ejump = particles.get_total_energy_jump()
-        eerr = ((e.tot-self.e0.tot) + ejump)/(-e.pot)
+        particles.update_phi(particles)
+        ke = particles.get_total_kinetic_energy()
+        pe = particles.get_total_potential_energy()
+        te = ke + pe
+        ve = ke + te
+
+        rcom = particles.get_center_of_mass_position()
+        vcom = particles.get_center_of_mass_velocity()
+        lmom = particles.get_total_linear_momentum()
+        amom = particles.get_total_angular_momentum()
+
+        ejump = 0.0 #particles.get_total_energy_jump()     ### :FIXME: ###
+        eerr = ((te-self.te0) + ejump)/(-pe)
         self.ceerr += eerr**2
         self.count += 1
         geerr = math.sqrt(self.ceerr / self.count)
-        dRcom = (rcom-self.rcom0) + particles.get_com_pos_jump()
-        dVcom = (vcom-self.vcom0) + particles.get_com_vel_jump()
-        dLmom = (lmom-self.lmom0) + particles.get_total_linmom_jump()
-        dAmom = (amom-self.amom0) + particles.get_total_angmom_jump()
+        dRcom = (rcom-self.rcom0) #+ particles.get_com_pos_jump()     ### :FIXME: ###
+        dVcom = (vcom-self.vcom0) #+ particles.get_com_vel_jump()     ### :FIXME: ###
+        dLmom = (lmom-self.lmom0) #+ particles.get_total_linmom_jump()     ### :FIXME: ###
+        dAmom = (amom-self.amom0) #+ particles.get_total_angmom_jump()     ### :FIXME: ###
 
         fmt = '{time:< 10.3e} {tstep:< 10.3e} '\
-              '{ekin:< 10.3e} {epot:< 10.3e} {etot:< 13.6e} '\
-              '{evir:< 10.3e} {eerr:< 10.3e} {geerr:< 10.3e} '\
+              '{ke:< 10.3e} {pe:< 10.3e} {te:< 13.6e} '\
+              '{ve:< 10.3e} {eerr:< 10.3e} {geerr:< 10.3e} '\
               '{rcom[0]:< 9.2e} {rcom[1]:< 9.2e} {rcom[2]:< 9.2e} '\
               '{vcom[0]:< 9.2e} {vcom[1]:< 9.2e} {vcom[2]:< 9.2e} '\
               '{lmom[0]:< 9.2e} {lmom[1]:< 9.2e} {lmom[2]:< 9.2e} '\
               '{amom[0]:< 9.2e} {amom[1]:< 9.2e} {amom[2]:< 9.2e}'
         myprint(fmt.format(time=time, tstep=tstep,
-                           ekin=e.kin+ejump, epot=e.pot,
-                           etot=e.tot+ejump, evir=e.vir+ejump,
+                           ke=ke+ejump, pe=pe,
+                           te=te+ejump, ve=ve+ejump,
                            eerr=eerr, geerr=geerr, rcom=dRcom,
                            vcom=dVcom, lmom=dLmom, amom=dAmom),
                 self.fname, 'a')

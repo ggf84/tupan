@@ -20,34 +20,48 @@ __all__ = ['Plummer']
 logger = logging.getLogger(__name__)
 
 
-def scale_mass(bodies, m_scale):
-    bodies.mass *= m_scale
+def scale_mass(particles, m_scale):
+    for obj in particles.values():
+        if obj:
+            obj.mass *= m_scale
 
-def scale_pos(bodies, r_scale):
-    bodies.pos *= r_scale
+def scale_pos(particles, r_scale):
+    for obj in particles.values():
+        if obj:
+            obj.pos *= r_scale
 
-def scale_vel(bodies, v_scale):
-    bodies.vel *= v_scale
+def scale_vel(particles, v_scale):
+    for obj in particles.values():
+        if obj:
+            obj.vel *= v_scale
 
-def scale_to_virial(particles, ekin, epot, etot):
-    scale_vel(particles["body"], math.sqrt(-0.5*epot/ekin))
-    ekin = -0.5*epot
-    etot = ekin + epot
-    scale_pos(particles["body"], etot/(-0.25))
-    particles["body"].set_phi(particles)
-    epot = particles["body"].get_total_epot()
-    scale_vel(particles["body"], math.sqrt(0.5*abs(epot/etot)))
+def scale_to_virial(particles, ke, pe, te):
+    scale_vel(particles, math.sqrt(-0.5*pe/ke))
+    ke = -0.5 * pe
+    te = ke + pe
+    scale_pos(particles, -te / 0.25)
+    particles.update_phi(particles)
+    pe = particles.get_total_potential_energy()
+    scale_vel(particles, math.sqrt(0.5 * abs(pe / te)))
 
 
 def scale_to_nbody_units(particles):
 #    scale_mass(particles["body"], 1.0/particles["body"].get_mass())
 #    particles["body"].set_phi(particles)
 
-    e = particles["body"].get_total_energies()
-    print(e.kin, e.pot, e.tot, e.vir)
-    scale_to_virial(particles, e.kin, e.pot, e.tot)
-    e = particles["body"].get_total_energies()
-    print(e.kin, e.pot, e.tot, e.vir)
+    ke = particles.get_total_kinetic_energy()
+    pe = particles.get_total_potential_energy()
+    te = ke + pe
+    ve = ke + te
+    print(ke, pe, te, ve)
+
+    scale_to_virial(particles, ke, pe, te)
+
+    ke = particles.get_total_kinetic_energy()
+    pe = particles.get_total_potential_energy()
+    te = ke + pe
+    ve = ke + te
+    print(ke, pe, te, ve)
 
 
 
@@ -128,35 +142,34 @@ class Plummer(object):
         ilist = np.arange(n)
 
         # set index
-        self.particles["body"].id[:] = ilist
+        self.particles["body"].key = ilist
 
         srand = np.random.get_state()
 
         # set mass
-        self.particles["body"].mass[:] = self.imf.sample(n)
+        self.particles["body"].mass = self.imf.sample(n)
         self.particles["body"].mass /= self.particles["body"].get_total_mass()
-        self.particles["body"].update_total_mass()
 
         # set eps2
-        self.particles["body"].eps2[:] = self.set_eps2(self.particles["body"].mass)
+        self.particles["body"].eps2 = self.set_eps2(self.particles["body"].mass)
 
         np.random.set_state(srand)
 
         # set pos
-        self.particles["body"].pos[:] = self.set_pos(np.random.permutation(ilist))
+        self.particles["body"].pos = self.set_pos(np.random.permutation(ilist))
 
         # set phi
-        self.particles.set_phi(self.particles)
+        self.particles.update_phi(self.particles)
 
         # set vel
-        self.particles["body"].vel[:] = self.set_vel(self.particles["body"].phi)
+        self.particles["body"].vel = self.set_vel(self.particles["body"].phi)
 
 
     def make_plummer(self):
         self.set_bodies()
-        self.particles.reset_center_of_mass()
+        self.particles.correct_center_of_mass()
         scale_to_nbody_units(self.particles)
-        self.particles.set_acc(self.particles)
+        self.particles.update_acc(self.particles)
 
 
 

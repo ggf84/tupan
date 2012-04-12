@@ -23,7 +23,7 @@ class LeapFrog(object):
     def __init__(self, eta, time, particles):
         self.eta = eta
         self.time = time
-        particles.set_acctstep(particles, eta)
+        particles.update_acctstep(particles, eta)
         self.particles = particles
         self.tstep = self.get_min_block_tstep()
         self.n2_sum = 0
@@ -71,7 +71,7 @@ class LeapFrog(object):
                 if hasattr(obj, "pnacc"):
                     prev_pnacc[key] = obj.pnacc.copy()
 
-        ip.set_acc(jp)
+        ip.update_acc(jp)
 
         ni = ip.get_nbody()
         nj = jp.get_nbody()
@@ -139,7 +139,7 @@ class LeapFrog(object):
         """
 
         """
-#        self.particles.set_tstep(self.particles, self.eta)
+#        self.particles.update_tstep(self.particles, self.eta)
 #        self.tstep = self.get_min_block_tstep()
 #        self.time += self.tstep / 2
 #        self.stepDKD(self.particles, self.particles.__class__(), self.tstep)
@@ -196,14 +196,14 @@ class LeapFrog(object):
         for (key, obj) in p.items():
             if obj:
                 if indexing[key]['is_slow'] is not None:
-                    obj._data[indexing[key]['is_slow']] = slow[key]._data
+                    obj.data[indexing[key]['is_slow']] = slow[key].data
 
                 if indexing[key]['is_fast'] is not None:
-                    obj._data[indexing[key]['is_fast']] = fast[key]._data
+                    obj.data[indexing[key]['is_fast']] = fast[key].data
 
 
     def rstep(self, p, tau, update_tstep):
-        if update_tstep: p.set_tstep(p, self.eta)
+        if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
         if fast.get_nbody() == 1: logger.error("fast level contains only *one* particle.")

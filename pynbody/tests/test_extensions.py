@@ -112,16 +112,13 @@ class TestCase(unittest.TestCase):
                 nj = len(jobj)
                 iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
                 jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-                iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
-                jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
-                data = (iposmass, iveleps2,
-                        jposmass, jveleps2,
+                data = (iposmass, iobj.eps2,
+                        jposmass, jobj.eps2,
                         np.uint32(ni),
-                        np.uint32(nj),
-                        np.float64(0.0))
+                        np.uint32(nj))
 
                 output_buf = np.empty((ni,4))
-                lmem_layout = (4, 4)
+                lmem_layout = (4, 1)
                 local_size = 384
                 global_size = ((ni-1)//local_size + 1) * local_size
 
@@ -291,16 +288,13 @@ class TestCase(unittest.TestCase):
                 nj = len(jobj)
                 iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
                 jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-                iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
-                jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
-                data = (iposmass, iveleps2,
-                        jposmass, jveleps2,
+                data = (iposmass, iobj.eps2,
+                        jposmass, jobj.eps2,
                         np.uint32(ni),
-                        np.uint32(nj),
-                        np.float64(0.0))
+                        np.uint32(nj))
 
                 output_buf = np.empty((ni,4))
-                lmem_layout = (4, 4)
+                lmem_layout = (4, 1)
                 local_size = 384
                 global_size = ((ni-1)//local_size + 1) * local_size
 
@@ -471,16 +465,13 @@ class TestCase(unittest.TestCase):
         nj = len(jobj)
         iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
         jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-        iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
-        jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
-        data = (iposmass, iveleps2,
-                jposmass, jveleps2,
+        data = (iposmass, iobj.eps2,
+                jposmass, jobj.eps2,
                 np.uint32(ni),
-                np.uint32(nj),
-                np.float64(0.0))
+                np.uint32(nj))
 
         output_buf = np.empty((ni,4))
-        lmem_layout = (4, 4)
+        lmem_layout = (4, 1)
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
@@ -657,16 +648,13 @@ class TestCase(unittest.TestCase):
         nj = len(jobj)
         iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
         jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-        iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
-        jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
-        data = (iposmass, iveleps2,
-                jposmass, jveleps2,
+        data = (iposmass, iobj.eps2,
+                jposmass, jobj.eps2,
                 np.uint32(ni),
-                np.uint32(nj),
-                np.float64(0.0))
+                np.uint32(nj))
 
         output_buf = np.empty((ni,4))
-        lmem_layout = (4, 4)
+        lmem_layout = (4, 1)
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
