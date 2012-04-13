@@ -51,10 +51,10 @@ class LeapFrog(object):
         """
         for (key, obj) in ip.items():
             if obj:
-                if hasattr(obj, "evolve_pos"):
-                    obj.evolve_pos(tau)
-                if hasattr(obj, "evolve_center_of_mass_position_due_to_pncorrection"):
-                    obj.evolve_center_of_mass_position_due_to_pncorrection(tau)
+                if hasattr(obj, "evolve_position"):
+                    obj.evolve_position(tau)
+                if hasattr(obj, "evolve_center_of_mass_position_correction_due_to_pnterms"):
+                    obj.evolve_center_of_mass_position_correction_due_to_pnterms(tau)
 
 
     @timings
@@ -95,31 +95,35 @@ class LeapFrog(object):
         """
         for (key, obj) in ip.items():
             if obj:
-                if hasattr(obj, "evolve_linear_momentum_due_to_pncorrection"):
-                    obj.evolve_linear_momentum_due_to_pncorrection(tau / 2)
-                if hasattr(obj, "evolve_angular_momentum_due_to_pncorrection"):
-                    obj.evolve_angular_momentum_due_to_pncorrection(tau / 2)
-                if hasattr(obj, "evolve_energy_due_to_pncorrection"):
-                    obj.evolve_energy_due_to_pncorrection(tau / 2)
-                if hasattr(obj, "evolve_center_of_mass_velocity_due_to_pncorrection"):
-                    obj.evolve_center_of_mass_velocity_due_to_pncorrection(tau / 2)
-                if hasattr(obj, "evolve_vel"):
-                    obj.evolve_vel(tau / 2)
+                if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
+                    obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
+                    obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_center_of_mass_velocity_correction_due_to_pnterms"):
+                    obj.evolve_center_of_mass_velocity_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
+                    obj.evolve_energy_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
+                    obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_velocity"):
+                    obj.evolve_velocity(tau / 2)
 
         self.forceDKD(ip, jp)
 
         for (key, obj) in ip.items():
             if obj:
-                if hasattr(obj, "evolve_vel"):
-                    obj.evolve_vel(tau / 2)
-                if hasattr(obj, "evolve_linear_momentum_due_to_pncorrection"):
-                    obj.evolve_linear_momentum_due_to_pncorrection(tau / 2)
-                if hasattr(obj, "evolve_angular_momentum_due_to_pncorrection"):
-                    obj.evolve_angular_momentum_due_to_pncorrection(tau / 2)
-                if hasattr(obj, "evolve_energy_due_to_pncorrection"):
-                    obj.evolve_energy_due_to_pncorrection(tau / 2)
-                if hasattr(obj, "evolve_center_of_mass_velocity_due_to_pncorrection"):
-                    obj.evolve_center_of_mass_velocity_due_to_pncorrection(tau / 2)
+                if hasattr(obj, "evolve_velocity"):
+                    obj.evolve_velocity(tau / 2)
+                if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
+                    obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
+                    obj.evolve_energy_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_center_of_mass_velocity_correction_due_to_pnterms"):
+                    obj.evolve_center_of_mass_velocity_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
+                    obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
+                    obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
 
 
     @timings
@@ -318,20 +322,6 @@ class LeapFrog(object):
 
 
         self.merge(p, slow, fast, indexing)
-
-
-
-
-
-    # Pickle-related methods
-
-    def __getstate__(self):
-        sdict = self.__dict__.copy()
-        return sdict
-
-    def __setstate__(self, sdict):
-        self.__dict__.update(sdict)
-        self.particles = self.particles.copy()
 
 
 ########## end of file ##########

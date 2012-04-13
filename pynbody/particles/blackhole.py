@@ -36,9 +36,9 @@ class BlackHole(Pbase):
              ("radius", "f8"),
              # auxiliary attributes
              ("tstep", "f8"),
-	     ("pncorrection_energy", "f8"),
-	     ("pncorrection_linear_momentum", "3f8"),
-	     ("pncorrection_angular_momentum", "3f8"),
+             ("pncorrection_energy", "f8"),
+             ("pncorrection_linear_momentum", "3f8"),
+             ("pncorrection_angular_momentum", "3f8"),
             ]
 
     def __init__(self, n=0):
@@ -163,48 +163,48 @@ class BlackHole(Pbase):
     # specific methods
     #
 
-    ### evolve quantities due to post-newtonian corrections
+    ### evolve corrections due to post-newtonian terms
 
-    def evolve_velocity_due_to_pncorrection(self, tstep):
+    def evolve_velocity_correction_due_to_pnterms(self, tstep):
         """
-        Evolves velocity in time due to post-newtonian correction.
+        Evolves velocity correction in time due to post-newtonian terms.
         """
         self.vel += tstep * self.pnacc
 
-    def evolve_center_of_mass_position_due_to_pncorrection(self, tstep):
+    def evolve_energy_correction_due_to_pnterms(self, tstep):
         """
-        Evolves center of mass position in time due to post-newtonian correction.
-        """
-        comp_jump = tstep * self.pncorrection_linear_momentum.sum(0)
-        self.pncorrection_center_of_mass_position += comp_jump
-
-    def evolve_center_of_mass_velocity_due_to_pncorrection(self, tstep):
-        """
-        Evolves center of mass velocity in time due to post-newtonian correction.
-        """
-        pnforce = -(self.mass * self.pnacc.T).T
-        comv_jump = tstep * pnforce.sum(0)
-        self.pncorrection_center_of_mass_velocity += comv_jump
-
-    def evolve_energy_due_to_pncorrection(self, tstep):
-        """
-        Evolves energy in time due to post-newtonian correction.
+        Evolves energy correction in time due to post-newtonian terms.
         """
         pnforce = -(self.mass * self.pnacc.T).T
         e_jump = tstep * (self.vel * pnforce).sum(1)
         self.pncorrection_energy += e_jump
 
-    def evolve_linear_momentum_due_to_pncorrection(self, tstep):
+    def evolve_center_of_mass_position_correction_due_to_pnterms(self, tstep):
         """
-        Evolves linear momentum in time due to post-newtonian correction.
+        Evolves center of mass position correction in time due to post-newtonian terms.
+        """
+        comp_jump = tstep * self.pncorrection_linear_momentum.sum(0)
+        self.pncorrection_center_of_mass_position += comp_jump
+
+    def evolve_center_of_mass_velocity_correction_due_to_pnterms(self, tstep):
+        """
+        Evolves center of mass velocity correction in time due to post-newtonian terms.
+        """
+        pnforce = -(self.mass * self.pnacc.T).T
+        comv_jump = tstep * pnforce.sum(0)
+        self.pncorrection_center_of_mass_velocity += comv_jump
+
+    def evolve_linear_momentum_correction_due_to_pnterms(self, tstep):
+        """
+        Evolves linear momentum correction in time due to post-newtonian terms.
         """
         pnforce = -(self.mass * self.pnacc.T).T
         lm_jump = tstep * pnforce
         self.pncorrection_linear_momentum += lm_jump
 
-    def evolve_angular_momentum_due_to_pncorrection(self, tstep):
+    def evolve_angular_momentum_correction_due_to_pnterms(self, tstep):
         """
-        Evolves angular momentum in time due to post-newtonian correction.
+        Evolves angular momentum correction in time due to post-newtonian terms.
         """
         pnforce = -(self.mass * self.pnacc.T).T
         am_jump = tstep * np.cross(self.pos, pnforce)
@@ -215,14 +215,14 @@ class BlackHole(Pbase):
     # auxiliary methods
     #
 
+    def get_pn_correction_for_total_energy(self):
+        return self.pncorrection_energy.sum(0)
+
     def get_pn_correction_for_center_of_mass_position(self):
         return self.pncorrection_center_of_mass_position
 
     def get_pn_correction_for_center_of_mass_velocity(self):
         return self.pncorrection_center_of_mass_velocity
-
-    def get_pn_correction_for_total_energy(self):
-        return self.pncorrection_energy.sum(0)
 
     def get_pn_correction_for_total_linear_momentum(self):
         return self.pncorrection_linear_momentum.sum(0)
@@ -263,15 +263,6 @@ class BlackHole(Pbase):
         """
         self.tstep = interact.tstep_blackhole(self, objs, eta)
 
-
-    ### evolve
-
-    def evolve_vel(self, tstep):
-        """
-        Evolves velocity in time.
-        """
-        self.vel += tstep * self.acc
-        self.evolve_velocity_due_to_pncorrection(tstep)
 
 
 

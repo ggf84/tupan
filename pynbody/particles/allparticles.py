@@ -8,6 +8,7 @@
 
 from __future__ import print_function
 import sys
+import copy
 import traceback
 from collections import namedtuple
 import numpy as np
@@ -35,7 +36,7 @@ class Particles(dict):
         """
         Initializer
         """
-        dict.__init__(self)
+#        dict.__init__(self)
 
         self["sph"] = None #Sph()
         self["body"] = None #Body()
@@ -56,6 +57,8 @@ class Particles(dict):
                 self["blackhole"] = BlackHole(types["blackhole"])
 
         self._totalmass = None
+
+        super(Particles, self).__init__()
 
 
     def get_nbody(self):
@@ -239,25 +242,25 @@ class Particles(dict):
 
     @timings
     def update_phi(self, objs):
-        for (key, obj) in self.iteritems():
+        for (key, obj) in self.items():
             if obj:
                 obj.update_phi(objs)
 
     @timings
     def update_acc(self, objs):
-        for (key, obj) in self.iteritems():
+        for (key, obj) in self.items():
             if obj:
                 obj.update_acc(objs)
 
     @timings
     def update_acctstep(self, objs, eta):
-        for (key, obj) in self.iteritems():
+        for (key, obj) in self.items():
             if obj:
                 obj.update_acctstep(objs, eta)
 
     @timings
     def update_tstep(self, objs, eta):
-        for (key, obj) in self.iteritems():
+        for (key, obj) in self.items():
             if obj:
                 obj.update_tstep(objs, eta)
 
@@ -274,12 +277,7 @@ class Particles(dict):
         return has_obj
 
     def copy(self):
-        ret = self.__class__()
-        ret.__dict__.update(self.__dict__)
-        for (key, obj) in self.iteritems():
-            if obj:
-                ret[key] = obj.copy()
-        return ret
+        return copy.deepcopy(self)
 
     def append(self, data):
         for (key, obj) in data.iteritems():
@@ -312,18 +310,6 @@ class Particles(dict):
                             sys.exc_info()[2].tb_frame.f_back, None), None)
             print("TypeError: {0}".format(msg))
             sys.exit(-1)
-
-
-
-    # Pickle-related methods
-
-    def __getstate__(self):
-        sdict = self.__dict__.copy()
-        return sdict
-
-    def __setstate__(self, sdict):
-        self.__dict__.update(sdict)
-        self = self.copy()
 
 
 ########## end of file ##########

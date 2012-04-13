@@ -32,19 +32,13 @@ class Pbase(object):
         return len(self.data)
 
     def __getitem__(self, index):
-        item = self.data[index]
-        cp = self.copy()
-        cp.data = item
+        data = self.data[index]
+        cp = copy.copy(self)
+        cp.data = data
         return cp
 
     def copy(self):
         return copy.deepcopy(self)
-
-#    def copy(self):
-#        ret = self.__class__()
-#        ret.__dict__.update(self.__dict__)
-#        ret.data = self.data.copy()
-#        return ret
 
     def append(self, objs):
         self.data = np.append(self.data, objs.data)
@@ -324,13 +318,13 @@ class Pbase(object):
 
     ### evolve
 
-    def evolve_pos(self, tstep):
+    def evolve_position(self, tstep):
         """
         Evolves position in time.
         """
         self.pos += tstep * self.vel
 
-    def evolve_vel(self, tstep):
+    def evolve_velocity(self, tstep):
         """
         Evolves velocity in time.
         """
