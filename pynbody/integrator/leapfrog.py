@@ -24,6 +24,7 @@ class LeapFrog(object):
         self.eta = eta
         self.time = time
         particles.update_acctstep(particles, eta)
+        particles.update_pnacc(particles)
         self.particles = particles
         self.tstep = self.get_min_block_tstep()
         self.n2_sum = 0
@@ -72,6 +73,7 @@ class LeapFrog(object):
                     prev_pnacc[key] = obj.pnacc.copy()
 
         ip.update_acc(jp)
+        ip.update_pnacc(jp)
 
         ni = ip.get_nbody()
         nj = jp.get_nbody()
@@ -83,10 +85,9 @@ class LeapFrog(object):
         for (key, obj) in ip.items():
             if obj:
                 if hasattr(obj, "acc"):
-                    obj.acc[:] = 2 * obj.acc - prev_acc[key]
+                    obj.acc = 2 * obj.acc - prev_acc[key]
                 if hasattr(obj, "pnacc"):
-                    obj.pnacc[:] = 2 * obj.pnacc - prev_pnacc[key]
-
+                    obj.pnacc = 2 * obj.pnacc - prev_pnacc[key]
 
     @timings
     def kick(self, ip, jp, tau):

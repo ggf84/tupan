@@ -8,7 +8,6 @@
 from __future__ import print_function
 import copy
 import numpy as np
-from ..lib.interactor import interact
 
 
 __all__ = ['Pbase']
@@ -291,29 +290,17 @@ class Pbase(object):
 
     ### gravity
 
-    def update_phi(self, objs):
-        """
-        Update the individual gravitational potential due to other particles.
-        """
-        self.phi = interact.phi_body(self, objs)
+    def update_phi(self, jobj):
+        raise NotImplementedError()
 
-    def update_acc(self, objs):
-        """
-        Update the individual acceleration due to other particles.
-        """
-        self.acc = interact.acc_body(self, objs)
+    def update_acc(self, jobj):
+        raise NotImplementedError()
 
-    def update_acctstep(self, objs, eta):
-        """
-        Update the individual acceleration and time-steps due to other particles.
-        """
-        (self.acc, self.tstep) = interact.acctstep_body(self, objs, eta)
+    def update_acctstep(self, jobj, eta):
+        raise NotImplementedError()
 
-    def update_tstep(self, objs, eta):
-        """
-        Update the individual time-steps due to other particles.
-        """
-        self.tstep = interact.tstep_body(self, objs, eta)
+    def update_tstep(self, jobj, eta):
+        raise NotImplementedError()
 
 
     ### evolve

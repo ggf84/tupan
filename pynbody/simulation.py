@@ -92,8 +92,7 @@ class Diagnostic(object):
         lmom = particles.get_total_linear_momentum()
         amom = particles.get_total_angular_momentum()
 
-        ejump = 0.0 #particles['blackhole'].get_total_energy_jump()     ### :FIXME: ###
-        eerr = ((te-self.te0) + ejump)/(-pe)
+        eerr = (te-self.te0)/(-pe)
         self.ceerr += eerr**2
         self.count += 1
         geerr = math.sqrt(self.ceerr / self.count)
@@ -110,8 +109,8 @@ class Diagnostic(object):
               '{lmom[0]:< 9.2e} {lmom[1]:< 9.2e} {lmom[2]:< 9.2e} '\
               '{amom[0]:< 9.2e} {amom[1]:< 9.2e} {amom[2]:< 9.2e}'
         myprint(fmt.format(time=time, tstep=tstep,
-                           ke=ke+ejump, pe=pe,
-                           te=te+ejump, ve=ve+ejump,
+                           ke=ke, pe=pe,
+                           te=te, ve=ve,
                            eerr=eerr, geerr=geerr, rcom=dRcom,
                            vcom=dVcom, lmom=dLmom, amom=dAmom),
                 self.fname, 'a')

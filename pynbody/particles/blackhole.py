@@ -9,7 +9,6 @@ from __future__ import print_function
 from collections import namedtuple
 import numpy as np
 from .pbase import Pbase
-from ..lib.interactor import interact
 
 
 __all__ = ["BlackHole"]
@@ -231,37 +230,12 @@ class BlackHole(Pbase):
         return self.pncorrection_angular_momentum.sum(0)
 
 
-
-
     #
     # overridden methods
     #
 
-    ### gravity
+    ### ...
 
-    def update_phi(self, objs):
-        """
-        Update the individual gravitational potential due to other particles.
-        """
-        self.phi = interact.phi_blackhole(self, objs)
-
-    def update_acc(self, objs):
-        """
-        Update the individual acceleration due to other particles.
-        """
-        self.acc, self.pnacc = interact.acc_blackhole(self, objs)
-
-    def update_acctstep(self, objs, eta):
-        """
-        Update the individual acceleration and time-steps due to other particles.
-        """
-        (self.acc, self.pnacc, self.tstep) = interact.acctstep_blackhole(self, objs, eta)
-
-    def update_tstep(self, objs, eta):
-        """
-        Update the individual time-steps due to other particles.
-        """
-        self.tstep = interact.tstep_blackhole(self, objs, eta)
 
 
 

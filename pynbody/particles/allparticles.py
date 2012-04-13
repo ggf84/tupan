@@ -15,6 +15,7 @@ import numpy as np
 from .sph import Sph
 from .body import Body
 from .blackhole import BlackHole
+from ..lib.gravity import gravitation
 from ..lib.utils.timing import timings
 
 
@@ -166,6 +167,8 @@ class Particles(dict):
         for obj in self.values():
             if obj:
                 ke += obj.get_total_kinetic_energy()
+                if hasattr(obj, "get_pn_correction_for_total_energy"):
+                    ke += obj.get_pn_correction_for_total_energy()
         return ke
 
     def get_total_potential_energy(self):
@@ -242,27 +245,81 @@ class Particles(dict):
 
     @timings
     def update_phi(self, objs):
-        for (key, obj) in self.items():
-            if obj:
-                obj.update_phi(objs)
+        """
+        Update the individual gravitational potential due to other particles.
+        """
+        for iobj in self.values():
+            if iobj:
+                iphi = 0.0
+                for jobj in objs.values():
+                    if jobj:
+                        ret = gravitation.newtonian.set_phi(iobj, jobj)
+                        iphi += ret
+                iobj.phi = iphi
 
     @timings
     def update_acc(self, objs):
-        for (key, obj) in self.items():
-            if obj:
-                obj.update_acc(objs)
+        """
+        Update the individual gravitational acceleration due to other particles.
+        """
+        for iobj in self.values():
+            if iobj:
+                iacc = 0.0
+                for jobj in objs.values():
+                    if jobj:
+                        ret = gravitation.newtonian.set_acc(iobj, jobj)
+                        iacc += ret
+                iobj.acc = iacc
+
+    @timings
+    def update_pnacc(self, objs):
+        """
+        Update the individual post-newtonian gravitational acceleration due to other particles.
+        """
+        for iobj in self.values():
+            if iobj:
+                ipnacc = 0.0
+                if hasattr(iobj, "pnacc"):
+                    for jobj in objs.values():
+                        if jobj:
+                            if hasattr(jobj, "pnacc"):
+                                ret = gravitation.post_newtonian.set_acc(iobj, jobj)
+                                ipnacc += ret
+                    iobj.pnacc = ipnacc
 
     @timings
     def update_acctstep(self, objs, eta):
-        for (key, obj) in self.items():
-            if obj:
-                obj.update_acctstep(objs, eta)
+        """
+        Update the individual gravitational acceleration and time-steps due to other particles.
+        """
+        eta_2 = eta/2
+        for iobj in self.values():
+            if iobj:
+                iacc = 0.0
+                iomega = 0.0
+                for jobj in objs.values():
+                    if jobj:
+                        ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta_2)
+                        iacc += ret[0]
+                        iomega = np.maximum(iomega, ret[1])
+                iobj.acc = iacc
+                iobj.tstep = eta/iomega
+
 
     @timings
     def update_tstep(self, objs, eta):
-        for (key, obj) in self.items():
-            if obj:
-                obj.update_tstep(objs, eta)
+        """
+        Update the individual time-steps due to other particles.
+        """
+        eta_2 = eta/2
+        for iobj in self.values():
+            if iobj:
+                iomega = 0.0
+                for jobj in objs.values():
+                    if jobj:
+                        ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
+                        iomega = np.maximum(iomega, ret)
+                iobj.tstep = eta/iomega
 
 
 
