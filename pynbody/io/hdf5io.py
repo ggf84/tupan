@@ -66,7 +66,7 @@ class HDF5IO(object):
             for (k, v) in group.items():
                 obj = pickle.loads(v.attrs['Class'])()
                 obj.data = v[:]
-                particles.set_members(obj)
+                particles.append(obj)
         return particles
 
 

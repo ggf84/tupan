@@ -41,6 +41,8 @@ class IO(object):
     def load(self, *args, **kwargs):
         import os
         import sys
+        import logging
+        logger = logging.getLogger(__name__)
         from warnings import warn
         fname = self.fname
         if not os.path.exists(fname):
@@ -50,8 +52,9 @@ class IO(object):
         for loader in loaders:
             try:
                 return loader(fname).load(*args, **kwargs)
-            except Exception:
+            except Exception as exc:
                 pass
+        logger.exception(str(exc))
         raise ValueError("File not in a supported format.")
 
 

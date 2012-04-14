@@ -9,8 +9,6 @@
 from __future__ import print_function
 import sys
 import copy
-import traceback
-from collections import namedtuple
 import numpy as np
 from .sph import Sph
 from .body import Body
@@ -24,10 +22,6 @@ __all__ = ["Particles"]
 
 ALL_PARTICLE_TYPES = ["sph", "body", "blackhole"]
 
-
-Energies = namedtuple("Energies", ["kin", "pot", "tot", "vir"])
-
-
 class Particles(dict):
     """
     This class holds the particle types in the simulation.
@@ -37,12 +31,9 @@ class Particles(dict):
         """
         Initializer
         """
-#        dict.__init__(self)
-
-        self["sph"] = None #Sph()
-        self["body"] = None #Body()
-        self["blackhole"] = None #Blackhole()
-
+        self["sph"] = Sph()
+        self["body"] = Body()
+        self["blackhole"] = BlackHole()
 
         if types:
             if not isinstance(types, dict):
@@ -57,9 +48,36 @@ class Particles(dict):
             if "blackhole" in types and types["blackhole"] > 0:
                 self["blackhole"] = BlackHole(types["blackhole"])
 
-        self._totalmass = None
-
         super(Particles, self).__init__()
+
+    #
+    # common basic methods
+    #
+
+    def __repr__(self):
+        return '{0}({1})'.format(self.__class__.__name__, self)
+
+    def __len__(self):
+        n = 0
+        for obj in self.values():
+            if obj:
+                n += len(obj)
+        return n
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+    def append(self, objs):
+        if isinstance(objs, Particles):
+            for (key, obj) in objs.items():
+                if obj:
+                    self[key].append(obj)
+        elif isinstance(objs, Body):
+            self["body"].append(objs)
+        elif isinstance(objs, BlackHole):
+            self["blackhole"].append(objs)
+        elif isinstance(objs, Sph):
+            self["sph"].append(objs)
 
 
     def get_nbody(self):
@@ -70,7 +88,7 @@ class Particles(dict):
         return nb
 
 
-    # Total Mass
+    ### total mass and center-of-mass
 
     def get_total_mass(self):
         """
@@ -81,9 +99,6 @@ class Particles(dict):
             if obj:
                 total_mass += obj.get_total_mass()
         return total_mass
-
-
-    # Center-of-Mass methods
 
     def get_center_of_mass_position(self):
         """
@@ -129,7 +144,7 @@ class Particles(dict):
                 obj.vel -= com_vel
 
 
-    # Momentum methods
+    ### linear momentum
 
     def get_total_linear_momentum(self):
         """
@@ -142,6 +157,9 @@ class Particles(dict):
                 if hasattr(obj, "get_pn_correction_for_total_linear_momentum"):
                     lin_mom += obj.get_pn_correction_for_total_linear_momentum()
         return lin_mom
+
+
+    ### angular momentum
 
     def get_total_angular_momentum(self):
         """
@@ -156,8 +174,7 @@ class Particles(dict):
         return ang_mom
 
 
-
-    # Energy methods
+    ### kinetic energy
 
     def get_total_kinetic_energy(self):
         """
@@ -171,6 +188,9 @@ class Particles(dict):
                     ke += obj.get_pn_correction_for_total_energy()
         return ke
 
+
+    ### potential energy
+
     def get_total_potential_energy(self):
         """
         Get the total potential energy for the whole system of particles.
@@ -183,65 +203,8 @@ class Particles(dict):
 #                pe += 0.5*(value + obj._self_total_epot)
         return pe
 
-    def get_total_etot(self):
-        ekin = self.get_total_ekin()
-        epot = self.get_total_epot()
-        etot = ekin + epot
-        return etot
 
-    def get_total_evir(self):
-        ekin = self.get_total_ekin()
-        epot = self.get_total_epot()
-        evir = ekin + (ekin + epot)
-        return evir
-
-    def get_energies(self):       ### is it necessary? ###
-        """
-        Get the energies ("kin", "pot", "tot", "vir") for each particle type.
-        """
-        energies = {}
-        for (key, obj) in self.iteritems():
-            if obj:
-                energies[key] = obj.get_total_energies()
-            else:
-                energies[key] = None
-        return energies
-
-    def get_energy_jump(self):     ### :FIXME: ###      ### is it necessary? ###
-        energy_jump = {}
-        for (key, obj) in self.iteritems():
-            if hasattr(obj, "get_total_energy_jump"):
-                energy_jump[key] = obj.get_total_energy_jump()
-            else:
-                energy_jump[key] = None
-        return energy_jump
-
-    def get_total_energies(self):       ### is it necessary? ###
-        """
-        Get the total energies ("kin", "pot", "tot", "vir") for the whole
-        system of particles.
-        """
-        ekin = 0.0
-        epot = 0.0
-        for (key, energy) in self.get_energies().iteritems():
-            if energy is not None:
-                ekin += energy.kin
-                epot += 0.5*(energy.pot + self[key]._self_total_epot)
-#                XXX: To fix it: sum_epot = BoBo + BHBH + (BoBH + BHBo) + ...
-#                   : Now it looks OK, but it's better verify it again
-#                   : when other particles types are implemented.
-        etot = ekin + epot
-        evir = ekin + etot
-        energies = Energies(ekin, epot, etot, evir)
-        return energies
-
-    def get_total_energy_jump(self):     ### :FIXME: ###
-        energy_jump = self.get_energy_jump()
-        return sum((value for value in energy_jump.itervalues()
-                    if value is not None))
-
-
-    # Gravity methods
+    ### gravity
 
     @timings
     def update_phi(self, objs):
@@ -320,53 +283,6 @@ class Particles(dict):
                         ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
                         iomega = np.maximum(iomega, ret)
                 iobj.tstep = eta/iomega
-
-
-
-
-    # Miscelaneous methods
-
-    def any(self):
-        has_obj = False
-        for obj in self.itervalues():
-            if obj:
-                has_obj = True
-        return has_obj
-
-    def copy(self):
-        return copy.deepcopy(self)
-
-    def append(self, data):
-        for (key, obj) in data.iteritems():
-            if obj:
-                if self[key]:
-#                    tmp = self[key][:]
-                    tmp = self[key].copy()
-                    tmp.append(obj)
-                    self[key] = tmp
-                else:
-                    self[key] = obj
-
-
-    def set_members(self, data):
-        """
-        Set particle member types.
-        """
-        try:
-            if isinstance(data, Body):
-                self["body"] = data
-            elif isinstance(data, BlackHole):
-                self["blackhole"] = data
-            elif isinstance(data, Sph):
-                self["sph"] = data
-            else:
-                raise TypeError("Unsupported particle type.")
-        except TypeError as msg:
-            traceback.print_list(
-                    traceback.extract_stack(
-                            sys.exc_info()[2].tb_frame.f_back, None), None)
-            print("TypeError: {0}".format(msg))
-            sys.exit(-1)
 
 
 ########## end of file ##########
