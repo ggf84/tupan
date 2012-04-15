@@ -34,6 +34,6 @@ def make_system(particles_as_type='body', **kwargs):
     particles.update_acc(particles)
 
     return particles
-        
+
 
 ########## end of file ##########

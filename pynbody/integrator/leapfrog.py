@@ -82,6 +82,7 @@ class LeapFrog(object):
                 if hasattr(obj, "pnacc"):
                     obj.pnacc = 2 * obj.pnacc - prev_pnacc[key]
 
+
     @timings
     def kick(self, ip, jp, tau):
         """

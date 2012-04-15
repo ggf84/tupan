@@ -55,7 +55,7 @@ class Particles(dict):
     #
 
     def __repr__(self):
-        return '{0}({1})'.format(self.__class__.__name__, self)
+        return '{0}({1})'.format(self.__class__.__name__, dict(self))
 
     def __len__(self):
         n = 0
