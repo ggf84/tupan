@@ -8,7 +8,6 @@
 
 from . import extensions
 from . import gravity
-from . import interactor
 from . import utils
 
 
