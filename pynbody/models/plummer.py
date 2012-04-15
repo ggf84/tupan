@@ -142,7 +142,7 @@ class Plummer(object):
         ilist = np.arange(n)
 
         # set index
-        self.particles["body"].key = ilist
+        self.particles["body"].id = ilist
 
         srand = np.random.get_state()
 
@@ -169,9 +169,7 @@ class Plummer(object):
         self.set_bodies()
         self.particles.correct_center_of_mass()
         scale_to_nbody_units(self.particles)
-        self.particles.update_acc(self.particles)
-
-
+        self.particles["body"].phi = 0.0
 
 
 

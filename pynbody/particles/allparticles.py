@@ -50,8 +50,9 @@ class Particles(dict):
 
         super(Particles, self).__init__()
 
+
     #
-    # common basic methods
+    # miscellaneous methods
     #
 
     def __repr__(self):
@@ -87,6 +88,10 @@ class Particles(dict):
                 nb += len(obj)
         return nb
 
+
+    #
+    # common methods
+    #
 
     ### total mass and center-of-mass
 
@@ -251,7 +256,7 @@ class Particles(dict):
                     iobj.pnacc = ipnacc
 
     @timings
-    def update_acctstep(self, objs, eta):
+    def update_acc_and_timestep(self, objs, eta):
         """
         Update the individual gravitational acceleration and time-steps due to other particles.
         """
@@ -266,11 +271,10 @@ class Particles(dict):
                         iacc += ret[0]
                         iomega = np.maximum(iomega, ret[1])
                 iobj.acc = iacc
-                iobj.tstep = eta/iomega
-
+                iobj.dt_next = eta/iomega
 
     @timings
-    def update_tstep(self, objs, eta):
+    def update_timestep(self, objs, eta):
         """
         Update the individual time-steps due to other particles.
         """
@@ -282,7 +286,7 @@ class Particles(dict):
                     if jobj:
                         ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
                         iomega = np.maximum(iomega, ret)
-                iobj.tstep = eta/iomega
+                iobj.dt_next = eta/iomega
 
 
 ########## end of file ##########

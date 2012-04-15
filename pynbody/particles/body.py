@@ -18,21 +18,22 @@ class Body(Pbase):
     A base class for Stars.
     """
     dtype = [# common attributes
-             ("key", "u8"),
+             ("id", "u8"),
              ("mass", "f8"),
              ("pos", "3f8"),
              ("vel", "3f8"),
              ("acc", "3f8"),
              ("phi", "f8"),
              ("eps2", "f8"),
-             ("tcurr", "f8"),
-             ("tnext", "f8"),
+             ("t_curr", "f8"),
+             ("dt_prev", "f8"),
+             ("dt_next", "f8"),
              # specific attributes
              ("age", "f8"),
              ("radius", "f8"),
              ("metallicity", "f8"),
              # auxiliary attributes
-             ("tstep", "f8"),
+
             ]
 
     def __init__(self, n=0):
@@ -87,23 +88,12 @@ class Body(Pbase):
     def metallicity(self):
         raise NotImplementedError()
 
+
     #
     # auxiliary attributes
     #
 
-    ### tstep
-
-    @property
-    def tstep(self):
-        return self.data['tstep']
-
-    @tstep.setter
-    def tstep(self, values):
-        self.data['tstep'] = values
-
-    @tstep.deleter
-    def tstep(self):
-        raise NotImplementedError()
+    ### ...
 
 
     #

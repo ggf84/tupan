@@ -20,8 +20,9 @@ class Pbase(object):
     def __init__(self, dtype, n):
         self.data = np.zeros(n, dtype)
 
+
     #
-    # common basic methods
+    # miscellaneous methods
     #
 
     def __repr__(self):
@@ -58,22 +59,23 @@ class Pbase(object):
         self.data = np.delete(self.data, index)
         return obj
 
+
     #
     # common attributes
     #
 
-    ### key
+    ### id
 
     @property
-    def key(self):
-        return self.data['key']
+    def id(self):
+        return self.data['id']
 
-    @key.setter
-    def key(self, values):
-        self.data['key'] = values
+    @id.setter
+    def id(self, values):
+        self.data['id'] = values
 
-    @key.deleter
-    def key(self):
+    @id.deleter
+    def id(self):
         raise NotImplementedError()
 
 
@@ -167,33 +169,48 @@ class Pbase(object):
         raise NotImplementedError()
 
 
-    ### tcurr
+    ### t_curr
 
     @property
-    def tcurr(self):
-        return self.data['tcurr']
+    def t_curr(self):
+        return self.data['t_curr']
 
-    @tcurr.setter
-    def tcurr(self, values):
-        self.data['tcurr'] = values
+    @t_curr.setter
+    def t_curr(self, values):
+        self.data['t_curr'] = values
 
-    @tcurr.deleter
-    def tcurr(self):
+    @t_curr.deleter
+    def t_curr(self):
         raise NotImplementedError()
 
 
-    ### tnext
+    ### dt_prev
 
     @property
-    def tnext(self):
-        return self.data['tnext']
+    def dt_prev(self):
+        return self.data['dt_prev']
 
-    @tnext.setter
-    def tnext(self, values):
-        self.data['tnext'] = values
+    @dt_prev.setter
+    def dt_prev(self, values):
+        self.data['dt_prev'] = values
 
-    @tnext.deleter
-    def tnext(self):
+    @dt_prev.deleter
+    def dt_prev(self):
+        raise NotImplementedError()
+
+
+    ### dt_next
+
+    @property
+    def dt_next(self):
+        return self.data['dt_next']
+
+    @dt_next.setter
+    def dt_next(self, values):
+        self.data['dt_next'] = values
+
+    @dt_next.deleter
+    def dt_next(self):
         raise NotImplementedError()
 
 
@@ -299,26 +316,26 @@ class Pbase(object):
     def update_acc(self, jobj):
         raise NotImplementedError()
 
-    def update_acctstep(self, jobj, eta):
+    def update_acc_and_timestep(self, jobj, eta):
         raise NotImplementedError()
 
-    def update_tstep(self, jobj, eta):
+    def update_timestep(self, jobj, eta):
         raise NotImplementedError()
 
 
     ### evolve
 
-    def evolve_position(self, tstep):
+    def evolve_position(self, tau):
         """
         Evolves position in time.
         """
-        self.pos += tstep * self.vel
+        self.pos += tau * self.vel
 
-    def evolve_velocity(self, tstep):
+    def evolve_velocity(self, tau):
         """
         Evolves velocity in time.
         """
-        self.vel += tstep * self.acc
+        self.vel += tau * self.acc
 
 
 ########## end of file ##########

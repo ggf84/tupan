@@ -23,8 +23,9 @@ class LeapFrog(object):
     def __init__(self, eta, time, particles):
         self.eta = eta
         self.time = time
-        particles.update_acctstep(particles, eta)
+        particles.update_acc(particles)
         particles.update_pnacc(particles)
+        particles.update_timestep(particles, eta)
         self.particles = particles
         self.tstep = self.get_min_block_tstep()
         self.n2_sum = 0
@@ -34,7 +35,7 @@ class LeapFrog(object):
         min_tstep = 1.0
         for (key, obj) in self.particles.items():
             if obj:
-                min_tstep = min(min_tstep, obj.tstep.min())
+                min_tstep = min(min_tstep, obj.dt_next.min())
 
         power = int(np.log2(min_tstep) - 1)
         min_tstep = 2.0**power
@@ -143,7 +144,7 @@ class LeapFrog(object):
         """
 
         """
-        self.particles.update_tstep(self.particles, self.eta)
+        self.particles.update_timestep(self.particles, self.eta)
         self.tstep = self.get_min_block_tstep()
 
         self.time += self.tstep / 2

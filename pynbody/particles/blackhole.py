@@ -18,21 +18,21 @@ class BlackHole(Pbase):
     A base class for BlackHoles.
     """
     dtype = [# common attributes
-             ("key", "u8"),
+             ("id", "u8"),
              ("mass", "f8"),
              ("pos", "3f8"),
              ("vel", "3f8"),
              ("acc", "3f8"),
              ("phi", "f8"),
              ("eps2", "f8"),
-             ("tcurr", "f8"),
-             ("tnext", "f8"),
+             ("t_curr", "f8"),
+             ("dt_prev", "f8"),
+             ("dt_next", "f8"),
              # specific attributes
+             ("radius", "f8"),
              ("pnacc", "3f8"),
              ("spin", "3f8"),
-             ("radius", "f8"),
              # auxiliary attributes
-             ("tstep", "f8"),
              ("pncorrection_energy", "f8"),
              ("pncorrection_linear_momentum", "3f8"),
              ("pncorrection_angular_momentum", "3f8"),
@@ -47,35 +47,6 @@ class BlackHole(Pbase):
     #
     # specific attributes
     #
-
-    ### pnacc
-
-    @property
-    def pnacc(self):
-        return self.data['pnacc']
-
-    @pnacc.setter
-    def pnacc(self, values):
-        self.data['pnacc'] = values
-
-    @pnacc.deleter
-    def pnacc(self):
-        raise NotImplementedError()
-
-    ### spin
-
-    @property
-    def spin(self):
-        return self.data['spin']
-
-    @spin.setter
-    def spin(self, values):
-        self.data['spin'] = values
-
-    @spin.deleter
-    def spin(self):
-        raise NotImplementedError()
-
 
     ### radius
 
@@ -92,24 +63,39 @@ class BlackHole(Pbase):
         raise NotImplementedError()
 
 
+    ### pnacc
+
+    @property
+    def pnacc(self):
+        return self.data['pnacc']
+
+    @pnacc.setter
+    def pnacc(self, values):
+        self.data['pnacc'] = values
+
+    @pnacc.deleter
+    def pnacc(self):
+        raise NotImplementedError()
+
+
+    ### spin
+
+    @property
+    def spin(self):
+        return self.data['spin']
+
+    @spin.setter
+    def spin(self, values):
+        self.data['spin'] = values
+
+    @spin.deleter
+    def spin(self):
+        raise NotImplementedError()
+
+
     #
     # auxiliary attributes
     #
-
-    ### tstep
-
-    @property
-    def tstep(self):
-        return self.data['tstep']
-
-    @tstep.setter
-    def tstep(self, values):
-        self.data['tstep'] = values
-
-    @tstep.deleter
-    def tstep(self):
-        raise NotImplementedError()
-
 
     ### pncorrection_energy
 
