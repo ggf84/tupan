@@ -6,7 +6,7 @@
 """
 
 
-from . import block
+from . import hts
 from . import leapfrog
 
 
@@ -14,7 +14,7 @@ class Integrator(object):
     """
 
     """
-    PROVIDED_METHODS = ['leapfrog', 'blockstep']
+    PROVIDED_METHODS = ['leapfrog', 'hts']
 
     def __init__(self, eta, time, particles, method="leapfrog", **kwargs):
         import logging
@@ -24,9 +24,9 @@ class Integrator(object):
         if method == "leapfrog":
             logger.info("Using 'leapfrog' integrator.")
             self.integrator = leapfrog.LeapFrog(eta, time, particles)
-        elif method == "blockstep":
-            logger.info("Using 'blockstep' integrator.")
-            self.integrator = leapfrog.BlockStep(eta, time, particles)
+        elif method == "hts":
+            logger.info("Using 'hts' integrator.")
+            self.integrator = hts.HTS(eta, time, particles)
         else:
             logger.critical("Unexpected integrator method: '%s'. Provided methods: %s",
                             method, str(self.PROVIDED_METHODS))

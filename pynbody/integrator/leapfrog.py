@@ -75,13 +75,6 @@ class LeapFrog(object):
         ip.update_acc(jp)
         ip.update_pnacc(jp)
 
-        ni = ip.get_nbody()
-        nj = jp.get_nbody()
-        self.n2_sum += ni*nj
-        ntot = self.particles.get_nbody()
-#        if ni == ntot and nj == ntot:
-#            print(ni, nj, self.n2_sum)
-
         for (key, obj) in ip.items():
             if obj:
                 if hasattr(obj, "acc"):
@@ -126,17 +119,22 @@ class LeapFrog(object):
                 if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
                     obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
 
+        ni = ip.get_nbody()
+        nj = jp.get_nbody()
+        self.n2_sum += ni*nj
+        ntot = self.particles.get_nbody()
+#        if ni == ntot and nj == ntot:
+#            print(ni, nj, self.n2_sum)
+
 
     @timings
-    def stepDKD(self, slow, fast, tau):
+    def dkd(self, p, tau):
         """
 
         """
-        self.drift(slow, tau / 2)
-        if fast.get_nbody() > 0: self.kick(fast, slow, tau)
-        self.kick(slow, slow, tau)
-        if fast.get_nbody() > 0: self.kick(slow, fast, tau)
-        self.drift(slow, tau / 2)
+        self.drift(p, tau / 2)
+        self.kick(p, p, tau)
+        self.drift(p, tau / 2)
 
 
     @timings
@@ -144,185 +142,12 @@ class LeapFrog(object):
         """
 
         """
-#        self.particles.update_tstep(self.particles, self.eta)
-#        self.tstep = self.get_min_block_tstep()
-#        self.time += self.tstep / 2
-#        self.stepDKD(self.particles, self.particles.__class__(), self.tstep)
-#        self.time += self.tstep / 2
+        self.particles.update_tstep(self.particles, self.eta)
+        self.tstep = self.get_min_block_tstep()
 
-        tau = 1.0 / 8
-        self.rstep(self.particles, tau, True)
-
-
-    def split(self, tau, p):
-        slow = p.__class__()
-        fast = p.__class__()
-        indexing = {}
-        for (key, obj) in p.items():
-            if obj:
-                is_fast = obj.tstep < tau
-                is_slow = ~is_fast
-                slow[key] = obj[is_slow]
-                fast[key] = obj[is_fast]
-                indexing[key] = {'is_slow': is_slow, 'is_fast': is_fast}
-            else:
-                indexing[key] = {'is_slow': None, 'is_fast': None}
-
-        # prevents the occurrence of a slow level with only one particle.
-        if slow.get_nbody() == 1:
-            for (key, obj) in p.items():
-                if obj:
-                    is_slow = indexing[key]['is_slow']
-                    is_fast = indexing[key]['is_fast']
-                    is_slow[is_slow] = False
-                    is_fast[~is_fast] = True
-                    slow[key] = obj[is_slow]
-                    fast[key] = obj[is_fast]
-
-        # prevents the occurrence of a fast level with only one particle.
-        if fast.get_nbody() == 1:
-            for (key, obj) in p.items():
-                if obj:
-                    is_slow = indexing[key]['is_slow']
-                    is_fast = indexing[key]['is_fast']
-                    is_fast[is_fast] = False
-                    is_slow[~is_slow] = True
-                    slow[key] = obj[is_slow]
-                    fast[key] = obj[is_fast]
-
-        return slow, fast, indexing
-
-
-    def merge(self, p, slow, fast, indexing):
-        # XXX: known bug: numpy fancy indexing in 'split' method returns a copy
-        #                 but we want a view. That's why this 'merge' method
-        #                 is needed so that after play with slow/fast returned
-        #                 from 'split' we should inform p about the changes.
-        for (key, obj) in p.items():
-            if obj:
-                if indexing[key]['is_slow'] is not None:
-                    obj.data[indexing[key]['is_slow']] = slow[key].data
-
-                if indexing[key]['is_fast'] is not None:
-                    obj.data[indexing[key]['is_fast']] = fast[key].data
-
-
-    def rstep(self, p, tau, update_tstep):
-        if update_tstep: p.update_tstep(p, self.eta)
-        slow, fast, indexing = self.split(tau, p)
-
-        if fast.get_nbody() == 1: logger.error("fast level contains only *one* particle.")
-        if slow.get_nbody() == 1: logger.error("slow level contains only *one* particle.")
-
-        # meth 0:
-        if fast.get_nbody() == 0: self.time += tau / 2
-        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, False)
-        if slow.get_nbody() > 0: self.stepDKD(slow, fast, tau)
-        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-        if fast.get_nbody() == 0: self.time += tau / 2
-
-#        # meth 1:
-#        if fast.get_nbody() == 0: self.time += tau / 2
-#        if slow.get_nbody() > 0: self.stepDKD(slow, fast, tau / 2)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if slow.get_nbody() > 0: self.stepDKD(slow, fast, tau / 2)
-#        if fast.get_nbody() == 0: self.time += tau / 2
-
-#        # meth 2:
-#        if fast.get_nbody() == 0: self.time += tau / 2
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(slow, fast, tau / 2)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(fast, slow, tau / 2)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if slow.get_nbody() > 0: self.stepDKD(slow, fast, tau)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(fast, slow, tau / 2)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(slow, fast, tau / 2)
-#        if fast.get_nbody() == 0: self.time += tau / 2
-
-#        # meth 3 (CoM is not conserved):
-#        if fast.get_nbody() == 0: self.time += tau / 2
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, False)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(slow, fast, tau / 2)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(fast, slow, tau / 2)
-#        if slow.get_nbody() > 0: self.stepDKD(slow, fast, tau)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(fast, slow, tau / 2)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(slow, fast, tau / 2)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if fast.get_nbody() == 0: self.time += tau / 2
-
-#        # meth 4:
-#        if fast.get_nbody() == 0: self.time += tau / 2
-#        if slow.get_nbody() > 0: self.stepDKD(slow, fast, tau / 2)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, False)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(slow, fast, tau)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(fast, slow, tau)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if slow.get_nbody() > 0: self.stepDKD(slow, fast, tau / 2)
-#        if fast.get_nbody() == 0: self.time += tau / 2
-
-#        # meth 5:
-#        if fast.get_nbody() == 0: self.time += tau / 2
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, False)
-#        if slow.get_nbody() > 0: self.stepDKD(slow, fast, tau / 2)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(slow, fast, tau)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(fast, slow, tau)
-#        if slow.get_nbody() > 0: self.stepDKD(slow, fast, tau / 2)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if fast.get_nbody() == 0: self.time += tau / 2
-
-#        # meth 6:
-#        if fast.get_nbody() == 0: self.time += tau / 2
-#        if slow.get_nbody() > 0: self.drift(slow, tau / 2)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, False)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(fast, slow, tau)
-#        if slow.get_nbody() > 0: self.kick(slow, slow, tau)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(slow, fast, tau)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if slow.get_nbody() > 0: self.drift(slow, tau / 2)
-#        if fast.get_nbody() == 0: self.time += tau / 2
-
-#        # meth 7:
-#        if fast.get_nbody() == 0: self.time += tau / 2
-#        if slow.get_nbody() > 0: self.drift(slow, tau / 2)
-#        if slow.get_nbody() > 0: self.kick(slow, slow, tau / 2)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, False)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(fast, slow, tau)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(slow, fast, tau)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if slow.get_nbody() > 0: self.kick(slow, slow, tau / 2)
-#        if slow.get_nbody() > 0: self.drift(slow, tau / 2)
-#        if fast.get_nbody() == 0: self.time += tau / 2
-
-#        # meth 8:
-#        if fast.get_nbody() == 0: self.time += tau / 2
-#        if slow.get_nbody() > 0: self.drift(slow, tau / 2)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(fast, slow, tau / 2)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(slow, fast, tau / 2)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if slow.get_nbody() > 0: self.kick(slow, slow, tau)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(fast, slow, tau / 2)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(slow, fast, tau / 2)
-#        if slow.get_nbody() > 0: self.drift(slow, tau / 2)
-#        if fast.get_nbody() == 0: self.time += tau / 2
-
-#        # meth 9:
-#        if fast.get_nbody() == 0: self.time += tau / 2
-#        if slow.get_nbody() > 0: self.drift(slow, tau / 2)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(fast, slow, tau / 2)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(slow, fast, tau / 2)
-#        if slow.get_nbody() > 0: self.kick(slow, slow, tau / 2)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if fast.get_nbody() > 0: self.rstep(fast, tau / 2, True)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(fast, slow, tau / 2)
-#        if slow.get_nbody() > 0 and fast.get_nbody() > 0: self.kick(slow, fast, tau / 2)
-#        if slow.get_nbody() > 0: self.kick(slow, slow, tau / 2)
-#        if slow.get_nbody() > 0: self.drift(slow, tau / 2)
-#        if fast.get_nbody() == 0: self.time += tau / 2
-
-
-        self.merge(p, slow, fast, indexing)
+        self.time += self.tstep / 2
+        self.dkd(self.particles, self.tstep)
+        self.time += self.tstep / 2
 
 
 ########## end of file ##########
