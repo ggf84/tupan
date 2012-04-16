@@ -39,11 +39,12 @@ class HTS(LeapFrog):
 
 
     @timings
-    def step(self):
+    def step(self, t_end):
         """
 
         """
         tau = 1.0 / 8
+        tau = tau if self.time+tau < t_end else t_end-self.time
 
         if self.meth_type == 0:
             self.meth0(self.particles, tau, True)

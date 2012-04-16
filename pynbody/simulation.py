@@ -38,6 +38,7 @@ class Diagnostic(object):
 
     """
     def __init__(self, fname, particles):
+        self.time = 0.0
         self.fname = fname
 
         particles.update_phi(particles)
@@ -80,6 +81,7 @@ class Diagnostic(object):
 
     @timings
     def print_diagnostic(self, time, tstep, particles):
+        self.time = time
 
         particles.update_phi(particles)
         ke = particles.get_total_kinetic_energy()
@@ -148,11 +150,10 @@ class Simulation(object):
         self.io = IO("snapshots", output_format=self.args.output_format)
         self.io.dump(particles)
 
-        # Initializes times for output a couple of things.
-        self.gl_steps = self.args.gl_freq
-        self.res_steps = self.args.res_freq
-        self.dt_dia = 1.0 / self.args.diag_freq
-        self.oldtime_dia = self.integrator.current_time
+        # Initializes some counters.
+        self.gl_steps = 0
+        self.res_steps = 0
+        self.diag_steps = 0
 
 
     @timings
@@ -174,16 +175,17 @@ class Simulation(object):
         if self.viewer:
             self.viewer.initialize()
 
-        while (self.integrator.current_time < self.args.tmax):
-            self.integrator.step()
+        while (self.integrator.current_time < self.args.t_end):
+            self.integrator.step(self.args.t_end)
             self.gl_steps += 1
             if (self.gl_steps >= self.args.gl_freq):
                 self.gl_steps -= self.args.gl_freq
                 if self.viewer:
                     particles = self.integrator.particles
                     self.viewer.show_event(particles.copy())
-            if (self.integrator.current_time - self.oldtime_dia >= self.dt_dia):
-                self.oldtime_dia += self.dt_dia
+            self.diag_steps += 1
+            if (self.diag_steps >= self.args.diag_freq):
+                self.diag_steps -= self.args.diag_freq
                 particles = self.integrator.particles
                 self.dia.print_diagnostic(self.integrator.current_time,
                                           self.integrator.tstep,
@@ -193,6 +195,14 @@ class Simulation(object):
             if (self.res_steps >= self.args.res_freq):
                 self.res_steps -= self.args.res_freq
                 self.dump_restart_file()
+
+        # final IO/diag operations
+        if self.dia.time < self.args.t_end:
+            particles = self.integrator.particles
+            self.dia.print_diagnostic(self.integrator.current_time,
+                                  self.integrator.tstep,
+                                  particles)
+            self.io.dump(particles)
 
         self.dump_restart_file()
         if self.viewer:
@@ -227,7 +237,7 @@ def _main_restart(args):
         fobj.close()
 
     # update args
-    mysim.args.tmax = args.tmax
+    mysim.args.t_end = args.t_end
     if not args.eta is None:
         mysim.integrator._meth.eta = args.eta
 
@@ -271,7 +281,7 @@ def main():
                         help="Parameter for time step determination (type: flo"
                              "at, default: None)."
                        )
-    newrun.add_argument("-t", "--tmax",
+    newrun.add_argument("-t", "--t_end",
                         type=float,
                         default=None,
                         required=True,
@@ -300,15 +310,15 @@ def main():
                        )
     newrun.add_argument("-d", "--diag_freq",
                         type=int,
-                        default=4,
-                        help="Diagnostic frequency of the simulation per time "
-                             "unit (type: int, default: 4)."
+                        default=64,
+                        help="Number of time-steps between diagnostic of the "
+                             "simulation (type: int, default: 64)."
                        )
     newrun.add_argument("-r", "--res_freq",
                         type=int,
-                        default=1000,
+                        default=1024,
                         help="Number of time-steps between rewrites of the "
-                             "restart file (type: int, default: 1000)."
+                             "restart file (type: int, default: 1024)."
                        )
     newrun.add_argument("--view",
                         action="store_true",
@@ -343,7 +353,7 @@ def main():
     restart = subparser.add_parser("restart",
                         description="Restart a simulation from a previous run.")
     # add the arguments to restart
-    restart.add_argument("-t", "--tmax",
+    restart.add_argument("-t", "--t_end",
                          type=float,
                          default=None,
                          required=True,

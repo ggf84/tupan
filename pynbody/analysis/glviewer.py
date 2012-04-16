@@ -119,8 +119,6 @@ class GLviewer(object):
 
     def initialize(self):
         self.init_window()
-        print('OpenGL Version: {0}'.format(gl.glGetString(gl.GL_VERSION)),
-              file=sys.stderr)
         self.init_gl()
 
 

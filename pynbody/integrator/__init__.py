@@ -32,8 +32,8 @@ class Integrator(object):
                             method, str(self.PROVIDED_METHODS))
 
 
-    def step(self):
-        self.integrator.step()
+    def step(self, t_end):
+        self.integrator.step(t_end)
 
     @property
     def tstep(self):

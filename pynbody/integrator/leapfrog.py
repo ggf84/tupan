@@ -140,12 +140,14 @@ class LeapFrog(object):
 
 
     @timings
-    def step(self):
+    def step(self, t_end):
         """
 
         """
         self.particles.update_timestep(self.particles, self.eta)
         self.tstep = self.get_min_block_tstep()
+
+        self.tstep = self.tstep if self.time+self.tstep < t_end else t_end-self.time
 
         self.time += self.tstep / 2
         self.dkd(self.particles, self.tstep)
