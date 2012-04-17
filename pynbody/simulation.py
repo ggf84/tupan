@@ -63,20 +63,16 @@ class Diagnostic(object):
 
 
     def print_header(self):
-        fmt = '{0:10s} {1:10s} '\
-              '{2:10s} {3:10s} {4:13s} '\
+        fmt = '{0:13s} {1:10s} '\
+              '{2:10s} {3:10s} {4:15s} '\
               '{5:10s} {6:10s} {7:10s} '\
-              '{8:9s} {9:9s} {10:9s} '\
-              '{11:9s} {12:9s} {13:9s} '\
-              '{14:9s} {15:9s} {16:9s} '\
-              '{17:9s} {18:9s} {19:9s}'
+              '{8:10s} {9:10s} {10:10s} '\
+              '{11:10s}'
         myprint(fmt.format('#00:time', '#01:tstep',
-                           '#02:ekin', '#03:epot', '#04:etot',
-                           '#05:evir', '#06:eerr', '#07:geerr',
-                           '#08:rcomX', '#09:rcomY', '#10:rcomZ',
-                           '#11:vcomX', '#12:vcomY', '#13:vcomZ',
-                           '#14:lmomX', '#15:lmomY', '#16:lmomZ',
-                           '#17:amomX', '#18:amomY', '#19:amomZ'),
+                           '#02:ke', '#03:pe', '#04:te',
+                           '#05:ve', '#06:eerr', '#07:geerr',
+                           '#08:rcom', '#09:vcom', '#10:lmom',
+                           '#11:amom'),
                 self.fname, 'w')
 
     @timings
@@ -98,18 +94,16 @@ class Diagnostic(object):
         self.ceerr += eerr**2
         self.count += 1
         geerr = math.sqrt(self.ceerr / self.count)
-        dRcom = (rcom-self.rcom0)
-        dVcom = (vcom-self.vcom0)
-        dLmom = (lmom-self.lmom0)
-        dAmom = (amom-self.amom0)
+        dRcom = (((rcom-self.rcom0)**2).sum())**0.5
+        dVcom = (((vcom-self.vcom0)**2).sum())**0.5
+        dLmom = (((lmom-self.lmom0)**2).sum())**0.5
+        dAmom = (((amom-self.amom0)**2).sum())**0.5
 
-        fmt = '{time:< 10.3e} {tstep:< 10.3e} '\
-              '{ke:< 10.3e} {pe:< 10.3e} {te:< 13.6e} '\
+        fmt = '{time:< 13.6e} {tstep:< 10.3e} '\
+              '{ke:< 10.3e} {pe:< 10.3e} {te:< 15.8e} '\
               '{ve:< 10.3e} {eerr:< 10.3e} {geerr:< 10.3e} '\
-              '{rcom[0]:< 9.2e} {rcom[1]:< 9.2e} {rcom[2]:< 9.2e} '\
-              '{vcom[0]:< 9.2e} {vcom[1]:< 9.2e} {vcom[2]:< 9.2e} '\
-              '{lmom[0]:< 9.2e} {lmom[1]:< 9.2e} {lmom[2]:< 9.2e} '\
-              '{amom[0]:< 9.2e} {amom[1]:< 9.2e} {amom[2]:< 9.2e}'
+              '{rcom:< 10.3e} {vcom:< 10.3e} {lmom:< 10.3e} '\
+              '{amom:< 10.3e}'
         myprint(fmt.format(time=time, tstep=tstep,
                            ke=ke, pe=pe,
                            te=te, ve=ve,

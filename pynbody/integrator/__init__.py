@@ -24,9 +24,11 @@ class Integrator(object):
         if method == "leapfrog":
             logger.info("Using 'leapfrog' integrator.")
             self.integrator = leapfrog.LeapFrog(eta, time, particles)
+            self.integrator.init_for_integration()
         elif method == "hts":
             logger.info("Using 'hts' integrator.")
             self.integrator = hts.HTS(eta, time, particles)
+            self.integrator.init_for_integration()
         else:
             logger.critical("Unexpected integrator method: '%s'. Provided methods: %s",
                             method, str(self.PROVIDED_METHODS))

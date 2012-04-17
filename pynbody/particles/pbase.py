@@ -325,6 +325,12 @@ class Pbase(object):
 
     ### evolve
 
+    def evolve_current_time(self, tau):
+        """
+        Evolves current time by tau.
+        """
+        self.t_curr += tau
+
     def evolve_position(self, tau):
         """
         Evolves position in time.

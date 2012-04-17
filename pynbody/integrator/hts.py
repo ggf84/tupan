@@ -26,6 +26,18 @@ class HTS(LeapFrog):
         super(HTS, self).__init__(eta, time, particles)
 
 
+    def init_for_integration(self):
+        p = self.particles
+
+        p.update_acc(p)
+        p.update_pnacc(p)
+        p.set_dt_prev()
+        p.update_timestep(p, self.eta)
+        p.set_dt_next()
+
+        self.tstep = self.eta   # unsused: provisionally sets tstep as eta
+
+
     @timings
     def dkd(self, slow, fast, tau):
         """
@@ -73,15 +85,17 @@ class HTS(LeapFrog):
     ### meth0
 
     def meth0(self, p, tau, update_timestep):
+#        if update_timestep: p.update_timestep(p, self.eta)      # False/True
         slow, fast, indexing = self.split(tau, p, update_timestep)
 
         if fast.get_nbody() == 0: self.time += tau / 2
-        if fast.get_nbody() > 0: self.meth0(fast, tau / 2, False)
-        if slow.get_nbody() > 0: self.dkd(slow, fast, tau)
         if fast.get_nbody() > 0: self.meth0(fast, tau / 2, True)
+        if slow.get_nbody() > 0: self.dkd(slow, fast, tau)
+        if fast.get_nbody() > 0: self.meth0(fast, tau / 2, False)
         if fast.get_nbody() == 0: self.time += tau / 2
 
-        self.merge(p, slow, fast, indexing)
+        self.merge(p, slow, fast, indexing, update_timestep)
+        if update_timestep: p.update_timestep(p, self.eta)      # True/False
 
 
     ### meth1
@@ -250,7 +264,7 @@ class HTS(LeapFrog):
     ### split
 
     def split(self, tau, p, update_timestep):
-        if update_timestep: p.update_timestep(p, self.eta)
+#        if update_timestep: p.update_timestep(p, self.eta)
 
         slow = p.__class__()
         fast = p.__class__()
@@ -295,7 +309,7 @@ class HTS(LeapFrog):
 
     ### merge
 
-    def merge(self, p, slow, fast, indexing):
+    def merge(self, p, slow, fast, indexing, update_timestep):
         # XXX: known bug: numpy fancy indexing in 'split' method returns a copy
         #                 but we want a view. That's why this 'merge' method
         #                 is needed so that after play with slow/fast returned
@@ -308,5 +322,6 @@ class HTS(LeapFrog):
                 if indexing[key]['is_fast'] is not None:
                     obj.data[indexing[key]['is_fast']] = fast[key].data
 
+#        if update_timestep: p.update_timestep(p, self.eta)
 
 ########## end of file ##########

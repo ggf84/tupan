@@ -289,4 +289,23 @@ class Particles(dict):
                 iobj.dt_next = eta/iomega
 
 
+    ### prev/next timestep
+
+    def set_dt_prev(self):
+        """
+
+        """
+        for obj in self.values():
+            if obj:
+                obj.dt_prev = obj.dt_next.copy()
+
+    def set_dt_next(self):
+        """
+
+        """
+        for obj in self.values():
+            if obj:
+                obj.dt_next = obj.dt_next   # (obj.dt_next**2)/obj.dt_prev
+
+
 ########## end of file ##########
