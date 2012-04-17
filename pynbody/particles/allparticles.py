@@ -308,4 +308,100 @@ class Particles(dict):
                 obj.dt_next = obj.dt_next   # (obj.dt_next**2)/obj.dt_prev
 
 
+    def min_dt_prev(self):
+        """
+
+        """
+        min_value = sys.float_info.max
+        for obj in self.values():
+            if obj:
+                min_value = min(min_value, obj.dt_prev.min())
+        return min_value
+
+    def min_dt_next(self):
+        """
+
+        """
+        min_value = sys.float_info.max
+        for obj in self.values():
+            if obj:
+                min_value = min(min_value, obj.dt_next.min())
+        return min_value
+
+
+    def max_dt_prev(self):
+        """
+
+        """
+        max_value = 0.0
+        for obj in self.values():
+            if obj:
+                max_value = max(max_value, obj.dt_prev.max())
+        return max_value
+
+    def max_dt_next(self):
+        """
+
+        """
+        max_value = 0.0
+        for obj in self.values():
+            if obj:
+                max_value = max(max_value, obj.dt_next.max())
+        return max_value
+
+
+    def mean_dt_prev(self):
+        """
+
+        """
+        n = 0
+        mean_value = 0.0
+        for obj in self.values():
+            if obj:
+                mean_value += obj.dt_prev.sum()
+                n += len(obj)
+        mean_value = mean_value / n
+        return mean_value
+
+    def mean_dt_next(self):
+        """
+
+        """
+        n = 0
+        mean_value = 0.0
+        for obj in self.values():
+            if obj:
+                mean_value += obj.dt_next.sum()
+                n += len(obj)
+        mean_value = mean_value / n
+        return mean_value
+
+
+    def harmonic_mean_dt_prev(self):
+        """
+
+        """
+        n = 0
+        harmonic_mean_value = 0.0
+        for obj in self.values():
+            if obj:
+                harmonic_mean_value += (1 / obj.dt_prev).sum()
+                n += len(obj)
+        harmonic_mean_value = n / harmonic_mean_value
+        return harmonic_mean_value
+
+    def harmonic_mean_dt_next(self):
+        """
+
+        """
+        n = 0
+        harmonic_mean_value = 0.0
+        for obj in self.values():
+            if obj:
+                harmonic_mean_value += (1 / obj.dt_next).sum()
+                n += len(obj)
+        harmonic_mean_value = n / harmonic_mean_value
+        return harmonic_mean_value
+
+
 ########## end of file ##########

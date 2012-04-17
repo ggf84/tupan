@@ -25,6 +25,7 @@ class LeapFrog(object):
         self.time = time
         self.particles = particles
         self.n2_sum = 0
+        self.nkick = 0
 
 
     def init_for_integration(self):
@@ -139,9 +140,11 @@ class LeapFrog(object):
         ni = ip.get_nbody()
         nj = jp.get_nbody()
         self.n2_sum += ni*nj
+        self.nkick += 1
         ntot = self.particles.get_nbody()
-#        if ni == ntot and nj == ntot:
-#            print(ni, nj, self.n2_sum)
+        if ni == ntot and nj == ntot:
+            print(ni, nj, self.n2_sum)
+#        print(self.n2_sum, self.nkick, self.n2_sum/self.nkick)
 
 
     @timings
