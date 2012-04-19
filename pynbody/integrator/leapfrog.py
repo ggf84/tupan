@@ -20,44 +20,52 @@ class LeapFrog(object):
     """
 
     """
-    def __init__(self, eta, time, particles):
+    def __init__(self, eta, time, particles, **kwargs):
         self.eta = eta
         self.time = time
         self.particles = particles
+        self.tstep = 0.0
+        self.is_initialized = False
         self.n2_sum = 0
         self.nkick = 0
+        self.dumpper = kwargs.pop("dumpper", None)
+        self.snap_freq = kwargs.pop("snap_freq")
+        if kwargs:
+            msg = "{0}.__init__ received unexpected keyword arguments: {1}."
+            raise TypeError(msg.format(self.__class__.__name__,
+                                       ", ".join(kwargs.keys())))
 
 
-    def init_for_integration(self):
+    @timings
+    def init_for_integration(self, t_end):
+        logger.info("Initializing for integration.")
+
         p = self.particles
 
         p.update_acc(p)
         p.update_pnacc(p)
-        p.set_dt_prev()
+        p.set_dt_prev(0.0)
         p.update_timestep(p, self.eta)
-        p.set_dt_next()
-
-        tau = self.get_min_block_tstep(p)
+        tau = self.get_min_block_tstep(p, t_end)
+        p.set_dt_next(tau)
         self.tstep = tau
 
+        self.snap_counter = 0
+        if self.dumpper: self.dumpper.dump(p)
+        self.is_initialized = True
 
-    def get_min_block_tstep(self, p):
-        min_tstep = 1.0
-        for obj in p.values():
-            if obj:
-                min_tstep = min(min_tstep, obj.dt_next.min())
+
+    def get_min_block_tstep(self, p, t_end):
+        min_tstep = p.min_dt_next()
 
         power = int(np.log2(min_tstep) - 1)
-        min_tstep = 2.0**power
+        min_block_tstep = 2.0**power
 
-        if (self.time+min_tstep)%(min_tstep) != 0:
-            min_tstep /= 2
+        if (self.time+min_block_tstep)%(min_block_tstep) != 0:
+            min_block_tstep /= 2
 
-        for obj in p.values():
-            if obj:
-                obj.dt_next = min_tstep
-
-        return min_tstep
+        tau = min_block_tstep if self.time+min_block_tstep < t_end else t_end-self.time
+        return tau
 
 
     @timings
@@ -162,6 +170,9 @@ class LeapFrog(object):
         """
 
         """
+        if not self.is_initialized:
+            self.init_for_integration(t_end)
+
         tau = self.tstep
         p = self.particles
 
@@ -169,12 +180,16 @@ class LeapFrog(object):
         self.dkd(self.particles, tau)
         self.time += self.tstep / 2
 
-        p.set_dt_prev()
+        p.set_dt_prev(tau)
         p.update_timestep(p, self.eta)
-        p.set_dt_next()
-
-        tau = self.get_min_block_tstep(p)
-        self.tstep = tau if self.time+tau < t_end else t_end-self.time
+        tau = self.get_min_block_tstep(p, t_end)
+        p.set_dt_next(tau)
+        self.tstep = tau
+        if self.dumpper:
+            self.snap_counter += 1
+            if (self.snap_counter >= self.snap_freq):
+                self.snap_counter -= self.snap_freq
+                self.dumpper.dump(p)
 
 
 ########## end of file ##########

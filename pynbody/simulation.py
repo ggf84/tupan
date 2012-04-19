@@ -130,19 +130,21 @@ class Simulation(object):
         fname = self.args.input_file
         particles = IO(fname).load()
 
+        # Initializes snapshots output.
+        self.io = IO("snapshots", output_format=self.args.output_format)
+#        self.io.dump(particles)
+
         # Initializes the integrator.
-        self.integrator = Integrator(self.args.eta, 0.0, particles,
-                                     method=self.args.meth)
+        self.integrator = Integrator(self.args.eta, self.args.t_begin, particles,
+                                     method=self.args.meth, dumpper=self.io,
+                                     snap_freq=self.args.snap_freq)
+        self.integrator.init_for_integration(self.args.t_end)
 
         # Initializes the diagnostic of the simulation.
         self.dia = Diagnostic(self.args.log_file, particles)
         self.dia.print_diagnostic(self.integrator.current_time,
                                   self.integrator.tstep,
                                   particles)
-
-        # Initializes snapshots output.
-        self.io = IO("snapshots", output_format=self.args.output_format)
-        self.io.dump(particles)
 
         # Initializes some counters.
         self.gl_steps = 0
@@ -184,7 +186,7 @@ class Simulation(object):
                 self.dia.print_diagnostic(self.integrator.current_time,
                                           self.integrator.tstep,
                                           particles)
-                self.io.dump(particles)
+#                self.io.dump(particles)
             self.res_steps += 1
             if (self.res_steps >= self.args.res_freq):
                 self.res_steps -= self.args.res_freq
@@ -282,6 +284,12 @@ def main():
                         help="Time to end the simulation (type: float, default"
                              ": None)."
                        )
+    newrun.add_argument("--t_begin",
+                        type=float,
+                        default=0.0,
+                        help="Time to begin the simulation (type: float, default"
+                             ": 0.0)."
+                       )
     newrun.add_argument("-m", "--meth",
                         type=str,
                         default="leapfrog",
@@ -307,6 +315,12 @@ def main():
                         default=64,
                         help="Number of time-steps between diagnostic of the "
                              "simulation (type: int, default: 64)."
+                       )
+    newrun.add_argument("-s", "--snap_freq",
+                        type=int,
+                        default=16,
+                        help="Number of time-steps between snapshots of the "
+                             "simulation (type: int, default: 16)."
                        )
     newrun.add_argument("-r", "--res_freq",
                         type=int,

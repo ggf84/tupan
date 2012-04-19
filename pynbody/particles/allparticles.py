@@ -291,21 +291,21 @@ class Particles(dict):
 
     ### prev/next timestep
 
-    def set_dt_prev(self):
+    def set_dt_prev(self, tau):
         """
 
         """
         for obj in self.values():
             if obj:
-                obj.dt_prev = obj.dt_next.copy()
+                obj.dt_prev = tau
 
-    def set_dt_next(self):
+    def set_dt_next(self, tau):
         """
 
         """
         for obj in self.values():
             if obj:
-                obj.dt_next = obj.dt_next   # (obj.dt_next**2)/obj.dt_prev
+                obj.dt_next = tau
 
 
     def min_dt_prev(self):
