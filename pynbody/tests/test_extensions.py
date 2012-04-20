@@ -18,15 +18,17 @@ cext32 = Extensions(dtype='f', junroll=8)
 cext64 = Extensions(dtype='d', junroll=8)
 clext32 = Extensions(dtype='f', junroll=8)
 clext64 = Extensions(dtype='d', junroll=8)
-cext32.build_kernels(device='cpu')
-cext64.build_kernels(device='cpu')
-clext32.build_kernels(device='gpu')
-clext64.build_kernels(device='gpu')
+cext32.build_kernels(use_cl=False)
+cext64.build_kernels(use_cl=False)
+clext32.build_kernels(use_cl=True)
+clext64.build_kernels(use_cl=True)
 
 def set_particles(npart):
     if npart < 2: npart = 2
     from pynbody.models.imf import IMF
     from pynbody.models.plummer import Plummer
+    from pynbody.lib.extensions import kernel_library
+    kernel_library.build_kernels(use_cl=False)
     imf = IMF.padoan2007(0.075, 120.0)
     p = Plummer(npart, imf, eps=0.0, seed=1)
     p.make_plummer()

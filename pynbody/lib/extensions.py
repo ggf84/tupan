@@ -189,7 +189,7 @@ class Extensions(object):
         self.clext = CLExtensions(dtype=self.dtype, junroll=self.junroll)
 
 
-    def build_kernels(self, device='cpu'):
+    def build_kernels(self, use_cl=False):
         logger.debug("Building kernels...")
         self.cext.build_kernels()
         try:
@@ -199,13 +199,13 @@ class Extensions(object):
             has_cl = False
             logger.exception(exc)
 
-        if device == 'cpu':
+        if not use_cl:
             self.extension = self.cext
             logger.debug("Using C extensions.")
-        elif device == 'gpu' and has_cl:
+        elif use_cl and has_cl:
             self.extension = self.clext
             logger.debug("Using CL extensions.")
-        if device == 'gpu' and not has_cl:
+        if use_cl and not has_cl:
             msg = ("Sorry, a problem occurred while trying to build OpenCL extensions."
                    "\nDo you want to continue with C extensions ([y]/n)? ")
             ans = raw_input(msg)
@@ -220,9 +220,7 @@ class Extensions(object):
         return self.extension.get_kernel(kernel_name)
 
 
-
 kernel_library = Extensions(dtype='d', junroll=8)
-kernel_library.build_kernels(device='cpu')
 
 
 ########## end of file ##########
