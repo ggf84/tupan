@@ -133,7 +133,6 @@ class Simulation(object):
 
         # Initializes snapshots output.
         self.io = IO("snapshots", output_format=self.args.output_format)
-#        self.io.dump(particles)
 
         # Initializes the integrator.
         self.integrator = Integrator(self.args.eta, self.args.t_begin, particles,
@@ -187,7 +186,6 @@ class Simulation(object):
                 self.dia.print_diagnostic(self.integrator.current_time,
                                           self.integrator.tstep,
                                           particles)
-#                self.io.dump(particles)
             self.res_steps += 1
             if (self.res_steps >= self.args.res_freq):
                 self.res_steps -= self.args.res_freq
@@ -199,8 +197,8 @@ class Simulation(object):
             self.dia.print_diagnostic(self.integrator.current_time,
                                   self.integrator.tstep,
                                   particles)
-            self.io.dump(particles)
 
+#        self.io.dump(particles)
         self.dump_restart_file()
         if self.viewer:
             self.viewer.enter_main_loop()

@@ -26,20 +26,16 @@ class HTS(LeapFrog):
         super(HTS, self).__init__(eta, time, particles, **kwargs)
 
 
-    def calc_block_step(self, p):
-        """
+    def get_max_block_tstep(self, p):
+        max_tstep = p.max_dt_next()
 
-        """
-        for obj in p.values():
-            power = (np.log2(obj.dt_next) - 1).astype(np.int)
-            block_tstep = 2.0**power
-            mod = (obj.t_curr+block_tstep)%(block_tstep)
-            is_ne_zero = (mod != 0)
-            while is_ne_zero.any():
-                block_tstep[np.where(is_ne_zero)] /= 2
-                mod = (obj.t_curr+block_tstep)%(block_tstep)
-                is_ne_zero = (mod != 0)
-            obj.dt_next = block_tstep
+        power = int(np.log2(max_tstep) - 1)
+        max_block_tstep = 2.0**power
+
+        if (self.time+max_block_tstep)%(max_block_tstep) != 0:
+            max_block_tstep /= 2
+
+        return max_block_tstep
 
 
     @timings
@@ -50,21 +46,18 @@ class HTS(LeapFrog):
 
         p.update_acc(p)
         p.update_pnacc(p)
-        p.set_dt_prev(0.0)
         p.update_timestep(p, self.eta)
-        tau = 1.0/8     #self.get_min_block_tstep(p, t_end)
-        self.calc_block_step(p)
-#        p.set_dt_next(tau)
-        self.tstep = tau
 
-#        tau = 1.0/8
-##        tau = p.max_dt_next()
-##        tau = p.mean_dt_next()
-##        tau = p.harmonic_mean_dt_next()
+        tau = 1.0/4
+#        tau = p.max_dt_next()
+#        tau = p.mean_dt_next()
+#        tau = p.harmonic_mean_dt_next()
 #        self.tstep = tau if self.time+tau < t_end else t_end-self.time
 
+#        tau = self.get_max_block_tstep(p)
+        self.tstep = tau
+
         self.snap_counter = {}
-        if self.dumpper: self.dumpper.dump(p)
         self.is_initialized = True
 
 
@@ -115,13 +108,14 @@ class HTS(LeapFrog):
         else:
             raise ValueError("Unexpected HTS method type.")
 
-        tau = 1.0/8
-#        tau = self.get_min_block_tstep(p, t_end)
-        self.tstep = tau
+        tau = 1.0/4
 #        tau = p.max_dt_next()
 #        tau = p.mean_dt_next()
 #        tau = p.harmonic_mean_dt_next()
 #        self.tstep = tau if self.time+tau < t_end else t_end-self.time
+
+#        tau = self.get_max_block_tstep(p)
+        self.tstep = tau
 
 
     ### meth0
@@ -131,7 +125,15 @@ class HTS(LeapFrog):
 #        if update_timestep: p.update_timestep(p, self.eta)      # False/True
         slow, fast, indexing = self.split(tau, p)
 
-        if slow.get_nbody() > 0: slow.set_dt_prev(tau)
+        if slow.get_nbody() > 0: slow.set_dt_next(tau)
+
+        if self.dumpper and slow.get_nbody() > 0:
+            if not self.level in self.snap_counter:
+                self.snap_counter[self.level] = self.snap_freq
+            self.snap_counter[self.level] += 1
+            if (self.snap_counter[self.level] >= self.snap_freq):
+                self.snap_counter[self.level] -= self.snap_freq
+                self.dumpper.dump(slow)
 
         if fast.get_nbody() == 0: self.time += tau / 2
         if fast.get_nbody() > 0: self.meth0(fast, tau / 2, True)
@@ -139,17 +141,11 @@ class HTS(LeapFrog):
         if fast.get_nbody() > 0: self.meth0(fast, tau / 2, False)
         if fast.get_nbody() == 0: self.time += tau / 2
 
+        if slow.get_nbody() > 0: slow.set_dt_prev(tau)
+
         self.merge(p, slow, fast, indexing)
-        if update_timestep:
-            p.update_timestep(p, self.eta)      # True/False
-            if self.dumpper:
-                if not self.level in self.snap_counter:
-                    self.snap_counter[self.level] = 0
-                self.snap_counter[self.level] += 1
-                if (self.snap_counter[self.level] >= self.snap_freq):
-                    self.snap_counter[self.level] -= self.snap_freq
-                    self.calc_block_step(p)
-                    self.dumpper.dump(p)
+        if update_timestep: p.update_timestep(p, self.eta)      # True/False
+
         self.level -= 1
 
 

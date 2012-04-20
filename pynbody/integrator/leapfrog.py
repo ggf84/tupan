@@ -44,14 +44,13 @@ class LeapFrog(object):
 
         p.update_acc(p)
         p.update_pnacc(p)
-        p.set_dt_prev(0.0)
         p.update_timestep(p, self.eta)
+
         tau = self.get_min_block_tstep(p, t_end)
         p.set_dt_next(tau)
         self.tstep = tau
 
-        self.snap_counter = 0
-        if self.dumpper: self.dumpper.dump(p)
+        self.snap_counter = self.snap_freq
         self.is_initialized = True
 
 
@@ -64,8 +63,9 @@ class LeapFrog(object):
         if (self.time+min_block_tstep)%(min_block_tstep) != 0:
             min_block_tstep /= 2
 
-        tau = min_block_tstep if self.time+min_block_tstep < t_end else t_end-self.time
-        return tau
+#        tau = min_block_tstep if self.time+min_block_tstep < t_end else t_end-self.time
+#        return tau
+        return min_block_tstep
 
 
     @timings
@@ -176,20 +176,22 @@ class LeapFrog(object):
         tau = self.tstep
         p = self.particles
 
-        self.time += self.tstep / 2
-        self.dkd(self.particles, tau)
-        self.time += self.tstep / 2
-
-        p.set_dt_prev(tau)
-        p.update_timestep(p, self.eta)
         tau = self.get_min_block_tstep(p, t_end)
         p.set_dt_next(tau)
         self.tstep = tau
+
         if self.dumpper:
             self.snap_counter += 1
             if (self.snap_counter >= self.snap_freq):
                 self.snap_counter -= self.snap_freq
                 self.dumpper.dump(p)
+
+        self.time += self.tstep / 2
+        self.dkd(p, tau)
+        self.time += self.tstep / 2
+
+        p.set_dt_prev(tau)
+        p.update_timestep(p, self.eta)
 
 
 ########## end of file ##########
