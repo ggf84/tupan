@@ -48,6 +48,7 @@ class Particles(dict):
             if "blackhole" in types and types["blackhole"] > 0:
                 self["blackhole"] = BlackHole(types["blackhole"])
 
+        self.n = 0
         super(Particles, self).__init__()
 
 
@@ -57,13 +58,6 @@ class Particles(dict):
 
     def __repr__(self):
         return '{0}({1})'.format(self.__class__.__name__, dict(self))
-
-    def __len__(self):
-        n = 0
-        for obj in self.values():
-            if obj:
-                n += len(obj)
-        return n
 
     def copy(self):
         return copy.deepcopy(self)
@@ -80,13 +74,12 @@ class Particles(dict):
         elif isinstance(objs, Sph):
             self["sph"].append(objs)
 
-
-    def get_nbody(self):
-        nb = 0
+    def update_n(self):
+        n = 0
         for obj in self.values():
             if obj:
-                nb += len(obj)
-        return nb
+                n += len(obj)
+        self.n = n
 
 
     #

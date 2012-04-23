@@ -344,4 +344,14 @@ class Pbase(object):
         self.vel += tau * self.acc
 
 
+    ### state
+
+    def get_state(self):
+        attrs = list(self.data.dtype.names[:10])
+        return self.data[attrs]
+
+    def set_state(self, state):
+        self.data = state.astype(self.dtype)
+
+
 ########## end of file ##########

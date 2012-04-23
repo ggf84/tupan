@@ -71,11 +71,15 @@ class Stream(yaml.YAMLObject):
         Convert a Python object to a representation node.
         """
         # default attributes
-        attributes = {'id': data.id, 'm': data.m, 't': data.t,
+        attributes = {'id': data.id, 'm': data.m, 't': data.t_curr,
                       'r': data.r, 'v': data.v, 'a': data.a}
         # PyNbody's specific attributes
         if hasattr(data, 'type'):
             attributes['type'] = data.type
+        if hasattr(data, 'dt_prev'):
+            attributes['dt_prev'] = data.dt_prev
+        if hasattr(data, 'dt_next'):
+            attributes['dt_next'] = data.dt_next
         if hasattr(data, 'eps2'):
             attributes['eps2'] = data.eps2
         if hasattr(data, 'pot'):
@@ -103,35 +107,40 @@ class Stream(yaml.YAMLObject):
             if objs:
                 for obj in objs:
                     p = cls()
-                    attributes = obj.dtype.names
+                    attributes = obj.data.dtype.names
                     # default attributes
-                    if 'index' in attributes:
-                        p.id = int(obj['index'])
+                    if 'id' in attributes:
+                        p.id = int(obj.id)
                     if 'mass' in attributes:
-                        p.m = float(obj['mass'])
-                    p.t = 0.0
+                        p.m = float(obj.mass)
                     if 'pos' in attributes:
-                        p.r = [float(obj['pos'][0]),
-                               float(obj['pos'][1]),
-                               float(obj['pos'][2])]
+                        p.r = [float(obj.pos[0]),
+                               float(obj.pos[1]),
+                               float(obj.pos[2])]
                     if 'vel' in attributes:
-                        p.v = [float(obj['vel'][0]),
-                               float(obj['vel'][1]),
-                               float(obj['vel'][2])]
+                        p.v = [float(obj.vel[0]),
+                               float(obj.vel[1]),
+                               float(obj.vel[2])]
                     if 'acc' in attributes:
-                        p.a = [float(obj['acc'][0]),
-                               float(obj['acc'][1]),
-                               float(obj['acc'][2])]
+                        p.a = [float(obj.acc[0]),
+                               float(obj.acc[1]),
+                               float(obj.acc[2])]
+                    if 't_curr' in attributes:
+                        p.t_curr = float(obj.t_curr)
                     # PyNbody's specific attributes
                     p.type = key
+                    if 'dt_prev' in attributes:
+                        p.dt_prev = float(obj.dt_prev)
+                    if 'dt_next' in attributes:
+                        p.dt_next = float(obj.dt_next)
                     if 'eps2' in attributes:
-                        p.eps2 = float(obj['eps2'])
+                        p.eps2 = float(obj.eps2)
                     if 'phi' in attributes:
-                        p.pot = float(obj['phi'])
+                        p.pot = float(obj.phi)
                     if 'spin' in attributes:
-                        p.s = [float(obj['spin'][0]),
-                               float(obj['spin'][1]),
-                               float(obj['spin'][2])]
+                        p.s = [float(obj.spin[0]),
+                               float(obj.spin[1]),
+                               float(obj.spin[2])]
 
                     data.append(p)
         return data
@@ -155,13 +164,17 @@ class Stream(yaml.YAMLObject):
         from pynbody.particles.blackhole import BlackHole
 
         def set_attributes(obj, index, item):
-            obj.index[index] = item['id']
+            obj.id[index] = item['id']
             obj.mass[index] = item['m']
-#            obj.t[index] = item['t']
+            obj.t_curr[index] = item['t']
             obj.pos[index] = item['r']
             obj.vel[index] = item['v']
             obj.acc[index] = item['a']
 
+            if 'dt_prev' in item:
+                obj.dt_prev[index] = item['dt_prev']
+            if 'dt_next' in item:
+                obj.dt_next[index] = item['dt_next']
             if 'eps2' in item:
                 obj.eps2[index] = item['eps2']
             if 'pot' in item:

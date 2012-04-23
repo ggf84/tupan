@@ -40,9 +40,11 @@ class HDF5IO(object):
             for (k, v) in particles.items():
                 if v:
                     dset_name = v.__class__.__name__.lower()
+                    state = v.get_state()   # XXX:
                     dset = group.require_dataset(dset_name,
                                                  (dset_length[k],),
-                                                 dtype=v.dtype,
+#                                                 dtype=v.dtype,
+                                                 dtype=state.dtype,
                                                  maxshape=(None,),
                                                  chunks=True,
                                                  compression='gzip',
@@ -51,7 +53,8 @@ class HDF5IO(object):
                     olen = len(dset)
                     dset.resize((olen+len(v),))
                     nlen = len(dset)
-                    dset[olen:nlen] = v.data
+#                    dset[olen:nlen] = v.data
+                    dset[olen:nlen] = state
 
 
     @timings
@@ -65,7 +68,8 @@ class HDF5IO(object):
             particles = pickle.loads(group.attrs['Class'])()
             for (k, v) in group.items():
                 obj = pickle.loads(v.attrs['Class'])()
-                obj.data = v[:]
+#                obj.data = v[:]
+                obj.set_state(v[:])
                 particles.append(obj)
         return particles
 

@@ -42,6 +42,7 @@ class LeapFrog(object):
 
         p = self.particles
 
+        p.update_n()
         p.update_acc(p)
         p.update_pnacc(p)
         p.update_timestep(p, self.eta)
@@ -145,11 +146,11 @@ class LeapFrog(object):
                 if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
                     obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
 
-        ni = ip.get_nbody()
-        nj = jp.get_nbody()
+        ni = ip.n
+        nj = jp.n
         self.n2_sum += ni*nj
         self.nkick += 1
-        ntot = self.particles.get_nbody()
+        ntot = self.particles.n
         if ni == ntot and nj == ntot:
             print(ni, nj, self.n2_sum)
 #        print(self.n2_sum, self.nkick, self.n2_sum/self.nkick)
