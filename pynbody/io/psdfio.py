@@ -169,8 +169,10 @@ class Stream(yaml.YAMLObject):
             obj.t_curr[index] = item['t']
             obj.pos[index] = item['r']
             obj.vel[index] = item['v']
-            obj.acc[index] = item['a']
+#            obj.acc[index] = item['a']
 
+            if 'a' in item:
+                obj.acc[index] = item['a']
             if 'dt_prev' in item:
                 obj.dt_prev[index] = item['dt_prev']
             if 'dt_next' in item:
@@ -213,8 +215,15 @@ class Stream(yaml.YAMLObject):
                     else:
                         p['sph'] = Sph(1)
                         set_attributes(p['sph'], 0, item)
+            else:
+                print("Unspecified particle type! Using by default the 'body' type.")
+                if p['body']:
+                    olen = len(p['body'])
+                    p['body'].append(Body(1))
+                    set_attributes(p['body'], olen, item)
                 else:
-                    print("Unspecified particle type!")
+                    p['body'] = Body(1)
+                    set_attributes(p['body'], 0, item)
 
         return p
 

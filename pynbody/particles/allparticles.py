@@ -278,7 +278,9 @@ class Particles(dict):
                 for jobj in objs.values():
                     if jobj:
                         ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
-                        iomega = np.maximum(iomega, ret)
+#                        iomega = np.maximum(iomega, ret)
+                        iomega += ret
+                iomega = iomega**0.5
                 iobj.dt_next = eta/iomega
 
 

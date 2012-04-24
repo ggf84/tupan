@@ -45,6 +45,7 @@ class HTS(LeapFrog):
         p = self.particles
 
         p.update_n()
+        p.update_phi(p)
         p.update_acc(p)
         p.update_pnacc(p)
         p.update_timestep(p, self.eta)
@@ -119,11 +120,42 @@ class HTS(LeapFrog):
         self.tstep = tau
 
 
+    ### heapq0
+
+    def heapq0(self, pheap, tau, update_timestep):
+        tstop = tau
+        while pheap[0][0] < tstop:
+            tnext, tau, p, slow, fast, indexing = heapq.heappop(pheap)
+
+            if fast.n == 0: self.time += tau / 2
+            if slow.n > 0: self.dkd(slow, fast, tau)
+            if fast.n == 0: self.time += tau / 2
+
+            self.merge(p, slow, fast, indexing)
+
+            if update_timestep: p.update_timestep(p, self.eta)      # True/False
+
+            slow, fast, indexing = self.split(tau/2, p)
+
+            if fast.n > 0:
+                tnext += tau/2
+                heapq.heappush(p, (tnext, tau/2, p, slow, fast, indexing))
+            else:
+                tnext += tau
+                heapq.heappush(p, (tnext, tau, p, slow, fast, indexing))
+
+
+
+
+
+
     ### meth0
 
     def meth0(self, p, tau, update_timestep):
         self.level += 1
 #        if update_timestep: p.update_timestep(p, self.eta)      # False/True
+#        if update_timestep: p.update_phi(p)      # False/True
+
         slow, fast, indexing = self.split(tau, p)
 
         if slow.n > 0: slow.set_dt_next(tau)
@@ -146,6 +178,7 @@ class HTS(LeapFrog):
 
         self.merge(p, slow, fast, indexing)
         if update_timestep: p.update_timestep(p, self.eta)      # True/False
+        if update_timestep: p.update_phi(p)      # True/False
 
         self.level -= 1
 
@@ -376,6 +409,7 @@ class HTS(LeapFrog):
 
         if fast.n == 1: logger.error("fast level contains only *one* particle.")
         if slow.n == 1: logger.error("slow level contains only *one* particle.")
+        if slow.n+fast.n != p.n: logger.error("slow.n+fast.n != p.n: slow: %d, fast: %d, p: %d.", slow.n, fast.n, p.n)
 
         return slow, fast, indexing
 
