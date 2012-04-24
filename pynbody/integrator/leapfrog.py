@@ -29,7 +29,7 @@ class LeapFrog(object):
         self.n2_sum = 0
         self.nkick = 0
         self.dumpper = kwargs.pop("dumpper", None)
-        self.snap_freq = kwargs.pop("snap_freq")
+        self.snap_freq = kwargs.pop("snap_freq", 0)
         if kwargs:
             msg = "{0}.__init__ received unexpected keyword arguments: {1}."
             raise TypeError(msg.format(self.__class__.__name__,
