@@ -101,7 +101,7 @@ class GLviewer(object):
 
 
     def set_particle(self, particle):
-        self.particle = particle
+        self.particle = particle.copy()
 
 
     def enter_main_loop(self):

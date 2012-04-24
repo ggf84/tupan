@@ -351,7 +351,9 @@ class Pbase(object):
         return self.data[attrs]
 
     def set_state(self, state):
-        self.data = state.astype(self.dtype)
+        self.data = np.zeros(len(state), dtype=self.dtype)
+        for name in state.dtype.names:
+            self.data[name] = state[name]
 
 
 ########## end of file ##########

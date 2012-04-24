@@ -178,7 +178,7 @@ class Simulation(object):
                 self.gl_steps -= self.args.gl_freq
                 if self.viewer:
                     particles = self.integrator.particles
-                    self.viewer.show_event(particles.copy())
+                    self.viewer.show_event(particles)
             self.diag_steps += 1
             if (self.diag_steps >= self.args.diag_freq):
                 self.diag_steps -= self.args.diag_freq
@@ -201,6 +201,8 @@ class Simulation(object):
 #        self.io.dump(particles)
         self.dump_restart_file()
         if self.viewer:
+            particles = self.integrator.particles
+            self.viewer.show_event(particles)
             self.viewer.enter_main_loop()
 
 
