@@ -151,8 +151,8 @@ class LeapFrog(object):
         self.n2_sum += ni*nj
         self.nkick += 1
         ntot = self.particles.n
-        if ni == ntot and nj == ntot:
-            print(ni, nj, self.n2_sum)
+#        if ni == ntot and nj == ntot:
+#            print(ni, nj, self.n2_sum)
 #        print(self.n2_sum, self.nkick, self.n2_sum/self.nkick)
 
 

@@ -7,6 +7,7 @@
 
 from __future__ import print_function
 import logging
+import heapq
 import numpy as np
 from .leapfrog import LeapFrog
 from ..lib.utils.timing import timings
@@ -88,7 +89,8 @@ class HTS(LeapFrog):
         self.level = 0
 
         if self.meth_type == 0:
-            self.meth0(p, tau, True)
+            p = self.meth0(p, tau, True)
+#            p = self.heapq0(p, tau, True)
         elif self.meth_type == 1:
             self.meth1(p, tau, True)
         elif self.meth_type == 2:
@@ -119,31 +121,64 @@ class HTS(LeapFrog):
         tau = self.get_max_block_tstep(p)
         self.tstep = tau
 
+        self.particles = p
+
 
     ### heapq0
 
-    def heapq0(self, pheap, tau, update_timestep):
-        tstop = tau
-        while pheap[0][0] < tstop:
-            tnext, tau, p, slow, fast, indexing = heapq.heappop(pheap)
+    def heapq0(self, p, tau, update_timestep):
 
-            if fast.n == 0: self.time += tau / 2
-            if slow.n > 0: self.dkd(slow, fast, tau)
-            if fast.n == 0: self.time += tau / 2
+        dt = tau
+        t = self.time
+        ph = []
+        while p.n > 0:
+            slow, fast, indexing = self.split(dt, p)
+            ph.append((t+dt, dt, p, slow, fast, indexing))
+            dt /= 2
+            p = fast
+        heapq.heapify(ph)
+
+        tstop = self.time+tau
+        while ph[0][0] < tstop:
+            (t, dt, p, slow, fast, indexing) = heapq.heappop(ph)
+            if fast.n > 0:
+                self.dkd(slow, fast, dt)
+                t += dt
+                self.time = t
 
             self.merge(p, slow, fast, indexing)
-
             if update_timestep: p.update_timestep(p, self.eta)      # True/False
-
-            slow, fast, indexing = self.split(tau/2, p)
+            if update_timestep: p.update_phi(p)      # True/False
+            slow, fast, indexing = self.split(dt/2, p)
 
             if fast.n > 0:
-                tnext += tau/2
-                heapq.heappush(p, (tnext, tau/2, p, slow, fast, indexing))
-            else:
-                tnext += tau
-                heapq.heappush(p, (tnext, tau, p, slow, fast, indexing))
+                heapq.heappush(ph, (t+dt/2, dt/2, p, slow, fast, indexing))
 
+            print(len(ph), p.n, p['body'].t_curr[0], self.time, t, dt)
+
+        return p
+
+
+#        tstop = tau
+#        while pheap[0][0] < tstop:
+#            tnext, tau, p, slow, fast, indexing = heapq.heappop(pheap)
+#
+#            if fast.n == 0: self.time += tau / 2
+#            if slow.n > 0: self.dkd(slow, fast, tau)
+#            if fast.n == 0: self.time += tau / 2
+#
+#            self.merge(p, slow, fast, indexing)
+#
+#            if update_timestep: p.update_timestep(p, self.eta)      # True/False
+#
+#            slow, fast, indexing = self.split(tau/2, p)
+#
+#            if fast.n > 0:
+#                tnext += tau/2
+#                heapq.heappush(p, (tnext, tau/2, p, slow, fast, indexing))
+#            else:
+#                tnext += tau
+#                heapq.heappush(p, (tnext, tau, p, slow, fast, indexing))
 
 
 
@@ -154,9 +189,9 @@ class HTS(LeapFrog):
     def meth0(self, p, tau, update_timestep):
         self.level += 1
 #        if update_timestep: p.update_timestep(p, self.eta)      # False/True
-#        if update_timestep: p.update_phi(p)      # False/True
+#        if update_timestep: p.update_phi(p)                     # False/True
 
-        slow, fast, indexing = self.split(tau, p)
+        slow, fast = self.split(tau, p)
 
         if slow.n > 0: slow.set_dt_next(tau)
 
@@ -169,18 +204,20 @@ class HTS(LeapFrog):
                 self.dumpper.dump(slow)
 
         if fast.n == 0: self.time += tau / 2
-        if fast.n > 0: self.meth0(fast, tau / 2, True)
+        if fast.n > 0: fast = self.meth0(fast, tau / 2, True)
         if slow.n > 0: self.dkd(slow, fast, tau)
-        if fast.n > 0: self.meth0(fast, tau / 2, False)
+        if fast.n > 0: fast = self.meth0(fast, tau / 2, False)
         if fast.n == 0: self.time += tau / 2
 
         if slow.n > 0: slow.set_dt_prev(tau)
 
-        self.merge(p, slow, fast, indexing)
+        p = self.merge(slow, fast)
         if update_timestep: p.update_timestep(p, self.eta)      # True/False
-        if update_timestep: p.update_phi(p)      # True/False
+        if update_timestep: p.update_phi(p)                     # True/False
 
         self.level -= 1
+
+        return p
 
 
     ### meth1
@@ -369,67 +406,44 @@ class HTS(LeapFrog):
     def split(self, tau, p):
         slow = p.__class__()
         fast = p.__class__()
-        indexing = {}
         for (key, obj) in p.items():
             if obj:
                 is_fast = obj.dt_next < tau
                 is_slow = ~is_fast
                 slow[key] = obj[is_slow]
                 fast[key] = obj[is_fast]
-                indexing[key] = {'is_slow': is_slow, 'is_fast': is_fast}
-            else:
-                indexing[key] = {'is_slow': None, 'is_fast': None}
 
         # prevents the occurrence of a slow level with only one particle.
         slow.update_n()
         if slow.n == 1:
-            for (key, obj) in p.items():
+            for (key, obj) in slow.items():
                 if obj:
-                    is_slow = indexing[key]['is_slow']
-                    is_fast = indexing[key]['is_fast']
-                    is_slow[is_slow] = False
-                    is_fast[~is_fast] = True
-                    slow[key] = obj[is_slow]
-                    fast[key] = obj[is_fast]
+                    fast[key].append(obj.pop())
 
         # prevents the occurrence of a fast level with only one particle.
         fast.update_n()
         if fast.n == 1:
-            for (key, obj) in p.items():
+            for (key, obj) in fast.items():
                 if obj:
-                    is_slow = indexing[key]['is_slow']
-                    is_fast = indexing[key]['is_fast']
-                    is_fast[is_fast] = False
-                    is_slow[~is_slow] = True
-                    slow[key] = obj[is_slow]
-                    fast[key] = obj[is_fast]
+                    slow[key].append(obj.pop())
 
         fast.update_n()
         slow.update_n()
 
         if fast.n == 1: logger.error("fast level contains only *one* particle.")
         if slow.n == 1: logger.error("slow level contains only *one* particle.")
-        if slow.n+fast.n != p.n: logger.error("slow.n+fast.n != p.n: slow: %d, fast: %d, p: %d.", slow.n, fast.n, p.n)
+        if slow.n + fast.n != p.n: logger.error("slow.n + fast.n != p.n: %d, %d, %d.", slow.n, fast.n, p.n)
 
-        return slow, fast, indexing
+        return slow, fast
 
 
     ### merge
 
-    def merge(self, p, slow, fast, indexing):
-        # XXX: known bug: numpy fancy indexing in 'split' method returns a copy
-        #                 but we want a view. That's why this 'merge' method
-        #                 is needed so that after play with slow/fast returned
-        #                 from 'split' we should inform p about the changes.
-        for (key, obj) in p.items():
-            if obj:
-                if indexing[key]['is_slow'] is not None:
-                    obj.data[indexing[key]['is_slow']] = slow[key].data
-
-                if indexing[key]['is_fast'] is not None:
-                    obj.data[indexing[key]['is_fast']] = fast[key].data
-
+    def merge(self, slow, fast):
+        p = slow
+        p.append(fast)
         p.update_n()
+        return p
 
 
 ########## end of file ##########
