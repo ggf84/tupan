@@ -40,8 +40,8 @@ class HTS(LeapFrog):
 
 
     @timings
-    def init_for_integration(self, t_end):
-        logger.info("Initializing for integration.")
+    def initialize_integrator(self, t_end):
+        logger.info("Initializing integrator.")
 
         p = self.particles
 
@@ -82,7 +82,7 @@ class HTS(LeapFrog):
 
         """
         if not self.is_initialized:
-            self.init_for_integration(t_end)
+            self.initialize_integrator(t_end)
 
         tau = self.tstep
         p = self.particles
@@ -211,7 +211,7 @@ class HTS(LeapFrog):
 
         if slow.n > 0: slow.set_dt_prev(tau)
 
-        p = self.merge(slow, fast)
+        p = self.join(slow, fast)
         if update_timestep: p.update_timestep(p, self.eta)      # True/False
         if update_timestep: p.update_phi(p)                     # True/False
 
@@ -437,12 +437,13 @@ class HTS(LeapFrog):
         return slow, fast
 
 
-    ### merge
+    ### join
 
-    def merge(self, slow, fast):
+    def join(self, slow, fast):
         p = slow
-        p.append(fast)
-        p.update_n()
+        if fast.n > 0:
+            p.append(fast)
+            p.update_n()
         return p
 
 

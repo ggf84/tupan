@@ -37,8 +37,8 @@ class LeapFrog(object):
 
 
     @timings
-    def init_for_integration(self, t_end):
-        logger.info("Initializing for integration.")
+    def initialize_integrator(self, t_end):
+        logger.info("Initializing integrator.")
 
         p = self.particles
 
@@ -53,6 +53,18 @@ class LeapFrog(object):
 
         self.snap_counter = self.snap_freq
         self.is_initialized = True
+
+
+    @timings
+    def finalize_integrator(self, t_end):
+        logger.info("Finalizing integrator.")
+
+        p = self.particles
+        tau = t_end-self.time
+        p.set_dt_next(tau)
+
+        if self.dumpper:
+            self.dumpper.dump(p)
 
 
     def get_min_block_tstep(self, p, t_end):
@@ -172,7 +184,7 @@ class LeapFrog(object):
 
         """
         if not self.is_initialized:
-            self.init_for_integration(t_end)
+            self.initialize_integrator(t_end)
 
         tau = self.tstep
         p = self.particles
