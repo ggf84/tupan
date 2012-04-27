@@ -20,14 +20,13 @@ class LeapFrog(object):
     """
 
     """
+    @timings
     def __init__(self, eta, time, particles, **kwargs):
         self.eta = eta
         self.time = time
         self.particles = particles
         self.tstep = 0.0
         self.is_initialized = False
-        self.n2_sum = 0
-        self.nkick = 0
         self.dumpper = kwargs.pop("dumpper", None)
         self.snap_freq = kwargs.pop("snap_freq", 0)
         if kwargs:
@@ -37,7 +36,7 @@ class LeapFrog(object):
 
 
     @timings
-    def initialize_integrator(self, t_end):
+    def initialize(self, t_end):
         logger.info("Initializing integrator.")
 
         p = self.particles
@@ -56,17 +55,18 @@ class LeapFrog(object):
 
 
     @timings
-    def finalize_integrator(self, t_end):
+    def finalize(self, t_end):
         logger.info("Finalizing integrator.")
 
         p = self.particles
-        tau = t_end-self.time
+        tau = self.get_min_block_tstep(p, t_end)
         p.set_dt_next(tau)
 
         if self.dumpper:
             self.dumpper.dump(p)
 
 
+    @timings
     def get_min_block_tstep(self, p, t_end):
         min_tstep = p.min_dt_next()
 
@@ -158,15 +158,6 @@ class LeapFrog(object):
                 if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
                     obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
 
-        ni = ip.n
-        nj = jp.n
-        self.n2_sum += ni*nj
-        self.nkick += 1
-        ntot = self.particles.n
-#        if ni == ntot and nj == ntot:
-#            print(ni, nj, self.n2_sum)
-#        print(self.n2_sum, self.nkick, self.n2_sum/self.nkick)
-
 
     @timings
     def dkd(self, p, tau):
@@ -184,7 +175,7 @@ class LeapFrog(object):
 
         """
         if not self.is_initialized:
-            self.initialize_integrator(t_end)
+            self.initialize(t_end)
 
         tau = self.tstep
         p = self.particles

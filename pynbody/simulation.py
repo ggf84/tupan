@@ -138,7 +138,7 @@ class Simulation(object):
         self.integrator = Integrator(self.args.eta, self.args.t_begin, particles,
                                      method=self.args.meth, dumpper=self.io,
                                      snap_freq=self.args.snap_freq)
-        self.integrator.initialize_integrator(self.args.t_end)
+        self.integrator.initialize(self.args.t_end)
 
         # Initializes the diagnostic of the simulation.
         self.dia = Diagnostic(self.args.log_file, particles)
@@ -192,7 +192,7 @@ class Simulation(object):
                 self.dump_restart_file()
 
         self.dump_restart_file()
-        self.integrator.finalize_integrator(self.args.t_end)
+        self.integrator.finalize(self.args.t_end)
 
         # final IO/diag operations
         if self.dia.time < self.args.t_end:

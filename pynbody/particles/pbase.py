@@ -17,8 +17,11 @@ class Pbase(object):
     """
 
     """
-    def __init__(self, dtype, n):
-        self.data = np.zeros(n, dtype)
+    dtype = None
+    zero = None
+
+    def __init__(self, n):
+        self.data = self.zero.copy() if n == 0 else np.zeros(n, self.dtype)
 
 
     #

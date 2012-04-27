@@ -38,10 +38,12 @@ class BlackHole(Pbase):
              ("pncorrection_angular_momentum", "3f8"),
             ]
 
+    zero = np.zeros(0, dtype)
+
     def __init__(self, n=0):
         self.pncorrection_center_of_mass_position = np.zeros(3, "f8")
         self.pncorrection_center_of_mass_velocity = np.zeros(3, "f8")
-        super(BlackHole, self).__init__(self.dtype, n)
+        super(BlackHole, self).__init__(n)
 
 
     #

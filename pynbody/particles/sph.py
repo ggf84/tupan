@@ -34,8 +34,10 @@ class Sph(Pbase):
 
             ]
 
+    zero = np.zeros(0, dtype)
+
     def __init__(self, n=0):
-        super(Sph, self).__init__(self.dtype, n)
+        super(Sph, self).__init__(n)
 
 
     #

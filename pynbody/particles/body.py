@@ -36,8 +36,10 @@ class Body(Pbase):
 
             ]
 
+    zero = np.zeros(0, dtype)
+
     def __init__(self, n=0):
-        super(Body, self).__init__(self.dtype, n)
+        super(Body, self).__init__(n)
 
 
     #

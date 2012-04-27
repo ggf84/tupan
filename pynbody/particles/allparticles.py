@@ -27,6 +27,7 @@ class Particles(dict):
     This class holds the particle types in the simulation.
     """
 
+    @timings
     def __init__(self, types=None):
         """
         Initializer

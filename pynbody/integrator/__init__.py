@@ -32,11 +32,11 @@ class Integrator(object):
                             method, str(self.PROVIDED_METHODS))
 
 
-    def initialize_integrator(self, t_end):
-        self.integrator.initialize_integrator(t_end)
+    def initialize(self, t_end):
+        self.integrator.initialize(t_end)
 
-    def finalize_integrator(self, t_end):
-        self.integrator.finalize_integrator(t_end)
+    def finalize(self, t_end):
+        self.integrator.finalize(t_end)
 
     def step(self, t_end):
         self.integrator.step(t_end)
