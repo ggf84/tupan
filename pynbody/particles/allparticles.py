@@ -58,7 +58,11 @@ class Particles(dict):
     #
 
     def __repr__(self):
-        return '{0}({1})'.format(self.__class__.__name__, dict(self))
+        fmt = self.__class__.__name__+'{'
+        for key, obj in self.items():
+            fmt += '\n{0},'.format(obj)
+        fmt += '\n}'
+        return fmt
 
     def copy(self):
         return copy.deepcopy(self)
@@ -279,9 +283,7 @@ class Particles(dict):
                 for jobj in objs.values():
                     if jobj:
                         ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
-#                        iomega = np.maximum(iomega, ret)
-                        iomega += ret
-                iomega = iomega**0.5
+                        iomega = np.maximum(iomega, ret)
                 iobj.dt_next = eta/iomega
 
 

@@ -8,7 +8,7 @@
 from __future__ import print_function
 import pickle
 import h5py
-from pynbody.lib.utils.timing import timings
+from ..lib.utils.timing import timings
 
 
 __all__ = ['HDF5IO']
@@ -27,28 +27,26 @@ class HDF5IO(object):
         """
 
         """
-        dset_length = {'body': 0, 'blackhole': 0, 'sph': 0}
         with h5py.File(self.fname, fmode) as fobj:
             group_name = particles.__class__.__name__.lower()
             group = fobj.require_group(group_name)
             group.attrs['Class'] = pickle.dumps(particles.__class__)
-            for (k, v) in group.items():
-                if v:
-                    dset_length[k] = len(v)
-                else:
-                    dset_length[k] = 0
             for (k, v) in particles.items():
                 if v:
                     dset_name = v.__class__.__name__.lower()
+                    dset_length = 0
+                    if k in group:
+                        dset_length = len(group[k])
                     state = v.get_state()   # XXX:
                     dset = group.require_dataset(dset_name,
-                                                 (dset_length[k],),
+                                                 (dset_length,),
 #                                                 dtype=v.dtype,
                                                  dtype=state.dtype,
                                                  maxshape=(None,),
                                                  chunks=True,
                                                  compression='gzip',
-                                                 shuffle=True)
+                                                 shuffle=True,
+                                                )
                     dset.attrs['Class'] = pickle.dumps(v.__class__)
                     olen = len(dset)
                     dset.resize((olen+len(v),))
@@ -74,6 +72,7 @@ class HDF5IO(object):
         return particles
 
 
+    @timings
     def to_psdf(self):
         """
         Converts a HDF5 stream into a YAML one.

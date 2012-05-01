@@ -132,8 +132,6 @@ class LeapFrog(object):
                     obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
                 if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
                     obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_center_of_mass_velocity_correction_due_to_pnterms"):
-                    obj.evolve_center_of_mass_velocity_correction_due_to_pnterms(tau / 2)
                 if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
                     obj.evolve_energy_correction_due_to_pnterms(tau / 2)
                 if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
@@ -151,8 +149,6 @@ class LeapFrog(object):
                     obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
                 if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
                     obj.evolve_energy_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_center_of_mass_velocity_correction_due_to_pnterms"):
-                    obj.evolve_center_of_mass_velocity_correction_due_to_pnterms(tau / 2)
                 if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
                     obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
                 if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
@@ -167,6 +163,8 @@ class LeapFrog(object):
         self.drift(p, tau / 2)
         self.kick(p, p, tau)
         self.drift(p, tau / 2)
+
+        return p
 
 
     @timings
@@ -191,11 +189,12 @@ class LeapFrog(object):
                 self.dumpper.dump(p)
 
         self.time += self.tstep / 2
-        self.dkd(p, tau)
+        p = self.dkd(p, tau)
         self.time += self.tstep / 2
 
         p.set_dt_prev(tau)
         p.update_timestep(p, self.eta)
+        self.particles = p
 
 
 ########## end of file ##########

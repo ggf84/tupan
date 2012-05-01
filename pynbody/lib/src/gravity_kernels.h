@@ -140,8 +140,7 @@ p2p_tstep_kernel_core(REAL inv_tstep,
     REAL omega = sqrt(omega2);                                       // 1 FLOPs
     omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
 
-//    inv_tstep = (omega > inv_tstep) ? (omega):(inv_tstep);
-    inv_tstep += omega*omega;
+    inv_tstep = (omega > inv_tstep) ? (omega):(inv_tstep);
     return inv_tstep;
 }
 // Total flop count: 38

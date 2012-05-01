@@ -29,7 +29,17 @@ class Pbase(object):
     #
 
     def __repr__(self):
-        return '{0}({1})'.format(self.__class__.__name__, self.data)
+        fmt = self.__class__.__name__+'['
+        if self:
+            fmt += '\n'
+            for item in self:
+                if item:
+                    fmt += '(\n'
+                    for name in self.data.dtype.names:
+                        fmt += '{0} = {1},\n'.format(name, getattr(item, name).tolist())
+                    fmt += '),\n'
+        fmt += ']'
+        return fmt
 
     def __len__(self):
         return len(self.data)
@@ -356,7 +366,8 @@ class Pbase(object):
     def set_state(self, state):
         self.data = np.zeros(len(state), dtype=self.dtype)
         for name in state.dtype.names:
-            self.data[name] = state[name]
+            if name in self.data.dtype.names:
+                self.data[name] = state[name]
 
 
 ########## end of file ##########

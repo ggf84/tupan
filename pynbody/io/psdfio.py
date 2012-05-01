@@ -7,7 +7,7 @@
 
 from __future__ import print_function
 import yaml
-from pynbody.lib.utils.timing import timings
+from ..lib.utils.timing import timings
 
 
 __all__ = ['PSDFIO']
@@ -45,6 +45,7 @@ class PSDFIO(object):
         return particles
 
 
+    @timings
     def to_hdf5(self):
         """
         Converts a YAML stream into a HDF5 one.

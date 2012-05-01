@@ -97,6 +97,8 @@ class HTS(LeapFrog):
         if fast.n > 0: self.kick(slow, fast, tau)
         self.drift(slow, tau / 2)
 
+        return slow, fast
+
 
     @timings
     def step(self, t_end):
@@ -108,7 +110,7 @@ class HTS(LeapFrog):
 
         tau = self.tstep
         p = self.particles
-        self.level = 0
+        self.level = -1
 
         if self.meth_type == 0:
             p = self.meth0(p, tau, True)
@@ -216,19 +218,19 @@ class HTS(LeapFrog):
 
         slow, fast = self.split(tau, p)
 
-        if slow.n > 0: slow.set_dt_next(tau)
-
-        if self.dumpper and slow.n > 0:
-            if not self.level in self.snap_counter:
-                self.snap_counter[self.level] = self.snap_freq
-            self.snap_counter[self.level] += 1
-            if (self.snap_counter[self.level] >= self.snap_freq):
-                self.snap_counter[self.level] -= self.snap_freq
-                self.dumpper.dump(slow)
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if self.dumpper:
+                if not self.level in self.snap_counter:
+                    self.snap_counter[self.level] = self.snap_freq
+                self.snap_counter[self.level] += 1
+                if (self.snap_counter[self.level] >= self.snap_freq):
+                    self.snap_counter[self.level] -= self.snap_freq
+                    self.dumpper.dump(slow)
 
         if fast.n == 0: self.time += tau / 2
         if fast.n > 0: fast = self.meth0(fast, tau / 2, True)
-        if slow.n > 0: self.dkd(slow, fast, tau)
+        if slow.n > 0: slow, fast = self.dkd(slow, fast, tau)
         if fast.n > 0: fast = self.meth0(fast, tau / 2, False)
         if fast.n == 0: self.time += tau / 2
 
