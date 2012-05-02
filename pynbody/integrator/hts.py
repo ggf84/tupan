@@ -24,8 +24,8 @@ class HTS(LeapFrog):
     """
     @timings
     def __init__(self, eta, time, particles, **kwargs):
-        self.meth_type = 0
         super(HTS, self).__init__(eta, time, particles, **kwargs)
+        self.meth_type = 0
 
 
     @timings
