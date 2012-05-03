@@ -25,8 +25,8 @@ clext64.build_kernels(use_cl=True)
 
 def set_particles(npart):
     if npart < 2: npart = 2
-    from pynbody.models.imf import IMF
-    from pynbody.models.plummer import Plummer
+    from pynbody.ics.imf import IMF
+    from pynbody.ics.plummer import Plummer
     from pynbody.lib.extensions import kernel_library
     kernel_library.build_kernels(use_cl=False)
     imf = IMF.padoan2007(0.075, 120.0)

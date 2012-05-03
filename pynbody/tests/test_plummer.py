@@ -7,8 +7,8 @@ from __future__ import print_function
 if __name__ == "__main__":
     from pynbody.lib.utils.timing import timings
     from pynbody.lib.extensions import kernel_library
-    from pynbody.models.imf import IMF
-    from pynbody.models.plummer import Plummer
+    from pynbody.ics.imf import IMF
+    from pynbody.ics.plummer import Plummer
     from pynbody.io import IO
     import matplotlib.pyplot as plt
     import numpy as np

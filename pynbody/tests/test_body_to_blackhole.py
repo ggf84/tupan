@@ -5,8 +5,8 @@ from __future__ import print_function
 
 if __name__ == "__main__":
     from pynbody.lib.extensions import kernel_library
-    from pynbody.models.imf import IMF
-    from pynbody.models.plummer import Plummer
+    from pynbody.ics.imf import IMF
+    from pynbody.ics.plummer import Plummer
     from pynbody.particles import Particles
     from pynbody.io import IO
     import matplotlib.pyplot as plt
@@ -43,7 +43,7 @@ if __name__ == "__main__":
 #    p = Particles({"body": 1, "blackhole": 1})
 #    p["body"] = p0["body"][:-n_bh]
 
-    from pynbody.models import *
+    from pynbody.ics import *
     p = figure_eight_orbit.make_system('blackhole')
     p['body'] = p0["body"]
 
