@@ -7,10 +7,12 @@
 
 
 from . import imf
+from . import binary
+from . import chain4
+from . import figure8
+from . import lagrange3
 from . import plummer
-from . import keplerian_binary
-from . import pythagorean
-from . import figure_eight_orbit
+from . import pyth
 
 
 ########## end of file ##########
