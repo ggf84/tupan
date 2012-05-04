@@ -9,10 +9,11 @@ from __future__ import print_function
 import sys
 import time
 import atexit
+import inspect
 import functools
 
 
-__all__ = ['Timer', 'Timing', 'timings']
+__all__ = ['Timer', 'decallmethods', 'timings']
 
 
 class Timer(object):
@@ -69,16 +70,20 @@ class Timing(object):
                 self.timings[module][name]["total"] = elapsed
 
     def __call__(self, func):
+        if func.func_code.co_name == 'wrapper':
+            return func
         timer = Timer()
         @functools.wraps(func)
         def wrapper(that, *args, **kwargs):
             timer.start()
             ret = func(that, *args, **kwargs)
             timer.stop()
-            module = func.__module__
             name = func.__name__
             if hasattr(that.__class__, name):
                 name = that.__class__.__name__ + '.' + name
+                module = that.__class__.__module__
+            else:
+                module = func.__module__
             self._collector(module, name, timer.elapsed())
             return ret
         wrapper.__wrapped__ = func  # adds a __wrapped__ attribute pointing to
@@ -111,6 +116,15 @@ class Timing(object):
                     _str += "\n" + mindent + " " + indent
                 _str += nfmt.format(key, count, total, total / count)
         return mark + "Timings:{0}".format(_str)
+
+
+def decallmethods(decorator, prefix=''):
+    def wrapper(cls):
+        for name, meth in inspect.getmembers(cls, inspect.ismethod):
+            if name.startswith(prefix):
+                setattr(cls, name, decorator(meth))
+        return cls
+    return wrapper
 
 
 timings = Timing()

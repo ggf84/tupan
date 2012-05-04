@@ -8,7 +8,7 @@
 from __future__ import print_function
 import logging
 import numpy as np
-from ..lib.utils.timing import timings
+from ..lib.utils.timing import decallmethods, timings
 
 
 __all__ = ["LeapFrog"]
@@ -16,11 +16,11 @@ __all__ = ["LeapFrog"]
 logger = logging.getLogger(__name__)
 
 
+@decallmethods(timings)
 class LeapFrog(object):
     """
 
     """
-    @timings
     def __init__(self, eta, time, particles, **kwargs):
         self.eta = eta
         self.time = time
@@ -34,7 +34,6 @@ class LeapFrog(object):
             raise TypeError(msg.format(self.__class__.__name__,", ".join(kwargs.keys())))
 
 
-    @timings
     def drift(self, ip, tau):
         """
 
@@ -49,7 +48,6 @@ class LeapFrog(object):
                     obj.evolve_center_of_mass_position_correction_due_to_pnterms(tau)
 
 
-    @timings
     def forceDKD(self, ip, jp):
         """
 
@@ -74,7 +72,6 @@ class LeapFrog(object):
                     obj.pnacc = 2 * obj.pnacc - prev_pnacc[key]
 
 
-    @timings
     def kick(self, ip, jp, tau):
         """
 
@@ -108,7 +105,6 @@ class LeapFrog(object):
                     obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
 
 
-    @timings
     def dkd(self, p, tau):
         """
 
@@ -120,7 +116,6 @@ class LeapFrog(object):
         return p
 
 
-    @timings
     def initialize(self, t_end):
         logger.info("Initializing integrator.")
 
@@ -139,7 +134,6 @@ class LeapFrog(object):
         self.is_initialized = True
 
 
-    @timings
     def finalize(self, t_end):
         logger.info("Finalizing integrator.")
 
@@ -151,7 +145,6 @@ class LeapFrog(object):
             self.dumpper.dump(p)
 
 
-    @timings
     def step(self, t_end):
         """
 
@@ -179,16 +172,15 @@ class LeapFrog(object):
 
 
 
+@decallmethods(timings)
 class AdaptLF(LeapFrog):
     """
 
     """
-    @timings
     def __init__(self, eta, time, particles, **kwargs):
         super(AdaptLF, self).__init__(eta, time, particles, **kwargs)
 
 
-    @timings
     def get_min_block_tstep(self, p, t_end):
         min_tstep = p.min_dt_next()
 
@@ -203,7 +195,6 @@ class AdaptLF(LeapFrog):
         return min_block_tstep
 
 
-    @timings
     def initialize(self, t_end):
         logger.info("Initializing integrator.")
 
@@ -222,7 +213,6 @@ class AdaptLF(LeapFrog):
         self.is_initialized = True
 
 
-    @timings
     def finalize(self, t_end):
         logger.info("Finalizing integrator.")
 
@@ -234,7 +224,6 @@ class AdaptLF(LeapFrog):
             self.dumpper.dump(p)
 
 
-    @timings
     def step(self, t_end):
         """
 

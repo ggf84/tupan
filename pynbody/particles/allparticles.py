@@ -14,7 +14,7 @@ from .sph import Sph
 from .body import Body
 from .blackhole import BlackHole
 from ..lib.gravity import gravitation
-from ..lib.utils.timing import timings
+from ..lib.utils.timing import decallmethods, timings
 
 
 __all__ = ["Particles"]
@@ -22,12 +22,11 @@ __all__ = ["Particles"]
 
 ALL_PARTICLE_TYPES = ["sph", "body", "blackhole"]
 
+@decallmethods(timings)
 class Particles(dict):
     """
     This class holds the particle types in the simulation.
     """
-
-    @timings
     def __init__(self, types=None):
         """
         Initializer
@@ -209,7 +208,6 @@ class Particles(dict):
 
     ### gravity
 
-    @timings
     def update_phi(self, objs):
         """
         Update the individual gravitational potential due to other particles.
@@ -223,7 +221,6 @@ class Particles(dict):
                         iphi += ret
                 iobj.phi = iphi
 
-    @timings
     def update_acc(self, objs):
         """
         Update the individual gravitational acceleration due to other particles.
@@ -237,7 +234,6 @@ class Particles(dict):
                         iacc += ret
                 iobj.acc = iacc
 
-    @timings
     def update_pnacc(self, objs):
         """
         Update the individual post-newtonian gravitational acceleration due to other particles.
@@ -253,7 +249,6 @@ class Particles(dict):
                                 ipnacc += ret
                     iobj.pnacc = ipnacc
 
-    @timings
     def update_acc_and_timestep(self, objs, eta):
         """
         Update the individual gravitational acceleration and time-steps due to other particles.
@@ -271,7 +266,6 @@ class Particles(dict):
                 iobj.acc = iacc
                 iobj.dt_next = eta/iomega
 
-    @timings
     def update_timestep(self, objs, eta):
         """
         Update the individual time-steps due to other particles.

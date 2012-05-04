@@ -10,7 +10,7 @@ import logging
 import heapq
 import numpy as np
 from .leapfrog import LeapFrog
-from ..lib.utils.timing import timings
+from ..lib.utils.timing import decallmethods, timings
 
 
 __all__ = ["HTS"]
@@ -18,17 +18,16 @@ __all__ = ["HTS"]
 logger = logging.getLogger(__name__)
 
 
+@decallmethods(timings)
 class HTS(LeapFrog):
     """
 
     """
-    @timings
     def __init__(self, eta, time, particles, **kwargs):
         super(HTS, self).__init__(eta, time, particles, **kwargs)
         self.meth_type = 0
 
 
-    @timings
     def get_max_block_tstep(self, p):
         max_tstep = p.max_dt_next()
 
@@ -41,7 +40,6 @@ class HTS(LeapFrog):
         return max_block_tstep
 
 
-    @timings
     def initialize(self, t_end):
         logger.info("Initializing integrator.")
 
@@ -66,7 +64,6 @@ class HTS(LeapFrog):
         self.is_initialized = True
 
 
-    @timings
     def finalize(self, t_end):
         logger.info("Finalizing integrator.")
 
@@ -86,7 +83,6 @@ class HTS(LeapFrog):
         final_dump(p, tau)
 
 
-    @timings
     def dkd(self, slow, fast, tau):
         """
 
@@ -100,7 +96,6 @@ class HTS(LeapFrog):
         return slow, fast
 
 
-    @timings
     def step(self, t_end):
         """
 
@@ -210,7 +205,6 @@ class HTS(LeapFrog):
 
     ### meth0
 
-    @timings
     def meth0(self, p, tau, update_timestep):
         self.level += 1
 #        if update_timestep: p.update_timestep(p, self.eta)      # False/True
@@ -247,7 +241,6 @@ class HTS(LeapFrog):
 
     ### meth1
 
-    @timings
     def meth1(self, p, tau, update_timestep):
         if update_timestep: p.update_timestep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
@@ -265,7 +258,6 @@ class HTS(LeapFrog):
 
     ### meth2
 
-    @timings
     def meth2(self, p, tau, update_timestep):
         if update_timestep: p.update_timestep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
@@ -286,7 +278,6 @@ class HTS(LeapFrog):
 
     ### meth3
 
-    @timings
     def meth3(self, p, tau, update_timestep):  # This method does not conserves the center of mass.
         if update_timestep: p.update_timestep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
@@ -307,7 +298,6 @@ class HTS(LeapFrog):
 
     ### meth4
 
-    @timings
     def meth4(self, p, tau, update_timestep):
         if update_timestep: p.update_timestep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
@@ -327,7 +317,6 @@ class HTS(LeapFrog):
 
     ### meth5
 
-    @timings
     def meth5(self, p, tau, update_timestep):
         if update_timestep: p.update_timestep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
@@ -347,7 +336,6 @@ class HTS(LeapFrog):
 
     ### meth6
 
-    @timings
     def meth6(self, p, tau, update_timestep):
         if update_timestep: p.update_timestep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
@@ -368,7 +356,6 @@ class HTS(LeapFrog):
 
     ### meth7
 
-    @timings
     def meth7(self, p, tau, update_timestep):
         if update_timestep: p.update_timestep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
@@ -390,7 +377,6 @@ class HTS(LeapFrog):
 
     ### meth8
 
-    @timings
     def meth8(self, p, tau, update_timestep):
         if update_timestep: p.update_timestep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
@@ -413,7 +399,6 @@ class HTS(LeapFrog):
 
     ### meth9
 
-    @timings
     def meth9(self, p, tau, update_timestep):
         if update_timestep: p.update_timestep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
@@ -437,7 +422,6 @@ class HTS(LeapFrog):
 
     ### split
 
-    @timings
     def split(self, tau, p):
         slow = p.__class__()
         fast = p.__class__()
@@ -474,7 +458,6 @@ class HTS(LeapFrog):
 
     ### join
 
-    @timings
     def join(self, slow, fast):
         if fast.n == 0:
             return slow

@@ -15,7 +15,7 @@ from .io import IO
 from .analysis.glviewer import GLviewer
 from .integrator import Integrator
 from .lib.extensions import kernel_library
-from .lib.utils.timing import timings
+from .lib.utils.timing import decallmethods, timings
 
 
 __all__ = ['Simulation']
@@ -34,6 +34,7 @@ def myprint(data, fname, fmode):
 
 
 
+@decallmethods(timings)
 class Diagnostic(object):
     """
 
@@ -76,7 +77,6 @@ class Diagnostic(object):
                            '#11:amom'),
                 self.fname, 'w')
 
-    @timings
     def print_diagnostic(self, time, tstep, particles):
         self.time = time
 
@@ -114,11 +114,11 @@ class Diagnostic(object):
 
 
 
+@decallmethods(timings)
 class Simulation(object):
     """
     The Simulation class is the top level class for N-body simulations.
     """
-    @timings
     def __init__(self, args, viewer):
         self.args = args
         self.viewer = viewer
@@ -152,7 +152,6 @@ class Simulation(object):
         self.diag_steps = 0
 
 
-    @timings
     def dump_restart_file(self):
         if sys.version_info >= (2, 7):
             with open(self.args.restart_file, 'wb') as fobj:
@@ -163,7 +162,6 @@ class Simulation(object):
             fobj.close()
 
 
-    @timings
     def evolve(self):
         """
 
