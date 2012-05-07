@@ -11,12 +11,13 @@ import sys
 import numpy as np
 from collections import namedtuple
 from .extensions import kernel_library
-from .utils.timing import timings
+from .utils.timing import decallmethods, timings
 
 
 __all__ = ["Gravity", "gravitation"]
 
 
+@decallmethods(timings)
 class Newtonian(object):
     """
     This class holds base methods for newtonian gravity.
@@ -159,6 +160,7 @@ class Newtonian(object):
         return ret
 
 
+@decallmethods(timings)
 class PostNewtonian(object):
     """
     This class holds base methods for post-newtonian gravity.
@@ -210,6 +212,7 @@ class PostNewtonian(object):
                                         #      __global REAL3 in OpenCL.
 
 
+@decallmethods(timings)
 class Clight(object):
     """
     This class holds the PN-order and some inverse powers of clight.
@@ -225,6 +228,7 @@ class Clight(object):
         self.inv7 = self.inv1**7
 
 
+@decallmethods(timings)
 class Gravity(object):
     """
     A base class for gravitational interaction between particles.

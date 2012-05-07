@@ -8,11 +8,13 @@
 from __future__ import print_function
 import copy
 import numpy as np
+from ..lib.utils.timing import decallmethods, timings
 
 
 __all__ = ['Pbase']
 
 
+@decallmethods(timings)
 class Pbase(object):
     """
 

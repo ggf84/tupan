@@ -11,8 +11,8 @@ import sys
 import math
 import logging
 import numpy as np
-from pynbody.particles import Particles
-from pynbody.lib.utils.timing import timings
+from ..particles import Particles
+from ..lib.utils.timing import decallmethods, timings
 
 
 __all__ = ['Plummer']
@@ -65,6 +65,7 @@ def scale_to_nbody_units(particles):
 
 
 
+@decallmethods(timings)
 class Plummer(object):
     """  """
 
@@ -77,7 +78,6 @@ class Plummer(object):
         self.particles = Particles({"body": num})
         np.random.seed(seed)
 
-    @timings
     def set_eps2(self, mass):
         n = self.num
         if self.eps_parametrization == 0:       # eps2 ~ cte
@@ -101,7 +101,6 @@ class Plummer(object):
         return eps2/2
 
 
-    @timings
     def set_pos(self, irand):
         n = self.num
         mfrac = self.mfrac
@@ -115,7 +114,6 @@ class Plummer(object):
         return np.vstack((rx, ry, rz)).T
 
 
-    @timings
     def set_vel(self, pot):
         count = 0
         n = self.num
@@ -135,7 +133,6 @@ class Plummer(object):
         return np.vstack((vx, vy, vz)).T
 
 
-    @timings
     def set_bodies(self):
         """  """
         n = self.num

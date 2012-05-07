@@ -15,7 +15,7 @@ import sys
 import Image
 import subprocess
 from matplotlib import cm
-from pynbody.lib.utils.timing import (Timer, timings)
+from ..lib.utils.timing import Timer, decallmethods, timings
 
 
 __all__ = ['GLviewer']
@@ -43,6 +43,7 @@ TRACEORBITS = False
 COLORMASK = {'r': False, 'g': False, 'b': False}
 
 
+@decallmethods(timings)
 class GLviewer(object):
     """
 
@@ -406,7 +407,6 @@ class GLviewer(object):
 #        self.mencoder.stdin.write(im.tostring())
 
 
-    @timings
     def render_func(self):
         if not TRACEORBITS:
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)

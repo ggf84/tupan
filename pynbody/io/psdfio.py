@@ -7,12 +7,13 @@
 
 from __future__ import print_function
 import yaml
-from ..lib.utils.timing import timings
+from ..lib.utils.timing import decallmethods, timings
 
 
 __all__ = ['PSDFIO']
 
 
+@decallmethods(timings)
 class PSDFIO(object):
     """
 
@@ -21,7 +22,6 @@ class PSDFIO(object):
         self.fname = fname
 
 
-    @timings
     def dump(self, particles, fmode='a'):
         """
         Serialize particle objects into a YAML stream.
@@ -34,7 +34,6 @@ class PSDFIO(object):
                           explicit_start=True)
 
 
-    @timings
     def load(self):
         """
         Load a YAML stream into particle objects.
@@ -45,7 +44,6 @@ class PSDFIO(object):
         return particles
 
 
-    @timings
     def to_hdf5(self):
         """
         Converts a YAML stream into a HDF5 one.
@@ -58,6 +56,7 @@ class PSDFIO(object):
 
 
 
+#@decallmethods(timings)
 class Stream(yaml.YAMLObject):
     """
 
@@ -66,7 +65,6 @@ class Stream(yaml.YAMLObject):
 
 
     @classmethod
-    @timings
     def to_yaml(cls, dumper, data):
         """
         Convert a Python object to a representation node.
@@ -101,7 +99,6 @@ class Stream(yaml.YAMLObject):
 
 
     @classmethod
-    @timings
     def to_dumper(cls, particles):
         data = []
         for (key, objs) in particles.items():
@@ -148,7 +145,6 @@ class Stream(yaml.YAMLObject):
 
 
     @classmethod
-    @timings
     def from_yaml(cls, loader, node):
         """
         Convert a representation node to a Python object.
@@ -157,7 +153,6 @@ class Stream(yaml.YAMLObject):
 
 
     @classmethod
-    @timings
     def from_loader(cls, data):
         from pynbody.particles import Particles
         from pynbody.particles.sph import Sph

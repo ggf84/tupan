@@ -8,12 +8,13 @@
 from __future__ import print_function
 import numpy as np
 from scipy import (integrate, optimize)
-from pynbody.lib.utils.timing import timings
+from ..lib.utils.timing import decallmethods, timings
 
 
 __all__ = ['IMF']
 
 
+@decallmethods(timings)
 class IMFSample(object):
     """
 
@@ -49,7 +50,6 @@ class IMFSample(object):
         self._mtot = None
 
 
-    @timings
     def sample(self, n):
         size = n
         ran_mass = []

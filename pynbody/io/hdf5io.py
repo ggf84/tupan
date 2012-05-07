@@ -8,12 +8,13 @@
 from __future__ import print_function
 import pickle
 import h5py
-from ..lib.utils.timing import timings
+from ..lib.utils.timing import decallmethods, timings
 
 
 __all__ = ['HDF5IO']
 
 
+@decallmethods(timings)
 class HDF5IO(object):
     """
 
@@ -22,7 +23,6 @@ class HDF5IO(object):
         self.fname = fname
 
 
-    @timings
     def dump(self, particles, fmode='a'):
         """
 
@@ -55,7 +55,6 @@ class HDF5IO(object):
                     dset[olen:nlen] = state
 
 
-    @timings
     def load(self):
         """
 
@@ -72,7 +71,6 @@ class HDF5IO(object):
         return particles
 
 
-    @timings
     def to_psdf(self):
         """
         Converts a HDF5 stream into a YAML one.

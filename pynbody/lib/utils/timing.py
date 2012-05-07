@@ -7,7 +7,7 @@
 
 from __future__ import print_function
 import sys
-import time
+import timeit
 import atexit
 import inspect
 import functools
@@ -27,15 +27,15 @@ class Timer(object):
 
     def start(self):
         self.stopped = False
-        self.tic = time.time()
+        self.tic = timeit.default_timer()
 
     def stop(self):
         self.stopped = True
-        self.toc = time.time()
+        self.toc = timeit.default_timer()
 
     def elapsed(self):
         if not self.stopped:
-            self.toc = time.time()
+            self.toc = timeit.default_timer()
         return self.toc - self.tic
 
 
@@ -43,33 +43,32 @@ class Timing(object):
     """
 
     """
-    def __init__(self):
+    def __init__(self, is_enabled):
         self.timings = {}
+        self.is_enabled = is_enabled
 
-    def _collector(self, module, name, elapsed):
+    def collector(self, module, name, elapsed):
         if module in self.timings:
             if name in self.timings[module]:
                 self.timings[module][name]["count"] += 1
-                self.timings[module][name]["last_call"] = elapsed
                 self.timings[module][name]["total"] += elapsed
             else:
                 self.timings[module][name] = {}
                 self.timings[module][name]["count"] = 1
-                self.timings[module][name]["last_call"] = elapsed
                 self.timings[module][name]["total"] = elapsed
         else:
             self.timings[module] = {}
             if name in self.timings[module]:
                 self.timings[module][name]["count"] += 1
-                self.timings[module][name]["last_call"] = elapsed
                 self.timings[module][name]["total"] += elapsed
             else:
                 self.timings[module][name] = {}
                 self.timings[module][name]["count"] = 1
-                self.timings[module][name]["last_call"] = elapsed
                 self.timings[module][name]["total"] = elapsed
 
     def __call__(self, func):
+        if not self.is_enabled:
+            return func
         if func.func_code.co_name == 'wrapper':
             return func
         timer = Timer()
@@ -79,12 +78,13 @@ class Timing(object):
             ret = func(that, *args, **kwargs)
             timer.stop()
             name = func.__name__
-            if hasattr(that.__class__, name):
-                name = that.__class__.__name__ + '.' + name
-                module = that.__class__.__module__
+            cls = that.__class__
+            if hasattr(cls, name):
+                name = cls.__name__ + '.' + name
+                module = cls.__module__
             else:
                 module = func.__module__
-            self._collector(module, name, timer.elapsed())
+            self.collector(module, name, timer.elapsed())
             return ret
         wrapper.__wrapped__ = func  # adds a __wrapped__ attribute pointing to
                                     # the original callable function. It will
@@ -127,7 +127,7 @@ def decallmethods(decorator, prefix=''):
     return wrapper
 
 
-timings = Timing()
+timings = Timing(False)
 atexit.register(print, timings, file=sys.stderr)
 
 

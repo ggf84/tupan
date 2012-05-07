@@ -14,6 +14,7 @@ from warnings import warn
 from functools import reduce
 import numpy as np
 import pyopencl as cl
+from .utils.timing import decallmethods, timings
 
 
 __all__ = ["Extensions"]
@@ -24,6 +25,7 @@ logging.basicConfig(filename='spam.log', filemode='w',
                      level=logging.DEBUG)
 
 
+@decallmethods(timings)
 class CLExtensions(object):
     """
 
@@ -130,6 +132,7 @@ class CLExtensions(object):
 
 
 
+@decallmethods(timings)
 class CExtensions(object):
     """
 
@@ -171,7 +174,7 @@ class CExtensions(object):
 
 
 
-
+@decallmethods(timings)
 class Extensions(object):
     """
 
