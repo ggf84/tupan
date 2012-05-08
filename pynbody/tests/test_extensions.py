@@ -64,7 +64,7 @@ class TestCase(unittest.TestCase):
                         np.uint32(ni),
                         np.uint32(nj))
 
-                output_buf = np.empty(ni)
+                output_layout = (ni,)
                 lmem_layout = (4, 1)
                 local_size = 384
                 global_size = ((ni-1)//local_size + 1) * local_size
@@ -74,7 +74,7 @@ class TestCase(unittest.TestCase):
                 phi_kernel = cext32.get_kernel("p2p_phi_kernel")
                 phi_kernel.set_kernel_args(*data, global_size=global_size,
                                                   local_size=local_size,
-                                                  output_buf=output_buf,
+                                                  output_layout=output_layout,
                                                   lmem_layout=lmem_layout)
                 phi_kernel.run()
                 phi['cpu_result'] = phi_kernel.get_result()
@@ -84,7 +84,7 @@ class TestCase(unittest.TestCase):
                 phi_kernel = clext32.get_kernel("p2p_phi_kernel")
                 phi_kernel.set_kernel_args(*data, global_size=global_size,
                                                   local_size=local_size,
-                                                  output_buf=output_buf,
+                                                  output_layout=output_layout,
                                                   lmem_layout=lmem_layout)
                 phi_kernel.run()
                 phi['gpu_result'] = phi_kernel.get_result()
@@ -119,7 +119,7 @@ class TestCase(unittest.TestCase):
                         np.uint32(ni),
                         np.uint32(nj))
 
-                output_buf = np.empty((ni,4))
+                output_layout = (ni, 4)
                 lmem_layout = (4, 1)
                 local_size = 384
                 global_size = ((ni-1)//local_size + 1) * local_size
@@ -129,7 +129,7 @@ class TestCase(unittest.TestCase):
                 acc_kernel = cext32.get_kernel("p2p_acc_kernel")
                 acc_kernel.set_kernel_args(*data, global_size=global_size,
                                                   local_size=local_size,
-                                                  output_buf=output_buf,
+                                                  output_layout=output_layout,
                                                   lmem_layout=lmem_layout)
                 acc_kernel.run()
                 acc['cpu_result'] = acc_kernel.get_result()[:,:3]
@@ -139,7 +139,7 @@ class TestCase(unittest.TestCase):
                 acc_kernel = clext32.get_kernel("p2p_acc_kernel")
                 acc_kernel.set_kernel_args(*data, global_size=global_size,
                                                   local_size=local_size,
-                                                  output_buf=output_buf,
+                                                  output_layout=output_layout,
                                                   lmem_layout=lmem_layout)
                 acc_kernel.run()
                 acc['gpu_result'] = acc_kernel.get_result()[:,:3]
@@ -184,7 +184,7 @@ class TestCase(unittest.TestCase):
                         np.float64(clight.inv6), np.float64(clight.inv7),
                        )
 
-                output_buf = np.empty((ni,4))
+                output_layout = (ni, 4)
                 lmem_layout = (4, 4)
                 local_size = 384
                 global_size = ((ni-1)//local_size + 1) * local_size
@@ -194,7 +194,7 @@ class TestCase(unittest.TestCase):
                 pnacc_kernel = cext32.get_kernel("p2p_pnacc_kernel")
                 pnacc_kernel.set_kernel_args(*data, global_size=global_size,
                                                   local_size=local_size,
-                                                  output_buf=output_buf,
+                                                  output_layout=output_layout,
                                                   lmem_layout=lmem_layout)
                 pnacc_kernel.run()
                 pnacc['cpu_result'] = pnacc_kernel.get_result()[:,:3]
@@ -204,7 +204,7 @@ class TestCase(unittest.TestCase):
                 pnacc_kernel = clext32.get_kernel("p2p_pnacc_kernel")
                 pnacc_kernel.set_kernel_args(*data, global_size=global_size,
                                                   local_size=local_size,
-                                                  output_buf=output_buf,
+                                                  output_layout=output_layout,
                                                   lmem_layout=lmem_layout)
                 pnacc_kernel.run()
                 pnacc['gpu_result'] = pnacc_kernel.get_result()[:,:3]
@@ -240,7 +240,7 @@ class TestCase(unittest.TestCase):
                         np.uint32(ni),
                         np.uint32(nj))
 
-                output_buf = np.empty(ni)
+                output_layout = (ni,)
                 lmem_layout = (4, 1)
                 local_size = 384
                 global_size = ((ni-1)//local_size + 1) * local_size
@@ -250,7 +250,7 @@ class TestCase(unittest.TestCase):
                 phi_kernel = cext64.get_kernel("p2p_phi_kernel")
                 phi_kernel.set_kernel_args(*data, global_size=global_size,
                                                   local_size=local_size,
-                                                  output_buf=output_buf,
+                                                  output_layout=output_layout,
                                                   lmem_layout=lmem_layout)
                 phi_kernel.run()
                 phi['cpu_result'] = phi_kernel.get_result()
@@ -260,7 +260,7 @@ class TestCase(unittest.TestCase):
                 phi_kernel = clext64.get_kernel("p2p_phi_kernel")
                 phi_kernel.set_kernel_args(*data, global_size=global_size,
                                                   local_size=local_size,
-                                                  output_buf=output_buf,
+                                                  output_layout=output_layout,
                                                   lmem_layout=lmem_layout)
                 phi_kernel.run()
                 phi['gpu_result'] = phi_kernel.get_result()
@@ -295,7 +295,7 @@ class TestCase(unittest.TestCase):
                         np.uint32(ni),
                         np.uint32(nj))
 
-                output_buf = np.empty((ni,4))
+                output_layout = (ni, 4)
                 lmem_layout = (4, 1)
                 local_size = 384
                 global_size = ((ni-1)//local_size + 1) * local_size
@@ -305,7 +305,7 @@ class TestCase(unittest.TestCase):
                 acc_kernel = cext64.get_kernel("p2p_acc_kernel")
                 acc_kernel.set_kernel_args(*data, global_size=global_size,
                                                   local_size=local_size,
-                                                  output_buf=output_buf,
+                                                  output_layout=output_layout,
                                                   lmem_layout=lmem_layout)
                 acc_kernel.run()
                 acc['cpu_result'] = acc_kernel.get_result()[:,:3]
@@ -315,7 +315,7 @@ class TestCase(unittest.TestCase):
                 acc_kernel = clext64.get_kernel("p2p_acc_kernel")
                 acc_kernel.set_kernel_args(*data, global_size=global_size,
                                                   local_size=local_size,
-                                                  output_buf=output_buf,
+                                                  output_layout=output_layout,
                                                   lmem_layout=lmem_layout)
                 acc_kernel.run()
                 acc['gpu_result'] = acc_kernel.get_result()[:,:3]
@@ -360,7 +360,7 @@ class TestCase(unittest.TestCase):
                         np.float64(clight.inv6), np.float64(clight.inv7),
                        )
 
-                output_buf = np.empty((ni,4))
+                output_layout = (ni, 4)
                 lmem_layout = (4, 4)
                 local_size = 384
                 global_size = ((ni-1)//local_size + 1) * local_size
@@ -370,7 +370,7 @@ class TestCase(unittest.TestCase):
                 pnacc_kernel = cext64.get_kernel("p2p_pnacc_kernel")
                 pnacc_kernel.set_kernel_args(*data, global_size=global_size,
                                                   local_size=local_size,
-                                                  output_buf=output_buf,
+                                                  output_layout=output_layout,
                                                   lmem_layout=lmem_layout)
                 pnacc_kernel.run()
                 pnacc['cpu_result'] = pnacc_kernel.get_result()[:,:3]
@@ -380,7 +380,7 @@ class TestCase(unittest.TestCase):
                 pnacc_kernel = clext64.get_kernel("p2p_pnacc_kernel")
                 pnacc_kernel.set_kernel_args(*data, global_size=global_size,
                                                   local_size=local_size,
-                                                  output_buf=output_buf,
+                                                  output_layout=output_layout,
                                                   lmem_layout=lmem_layout)
                 pnacc_kernel.run()
                 pnacc['gpu_result'] = pnacc_kernel.get_result()[:,:3]
@@ -414,7 +414,7 @@ class TestCase(unittest.TestCase):
                 np.uint32(ni),
                 np.uint32(nj))
 
-        output_buf = np.empty(ni)
+        output_layout = (ni,)
         lmem_layout = (4, 1)
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
@@ -424,7 +424,7 @@ class TestCase(unittest.TestCase):
         phi_kernel = cext32.get_kernel("p2p_phi_kernel")
         phi_kernel.set_kernel_args(*data, global_size=global_size,
                                           local_size=local_size,
-                                          output_buf=output_buf,
+                                          output_layout=output_layout,
                                           lmem_layout=lmem_layout)
         elapsed_sum = 0.0
         for i in range(nsamples):
@@ -439,7 +439,7 @@ class TestCase(unittest.TestCase):
         phi_kernel = cext64.get_kernel("p2p_phi_kernel")
         phi_kernel.set_kernel_args(*data, global_size=global_size,
                                           local_size=local_size,
-                                          output_buf=output_buf,
+                                          output_layout=output_layout,
                                           lmem_layout=lmem_layout)
         elapsed_sum = 0.0
         for i in range(nsamples):
@@ -472,7 +472,7 @@ class TestCase(unittest.TestCase):
                 np.uint32(ni),
                 np.uint32(nj))
 
-        output_buf = np.empty((ni,4))
+        output_layout = (ni, 4)
         lmem_layout = (4, 1)
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
@@ -482,7 +482,7 @@ class TestCase(unittest.TestCase):
         acc_kernel = cext32.get_kernel("p2p_acc_kernel")
         acc_kernel.set_kernel_args(*data, global_size=global_size,
                                           local_size=local_size,
-                                          output_buf=output_buf,
+                                          output_layout=output_layout,
                                           lmem_layout=lmem_layout)
         elapsed_sum = 0.0
         for i in range(nsamples):
@@ -497,7 +497,7 @@ class TestCase(unittest.TestCase):
         acc_kernel = cext64.get_kernel("p2p_acc_kernel")
         acc_kernel.set_kernel_args(*data, global_size=global_size,
                                           local_size=local_size,
-                                          output_buf=output_buf,
+                                          output_layout=output_layout,
                                           lmem_layout=lmem_layout)
         elapsed_sum = 0.0
         for i in range(nsamples):
@@ -539,7 +539,7 @@ class TestCase(unittest.TestCase):
                 np.float64(clight.inv6), np.float64(clight.inv7),
                )
 
-        output_buf = np.empty((ni,4))
+        output_layout = (ni, 4)
         lmem_layout = (4, 4)
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
@@ -549,7 +549,7 @@ class TestCase(unittest.TestCase):
         pnacc_kernel = cext32.get_kernel("p2p_pnacc_kernel")
         pnacc_kernel.set_kernel_args(*data, global_size=global_size,
                                             local_size=local_size,
-                                            output_buf=output_buf,
+                                            output_layout=output_layout,
                                             lmem_layout=lmem_layout)
         elapsed_sum = 0.0
         for i in range(nsamples):
@@ -564,7 +564,7 @@ class TestCase(unittest.TestCase):
         pnacc_kernel = cext64.get_kernel("p2p_pnacc_kernel")
         pnacc_kernel.set_kernel_args(*data, global_size=global_size,
                                             local_size=local_size,
-                                            output_buf=output_buf,
+                                            output_layout=output_layout,
                                             lmem_layout=lmem_layout)
         elapsed_sum = 0.0
         for i in range(nsamples):
@@ -597,7 +597,7 @@ class TestCase(unittest.TestCase):
                 np.uint32(ni),
                 np.uint32(nj))
 
-        output_buf = np.empty(ni)
+        output_layout = (ni,)
         lmem_layout = (4, 1)
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
@@ -607,7 +607,7 @@ class TestCase(unittest.TestCase):
         phi_kernel = clext32.get_kernel("p2p_phi_kernel")
         phi_kernel.set_kernel_args(*data, global_size=global_size,
                                           local_size=local_size,
-                                          output_buf=output_buf,
+                                          output_layout=output_layout,
                                           lmem_layout=lmem_layout)
         elapsed_sum = 0.0
         for i in range(nsamples):
@@ -622,7 +622,7 @@ class TestCase(unittest.TestCase):
         phi_kernel = clext64.get_kernel("p2p_phi_kernel")
         phi_kernel.set_kernel_args(*data, global_size=global_size,
                                           local_size=local_size,
-                                          output_buf=output_buf,
+                                          output_layout=output_layout,
                                           lmem_layout=lmem_layout)
         elapsed_sum = 0.0
         for i in range(nsamples):
@@ -655,7 +655,7 @@ class TestCase(unittest.TestCase):
                 np.uint32(ni),
                 np.uint32(nj))
 
-        output_buf = np.empty((ni,4))
+        output_layout = (ni, 4)
         lmem_layout = (4, 1)
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
@@ -665,7 +665,7 @@ class TestCase(unittest.TestCase):
         acc_kernel = clext32.get_kernel("p2p_acc_kernel")
         acc_kernel.set_kernel_args(*data, global_size=global_size,
                                           local_size=local_size,
-                                          output_buf=output_buf,
+                                          output_layout=output_layout,
                                           lmem_layout=lmem_layout)
         elapsed_sum = 0.0
         for i in range(nsamples):
@@ -680,7 +680,7 @@ class TestCase(unittest.TestCase):
         acc_kernel = clext64.get_kernel("p2p_acc_kernel")
         acc_kernel.set_kernel_args(*data, global_size=global_size,
                                           local_size=local_size,
-                                          output_buf=output_buf,
+                                          output_layout=output_layout,
                                           lmem_layout=lmem_layout)
         elapsed_sum = 0.0
         for i in range(nsamples):
@@ -722,7 +722,7 @@ class TestCase(unittest.TestCase):
                 np.float64(clight.inv6), np.float64(clight.inv7),
                )
 
-        output_buf = np.empty((ni,4))
+        output_layout = (ni, 4)
         lmem_layout = (4, 4)
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
@@ -732,7 +732,7 @@ class TestCase(unittest.TestCase):
         pnacc_kernel = clext32.get_kernel("p2p_pnacc_kernel")
         pnacc_kernel.set_kernel_args(*data, global_size=global_size,
                                             local_size=local_size,
-                                            output_buf=output_buf,
+                                            output_layout=output_layout,
                                             lmem_layout=lmem_layout)
         elapsed_sum = 0.0
         for i in range(nsamples):
@@ -747,7 +747,7 @@ class TestCase(unittest.TestCase):
         pnacc_kernel = clext64.get_kernel("p2p_pnacc_kernel")
         pnacc_kernel.set_kernel_args(*data, global_size=global_size,
                                             local_size=local_size,
-                                            output_buf=output_buf,
+                                            output_layout=output_layout,
                                             lmem_layout=lmem_layout)
         elapsed_sum = 0.0
         for i in range(nsamples):

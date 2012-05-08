@@ -81,7 +81,7 @@ class CLExtensions(object):
         gsize = kwargs.pop("global_size")
         global_size = gsize if isinstance(gsize, tuple) else (gsize,)
 
-        output_buf = kwargs.pop("output_buf")
+        output_layout = kwargs.pop("output_layout")
         lmem_layout = kwargs.pop("lmem_layout")
 
         if kwargs:
@@ -104,14 +104,15 @@ class CLExtensions(object):
                 dev_args.append(item)
 
         # Set output buffer on CL device
-        self.kernel_result = output_buf.copy().astype(self._dtype)
+        self.kernel_result = np.empty(output_layout, dtype=self._dtype)
         self._cl_devbuf_res = cl.Buffer(self._cl_ctx,
                                         mf.WRITE_ONLY | mf.USE_HOST_PTR,
                                         hostbuf=self.kernel_result)
         dev_args.append(self._cl_devbuf_res)
 
         # Set local memory sizes on CL device
-        base_mem_size = reduce(lambda x, y: x * y, local_size)
+        def foo(x, y): return x * y
+        base_mem_size = reduce(foo, local_size)
         base_mem_size *= self._dtype.itemsize
         local_mem_size_list = (i * base_mem_size for i in lmem_layout)
         for size in local_mem_size_list:
