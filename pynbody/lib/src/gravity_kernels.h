@@ -140,6 +140,10 @@ p2p_tstep_kernel_core(REAL inv_tstep,
     REAL omega = sqrt(omega2);                                       // 1 FLOPs
     omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
 
+//    REAL inv_a = (v2 - 2 * r.w * inv_r);
+//    inv_a = (inv_a > 0) ? (inv_a):(-inv_a);
+//    REAL omega = sqrt(inv_a * inv_a * inv_a) / r.w;
+
     inv_tstep = (omega > inv_tstep) ? (omega):(inv_tstep);
     return inv_tstep;
 }

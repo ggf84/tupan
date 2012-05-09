@@ -9,7 +9,6 @@ between particles in Newtonian and post-Newtonian approach.
 
 import sys
 import numpy as np
-#from collections import namedtuple
 from .extensions import kernel_library
 from .utils.timing import decallmethods, timings
 
@@ -32,10 +31,8 @@ class Newtonian(object):
         """
         ni = len(iobj)
         nj = len(jobj)
-#        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
-#        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-        iposmass = np.concatenate((iobj.pos, iobj.mass.reshape((1,ni)).T), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass.reshape((1,nj)).T), axis=1)
+        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
         data = (iposmass, iobj.eps2,
                 jposmass, jobj.eps2,
                 np.uint32(ni),
@@ -65,10 +62,8 @@ class Newtonian(object):
         """
         ni = len(iobj)
         nj = len(jobj)
-#        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
-#        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-        iposmass = np.concatenate((iobj.pos, iobj.mass.reshape((1,ni)).T), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass.reshape((1,nj)).T), axis=1)
+        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
         data = (iposmass, iobj.eps2,
                 jposmass, jobj.eps2,
                 np.uint32(ni),
@@ -91,9 +86,8 @@ class Newtonian(object):
                                           lmem_layout=lmem_layout)
         acc_kernel.run()
         ret = acc_kernel.get_result()
-        if ret.shape[1] > 3:
-            ret = ret[:,:3]             # XXX: forcing return shape = (ni, 3).
-        return ret                      #      see comment about a bug using
+        return ret[:,:3]                # XXX: forcing return shape = (ni, 3).
+                                        #      see comment about a bug using
                                         #      __global REAL3 in OpenCL.
 
 
@@ -103,14 +97,10 @@ class Newtonian(object):
         """
         ni = len(iobj)
         nj = len(jobj)
-#        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
-#        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-#        iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
-#        jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
-        iposmass = np.concatenate((iobj.pos, iobj.mass.reshape((1,ni)).T), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass.reshape((1,nj)).T), axis=1)
-        iveleps2 = np.concatenate((iobj.vel, iobj.eps2.reshape((1,ni)).T), axis=1)
-        jveleps2 = np.concatenate((jobj.vel, jobj.eps2.reshape((1,nj)).T), axis=1)
+        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
+        iveleps2 = np.concatenate((iobj.vel, iobj.eps2[..., np.newaxis]), axis=1)
+        jveleps2 = np.concatenate((jobj.vel, jobj.eps2[..., np.newaxis]), axis=1)
         data = (iposmass, iveleps2,
                 jposmass, jveleps2,
                 np.uint32(ni),
@@ -141,14 +131,10 @@ class Newtonian(object):
         """
         ni = len(iobj)
         nj = len(jobj)
-#        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
-#        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-#        iveleps2 = np.vstack((iobj.vel.T, iobj.eps2)).T
-#        jveleps2 = np.vstack((jobj.vel.T, jobj.eps2)).T
-        iposmass = np.concatenate((iobj.pos, iobj.mass.reshape((1,ni)).T), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass.reshape((1,nj)).T), axis=1)
-        iveleps2 = np.concatenate((iobj.vel, iobj.eps2.reshape((1,ni)).T), axis=1)
-        jveleps2 = np.concatenate((jobj.vel, jobj.eps2.reshape((1,nj)).T), axis=1)
+        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
+        iveleps2 = np.concatenate((iobj.vel, iobj.eps2[..., np.newaxis]), axis=1)
+        jveleps2 = np.concatenate((jobj.vel, jobj.eps2[..., np.newaxis]), axis=1)
         data = (iposmass, iveleps2,
                 jposmass, jveleps2,
                 np.uint32(ni),
@@ -188,14 +174,10 @@ class PostNewtonian(object):
         """
         ni = len(iobj)
         nj = len(jobj)
-#        iposmass = np.vstack((iobj.pos.T, iobj.mass)).T
-#        jposmass = np.vstack((jobj.pos.T, jobj.mass)).T
-#        iveliv2 = np.vstack((iobj.vel.T, (iobj.vel**2).sum(1))).T
-#        jveljv2 = np.vstack((jobj.vel.T, (jobj.vel**2).sum(1))).T
-        iposmass = np.concatenate((iobj.pos, iobj.mass.reshape((1,ni)).T), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass.reshape((1,nj)).T), axis=1)
-        iveliv2 = np.concatenate((iobj.vel, (iobj.vel**2).sum(1).reshape((1,ni)).T), axis=1)
-        jveljv2 = np.concatenate((jobj.vel, (jobj.vel**2).sum(1).reshape((1,nj)).T), axis=1)
+        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
+        iveliv2 = np.concatenate((iobj.vel, (iobj.vel**2).sum(1)[..., np.newaxis]), axis=1)
+        jveljv2 = np.concatenate((jobj.vel, (jobj.vel**2).sum(1)[..., np.newaxis]), axis=1)
         clight = self.clight
         data = (iposmass, iveliv2,
                 jposmass, jveljv2,

@@ -264,7 +264,7 @@ class Particles(dict):
                         iacc += ret[0]
                         iomega = np.maximum(iomega, ret[1])
                 iobj.acc = iacc
-                iobj.dt_next = eta/iomega
+                iobj.dt_next = eta / iomega
 
     def update_timestep(self, objs, eta):
         """
@@ -278,7 +278,7 @@ class Particles(dict):
                     if jobj:
                         ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
                         iomega = np.maximum(iomega, ret)
-                iobj.dt_next = eta/iomega
+                iobj.dt_next = eta / iomega
 
 
     ### prev/next timestep

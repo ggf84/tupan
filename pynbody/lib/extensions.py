@@ -92,21 +92,22 @@ class CLExtensions(object):
         # Set input buffers and kernel args on CL device
         mf = cl.mem_flags
         dev_args = [global_size, local_size]
-        for item in args:
-            if isinstance(item, np.ndarray):
-                hostbuf = item.copy().astype(self._dtype)
-                dev_args.append(cl.Buffer(self._cl_ctx,
-                                          mf.READ_ONLY | mf.COPY_HOST_PTR,
-                                          hostbuf=hostbuf))
-            elif isinstance(item, np.floating):
-                dev_args.append(item.astype(self._dtype))
+        for arg in args:
+            if isinstance(arg, np.ndarray):
+                hostbuf = arg.copy().astype(self._dtype)
+                item = cl.Buffer(self._cl_ctx,
+                                 mf.READ_ONLY | mf.COPY_HOST_PTR,
+                                 hostbuf=hostbuf)
+            elif isinstance(arg, np.floating):
+                item = arg.astype(self._dtype)
             else:
-                dev_args.append(item)
+                item = arg
+            dev_args.append(item)
 
         # Set output buffer on CL device
         self.kernel_result = np.empty(output_layout, dtype=self._dtype)
         self._cl_devbuf_res = cl.Buffer(self._cl_ctx,
-                                        mf.WRITE_ONLY | mf.USE_HOST_PTR,
+                                        mf.WRITE_ONLY | mf.COPY_HOST_PTR,
                                         hostbuf=self.kernel_result)
         dev_args.append(self._cl_devbuf_res)
 
@@ -220,8 +221,7 @@ class Extensions(object):
             self.extension = self.cext
             logger.debug("Using C extensions.")
 
-    def get_kernel(self, kernel_name):
-        return self.extension.get_kernel(kernel_name)
+        self.get_kernel = self.extension.get_kernel
 
 
 kernel_library = Extensions(dtype='d', junroll=8)
