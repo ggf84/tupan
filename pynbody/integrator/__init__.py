@@ -16,9 +16,11 @@ class Integrator(object):
     """
     PROVIDED_METHODS = ['leapfrog', 'adaptlf', 'hts']
 
-    def __init__(self, eta, time, particles, method="leapfrog", **kwargs):
+    def __init__(self, eta, time, particles, **kwargs):
         import logging
         logger = logging.getLogger(__name__)
+
+        method = kwargs.pop("method", None)
 
         self.integrator = None
         if method == "leapfrog":

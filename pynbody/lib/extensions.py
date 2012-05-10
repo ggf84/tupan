@@ -81,8 +81,8 @@ class CLExtensions(object):
         gsize = kwargs.pop("global_size")
         global_size = gsize if isinstance(gsize, tuple) else (gsize,)
 
-        output_layout = kwargs.pop("output_layout")
-        lmem_layout = kwargs.pop("lmem_layout")
+        result_shape = kwargs.pop("result_shape")
+        local_memory_shape = kwargs.pop("local_memory_shape")
 
         if kwargs:
             msg = "{0}.load_data received unexpected keyword arguments: {1}."
@@ -95,8 +95,7 @@ class CLExtensions(object):
         for arg in args:
             if isinstance(arg, np.ndarray):
                 hostbuf = np.ascontiguousarray(arg, dtype=self._dtype)
-#                item = cl.Buffer(self._cl_ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=hostbuf)
-                item = cl.Buffer(self._cl_ctx, mf.READ_ONLY | mf.USE_HOST_PTR, hostbuf=hostbuf)
+                item = cl.Buffer(self._cl_ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=hostbuf)
             elif isinstance(arg, np.floating):
                 item = arg.astype(self._dtype)
             else:
@@ -104,16 +103,15 @@ class CLExtensions(object):
             dev_args.append(item)
 
         # Set output buffer on CL device
-        self.kernel_result = np.empty(output_layout, dtype=self._dtype)
-#        self._cl_devbuf_res = cl.Buffer(self._cl_ctx, mf.WRITE_ONLY | mf.COPY_HOST_PTR, hostbuf=self.kernel_result)
-        self._cl_devbuf_res = cl.Buffer(self._cl_ctx, mf.WRITE_ONLY | mf.USE_HOST_PTR, hostbuf=self.kernel_result)
+        self.kernel_result = np.empty(result_shape, dtype=self._dtype)
+        self._cl_devbuf_res = cl.Buffer(self._cl_ctx, mf.WRITE_ONLY, size=self.kernel_result.nbytes)
         dev_args.append(self._cl_devbuf_res)
 
         # Set local memory sizes on CL device
         def foo(x, y): return x * y
         base_mem_size = reduce(foo, local_size)
         base_mem_size *= self._dtype.itemsize
-        local_mem_size_list = (i * base_mem_size for i in lmem_layout)
+        local_mem_size_list = (i * base_mem_size for i in local_memory_shape)
         for size in local_mem_size_list:
             dev_args.append(cl.LocalMemory(size))
 

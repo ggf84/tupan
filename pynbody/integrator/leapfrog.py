@@ -27,6 +27,13 @@ class LeapFrog(object):
         self.particles = particles
         self.tstep = 0.0
         self.is_initialized = False
+
+        self.pn_order = kwargs.pop("pn_order", 0)
+        self.clight = kwargs.pop("clight", None)
+        if self.pn_order > 0 and self.clight is None:
+            raise TypeError("'clight' is not defined. Please set the input "
+                            "argument 'clight' when using 'pn_order' != 0.")
+
         self.dumpper = kwargs.pop("dumpper", None)
         self.snap_freq = kwargs.pop("snap_freq", 0)
         if kwargs:
@@ -44,8 +51,9 @@ class LeapFrog(object):
                     obj.evolve_current_time(tau)
                 if hasattr(obj, "evolve_position"):
                     obj.evolve_position(tau)
-                if hasattr(obj, "evolve_center_of_mass_position_correction_due_to_pnterms"):
-                    obj.evolve_center_of_mass_position_correction_due_to_pnterms(tau)
+                if self.pn_order > 0:
+                    if hasattr(obj, "evolve_center_of_mass_position_correction_due_to_pnterms"):
+                        obj.evolve_center_of_mass_position_correction_due_to_pnterms(tau)
 
 
     def forceDKD(self, ip, jp):
@@ -58,18 +66,21 @@ class LeapFrog(object):
             if obj:
                 if hasattr(obj, "acc"):
                     prev_acc[key] = obj.acc.copy()
-                if hasattr(obj, "pnacc"):
-                    prev_pnacc[key] = obj.pnacc.copy()
+                if self.pn_order > 0:
+                    if hasattr(obj, "pnacc"):
+                        prev_pnacc[key] = obj.pnacc.copy()
 
         ip.update_acc(jp)
-        ip.update_pnacc(jp)
+        if self.pn_order > 0 and self.clight > 0:
+            ip.update_pnacc(jp, self.pn_order, self.clight)
 
         for (key, obj) in ip.items():
             if obj:
                 if hasattr(obj, "acc"):
                     obj.acc = 2 * obj.acc - prev_acc[key]
-                if hasattr(obj, "pnacc"):
-                    obj.pnacc = 2 * obj.pnacc - prev_pnacc[key]
+                if self.pn_order > 0:
+                    if hasattr(obj, "pnacc"):
+                        obj.pnacc = 2 * obj.pnacc - prev_pnacc[key]
 
 
     def kick(self, ip, jp, tau):
@@ -78,14 +89,15 @@ class LeapFrog(object):
         """
         for (key, obj) in ip.items():
             if obj:
-                if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
-                    obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
-                    obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
-                    obj.evolve_energy_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
-                    obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
+                if self.pn_order > 0:
+                    if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
+                        obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
+                    if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
+                        obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
+                    if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
+                        obj.evolve_energy_correction_due_to_pnterms(tau / 2)
+                    if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
+                        obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
                 if hasattr(obj, "evolve_velocity"):
                     obj.evolve_velocity(tau / 2)
 
@@ -95,14 +107,15 @@ class LeapFrog(object):
             if obj:
                 if hasattr(obj, "evolve_velocity"):
                     obj.evolve_velocity(tau / 2)
-                if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
-                    obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
-                    obj.evolve_energy_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
-                    obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
-                    obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
+                if self.pn_order > 0:
+                    if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
+                        obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
+                    if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
+                        obj.evolve_energy_correction_due_to_pnterms(tau / 2)
+                    if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
+                        obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
+                    if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
+                        obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
 
 
     def dkd(self, p, tau):
@@ -123,7 +136,8 @@ class LeapFrog(object):
 
         p.update_n()
         p.update_acc(p)
-        p.update_pnacc(p)
+        if self.pn_order > 0:
+            p.update_pnacc(p, self.pn_order, self.clight)
         p.update_timestep(p, self.eta)
 
         tau = self.eta
@@ -202,7 +216,8 @@ class AdaptLF(LeapFrog):
 
         p.update_n()
         p.update_acc(p)
-        p.update_pnacc(p)
+        if self.pn_order > 0:
+            p.update_pnacc(p, self.pn_order, self.clight)
         p.update_timestep(p, self.eta)
 
         tau = self.get_min_block_tstep(p, t_end)

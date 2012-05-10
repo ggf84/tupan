@@ -17,201 +17,6 @@ __all__ = ["Gravity", "gravitation"]
 
 
 @decallmethods(timings)
-class Newtonian(object):
-    """
-    This class holds base methods for newtonian gravity.
-    """
-    def __init__(self):
-        pass
-
-
-    def set_phi(self, iobj, jobj):
-        """
-        Set obj-obj newtonian phi.
-        """
-        ni = len(iobj)
-        nj = len(jobj)
-        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        data = (iposmass, iobj.eps2,
-                jposmass, jobj.eps2,
-                np.uint32(ni),
-                np.uint32(nj))
-
-        output_layout = (ni,)
-        lmem_layout = (4, 1)
-
-        # Adjusts global_size to be an integer multiple of local_size
-        local_size = 384
-        global_size = ((ni-1)//local_size + 1) * local_size
-
-        phi_kernel = kernel_library.get_kernel("p2p_phi_kernel")
-
-        phi_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          output_layout=output_layout,
-                                          lmem_layout=lmem_layout)
-        phi_kernel.run()
-        ret = phi_kernel.get_result()
-        return ret
-
-
-    def set_acc(self, iobj, jobj):
-        """
-        Set obj-obj newtonian acc.
-        """
-        ni = len(iobj)
-        nj = len(jobj)
-        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        data = (iposmass, iobj.eps2,
-                jposmass, jobj.eps2,
-                np.uint32(ni),
-                np.uint32(nj))
-
-        output_layout = (ni, 4)         # XXX: forcing shape = (ni, 4) due to
-                                        #      a bug using __global REAL3 in
-                                        #      AMD's OpenCL implementation.
-        lmem_layout = (4, 1)
-
-        # Adjusts global_size to be an integer multiple of local_size
-        local_size = 384
-        global_size = ((ni-1)//local_size + 1) * local_size
-
-        acc_kernel = kernel_library.get_kernel("p2p_acc_kernel")
-
-        acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          output_layout=output_layout,
-                                          lmem_layout=lmem_layout)
-        acc_kernel.run()
-        ret = acc_kernel.get_result()
-        return ret[:,:3]                # XXX: forcing return shape = (ni, 3).
-                                        #      see comment about a bug using
-                                        #      __global REAL3 in OpenCL.
-
-
-    def set_acctstep(self, iobj, jobj, eta):
-        """
-        Set obj-obj newtonian acc and timestep.
-        """
-        ni = len(iobj)
-        nj = len(jobj)
-        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        iveleps2 = np.concatenate((iobj.vel, iobj.eps2[..., np.newaxis]), axis=1)
-        jveleps2 = np.concatenate((jobj.vel, jobj.eps2[..., np.newaxis]), axis=1)
-        data = (iposmass, iveleps2,
-                jposmass, jveleps2,
-                np.uint32(ni),
-                np.uint32(nj),
-                np.float64(eta))
-
-        output_layout = (ni, 4)
-        lmem_layout = (4, 4)
-
-        # Adjusts global_size to be an integer multiple of local_size
-        local_size = 384
-        global_size = ((ni-1)//local_size + 1) * local_size
-
-        acc_kernel = kernel_library.get_kernel("p2p_acctstep_kernel")
-
-        acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          output_layout=output_layout,
-                                          lmem_layout=lmem_layout)
-        acc_kernel.run()
-        ret = acc_kernel.get_result()
-        return (ret[:,:3], ret[:,3])
-
-
-    def set_tstep(self, iobj, jobj, eta):
-        """
-        Set timestep.
-        """
-        ni = len(iobj)
-        nj = len(jobj)
-        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        iveleps2 = np.concatenate((iobj.vel, iobj.eps2[..., np.newaxis]), axis=1)
-        jveleps2 = np.concatenate((jobj.vel, jobj.eps2[..., np.newaxis]), axis=1)
-        data = (iposmass, iveleps2,
-                jposmass, jveleps2,
-                np.uint32(ni),
-                np.uint32(nj),
-                np.float64(eta))
-
-        output_layout = (ni,)
-        lmem_layout = (4, 4)
-
-        # Adjusts global_size to be an integer multiple of local_size
-        local_size = 384
-        global_size = ((ni-1)//local_size + 1) * local_size
-
-        tstep_kernel = kernel_library.get_kernel("p2p_tstep_kernel")
-
-        tstep_kernel.set_kernel_args(*data, global_size=global_size,
-                                            local_size=local_size,
-                                            output_layout=output_layout,
-                                            lmem_layout=lmem_layout)
-        tstep_kernel.run()
-        ret = tstep_kernel.get_result()
-        return ret
-
-
-@decallmethods(timings)
-class PostNewtonian(object):
-    """
-    This class holds base methods for post-newtonian gravity.
-    """
-    def __init__(self, pn_order, clight):
-        self.clight = Clight(pn_order, clight)
-
-
-    def set_acc(self, iobj, jobj):
-        """
-        Set blackhole-blackhole post-newtonian acc.
-        """
-        ni = len(iobj)
-        nj = len(jobj)
-        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        iveliv2 = np.concatenate((iobj.vel, (iobj.vel**2).sum(1)[..., np.newaxis]), axis=1)
-        jveljv2 = np.concatenate((jobj.vel, (jobj.vel**2).sum(1)[..., np.newaxis]), axis=1)
-        clight = self.clight
-        data = (iposmass, iveliv2,
-                jposmass, jveljv2,
-                np.uint32(ni),
-                np.uint32(nj),
-                np.uint32(clight.pn_order), np.float64(clight.inv1),
-                np.float64(clight.inv2), np.float64(clight.inv3),
-                np.float64(clight.inv4), np.float64(clight.inv5),
-                np.float64(clight.inv6), np.float64(clight.inv7),
-               )
-
-        output_layout = (ni,4)          # XXX: forcing shape = (ni, 4) due to
-                                        #      a bug using __global REAL3 in
-                                        #      AMD's OpenCL implementation.
-        lmem_layout = (4, 4)
-
-        # Adjusts global_size to be an integer multiple of local_size
-        local_size = 384
-        global_size = ((ni-1)//local_size + 1) * local_size
-
-        pnacc_kernel = kernel_library.get_kernel("p2p_pnacc_kernel")
-
-        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
-                                            local_size=local_size,
-                                            output_layout=output_layout,
-                                            lmem_layout=lmem_layout)
-        pnacc_kernel.run()
-        ret = pnacc_kernel.get_result()
-        return ret[:,:3]                # XXX: forcing return shape = (ni, 3).
-                                        #      see comment about a bug using
-                                        #      __global REAL3 in OpenCL.
-
-
-@decallmethods(timings)
 class Clight(object):
     """
     This class holds the PN-order and some inverse powers of clight.
@@ -232,9 +37,220 @@ class Gravity(object):
     """
     A base class for gravitational interaction between particles.
     """
-    def __init__(self, pn_order=4, clight=25.0):
-        self.newtonian = Newtonian()
-        self.post_newtonian = PostNewtonian(pn_order, clight)
+    def __init__(self):
+        pass
+
+
+    ### phi methods
+
+    def setup_phi_data(self, iobj, jobj):
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
+        data = (iposmass, iobj.eps2,
+                jposmass, jobj.eps2,
+                np.uint32(ni),
+                np.uint32(nj))
+        return data
+
+    def set_phi(self, iobj, jobj):
+        """
+        Set obj-obj newtonian phi.
+        """
+        ni = len(iobj)
+        data = self.setup_phi_data(iobj, jobj)
+
+        result_shape = (ni,)
+        local_memory_shape = (4, 1)
+
+        # Adjusts global_size to be an integer multiple of local_size
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+        phi_kernel = kernel_library.get_kernel("p2p_phi_kernel")
+
+        phi_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          result_shape=result_shape,
+                                          local_memory_shape=local_memory_shape)
+        phi_kernel.run()
+        ret = phi_kernel.get_result()
+        return ret
+
+
+    ### acc methods
+
+    def setup_acc_data(self, iobj, jobj):
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
+        data = (iposmass, iobj.eps2,
+                jposmass, jobj.eps2,
+                np.uint32(ni),
+                np.uint32(nj))
+        return data
+
+    def set_acc(self, iobj, jobj):
+        """
+        Set obj-obj newtonian acc.
+        """
+        ni = len(iobj)
+        data = self.setup_acc_data(iobj, jobj)
+
+        result_shape = (ni, 4)          # XXX: forcing shape = (ni, 4) due to
+                                        #      a bug using __global REAL3 in
+                                        #      AMD's OpenCL implementation.
+        local_memory_shape = (4, 1)
+
+        # Adjusts global_size to be an integer multiple of local_size
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+        acc_kernel = kernel_library.get_kernel("p2p_acc_kernel")
+
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          result_shape=result_shape,
+                                          local_memory_shape=local_memory_shape)
+        acc_kernel.run()
+        ret = acc_kernel.get_result()
+        return ret[:,:3]                # XXX: forcing return shape = (ni, 3).
+                                        #      see comment about a bug using
+                                        #      __global REAL3 in OpenCL.
+
+
+    ### acctstep methods
+
+    def setup_acctstep_data(self, iobj, jobj, eta):
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
+        iveleps2 = np.concatenate((iobj.vel, iobj.eps2[..., np.newaxis]), axis=1)
+        jveleps2 = np.concatenate((jobj.vel, jobj.eps2[..., np.newaxis]), axis=1)
+        data = (iposmass, iveleps2,
+                jposmass, jveleps2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.float64(eta))
+        return data
+
+    def set_acctstep(self, iobj, jobj, eta):
+        """
+        Set obj-obj newtonian acc and timestep.
+        """
+        ni = len(iobj)
+        data = self.setup_acctstep_data(iobj, jobj, eta)
+
+        result_shape = (ni, 4)
+        local_memory_shape = (4, 4)
+
+        # Adjusts global_size to be an integer multiple of local_size
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+        acc_kernel = kernel_library.get_kernel("p2p_acctstep_kernel")
+
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          result_shape=result_shape,
+                                          local_memory_shape=local_memory_shape)
+        acc_kernel.run()
+        ret = acc_kernel.get_result()
+        return (ret[:,:3], ret[:,3])
+
+
+    ### tstep methods
+
+    def setup_tstep_data(self, iobj, jobj, eta):
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
+        iveleps2 = np.concatenate((iobj.vel, iobj.eps2[..., np.newaxis]), axis=1)
+        jveleps2 = np.concatenate((jobj.vel, jobj.eps2[..., np.newaxis]), axis=1)
+        data = (iposmass, iveleps2,
+                jposmass, jveleps2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.float64(eta))
+        return data
+
+    def set_tstep(self, iobj, jobj, eta):
+        """
+        Set timestep.
+        """
+        ni = len(iobj)
+        data = self.setup_tstep_data(iobj, jobj, eta)
+
+        result_shape = (ni,)
+        local_memory_shape = (4, 4)
+
+        # Adjusts global_size to be an integer multiple of local_size
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+        tstep_kernel = kernel_library.get_kernel("p2p_tstep_kernel")
+
+        tstep_kernel.set_kernel_args(*data, global_size=global_size,
+                                            local_size=local_size,
+                                            result_shape=result_shape,
+                                            local_memory_shape=local_memory_shape)
+        tstep_kernel.run()
+        ret = tstep_kernel.get_result()
+        return ret
+
+
+    ### pnacc methods
+
+    def setup_pnacc_data(self, iobj, jobj, clight):
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
+        iveliv2 = np.concatenate((iobj.vel, (iobj.vel**2).sum(1)[..., np.newaxis]), axis=1)
+        jveljv2 = np.concatenate((jobj.vel, (jobj.vel**2).sum(1)[..., np.newaxis]), axis=1)
+        data = (iposmass, iveliv2,
+                jposmass, jveljv2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.uint32(clight.pn_order), np.float64(clight.inv1),
+                np.float64(clight.inv2), np.float64(clight.inv3),
+                np.float64(clight.inv4), np.float64(clight.inv5),
+                np.float64(clight.inv6), np.float64(clight.inv7))
+        return data
+
+    def set_pnacc(self, iobj, jobj, pn_order, clight):
+        """
+        Set blackhole-blackhole post-newtonian acc.
+        """
+        ni = len(iobj)
+        data = self.setup_pnacc_data(iobj, jobj, Clight(pn_order, clight))
+
+        result_shape = (ni,4)           # XXX: forcing shape = (ni, 4) due to
+                                        #      a bug using __global REAL3 in
+                                        #      AMD's OpenCL implementation.
+        local_memory_shape = (4, 4)
+
+        # Adjusts global_size to be an integer multiple of local_size
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+        pnacc_kernel = kernel_library.get_kernel("p2p_pnacc_kernel")
+
+        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
+                                            local_size=local_size,
+                                            result_shape=result_shape,
+                                            local_memory_shape=local_memory_shape)
+        pnacc_kernel.run()
+        ret = pnacc_kernel.get_result()
+        return ret[:,:3]                # XXX: forcing return shape = (ni, 3).
+                                        #      see comment about a bug using
+                                        #      __global REAL3 in OpenCL.
+
+
 
 
 gravitation = Gravity()

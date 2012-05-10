@@ -48,7 +48,8 @@ class HTS(LeapFrog):
         p.update_n()
         p.update_phi(p)
         p.update_acc(p)
-        p.update_pnacc(p)
+        if self.pn_order > 0:
+            p.update_pnacc(p, self.pn_order, self.clight)
         p.update_timestep(p, self.eta)
 
 #        tau = 1.0/4

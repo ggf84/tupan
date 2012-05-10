@@ -217,7 +217,7 @@ class Particles(dict):
                 iphi = 0.0
                 for jobj in objs.values():
                     if jobj:
-                        ret = gravitation.newtonian.set_phi(iobj, jobj)
+                        ret = gravitation.set_phi(iobj, jobj)
                         iphi += ret
                 iobj.phi = iphi
 
@@ -230,11 +230,11 @@ class Particles(dict):
                 iacc = 0.0
                 for jobj in objs.values():
                     if jobj:
-                        ret = gravitation.newtonian.set_acc(iobj, jobj)
+                        ret = gravitation.set_acc(iobj, jobj)
                         iacc += ret
                 iobj.acc = iacc
 
-    def update_pnacc(self, objs):
+    def update_pnacc(self, objs, pn_order, clight):
         """
         Update the individual post-newtonian gravitational acceleration due to other particles.
         """
@@ -245,7 +245,7 @@ class Particles(dict):
                     for jobj in objs.values():
                         if jobj:
                             if hasattr(jobj, "pnacc"):
-                                ret = gravitation.post_newtonian.set_acc(iobj, jobj)
+                                ret = gravitation.set_pnacc(iobj, jobj, pn_order, clight)
                                 ipnacc += ret
                     iobj.pnacc = ipnacc
 
@@ -260,7 +260,7 @@ class Particles(dict):
                 iomega = 0.0
                 for jobj in objs.values():
                     if jobj:
-                        ret = gravitation.newtonian.set_acctstep(iobj, jobj, eta_2)
+                        ret = gravitation.set_acctstep(iobj, jobj, eta_2)
                         iacc += ret[0]
                         iomega = np.maximum(iomega, ret[1])
                 iobj.acc = iacc
@@ -276,7 +276,7 @@ class Particles(dict):
                 iomega = 0.0
                 for jobj in objs.values():
                     if jobj:
-                        ret = gravitation.newtonian.set_tstep(iobj, jobj, eta_2)
+                        ret = gravitation.set_tstep(iobj, jobj, eta_2)
                         iomega = np.maximum(iomega, ret)
                 iobj.dt_next = eta / iomega
 

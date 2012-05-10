@@ -136,7 +136,10 @@ class Simulation(object):
 
         # Initializes the integrator.
         self.integrator = Integrator(self.args.eta, self.args.t_begin, particles,
-                                     method=self.args.meth, dumpper=self.io,
+                                     method=self.args.meth,
+                                     pn_order=self.args.pn_order,
+                                     clight=self.args.clight,
+                                     dumpper=self.io,
                                      snap_freq=self.args.snap_freq)
         self.integrator.initialize(self.args.t_end)
 
@@ -275,6 +278,14 @@ def main():
                              "must be read from. The file format, if supported, "
                              "is automatically discovered (type: str, default: None)."
                        )
+    newrun.add_argument("-m", "--meth",
+                        type=str,
+                        default=None,
+                        required=True,
+                        choices=Integrator.PROVIDED_METHODS,
+                        help="Integration method name (type: str, default:"
+                             " None)."
+                       )
     newrun.add_argument("-e", "--eta",
                         type=float,
                         default=None,
@@ -295,12 +306,18 @@ def main():
                         help="Time to begin the simulation (type: float, default"
                              ": 0.0)."
                        )
-    newrun.add_argument("-m", "--meth",
-                        type=str,
-                        default="leapfrog",
-                        choices=Integrator.PROVIDED_METHODS,
-                        help="Integration method name (type: str, default:"
-                             " 'leapfrog')."
+    newrun.add_argument("--pn_order",
+                        type=int,
+                        default=0,
+                        choices=[2, 4, 5, 6, 7],
+                        help="Order of the Post-Newtonian corrections"
+                             "(type: int, default: 0)."
+                       )
+    newrun.add_argument("--clight",
+                        type=float,
+                        default=None,
+                        help="Speed of light value to use in Post-Newtonian"
+                             "corrections (type: int, default: None)."
                        )
     newrun.add_argument("-o", "--output_format",
                         type=str,
