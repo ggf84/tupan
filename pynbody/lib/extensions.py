@@ -94,10 +94,9 @@ class CLExtensions(object):
         dev_args = [global_size, local_size]
         for arg in args:
             if isinstance(arg, np.ndarray):
-                hostbuf = arg.copy().astype(self._dtype)
-                item = cl.Buffer(self._cl_ctx,
-                                 mf.READ_ONLY | mf.COPY_HOST_PTR,
-                                 hostbuf=hostbuf)
+                hostbuf = np.ascontiguousarray(arg, dtype=self._dtype)
+#                item = cl.Buffer(self._cl_ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=hostbuf)
+                item = cl.Buffer(self._cl_ctx, mf.READ_ONLY | mf.USE_HOST_PTR, hostbuf=hostbuf)
             elif isinstance(arg, np.floating):
                 item = arg.astype(self._dtype)
             else:
@@ -106,9 +105,8 @@ class CLExtensions(object):
 
         # Set output buffer on CL device
         self.kernel_result = np.empty(output_layout, dtype=self._dtype)
-        self._cl_devbuf_res = cl.Buffer(self._cl_ctx,
-                                        mf.WRITE_ONLY | mf.COPY_HOST_PTR,
-                                        hostbuf=self.kernel_result)
+#        self._cl_devbuf_res = cl.Buffer(self._cl_ctx, mf.WRITE_ONLY | mf.COPY_HOST_PTR, hostbuf=self.kernel_result)
+        self._cl_devbuf_res = cl.Buffer(self._cl_ctx, mf.WRITE_ONLY | mf.USE_HOST_PTR, hostbuf=self.kernel_result)
         dev_args.append(self._cl_devbuf_res)
 
         # Set local memory sizes on CL device
