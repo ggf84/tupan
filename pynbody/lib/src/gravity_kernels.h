@@ -128,21 +128,23 @@ p2p_tstep_kernel_core(REAL inv_tstep,
     REAL inv_r2 = 1 / (r2 + v.w);                                    // 2 FLOPs
     inv_r2 = (r2 > 0) ? (inv_r2):(0);
     REAL inv_r = sqrt(inv_r2);                                       // 1 FLOPs
-    REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
+//    REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
 
-    REAL omega2a = v2 * inv_r2;                                      // 1 FLOPs
-    REAL omega2b = 2 * r.w * inv_r3;                                 // 2 FLOPs
-    REAL omega2 = omega2a + omega2b;                                 // 1 FLOPs
-    REAL omega2b_omega2 = omega2b / omega2;                          // 1 FLOPs
-    omega2b_omega2 = (r2 > 0) ? (omega2b_omega2):(0);
-    REAL weighting = 1 + omega2b_omega2;                             // 1 FLOPs
-    REAL dln_omega = -weighting * rv * inv_r2;                       // 2 FLOPs
-    REAL omega = sqrt(omega2);                                       // 1 FLOPs
+//    REAL omega2a = v2 * inv_r2;                                      // 1 FLOPs
+//    REAL omega2b = 2 * r.w * inv_r3;                                 // 2 FLOPs
+//    REAL omega2 = omega2a + omega2b;                                 // 1 FLOPs
+//    REAL omega2b_omega2 = omega2b / omega2;                          // 1 FLOPs
+//    omega2b_omega2 = (r2 > 0) ? (omega2b_omega2):(0);
+//    REAL weighting = 1 + omega2b_omega2;                             // 1 FLOPs
+//    REAL dln_omega = -weighting * rv * inv_r2;                       // 2 FLOPs
+//    REAL omega = sqrt(omega2);                                       // 1 FLOPs
+//    omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
+
+    REAL energy = (v2 - 2 * r.w * inv_r);                            // 3 FLOPs
+    energy = (energy > 0) ? (energy):(-energy);
+    REAL omega = sqrt(energy * inv_r2);                             // 2 FLOPs
+    REAL dln_omega = -(rv * inv_r2);                                 // 1 FLOPs
     omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
-
-//    REAL inv_a = (v2 - 2 * r.w * inv_r);
-//    inv_a = (inv_a > 0) ? (inv_a):(-inv_a);
-//    REAL omega = sqrt(inv_a * inv_a * inv_a) / r.w;
 
     inv_tstep = (omega > inv_tstep) ? (omega):(inv_tstep);
     return inv_tstep;
