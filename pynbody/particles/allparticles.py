@@ -13,7 +13,6 @@ import numpy as np
 from .sph import Sph
 from .body import Body
 from .blackhole import BlackHole
-from ..lib.gravity import gravitation
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -216,9 +215,7 @@ class Particles(dict):
             if iobj:
                 iphi = 0.0
                 for jobj in objs.values():
-                    if jobj:
-                        ret = gravitation.set_phi(iobj, jobj)
-                        iphi += ret
+                    iphi += iobj.get_phi(jobj)
                 iobj.phi = iphi
 
     def update_acc(self, objs):
@@ -229,9 +226,7 @@ class Particles(dict):
             if iobj:
                 iacc = 0.0
                 for jobj in objs.values():
-                    if jobj:
-                        ret = gravitation.set_acc(iobj, jobj)
-                        iacc += ret
+                    iacc += iobj.get_acc(jobj)
                 iobj.acc = iacc
 
     def update_pnacc(self, objs, pn_order, clight):
@@ -240,45 +235,38 @@ class Particles(dict):
         """
         for iobj in self.values():
             if iobj:
-                ipnacc = 0.0
                 if hasattr(iobj, "pnacc"):
+                    ipnacc = 0.0
                     for jobj in objs.values():
-                        if jobj:
-                            if hasattr(jobj, "pnacc"):
-                                ret = gravitation.set_pnacc(iobj, jobj, pn_order, clight)
-                                ipnacc += ret
+                        if hasattr(jobj, "pnacc"):
+                            ipnacc += iobj.get_pnacc(jobj, pn_order, clight)
                     iobj.pnacc = ipnacc
 
     def update_acc_and_timestep(self, objs, eta):
         """
         Update the individual gravitational acceleration and time-steps due to other particles.
         """
-        eta_2 = eta/2
         for iobj in self.values():
             if iobj:
                 iacc = 0.0
-                iomega = 0.0
+                itstep = 1.0
                 for jobj in objs.values():
-                    if jobj:
-                        ret = gravitation.set_acctstep(iobj, jobj, eta_2)
-                        iacc += ret[0]
-                        iomega = np.maximum(iomega, ret[1])
+                    ret = iobj.get_acctstep(jobj, eta)
+                    iacc += ret[0]
+                    itstep = np.minimum(itstep, ret[1])
                 iobj.acc = iacc
-                iobj.dt_next = eta / iomega
+                iobj.dt_next = itstep
 
     def update_timestep(self, objs, eta):
         """
         Update the individual time-steps due to other particles.
         """
-        eta_2 = eta/2
         for iobj in self.values():
             if iobj:
-                iomega = 0.0
+                itstep = 1.0
                 for jobj in objs.values():
-                    if jobj:
-                        ret = gravitation.set_tstep(iobj, jobj, eta_2)
-                        iomega = np.maximum(iomega, ret)
-                iobj.dt_next = eta / iomega
+                    itstep = np.minimum(itstep, iobj.get_tstep(jobj, eta))
+                iobj.dt_next = itstep
 
 
     ### prev/next timestep

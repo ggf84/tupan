@@ -8,6 +8,7 @@
 from __future__ import print_function
 import copy
 import numpy as np
+from ..lib.gravity import gravitation
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -326,16 +327,53 @@ class Pbase(object):
     ### gravity
 
     def update_phi(self, jobj):
-        raise NotImplementedError()
+        self.phi = self.get_phi(jobj)
 
     def update_acc(self, jobj):
-        raise NotImplementedError()
+        self.acc = self.get_acc(jobj)
 
     def update_acc_and_timestep(self, jobj, eta):
-        raise NotImplementedError()
+        ret = iobj.get_acctstep(jobj, eta)
+        self.acc = ret[0]
+        self.dt_next = ret[1]
 
     def update_timestep(self, jobj, eta):
-        raise NotImplementedError()
+        self.dt_next = self.get_tstep(jobj, eta)
+
+
+    def get_phi(self, jobj):
+        """
+        Get individual gravitational potential due j-particles.
+        """
+        if jobj:
+            return gravitation.set_phi(self, jobj)
+        return 0.0
+
+    def get_acc(self, jobj):
+        """
+        Get individual gravitational acceleration due j-particles.
+        """
+        if jobj:
+            return gravitation.set_acc(self, jobj)
+        return 0.0
+
+    def get_acctstep(self, jobj, eta):
+        """
+        Get individual gravitational acceleration and time-step due j-particles.
+        """
+        if jobj:
+            ret = gravitation.set_acctstep(self, jobj, eta/2)
+            return (ret[0], eta / ret[1])
+        return (0.0, 1.0)
+
+    def get_tstep(self, jobj, eta):
+        """
+        Get individual time-step due j-particles.
+        """
+#        if jobj:
+        if jobj and len(jobj)+len(self) > 2:
+            return eta / gravitation.set_tstep(self, jobj, eta/2)
+        return 1.0
 
 
     ### evolve

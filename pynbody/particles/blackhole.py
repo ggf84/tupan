@@ -8,6 +8,7 @@
 from __future__ import print_function
 import numpy as np
 from .pbase import Pbase
+from ..lib.gravity import gravitation
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -163,6 +164,20 @@ class BlackHole(Pbase):
     #
     # specific methods
     #
+
+    ### pn-gravity
+
+    def update_pnacc(self, jobj, pn_order, clight):
+        self.pnacc = self.get_pnacc(jobj, pn_order, clight)
+
+    def get_pnacc(self, jobj, pn_order, clight):
+        """
+        Get individual post-newtonian gravitational acceleration due j-particles.
+        """
+        if jobj:
+            return gravitation.set_pnacc(self, jobj, pn_order, clight)
+        return 0.0
+
 
     ### evolve corrections due to post-newtonian terms
 
