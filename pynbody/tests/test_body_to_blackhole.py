@@ -44,7 +44,7 @@ if __name__ == "__main__":
 #    p["body"] = p0["body"][:-n_bh]
 
     from pynbody.ics import *
-    p = figure_eight_orbit.make_system('blackhole')
+    p = figure8.make_system('blackhole')
     p['body'] = p0["body"]
 
 #    from pynbody.particles.blackhole import dtype

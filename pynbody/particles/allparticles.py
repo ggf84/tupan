@@ -10,6 +10,7 @@ from __future__ import print_function
 import sys
 import copy
 import numpy as np
+from numpy.lib import recfunctions as recf
 from .sph import Sph
 from .body import Body
 from .blackhole import BlackHole
@@ -68,7 +69,7 @@ class Particles(dict):
     def append(self, objs):
         if isinstance(objs, Particles):
             for (key, obj) in objs.items():
-                if obj:
+                if obj.n:
                     self[key].append(obj)
         elif isinstance(objs, Body):
             self["body"].append(objs)
@@ -78,11 +79,32 @@ class Particles(dict):
             self["sph"].append(objs)
 
     def update_n(self):
-        n = 0
-        for obj in self.values():
-            if obj:
-                n += len(obj)
-        self.n = n
+        self.n = sum([obj.n for obj in self.values()])
+
+
+    #
+    # common attributes
+    #
+
+    @property
+    def pos(self):
+        pos = [obj.pos for obj in self.values() if obj.n]
+        return recf.stack_arrays(pos).view(np.ndarray).reshape((-1,3))
+
+    @property
+    def vel(self):
+        vel = [obj.vel for obj in self.values() if obj.n]
+        return recf.stack_arrays(vel).view(np.ndarray).reshape((-1,3))
+
+    @property
+    def mass(self):
+        mass = [obj.mass for obj in self.values() if obj.n]
+        return recf.stack_arrays(mass).view(np.ndarray)
+
+    @property
+    def eps2(self):
+        eps2 = [obj.eps2 for obj in self.values() if obj.n]
+        return recf.stack_arrays(eps2).view(np.ndarray)
 
 
     #
@@ -95,11 +117,7 @@ class Particles(dict):
         """
         Get the total mass of the whole system of particles.
         """
-        total_mass = 0.0
-        for obj in self.values():
-            if obj:
-                total_mass += obj.get_total_mass()
-        return total_mass
+        return sum([obj.get_total_mass() for obj in self.values() if obj.n])
 
     def get_center_of_mass_position(self):
         """
@@ -108,11 +126,11 @@ class Particles(dict):
         com_pos = 0.0
         total_mass = 0.0
         for obj in self.values():
-            if obj:
+            if obj.n:
                 mass = obj.get_total_mass()
-                total_mass += mass
                 pos = obj.get_center_of_mass_position()
                 com_pos += pos * mass
+                total_mass += mass
                 if hasattr(obj, "get_pn_correction_for_center_of_mass_position"):
                     com_pos += obj.get_pn_correction_for_center_of_mass_position()
         return (com_pos / total_mass)
@@ -124,11 +142,11 @@ class Particles(dict):
         com_vel = 0.0
         total_mass = 0.0
         for obj in self.values():
-            if obj:
+            if obj.n:
                 mass = obj.get_total_mass()
-                total_mass += mass
                 vel = obj.get_center_of_mass_velocity()
                 com_vel += vel * mass
+                total_mass += mass
                 if hasattr(obj, "get_pn_correction_for_center_of_mass_velocity"):
                     com_vel += obj.get_pn_correction_for_center_of_mass_velocity()
         return (com_vel / total_mass)
@@ -140,7 +158,7 @@ class Particles(dict):
         com_pos = self.get_center_of_mass_position()
         com_vel = self.get_center_of_mass_velocity()
         for obj in self.values():
-            if obj:
+            if obj.n:
                 obj.pos -= com_pos
                 obj.vel -= com_vel
 
@@ -153,7 +171,7 @@ class Particles(dict):
         """
         lin_mom = 0.0
         for obj in self.values():
-            if obj:
+            if obj.n:
                 lin_mom += obj.get_total_linear_momentum()
                 if hasattr(obj, "get_pn_correction_for_total_linear_momentum"):
                     lin_mom += obj.get_pn_correction_for_total_linear_momentum()
@@ -168,7 +186,7 @@ class Particles(dict):
         """
         ang_mom = 0.0
         for obj in self.values():
-            if obj:
+            if obj.n:
                 ang_mom += obj.get_total_angular_momentum()
                 if hasattr(obj, "get_pn_correction_for_total_angular_momentum"):
                     ang_mom += obj.get_pn_correction_for_total_angular_momentum()
@@ -183,7 +201,7 @@ class Particles(dict):
         """
         ke = 0.0
         for obj in self.values():
-            if obj:
+            if obj.n:
                 ke += obj.get_total_kinetic_energy()
                 if hasattr(obj, "get_pn_correction_for_total_energy"):
                     ke += obj.get_pn_correction_for_total_energy()
@@ -198,7 +216,7 @@ class Particles(dict):
         """
         pe = 0.0
         for obj in self.values():
-            if obj:
+            if obj.n:
                 pe += obj.get_total_potential_energy()     ### :FIXME: (when include BHs) ###
 #                value = obj.get_total_potential_energy()
 #                pe += 0.5*(value + obj._self_total_epot)
@@ -211,30 +229,45 @@ class Particles(dict):
         """
         Update the individual gravitational potential due to other particles.
         """
+        nj = objs.n
+        jpos = objs.pos
+        jmass = objs.mass
+        jeps2 = objs.eps2
         for iobj in self.values():
-            if iobj:
-                iphi = 0.0
-                for jobj in objs.values():
-                    iphi += iobj.get_phi(jobj)
-                iobj.phi = iphi
+            if iobj.n:
+                iobj.phi = iobj.get_phi(nj, jpos, jmass, jeps2)
 
     def update_acc(self, objs):
         """
         Update the individual gravitational acceleration due to other particles.
         """
+        nj = objs.n
+        jpos = objs.pos
+        jmass = objs.mass
+        jeps2 = objs.eps2
         for iobj in self.values():
-            if iobj:
-                iacc = 0.0
-                for jobj in objs.values():
-                    iacc += iobj.get_acc(jobj)
-                iobj.acc = iacc
+            if iobj.n:
+                iobj.acc = iobj.get_acc(nj, jpos, jmass, jeps2)
+
+    def update_timestep(self, objs, eta):
+        """
+        Update the individual time-steps due to other particles.
+        """
+        nj = objs.n
+        jpos = objs.pos
+        jmass = objs.mass
+        jvel = objs.vel
+        jeps2 = objs.eps2
+        for iobj in self.values():
+            if iobj.n:
+                iobj.dt_next = iobj.get_tstep(nj, jpos, jmass, jvel, jeps2, eta)
 
     def update_pnacc(self, objs, pn_order, clight):
         """
         Update the individual post-newtonian gravitational acceleration due to other particles.
         """
         for iobj in self.values():
-            if iobj:
+            if iobj.n:
                 if hasattr(iobj, "pnacc"):
                     ipnacc = 0.0
                     for jobj in objs.values():
@@ -242,12 +275,12 @@ class Particles(dict):
                             ipnacc += iobj.get_pnacc(jobj, pn_order, clight)
                     iobj.pnacc = ipnacc
 
-    def update_acc_and_timestep(self, objs, eta):
+    def update_acc_and_timestep(self, objs, eta):   # XXX: deprecated!
         """
         Update the individual gravitational acceleration and time-steps due to other particles.
         """
         for iobj in self.values():
-            if iobj:
+            if iobj.n:
                 iacc = 0.0
                 itstep = 1.0
                 for jobj in objs.values():
@@ -255,17 +288,6 @@ class Particles(dict):
                     iacc += ret[0]
                     itstep = np.minimum(itstep, ret[1])
                 iobj.acc = iacc
-                iobj.dt_next = itstep
-
-    def update_timestep(self, objs, eta):
-        """
-        Update the individual time-steps due to other particles.
-        """
-        for iobj in self.values():
-            if iobj:
-                itstep = 1.0
-                for jobj in objs.values():
-                    itstep = np.minimum(itstep, iobj.get_tstep(jobj, eta))
                 iobj.dt_next = itstep
 
 
@@ -276,7 +298,7 @@ class Particles(dict):
 
         """
         for obj in self.values():
-            if obj:
+            if obj.n:
                 obj.dt_prev = tau
 
     def set_dt_next(self, tau):
@@ -284,7 +306,7 @@ class Particles(dict):
 
         """
         for obj in self.values():
-            if obj:
+            if obj.n:
                 obj.dt_next = tau
 
 
@@ -294,7 +316,7 @@ class Particles(dict):
         """
         min_value = sys.float_info.max
         for obj in self.values():
-            if obj:
+            if obj.n:
                 min_value = min(min_value, obj.dt_prev.min())
         return min_value
 
@@ -304,7 +326,7 @@ class Particles(dict):
         """
         min_value = sys.float_info.max
         for obj in self.values():
-            if obj:
+            if obj.n:
                 min_value = min(min_value, obj.dt_next.min())
         return min_value
 
@@ -315,7 +337,7 @@ class Particles(dict):
         """
         max_value = 0.0
         for obj in self.values():
-            if obj:
+            if obj.n:
                 max_value = max(max_value, obj.dt_prev.max())
         return max_value
 
@@ -325,7 +347,7 @@ class Particles(dict):
         """
         max_value = 0.0
         for obj in self.values():
-            if obj:
+            if obj.n:
                 max_value = max(max_value, obj.dt_next.max())
         return max_value
 
@@ -337,9 +359,9 @@ class Particles(dict):
         n = 0
         mean_value = 0.0
         for obj in self.values():
-            if obj:
+            if obj.n:
                 mean_value += obj.dt_prev.sum()
-                n += len(obj)
+                n += obj.n
         mean_value = mean_value / n
         return mean_value
 
@@ -350,9 +372,9 @@ class Particles(dict):
         n = 0
         mean_value = 0.0
         for obj in self.values():
-            if obj:
+            if obj.n:
                 mean_value += obj.dt_next.sum()
-                n += len(obj)
+                n += obj.n
         mean_value = mean_value / n
         return mean_value
 
@@ -364,9 +386,9 @@ class Particles(dict):
         n = 0
         harmonic_mean_value = 0.0
         for obj in self.values():
-            if obj:
+            if obj.n:
                 harmonic_mean_value += (1 / obj.dt_prev).sum()
-                n += len(obj)
+                n += obj.n
         harmonic_mean_value = n / harmonic_mean_value
         return harmonic_mean_value
 
@@ -377,9 +399,9 @@ class Particles(dict):
         n = 0
         harmonic_mean_value = 0.0
         for obj in self.values():
-            if obj:
+            if obj.n:
                 harmonic_mean_value += (1 / obj.dt_next).sum()
-                n += len(obj)
+                n += obj.n
         harmonic_mean_value = n / harmonic_mean_value
         return harmonic_mean_value
 

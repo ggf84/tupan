@@ -24,7 +24,7 @@ class Pbase(object):
     zero = None
 
     def __init__(self, n):
-        self.data = self.zero.copy() if n == 0 else np.zeros(n, self.dtype)
+        self.data = self.zero if n == 0 else np.zeros(n, self.dtype)
 
 
     #
@@ -46,6 +46,7 @@ class Pbase(object):
 
     def __len__(self):
         return len(self.data)
+    n = property(__len__)
 
     def __getitem__(self, index):
         data = self.data[index]
@@ -327,53 +328,75 @@ class Pbase(object):
     ### gravity
 
     def update_phi(self, jobj):
-        self.phi = self.get_phi(jobj)
+        nj = jobj.n
+        jpos = jobj.pos
+        jmass = jobj.mass
+        jeps2 = jobj.eps2
+        self.phi = self.get_phi(nj, jpos, jmass, jeps2)
 
     def update_acc(self, jobj):
-        self.acc = self.get_acc(jobj)
+        nj = jobj.n
+        jpos = jobj.pos
+        jmass = jobj.mass
+        jeps2 = jobj.eps2
+        self.acc = self.get_acc(nj, jpos, jmass, jeps2)
 
-    def update_acc_and_timestep(self, jobj, eta):
+    def update_timestep(self, jobj, eta):
+        nj = jobj.n
+        jpos = jobj.pos
+        jmass = jobj.mass
+        jvel = jobj.vel
+        jeps2 = jobj.eps2
+        self.dt_next = self.get_tstep(nj, jpos, jmass, jvel, jeps2, eta)
+
+    def update_acc_and_timestep(self, jobj, eta):   # XXX: deprecated!
         ret = iobj.get_acctstep(jobj, eta)
         self.acc = ret[0]
         self.dt_next = ret[1]
 
-    def update_timestep(self, jobj, eta):
-        self.dt_next = self.get_tstep(jobj, eta)
 
-
-    def get_phi(self, jobj):
+    def get_phi(self, nj, jpos, jmass, jeps2):
         """
         Get individual gravitational potential due j-particles.
         """
-        if jobj:
-            return gravitation.set_phi(self, jobj)
-        return 0.0
+        ni = self.n
+        ipos = self.pos
+        imass = self.mass
+        ieps2 = self.eps2
+        return gravitation.set_phi(ni, ipos, imass, ieps2,
+                                   nj, jpos, jmass, jeps2)
 
-    def get_acc(self, jobj):
+    def get_acc(self, nj, jpos, jmass, jeps2):
         """
         Get individual gravitational acceleration due j-particles.
         """
-        if jobj:
-            return gravitation.set_acc(self, jobj)
-        return 0.0
+        ni = self.n
+        ipos = self.pos
+        imass = self.mass
+        ieps2 = self.eps2
+        return gravitation.set_acc(ni, ipos, imass, ieps2,
+                                   nj, jpos, jmass, jeps2)
 
-    def get_acctstep(self, jobj, eta):
-        """
-        Get individual gravitational acceleration and time-step due j-particles.
-        """
-        if jobj:
-            ret = gravitation.set_acctstep(self, jobj, eta/2)
-            return (ret[0], eta / ret[1])
-        return (0.0, 1.0)
-
-    def get_tstep(self, jobj, eta):
+    def get_tstep(self, nj, jpos, jmass, jvel, jeps2, eta):
         """
         Get individual time-step due j-particles.
         """
-#        if jobj:
-        if jobj and len(jobj)+len(self) > 2:
-            return eta / gravitation.set_tstep(self, jobj, eta/2)
-        return 1.0
+        ni = self.n
+        ipos = self.pos
+        imass = self.mass
+        ivel = self.vel
+        ieps2 = self.eps2
+        return eta / gravitation.set_tstep(ni, ipos, imass, ivel, ieps2,
+                                           nj, jpos, jmass, jvel, jeps2, eta/2)
+
+    def get_acctstep(self, jobj, eta):   # XXX: deprecated!
+        """
+        Get individual gravitational acceleration and time-step due j-particles.
+        """
+        if jobj.n:
+            ret = gravitation.set_acctstep(self, jobj, eta/2)
+            return (ret[0], eta / ret[1])
+        return (0.0, 1.0)
 
 
     ### evolve

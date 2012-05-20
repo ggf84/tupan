@@ -174,7 +174,7 @@ class BlackHole(Pbase):
         """
         Get individual post-newtonian gravitational acceleration due j-particles.
         """
-        if jobj:
+        if jobj.n:
             return gravitation.set_pnacc(self, jobj, pn_order, clight)
         return 0.0
 

@@ -46,7 +46,7 @@ class LeapFrog(object):
 
         """
         for (key, obj) in ip.items():
-            if obj:
+            if obj.n:
                 if hasattr(obj, "evolve_current_time"):
                     obj.evolve_current_time(tau)
                 if hasattr(obj, "evolve_position"):
@@ -63,7 +63,7 @@ class LeapFrog(object):
         prev_acc = {}
         prev_pnacc = {}
         for (key, obj) in ip.items():
-            if obj:
+            if obj.n:
                 if hasattr(obj, "acc"):
                     prev_acc[key] = obj.acc.copy()
                 if self.pn_order > 0:
@@ -75,7 +75,7 @@ class LeapFrog(object):
             ip.update_pnacc(jp, self.pn_order, self.clight)
 
         for (key, obj) in ip.items():
-            if obj:
+            if obj.n:
                 if hasattr(obj, "acc"):
                     obj.acc = 2 * obj.acc - prev_acc[key]
                 if self.pn_order > 0:
@@ -88,7 +88,7 @@ class LeapFrog(object):
 
         """
         for (key, obj) in ip.items():
-            if obj:
+            if obj.n:
                 if self.pn_order > 0:
                     if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
                         obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
@@ -104,7 +104,7 @@ class LeapFrog(object):
         self.forceDKD(ip, jp)
 
         for (key, obj) in ip.items():
-            if obj:
+            if obj.n:
                 if hasattr(obj, "evolve_velocity"):
                     obj.evolve_velocity(tau / 2)
                 if self.pn_order > 0:

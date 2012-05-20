@@ -22,17 +22,17 @@ logger = logging.getLogger(__name__)
 
 def scale_mass(particles, m_scale):
     for obj in particles.values():
-        if obj:
+        if obj.n:
             obj.mass *= m_scale
 
 def scale_pos(particles, r_scale):
     for obj in particles.values():
-        if obj:
+        if obj.n:
             obj.pos *= r_scale
 
 def scale_vel(particles, v_scale):
     for obj in particles.values():
-        if obj:
+        if obj.n:
             obj.vel *= v_scale
 
 def scale_to_virial(particles, ke, pe, te):
@@ -76,6 +76,7 @@ class Plummer(object):
         self.eps2 = eps*eps
         self.eps_parametrization = eps_parametrization
         self.particles = Particles({"body": num})
+        self.particles.update_n()
         np.random.seed(seed)
 
     def set_eps2(self, mass):

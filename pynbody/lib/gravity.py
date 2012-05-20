@@ -43,23 +43,25 @@ class Gravity(object):
 
     ### phi methods
 
-    def setup_phi_data(self, iobj, jobj):
-        ni = len(iobj)
-        nj = len(jobj)
-        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        data = (iposmass, iobj.eps2,
-                jposmass, jobj.eps2,
+    def setup_phi_data(self, ni, ipos, imass, ieps2,
+                             nj, jpos, jmass, jeps2):
+
+        iposmass = np.concatenate((ipos, imass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jpos, jmass[..., np.newaxis]), axis=1)
+
+        data = (iposmass, ieps2,
+                jposmass, jeps2,
                 np.uint32(ni),
                 np.uint32(nj))
         return data
 
-    def set_phi(self, iobj, jobj):
+    def set_phi(self, ni, ipos, imass, ieps2,
+                      nj, jpos, jmass, jeps2):
         """
         Set obj-obj newtonian phi.
         """
-        ni = len(iobj)
-        data = self.setup_phi_data(iobj, jobj)
+        data = self.setup_phi_data(ni, ipos, imass, ieps2,
+                                   nj, jpos, jmass, jeps2)
 
         result_shape = (ni,)
         local_memory_shape = (4, 1)
@@ -81,23 +83,25 @@ class Gravity(object):
 
     ### acc methods
 
-    def setup_acc_data(self, iobj, jobj):
-        ni = len(iobj)
-        nj = len(jobj)
-        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        data = (iposmass, iobj.eps2,
-                jposmass, jobj.eps2,
+    def setup_acc_data(self, ni, ipos, imass, ieps2,
+                             nj, jpos, jmass, jeps2):
+
+        iposmass = np.concatenate((ipos, imass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jpos, jmass[..., np.newaxis]), axis=1)
+
+        data = (iposmass, ieps2,
+                jposmass, jeps2,
                 np.uint32(ni),
                 np.uint32(nj))
         return data
 
-    def set_acc(self, iobj, jobj):
+    def set_acc(self, ni, ipos, imass, ieps2,
+                      nj, jpos, jmass, jeps2):
         """
         Set obj-obj newtonian acc.
         """
-        ni = len(iobj)
-        data = self.setup_acc_data(iobj, jobj)
+        data = self.setup_acc_data(ni, ipos, imass, ieps2,
+                                   nj, jpos, jmass, jeps2)
 
         result_shape = (ni, 4)          # XXX: forcing shape = (ni, 4) due to
                                         #      a bug using __global REAL3 in
@@ -121,56 +125,16 @@ class Gravity(object):
                                         #      __global REAL3 in OpenCL.
 
 
-    ### acctstep methods
-
-    def setup_acctstep_data(self, iobj, jobj, eta):
-        ni = len(iobj)
-        nj = len(jobj)
-        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        iveleps2 = np.concatenate((iobj.vel, iobj.eps2[..., np.newaxis]), axis=1)
-        jveleps2 = np.concatenate((jobj.vel, jobj.eps2[..., np.newaxis]), axis=1)
-        data = (iposmass, iveleps2,
-                jposmass, jveleps2,
-                np.uint32(ni),
-                np.uint32(nj),
-                np.float64(eta))
-        return data
-
-    def set_acctstep(self, iobj, jobj, eta):
-        """
-        Set obj-obj newtonian acc and timestep.
-        """
-        ni = len(iobj)
-        data = self.setup_acctstep_data(iobj, jobj, eta)
-
-        result_shape = (ni, 4)
-        local_memory_shape = (4, 4)
-
-        # Adjusts global_size to be an integer multiple of local_size
-        local_size = 384
-        global_size = ((ni-1)//local_size + 1) * local_size
-
-        acc_kernel = kernel_library.get_kernel("p2p_acctstep_kernel")
-
-        acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          result_shape=result_shape,
-                                          local_memory_shape=local_memory_shape)
-        acc_kernel.run()
-        ret = acc_kernel.get_result()
-        return (ret[:,:3], ret[:,3])
-
-
     ### tstep methods
 
-    def setup_tstep_data(self, iobj, jobj, eta):
-        ni = len(iobj)
-        nj = len(jobj)
-        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        iveleps2 = np.concatenate((iobj.vel, iobj.eps2[..., np.newaxis]), axis=1)
-        jveleps2 = np.concatenate((jobj.vel, jobj.eps2[..., np.newaxis]), axis=1)
+    def setup_tstep_data(self, ni, ipos, imass, ivel, ieps2,
+                               nj, jpos, jmass, jvel, jeps2, eta):
+
+        iposmass = np.concatenate((ipos, imass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jpos, jmass[..., np.newaxis]), axis=1)
+        iveleps2 = np.concatenate((ivel, ieps2[..., np.newaxis]), axis=1)
+        jveleps2 = np.concatenate((jvel, jeps2[..., np.newaxis]), axis=1)
+
         data = (iposmass, iveleps2,
                 jposmass, jveleps2,
                 np.uint32(ni),
@@ -178,12 +142,13 @@ class Gravity(object):
                 np.float64(eta))
         return data
 
-    def set_tstep(self, iobj, jobj, eta):
+    def set_tstep(self, ni, ipos, imass, ivel, ieps2,
+                        nj, jpos, jmass, jvel, jeps2, eta):
         """
         Set timestep.
         """
-        ni = len(iobj)
-        data = self.setup_tstep_data(iobj, jobj, eta)
+        data = self.setup_tstep_data(ni, ipos, imass, ivel, ieps2,
+                                     nj, jpos, jmass, jvel, jeps2, eta)
 
         result_shape = (ni,)
         local_memory_shape = (4, 4)
@@ -250,6 +215,49 @@ class Gravity(object):
                                         #      see comment about a bug using
                                         #      __global REAL3 in OpenCL.
 
+
+
+
+
+    ### acctstep methods
+
+    def setup_acctstep_data(self, iobj, jobj, eta):   # XXX: deprecated!
+        ni = len(iobj)
+        nj = len(jobj)
+        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
+        iveleps2 = np.concatenate((iobj.vel, iobj.eps2[..., np.newaxis]), axis=1)
+        jveleps2 = np.concatenate((jobj.vel, jobj.eps2[..., np.newaxis]), axis=1)
+        data = (iposmass, iveleps2,
+                jposmass, jveleps2,
+                np.uint32(ni),
+                np.uint32(nj),
+                np.float64(eta))
+        return data
+
+    def set_acctstep(self, iobj, jobj, eta):   # XXX: deprecated!
+        """
+        Set obj-obj newtonian acc and timestep.
+        """
+        ni = len(iobj)
+        data = self.setup_acctstep_data(iobj, jobj, eta)
+
+        result_shape = (ni, 4)
+        local_memory_shape = (4, 4)
+
+        # Adjusts global_size to be an integer multiple of local_size
+        local_size = 384
+        global_size = ((ni-1)//local_size + 1) * local_size
+
+        acc_kernel = kernel_library.get_kernel("p2p_acctstep_kernel")
+
+        acc_kernel.set_kernel_args(*data, global_size=global_size,
+                                          local_size=local_size,
+                                          result_shape=result_shape,
+                                          local_memory_shape=local_memory_shape)
+        acc_kernel.run()
+        ret = acc_kernel.get_result()
+        return (ret[:,:3], ret[:,3])
 
 
 
