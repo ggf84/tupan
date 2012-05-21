@@ -170,13 +170,16 @@ class Gravity(object):
 
     ### pnacc methods
 
-    def setup_pnacc_data(self, iobj, jobj, clight):
-        ni = len(iobj)
-        nj = len(jobj)
-        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        iveliv2 = np.concatenate((iobj.vel, (iobj.vel**2).sum(1)[..., np.newaxis]), axis=1)
-        jveljv2 = np.concatenate((jobj.vel, (jobj.vel**2).sum(1)[..., np.newaxis]), axis=1)
+    def setup_pnacc_data(self, ni, ipos, imass, ivel,
+                               nj, jpos, jmass, jvel,
+                               pn_order, clight):
+
+        iposmass = np.concatenate((ipos, imass[..., np.newaxis]), axis=1)
+        jposmass = np.concatenate((jpos, jmass[..., np.newaxis]), axis=1)
+        iveliv2 = np.concatenate((ivel, (ivel**2).sum(1)[..., np.newaxis]), axis=1)
+        jveljv2 = np.concatenate((jvel, (jvel**2).sum(1)[..., np.newaxis]), axis=1)
+        clight = Clight(pn_order, clight)
+
         data = (iposmass, iveliv2,
                 jposmass, jveljv2,
                 np.uint32(ni),
@@ -187,12 +190,15 @@ class Gravity(object):
                 np.float64(clight.inv6), np.float64(clight.inv7))
         return data
 
-    def set_pnacc(self, iobj, jobj, pn_order, clight):
+    def set_pnacc(self, ni, ipos, imass, ivel,
+                        nj, jpos, jmass, jvel,
+                        pn_order, clight):
         """
         Set blackhole-blackhole post-newtonian acc.
         """
-        ni = len(iobj)
-        data = self.setup_pnacc_data(iobj, jobj, Clight(pn_order, clight))
+        data = self.setup_pnacc_data(ni, ipos, imass, ivel,
+                                     nj, jpos, jmass, jvel,
+                                     pn_order, clight)
 
         result_shape = (ni,4)           # XXX: forcing shape = (ni, 4) due to
                                         #      a bug using __global REAL3 in

@@ -253,14 +253,15 @@ class Particles(dict):
         """
         Update the individual post-newtonian gravitational acceleration due to other particles.
         """
+        objs = objs['blackhole']
+        nj = objs.n
+        jpos = objs.pos
+        jmass = objs.mass
+        jvel = objs.vel
         for iobj in self.values():
             if iobj.n:
                 if hasattr(iobj, "pnacc"):
-                    ipnacc = 0.0
-                    for jobj in objs.values():
-                        if hasattr(jobj, "pnacc"):
-                            ipnacc += iobj.get_pnacc(jobj, pn_order, clight)
-                    iobj.pnacc = ipnacc
+                    iobj.pnacc = iobj.get_pnacc(nj, jpos, jmass, jvel, pn_order, clight)
 
     def update_acc_and_timestep(self, objs, eta):   # XXX: deprecated!
         """
