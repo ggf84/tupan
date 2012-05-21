@@ -36,23 +36,12 @@ if __name__ == "__main__":
         return p.particles.copy()
 
 
-    p0 = main()
-
-#    p0["body"].vel /= 2
-#    n_bh = 3
-#    p = Particles({"body": 1, "blackhole": 1})
-#    p["body"] = p0["body"][:-n_bh]
+    p = main()
 
     from pynbody.ics import *
-    p = figure8.make_system('blackhole')
-    p['body'] = p0["body"]
-
-#    from pynbody.particles.blackhole import dtype
-#    p["blackhole"].fromlist([tuple(b)+([0.0, 0.0, 0.0],0.0,0.0,)
-#                            for b in p0["body"][numBodies-n_bh:]],
-#                            dtype=dtype)
-#    p["blackhole"].eps2 *= 0
-
+    from pynbody.particles.blackhole import BlackHole
+    bh = figure8.make_system().astype(BlackHole)
+    p.append(bh)
 
     fname = "plummer"+str(numBodies).zfill(4)+'-'+"3bh"
     io = IO(fname, 'hdf5')

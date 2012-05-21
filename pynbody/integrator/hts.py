@@ -45,7 +45,6 @@ class HTS(LeapFrog):
 
         p = self.particles
 
-        p.update_n()
         p.update_phi(p)
         p.update_acc(p)
         if self.pn_order > 0:
@@ -427,28 +426,23 @@ class HTS(LeapFrog):
         slow = p.__class__()
         fast = p.__class__()
         for obj in p.values():
-            if obj:
+            if obj.n:
                 is_fast = obj.dt_next < tau
                 is_slow = ~is_fast
                 slow.append(obj[is_slow])
                 fast.append(obj[is_fast])
 
         # prevents the occurrence of a slow level with only one particle.
-        slow.update_n()
         if slow.n == 1:
             for obj in slow.values():
-                if obj:
+                if obj.n:
                     fast.append(obj.pop())
 
         # prevents the occurrence of a fast level with only one particle.
-        fast.update_n()
         if fast.n == 1:
             for obj in fast.values():
-                if obj:
+                if obj.n:
                     slow.append(obj.pop())
-
-        fast.update_n()
-        slow.update_n()
 
         if fast.n == 1: logger.error("fast level contains only *one* particle.")
         if slow.n == 1: logger.error("slow level contains only *one* particle.")
@@ -466,7 +460,6 @@ class HTS(LeapFrog):
             return fast
         p = slow
         p.append(fast)
-        p.update_n()
         return p
 
 

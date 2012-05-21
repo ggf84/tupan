@@ -19,6 +19,8 @@ class Body(Pbase):
     """
     A base class for Stars.
     """
+    attrs = ["id", "mass", "pos", "vel", "acc", "phi",
+             "eps2", "t_curr", "dt_prev", "dt_next", "radius"]
     dtype = [# common attributes
              ("id", "u8"),
              ("mass", "f8"),

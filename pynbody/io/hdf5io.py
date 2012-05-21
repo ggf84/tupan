@@ -8,6 +8,7 @@
 from __future__ import print_function
 import pickle
 import h5py
+from ..particles import Particles
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -27,6 +28,10 @@ class HDF5IO(object):
         """
 
         """
+        if not isinstance(particles, Particles):
+            p = Particles()
+            p.append(particles)
+            particles = p
         with h5py.File(self.fname, fmode) as fobj:
             group_name = particles.__class__.__name__.lower()
             group = fobj.require_group(group_name)

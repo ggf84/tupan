@@ -20,11 +20,12 @@ class Pbase(object):
     """
 
     """
+    attrs = None
     dtype = None
     zero = None
 
     def __init__(self, n):
-        self.data = self.zero if n == 0 else np.zeros(n, self.dtype)
+        self.data = np.zeros(n, self.dtype) if n else self.zero
 
 
     #
@@ -44,15 +45,17 @@ class Pbase(object):
         fmt += ']'
         return fmt
 
-    def __len__(self):
+    @property
+    def n(self):
         return len(self.data)
-    n = property(__len__)
+
+    def __len__(self):
+        return self.n
 
     def __getitem__(self, index):
-        data = self.data[index]
-        cp = copy.copy(self)
-        cp.data = data
-        return cp
+        obj = copy.copy(self)
+        obj.data = self.data[index]
+        return obj
 
     def copy(self):
         return copy.deepcopy(self)
@@ -74,6 +77,20 @@ class Pbase(object):
             index = -1
         obj = self[index]
         self.data = np.delete(self.data, index)
+        return obj
+
+    def get_state(self):
+        return self.data[self.attrs]
+
+    def set_state(self, state):
+        self.data = np.zeros(len(state), dtype=self.dtype)
+        for name in state.dtype.names:
+            if name in self.data.dtype.names:
+                self.data[name] = state[name]
+
+    def astype(self, cls):
+        obj = cls()
+        obj.set_state(self.get_state())
         return obj
 
 
@@ -418,19 +435,6 @@ class Pbase(object):
         Evolves velocity in time.
         """
         self.vel += tau * self.acc
-
-
-    ### state
-
-    def get_state(self):
-        attrs = list(self.data.dtype.names[:10])
-        return self.data[attrs]
-
-    def set_state(self, state):
-        self.data = np.zeros(len(state), dtype=self.dtype)
-        for name in state.dtype.names:
-            if name in self.data.dtype.names:
-                self.data[name] = state[name]
 
 
 ########## end of file ##########

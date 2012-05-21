@@ -27,29 +27,15 @@ class Particles(dict):
     """
     This class holds the particle types in the simulation.
     """
-    def __init__(self, types=None):
+    def __init__(self):
         """
         Initializer
         """
-        self["sph"] = Sph()
-        self["body"] = Body()
-        self["blackhole"] = BlackHole()
-
-        if types:
-            if not isinstance(types, dict):
-                print("types should be a dict instance", file=sys.stderr)
-
-            if "sph" in types and types["sph"] > 0:
-                self["sph"] = Sph(types["sph"])
-
-            if "body" in types and types["body"] > 0:
-                self["body"] = Body(types["body"])
-
-            if "blackhole" in types and types["blackhole"] > 0:
-                self["blackhole"] = BlackHole(types["blackhole"])
-
-        self.n = 0
-        super(Particles, self).__init__()
+        super(Particles, self).__init__(
+                                        sph=Sph(),
+                                        body=Body(),
+                                        blackhole=BlackHole(),
+                                       )
 
 
     #
@@ -78,8 +64,9 @@ class Particles(dict):
         elif isinstance(objs, Sph):
             self["sph"].append(objs)
 
-    def update_n(self):
-        self.n = sum([obj.n for obj in self.values()])
+    @property
+    def n(self):
+        return sum([obj.n for obj in self.values()])
 
 
     #

@@ -12,6 +12,7 @@ import math
 import logging
 import numpy as np
 from ..particles import Particles
+from ..particles.body import Body
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -75,8 +76,8 @@ class Plummer(object):
         self.mfrac = mfrac
         self.eps2 = eps*eps
         self.eps_parametrization = eps_parametrization
-        self.particles = Particles({"body": num})
-        self.particles.update_n()
+        self.particles = Particles()
+        self.particles.append(Body(num))
         np.random.seed(seed)
 
     def set_eps2(self, mass):

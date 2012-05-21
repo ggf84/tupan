@@ -501,7 +501,7 @@ class GLviewer(object):
         Ntot = self.particle.n
 
         blackholes = self.particle['blackhole']
-        if blackholes:
+        if blackholes.n:
             points = blackholes.pos
             colors = self.get_colors(blackholes.mass)
             colors[:, 0].fill(0)
@@ -521,7 +521,7 @@ class GLviewer(object):
 
 
         bodies = self.particle['body']
-        if bodies:
+        if bodies.n:
             points = bodies.pos
             colors = self.get_colors(bodies.mass)
             sizes = np.sqrt(bodies.eps2 * Ntot)
@@ -534,7 +534,7 @@ class GLviewer(object):
 
 
         sph = self.particle['sph']
-        if sph:
+        if sph.n:
             points = sph.pos
             colors = self.get_colors(sph.mass)
             sizes = np.sqrt(sph.eps2 * Ntot)
