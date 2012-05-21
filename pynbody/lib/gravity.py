@@ -49,10 +49,8 @@ class Gravity(object):
         iposmass = np.concatenate((ipos, imass[..., np.newaxis]), axis=1)
         jposmass = np.concatenate((jpos, jmass[..., np.newaxis]), axis=1)
 
-        data = (iposmass, ieps2,
-                jposmass, jeps2,
-                np.uint32(ni),
-                np.uint32(nj))
+        data = (ni, iposmass, ieps2,
+                nj, jposmass, jeps2)
         return data
 
     def set_phi(self, ni, ipos, imass, ieps2,
@@ -89,10 +87,8 @@ class Gravity(object):
         iposmass = np.concatenate((ipos, imass[..., np.newaxis]), axis=1)
         jposmass = np.concatenate((jpos, jmass[..., np.newaxis]), axis=1)
 
-        data = (iposmass, ieps2,
-                jposmass, jeps2,
-                np.uint32(ni),
-                np.uint32(nj))
+        data = (ni, iposmass, ieps2,
+                nj, jposmass, jeps2)
         return data
 
     def set_acc(self, ni, ipos, imass, ieps2,
@@ -135,11 +131,9 @@ class Gravity(object):
         iveleps2 = np.concatenate((ivel, ieps2[..., np.newaxis]), axis=1)
         jveleps2 = np.concatenate((jvel, jeps2[..., np.newaxis]), axis=1)
 
-        data = (iposmass, iveleps2,
-                jposmass, jveleps2,
-                np.uint32(ni),
-                np.uint32(nj),
-                np.float64(eta))
+        data = (ni, iposmass, iveleps2,
+                nj, jposmass, jveleps2,
+                eta)
         return data
 
     def set_tstep(self, ni, ipos, imass, ivel, ieps2,
@@ -180,14 +174,12 @@ class Gravity(object):
         jveljv2 = np.concatenate((jvel, (jvel**2).sum(1)[..., np.newaxis]), axis=1)
         clight = Clight(pn_order, clight)
 
-        data = (iposmass, iveliv2,
-                jposmass, jveljv2,
-                np.uint32(ni),
-                np.uint32(nj),
-                np.uint32(clight.pn_order), np.float64(clight.inv1),
-                np.float64(clight.inv2), np.float64(clight.inv3),
-                np.float64(clight.inv4), np.float64(clight.inv5),
-                np.float64(clight.inv6), np.float64(clight.inv7))
+        data = (ni, iposmass, iveliv2,
+                nj, jposmass, jveljv2,
+                clight.pn_order, clight.inv1,
+                clight.inv2, clight.inv3,
+                clight.inv4, clight.inv5,
+                clight.inv6, clight.inv7)
         return data
 
     def set_pnacc(self, ni, ipos, imass, ivel,

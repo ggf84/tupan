@@ -96,10 +96,12 @@ class CLExtensions(object):
             if isinstance(arg, np.ndarray):
                 hostbuf = np.ascontiguousarray(arg, dtype=self._dtype)
                 item = cl.Buffer(self._cl_ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=hostbuf)
-            elif isinstance(arg, np.floating):
-                item = arg.astype(self._dtype)
+            elif isinstance(arg, float):
+                item = np.typeDict[self._dtype.name](arg)
+            elif isinstance(arg, int):
+                item = np.uint32(arg)
             else:
-                item = arg
+                raise TypeError()
             dev_args.append(item)
 
         # Set output buffer on CL device
@@ -159,7 +161,20 @@ class CExtensions(object):
 
 
     def set_kernel_args(self, *args, **kwargs):
-        self.kernel_args = args
+        dev_args = []
+        for arg in args:
+            if isinstance(arg, np.ndarray):
+                hostbuf = np.ascontiguousarray(arg, dtype=self._dtype)
+                item = hostbuf
+            elif isinstance(arg, float):
+                item = np.typeDict[self._dtype.name](arg)
+            elif isinstance(arg, int):
+                item = np.uint32(arg)
+            else:
+                raise TypeError()
+            dev_args.append(item)
+
+        self.kernel_args = dev_args
 
 
     def run(self):

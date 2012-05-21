@@ -38,12 +38,8 @@ p2p_acc_kernel_core(REAL3 acc,
     r.x = ri.x - rj.x;                                               // 1 FLOPs
     r.y = ri.y - rj.y;                                               // 1 FLOPs
     r.z = ri.z - rj.z;                                               // 1 FLOPs
-    r.w = hi2 + hj2;                                                 // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
-    REAL inv_r2 = 1 / (r2 + r.w);                                    // 2 FLOPs
-    inv_r2 = (r2 > 0) ? (inv_r2):(0);
-    REAL inv_r = sqrt(inv_r2);                                       // 1 FLOPs
-    REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
+    REAL inv_r3 = acc_smooth(r2, hi2 + hj2);                         // 5 FLOPs
 
     inv_r3 *= rj.w;                                                  // 1 FLOPs
 

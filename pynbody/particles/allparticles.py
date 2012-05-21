@@ -261,7 +261,10 @@ class Particles(dict):
         for iobj in self.values():
             if iobj.n:
                 if hasattr(iobj, "pnacc"):
-                    iobj.pnacc = iobj.get_pnacc(nj, jpos, jmass, jvel, pn_order, clight)
+                    if nj:
+                        iobj.pnacc = iobj.get_pnacc(nj, jpos, jmass, jvel, pn_order, clight)
+                    else:
+                        iobj.pnacc = 0.0
 
     def update_acc_and_timestep(self, objs, eta):   # XXX: deprecated!
         """

@@ -70,12 +70,12 @@ p2p_phi_kernel_main_loop(const REAL4 myPos,
 }
 
 
-__kernel void p2p_phi_kernel(__global const REAL4 *ipos,
+__kernel void p2p_phi_kernel(const uint ni,
+                             __global const REAL4 *ipos,
                              __global const REAL *ieps2,
+                             const uint nj,
                              __global const REAL4 *jpos,
                              __global const REAL *jeps2,
-                             const uint ni,
-                             const uint nj,
                              __global REAL *iphi,
                              __local REAL4 *sharedPos,
                              __local REAL *sharedEps2)
@@ -151,12 +151,12 @@ p2p_acc_kernel_main_loop(const REAL4 myPos,
 }
 
 
-__kernel void p2p_acc_kernel(__global const REAL4 *ipos,
+__kernel void p2p_acc_kernel(const uint ni,
+                             __global const REAL4 *ipos,
                              __global const REAL *ieps2,
+                             const uint nj,
                              __global const REAL4 *jpos,
                              __global const REAL *jeps2,
-                             const uint ni,
-                             const uint nj,
                              __global REAL4 *iacc,  // XXX: Bug!!! if we use __global REAL3
                              __local REAL4 *sharedPos,
                              __local REAL *sharedEps2)
@@ -235,12 +235,12 @@ p2p_acctstep_kernel_main_loop(const REAL4 myPos,
 }
 
 
-__kernel void p2p_acctstep_kernel(__global const REAL4 *ipos,
+__kernel void p2p_acctstep_kernel(const uint ni,
+                                  __global const REAL4 *ipos,
                                   __global const REAL4 *ivel,
+                                  const uint nj,
                                   __global const REAL4 *jpos,
                                   __global const REAL4 *jvel,
-                                  const uint ni,
-                                  const uint nj,
                                   const REAL eta,
                                   __global REAL4 *iacctstep,
                                   __local REAL4 *sharedPos,
@@ -320,12 +320,12 @@ p2p_tstep_kernel_main_loop(const REAL4 myPos,
 }
 
 
-__kernel void p2p_tstep_kernel(__global const REAL4 *ipos,
+__kernel void p2p_tstep_kernel(const uint ni,
+                               __global const REAL4 *ipos,
                                __global const REAL4 *ivel,
+                               const uint nj,
                                __global const REAL4 *jpos,
                                __global const REAL4 *jvel,
-                               const uint ni,
-                               const uint nj,
                                const REAL eta,
                                __global REAL *iinv_tstep,
                                __local REAL4 *sharedPos,
@@ -405,12 +405,12 @@ p2p_pnacc_kernel_main_loop(const REAL4 myPos,
 }
 
 
-__kernel void p2p_pnacc_kernel(__global const REAL4 *ipos,
+__kernel void p2p_pnacc_kernel(const uint ni,
+                               __global const REAL4 *ipos,
                                __global const REAL4 *ivel,
+                               const uint nj,
                                __global const REAL4 *jpos,
                                __global const REAL4 *jvel,
-                               const uint ni,
-                               const uint nj,
                                const uint order,
                                const REAL cinv1,
                                const REAL cinv2,

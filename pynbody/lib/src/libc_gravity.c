@@ -17,14 +17,13 @@ _p2p_phi_kernel(PyObject *_args)
 
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "OOOOII";
+        fmt = "IOOIOO";
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "OOOOII";
+        fmt = "IOOIOO";
     }
 
-    if (!PyArg_ParseTuple(_args, fmt, &_ipos, &_ieps2,
-                                      &_jpos, &_jeps2,
-                                      &ni, &nj))
+    if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ieps2,
+                                      &nj, &_jpos, &_jeps2))
         return NULL;
 
     // i-data
@@ -87,14 +86,13 @@ _p2p_acc_kernel(PyObject *_args)
 
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "OOOOII";
+        fmt = "IOOIOO";
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "OOOOII";
+        fmt = "IOOIOO";
     }
 
-    if (!PyArg_ParseTuple(_args, fmt, &_ipos, &_ieps2,
-                                      &_jpos, &_jeps2,
-                                      &ni, &nj))
+    if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ieps2,
+                                      &nj, &_jpos, &_jeps2))
         return NULL;
 
     // i-data
@@ -161,14 +159,14 @@ _p2p_acctstep_kernel(PyObject *_args)
 
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "OOOOIId";
+        fmt = "IOOIOOd";
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "OOOOIIf";
+        fmt = "IOOIOOf";
     }
 
-    if (!PyArg_ParseTuple(_args, fmt, &_ipos, &_ivel,
-                                      &_jpos, &_jvel,
-                                      &ni, &nj, &eta))
+    if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ivel,
+                                      &nj, &_jpos, &_jvel,
+                                      &eta))
         return NULL;
 
     // i-data
@@ -237,14 +235,14 @@ _p2p_tstep_kernel(PyObject *_args)
 
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "OOOOIId";
+        fmt = "IOOIOOd";
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "OOOOIIf";
+        fmt = "IOOIOOf";
     }
 
-    if (!PyArg_ParseTuple(_args, fmt, &_ipos, &_ivel,
-                                      &_jpos, &_jvel,
-                                      &ni, &nj, &eta))
+    if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ivel,
+                                      &nj, &_jpos, &_jvel,
+                                      &eta))
         return NULL;
 
     // i-data
@@ -310,14 +308,13 @@ _p2p_pnacc_kernel(PyObject *_args)
 
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "OOOOIIIddddddd";
+        fmt = "IOOIOOIddddddd";
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "OOOOIIIfffffff";
+        fmt = "IOOIOOIfffffff";
     }
 
-    if (!PyArg_ParseTuple(_args, fmt, &_ipos, &_ivel,
-                                      &_jpos, &_jvel,
-                                      &ni, &nj,
+    if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ivel,
+                                      &nj, &_jpos, &_jvel,
                                       &clight.order, &clight.inv1,
                                       &clight.inv2, &clight.inv3,
                                       &clight.inv4, &clight.inv5,
