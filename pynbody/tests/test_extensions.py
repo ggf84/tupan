@@ -59,10 +59,8 @@ class TestCase(unittest.TestCase):
                 nj = len(jobj)
                 iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
                 jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-                data = (iposmass, iobj.eps2,
-                        jposmass, jobj.eps2,
-                        np.uint32(ni),
-                        np.uint32(nj))
+                data = (ni, iposmass, iobj.eps2,
+                        nj, jposmass, jobj.eps2)
 
                 result_shape = (ni,)
                 local_memory_shape = (4, 1)
@@ -114,10 +112,8 @@ class TestCase(unittest.TestCase):
                 nj = len(jobj)
                 iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
                 jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-                data = (iposmass, iobj.eps2,
-                        jposmass, jobj.eps2,
-                        np.uint32(ni),
-                        np.uint32(nj))
+                data = (ni, iposmass, iobj.eps2,
+                        nj, jposmass, jobj.eps2)
 
                 result_shape = (ni, 4)
                 local_memory_shape = (4, 1)
@@ -174,15 +170,12 @@ class TestCase(unittest.TestCase):
                 jveljv2 = np.concatenate((jobj.vel, (jobj.vel**2).sum(1)[..., np.newaxis]), axis=1)
                 from pynbody.lib.gravity import Clight
                 clight = Clight(7, 128)
-                data = (iposmass, iveliv2,
-                        jposmass, jveljv2,
-                        np.uint32(ni),
-                        np.uint32(nj),
-                        np.uint32(clight.pn_order), np.float64(clight.inv1),
-                        np.float64(clight.inv2), np.float64(clight.inv3),
-                        np.float64(clight.inv4), np.float64(clight.inv5),
-                        np.float64(clight.inv6), np.float64(clight.inv7),
-                       )
+                data = (ni, iposmass, iveliv2,
+                        nj, jposmass, jveljv2,
+                        clight.pn_order, clight.inv1,
+                        clight.inv2, clight.inv3,
+                        clight.inv4, clight.inv5,
+                        clight.inv6, clight.inv7)
 
                 result_shape = (ni, 4)
                 local_memory_shape = (4, 4)
@@ -235,10 +228,8 @@ class TestCase(unittest.TestCase):
                 nj = len(jobj)
                 iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
                 jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-                data = (iposmass, iobj.eps2,
-                        jposmass, jobj.eps2,
-                        np.uint32(ni),
-                        np.uint32(nj))
+                data = (ni, iposmass, iobj.eps2,
+                        nj, jposmass, jobj.eps2)
 
                 result_shape = (ni,)
                 local_memory_shape = (4, 1)
@@ -290,10 +281,8 @@ class TestCase(unittest.TestCase):
                 nj = len(jobj)
                 iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
                 jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-                data = (iposmass, iobj.eps2,
-                        jposmass, jobj.eps2,
-                        np.uint32(ni),
-                        np.uint32(nj))
+                data = (ni, iposmass, iobj.eps2,
+                        nj, jposmass, jobj.eps2)
 
                 result_shape = (ni, 4)
                 local_memory_shape = (4, 1)
@@ -350,15 +339,12 @@ class TestCase(unittest.TestCase):
                 jveljv2 = np.concatenate((jobj.vel, (jobj.vel**2).sum(1)[..., np.newaxis]), axis=1)
                 from pynbody.lib.gravity import Clight
                 clight = Clight(7, 128)
-                data = (iposmass, iveliv2,
-                        jposmass, jveljv2,
-                        np.uint32(ni),
-                        np.uint32(nj),
-                        np.uint32(clight.pn_order), np.float64(clight.inv1),
-                        np.float64(clight.inv2), np.float64(clight.inv3),
-                        np.float64(clight.inv4), np.float64(clight.inv5),
-                        np.float64(clight.inv6), np.float64(clight.inv7),
-                       )
+                data = (ni, iposmass, iveliv2,
+                        nj, jposmass, jveljv2,
+                        clight.pn_order, clight.inv1,
+                        clight.inv2, clight.inv3,
+                        clight.inv4, clight.inv5,
+                        clight.inv6, clight.inv7)
 
                 result_shape = (ni, 4)
                 local_memory_shape = (4, 4)
@@ -409,10 +395,8 @@ class TestCase(unittest.TestCase):
         nj = len(jobj)
         iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
         jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        data = (iposmass, iobj.eps2,
-                jposmass, jobj.eps2,
-                np.uint32(ni),
-                np.uint32(nj))
+        data = (ni, iposmass, iobj.eps2,
+                nj, jposmass, jobj.eps2)
 
         result_shape = (ni,)
         local_memory_shape = (4, 1)
@@ -467,10 +451,8 @@ class TestCase(unittest.TestCase):
         nj = len(jobj)
         iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
         jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        data = (iposmass, iobj.eps2,
-                jposmass, jobj.eps2,
-                np.uint32(ni),
-                np.uint32(nj))
+        data = (ni, iposmass, iobj.eps2,
+                nj, jposmass, jobj.eps2)
 
         result_shape = (ni, 4)
         local_memory_shape = (4, 1)
@@ -529,15 +511,12 @@ class TestCase(unittest.TestCase):
         jveljv2 = np.concatenate((jobj.vel, (jobj.vel**2).sum(1)[..., np.newaxis]), axis=1)
         from pynbody.lib.gravity import Clight
         clight = Clight(7, 128)
-        data = (iposmass, iveliv2,
-                jposmass, jveljv2,
-                np.uint32(ni),
-                np.uint32(nj),
-                np.uint32(clight.pn_order), np.float64(clight.inv1),
-                np.float64(clight.inv2), np.float64(clight.inv3),
-                np.float64(clight.inv4), np.float64(clight.inv5),
-                np.float64(clight.inv6), np.float64(clight.inv7),
-               )
+        data = (ni, iposmass, iveliv2,
+                nj, jposmass, jveljv2,
+                clight.pn_order, clight.inv1,
+                clight.inv2, clight.inv3,
+                clight.inv4, clight.inv5,
+                clight.inv6, clight.inv7)
 
         result_shape = (ni, 4)
         local_memory_shape = (4, 4)
@@ -592,10 +571,8 @@ class TestCase(unittest.TestCase):
         nj = len(jobj)
         iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
         jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        data = (iposmass, iobj.eps2,
-                jposmass, jobj.eps2,
-                np.uint32(ni),
-                np.uint32(nj))
+        data = (ni, iposmass, iobj.eps2,
+                nj, jposmass, jobj.eps2)
 
         result_shape = (ni,)
         local_memory_shape = (4, 1)
@@ -650,10 +627,8 @@ class TestCase(unittest.TestCase):
         nj = len(jobj)
         iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
         jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        data = (iposmass, iobj.eps2,
-                jposmass, jobj.eps2,
-                np.uint32(ni),
-                np.uint32(nj))
+        data = (ni, iposmass, iobj.eps2,
+                nj, jposmass, jobj.eps2)
 
         result_shape = (ni, 4)
         local_memory_shape = (4, 1)
@@ -712,15 +687,12 @@ class TestCase(unittest.TestCase):
         jveljv2 = np.concatenate((jobj.vel, (jobj.vel**2).sum(1)[..., np.newaxis]), axis=1)
         from pynbody.lib.gravity import Clight
         clight = Clight(7, 128)
-        data = (iposmass, iveliv2,
-                jposmass, jveljv2,
-                np.uint32(ni),
-                np.uint32(nj),
-                np.uint32(clight.pn_order), np.float64(clight.inv1),
-                np.float64(clight.inv2), np.float64(clight.inv3),
-                np.float64(clight.inv4), np.float64(clight.inv5),
-                np.float64(clight.inv6), np.float64(clight.inv7),
-               )
+        data = (ni, iposmass, iveliv2,
+                nj, jposmass, jveljv2,
+                clight.pn_order, clight.inv1,
+                clight.inv2, clight.inv3,
+                clight.inv4, clight.inv5,
+                clight.inv6, clight.inv7)
 
         result_shape = (ni, 4)
         local_memory_shape = (4, 4)
