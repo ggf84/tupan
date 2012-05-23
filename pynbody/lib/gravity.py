@@ -10,6 +10,7 @@ between particles in Newtonian and post-Newtonian approach.
 import sys
 import numpy as np
 from .extensions import kernel_library
+from .extensions import Extensions2
 from .utils.timing import decallmethods, timings
 
 
@@ -38,7 +39,11 @@ class Gravity(object):
     A base class for gravitational interaction between particles.
     """
     def __init__(self):
-        pass
+        ext = Extensions2(use_sp=False, use_cl=False).build()
+        self.phi_kernel = ext.p2p_phi_kernel
+        self.acc_kernel = ext.p2p_acc_kernel
+        self.tstep_kernel = ext.p2p_tstep_kernel
+        self.pnacc_kernel = ext.p2p_pnacc_kernel
 
 
     ### phi methods
@@ -68,12 +73,13 @@ class Gravity(object):
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
-        phi_kernel = kernel_library.get_kernel("p2p_phi_kernel")
+#        phi_kernel = kernel_library.get_kernel("p2p_phi_kernel")
+        phi_kernel = self.phi_kernel
 
-        phi_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          result_shape=result_shape,
-                                          local_memory_shape=local_memory_shape)
+        phi_kernel.set_args(*data, global_size=global_size,
+                                   local_size=local_size,
+                                   result_shape=result_shape,
+                                   local_memory_shape=local_memory_shape)
         phi_kernel.run()
         ret = phi_kernel.get_result()
         return ret
@@ -108,12 +114,13 @@ class Gravity(object):
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
-        acc_kernel = kernel_library.get_kernel("p2p_acc_kernel")
+#        acc_kernel = kernel_library.get_kernel("p2p_acc_kernel")
+        acc_kernel = self.acc_kernel
 
-        acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          result_shape=result_shape,
-                                          local_memory_shape=local_memory_shape)
+        acc_kernel.set_args(*data, global_size=global_size,
+                                   local_size=local_size,
+                                   result_shape=result_shape,
+                                   local_memory_shape=local_memory_shape)
         acc_kernel.run()
         ret = acc_kernel.get_result()
         return ret[:,:3]                # XXX: forcing return shape = (ni, 3).
@@ -151,12 +158,13 @@ class Gravity(object):
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
-        tstep_kernel = kernel_library.get_kernel("p2p_tstep_kernel")
+#        tstep_kernel = kernel_library.get_kernel("p2p_tstep_kernel")
+        tstep_kernel = self.tstep_kernel
 
-        tstep_kernel.set_kernel_args(*data, global_size=global_size,
-                                            local_size=local_size,
-                                            result_shape=result_shape,
-                                            local_memory_shape=local_memory_shape)
+        tstep_kernel.set_args(*data, global_size=global_size,
+                                     local_size=local_size,
+                                     result_shape=result_shape,
+                                     local_memory_shape=local_memory_shape)
         tstep_kernel.run()
         ret = tstep_kernel.get_result()
         return ret
@@ -201,12 +209,13 @@ class Gravity(object):
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
-        pnacc_kernel = kernel_library.get_kernel("p2p_pnacc_kernel")
+#        pnacc_kernel = kernel_library.get_kernel("p2p_pnacc_kernel")
+        pnacc_kernel = self.pnacc_kernel
 
-        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
-                                            local_size=local_size,
-                                            result_shape=result_shape,
-                                            local_memory_shape=local_memory_shape)
+        pnacc_kernel.set_args(*data, global_size=global_size,
+                                     local_size=local_size,
+                                     result_shape=result_shape,
+                                     local_memory_shape=local_memory_shape)
         pnacc_kernel.run()
         ret = pnacc_kernel.get_result()
         return ret[:,:3]                # XXX: forcing return shape = (ni, 3).
