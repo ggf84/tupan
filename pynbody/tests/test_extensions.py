@@ -9,26 +9,15 @@ Test suite for extensions module.
 from __future__ import print_function
 import unittest
 import numpy as np
-from pynbody.lib.extensions import Extensions
+from pynbody.lib.extensions import libkernels
 from pynbody.lib.utils.timing import Timer
 
 
-
-cext32 = Extensions(dtype='f', junroll=8)
-cext64 = Extensions(dtype='d', junroll=8)
-clext32 = Extensions(dtype='f', junroll=8)
-clext64 = Extensions(dtype='d', junroll=8)
-cext32.build_kernels(use_cl=False)
-cext64.build_kernels(use_cl=False)
-clext32.build_kernels(use_cl=True)
-clext64.build_kernels(use_cl=True)
 
 def set_particles(npart):
     if npart < 2: npart = 2
     from pynbody.ics.imf import IMF
     from pynbody.ics.plummer import Plummer
-    from pynbody.lib.extensions import kernel_library
-    kernel_library.build_kernels(use_cl=False)
     imf = IMF.padoan2007(0.075, 120.0)
     p = Plummer(npart, imf, eps=0.0, seed=1)
     p.make_plummer()
@@ -36,7 +25,7 @@ def set_particles(npart):
     return bi
 
 small_system = set_particles(64)
-large_system = set_particles(8192)
+large_system = set_particles(4096)
 
 
 
@@ -69,21 +58,21 @@ class TestCase(unittest.TestCase):
 
 
                 # calculating on CPU
-                phi_kernel = cext32.get_kernel("p2p_phi_kernel")
-                phi_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  result_shape=result_shape,
-                                                  local_memory_shape=local_memory_shape)
+                phi_kernel = libkernels['sp']['c'].p2p_phi_kernel
+                phi_kernel.set_args(*data, global_size=global_size,
+                                           local_size=local_size,
+                                           result_shape=result_shape,
+                                           local_memory_shape=local_memory_shape)
                 phi_kernel.run()
                 phi['cpu_result'] = phi_kernel.get_result()
 
 
                 # calculating on GPU
-                phi_kernel = clext32.get_kernel("p2p_phi_kernel")
-                phi_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  result_shape=result_shape,
-                                                  local_memory_shape=local_memory_shape)
+                phi_kernel = libkernels['sp']['cl'].p2p_phi_kernel
+                phi_kernel.set_args(*data, global_size=global_size,
+                                           local_size=local_size,
+                                           result_shape=result_shape,
+                                           local_memory_shape=local_memory_shape)
                 phi_kernel.run()
                 phi['gpu_result'] = phi_kernel.get_result()
 
@@ -122,27 +111,26 @@ class TestCase(unittest.TestCase):
 
 
                 # calculating on CPU
-                acc_kernel = cext32.get_kernel("p2p_acc_kernel")
-                acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  result_shape=result_shape,
-                                                  local_memory_shape=local_memory_shape)
+                acc_kernel = libkernels['sp']['c'].p2p_acc_kernel
+                acc_kernel.set_args(*data, global_size=global_size,
+                                           local_size=local_size,
+                                           result_shape=result_shape,
+                                           local_memory_shape=local_memory_shape)
                 acc_kernel.run()
                 acc['cpu_result'] = acc_kernel.get_result()[:,:3]
 
 
                 # calculating on GPU
-                acc_kernel = clext32.get_kernel("p2p_acc_kernel")
-                acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  result_shape=result_shape,
-                                                  local_memory_shape=local_memory_shape)
+                acc_kernel = libkernels['sp']['cl'].p2p_acc_kernel
+                acc_kernel.set_args(*data, global_size=global_size,
+                                           local_size=local_size,
+                                           result_shape=result_shape,
+                                           local_memory_shape=local_memory_shape)
                 acc_kernel.run()
                 acc['gpu_result'] = acc_kernel.get_result()[:,:3]
 
                 # calculating diff of result
-                acc_deviation = np.abs(  np.sqrt((acc['cpu_result']**2).sum(1))
-                                       - np.sqrt((acc['gpu_result']**2).sum(1)))
+                acc_deviation = np.sqrt(((acc['cpu_result']-acc['gpu_result'])**2).sum(1))
                 deviations.append(acc_deviation.max())
 
         deviations = np.array(deviations)
@@ -184,27 +172,26 @@ class TestCase(unittest.TestCase):
 
 
                 # calculating on CPU
-                pnacc_kernel = cext32.get_kernel("p2p_pnacc_kernel")
-                pnacc_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  result_shape=result_shape,
-                                                  local_memory_shape=local_memory_shape)
+                pnacc_kernel = libkernels['sp']['c'].p2p_pnacc_kernel
+                pnacc_kernel.set_args(*data, global_size=global_size,
+                                             local_size=local_size,
+                                             result_shape=result_shape,
+                                             local_memory_shape=local_memory_shape)
                 pnacc_kernel.run()
                 pnacc['cpu_result'] = pnacc_kernel.get_result()[:,:3]
 
 
                 # calculating on GPU
-                pnacc_kernel = clext32.get_kernel("p2p_pnacc_kernel")
-                pnacc_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  result_shape=result_shape,
-                                                  local_memory_shape=local_memory_shape)
+                pnacc_kernel = libkernels['sp']['cl'].p2p_pnacc_kernel
+                pnacc_kernel.set_args(*data, global_size=global_size,
+                                             local_size=local_size,
+                                             result_shape=result_shape,
+                                             local_memory_shape=local_memory_shape)
                 pnacc_kernel.run()
                 pnacc['gpu_result'] = pnacc_kernel.get_result()[:,:3]
 
                 # calculating diff of result
-                pnacc_deviation = np.abs(  np.sqrt((pnacc['cpu_result']**2).sum(1))
-                                         - np.sqrt((pnacc['gpu_result']**2).sum(1)))
+                pnacc_deviation = np.sqrt(((pnacc['cpu_result']-pnacc['gpu_result'])**2).sum(1))
                 deviations.append(pnacc_deviation.max())
 
         deviations = np.array(deviations)
@@ -238,21 +225,21 @@ class TestCase(unittest.TestCase):
 
 
                 # calculating on CPU
-                phi_kernel = cext64.get_kernel("p2p_phi_kernel")
-                phi_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  result_shape=result_shape,
-                                                  local_memory_shape=local_memory_shape)
+                phi_kernel = libkernels['dp']['c'].p2p_phi_kernel
+                phi_kernel.set_args(*data, global_size=global_size,
+                                           local_size=local_size,
+                                           result_shape=result_shape,
+                                           local_memory_shape=local_memory_shape)
                 phi_kernel.run()
                 phi['cpu_result'] = phi_kernel.get_result()
 
 
                 # calculating on GPU
-                phi_kernel = clext64.get_kernel("p2p_phi_kernel")
-                phi_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  result_shape=result_shape,
-                                                  local_memory_shape=local_memory_shape)
+                phi_kernel = libkernels['dp']['cl'].p2p_phi_kernel
+                phi_kernel.set_args(*data, global_size=global_size,
+                                           local_size=local_size,
+                                           result_shape=result_shape,
+                                           local_memory_shape=local_memory_shape)
                 phi_kernel.run()
                 phi['gpu_result'] = phi_kernel.get_result()
 
@@ -291,27 +278,26 @@ class TestCase(unittest.TestCase):
 
 
                 # calculating on CPU
-                acc_kernel = cext64.get_kernel("p2p_acc_kernel")
-                acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  result_shape=result_shape,
-                                                  local_memory_shape=local_memory_shape)
+                acc_kernel = libkernels['dp']['c'].p2p_acc_kernel
+                acc_kernel.set_args(*data, global_size=global_size,
+                                           local_size=local_size,
+                                           result_shape=result_shape,
+                                           local_memory_shape=local_memory_shape)
                 acc_kernel.run()
                 acc['cpu_result'] = acc_kernel.get_result()[:,:3]
 
 
                 # calculating on GPU
-                acc_kernel = clext64.get_kernel("p2p_acc_kernel")
-                acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  result_shape=result_shape,
-                                                  local_memory_shape=local_memory_shape)
+                acc_kernel = libkernels['dp']['cl'].p2p_acc_kernel
+                acc_kernel.set_args(*data, global_size=global_size,
+                                           local_size=local_size,
+                                           result_shape=result_shape,
+                                           local_memory_shape=local_memory_shape)
                 acc_kernel.run()
                 acc['gpu_result'] = acc_kernel.get_result()[:,:3]
 
                 # calculating diff of result
-                acc_deviation = np.abs(  np.sqrt((acc['cpu_result']**2).sum(1))
-                                       - np.sqrt((acc['gpu_result']**2).sum(1)))
+                acc_deviation = np.sqrt(((acc['cpu_result']-acc['gpu_result'])**2).sum(1))
                 deviations.append(acc_deviation.max())
 
         deviations = np.array(deviations)
@@ -353,27 +339,26 @@ class TestCase(unittest.TestCase):
 
 
                 # calculating on CPU
-                pnacc_kernel = cext64.get_kernel("p2p_pnacc_kernel")
-                pnacc_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  result_shape=result_shape,
-                                                  local_memory_shape=local_memory_shape)
+                pnacc_kernel = libkernels['dp']['c'].p2p_pnacc_kernel
+                pnacc_kernel.set_args(*data, global_size=global_size,
+                                             local_size=local_size,
+                                             result_shape=result_shape,
+                                             local_memory_shape=local_memory_shape)
                 pnacc_kernel.run()
                 pnacc['cpu_result'] = pnacc_kernel.get_result()[:,:3]
 
 
                 # calculating on GPU
-                pnacc_kernel = clext64.get_kernel("p2p_pnacc_kernel")
-                pnacc_kernel.set_kernel_args(*data, global_size=global_size,
-                                                  local_size=local_size,
-                                                  result_shape=result_shape,
-                                                  local_memory_shape=local_memory_shape)
+                pnacc_kernel = libkernels['dp']['cl'].p2p_pnacc_kernel
+                pnacc_kernel.set_args(*data, global_size=global_size,
+                                             local_size=local_size,
+                                             result_shape=result_shape,
+                                             local_memory_shape=local_memory_shape)
                 pnacc_kernel.run()
                 pnacc['gpu_result'] = pnacc_kernel.get_result()[:,:3]
 
                 # calculating diff of result
-                pnacc_deviation = np.abs(  np.sqrt((pnacc['cpu_result']**2).sum(1))
-                                         - np.sqrt((pnacc['gpu_result']**2).sum(1)))
+                pnacc_deviation = np.sqrt(((pnacc['cpu_result']-pnacc['gpu_result'])**2).sum(1))
                 deviations.append(pnacc_deviation.max())
 
         deviations = np.array(deviations)
@@ -405,11 +390,11 @@ class TestCase(unittest.TestCase):
 
 
         # calculating using SP on CPU
-        phi_kernel = cext32.get_kernel("p2p_phi_kernel")
-        phi_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          result_shape=result_shape,
-                                          local_memory_shape=local_memory_shape)
+        phi_kernel = libkernels['sp']['c'].p2p_phi_kernel
+        phi_kernel.set_args(*data, global_size=global_size,
+                                   local_size=local_size,
+                                   result_shape=result_shape,
+                                   local_memory_shape=local_memory_shape)
         elapsed_sum = 0.0
         for i in range(nsamples):
             timer.start()
@@ -420,11 +405,11 @@ class TestCase(unittest.TestCase):
 
 
         # calculating using DP on CPU
-        phi_kernel = cext64.get_kernel("p2p_phi_kernel")
-        phi_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          result_shape=result_shape,
-                                          local_memory_shape=local_memory_shape)
+        phi_kernel = libkernels['dp']['c'].p2p_phi_kernel
+        phi_kernel.set_args(*data, global_size=global_size,
+                                   local_size=local_size,
+                                   result_shape=result_shape,
+                                   local_memory_shape=local_memory_shape)
         elapsed_sum = 0.0
         for i in range(nsamples):
             timer.start()
@@ -461,11 +446,11 @@ class TestCase(unittest.TestCase):
 
 
         # calculating using SP on CPU
-        acc_kernel = cext32.get_kernel("p2p_acc_kernel")
-        acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          result_shape=result_shape,
-                                          local_memory_shape=local_memory_shape)
+        acc_kernel = libkernels['sp']['c'].p2p_acc_kernel
+        acc_kernel.set_args(*data, global_size=global_size,
+                                   local_size=local_size,
+                                   result_shape=result_shape,
+                                   local_memory_shape=local_memory_shape)
         elapsed_sum = 0.0
         for i in range(nsamples):
             timer.start()
@@ -476,11 +461,11 @@ class TestCase(unittest.TestCase):
 
 
         # calculating using DP on CPU
-        acc_kernel = cext64.get_kernel("p2p_acc_kernel")
-        acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          result_shape=result_shape,
-                                          local_memory_shape=local_memory_shape)
+        acc_kernel = libkernels['dp']['c'].p2p_acc_kernel
+        acc_kernel.set_args(*data, global_size=global_size,
+                                   local_size=local_size,
+                                   result_shape=result_shape,
+                                   local_memory_shape=local_memory_shape)
         elapsed_sum = 0.0
         for i in range(nsamples):
             timer.start()
@@ -525,11 +510,11 @@ class TestCase(unittest.TestCase):
 
 
         # calculating using SP on CPU
-        pnacc_kernel = cext32.get_kernel("p2p_pnacc_kernel")
-        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
-                                            local_size=local_size,
-                                            result_shape=result_shape,
-                                            local_memory_shape=local_memory_shape)
+        pnacc_kernel = libkernels['sp']['c'].p2p_pnacc_kernel
+        pnacc_kernel.set_args(*data, global_size=global_size,
+                                     local_size=local_size,
+                                     result_shape=result_shape,
+                                     local_memory_shape=local_memory_shape)
         elapsed_sum = 0.0
         for i in range(nsamples):
             timer.start()
@@ -540,11 +525,11 @@ class TestCase(unittest.TestCase):
 
 
         # calculating using DP on CPU
-        pnacc_kernel = cext64.get_kernel("p2p_pnacc_kernel")
-        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
-                                            local_size=local_size,
-                                            result_shape=result_shape,
-                                            local_memory_shape=local_memory_shape)
+        pnacc_kernel = libkernels['dp']['c'].p2p_pnacc_kernel
+        pnacc_kernel.set_args(*data, global_size=global_size,
+                                     local_size=local_size,
+                                     result_shape=result_shape,
+                                     local_memory_shape=local_memory_shape)
         elapsed_sum = 0.0
         for i in range(nsamples):
             timer.start()
@@ -581,11 +566,11 @@ class TestCase(unittest.TestCase):
 
 
         # calculating using SP on GPU
-        phi_kernel = clext32.get_kernel("p2p_phi_kernel")
-        phi_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          result_shape=result_shape,
-                                          local_memory_shape=local_memory_shape)
+        phi_kernel = libkernels['sp']['cl'].p2p_phi_kernel
+        phi_kernel.set_args(*data, global_size=global_size,
+                                   local_size=local_size,
+                                   result_shape=result_shape,
+                                   local_memory_shape=local_memory_shape)
         elapsed_sum = 0.0
         for i in range(nsamples):
             timer.start()
@@ -596,11 +581,11 @@ class TestCase(unittest.TestCase):
 
 
         # calculating using DP on GPU
-        phi_kernel = clext64.get_kernel("p2p_phi_kernel")
-        phi_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          result_shape=result_shape,
-                                          local_memory_shape=local_memory_shape)
+        phi_kernel = libkernels['dp']['cl'].p2p_phi_kernel
+        phi_kernel.set_args(*data, global_size=global_size,
+                                   local_size=local_size,
+                                   result_shape=result_shape,
+                                   local_memory_shape=local_memory_shape)
         elapsed_sum = 0.0
         for i in range(nsamples):
             timer.start()
@@ -637,11 +622,11 @@ class TestCase(unittest.TestCase):
 
 
         # calculating using SP on GPU
-        acc_kernel = clext32.get_kernel("p2p_acc_kernel")
-        acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          result_shape=result_shape,
-                                          local_memory_shape=local_memory_shape)
+        acc_kernel = libkernels['sp']['cl'].p2p_acc_kernel
+        acc_kernel.set_args(*data, global_size=global_size,
+                                   local_size=local_size,
+                                   result_shape=result_shape,
+                                   local_memory_shape=local_memory_shape)
         elapsed_sum = 0.0
         for i in range(nsamples):
             timer.start()
@@ -652,11 +637,11 @@ class TestCase(unittest.TestCase):
 
 
         # calculating using DP on GPU
-        acc_kernel = clext64.get_kernel("p2p_acc_kernel")
-        acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          result_shape=result_shape,
-                                          local_memory_shape=local_memory_shape)
+        acc_kernel = libkernels['dp']['cl'].p2p_acc_kernel
+        acc_kernel.set_args(*data, global_size=global_size,
+                                   local_size=local_size,
+                                   result_shape=result_shape,
+                                   local_memory_shape=local_memory_shape)
         elapsed_sum = 0.0
         for i in range(nsamples):
             timer.start()
@@ -701,11 +686,11 @@ class TestCase(unittest.TestCase):
 
 
         # calculating using SP on GPU
-        pnacc_kernel = clext32.get_kernel("p2p_pnacc_kernel")
-        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
-                                            local_size=local_size,
-                                            result_shape=result_shape,
-                                            local_memory_shape=local_memory_shape)
+        pnacc_kernel = libkernels['sp']['cl'].p2p_pnacc_kernel
+        pnacc_kernel.set_args(*data, global_size=global_size,
+                                     local_size=local_size,
+                                     result_shape=result_shape,
+                                     local_memory_shape=local_memory_shape)
         elapsed_sum = 0.0
         for i in range(nsamples):
             timer.start()
@@ -716,11 +701,11 @@ class TestCase(unittest.TestCase):
 
 
         # calculating using DP on GPU
-        pnacc_kernel = clext64.get_kernel("p2p_pnacc_kernel")
-        pnacc_kernel.set_kernel_args(*data, global_size=global_size,
-                                            local_size=local_size,
-                                            result_shape=result_shape,
-                                            local_memory_shape=local_memory_shape)
+        pnacc_kernel = libkernels['dp']['cl'].p2p_pnacc_kernel
+        pnacc_kernel.set_args(*data, global_size=global_size,
+                                     local_size=local_size,
+                                     result_shape=result_shape,
+                                     local_memory_shape=local_memory_shape)
         elapsed_sum = 0.0
         for i in range(nsamples):
             timer.start()

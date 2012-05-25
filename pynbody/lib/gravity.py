@@ -9,8 +9,7 @@ between particles in Newtonian and post-Newtonian approach.
 
 import sys
 import numpy as np
-from .extensions import kernel_library
-from .extensions import Extensions2
+from .extensions import ext
 from .utils.timing import decallmethods, timings
 
 
@@ -39,7 +38,6 @@ class Gravity(object):
     A base class for gravitational interaction between particles.
     """
     def __init__(self):
-        ext = Extensions2(use_sp=False, use_cl=False).build()
         self.phi_kernel = ext.p2p_phi_kernel
         self.acc_kernel = ext.p2p_acc_kernel
         self.tstep_kernel = ext.p2p_tstep_kernel
@@ -73,7 +71,6 @@ class Gravity(object):
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
-#        phi_kernel = kernel_library.get_kernel("p2p_phi_kernel")
         phi_kernel = self.phi_kernel
 
         phi_kernel.set_args(*data, global_size=global_size,
@@ -114,7 +111,6 @@ class Gravity(object):
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
-#        acc_kernel = kernel_library.get_kernel("p2p_acc_kernel")
         acc_kernel = self.acc_kernel
 
         acc_kernel.set_args(*data, global_size=global_size,
@@ -158,7 +154,6 @@ class Gravity(object):
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
-#        tstep_kernel = kernel_library.get_kernel("p2p_tstep_kernel")
         tstep_kernel = self.tstep_kernel
 
         tstep_kernel.set_args(*data, global_size=global_size,
@@ -209,7 +204,6 @@ class Gravity(object):
         local_size = 384
         global_size = ((ni-1)//local_size + 1) * local_size
 
-#        pnacc_kernel = kernel_library.get_kernel("p2p_pnacc_kernel")
         pnacc_kernel = self.pnacc_kernel
 
         pnacc_kernel.set_args(*data, global_size=global_size,

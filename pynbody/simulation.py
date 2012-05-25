@@ -14,7 +14,6 @@ from pprint import pprint
 from .io import IO
 from .analysis.glviewer import GLviewer
 from .integrator import Integrator
-from .lib.extensions import kernel_library
 from .lib.utils.timing import decallmethods, timings
 
 
@@ -220,8 +219,6 @@ def _main_newrun(args):
 
     # --------------------------------------------------------------------------
 
-    kernel_library.build_kernels(use_cl=args.use_cl)
-
     viewer = GLviewer() if args.view else None
     mysim = Simulation(args, viewer)
     mysim.evolve()
@@ -242,14 +239,11 @@ def _main_restart(args):
     if not args.eta is None:
         mysim.integrator._meth.eta = args.eta
 
-    args.use_cl = mysim.args.use_cl
-    kernel_library.build_kernels(use_cl=args.use_cl)
-
     mysim.evolve()
     return 0
 
 
-def main():
+def parse_args():
     """
     The PyNbody's main function.
 
@@ -354,6 +348,10 @@ def main():
                         action="store_true",
                         help="Enable OpenCL support."
                        )
+    newrun.add_argument("--use_sp",
+                        action="store_true",
+                        help="Enforce the use of single precision in extension modules."
+                       )
     newrun.add_argument("--view",
                         action="store_true",
                         help="Enable visualization of the simulation in real time."
@@ -409,10 +407,12 @@ def main():
     restart.set_defaults(func=_main_restart)
 
     # --------------------------------------------------------------------------
-    # parse the command line
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    # call the appropriate function
+
+
+def main():
+    args = parse_args()
     args.func(args)
 
 

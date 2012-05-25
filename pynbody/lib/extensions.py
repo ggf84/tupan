@@ -21,8 +21,8 @@ __all__ = ["Extensions"]
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='spam.log', filemode='w',
-                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                     level=logging.DEBUG)
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.DEBUG)
 
 
 class CLEnv(object):
@@ -209,55 +209,42 @@ class CKernel(object):
 
 
 
-sp_cmodule = CModule(CEnv(dtype='f', fast_math=True)).build()
-dp_cmodule = CModule(CEnv(dtype='d', fast_math=True)).build()
-sp_clmodule = CLModule(CLEnv(dtype='f', fast_math=True)).build(junroll=8)
-dp_clmodule = CLModule(CLEnv(dtype='d', fast_math=True)).build(junroll=8)
+libkernels = {'sp': {'c': None, 'cl': None}, 'dp': {'c': None, 'cl': None}}
+libkernels['sp']['c'] = CModule(CEnv(dtype='f', fast_math=True)).build()
+libkernels['sp']['cl'] = CLModule(CLEnv(dtype='f', fast_math=True)).build(junroll=8)
+libkernels['dp']['c'] = CModule(CEnv(dtype='d', fast_math=True)).build()
+libkernels['dp']['cl'] = CLModule(CLEnv(dtype='d', fast_math=True)).build(junroll=8)
 
 
-class Extensions2(object):
-    """
-
-    """
-    def __init__(self, use_sp, use_cl):
-        self.use_sp = use_sp
-        self.use_cl = use_cl
-
-
-    def build(self):
-        if self.use_sp:
-            prec = 'single'
-            if self.use_cl:
-                logger.debug("Using %s precision CL extension module.", prec)
-                return sp_clmodule
-            else:
-                logger.debug("Using %s precision C extension module.", prec)
-                return sp_cmodule
+def get_extension(use_sp=False, use_cl=False):
+    if use_sp:
+        prec = 'single'
+        if use_cl:
+            logger.debug("Using %s precision CL extension module.", prec)
+            return libkernels['sp']['cl']
         else:
-            prec = 'double'
-            if self.use_cl:
-                logger.debug("Using %s precision CL extension module.", prec)
-                return dp_clmodule
-            else:
-                logger.debug("Using %s precision C extension module.", prec)
-                return dp_cmodule
+            logger.debug("Using %s precision C extension module.", prec)
+            return libkernels['sp']['c']
+    else:
+        prec = 'double'
+        if use_cl:
+            logger.debug("Using %s precision CL extension module.", prec)
+            return libkernels['dp']['cl']
+        else:
+            logger.debug("Using %s precision C extension module.", prec)
+            return libkernels['dp']['c']
+
+
+use_cl = True if '--use_cl' in sys.argv else False
+use_sp = True if '--use_sp' in sys.argv else False
+
+ext = get_extension(use_sp=use_sp, use_cl=use_cl)
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+'''
 @decallmethods(timings)
 class CLExtensions(object):
     """
@@ -421,7 +408,7 @@ class CExtensions(object):
 
 
 @decallmethods(timings)
-class Extensions(object):
+class __Extensions(object):
     """
 
     """
@@ -468,7 +455,7 @@ class Extensions(object):
         self.get_kernel = self.extension.get_kernel
 
 
-kernel_library = Extensions(dtype='d', junroll=8)
-
+#kernel_library = __Extensions(dtype='d', junroll=8)
+'''
 
 ########## end of file ##########
