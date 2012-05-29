@@ -127,8 +127,12 @@ def decallmethods(decorator, prefix=''):
     return wrapper
 
 
-timings = Timing(False)
-atexit.register(print, timings, file=sys.stderr)
+profile = True if '--profile' in sys.argv else False
+
+timings = Timing(profile)
+
+if profile:
+    atexit.register(print, timings, file=sys.stderr)
 
 
 ########## end of file ##########

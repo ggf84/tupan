@@ -10,7 +10,6 @@ from __future__ import print_function
 import os
 import sys
 import logging
-from warnings import warn
 from functools import reduce
 import numpy as np
 import pyopencl as cl
@@ -25,6 +24,7 @@ logging.basicConfig(filename='spam.log', filemode='w',
                     level=logging.DEBUG)
 
 
+@decallmethods(timings)
 class CLEnv(object):
 
     def __init__(self, dtype='d', fast_math=True):
@@ -35,6 +35,7 @@ class CLEnv(object):
 
 
 
+@decallmethods(timings)
 class CLModule(object):
 
     def __init__(self, env):
@@ -75,73 +76,110 @@ class CLModule(object):
 
 
 
+@decallmethods(timings)
 class CLKernel(object):
 
     def __init__(self, env, kernel):
         self.env = env
         self.kernel = kernel
+        self._lsize = None
+        self._lsize_max = None
+        self._gsize = None
+        self.dev_args = {}
 
 
-    def set_args(self, *args, **kwargs):
-        # Get keyword arguments
-        lsize = kwargs.pop("local_size")
-        local_size = lsize if isinstance(lsize, tuple) else (lsize,)
+    @property
+    def local_size(self):
+        lsize = self._lsize
+        return lsize if isinstance(lsize, tuple) else (lsize,)
 
-        gsize = kwargs.pop("global_size")
-        global_size = gsize if isinstance(gsize, tuple) else (gsize,)
+    @local_size.setter
+    def local_size(self, lsize):
+        self._lsize = lsize
+        self._lsize_max = lsize
 
-        result_shape = kwargs.pop("result_shape")
-        local_memory_shape = kwargs.pop("local_memory_shape")
 
-        if kwargs:
-            msg = "{0}.load_data received unexpected keyword arguments: {1}."
-            raise TypeError(msg.format(self.__class__.__name__,
-                                       ", ".join(kwargs.keys())))
+    @property
+    def global_size(self):
+        gsize = self._gsize
+        return gsize if isinstance(gsize, tuple) else (gsize,)
 
-        # Set input buffers and kernel args on CL device
-        mf = cl.mem_flags
-        dev_args = [global_size, local_size]
-        for arg in args:
-            if isinstance(arg, np.ndarray):
-                hostbuf = np.ascontiguousarray(arg, dtype=self.env.dtype)
-                item = cl.Buffer(self.env.ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=hostbuf)
+    @global_size.setter
+    def global_size(self, ni):
+        lsize = self._lsize_max
+        lsize = min(lsize, ((ni-1)//8 + 1))
+        self._lsize = lsize
+        self._gsize = ((ni-1)//lsize + 1) * lsize
+
+
+    def set_arg(self, mode, i, arg):
+        """
+        mode: 'IN', 'OUT', 'LMEM'
+        i: arg index
+        arg: arg value
+        """
+        if mode is 'IN':
+            if isinstance(arg, int):
+                self.dev_args[i] = np.uint32(arg)
             elif isinstance(arg, float):
-                item = self.env.dtype.type(arg)
-            elif isinstance(arg, int):
-                item = np.uint32(arg)
+                self.dev_args[i] = self.env.dtype.type(arg)
+            elif isinstance(arg, np.ndarray):
+                hostbuf = np.ascontiguousarray(arg, dtype=self.env.dtype)
+#                if not i in self.dev_args:
+#                    mf = cl.mem_flags
+#                    self.dev_args[i] = cl.Buffer(self.env.ctx, mf.READ_ONLY, size=hostbuf.nbytes)
+#                    print('IN:', self.kernel.function_name, self.dev_args)
+#                if hostbuf.nbytes > self.dev_args[i].size:
+#                    mf = cl.mem_flags
+#                    self.dev_args[i] = cl.Buffer(self.env.ctx, mf.READ_ONLY, size=hostbuf.nbytes)
+#                    print('IN realocation:', self.kernel.function_name, self.dev_args)
+#                cl.enqueue_copy(self.env.queue, self.dev_args[i], hostbuf)
+                mf = cl.mem_flags
+#                self.dev_args[i] = cl.Buffer(self.env.ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=hostbuf)
+                self.dev_args[i] = cl.Buffer(self.env.ctx, mf.READ_ONLY | mf.USE_HOST_PTR, hostbuf=hostbuf)
             else:
                 raise TypeError()
-            dev_args.append(item)
-
-        # Set output buffer on CL device
-        self.host_result = np.empty(result_shape, dtype=self.env.dtype)
-        self.device_result = cl.Buffer(self.env.ctx, mf.WRITE_ONLY, size=self.host_result.nbytes)
-        dev_args.append(self.device_result)
-
-        # Set local memory sizes on CL device
-        def foo(x, y): return x * y
-        base_mem_size = reduce(foo, local_size)
-        base_mem_size *= self.env.dtype.itemsize
-        local_mem_size_list = (i * base_mem_size for i in local_memory_shape)
-        for size in local_mem_size_list:
-            dev_args.append(cl.LocalMemory(size))
-
-        # Finally puts everything in _kernelargs
-        self.dev_args = dev_args
+        elif mode is 'OUT':
+            if not i in self.dev_args:
+                def foo(x, y): return x * y
+                size = self.env.dtype.itemsize * reduce(foo, arg)
+                self._shape = arg
+                mf = cl.mem_flags
+                self.dev_args[i] = cl.Buffer(self.env.ctx, mf.WRITE_ONLY, size=size)
+                self.dev_result = self.dev_args[i]
+                print('OUT:', self.kernel.function_name, self.dev_args)
+            if arg > self._shape:
+                def foo(x, y): return x * y
+                size = self.env.dtype.itemsize * reduce(foo, arg)
+                self._shape = arg
+                mf = cl.mem_flags
+                self.dev_args[i] = cl.Buffer(self.env.ctx, mf.WRITE_ONLY, size=size)
+                self.dev_result = self.dev_args[i]
+                print('OUT realocation:', self.kernel.function_name, self.dev_args)
+            self.host_shape = arg
+        elif mode is 'LMEM':
+            def foo(x, y): return x * y
+            base = self.env.dtype.itemsize * reduce(foo, self.local_size)
+            self.dev_args[i] = cl.LocalMemory(base * arg)
 
 
     def run(self):
-        args = self.dev_args
-        self.kernel(self.env.queue, *args).wait()
+        for i, arg in self.dev_args.items():
+            self.kernel.set_arg(i, arg)
+        cl.enqueue_nd_range_kernel(self.env.queue,
+                                   self.kernel,
+                                   self.global_size,
+                                   self.local_size,
+                                  ).wait()
 
 
     def get_result(self):
-        cl.enqueue_copy(self.env.queue, self.host_result, self.device_result)
-        return self.host_result
+        return self.dev_result.get_host_array(self.host_shape, self.env.dtype)
 
 
 
 
+@decallmethods(timings)
 class CEnv(object):
 
     def __init__(self, dtype='d', fast_math=True):
@@ -150,6 +188,7 @@ class CEnv(object):
 
 
 
+@decallmethods(timings)
 class CModule(object):
 
     def __init__(self, env):
@@ -174,37 +213,44 @@ class CModule(object):
 
 
 
+@decallmethods(timings)
 class CKernel(object):
 
     def __init__(self, env, kernel):
         self.env = env
         self.kernel = kernel
+        self.dev_args = {}
 
 
-    def set_args(self, *args, **kwargs):
-        dev_args = []
-        for arg in args:
-            if isinstance(arg, np.ndarray):
-                hostbuf = np.ascontiguousarray(arg, dtype=self.env.dtype)
-                item = hostbuf
+    def set_arg(self, mode, i, arg):
+        """
+        mode: 'IN', 'OUT', 'LMEM'
+        i: arg index
+        arg: arg value
+        """
+        if mode is 'IN':
+            if isinstance(arg, int):
+                self.dev_args[i] = np.uint32(arg)
             elif isinstance(arg, float):
-                item = self.env.dtype.type(arg)
-            elif isinstance(arg, int):
-                item = np.uint32(arg)
+                self.dev_args[i] = self.env.dtype.type(arg)
+            elif isinstance(arg, np.ndarray):
+                hostbuf = np.ascontiguousarray(arg, dtype=self.env.dtype)
+                self.dev_args[i] = hostbuf
             else:
                 raise TypeError()
-            dev_args.append(item)
-        self.dev_args = dev_args
+        elif mode is 'OUT':
+            pass
+        elif mode is 'LMEM':
+            pass
 
 
     def run(self):
-        args = self.dev_args
-        self.device_result = self.kernel(*args)
+        args = self.dev_args.values()
+        self.dev_result = self.kernel(*args)
 
 
     def get_result(self):
-        self.host_result = self.device_result
-        return self.host_result
+        return self.dev_result
 
 
 

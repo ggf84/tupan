@@ -362,6 +362,10 @@ def parse_args():
                         help="Number of time-steps between GLviewer events "
                              "(type: int, default: 2)."
                        )
+    newrun.add_argument("--profile",
+                        action="store_true",
+                        help="Enable execution profile."
+                       )
     newrun.add_argument("--debug",
                         action="store_true",
                         help="Enable debug messages."

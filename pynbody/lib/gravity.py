@@ -39,9 +39,24 @@ class Gravity(object):
     """
     def __init__(self):
         self.phi_kernel = ext.p2p_phi_kernel
+        self.phi_kernel.local_size = 384
+        self.phi_kernel.set_arg('LMEM', 7, 4)
+        self.phi_kernel.set_arg('LMEM', 8, 1)
+
         self.acc_kernel = ext.p2p_acc_kernel
+        self.acc_kernel.local_size = 384
+        self.acc_kernel.set_arg('LMEM', 7, 4)
+        self.acc_kernel.set_arg('LMEM', 8, 1)
+
         self.tstep_kernel = ext.p2p_tstep_kernel
+        self.tstep_kernel.local_size = 384
+        self.tstep_kernel.set_arg('LMEM', 8, 4)
+        self.tstep_kernel.set_arg('LMEM', 9, 4)
+
         self.pnacc_kernel = ext.p2p_pnacc_kernel
+        self.pnacc_kernel.local_size = 384
+        self.pnacc_kernel.set_arg('LMEM', 15, 4)
+        self.pnacc_kernel.set_arg('LMEM', 16, 4)
 
 
     ### phi methods
@@ -52,34 +67,27 @@ class Gravity(object):
         iposmass = np.concatenate((ipos, imass[..., np.newaxis]), axis=1)
         jposmass = np.concatenate((jpos, jmass[..., np.newaxis]), axis=1)
 
-        data = (ni, iposmass, ieps2,
-                nj, jposmass, jeps2)
-        return data
+        self.phi_kernel.set_arg('IN', 0, ni)
+        self.phi_kernel.set_arg('IN', 1, iposmass)
+        self.phi_kernel.set_arg('IN', 2, ieps2)
+        self.phi_kernel.set_arg('IN', 3, nj)
+        self.phi_kernel.set_arg('IN', 4, jposmass)
+        self.phi_kernel.set_arg('IN', 5, jeps2)
+        self.phi_kernel.set_arg('OUT', 6, (ni,))
 
     def set_phi(self, ni, ipos, imass, ieps2,
                       nj, jpos, jmass, jeps2):
         """
         Set obj-obj newtonian phi.
         """
-        data = self.setup_phi_data(ni, ipos, imass, ieps2,
-                                   nj, jpos, jmass, jeps2)
-
-        result_shape = (ni,)
-        local_memory_shape = (4, 1)
-
-        # Adjusts global_size to be an integer multiple of local_size
-        local_size = 384
-        global_size = ((ni-1)//local_size + 1) * local_size
+        self.setup_phi_data(ni, ipos, imass, ieps2,
+                            nj, jpos, jmass, jeps2)
 
         phi_kernel = self.phi_kernel
-
-        phi_kernel.set_args(*data, global_size=global_size,
-                                   local_size=local_size,
-                                   result_shape=result_shape,
-                                   local_memory_shape=local_memory_shape)
+        phi_kernel.global_size = ni
         phi_kernel.run()
-        ret = phi_kernel.get_result()
-        return ret
+        result = phi_kernel.get_result()
+        return result
 
 
     ### acc methods
@@ -90,36 +98,29 @@ class Gravity(object):
         iposmass = np.concatenate((ipos, imass[..., np.newaxis]), axis=1)
         jposmass = np.concatenate((jpos, jmass[..., np.newaxis]), axis=1)
 
-        data = (ni, iposmass, ieps2,
-                nj, jposmass, jeps2)
-        return data
+        self.acc_kernel.set_arg('IN', 0, ni)
+        self.acc_kernel.set_arg('IN', 1, iposmass)
+        self.acc_kernel.set_arg('IN', 2, ieps2)
+        self.acc_kernel.set_arg('IN', 3, nj)
+        self.acc_kernel.set_arg('IN', 4, jposmass)
+        self.acc_kernel.set_arg('IN', 5, jeps2)
+        self.acc_kernel.set_arg('OUT', 6, (ni, 4))      # XXX: forcing shape = (ni, 4) due to
+                                                        #      a bug using __global REAL3 in
+                                                        #      AMD's OpenCL implementation.
 
     def set_acc(self, ni, ipos, imass, ieps2,
                       nj, jpos, jmass, jeps2):
         """
         Set obj-obj newtonian acc.
         """
-        data = self.setup_acc_data(ni, ipos, imass, ieps2,
-                                   nj, jpos, jmass, jeps2)
-
-        result_shape = (ni, 4)          # XXX: forcing shape = (ni, 4) due to
-                                        #      a bug using __global REAL3 in
-                                        #      AMD's OpenCL implementation.
-        local_memory_shape = (4, 1)
-
-        # Adjusts global_size to be an integer multiple of local_size
-        local_size = 384
-        global_size = ((ni-1)//local_size + 1) * local_size
+        self.setup_acc_data(ni, ipos, imass, ieps2,
+                            nj, jpos, jmass, jeps2)
 
         acc_kernel = self.acc_kernel
-
-        acc_kernel.set_args(*data, global_size=global_size,
-                                   local_size=local_size,
-                                   result_shape=result_shape,
-                                   local_memory_shape=local_memory_shape)
+        acc_kernel.global_size = ni
         acc_kernel.run()
-        ret = acc_kernel.get_result()
-        return ret[:,:3]                # XXX: forcing return shape = (ni, 3).
+        result = acc_kernel.get_result()
+        return result[:,:3]             # XXX: forcing return shape = (ni, 3).
                                         #      see comment about a bug using
                                         #      __global REAL3 in OpenCL.
 
@@ -134,35 +135,28 @@ class Gravity(object):
         iveleps2 = np.concatenate((ivel, ieps2[..., np.newaxis]), axis=1)
         jveleps2 = np.concatenate((jvel, jeps2[..., np.newaxis]), axis=1)
 
-        data = (ni, iposmass, iveleps2,
-                nj, jposmass, jveleps2,
-                eta)
-        return data
+        self.tstep_kernel.set_arg('IN', 0, ni)
+        self.tstep_kernel.set_arg('IN', 1, iposmass)
+        self.tstep_kernel.set_arg('IN', 2, iveleps2)
+        self.tstep_kernel.set_arg('IN', 3, nj)
+        self.tstep_kernel.set_arg('IN', 4, jposmass)
+        self.tstep_kernel.set_arg('IN', 5, jveleps2)
+        self.tstep_kernel.set_arg('IN', 6, eta)
+        self.tstep_kernel.set_arg('OUT', 7, (ni,))
 
     def set_tstep(self, ni, ipos, imass, ivel, ieps2,
                         nj, jpos, jmass, jvel, jeps2, eta):
         """
         Set timestep.
         """
-        data = self.setup_tstep_data(ni, ipos, imass, ivel, ieps2,
-                                     nj, jpos, jmass, jvel, jeps2, eta)
-
-        result_shape = (ni,)
-        local_memory_shape = (4, 4)
-
-        # Adjusts global_size to be an integer multiple of local_size
-        local_size = 384
-        global_size = ((ni-1)//local_size + 1) * local_size
+        self.setup_tstep_data(ni, ipos, imass, ivel, ieps2,
+                              nj, jpos, jmass, jvel, jeps2, eta)
 
         tstep_kernel = self.tstep_kernel
-
-        tstep_kernel.set_args(*data, global_size=global_size,
-                                     local_size=local_size,
-                                     result_shape=result_shape,
-                                     local_memory_shape=local_memory_shape)
+        tstep_kernel.global_size = ni
         tstep_kernel.run()
-        ret = tstep_kernel.get_result()
-        return ret
+        result = tstep_kernel.get_result()
+        return result
 
 
     ### pnacc methods
@@ -177,13 +171,23 @@ class Gravity(object):
         jveljv2 = np.concatenate((jvel, (jvel**2).sum(1)[..., np.newaxis]), axis=1)
         clight = Clight(pn_order, clight)
 
-        data = (ni, iposmass, iveliv2,
-                nj, jposmass, jveljv2,
-                clight.pn_order, clight.inv1,
-                clight.inv2, clight.inv3,
-                clight.inv4, clight.inv5,
-                clight.inv6, clight.inv7)
-        return data
+        self.pnacc_kernel.set_arg('IN', 0, ni)
+        self.pnacc_kernel.set_arg('IN', 1, iposmass)
+        self.pnacc_kernel.set_arg('IN', 2, iveliv2)
+        self.pnacc_kernel.set_arg('IN', 3, nj)
+        self.pnacc_kernel.set_arg('IN', 4, jposmass)
+        self.pnacc_kernel.set_arg('IN', 5, jveljv2)
+        self.pnacc_kernel.set_arg('IN', 6, clight.pn_order)
+        self.pnacc_kernel.set_arg('IN', 7, clight.inv1)
+        self.pnacc_kernel.set_arg('IN', 8, clight.inv2)
+        self.pnacc_kernel.set_arg('IN', 9, clight.inv3)
+        self.pnacc_kernel.set_arg('IN', 10, clight.inv4)
+        self.pnacc_kernel.set_arg('IN', 11, clight.inv5)
+        self.pnacc_kernel.set_arg('IN', 12, clight.inv6)
+        self.pnacc_kernel.set_arg('IN', 13, clight.inv7)
+        self.pnacc_kernel.set_arg('OUT', 14, (ni, 4))       # XXX: forcing shape = (ni, 4) due to
+                                                            #      a bug using __global REAL3 in
+                                                            #      AMD's OpenCL implementation.
 
     def set_pnacc(self, ni, ipos, imass, ivel,
                         nj, jpos, jmass, jvel,
@@ -191,28 +195,15 @@ class Gravity(object):
         """
         Set blackhole-blackhole post-newtonian acc.
         """
-        data = self.setup_pnacc_data(ni, ipos, imass, ivel,
-                                     nj, jpos, jmass, jvel,
-                                     pn_order, clight)
-
-        result_shape = (ni,4)           # XXX: forcing shape = (ni, 4) due to
-                                        #      a bug using __global REAL3 in
-                                        #      AMD's OpenCL implementation.
-        local_memory_shape = (4, 4)
-
-        # Adjusts global_size to be an integer multiple of local_size
-        local_size = 384
-        global_size = ((ni-1)//local_size + 1) * local_size
+        self.setup_pnacc_data(ni, ipos, imass, ivel,
+                              nj, jpos, jmass, jvel,
+                              pn_order, clight)
 
         pnacc_kernel = self.pnacc_kernel
-
-        pnacc_kernel.set_args(*data, global_size=global_size,
-                                     local_size=local_size,
-                                     result_shape=result_shape,
-                                     local_memory_shape=local_memory_shape)
+        pnacc_kernel.global_size = ni
         pnacc_kernel.run()
-        ret = pnacc_kernel.get_result()
-        return ret[:,:3]                # XXX: forcing return shape = (ni, 3).
+        result = pnacc_kernel.get_result()
+        return result[:,:3]             # XXX: forcing return shape = (ni, 3).
                                         #      see comment about a bug using
                                         #      __global REAL3 in OpenCL.
 
