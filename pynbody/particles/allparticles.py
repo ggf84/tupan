@@ -93,6 +93,10 @@ class Particles(dict):
         eps2 = [obj.eps2 for obj in self.values() if obj.n]
         return recf.stack_arrays(eps2).view(np.ndarray)
 
+    def stack_fields(self, attrs):
+        arrays = [obj.stack_fields(attrs) for obj in self.values() if obj.n]
+        return recf.stack_arrays(arrays).reshape((self.n,-1)).squeeze()
+
 
     #
     # common methods
@@ -217,37 +221,33 @@ class Particles(dict):
         Update the individual gravitational potential due to other particles.
         """
         nj = objs.n
-        jpos = objs.pos
-        jmass = objs.mass
+        jposmass = objs.stack_fields(('pos', 'mass'))
         jeps2 = objs.eps2
         for iobj in self.values():
             if iobj.n:
-                iobj.phi = iobj.get_phi(nj, jpos, jmass, jeps2)
+                iobj.phi = iobj.get_phi(nj, jposmass, jeps2)
 
     def update_acc(self, objs):
         """
         Update the individual gravitational acceleration due to other particles.
         """
         nj = objs.n
-        jpos = objs.pos
-        jmass = objs.mass
+        jposmass = objs.stack_fields(('pos', 'mass'))
         jeps2 = objs.eps2
         for iobj in self.values():
             if iobj.n:
-                iobj.acc = iobj.get_acc(nj, jpos, jmass, jeps2)
+                iobj.acc = iobj.get_acc(nj, jposmass, jeps2)
 
     def update_timestep(self, objs, eta):
         """
         Update the individual time-steps due to other particles.
         """
         nj = objs.n
-        jpos = objs.pos
-        jmass = objs.mass
-        jvel = objs.vel
-        jeps2 = objs.eps2
+        jposmass = objs.stack_fields(('pos', 'mass'))
+        jveleps2 = objs.stack_fields(('vel', 'eps2'))
         for iobj in self.values():
             if iobj.n:
-                iobj.dt_next = iobj.get_tstep(nj, jpos, jmass, jvel, jeps2, eta)
+                iobj.dt_next = iobj.get_tstep(nj, jposmass, jveleps2, eta)
 
     def update_pnacc(self, objs, pn_order, clight):
         """

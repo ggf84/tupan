@@ -93,6 +93,12 @@ class Pbase(object):
         obj.set_state(self.get_state())
         return obj
 
+    def stack_fields(self, attrs):
+        def atleast_2d(attr):
+            arr = self.data[attr]
+            return arr.reshape(-1,1) if arr.ndim < 2 else arr
+        return np.concatenate([atleast_2d(attr) for attr in attrs], axis=1).squeeze()
+
 
     #
     # common attributes
@@ -346,25 +352,21 @@ class Pbase(object):
 
     def update_phi(self, jobj):
         nj = jobj.n
-        jpos = jobj.pos
-        jmass = jobj.mass
+        jposmass = jobj.stack_fields(('pos', 'mass'))
         jeps2 = jobj.eps2
-        self.phi = self.get_phi(nj, jpos, jmass, jeps2)
+        self.phi = self.get_phi(nj, jposmass, jeps2)
 
     def update_acc(self, jobj):
         nj = jobj.n
-        jpos = jobj.pos
-        jmass = jobj.mass
+        jposmass = jobj.stack_fields(('pos', 'mass'))
         jeps2 = jobj.eps2
-        self.acc = self.get_acc(nj, jpos, jmass, jeps2)
+        self.acc = self.get_acc(nj, jposmass, jeps2)
 
     def update_timestep(self, jobj, eta):
         nj = jobj.n
-        jpos = jobj.pos
-        jmass = jobj.mass
-        jvel = jobj.vel
-        jeps2 = jobj.eps2
-        self.dt_next = self.get_tstep(nj, jpos, jmass, jvel, jeps2, eta)
+        jposmass = jobj.stack_fields(('pos', 'mass'))
+        jveleps2 = jobj.stack_fields(('vel', 'eps2'))
+        self.dt_next = self.get_tstep(nj, jposmass, jveleps2, eta)
 
     def update_acc_and_timestep(self, jobj, eta):   # XXX: deprecated!
         ret = iobj.get_acctstep(jobj, eta)
@@ -372,39 +374,35 @@ class Pbase(object):
         self.dt_next = ret[1]
 
 
-    def get_phi(self, nj, jpos, jmass, jeps2):
+    def get_phi(self, nj, jposmass, jeps2):
         """
         Get individual gravitational potential due j-particles.
         """
         ni = self.n
-        ipos = self.pos
-        imass = self.mass
+        iposmass = self.stack_fields(('pos', 'mass'))
         ieps2 = self.eps2
-        return gravitation.set_phi(ni, ipos, imass, ieps2,
-                                   nj, jpos, jmass, jeps2)
+        return gravitation.set_phi(ni, iposmass, ieps2,
+                                   nj, jposmass, jeps2)
 
-    def get_acc(self, nj, jpos, jmass, jeps2):
+    def get_acc(self, nj, jposmass, jeps2):
         """
         Get individual gravitational acceleration due j-particles.
         """
         ni = self.n
-        ipos = self.pos
-        imass = self.mass
+        iposmass = self.stack_fields(('pos', 'mass'))
         ieps2 = self.eps2
-        return gravitation.set_acc(ni, ipos, imass, ieps2,
-                                   nj, jpos, jmass, jeps2)
+        return gravitation.set_acc(ni, iposmass, ieps2,
+                                   nj, jposmass, jeps2)
 
-    def get_tstep(self, nj, jpos, jmass, jvel, jeps2, eta):
+    def get_tstep(self, nj, jposmass, jveleps2, eta):
         """
         Get individual time-step due j-particles.
         """
         ni = self.n
-        ipos = self.pos
-        imass = self.mass
-        ivel = self.vel
-        ieps2 = self.eps2
-        return eta / gravitation.set_tstep(ni, ipos, imass, ivel, ieps2,
-                                           nj, jpos, jmass, jvel, jeps2, eta/2)
+        iposmass = self.stack_fields(('pos', 'mass'))
+        iveleps2 = self.stack_fields(('vel', 'eps2'))
+        return eta / gravitation.set_tstep(ni, iposmass, iveleps2,
+                                           nj, jposmass, jveleps2, eta/2)
 
     def get_acctstep(self, jobj, eta):   # XXX: deprecated!
         """

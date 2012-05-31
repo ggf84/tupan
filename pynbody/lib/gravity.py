@@ -61,12 +61,8 @@ class Gravity(object):
 
     ### phi methods
 
-    def setup_phi_data(self, ni, ipos, imass, ieps2,
-                             nj, jpos, jmass, jeps2):
-
-        iposmass = np.concatenate((ipos, imass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jpos, jmass[..., np.newaxis]), axis=1)
-
+    def setup_phi_data(self, ni, iposmass, ieps2,
+                             nj, jposmass, jeps2):
         self.phi_kernel.set_arg('IN', 0, ni)
         self.phi_kernel.set_arg('IN', 1, iposmass)
         self.phi_kernel.set_arg('IN', 2, ieps2)
@@ -75,29 +71,25 @@ class Gravity(object):
         self.phi_kernel.set_arg('IN', 5, jeps2)
         self.phi_kernel.set_arg('OUT', 6, (ni,))
 
-    def set_phi(self, ni, ipos, imass, ieps2,
-                      nj, jpos, jmass, jeps2):
+    def set_phi(self, ni, iposmass, ieps2,
+                      nj, jposmass, jeps2):
         """
         Set obj-obj newtonian phi.
         """
-        self.setup_phi_data(ni, ipos, imass, ieps2,
-                            nj, jpos, jmass, jeps2)
+        self.setup_phi_data(ni, iposmass, ieps2,
+                            nj, jposmass, jeps2)
 
         phi_kernel = self.phi_kernel
         phi_kernel.global_size = ni
         phi_kernel.run()
-        result = phi_kernel.get_result()
+        result = phi_kernel.get_result()[0]
         return result
 
 
     ### acc methods
 
-    def setup_acc_data(self, ni, ipos, imass, ieps2,
-                             nj, jpos, jmass, jeps2):
-
-        iposmass = np.concatenate((ipos, imass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jpos, jmass[..., np.newaxis]), axis=1)
-
+    def setup_acc_data(self, ni, iposmass, ieps2,
+                             nj, jposmass, jeps2):
         self.acc_kernel.set_arg('IN', 0, ni)
         self.acc_kernel.set_arg('IN', 1, iposmass)
         self.acc_kernel.set_arg('IN', 2, ieps2)
@@ -108,18 +100,18 @@ class Gravity(object):
                                                         #      a bug using __global REAL3 in
                                                         #      AMD's OpenCL implementation.
 
-    def set_acc(self, ni, ipos, imass, ieps2,
-                      nj, jpos, jmass, jeps2):
+    def set_acc(self, ni, iposmass, ieps2,
+                      nj, jposmass, jeps2):
         """
         Set obj-obj newtonian acc.
         """
-        self.setup_acc_data(ni, ipos, imass, ieps2,
-                            nj, jpos, jmass, jeps2)
+        self.setup_acc_data(ni, iposmass, ieps2,
+                            nj, jposmass, jeps2)
 
         acc_kernel = self.acc_kernel
         acc_kernel.global_size = ni
         acc_kernel.run()
-        result = acc_kernel.get_result()
+        result = acc_kernel.get_result()[0]
         return result[:,:3]             # XXX: forcing return shape = (ni, 3).
                                         #      see comment about a bug using
                                         #      __global REAL3 in OpenCL.
@@ -127,14 +119,8 @@ class Gravity(object):
 
     ### tstep methods
 
-    def setup_tstep_data(self, ni, ipos, imass, ivel, ieps2,
-                               nj, jpos, jmass, jvel, jeps2, eta):
-
-        iposmass = np.concatenate((ipos, imass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jpos, jmass[..., np.newaxis]), axis=1)
-        iveleps2 = np.concatenate((ivel, ieps2[..., np.newaxis]), axis=1)
-        jveleps2 = np.concatenate((jvel, jeps2[..., np.newaxis]), axis=1)
-
+    def setup_tstep_data(self, ni, iposmass, iveleps2,
+                               nj, jposmass, jveleps2, eta):
         self.tstep_kernel.set_arg('IN', 0, ni)
         self.tstep_kernel.set_arg('IN', 1, iposmass)
         self.tstep_kernel.set_arg('IN', 2, iveleps2)
@@ -144,18 +130,18 @@ class Gravity(object):
         self.tstep_kernel.set_arg('IN', 6, eta)
         self.tstep_kernel.set_arg('OUT', 7, (ni,))
 
-    def set_tstep(self, ni, ipos, imass, ivel, ieps2,
-                        nj, jpos, jmass, jvel, jeps2, eta):
+    def set_tstep(self, ni, iposmass, iveleps2,
+                        nj, jposmass, jveleps2, eta):
         """
         Set timestep.
         """
-        self.setup_tstep_data(ni, ipos, imass, ivel, ieps2,
-                              nj, jpos, jmass, jvel, jeps2, eta)
+        self.setup_tstep_data(ni, iposmass, iveleps2,
+                              nj, jposmass, jveleps2, eta)
 
         tstep_kernel = self.tstep_kernel
         tstep_kernel.global_size = ni
         tstep_kernel.run()
-        result = tstep_kernel.get_result()
+        result = tstep_kernel.get_result()[0]
         return result
 
 
@@ -202,7 +188,7 @@ class Gravity(object):
         pnacc_kernel = self.pnacc_kernel
         pnacc_kernel.global_size = ni
         pnacc_kernel.run()
-        result = pnacc_kernel.get_result()
+        result = pnacc_kernel.get_result()[0]
         return result[:,:3]             # XXX: forcing return shape = (ni, 3).
                                         #      see comment about a bug using
                                         #      __global REAL3 in OpenCL.

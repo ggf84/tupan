@@ -86,8 +86,9 @@ class CLKernel(object):
         self._lsize_max = None
         self._gsize = None
         self.dev_args = {}
-        self._in = {}
-        self._out = {}
+        self.in_buffers = {}
+        self.out_buffers = {}
+        self.out_shapes = {}
 
 
     @property
@@ -114,10 +115,16 @@ class CLKernel(object):
         self._gsize = ((ni-1)//lsize + 1) * lsize
 
 
-    def _set_arg_in_int(self, i, arg):
+    def _set_local_memory(self, i, arg):
+        def foo(x, y): return x * y
+        size = self.env.dtype.itemsize * reduce(foo, self.local_size)
+        self.dev_args[i] = cl.LocalMemory(size * arg)
+
+
+    def _set_int(self, i, arg):
         self.dev_args[i] = np.uint32(arg)
 
-    def _set_arg_in_float(self, i, arg):
+    def _set_float(self, i, arg):
         self.dev_args[i] = self.env.dtype.type(arg)
 
 
@@ -127,26 +134,24 @@ class CLKernel(object):
         dev_buf = cl.Buffer(self.env.ctx,
                             memf.READ_ONLY,
                             size=arg.nbytes)
-        pin_buff = cl.Buffer(self.env.ctx,
-                             memf.READ_ONLY | memf.ALLOC_HOST_PTR,
-                             size=arg.nbytes)
-        (in_data, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buff,
-                                              mapf.WRITE, 0, arg.shape,
-                                              self.env.dtype, 'C')
-        in_shape = in_data.shape
-        return (dev_buf, {"data": in_data, "shape": in_shape})
+        pin_buf = cl.Buffer(self.env.ctx,
+                            memf.READ_ONLY | memf.ALLOC_HOST_PTR,
+                            size=arg.nbytes)
+        (in_buf, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buf,
+                                             mapf.WRITE, 0, arg.shape,
+                                             self.env.dtype, 'C')
+        return (dev_buf, in_buf)
 
-    def _set_arg_in_ndarray(self, i, arg):
+    def _set_in_buffers(self, i, arg):
         if not i in self.dev_args:
-            (self.dev_args[i], self._in[i]) = self._allocate_in_buffers(arg)
+            (self.dev_args[i], self.in_buffers[i]) = self._allocate_in_buffers(arg)
             print('IN:', self.kernel.function_name, self.dev_args)
-        if len(arg) > len(self._in[i]["data"]):
-            (self.dev_args[i], self._in[i]) = self._allocate_in_buffers(arg)
+        if len(arg) > len(self.in_buffers[i]):
+            (self.dev_args[i], self.in_buffers[i]) = self._allocate_in_buffers(arg)
             print('IN realocation:', self.kernel.function_name, self.dev_args)
 
-        self._in[i]["shape"] = arg.shape
-        self._in[i]["data"][:len(arg)] = arg
-        cl.enqueue_copy(self.env.queue, self.dev_args[i], self._in[i]["data"][:len(arg)])
+        self.in_buffers[i][:len(arg)] = arg
+        cl.enqueue_copy(self.env.queue, self.dev_args[i], self.in_buffers[i][:len(arg)])
 
 #        cl.enqueue_copy(self.env.queue, self.dev_args[i], np.ascontiguousarray(arg, dtype=self.env.dtype))
 
@@ -161,30 +166,24 @@ class CLKernel(object):
         dev_buf = cl.Buffer(self.env.ctx,
                             memf.WRITE_ONLY,
                             size=arg.nbytes)
-        pin_buff = cl.Buffer(self.env.ctx,
-                             memf.WRITE_ONLY | memf.ALLOC_HOST_PTR,
-                             size=arg.nbytes)
-        (out_data, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buff,
-                                               mapf.READ, 0, arg.shape,
-                                               self.env.dtype, 'C')
-        out_shape = out_data.shape
-        return (dev_buf, {"data": out_data, "shape": out_shape})
+        pin_buf = cl.Buffer(self.env.ctx,
+                            memf.WRITE_ONLY | memf.ALLOC_HOST_PTR,
+                            size=arg.nbytes)
+        (out_buf, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buf,
+                                              mapf.READ, 0, arg.shape,
+                                              self.env.dtype, 'C')
+        return (dev_buf, out_buf, out_buf.shape)
 
-    def _set_arg_out_ndarray(self, i, arg):
-        arg = np.empty(arg, dtype=self.env.dtype)
+    def _set_out_buffers(self, i, arg):
         if not i in self.dev_args:
-            (self.dev_args[i], self._out[i]) = self._allocate_out_buffers(arg)
+            ary = np.empty(arg, dtype=self.env.dtype)
+            (self.dev_args[i], self.out_buffers[i], self.out_shapes[i]) = self._allocate_out_buffers(ary)
             print('OUT:', self.kernel.function_name, self.dev_args)
-        if len(arg) > len(self._out[i]["data"]):
-            (self.dev_args[i], self._out[i]) = self._allocate_out_buffers(arg)
+        if arg > self.out_buffers[i].shape:
+            ary = np.empty(arg, dtype=self.env.dtype)
+            (self.dev_args[i], self.out_buffers[i], self.out_shapes[i]) = self._allocate_out_buffers(ary)
             print('OUT realocation:', self.kernel.function_name, self.dev_args)
-        self._out[i]["shape"] = arg.shape
-
-
-    def _set_arg_in_lmem(self, i, arg):
-            def foo(x, y): return x * y
-            size = self.env.dtype.itemsize * reduce(foo, self.local_size)
-            self.dev_args[i] = cl.LocalMemory(size * arg)
+        self.out_shapes[i] = arg
 
 
     def set_arg(self, mode, i, arg):
@@ -195,31 +194,25 @@ class CLKernel(object):
         """
         if mode is 'IN':
             if isinstance(arg, int):
-                self._set_arg_in_int(i, arg)
+                self._set_int(i, arg)
             elif isinstance(arg, float):
-                self._set_arg_in_float(i, arg)
+                self._set_float(i, arg)
             elif isinstance(arg, np.ndarray):
-                self._set_arg_in_ndarray(i, arg)
+                self._set_in_buffers(i, arg)
             else:
                 raise TypeError("CLKernel.set_arg recived unexpected argument type: {}".format(type(arg)))
         elif mode is 'OUT':
-            if isinstance(arg, int):
-                raise NotImplementedError()
-            elif isinstance(arg, float):
-                raise NotImplementedError()
-            elif isinstance(arg, tuple):
-                self._set_arg_out_ndarray(i, arg)
-            else:
-                raise TypeError("CLKernel.set_arg recived unexpected argument type: {}".format(type(arg)))
+            self._set_out_buffers(i, arg)
         elif mode is 'LMEM':
-            self._set_arg_in_lmem(i, arg)
+            self._set_local_memory(i, arg)
         else:
             raise TypeError("CLKernel.set_arg recived unexpected mode setting: {}".format(mode))
 
+        arg = self.dev_args[i]
+        self.kernel.set_arg(i, arg)
+
 
     def run(self):
-        for i, arg in self.dev_args.items():
-            self.kernel.set_arg(i, arg)
         cl.enqueue_nd_range_kernel(self.env.queue,
                                    self.kernel,
                                    self.global_size,
@@ -228,13 +221,17 @@ class CLKernel(object):
 
 
     def get_result(self):
-#        return self.dev_result.get_host_array(self.host_shape, self.env.dtype)
-        ret = []
-        for i, _out in self._out.items():
-            ret.append(self.dev_args[i].get_host_array(_out["shape"], self.env.dtype))
-#            cl.enqueue_copy(self.env.queue, _out["data"], self.dev_args[i])
-#            ret.append(_out["data"][:_out["shape"][0]])
-        return ret[0]
+        def getter(item):
+            (i, shape) = item
+            return self.dev_args[i].get_host_array(shape, self.env.dtype)
+
+#        def __getter(item):
+#            (i, shape) = item
+#            cl.enqueue_copy(self.env.queue, self.out_buffers[i], self.dev_args[i])
+#            return self.out_buffers[i][:shape[0]]
+
+        return map(getter, self.out_shapes.items())
+
 
 
 @decallmethods(timings)
@@ -292,8 +289,7 @@ class CKernel(object):
             elif isinstance(arg, float):
                 self.dev_args[i] = self.env.dtype.type(arg)
             elif isinstance(arg, np.ndarray):
-                hostbuf = np.ascontiguousarray(arg, dtype=self.env.dtype)
-                self.dev_args[i] = hostbuf
+                self.dev_args[i] = self.env.dtype.type(arg)
             else:
                 raise TypeError()
         elif mode is 'OUT':
@@ -307,8 +303,8 @@ class CKernel(object):
         self.dev_result = self.kernel(*args)
 
 
-    def get_result(self):
-        return self.dev_result
+    def get_result(self):       # XXX: FIXME
+        return [self.dev_result]
 
 
 

@@ -1,10 +1,9 @@
-#ifndef CL_VERSION_1_2
+#if __OPENCL_VERSION__ < CL_VERSION_1_2
     #ifdef cl_khr_fp64
         #pragma OPENCL EXTENSION cl_khr_fp64 : enable
     #endif
 #endif
 
-#define OPENCL_EXTENSION
 #include"common.h"
 #include"gravity_kernels.h"
 

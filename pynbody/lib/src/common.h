@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#ifdef OPENCL_EXTENSION
+#ifdef __OPENCL_VERSION__
     #ifdef DOUBLE
         typedef double REAL;
         typedef double2 REAL2;
@@ -24,7 +24,7 @@
         #define rsqrt(x) (1.0/sqrt(x))
     #else
         typedef float REAL;
-        #define rsqrt(x) (1.0/sqrtf(x))
+        #define rsqrt(x) (1.0f/sqrtf(x))
     #endif
     #define min(a, b) ({ __typeof__ (a) _a = (a); \
                          __typeof__ (b) _b = (b); \
@@ -75,7 +75,7 @@
         REAL se;
         REAL sf;
     } REAL16, *pREAL16;
-#endif // OPENCL_EXTENSION
+#endif // __OPENCL_VERSION__
 
 
 #define PI ((REAL)3.141592653589793)

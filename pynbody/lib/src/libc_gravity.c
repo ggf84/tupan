@@ -15,11 +15,14 @@ _p2p_phi_kernel(PyObject *_args)
     PyObject *_ipos = NULL, *_ieps2 = NULL;
     PyObject *_jpos = NULL, *_jeps2 = NULL;
 
+    int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
         fmt = "IOOIOO";
+        typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
         fmt = "IOOIOO";
+        typenum = NPY_FLOAT32;
     }
 
     if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ieps2,
@@ -27,21 +30,21 @@ _p2p_phi_kernel(PyObject *_args)
         return NULL;
 
     // i-data
-    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *ipos_ptr = (double *)PyArray_DATA(_ipos_arr);
-    PyObject *_ieps2_arr = PyArray_FROM_OTF(_ieps2, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *ieps2_ptr = (double *)PyArray_DATA(_ieps2_arr);
+    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, typenum, NPY_IN_ARRAY);
+    REAL *ipos_ptr = (REAL *)PyArray_DATA(_ipos_arr);
+    PyObject *_ieps2_arr = PyArray_FROM_OTF(_ieps2, typenum, NPY_IN_ARRAY);
+    REAL *ieps2_ptr = (REAL *)PyArray_DATA(_ieps2_arr);
 
     // j-data
-    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *jpos_ptr = (double *)PyArray_DATA(_jpos_arr);
-    PyObject *_jeps2_arr = PyArray_FROM_OTF(_jeps2, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *jeps2_ptr = (double *)PyArray_DATA(_jeps2_arr);
+    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, typenum, NPY_IN_ARRAY);
+    REAL *jpos_ptr = (REAL *)PyArray_DATA(_jpos_arr);
+    PyObject *_jeps2_arr = PyArray_FROM_OTF(_jeps2, typenum, NPY_IN_ARRAY);
+    REAL *jeps2_ptr = (REAL *)PyArray_DATA(_jeps2_arr);
 
     // allocate a PyArrayObject to be returned
     npy_intp dims[1] = {ni};
-    PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(1, dims, NPY_FLOAT64, 0);
-    double *ret_ptr = (double *)PyArray_DATA(ret);
+    PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(1, dims, typenum, 0);
+    REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
 
     // main calculation
     unsigned int i, iiii, j, jjjj;
@@ -84,11 +87,14 @@ _p2p_acc_kernel(PyObject *_args)
     PyObject *_ipos = NULL, *_ieps2 = NULL;
     PyObject *_jpos = NULL, *_jeps2 = NULL;
 
+    int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
         fmt = "IOOIOO";
+        typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
         fmt = "IOOIOO";
+        typenum = NPY_FLOAT32;
     }
 
     if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ieps2,
@@ -96,21 +102,21 @@ _p2p_acc_kernel(PyObject *_args)
         return NULL;
 
     // i-data
-    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *ipos_ptr = (double *)PyArray_DATA(_ipos_arr);
-    PyObject *_ieps2_arr = PyArray_FROM_OTF(_ieps2, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *ieps2_ptr = (double *)PyArray_DATA(_ieps2_arr);
+    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, typenum, NPY_IN_ARRAY);
+    REAL *ipos_ptr = (REAL *)PyArray_DATA(_ipos_arr);
+    PyObject *_ieps2_arr = PyArray_FROM_OTF(_ieps2, typenum, NPY_IN_ARRAY);
+    REAL *ieps2_ptr = (REAL *)PyArray_DATA(_ieps2_arr);
 
     // j-data
-    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *jpos_ptr = (double *)PyArray_DATA(_jpos_arr);
-    PyObject *_jeps2_arr = PyArray_FROM_OTF(_jeps2, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *jeps2_ptr = (double *)PyArray_DATA(_jeps2_arr);
+    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, typenum, NPY_IN_ARRAY);
+    REAL *jpos_ptr = (REAL *)PyArray_DATA(_jpos_arr);
+    PyObject *_jeps2_arr = PyArray_FROM_OTF(_jeps2, typenum, NPY_IN_ARRAY);
+    REAL *jeps2_ptr = (REAL *)PyArray_DATA(_jeps2_arr);
 
     // allocate a PyArrayObject to be returned
     npy_intp dims[2] = {ni, 3};
-    PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(2, dims, NPY_FLOAT64, 0);
-    double *ret_ptr = (double *)PyArray_DATA(ret);
+    PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(2, dims, typenum, 0);
+    REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
 
     // main calculation
     unsigned int i, iii, iiii, j, jjjj;
@@ -157,11 +163,14 @@ _p2p_acctstep_kernel(PyObject *_args)
     PyObject *_ipos = NULL, *_ivel = NULL;
     PyObject *_jpos = NULL, *_jvel = NULL;
 
+    int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
         fmt = "IOOIOOd";
+        typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
         fmt = "IOOIOOf";
+        typenum = NPY_FLOAT32;
     }
 
     if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ivel,
@@ -170,21 +179,21 @@ _p2p_acctstep_kernel(PyObject *_args)
         return NULL;
 
     // i-data
-    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *ipos_ptr = (double *)PyArray_DATA(_ipos_arr);
-    PyObject *_ivel_arr = PyArray_FROM_OTF(_ivel, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *ivel_ptr = (double *)PyArray_DATA(_ivel_arr);
+    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, typenum, NPY_IN_ARRAY);
+    REAL *ipos_ptr = (REAL *)PyArray_DATA(_ipos_arr);
+    PyObject *_ivel_arr = PyArray_FROM_OTF(_ivel, typenum, NPY_IN_ARRAY);
+    REAL *ivel_ptr = (REAL *)PyArray_DATA(_ivel_arr);
 
     // j-data
-    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *jpos_ptr = (double *)PyArray_DATA(_jpos_arr);
-    PyObject *_jvel_arr = PyArray_FROM_OTF(_jvel, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *jvel_ptr = (double *)PyArray_DATA(_jvel_arr);
+    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, typenum, NPY_IN_ARRAY);
+    REAL *jpos_ptr = (REAL *)PyArray_DATA(_jpos_arr);
+    PyObject *_jvel_arr = PyArray_FROM_OTF(_jvel, typenum, NPY_IN_ARRAY);
+    REAL *jvel_ptr = (REAL *)PyArray_DATA(_jvel_arr);
 
     // allocate a PyArrayObject to be returned
     npy_intp dims[2] = {ni, 4};
-    PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(2, dims, NPY_FLOAT64, 0);
-    double *ret_ptr = (double *)PyArray_DATA(ret);
+    PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(2, dims, typenum, 0);
+    REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
 
     // main calculation
     unsigned int i, iiii, j, jjjj;
@@ -233,11 +242,14 @@ _p2p_tstep_kernel(PyObject *_args)
     PyObject *_ipos = NULL, *_ivel = NULL;
     PyObject *_jpos = NULL, *_jvel = NULL;
 
+    int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
         fmt = "IOOIOOd";
+        typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
         fmt = "IOOIOOf";
+        typenum = NPY_FLOAT32;
     }
 
     if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ivel,
@@ -246,21 +258,21 @@ _p2p_tstep_kernel(PyObject *_args)
         return NULL;
 
     // i-data
-    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *ipos_ptr = (double *)PyArray_DATA(_ipos_arr);
-    PyObject *_ivel_arr = PyArray_FROM_OTF(_ivel, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *ivel_ptr = (double *)PyArray_DATA(_ivel_arr);
+    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, typenum, NPY_IN_ARRAY);
+    REAL *ipos_ptr = (REAL *)PyArray_DATA(_ipos_arr);
+    PyObject *_ivel_arr = PyArray_FROM_OTF(_ivel, typenum, NPY_IN_ARRAY);
+    REAL *ivel_ptr = (REAL *)PyArray_DATA(_ivel_arr);
 
     // j-data
-    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *jpos_ptr = (double *)PyArray_DATA(_jpos_arr);
-    PyObject *_jvel_arr = PyArray_FROM_OTF(_jvel, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *jvel_ptr = (double *)PyArray_DATA(_jvel_arr);
+    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, typenum, NPY_IN_ARRAY);
+    REAL *jpos_ptr = (REAL *)PyArray_DATA(_jpos_arr);
+    PyObject *_jvel_arr = PyArray_FROM_OTF(_jvel, typenum, NPY_IN_ARRAY);
+    REAL *jvel_ptr = (REAL *)PyArray_DATA(_jvel_arr);
 
     // allocate a PyArrayObject to be returned
     npy_intp dims[1] = {ni};
-    PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(1, dims, NPY_FLOAT64, 0);
-    double *ret_ptr = (double *)PyArray_DATA(ret);
+    PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(1, dims, typenum, 0);
+    REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
 
     // main calculation
     unsigned int i, iiii, j, jjjj;
@@ -306,11 +318,14 @@ _p2p_pnacc_kernel(PyObject *_args)
     PyObject *_ipos = NULL, *_ivel = NULL;
     PyObject *_jpos = NULL, *_jvel = NULL;
 
+    int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
         fmt = "IOOIOOIddddddd";
+        typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
         fmt = "IOOIOOIfffffff";
+        typenum = NPY_FLOAT32;
     }
 
     if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ivel,
@@ -322,21 +337,21 @@ _p2p_pnacc_kernel(PyObject *_args)
         return NULL;
 
     // i-data
-    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *ipos_ptr = (double *)PyArray_DATA(_ipos_arr);
-    PyObject *_ivel_arr = PyArray_FROM_OTF(_ivel, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *ivel_ptr = (double *)PyArray_DATA(_ivel_arr);
+    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, typenum, NPY_IN_ARRAY);
+    REAL *ipos_ptr = (REAL *)PyArray_DATA(_ipos_arr);
+    PyObject *_ivel_arr = PyArray_FROM_OTF(_ivel, typenum, NPY_IN_ARRAY);
+    REAL *ivel_ptr = (REAL *)PyArray_DATA(_ivel_arr);
 
     // j-data
-    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *jpos_ptr = (double *)PyArray_DATA(_jpos_arr);
-    PyObject *_jvel_arr = PyArray_FROM_OTF(_jvel, NPY_FLOAT64, NPY_IN_ARRAY);
-    double *jvel_ptr = (double *)PyArray_DATA(_jvel_arr);
+    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, typenum, NPY_IN_ARRAY);
+    REAL *jpos_ptr = (REAL *)PyArray_DATA(_jpos_arr);
+    PyObject *_jvel_arr = PyArray_FROM_OTF(_jvel, typenum, NPY_IN_ARRAY);
+    REAL *jvel_ptr = (REAL *)PyArray_DATA(_jvel_arr);
 
     // allocate a PyArrayObject to be returned
     npy_intp dims[2] = {ni, 3};
-    PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(2, dims, NPY_FLOAT64, 0);
-    double *ret_ptr = (double *)PyArray_DATA(ret);
+    PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(2, dims, typenum, 0);
+    REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
 
     // main calculation
     unsigned int i, iii, iiii, j, jjjj;
