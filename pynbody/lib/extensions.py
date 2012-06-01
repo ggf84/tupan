@@ -140,7 +140,8 @@ class CLKernel(object):
         (in_buf, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buf,
                                              mapf.WRITE, 0, arg.shape,
                                              self.env.dtype, 'C')
-        return (dev_buf, in_buf)
+#        return (dev_buf, in_buf)
+        return (pin_buf, in_buf)
 
     def _set_in_buffers(self, i, arg):
         if not i in self.dev_args:
@@ -151,13 +152,14 @@ class CLKernel(object):
             print('IN realocation:', self.kernel.function_name, self.dev_args)
 
         self.in_buffers[i][:len(arg)] = arg
-        cl.enqueue_copy(self.env.queue, self.dev_args[i], self.in_buffers[i][:len(arg)])
+        cl.enqueue_copy(self.env.queue, self.dev_args[i], self.in_buffers[i][:len(arg)], is_blocking=False)
 
-#        cl.enqueue_copy(self.env.queue, self.dev_args[i], np.ascontiguousarray(arg, dtype=self.env.dtype))
+#        cl.enqueue_copy(self.env.queue, self.dev_args[i], np.ascontiguousarray(arg, dtype=self.env.dtype), is_blocking=False)
 
 #        memf = cl.mem_flags
 #        self.dev_args[i] = cl.Buffer(self.env.ctx, memf.READ_ONLY | memf.COPY_HOST_PTR, hostbuf=np.ascontiguousarray(arg, dtype=self.env.dtype))
 #        self.dev_args[i] = cl.Buffer(self.env.ctx, memf.READ_ONLY | memf.USE_HOST_PTR, hostbuf=np.ascontiguousarray(arg, dtype=self.env.dtype))
+
 
 
     def _allocate_out_buffers(self, arg):
@@ -172,7 +174,8 @@ class CLKernel(object):
         (out_buf, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buf,
                                               mapf.READ, 0, arg.shape,
                                               self.env.dtype, 'C')
-        return (dev_buf, out_buf, out_buf.shape)
+#        return (dev_buf, out_buf, out_buf.shape)
+        return (pin_buf, out_buf, out_buf.shape)
 
     def _set_out_buffers(self, i, arg):
         if not i in self.dev_args:
@@ -221,14 +224,14 @@ class CLKernel(object):
 
 
     def get_result(self):
-        def getter(item):
-            (i, shape) = item
-            return self.dev_args[i].get_host_array(shape, self.env.dtype)
-
 #        def __getter(item):
 #            (i, shape) = item
-#            cl.enqueue_copy(self.env.queue, self.out_buffers[i], self.dev_args[i])
-#            return self.out_buffers[i][:shape[0]]
+#            return self.dev_args[i].get_host_array(shape, self.env.dtype)
+
+        def getter(item):
+            (i, shape) = item
+            cl.enqueue_copy(self.env.queue, self.out_buffers[i], self.dev_args[i])
+            return self.out_buffers[i][:shape[0]]
 
         return map(getter, self.out_shapes.items())
 
