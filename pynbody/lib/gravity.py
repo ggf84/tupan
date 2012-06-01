@@ -50,8 +50,7 @@ class Gravity(object):
 
         self.tstep_kernel = ext.p2p_tstep_kernel
         self.tstep_kernel.local_size = 384
-        self.tstep_kernel.set_arg('LMEM', 8, 4)
-        self.tstep_kernel.set_arg('LMEM', 9, 4)
+        self.tstep_kernel.set_arg('LMEM', 6, 8)
 
         self.pnacc_kernel = ext.p2p_pnacc_kernel
         self.pnacc_kernel.local_size = 384
@@ -119,24 +118,19 @@ class Gravity(object):
 
     ### tstep methods
 
-    def setup_tstep_data(self, ni, iposmass, iveleps2,
-                               nj, jposmass, jveleps2, eta):
+    def setup_tstep_data(self, ni, idata, nj, jdata, eta):
         self.tstep_kernel.set_arg('IN', 0, ni)
-        self.tstep_kernel.set_arg('IN', 1, iposmass)
-        self.tstep_kernel.set_arg('IN', 2, iveleps2)
-        self.tstep_kernel.set_arg('IN', 3, nj)
-        self.tstep_kernel.set_arg('IN', 4, jposmass)
-        self.tstep_kernel.set_arg('IN', 5, jveleps2)
-        self.tstep_kernel.set_arg('IN', 6, eta)
-        self.tstep_kernel.set_arg('OUT', 7, (ni,))
+        self.tstep_kernel.set_arg('IN', 1, idata)
+        self.tstep_kernel.set_arg('IN', 2, nj)
+        self.tstep_kernel.set_arg('IN', 3, jdata)
+        self.tstep_kernel.set_arg('IN', 4, eta)
+        self.tstep_kernel.set_arg('OUT', 5, (ni,))
 
-    def set_tstep(self, ni, iposmass, iveleps2,
-                        nj, jposmass, jveleps2, eta):
+    def set_tstep(self, ni, idata, nj, jdata, eta):
         """
         Set timestep.
         """
-        self.setup_tstep_data(ni, iposmass, iveleps2,
-                              nj, jposmass, jveleps2, eta)
+        self.setup_tstep_data(ni, idata, nj, jdata, eta)
 
         tstep_kernel = self.tstep_kernel
         tstep_kernel.global_size = ni

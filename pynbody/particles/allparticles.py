@@ -93,8 +93,8 @@ class Particles(dict):
         eps2 = [obj.eps2 for obj in self.values() if obj.n]
         return recf.stack_arrays(eps2).view(np.ndarray)
 
-    def stack_fields(self, attrs):
-        arrays = [obj.stack_fields(attrs) for obj in self.values() if obj.n]
+    def stack_fields(self, attrs, pad=-1):
+        arrays = [obj.stack_fields(attrs, pad) for obj in self.values() if obj.n]
         return recf.stack_arrays(arrays).reshape((self.n,-1)).squeeze()
 
 
@@ -243,11 +243,10 @@ class Particles(dict):
         Update the individual time-steps due to other particles.
         """
         nj = objs.n
-        jposmass = objs.stack_fields(('pos', 'mass'))
-        jveleps2 = objs.stack_fields(('vel', 'eps2'))
+        jdata = objs.stack_fields(('pos', 'mass', 'vel', 'eps2'))
         for iobj in self.values():
             if iobj.n:
-                iobj.dt_next = iobj.get_tstep(nj, jposmass, jveleps2, eta)
+                iobj.dt_next = iobj.get_tstep(nj, jdata, eta)
 
     def update_pnacc(self, objs, pn_order, clight):
         """

@@ -261,18 +261,17 @@ __kernel void p2p_acctstep_kernel(const uint ni,
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL
 p2p_accum_tstep(REAL myInvTstep,
-                const REAL4 myPos,
-                const REAL4 myVel,
+                const REAL8 myData,
                 const REAL eta,
                 uint j_begin,
                 uint j_end,
-                __local REAL4 *sharedPos,
-                __local REAL4 *sharedVel)
+                __local REAL8 *sharedJData
+                )
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-       myInvTstep = p2p_tstep_kernel_core(myInvTstep, myPos, myVel,
-                                          sharedPos[j], sharedVel[j],
+       myInvTstep = p2p_tstep_kernel_core(myInvTstep, myData.lo, myData.hi,
+                                          sharedJData[j].lo, sharedJData[j].hi,
                                           eta);
     }
     return myInvTstep;
@@ -280,14 +279,12 @@ p2p_accum_tstep(REAL myInvTstep,
 
 
 inline REAL
-p2p_tstep_kernel_main_loop(const REAL4 myPos,
-                           const REAL4 myVel,
-                           __global const REAL4 *jpos,
-                           __global const REAL4 *jvel,
+p2p_tstep_kernel_main_loop(const REAL8 myData,
                            const uint nj,
+                           __global const REAL8 *jdata,
                            const REAL eta,
-                           __local REAL4 *sharedPos,
-                           __local REAL4 *sharedVel)
+                           __local REAL8 *sharedJData
+                          )
 {
     uint lsize = get_local_size(0);
 
@@ -298,21 +295,20 @@ p2p_tstep_kernel_main_loop(const REAL4 myPos,
     for (tile = 0; tile < numTiles; ++tile) {
         uint nb = min(lsize, (nj - (tile * lsize)));
 
-        event_t e[2];
-        e[0] = async_work_group_copy(sharedPos, jpos + tile * lsize, nb, 0);
-        e[1] = async_work_group_copy(sharedVel, jvel + tile * lsize, nb, 0);
-        wait_group_events(2, e);
+        event_t e[1];
+        e[0] = async_work_group_copy(sharedJData, jdata + tile * lsize, nb, 0);
+        wait_group_events(1, e);
 
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            myInvTstep = p2p_accum_tstep(myInvTstep, myPos, myVel,
+            myInvTstep = p2p_accum_tstep(myInvTstep, myData,
                                          eta, j, j + JUNROLL,
-                                         sharedPos, sharedVel);
+                                         sharedJData);
         }
-        myInvTstep = p2p_accum_tstep(myInvTstep, myPos, myVel,
+        myInvTstep = p2p_accum_tstep(myInvTstep, myData,
                                      eta, j, nb,
-                                     sharedPos, sharedVel);
+                                     sharedJData);
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
@@ -322,22 +318,20 @@ p2p_tstep_kernel_main_loop(const REAL4 myPos,
 
 
 __kernel void p2p_tstep_kernel(const uint ni,
-                               __global const REAL4 *ipos,
-                               __global const REAL4 *ivel,
+                               __global const REAL8 *idata,
                                const uint nj,
-                               __global const REAL4 *jpos,
-                               __global const REAL4 *jvel,
+                               __global const REAL8 *jdata,
                                const REAL eta,
                                __global REAL *iinv_tstep,
-                               __local REAL4 *sharedPos,
-                               __local REAL4 *sharedVel)
+                               __local REAL8 *sharedJData
+                              )
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);
-    iinv_tstep[i] = p2p_tstep_kernel_main_loop(ipos[i], ivel[i],
-                                               jpos, jvel,
-                                               nj, eta,
-                                               sharedPos, sharedVel);
+    iinv_tstep[i] = p2p_tstep_kernel_main_loop(idata[i],
+                                               nj, jdata,
+                                               eta,
+                                               sharedJData);
 }
 
 

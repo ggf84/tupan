@@ -93,11 +93,18 @@ class Pbase(object):
         obj.set_state(self.get_state())
         return obj
 
-    def stack_fields(self, attrs):
+    def stack_fields(self, attrs, pad=-1):
         def atleast_2d(attr):
             arr = self.data[attr]
             return arr.reshape(-1,1) if arr.ndim < 2 else arr
-        return np.concatenate([atleast_2d(attr) for attr in attrs], axis=1).squeeze()
+
+        array = np.concatenate([atleast_2d(attr) for attr in attrs], axis=1)
+        col = array.shape[1] - pad
+        if col < 0:
+            pad_array = np.zeros((len(array),pad), dtype=array.dtype)
+            pad_array[:,:col] = array
+            return pad_array
+        return array.squeeze()
 
 
     #
@@ -364,9 +371,8 @@ class Pbase(object):
 
     def update_timestep(self, jobj, eta):
         nj = jobj.n
-        jposmass = jobj.stack_fields(('pos', 'mass'))
-        jveleps2 = jobj.stack_fields(('vel', 'eps2'))
-        self.dt_next = self.get_tstep(nj, jposmass, jveleps2, eta)
+        jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+        self.dt_next = self.get_tstep(nj, jdata, eta)
 
     def update_acc_and_timestep(self, jobj, eta):   # XXX: deprecated!
         ret = iobj.get_acctstep(jobj, eta)
@@ -394,15 +400,13 @@ class Pbase(object):
         return gravitation.set_acc(ni, iposmass, ieps2,
                                    nj, jposmass, jeps2)
 
-    def get_tstep(self, nj, jposmass, jveleps2, eta):
+    def get_tstep(self, nj, jdata, eta):
         """
         Get individual time-step due j-particles.
         """
         ni = self.n
-        iposmass = self.stack_fields(('pos', 'mass'))
-        iveleps2 = self.stack_fields(('vel', 'eps2'))
-        return eta / gravitation.set_tstep(ni, iposmass, iveleps2,
-                                           nj, jposmass, jveleps2, eta/2)
+        idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+        return eta / gravitation.set_tstep(ni, idata, nj, jdata, eta/2)
 
     def get_acctstep(self, jobj, eta):   # XXX: deprecated!
         """
