@@ -12,34 +12,30 @@ static PyObject *
 _p2p_phi_kernel(PyObject *_args)
 {
     unsigned int ni, nj;
-    PyObject *_ipos = NULL, *_ieps2 = NULL;
-    PyObject *_jpos = NULL, *_jeps2 = NULL;
+    PyObject *_idata = NULL;
+    PyObject *_jdata = NULL;
 
     int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "IOOIOO";
+        fmt = "IOIO";
         typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "IOOIOO";
+        fmt = "IOIO";
         typenum = NPY_FLOAT32;
     }
 
-    if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ieps2,
-                                      &nj, &_jpos, &_jeps2))
+    if (!PyArg_ParseTuple(_args, fmt, &ni, &_idata,
+                                      &nj, &_jdata))
         return NULL;
 
     // i-data
-    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, typenum, NPY_IN_ARRAY);
-    REAL *ipos_ptr = (REAL *)PyArray_DATA(_ipos_arr);
-    PyObject *_ieps2_arr = PyArray_FROM_OTF(_ieps2, typenum, NPY_IN_ARRAY);
-    REAL *ieps2_ptr = (REAL *)PyArray_DATA(_ieps2_arr);
+    PyObject *_idata_arr = PyArray_FROM_OTF(_idata, typenum, NPY_IN_ARRAY);
+    REAL *idata_ptr = (REAL *)PyArray_DATA(_idata_arr);
 
     // j-data
-    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, typenum, NPY_IN_ARRAY);
-    REAL *jpos_ptr = (REAL *)PyArray_DATA(_jpos_arr);
-    PyObject *_jeps2_arr = PyArray_FROM_OTF(_jeps2, typenum, NPY_IN_ARRAY);
-    REAL *jeps2_ptr = (REAL *)PyArray_DATA(_jeps2_arr);
+    PyObject *_jdata_arr = PyArray_FROM_OTF(_jdata, typenum, NPY_IN_ARRAY);
+    REAL *jdata_ptr = (REAL *)PyArray_DATA(_jdata_arr);
 
     // allocate a PyArrayObject to be returned
     npy_intp dims[1] = {ni};
@@ -47,30 +43,28 @@ _p2p_phi_kernel(PyObject *_args)
     REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
 
     // main calculation
-    unsigned int i, iiii, j, jjjj;
+    unsigned int i, i8, j, j8;
     for (i = 0; i < ni; ++i) {
-        iiii = 4*i;
+        i8 = 8*i;
         REAL iphi = 0.0;
-        REAL4 ri = {ipos_ptr[iiii  ], ipos_ptr[iiii+1],
-                    ipos_ptr[iiii+2], ipos_ptr[iiii+3]};
-        REAL ieps2 = ieps2_ptr[i];
+        REAL4 ri = {idata_ptr[i8  ], idata_ptr[i8+1],
+                    idata_ptr[i8+2], idata_ptr[i8+3]};
+        REAL ieps2 = idata_ptr[i8+7];
         for (j = 0; j < nj; ++j) {
-            jjjj = 4*j;
-            REAL4 rj = {jpos_ptr[jjjj  ], jpos_ptr[jjjj+1],
-                        jpos_ptr[jjjj+2], jpos_ptr[jjjj+3]};
-            REAL jeps2 = jeps2_ptr[j];
+            j8 = 8*j;
+            REAL4 rj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
+                        jdata_ptr[j8+2], jdata_ptr[j8+3]};
+            REAL jeps2 = jdata_ptr[j8+7];
             iphi = p2p_phi_kernel_core(iphi, ri, ieps2, rj, jeps2);
         }
         ret_ptr[i] = iphi;
     }
 
     // Decrement the reference counts for i-objects
-    Py_DECREF(_ipos_arr);
-    Py_DECREF(_ieps2_arr);
+    Py_DECREF(_idata_arr);
 
     // Decrement the reference counts for j-objects
-    Py_DECREF(_jpos_arr);
-    Py_DECREF(_jeps2_arr);
+    Py_DECREF(_jdata_arr);
 
     // returns a PyArrayObject
     return PyArray_Return(ret);
@@ -84,34 +78,30 @@ static PyObject *
 _p2p_acc_kernel(PyObject *_args)
 {
     unsigned int ni, nj;
-    PyObject *_ipos = NULL, *_ieps2 = NULL;
-    PyObject *_jpos = NULL, *_jeps2 = NULL;
+    PyObject *_idata = NULL;
+    PyObject *_jdata = NULL;
 
     int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "IOOIOO";
+        fmt = "IOIO";
         typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "IOOIOO";
+        fmt = "IOIO";
         typenum = NPY_FLOAT32;
     }
 
-    if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ieps2,
-                                      &nj, &_jpos, &_jeps2))
+    if (!PyArg_ParseTuple(_args, fmt, &ni, &_idata,
+                                      &nj, &_jdata))
         return NULL;
 
     // i-data
-    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, typenum, NPY_IN_ARRAY);
-    REAL *ipos_ptr = (REAL *)PyArray_DATA(_ipos_arr);
-    PyObject *_ieps2_arr = PyArray_FROM_OTF(_ieps2, typenum, NPY_IN_ARRAY);
-    REAL *ieps2_ptr = (REAL *)PyArray_DATA(_ieps2_arr);
+    PyObject *_idata_arr = PyArray_FROM_OTF(_idata, typenum, NPY_IN_ARRAY);
+    REAL *idata_ptr = (REAL *)PyArray_DATA(_idata_arr);
 
     // j-data
-    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, typenum, NPY_IN_ARRAY);
-    REAL *jpos_ptr = (REAL *)PyArray_DATA(_jpos_arr);
-    PyObject *_jeps2_arr = PyArray_FROM_OTF(_jeps2, typenum, NPY_IN_ARRAY);
-    REAL *jeps2_ptr = (REAL *)PyArray_DATA(_jeps2_arr);
+    PyObject *_jdata_arr = PyArray_FROM_OTF(_jdata, typenum, NPY_IN_ARRAY);
+    REAL *jdata_ptr = (REAL *)PyArray_DATA(_jdata_arr);
 
     // allocate a PyArrayObject to be returned
     npy_intp dims[2] = {ni, 3};
@@ -119,33 +109,31 @@ _p2p_acc_kernel(PyObject *_args)
     REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
 
     // main calculation
-    unsigned int i, iii, iiii, j, jjjj;
+    unsigned int i, i3, i8, j, j8;
     for (i = 0; i < ni; ++i) {
-        iii = 3*i;
-        iiii = 4*i;
+        i8 = 8*i;
         REAL3 iacc = {0.0, 0.0, 0.0};
-        REAL4 ri = {ipos_ptr[iiii  ], ipos_ptr[iiii+1],
-                    ipos_ptr[iiii+2], ipos_ptr[iiii+3]};
-        REAL ieps2 = ieps2_ptr[i];
+        REAL4 ri = {idata_ptr[i8  ], idata_ptr[i8+1],
+                    idata_ptr[i8+2], idata_ptr[i8+3]};
+        REAL ieps2 = idata_ptr[i8+7];
         for (j = 0; j < nj; ++j) {
-            jjjj = 4*j;
-            REAL4 rj = {jpos_ptr[jjjj  ], jpos_ptr[jjjj+1],
-                        jpos_ptr[jjjj+2], jpos_ptr[jjjj+3]};
-            REAL jeps2 = jeps2_ptr[j];
+            j8 = 8*j;
+            REAL4 rj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
+                        jdata_ptr[j8+2], jdata_ptr[j8+3]};
+            REAL jeps2 = jdata_ptr[j8+7];
             iacc = p2p_acc_kernel_core(iacc, ri, ieps2, rj, jeps2);
         }
-        ret_ptr[iii  ] = iacc.x;
-        ret_ptr[iii+1] = iacc.y;
-        ret_ptr[iii+2] = iacc.z;
+        i3 = 3*i;
+        ret_ptr[i3  ] = iacc.x;
+        ret_ptr[i3+1] = iacc.y;
+        ret_ptr[i3+2] = iacc.z;
     }
 
     // Decrement the reference counts for i-objects
-    Py_DECREF(_ipos_arr);
-    Py_DECREF(_ieps2_arr);
+    Py_DECREF(_idata_arr);
 
     // Decrement the reference counts for j-objects
-    Py_DECREF(_jpos_arr);
-    Py_DECREF(_jeps2_arr);
+    Py_DECREF(_jdata_arr);
 
     // returns a PyArrayObject
     return PyArray_Return(ret);
@@ -309,21 +297,21 @@ _p2p_pnacc_kernel(PyObject *_args)
 {
     unsigned int ni, nj;
     CLIGHT clight;
-    PyObject *_ipos = NULL, *_ivel = NULL;
-    PyObject *_jpos = NULL, *_jvel = NULL;
+    PyObject *_idata = NULL;
+    PyObject *_jdata = NULL;
 
     int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "IOOIOOIddddddd";
+        fmt = "IOIOIddddddd";
         typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "IOOIOOIfffffff";
+        fmt = "IOIOIfffffff";
         typenum = NPY_FLOAT32;
     }
 
-    if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ivel,
-                                      &nj, &_jpos, &_jvel,
+    if (!PyArg_ParseTuple(_args, fmt, &ni, &_idata,
+                                      &nj, &_jdata,
                                       &clight.order, &clight.inv1,
                                       &clight.inv2, &clight.inv3,
                                       &clight.inv4, &clight.inv5,
@@ -331,16 +319,12 @@ _p2p_pnacc_kernel(PyObject *_args)
         return NULL;
 
     // i-data
-    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, typenum, NPY_IN_ARRAY);
-    REAL *ipos_ptr = (REAL *)PyArray_DATA(_ipos_arr);
-    PyObject *_ivel_arr = PyArray_FROM_OTF(_ivel, typenum, NPY_IN_ARRAY);
-    REAL *ivel_ptr = (REAL *)PyArray_DATA(_ivel_arr);
+    PyObject *_idata_arr = PyArray_FROM_OTF(_idata, typenum, NPY_IN_ARRAY);
+    REAL *idata_ptr = (REAL *)PyArray_DATA(_idata_arr);
 
     // j-data
-    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, typenum, NPY_IN_ARRAY);
-    REAL *jpos_ptr = (REAL *)PyArray_DATA(_jpos_arr);
-    PyObject *_jvel_arr = PyArray_FROM_OTF(_jvel, typenum, NPY_IN_ARRAY);
-    REAL *jvel_ptr = (REAL *)PyArray_DATA(_jvel_arr);
+    PyObject *_jdata_arr = PyArray_FROM_OTF(_jdata, typenum, NPY_IN_ARRAY);
+    REAL *jdata_ptr = (REAL *)PyArray_DATA(_jdata_arr);
 
     // allocate a PyArrayObject to be returned
     npy_intp dims[2] = {ni, 3};
@@ -348,35 +332,35 @@ _p2p_pnacc_kernel(PyObject *_args)
     REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
 
     // main calculation
-    unsigned int i, iii, iiii, j, jjjj;
+    unsigned int i, i3, i8, j, j8;
     for (i = 0; i < ni; ++i) {
-        iii = 3*i;
-        iiii = 4*i;
+        i8 = 8*i;
         REAL3 ipnacc = {0.0, 0.0, 0.0};
-        REAL4 ri = {ipos_ptr[iiii  ], ipos_ptr[iiii+1],
-                    ipos_ptr[iiii+2], ipos_ptr[iiii+3]};
-        REAL4 vi = {ivel_ptr[iiii  ], ivel_ptr[iiii+1],
-                    ivel_ptr[iiii+2], ivel_ptr[iiii+3]};
+        REAL4 ri = {idata_ptr[i8  ], idata_ptr[i8+1],
+                    idata_ptr[i8+2], idata_ptr[i8+3]};
+        REAL4 vi = {idata_ptr[i8+4], idata_ptr[i8+5],
+                    idata_ptr[i8+6], idata_ptr[i8+7]};
+        vi.w = vi.x * vi.x + vi.y * vi.y + vi.z * vi.z;
         for (j = 0; j < nj; ++j) {
-            jjjj = 4*j;
-            REAL4 rj = {jpos_ptr[jjjj  ], jpos_ptr[jjjj+1],
-                        jpos_ptr[jjjj+2], jpos_ptr[jjjj+3]};
-            REAL4 vj = {jvel_ptr[jjjj  ], jvel_ptr[jjjj+1],
-                        jvel_ptr[jjjj+2], jvel_ptr[jjjj+3]};
+            j8 = 8*j;
+            REAL4 rj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
+                        jdata_ptr[j8+2], jdata_ptr[j8+3]};
+            REAL4 vj = {jdata_ptr[j8+4], jdata_ptr[j8+5],
+                        jdata_ptr[j8+6], jdata_ptr[j8+7]};
+            vj.w = vj.x * vj.x + vj.y * vj.y + vj.z * vj.z;
             ipnacc = p2p_pnacc_kernel_core(ipnacc, ri, vi, rj, vj, clight);
         }
-        ret_ptr[iii  ] = ipnacc.x;
-        ret_ptr[iii+1] = ipnacc.y;
-        ret_ptr[iii+2] = ipnacc.z;
+        i3 = 3*i;
+        ret_ptr[i3  ] = ipnacc.x;
+        ret_ptr[i3+1] = ipnacc.y;
+        ret_ptr[i3+2] = ipnacc.z;
     }
 
     // Decrement the reference counts for i-objects
-    Py_DECREF(_ipos_arr);
-    Py_DECREF(_ivel_arr);
+    Py_DECREF(_idata_arr);
 
     // Decrement the reference counts for j-objects
-    Py_DECREF(_jpos_arr);
-    Py_DECREF(_jvel_arr);
+    Py_DECREF(_jdata_arr);
 
     // returns a PyArrayObject
     return PyArray_Return(ret);

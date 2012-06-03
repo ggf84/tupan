@@ -40,13 +40,11 @@ class Gravity(object):
     def __init__(self):
         self.phi_kernel = ext.p2p_phi_kernel
         self.phi_kernel.local_size = 384
-        self.phi_kernel.set_arg('LMEM', 7, 4)
-        self.phi_kernel.set_arg('LMEM', 8, 1)
+        self.phi_kernel.set_arg('LMEM', 5, 8)
 
         self.acc_kernel = ext.p2p_acc_kernel
         self.acc_kernel.local_size = 384
-        self.acc_kernel.set_arg('LMEM', 7, 4)
-        self.acc_kernel.set_arg('LMEM', 8, 1)
+        self.acc_kernel.set_arg('LMEM', 5, 8)
 
         self.tstep_kernel = ext.p2p_tstep_kernel
         self.tstep_kernel.local_size = 384
@@ -54,29 +52,23 @@ class Gravity(object):
 
         self.pnacc_kernel = ext.p2p_pnacc_kernel
         self.pnacc_kernel.local_size = 384
-        self.pnacc_kernel.set_arg('LMEM', 15, 4)
-        self.pnacc_kernel.set_arg('LMEM', 16, 4)
+        self.pnacc_kernel.set_arg('LMEM', 13, 8)
 
 
     ### phi methods
 
-    def setup_phi_data(self, ni, iposmass, ieps2,
-                             nj, jposmass, jeps2):
+    def setup_phi_data(self, ni, idata, nj, jdata):
         self.phi_kernel.set_arg('IN', 0, ni)
-        self.phi_kernel.set_arg('IN', 1, iposmass)
-        self.phi_kernel.set_arg('IN', 2, ieps2)
-        self.phi_kernel.set_arg('IN', 3, nj)
-        self.phi_kernel.set_arg('IN', 4, jposmass)
-        self.phi_kernel.set_arg('IN', 5, jeps2)
-        self.phi_kernel.set_arg('OUT', 6, (ni,))
+        self.phi_kernel.set_arg('IN', 1, idata)
+        self.phi_kernel.set_arg('IN', 2, nj)
+        self.phi_kernel.set_arg('IN', 3, jdata)
+        self.phi_kernel.set_arg('OUT', 4, (ni,))
 
-    def set_phi(self, ni, iposmass, ieps2,
-                      nj, jposmass, jeps2):
+    def set_phi(self, ni, idata, nj, jdata):
         """
         Set obj-obj newtonian phi.
         """
-        self.setup_phi_data(ni, iposmass, ieps2,
-                            nj, jposmass, jeps2)
+        self.setup_phi_data(ni, idata, nj, jdata)
 
         phi_kernel = self.phi_kernel
         phi_kernel.global_size = ni
@@ -87,25 +79,20 @@ class Gravity(object):
 
     ### acc methods
 
-    def setup_acc_data(self, ni, iposmass, ieps2,
-                             nj, jposmass, jeps2):
+    def setup_acc_data(self, ni, idata, nj, jdata):
         self.acc_kernel.set_arg('IN', 0, ni)
-        self.acc_kernel.set_arg('IN', 1, iposmass)
-        self.acc_kernel.set_arg('IN', 2, ieps2)
-        self.acc_kernel.set_arg('IN', 3, nj)
-        self.acc_kernel.set_arg('IN', 4, jposmass)
-        self.acc_kernel.set_arg('IN', 5, jeps2)
-        self.acc_kernel.set_arg('OUT', 6, (ni, 4))      # XXX: forcing shape = (ni, 4) due to
+        self.acc_kernel.set_arg('IN', 1, idata)
+        self.acc_kernel.set_arg('IN', 2, nj)
+        self.acc_kernel.set_arg('IN', 3, jdata)
+        self.acc_kernel.set_arg('OUT', 4, (ni, 4))      # XXX: forcing shape = (ni, 4) due to
                                                         #      a bug using __global REAL3 in
                                                         #      AMD's OpenCL implementation.
 
-    def set_acc(self, ni, iposmass, ieps2,
-                      nj, jposmass, jeps2):
+    def set_acc(self, ni, idata, nj, jdata):
         """
         Set obj-obj newtonian acc.
         """
-        self.setup_acc_data(ni, iposmass, ieps2,
-                            nj, jposmass, jeps2)
+        self.setup_acc_data(ni, idata, nj, jdata)
 
         acc_kernel = self.acc_kernel
         acc_kernel.global_size = ni
@@ -141,43 +128,29 @@ class Gravity(object):
 
     ### pnacc methods
 
-    def setup_pnacc_data(self, ni, ipos, imass, ivel,
-                               nj, jpos, jmass, jvel,
-                               pn_order, clight):
-
-        iposmass = np.concatenate((ipos, imass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jpos, jmass[..., np.newaxis]), axis=1)
-        iveliv2 = np.concatenate((ivel, (ivel**2).sum(1)[..., np.newaxis]), axis=1)
-        jveljv2 = np.concatenate((jvel, (jvel**2).sum(1)[..., np.newaxis]), axis=1)
+    def setup_pnacc_data(self, ni, idata, nj, jdata, pn_order, clight):
         clight = Clight(pn_order, clight)
-
         self.pnacc_kernel.set_arg('IN', 0, ni)
-        self.pnacc_kernel.set_arg('IN', 1, iposmass)
-        self.pnacc_kernel.set_arg('IN', 2, iveliv2)
-        self.pnacc_kernel.set_arg('IN', 3, nj)
-        self.pnacc_kernel.set_arg('IN', 4, jposmass)
-        self.pnacc_kernel.set_arg('IN', 5, jveljv2)
-        self.pnacc_kernel.set_arg('IN', 6, clight.pn_order)
-        self.pnacc_kernel.set_arg('IN', 7, clight.inv1)
-        self.pnacc_kernel.set_arg('IN', 8, clight.inv2)
-        self.pnacc_kernel.set_arg('IN', 9, clight.inv3)
-        self.pnacc_kernel.set_arg('IN', 10, clight.inv4)
-        self.pnacc_kernel.set_arg('IN', 11, clight.inv5)
-        self.pnacc_kernel.set_arg('IN', 12, clight.inv6)
-        self.pnacc_kernel.set_arg('IN', 13, clight.inv7)
-        self.pnacc_kernel.set_arg('OUT', 14, (ni, 4))       # XXX: forcing shape = (ni, 4) due to
+        self.pnacc_kernel.set_arg('IN', 1, idata)
+        self.pnacc_kernel.set_arg('IN', 2, nj)
+        self.pnacc_kernel.set_arg('IN', 3, jdata)
+        self.pnacc_kernel.set_arg('IN', 4, clight.pn_order)
+        self.pnacc_kernel.set_arg('IN', 5, clight.inv1)
+        self.pnacc_kernel.set_arg('IN', 6, clight.inv2)
+        self.pnacc_kernel.set_arg('IN', 7, clight.inv3)
+        self.pnacc_kernel.set_arg('IN', 8, clight.inv4)
+        self.pnacc_kernel.set_arg('IN', 9, clight.inv5)
+        self.pnacc_kernel.set_arg('IN', 10, clight.inv6)
+        self.pnacc_kernel.set_arg('IN', 11, clight.inv7)
+        self.pnacc_kernel.set_arg('OUT', 12, (ni, 4))       # XXX: forcing shape = (ni, 4) due to
                                                             #      a bug using __global REAL3 in
                                                             #      AMD's OpenCL implementation.
 
-    def set_pnacc(self, ni, ipos, imass, ivel,
-                        nj, jpos, jmass, jvel,
-                        pn_order, clight):
+    def set_pnacc(self, ni, idata, nj, jdata, pn_order, clight):
         """
         Set blackhole-blackhole post-newtonian acc.
         """
-        self.setup_pnacc_data(ni, ipos, imass, ivel,
-                              nj, jpos, jmass, jvel,
-                              pn_order, clight)
+        self.setup_pnacc_data(ni, idata, nj, jdata, pn_order, clight)
 
         pnacc_kernel = self.pnacc_kernel
         pnacc_kernel.global_size = ni

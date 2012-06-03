@@ -128,7 +128,7 @@ class CLKernel(object):
         self.dev_args[i] = self.env.dtype.type(arg)
 
 
-    def _allocate_in_buffers(self, arg):
+    def _allocate_in_buffer(self, arg):
         memf = cl.mem_flags
         mapf = cl.map_flags
         dev_buf = cl.Buffer(self.env.ctx,
@@ -143,15 +143,16 @@ class CLKernel(object):
 #        return (dev_buf, in_buf)
         return (pin_buf, in_buf)
 
-    def _set_in_buffers(self, i, arg):
+    def _set_in_buffer(self, i, arg):
         if not i in self.dev_args:
-            (self.dev_args[i], self.in_buffers[i]) = self._allocate_in_buffers(arg)
+            (self.dev_args[i], self.in_buffers[i]) = self._allocate_in_buffer(arg)
             print('IN:', self.kernel.function_name, self.dev_args)
         if len(arg) > len(self.in_buffers[i]):
-            (self.dev_args[i], self.in_buffers[i]) = self._allocate_in_buffers(arg)
+            (self.dev_args[i], self.in_buffers[i]) = self._allocate_in_buffer(arg)
             print('IN realocation:', self.kernel.function_name, self.dev_args)
 
         self.in_buffers[i][:len(arg)] = arg
+#        cl.enqueue_copy(self.env.queue, self.dev_args[i], self.in_buffers[i][:len(arg)])
         cl.enqueue_copy(self.env.queue, self.dev_args[i], self.in_buffers[i][:len(arg)], is_blocking=False)
 
 #        cl.enqueue_copy(self.env.queue, self.dev_args[i], np.ascontiguousarray(arg, dtype=self.env.dtype), is_blocking=False)
@@ -162,7 +163,7 @@ class CLKernel(object):
 
 
 
-    def _allocate_out_buffers(self, arg):
+    def _allocate_out_buffer(self, arg):
         memf = cl.mem_flags
         mapf = cl.map_flags
         dev_buf = cl.Buffer(self.env.ctx,
@@ -177,14 +178,14 @@ class CLKernel(object):
 #        return (dev_buf, out_buf, out_buf.shape)
         return (pin_buf, out_buf, out_buf.shape)
 
-    def _set_out_buffers(self, i, arg):
+    def _set_out_buffer(self, i, arg):
         if not i in self.dev_args:
             ary = np.empty(arg, dtype=self.env.dtype)
-            (self.dev_args[i], self.out_buffers[i], self.out_shapes[i]) = self._allocate_out_buffers(ary)
+            (self.dev_args[i], self.out_buffers[i], self.out_shapes[i]) = self._allocate_out_buffer(ary)
             print('OUT:', self.kernel.function_name, self.dev_args)
         if arg > self.out_buffers[i].shape:
             ary = np.empty(arg, dtype=self.env.dtype)
-            (self.dev_args[i], self.out_buffers[i], self.out_shapes[i]) = self._allocate_out_buffers(ary)
+            (self.dev_args[i], self.out_buffers[i], self.out_shapes[i]) = self._allocate_out_buffer(ary)
             print('OUT realocation:', self.kernel.function_name, self.dev_args)
         self.out_shapes[i] = arg
 
@@ -201,11 +202,11 @@ class CLKernel(object):
             elif isinstance(arg, float):
                 self._set_float(i, arg)
             elif isinstance(arg, np.ndarray):
-                self._set_in_buffers(i, arg)
+                self._set_in_buffer(i, arg)
             else:
                 raise TypeError("CLKernel.set_arg recived unexpected argument type: {}".format(type(arg)))
         elif mode is 'OUT':
-            self._set_out_buffers(i, arg)
+            self._set_out_buffer(i, arg)
         elif mode is 'LMEM':
             self._set_local_memory(i, arg)
         else:
@@ -280,6 +281,16 @@ class CKernel(object):
         self.dev_args = {}
 
 
+    def _set_int(self, i, arg):
+        self.dev_args[i] = np.uint32(arg)
+
+    def _set_float(self, i, arg):
+        self.dev_args[i] = self.env.dtype.type(arg)
+
+    def _set_in_buffer(self, i, arg):
+        self.dev_args[i] = self.env.dtype.type(arg)
+
+
     def set_arg(self, mode, i, arg):
         """
         mode: 'IN', 'OUT', 'LMEM'
@@ -288,11 +299,11 @@ class CKernel(object):
         """
         if mode is 'IN':
             if isinstance(arg, int):
-                self.dev_args[i] = np.uint32(arg)
+                self._set_int(i, arg)
             elif isinstance(arg, float):
-                self.dev_args[i] = self.env.dtype.type(arg)
+                self._set_float(i, arg)
             elif isinstance(arg, np.ndarray):
-                self.dev_args[i] = self.env.dtype.type(arg)
+                self._set_in_buffer(i, arg)
             else:
                 raise TypeError()
         elif mode is 'OUT':

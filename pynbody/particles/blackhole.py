@@ -171,22 +171,16 @@ class BlackHole(Pbase):
 
     def update_pnacc(self, jobj, pn_order, clight):
         nj = jobj.n
-        jpos = jobj.pos
-        jmass = jobj.mass
-        jvel = jobj.vel
-        self.pnacc = self.get_pnacc(nj, jpos, jmass, jvel, pn_order, clight)
+        jdata = jobj.stack_fields(('pos', 'mass', 'vel'), pad=8)
+        self.pnacc = self.get_pnacc(nj, jdata, pn_order, clight)
 
-    def get_pnacc(self, nj, jpos, jmass, jvel, pn_order, clight):
+    def get_pnacc(self, nj, jdata, pn_order, clight):
         """
         Get individual post-newtonian gravitational acceleration due j-particles.
         """
         ni = self.n
-        ipos = self.pos
-        imass = self.mass
-        ivel = self.vel
-        return gravitation.set_pnacc(ni, ipos, imass, ivel,
-                                     nj, jpos, jmass, jvel,
-                                     pn_order, clight)
+        idata = self.stack_fields(('pos', 'mass', 'vel'), pad=8)
+        return gravitation.set_pnacc(ni, idata, nj, jdata, pn_order, clight)
 
 
     ### evolve corrections due to post-newtonian terms

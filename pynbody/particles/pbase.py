@@ -359,15 +359,13 @@ class Pbase(object):
 
     def update_phi(self, jobj):
         nj = jobj.n
-        jposmass = jobj.stack_fields(('pos', 'mass'))
-        jeps2 = jobj.eps2
-        self.phi = self.get_phi(nj, jposmass, jeps2)
+        jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+        self.phi = self.get_phi(nj, jdata)
 
     def update_acc(self, jobj):
         nj = jobj.n
-        jposmass = jobj.stack_fields(('pos', 'mass'))
-        jeps2 = jobj.eps2
-        self.acc = self.get_acc(nj, jposmass, jeps2)
+        jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+        self.acc = self.get_acc(nj, jdata)
 
     def update_timestep(self, jobj, eta):
         nj = jobj.n
@@ -380,25 +378,21 @@ class Pbase(object):
         self.dt_next = ret[1]
 
 
-    def get_phi(self, nj, jposmass, jeps2):
+    def get_phi(self, nj, jdata):
         """
         Get individual gravitational potential due j-particles.
         """
         ni = self.n
-        iposmass = self.stack_fields(('pos', 'mass'))
-        ieps2 = self.eps2
-        return gravitation.set_phi(ni, iposmass, ieps2,
-                                   nj, jposmass, jeps2)
+        idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+        return gravitation.set_phi(ni, idata, nj, jdata)
 
-    def get_acc(self, nj, jposmass, jeps2):
+    def get_acc(self, nj, jdata):
         """
         Get individual gravitational acceleration due j-particles.
         """
         ni = self.n
-        iposmass = self.stack_fields(('pos', 'mass'))
-        ieps2 = self.eps2
-        return gravitation.set_acc(ni, iposmass, ieps2,
-                                   nj, jposmass, jeps2)
+        idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+        return gravitation.set_acc(ni, idata, nj, jdata)
 
     def get_tstep(self, nj, jdata, eta):
         """

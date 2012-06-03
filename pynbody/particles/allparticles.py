@@ -221,22 +221,20 @@ class Particles(dict):
         Update the individual gravitational potential due to other particles.
         """
         nj = objs.n
-        jposmass = objs.stack_fields(('pos', 'mass'))
-        jeps2 = objs.eps2
+        jdata = objs.stack_fields(('pos', 'mass', 'vel', 'eps2'))
         for iobj in self.values():
             if iobj.n:
-                iobj.phi = iobj.get_phi(nj, jposmass, jeps2)
+                iobj.phi = iobj.get_phi(nj, jdata)
 
     def update_acc(self, objs):
         """
         Update the individual gravitational acceleration due to other particles.
         """
         nj = objs.n
-        jposmass = objs.stack_fields(('pos', 'mass'))
-        jeps2 = objs.eps2
+        jdata = objs.stack_fields(('pos', 'mass', 'vel', 'eps2'))
         for iobj in self.values():
             if iobj.n:
-                iobj.acc = iobj.get_acc(nj, jposmass, jeps2)
+                iobj.acc = iobj.get_acc(nj, jdata)
 
     def update_timestep(self, objs, eta):
         """
@@ -254,14 +252,12 @@ class Particles(dict):
         """
         objs = objs['blackhole']
         nj = objs.n
-        jpos = objs.pos
-        jmass = objs.mass
-        jvel = objs.vel
+        jdata = objs.stack_fields(('pos', 'mass', 'vel'), pad=8)
         for iobj in self.values():
             if iobj.n:
                 if hasattr(iobj, "pnacc"):
                     if nj:
-                        iobj.pnacc = iobj.get_pnacc(nj, jpos, jmass, jvel, pn_order, clight)
+                        iobj.pnacc = iobj.get_pnacc(nj, jdata, pn_order, clight)
                     else:
                         iobj.pnacc = 0.0
 

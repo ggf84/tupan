@@ -13,31 +13,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL
 p2p_accum_phi(REAL myPhi,
-              const REAL4 myPos,
-              const REAL myEps2,
+              const REAL8 myData,
               uint j_begin,
               uint j_end,
-              __local REAL4 *sharedPos,
-              __local REAL *sharedEps2)
+              __local REAL8 *sharedJData
+             )
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-       myPhi = p2p_phi_kernel_core(myPhi, myPos, myEps2,
-                                   sharedPos[j], sharedEps2[j]);
-
+        myPhi = p2p_phi_kernel_core(myPhi, myData.lo, myData.s7,
+                                    sharedJData[j].lo, sharedJData[j].s7);
     }
     return myPhi;
 }
 
 
 inline REAL
-p2p_phi_kernel_main_loop(const REAL4 myPos,
-                         const REAL myEps2,
-                         __global const REAL4 *jpos,
-                         __global const REAL *jeps2,
+p2p_phi_kernel_main_loop(const REAL8 myData,
                          const uint nj,
-                         __local REAL4 *sharedPos,
-                         __local REAL *sharedEps2)
+                         __global const REAL8 *jdata,
+                         __local REAL8 *sharedJData
+                        )
 {
     uint lsize = get_local_size(0);
 
@@ -48,21 +44,20 @@ p2p_phi_kernel_main_loop(const REAL4 myPos,
     for (tile = 0; tile < numTiles; ++tile) {
         uint nb = min(lsize, (nj - (tile * lsize)));
 
-        event_t e[2];
-        e[0] = async_work_group_copy(sharedPos, jpos + tile * lsize, nb, 0);
-        e[1] = async_work_group_copy(sharedEps2, jeps2 + tile * lsize, nb, 0);
-        wait_group_events(2, e);
+        event_t e[1];
+        e[0] = async_work_group_copy(sharedJData, jdata + tile * lsize, nb, 0);
+        wait_group_events(1, e);
 
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            myPhi = p2p_accum_phi(myPhi, myPos, myEps2,
+            myPhi = p2p_accum_phi(myPhi, myData,
                                   j, j + JUNROLL,
-                                  sharedPos, sharedEps2);
+                                  sharedJData);
         }
-        myPhi = p2p_accum_phi(myPhi, myPos, myEps2,
+        myPhi = p2p_accum_phi(myPhi, myData,
                               j, nb,
-                              sharedPos, sharedEps2);
+                              sharedJData);
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
@@ -72,21 +67,18 @@ p2p_phi_kernel_main_loop(const REAL4 myPos,
 
 
 __kernel void p2p_phi_kernel(const uint ni,
-                             __global const REAL4 *ipos,
-                             __global const REAL *ieps2,
+                             __global const REAL8 *idata,
                              const uint nj,
-                             __global const REAL4 *jpos,
-                             __global const REAL *jeps2,
+                             __global const REAL8 *jdata,
                              __global REAL *iphi,
-                             __local REAL4 *sharedPos,
-                             __local REAL *sharedEps2)
+                             __local REAL8 *sharedJData
+                            )
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);
-    iphi[i] = p2p_phi_kernel_main_loop(ipos[i], ieps2[i],
-                                       jpos, jeps2,
-                                       nj,
-                                       sharedPos, sharedEps2);
+    iphi[i] = p2p_phi_kernel_main_loop(idata[i],
+                                       nj, jdata,
+                                       sharedJData);
 }
 
 
@@ -95,30 +87,27 @@ __kernel void p2p_phi_kernel(const uint ni,
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL3
 p2p_accum_acc(REAL3 myAcc,
-              const REAL4 myPos,
-              const REAL myEps2,
+              const REAL8 myData,
               uint j_begin,
               uint j_end,
-              __local REAL4 *sharedPos,
-              __local REAL *sharedEps2)
+              __local REAL8 *sharedJData
+             )
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-       myAcc = p2p_acc_kernel_core(myAcc, myPos, myEps2,
-                                   sharedPos[j], sharedEps2[j]);
+        myAcc = p2p_acc_kernel_core(myAcc, myData.lo, myData.s7,
+                                    sharedJData[j].lo, sharedJData[j].s7);
     }
     return myAcc;
 }
 
 
 inline REAL4
-p2p_acc_kernel_main_loop(const REAL4 myPos,
-                         const REAL myEps2,
-                         __global const REAL4 *jpos,
-                         __global const REAL *jeps2,
+p2p_acc_kernel_main_loop(const REAL8 myData,
                          const uint nj,
-                         __local REAL4 *sharedPos,
-                         __local REAL *sharedEps2)
+                         __global const REAL8 *jdata,
+                         __local REAL8 *sharedJData
+                        )
 {
     uint lsize = get_local_size(0);
 
@@ -129,21 +118,20 @@ p2p_acc_kernel_main_loop(const REAL4 myPos,
     for (tile = 0; tile < numTiles; ++tile) {
         uint nb = min(lsize, (nj - (tile * lsize)));
 
-        event_t e[2];
-        e[0] = async_work_group_copy(sharedPos, jpos + tile * lsize, nb, 0);
-        e[1] = async_work_group_copy(sharedEps2, jeps2 + tile * lsize, nb, 0);
-        wait_group_events(2, e);
+        event_t e[1];
+        e[0] = async_work_group_copy(sharedJData, jdata + tile * lsize, nb, 0);
+        wait_group_events(1, e);
 
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            myAcc = p2p_accum_acc(myAcc, myPos, myEps2,
+            myAcc = p2p_accum_acc(myAcc, myData,
                                   j, j + JUNROLL,
-                                  sharedPos, sharedEps2);
+                                  sharedJData);
         }
-        myAcc = p2p_accum_acc(myAcc, myPos, myEps2,
+        myAcc = p2p_accum_acc(myAcc, myData,
                               j, nb,
-                              sharedPos, sharedEps2);
+                              sharedJData);
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
@@ -153,21 +141,18 @@ p2p_acc_kernel_main_loop(const REAL4 myPos,
 
 
 __kernel void p2p_acc_kernel(const uint ni,
-                             __global const REAL4 *ipos,
-                             __global const REAL *ieps2,
+                             __global const REAL8 *idata,
                              const uint nj,
-                             __global const REAL4 *jpos,
-                             __global const REAL *jeps2,
+                             __global const REAL8 *jdata,
                              __global REAL4 *iacc,  // XXX: Bug!!! if we use __global REAL3
-                             __local REAL4 *sharedPos,
-                             __local REAL *sharedEps2)
+                             __local REAL8 *sharedJData
+                            )
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);
-    iacc[i] = p2p_acc_kernel_main_loop(ipos[i], ieps2[i],
-                                       jpos, jeps2,
-                                       nj,
-                                       sharedPos, sharedEps2);
+    iacc[i] = p2p_acc_kernel_main_loop(idata[i],
+                                       nj, jdata,
+                                       sharedJData);
 }
 
 
@@ -186,9 +171,9 @@ p2p_accum_acctstep(REAL4 myAccTstep,
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-       myAccTstep = p2p_acctstep_kernel_core(myAccTstep, myPos, myVel,
-                                             sharedPos[j], sharedVel[j],
-                                             eta);
+        myAccTstep = p2p_acctstep_kernel_core(myAccTstep, myPos, myVel,
+                                              sharedPos[j], sharedVel[j],
+                                              eta);
     }
     return myAccTstep;
 }
@@ -266,13 +251,13 @@ p2p_accum_tstep(REAL myInvTstep,
                 uint j_begin,
                 uint j_end,
                 __local REAL8 *sharedJData
-                )
+               )
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-       myInvTstep = p2p_tstep_kernel_core(myInvTstep, myData.lo, myData.hi,
-                                          sharedJData[j].lo, sharedJData[j].hi,
-                                          eta);
+        myInvTstep = p2p_tstep_kernel_core(myInvTstep, myData.lo, myData.hi,
+                                           sharedJData[j].lo, sharedJData[j].hi,
+                                           eta);
     }
     return myInvTstep;
 }
@@ -340,33 +325,32 @@ __kernel void p2p_tstep_kernel(const uint ni,
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL3
 p2p_accum_pnacc(REAL3 myPNAcc,
-                const REAL4 myPos,
-                const REAL4 myVel,
+                const REAL8 myData,
                 const CLIGHT clight,
                 uint j_begin,
                 uint j_end,
-                __local REAL4 *sharedPos,
-                __local REAL4 *sharedVel)
+                __local REAL8 *sharedJData
+               )
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-       myPNAcc = p2p_pnacc_kernel_core(myPNAcc, myPos, myVel,
-                                       sharedPos[j], sharedVel[j],
-                                       clight);
+        REAL8 jData = sharedJData[j];
+        jData.s7 = jData.s4 * jData.s4 + jData.s5 * jData.s5 + jData.s6 * jData.s6;
+        myPNAcc = p2p_pnacc_kernel_core(myPNAcc, myData.lo, myData.hi,
+                                        jData.lo, jData.hi,
+                                        clight);
     }
     return myPNAcc;
 }
 
 
 inline REAL4
-p2p_pnacc_kernel_main_loop(const REAL4 myPos,
-                           const REAL4 myVel,
-                           __global const REAL4 *jpos,
-                           __global const REAL4 *jvel,
+p2p_pnacc_kernel_main_loop(const REAL8 myData,
                            const uint nj,
+                           __global const REAL8 *jdata,
                            const CLIGHT clight,
-                           __local REAL4 *sharedPos,
-                           __local REAL4 *sharedVel)
+                           __local REAL8 *sharedJData
+                          )
 {
     uint lsize = get_local_size(0);
 
@@ -377,21 +361,20 @@ p2p_pnacc_kernel_main_loop(const REAL4 myPos,
     for (tile = 0; tile < numTiles; ++tile) {
         uint nb = min(lsize, (nj - (tile * lsize)));
 
-        event_t e[2];
-        e[0] = async_work_group_copy(sharedPos, jpos + tile * lsize, nb, 0);
-        e[1] = async_work_group_copy(sharedVel, jvel + tile * lsize, nb, 0);
-        wait_group_events(2, e);
+        event_t e[1];
+        e[0] = async_work_group_copy(sharedJData, jdata + tile * lsize, nb, 0);
+        wait_group_events(1, e);
 
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            myPNAcc = p2p_accum_pnacc(myPNAcc, myPos, myVel,
+            myPNAcc = p2p_accum_pnacc(myPNAcc, myData,
                                       clight, j, j + JUNROLL,
-                                      sharedPos, sharedVel);
+                                      sharedJData);
         }
-        myPNAcc = p2p_accum_pnacc(myPNAcc, myPos, myVel,
+        myPNAcc = p2p_accum_pnacc(myPNAcc, myData,
                                   clight, j, nb,
-                                  sharedPos, sharedVel);
+                                  sharedJData);
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
@@ -401,11 +384,9 @@ p2p_pnacc_kernel_main_loop(const REAL4 myPos,
 
 
 __kernel void p2p_pnacc_kernel(const uint ni,
-                               __global const REAL4 *ipos,
-                               __global const REAL4 *ivel,
+                               __global const REAL8 *idata,
                                const uint nj,
-                               __global const REAL4 *jpos,
-                               __global const REAL4 *jvel,
+                               __global const REAL8 *jdata,
                                const uint order,
                                const REAL cinv1,
                                const REAL cinv2,
@@ -415,17 +396,19 @@ __kernel void p2p_pnacc_kernel(const uint ni,
                                const REAL cinv6,
                                const REAL cinv7,
                                __global REAL4 *ipnacc,  // XXX: Bug!!! if we use __global REAL3
-                               __local REAL4 *sharedPos,
-                               __local REAL4 *sharedVel)
+                               __local REAL8 *sharedJData
+                              )
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);
     const CLIGHT clight = (CLIGHT){cinv1, cinv2, cinv3,
                                    cinv4, cinv5, cinv6,
                                    cinv7, order};
-    ipnacc[i] = p2p_pnacc_kernel_main_loop(ipos[i], ivel[i],
-                                           jpos, jvel,
-                                           nj, clight,
-                                           sharedPos, sharedVel);
+    REAL8 myData = idata[i];
+    myData.s7 = myData.s4 * myData.s4 + myData.s5 * myData.s5 + myData.s6 * myData.s6;
+    ipnacc[i] = p2p_pnacc_kernel_main_loop(myData,
+                                           nj, jdata,
+                                           clight,
+                                           sharedJData);
 }
 
