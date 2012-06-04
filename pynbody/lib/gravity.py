@@ -46,6 +46,10 @@ class Gravity(object):
         self.acc_kernel.local_size = 384
         self.acc_kernel.set_arg('LMEM', 5, 8)
 
+        self.acc_jerk_kernel = ext.p2p_acc_jerk_kernel
+        self.acc_jerk_kernel.local_size = 384
+        self.acc_jerk_kernel.set_arg('LMEM', 5, 8)
+
         self.tstep_kernel = ext.p2p_tstep_kernel
         self.tstep_kernel.local_size = 384
         self.tstep_kernel.set_arg('LMEM', 6, 8)
@@ -64,9 +68,9 @@ class Gravity(object):
         self.phi_kernel.set_arg('IN', 3, jdata)
         self.phi_kernel.set_arg('OUT', 4, (ni,))
 
-    def set_phi(self, ni, idata, nj, jdata):
+    def get_phi(self, ni, idata, nj, jdata):
         """
-        Set obj-obj newtonian phi.
+        Get obj-obj newtonian phi.
         """
         self.setup_phi_data(ni, idata, nj, jdata)
 
@@ -84,13 +88,13 @@ class Gravity(object):
         self.acc_kernel.set_arg('IN', 1, idata)
         self.acc_kernel.set_arg('IN', 2, nj)
         self.acc_kernel.set_arg('IN', 3, jdata)
-        self.acc_kernel.set_arg('OUT', 4, (ni, 4))      # XXX: forcing shape = (ni, 4) due to
-                                                        #      a bug using __global REAL3 in
-                                                        #      AMD's OpenCL implementation.
+        self.acc_kernel.set_arg('OUT', 4, (ni, 4))          # XXX: forcing shape = (ni, 4) due to
+                                                            #      a bug using __global REAL3 in
+                                                            #      AMD's OpenCL implementation.
 
-    def set_acc(self, ni, idata, nj, jdata):
+    def get_acc(self, ni, idata, nj, jdata):
         """
-        Set obj-obj newtonian acc.
+        Get obj-obj newtonian acc.
         """
         self.setup_acc_data(ni, idata, nj, jdata)
 
@@ -98,9 +102,37 @@ class Gravity(object):
         acc_kernel.global_size = ni
         acc_kernel.run()
         result = acc_kernel.get_result()[0]
-        return result[:,:3]             # XXX: forcing return shape = (ni, 3).
-                                        #      see comment about a bug using
-                                        #      __global REAL3 in OpenCL.
+        return result[:,:3]                                 # XXX: forcing return shape = (ni, 3).
+                                                            #      see comment about a bug using
+                                                            #      __global REAL3 in OpenCL.
+
+
+    ### acc-jerk methods
+
+    def setup_acc_jerk_data(self, ni, idata, nj, jdata):
+        self.acc_jerk_kernel.set_arg('IN', 0, ni)
+        self.acc_jerk_kernel.set_arg('IN', 1, idata)
+        self.acc_jerk_kernel.set_arg('IN', 2, nj)
+        self.acc_jerk_kernel.set_arg('IN', 3, jdata)
+        self.acc_jerk_kernel.set_arg('OUT', 4, (ni, 8))
+#        self.acc_jerk_kernel.set_arg('OUT', 5, (ni, 4))     # XXX: forcing shape = (ni, 4) due to
+                                                            #      a bug using __global REAL3 in
+                                                            #      AMD's OpenCL implementation.
+
+    def get_acc_jerk(self, ni, idata, nj, jdata):
+        """
+        Get obj-obj newtonian acc.
+        """
+        self.setup_acc_jerk_data(ni, idata, nj, jdata)
+
+        acc_jerk_kernel = self.acc_jerk_kernel
+        acc_jerk_kernel.global_size = ni
+        acc_jerk_kernel.run()
+        result = acc_jerk_kernel.get_result()[0]
+        return (result[:,:3], result[:,4:7])
+#        return (result[0][:,:3], result[1][:,:3])           # XXX: forcing return shape = (ni, 3).
+                                                            #      see comment about a bug using
+                                                            #      __global REAL3 in OpenCL.
 
 
     ### tstep methods
@@ -113,9 +145,9 @@ class Gravity(object):
         self.tstep_kernel.set_arg('IN', 4, eta)
         self.tstep_kernel.set_arg('OUT', 5, (ni,))
 
-    def set_tstep(self, ni, idata, nj, jdata, eta):
+    def get_tstep(self, ni, idata, nj, jdata, eta):
         """
-        Set timestep.
+        Get timestep.
         """
         self.setup_tstep_data(ni, idata, nj, jdata, eta)
 
@@ -146,9 +178,9 @@ class Gravity(object):
                                                             #      a bug using __global REAL3 in
                                                             #      AMD's OpenCL implementation.
 
-    def set_pnacc(self, ni, idata, nj, jdata, pn_order, clight):
+    def get_pnacc(self, ni, idata, nj, jdata, pn_order, clight):
         """
-        Set blackhole-blackhole post-newtonian acc.
+        Get blackhole-blackhole post-newtonian acc.
         """
         self.setup_pnacc_data(ni, idata, nj, jdata, pn_order, clight)
 
@@ -156,53 +188,9 @@ class Gravity(object):
         pnacc_kernel.global_size = ni
         pnacc_kernel.run()
         result = pnacc_kernel.get_result()[0]
-        return result[:,:3]             # XXX: forcing return shape = (ni, 3).
-                                        #      see comment about a bug using
-                                        #      __global REAL3 in OpenCL.
-
-
-
-
-
-    ### acctstep methods
-
-    def setup_acctstep_data(self, iobj, jobj, eta):   # XXX: deprecated!
-        ni = len(iobj)
-        nj = len(jobj)
-        iposmass = np.concatenate((iobj.pos, iobj.mass[..., np.newaxis]), axis=1)
-        jposmass = np.concatenate((jobj.pos, jobj.mass[..., np.newaxis]), axis=1)
-        iveleps2 = np.concatenate((iobj.vel, iobj.eps2[..., np.newaxis]), axis=1)
-        jveleps2 = np.concatenate((jobj.vel, jobj.eps2[..., np.newaxis]), axis=1)
-        data = (iposmass, iveleps2,
-                jposmass, jveleps2,
-                np.uint32(ni),
-                np.uint32(nj),
-                np.float64(eta))
-        return data
-
-    def set_acctstep(self, iobj, jobj, eta):   # XXX: deprecated!
-        """
-        Set obj-obj newtonian acc and timestep.
-        """
-        ni = len(iobj)
-        data = self.setup_acctstep_data(iobj, jobj, eta)
-
-        result_shape = (ni, 4)
-        local_memory_shape = (4, 4)
-
-        # Adjusts global_size to be an integer multiple of local_size
-        local_size = 384
-        global_size = ((ni-1)//local_size + 1) * local_size
-
-        acc_kernel = kernel_library.get_kernel("p2p_acctstep_kernel")
-
-        acc_kernel.set_kernel_args(*data, global_size=global_size,
-                                          local_size=local_size,
-                                          result_shape=result_shape,
-                                          local_memory_shape=local_memory_shape)
-        acc_kernel.run()
-        ret = acc_kernel.get_result()
-        return (ret[:,:3], ret[:,3])
+        return result[:,:3]                                 # XXX: forcing return shape = (ni, 3).
+                                                            #      see comment about a bug using
+                                                            #      __global REAL3 in OpenCL.
 
 
 

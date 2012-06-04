@@ -367,15 +367,15 @@ class Pbase(object):
         jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
         self.acc = self.get_acc(nj, jdata)
 
+    def update_acc_jerk(self, jobj):
+        nj = jobj.n
+        jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+        (self.acc, self.jerk) = self.get_acc_jerk(nj, jdata)
+
     def update_timestep(self, jobj, eta):
         nj = jobj.n
         jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
         self.dt_next = self.get_tstep(nj, jdata, eta)
-
-    def update_acc_and_timestep(self, jobj, eta):   # XXX: deprecated!
-        ret = iobj.get_acctstep(jobj, eta)
-        self.acc = ret[0]
-        self.dt_next = ret[1]
 
 
     def get_phi(self, nj, jdata):
@@ -384,7 +384,7 @@ class Pbase(object):
         """
         ni = self.n
         idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-        return gravitation.set_phi(ni, idata, nj, jdata)
+        return gravitation.get_phi(ni, idata, nj, jdata)
 
     def get_acc(self, nj, jdata):
         """
@@ -392,7 +392,15 @@ class Pbase(object):
         """
         ni = self.n
         idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-        return gravitation.set_acc(ni, idata, nj, jdata)
+        return gravitation.get_acc(ni, idata, nj, jdata)
+
+    def get_acc_jerk(self, nj, jdata):
+        """
+        Get individual gravitational acceleration and jerk due j-particles.
+        """
+        ni = self.n
+        idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+        return gravitation.get_acc_jerk(ni, idata, nj, jdata)
 
     def get_tstep(self, nj, jdata, eta):
         """
@@ -400,16 +408,7 @@ class Pbase(object):
         """
         ni = self.n
         idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-        return eta / gravitation.set_tstep(ni, idata, nj, jdata, eta/2)
-
-    def get_acctstep(self, jobj, eta):   # XXX: deprecated!
-        """
-        Get individual gravitational acceleration and time-step due j-particles.
-        """
-        if jobj.n:
-            ret = gravitation.set_acctstep(self, jobj, eta/2)
-            return (ret[0], eta / ret[1])
-        return (0.0, 1.0)
+        return eta / gravitation.get_tstep(ni, idata, nj, jdata, eta/2)
 
 
     ### evolve

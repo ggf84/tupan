@@ -112,7 +112,7 @@ _p2p_acc_kernel(PyObject *_args)
     unsigned int i, i3, i8, j, j8;
     for (i = 0; i < ni; ++i) {
         i8 = 8*i;
-        REAL3 iacc = {0.0, 0.0, 0.0};
+        REAL3 iacc = (REAL3){0.0, 0.0, 0.0};
         REAL4 ri = {idata_ptr[i8  ], idata_ptr[i8+1],
                     idata_ptr[i8+2], idata_ptr[i8+3]};
         REAL ieps2 = idata_ptr[i8+7];
@@ -141,78 +141,74 @@ _p2p_acc_kernel(PyObject *_args)
 
 
 //
-// AccTstep methods
+// Acc-Jerk methods
 ////////////////////////////////////////////////////////////////////////////////
 static PyObject *
-_p2p_acctstep_kernel(PyObject *_args)
+_p2p_acc_jerk_kernel(PyObject *_args)
 {
     unsigned int ni, nj;
-    REAL eta;
-    PyObject *_ipos = NULL, *_ivel = NULL;
-    PyObject *_jpos = NULL, *_jvel = NULL;
+    PyObject *_idata = NULL;
+    PyObject *_jdata = NULL;
 
     int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "IOOIOOd";
+        fmt = "IOIO";
         typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "IOOIOOf";
+        fmt = "IOIO";
         typenum = NPY_FLOAT32;
     }
 
-    if (!PyArg_ParseTuple(_args, fmt, &ni, &_ipos, &_ivel,
-                                      &nj, &_jpos, &_jvel,
-                                      &eta))
+    if (!PyArg_ParseTuple(_args, fmt, &ni, &_idata,
+                                      &nj, &_jdata))
         return NULL;
 
     // i-data
-    PyObject *_ipos_arr = PyArray_FROM_OTF(_ipos, typenum, NPY_IN_ARRAY);
-    REAL *ipos_ptr = (REAL *)PyArray_DATA(_ipos_arr);
-    PyObject *_ivel_arr = PyArray_FROM_OTF(_ivel, typenum, NPY_IN_ARRAY);
-    REAL *ivel_ptr = (REAL *)PyArray_DATA(_ivel_arr);
+    PyObject *_idata_arr = PyArray_FROM_OTF(_idata, typenum, NPY_IN_ARRAY);
+    REAL *idata_ptr = (REAL *)PyArray_DATA(_idata_arr);
 
     // j-data
-    PyObject *_jpos_arr = PyArray_FROM_OTF(_jpos, typenum, NPY_IN_ARRAY);
-    REAL *jpos_ptr = (REAL *)PyArray_DATA(_jpos_arr);
-    PyObject *_jvel_arr = PyArray_FROM_OTF(_jvel, typenum, NPY_IN_ARRAY);
-    REAL *jvel_ptr = (REAL *)PyArray_DATA(_jvel_arr);
+    PyObject *_jdata_arr = PyArray_FROM_OTF(_jdata, typenum, NPY_IN_ARRAY);
+    REAL *jdata_ptr = (REAL *)PyArray_DATA(_jdata_arr);
 
     // allocate a PyArrayObject to be returned
-    npy_intp dims[2] = {ni, 4};
+    npy_intp dims[2] = {ni, 8};
     PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(2, dims, typenum, 0);
     REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
 
     // main calculation
-    unsigned int i, iiii, j, jjjj;
+    unsigned int i, i8, j, j8;
     for (i = 0; i < ni; ++i) {
-        iiii = 4*i;
-        REAL4 iacctstep = {0.0, 0.0, 0.0, 0.0};
-        REAL4 ri = {ipos_ptr[iiii  ], ipos_ptr[iiii+1],
-                    ipos_ptr[iiii+2], ipos_ptr[iiii+3]};
-        REAL4 vi = {ivel_ptr[iiii  ], ivel_ptr[iiii+1],
-                    ivel_ptr[iiii+2], ivel_ptr[iiii+3]};
+        i8 = 8*i;
+        REAL8 iaccjerk = (REAL8){0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        REAL4 ri = {idata_ptr[i8  ], idata_ptr[i8+1],
+                    idata_ptr[i8+2], idata_ptr[i8+3]};
+        REAL4 vi = {idata_ptr[i8+4], idata_ptr[i8+5],
+                    idata_ptr[i8+6], idata_ptr[i8+7]};
         for (j = 0; j < nj; ++j) {
-            jjjj = 4*j;
-            REAL4 rj = {jpos_ptr[jjjj  ], jpos_ptr[jjjj+1],
-                        jpos_ptr[jjjj+2], jpos_ptr[jjjj+3]};
-            REAL4 vj = {jvel_ptr[jjjj  ], jvel_ptr[jjjj+1],
-                        jvel_ptr[jjjj+2], jvel_ptr[jjjj+3]};
-            iacctstep = p2p_acctstep_kernel_core(iacctstep, ri, vi, rj, vj, eta);
+            j8 = 8*j;
+            REAL4 rj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
+                        jdata_ptr[j8+2], jdata_ptr[j8+3]};
+            REAL4 vj = {jdata_ptr[j8+4], jdata_ptr[j8+5],
+                        jdata_ptr[j8+6], jdata_ptr[j8+7]};
+            iaccjerk = p2p_acc_jerk_kernel_core(iaccjerk, ri, vi, rj, vj);
         }
-        ret_ptr[iiii  ] = iacctstep.x;
-        ret_ptr[iiii+1] = iacctstep.y;
-        ret_ptr[iiii+2] = iacctstep.z;
-        ret_ptr[iiii+3] = iacctstep.w;
+        ret_ptr[i8  ] = iaccjerk.s0;
+        ret_ptr[i8+1] = iaccjerk.s1;
+        ret_ptr[i8+2] = iaccjerk.s2;
+        ret_ptr[i8+3] = iaccjerk.s3;
+        ret_ptr[i8+4] = iaccjerk.s4;
+        ret_ptr[i8+5] = iaccjerk.s5;
+        ret_ptr[i8+6] = iaccjerk.s6;
+        ret_ptr[i8+7] = iaccjerk.s7;
     }
 
     // Decrement the reference counts for i-objects
-    Py_DECREF(_ipos_arr);
-    Py_DECREF(_ivel_arr);
+    Py_DECREF(_idata_arr);
 
     // Decrement the reference counts for j-objects
-    Py_DECREF(_jpos_arr);
-    Py_DECREF(_jvel_arr);
+    Py_DECREF(_jdata_arr);
 
     // returns a PyArrayObject
     return PyArray_Return(ret);
@@ -335,7 +331,7 @@ _p2p_pnacc_kernel(PyObject *_args)
     unsigned int i, i3, i8, j, j8;
     for (i = 0; i < ni; ++i) {
         i8 = 8*i;
-        REAL3 ipnacc = {0.0, 0.0, 0.0};
+        REAL3 ipnacc = (REAL3){0.0, 0.0, 0.0};
         REAL4 ri = {idata_ptr[i8  ], idata_ptr[i8+1],
                     idata_ptr[i8+2], idata_ptr[i8+3]};
         REAL4 vi = {idata_ptr[i8+4], idata_ptr[i8+5],
@@ -385,9 +381,9 @@ p2p_acc_kernel(PyObject *_self, PyObject *_args)
 
 
 static PyObject *
-p2p_acctstep_kernel(PyObject *_self, PyObject *_args)
+p2p_acc_jerk_kernel(PyObject *_self, PyObject *_args)
 {
-    return _p2p_acctstep_kernel(_args);
+    return _p2p_acc_jerk_kernel(_args);
 }
 
 
@@ -410,8 +406,8 @@ static PyMethodDef libc_gravity_meths[] = {
                 "returns the Newtonian gravitational potential."},
     {"p2p_acc_kernel", (PyCFunction)p2p_acc_kernel, METH_VARARGS,
                 "returns the Newtonian gravitational acceleration."},
-    {"p2p_acctstep_kernel", (PyCFunction)p2p_acctstep_kernel, METH_VARARGS,
-                "returns the Newtonian gravitational acceleration and inverse of the timestep."},
+    {"p2p_acc_jerk_kernel", (PyCFunction)p2p_acc_jerk_kernel, METH_VARARGS,
+                "returns the Newtonian gravitational acceleration and jerk."},
     {"p2p_tstep_kernel", (PyCFunction)p2p_tstep_kernel, METH_VARARGS,
                 "returns the inverse of the timestep."},
     {"p2p_pnacc_kernel", (PyCFunction)p2p_pnacc_kernel, METH_VARARGS,

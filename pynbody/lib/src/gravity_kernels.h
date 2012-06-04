@@ -52,51 +52,52 @@ p2p_acc_kernel_core(REAL3 acc,
 
 
 //
-// p2p_acctstep_kernel_core
+// p2p_acc_jerk_kernel_core
 ////////////////////////////////////////////////////////////////////////////////
-inline REAL4
-p2p_acctstep_kernel_core(REAL4 acctstep,
+inline REAL8
+p2p_acc_jerk_kernel_core(REAL8 accjerk,
                          const REAL4 ri, const REAL4 vi,
-                         const REAL4 rj, const REAL4 vj,
-                         const REAL eta)
+                         const REAL4 rj, const REAL4 vj)
 {
     REAL4 r;
     r.x = ri.x - rj.x;                                               // 1 FLOPs
     r.y = ri.y - rj.y;                                               // 1 FLOPs
     r.z = ri.z - rj.z;                                               // 1 FLOPs
-    r.w = ri.w + rj.w;                                               // 1 FLOPs
     REAL4 v;
     v.x = vi.x - vj.x;                                               // 1 FLOPs
     v.y = vi.y - vj.y;                                               // 1 FLOPs
     v.z = vi.z - vj.z;                                               // 1 FLOPs
     v.w = vi.w + vj.w;                                               // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
-    REAL v2 = v.x * v.x + v.y * v.y + v.z * v.z;                     // 5 FLOPs
     REAL rv = r.x * v.x + r.y * v.y + r.z * v.z;                     // 5 FLOPs
-    REAL inv_r2 = 1 / (r2 + v.w);                                    // 2 FLOPs
-    inv_r2 = (r2 > 0) ? (inv_r2):(0);
-    REAL inv_r = sqrt(inv_r2);                                       // 1 FLOPs
-    REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
-
-    REAL omega2a = v2 * inv_r2;                                      // 1 FLOPs
-    REAL omega2b = 2 * r.w * inv_r3;                                 // 2 FLOPs
-    REAL omega2 = omega2a + omega2b;                                 // 1 FLOPs
-    REAL omega2b_omega2 = omega2b / omega2;                          // 1 FLOPs
-    omega2b_omega2 = (r2 > 0) ? (omega2b_omega2):(0);
-    REAL weighting = 1 + omega2b_omega2;                             // 1 FLOPs
-    REAL dln_omega = -weighting * rv * inv_r2;                       // 2 FLOPs
-    REAL omega = sqrt(omega2);                                       // 1 FLOPs
-    omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
+    REAL2 ret = accjerk_smooth(r2, v.w);                             // 4 FLOPs
+    REAL inv_r2 = ret.x;
+    REAL inv_r3 = ret.y;
 
     inv_r3 *= rj.w;                                                  // 1 FLOPs
+    rv *= 3 * inv_r2;                                                // 2 FLOPs
 
-    acctstep.x -= inv_r3 * r.x;                                      // 2 FLOPs
-    acctstep.y -= inv_r3 * r.y;                                      // 2 FLOPs
-    acctstep.z -= inv_r3 * r.z;                                      // 2 FLOPs
-    acctstep.w = (omega > acctstep.w) ? (omega):(acctstep.w);
-    return acctstep;
+    REAL3 da;
+    da.x = inv_r3 * r.x;                                             // 1 FLOPs
+    da.y = inv_r3 * r.y;                                             // 1 FLOPs
+    da.z = inv_r3 * r.z;                                             // 1 FLOPs
+    REAL3 dj;
+    dj.x = inv_r3 * v.x - rv * da.x;                                 // 3 FLOPs
+    dj.y = inv_r3 * v.y - rv * da.y;                                 // 3 FLOPs
+    dj.z = inv_r3 * v.z - rv * da.z;                                 // 3 FLOPs
+
+    accjerk.s0 -= da.x;                                              // 1 FLOPs
+    accjerk.s1 -= da.y;                                              // 1 FLOPs
+    accjerk.s2 -= da.z;                                              // 1 FLOPs
+    accjerk.s3  = 0;
+    accjerk.s4 -= dj.x;                                              // 1 FLOPs
+    accjerk.s5 -= dj.y;                                              // 1 FLOPs
+    accjerk.s6 -= dj.z;                                              // 1 FLOPs
+    accjerk.s7  = 0;
+
+    return accjerk;
 }
-// Total flop count: 45
+// Total flop count: 42
 
 
 //

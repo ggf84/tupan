@@ -180,7 +180,7 @@ class BlackHole(Pbase):
         """
         ni = self.n
         idata = self.stack_fields(('pos', 'mass', 'vel'), pad=8)
-        return gravitation.set_pnacc(ni, idata, nj, jdata, pn_order, clight)
+        return gravitation.get_pnacc(ni, idata, nj, jdata, pn_order, clight)
 
 
     ### evolve corrections due to post-newtonian terms

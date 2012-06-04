@@ -44,6 +44,26 @@ acc_smooth(REAL r2, REAL h2)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// acc-jerk smoothing
+
+inline REAL2
+accjerk_plummer_smooth(REAL r2, REAL h2)
+{
+    REAL inv_r2 = 1 / (r2 + h2);
+    inv_r2 = (r2 > 0) ? (inv_r2):(0);
+    REAL inv_r = sqrt(inv_r2);
+    REAL inv_r3 = inv_r * inv_r2;
+    return (REAL2){inv_r2, inv_r3};
+}
+
+inline REAL2
+accjerk_smooth(REAL r2, REAL h2)
+{
+    return accjerk_plummer_smooth(r2, h2);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 // rho smoothing
 
 inline REAL

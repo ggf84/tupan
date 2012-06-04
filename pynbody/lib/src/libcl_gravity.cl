@@ -157,87 +157,83 @@ __kernel void p2p_acc_kernel(const uint ni,
 
 
 //
-// AccTstep methods
+// Acc-Jerk methods
 ////////////////////////////////////////////////////////////////////////////////
-inline REAL4
-p2p_accum_acctstep(REAL4 myAccTstep,
-                   const REAL4 myPos,
-                   const REAL4 myVel,
-                   const REAL eta,
+inline REAL8
+p2p_accum_acc_jerk(REAL8 myAccJerk,
+                   const REAL8 myData,
                    uint j_begin,
                    uint j_end,
-                   __local REAL4 *sharedPos,
-                   __local REAL4 *sharedVel)
+                   __local REAL8 *sharedJData
+                  )
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-        myAccTstep = p2p_acctstep_kernel_core(myAccTstep, myPos, myVel,
-                                              sharedPos[j], sharedVel[j],
-                                              eta);
+        myAccJerk = p2p_acc_jerk_kernel_core(myAccJerk, myData.lo, myData.hi,
+                                             sharedJData[j].lo, sharedJData[j].hi);
     }
-    return myAccTstep;
+    return myAccJerk;
 }
 
 
-inline REAL4
-p2p_acctstep_kernel_main_loop(const REAL4 myPos,
-                              const REAL4 myVel,
-                              __global const REAL4 *jpos,
-                              __global const REAL4 *jvel,
+inline REAL8
+p2p_acc_jerk_kernel_main_loop(const REAL8 myData,
                               const uint nj,
-                              const REAL eta,
-                              __local REAL4 *sharedPos,
-                              __local REAL4 *sharedVel)
+                              __global const REAL8 *jdata,
+                              __local REAL8 *sharedJData
+                             )
 {
     uint lsize = get_local_size(0);
 
-    REAL4 myAccTstep = (REAL4){0.0, 0.0, 0.0, 0.0};
+    REAL8 myAccJerk = (REAL8){0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     uint tile;
     uint numTiles = (nj - 1)/lsize + 1;
     for (tile = 0; tile < numTiles; ++tile) {
         uint nb = min(lsize, (nj - (tile * lsize)));
 
-        event_t e[2];
-        e[0] = async_work_group_copy(sharedPos, jpos + tile * lsize, nb, 0);
-        e[1] = async_work_group_copy(sharedVel, jvel + tile * lsize, nb, 0);
-        wait_group_events(2, e);
+        event_t e[1];
+        e[0] = async_work_group_copy(sharedJData, jdata + tile * lsize, nb, 0);
+        wait_group_events(1, e);
 
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            myAccTstep = p2p_accum_acctstep(myAccTstep, myPos, myVel,
-                                            eta, j, j + JUNROLL,
-                                            sharedPos, sharedVel);
+            myAccJerk = p2p_accum_acc_jerk(myAccJerk, myData,
+                                           j, j + JUNROLL,
+                                           sharedJData);
         }
-        myAccTstep = p2p_accum_acctstep(myAccTstep, myPos, myVel,
-                                        eta, j, nb,
-                                        sharedPos, sharedVel);
+        myAccJerk = p2p_accum_acc_jerk(myAccJerk, myData,
+                                       j, nb,
+                                       sharedJData);
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
-    return myAccTstep;
+    return myAccJerk;
 }
 
 
-__kernel void p2p_acctstep_kernel(const uint ni,
-                                  __global const REAL4 *ipos,
-                                  __global const REAL4 *ivel,
+__kernel void p2p_acc_jerk_kernel(const uint ni,
+                                  __global const REAL8 *idata,
                                   const uint nj,
-                                  __global const REAL4 *jpos,
-                                  __global const REAL4 *jvel,
-                                  const REAL eta,
-                                  __global REAL4 *iacctstep,
-                                  __local REAL4 *sharedPos,
-                                  __local REAL4 *sharedVel)
+                                  __global const REAL8 *jdata,
+                                  __global REAL8 *iaccjerk,
+//                                  __global REAL4 *iacc,
+//                                  __global REAL4 *ijerk,
+                                  __local REAL8 *sharedJData
+                                 )
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);
-    iacctstep[i] = p2p_acctstep_kernel_main_loop(ipos[i], ivel[i],
-                                                 jpos, jvel,
-                                                 nj, eta,
-                                                 sharedPos, sharedVel);
+    iaccjerk[i] = p2p_acc_jerk_kernel_main_loop(idata[i],
+                                                nj, jdata,
+                                                sharedJData);
+//    REAL8 myAccJerk = p2p_acc_jerk_kernel_main_loop(idata[i],
+//                                                    nj, jdata,
+//                                                    sharedJData);
+//    iacc[i] = myAccJerk.lo;
+//    ijerk[i] = myAccJerk.hi;
 }
 
 

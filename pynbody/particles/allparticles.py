@@ -236,6 +236,16 @@ class Particles(dict):
             if iobj.n:
                 iobj.acc = iobj.get_acc(nj, jdata)
 
+    def update_acc_jerk(self, objs):
+        """
+        Update the individual gravitational acceleration and jerk due to other particles.
+        """
+        nj = objs.n
+        jdata = objs.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+        for iobj in self.values():
+            if iobj.n:
+                (iobj.acc, iobj.jerk) = iobj.get_acc_jerk(nj, jdata)
+
     def update_timestep(self, objs, eta):
         """
         Update the individual time-steps due to other particles.
@@ -260,21 +270,6 @@ class Particles(dict):
                         iobj.pnacc = iobj.get_pnacc(nj, jdata, pn_order, clight)
                     else:
                         iobj.pnacc = 0.0
-
-    def update_acc_and_timestep(self, objs, eta):   # XXX: deprecated!
-        """
-        Update the individual gravitational acceleration and time-steps due to other particles.
-        """
-        for iobj in self.values():
-            if iobj.n:
-                iacc = 0.0
-                itstep = 1.0
-                for jobj in objs.values():
-                    ret = iobj.get_acctstep(jobj, eta)
-                    iacc += ret[0]
-                    itstep = np.minimum(itstep, ret[1])
-                iobj.acc = iacc
-                iobj.dt_next = itstep
 
 
     ### prev/next timestep
