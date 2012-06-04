@@ -146,10 +146,12 @@ class CLKernel(object):
     def _set_in_buffer(self, i, arg):
         if not i in self.dev_args:
             (self.dev_args[i], self.in_buffers[i]) = self._allocate_in_buffer(arg)
-            print('IN:', self.kernel.function_name, self.dev_args)
+            logger.debug("%s: allocating buffer for input arg #%d - %s.",
+                         self.kernel.function_name, i, self.dev_args[i])
         if len(arg) > len(self.in_buffers[i]):
             (self.dev_args[i], self.in_buffers[i]) = self._allocate_in_buffer(arg)
-            print('IN realocation:', self.kernel.function_name, self.dev_args)
+            logger.debug("%s: reallocating buffer for input arg #%d - %s.",
+                         self.kernel.function_name, i, self.dev_args[i])
 
         self.in_buffers[i][:len(arg)] = arg
 #        cl.enqueue_copy(self.env.queue, self.dev_args[i], self.in_buffers[i][:len(arg)])
@@ -182,11 +184,13 @@ class CLKernel(object):
         if not i in self.dev_args:
             ary = np.empty(arg, dtype=self.env.dtype)
             (self.dev_args[i], self.out_buffers[i], self.out_shapes[i]) = self._allocate_out_buffer(ary)
-            print('OUT:', self.kernel.function_name, self.dev_args)
+            logger.debug("%s: allocating buffer for output arg #%d - %s.",
+                         self.kernel.function_name, i, self.dev_args[i])
         if arg > self.out_buffers[i].shape:
             ary = np.empty(arg, dtype=self.env.dtype)
             (self.dev_args[i], self.out_buffers[i], self.out_shapes[i]) = self._allocate_out_buffer(ary)
-            print('OUT realocation:', self.kernel.function_name, self.dev_args)
+            logger.debug("%s: reallocating buffer for output arg #%d - %s.",
+                         self.kernel.function_name, i, self.dev_args[i])
         self.out_shapes[i] = arg
 
 
