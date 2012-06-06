@@ -77,22 +77,13 @@ p2p_acc_jerk_kernel_core(REAL8 accjerk,
     inv_r3 *= rj.w;                                                  // 1 FLOPs
     rv *= 3 * inv_r2;                                                // 2 FLOPs
 
-    REAL3 da;
-    da.x = inv_r3 * r.x;                                             // 1 FLOPs
-    da.y = inv_r3 * r.y;                                             // 1 FLOPs
-    da.z = inv_r3 * r.z;                                             // 1 FLOPs
-    REAL3 dj;
-    dj.x = inv_r3 * v.x - rv * da.x;                                 // 3 FLOPs
-    dj.y = inv_r3 * v.y - rv * da.y;                                 // 3 FLOPs
-    dj.z = inv_r3 * v.z - rv * da.z;                                 // 3 FLOPs
-
-    accjerk.s0 -= da.x;                                              // 1 FLOPs
-    accjerk.s1 -= da.y;                                              // 1 FLOPs
-    accjerk.s2 -= da.z;                                              // 1 FLOPs
+    accjerk.s0 -= inv_r3 * r.x;                                      // 2 FLOPs
+    accjerk.s1 -= inv_r3 * r.y;                                      // 2 FLOPs
+    accjerk.s2 -= inv_r3 * r.z;                                      // 2 FLOPs
     accjerk.s3  = 0;
-    accjerk.s4 -= dj.x;                                              // 1 FLOPs
-    accjerk.s5 -= dj.y;                                              // 1 FLOPs
-    accjerk.s6 -= dj.z;                                              // 1 FLOPs
+    accjerk.s4 -= inv_r3 * (v.x - rv * r.x);                         // 4 FLOPs
+    accjerk.s5 -= inv_r3 * (v.y - rv * r.y);                         // 4 FLOPs
+    accjerk.s6 -= inv_r3 * (v.z - rv * r.z);                         // 4 FLOPs
     accjerk.s7  = 0;
 
     return accjerk;

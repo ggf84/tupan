@@ -37,7 +37,7 @@ class Body(Pbase):
              ("radius", "f8"),
              ("metallicity", "f8"),
              # auxiliary attributes
-
+             ("jerk", "3f8"),
             ]
 
     zero = np.zeros(0, dtype)
@@ -99,7 +99,17 @@ class Body(Pbase):
     # auxiliary attributes
     #
 
-    ### ...
+    @property
+    def jerk(self):
+        return self.data['jerk']
+
+    @jerk.setter
+    def jerk(self, values):
+        self.data['jerk'] = values
+
+    @jerk.deleter
+    def jerk(self):
+        raise NotImplementedError()
 
 
     #
