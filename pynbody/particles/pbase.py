@@ -8,6 +8,7 @@
 from __future__ import print_function
 import copy
 import numpy as np
+from ..lib import gravity
 from ..lib.gravity import gravitation
 from ..lib.utils.timing import decallmethods, timings
 
@@ -358,24 +359,85 @@ class Pbase(object):
     ### gravity
 
     def update_phi(self, jobj):
+#        nj = jobj.n
+#        jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+#        self.phi = self.get_phi(nj, jdata)
+
+        ni = self.n
+        idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
         nj = jobj.n
         jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-        self.phi = self.get_phi(nj, jdata)
+
+        gravity.phi.set_arg('IN', 0, ni)
+        gravity.phi.set_arg('IN', 1, idata)
+        gravity.phi.set_arg('IN', 2, nj)
+        gravity.phi.set_arg('IN', 3, jdata)
+        gravity.phi.set_arg('OUT', 4, (ni,))
+        gravity.phi.global_size = ni
+        gravity.phi.run()
+        self.phi = gravity.phi.get_result()[0]
+
 
     def update_acc(self, jobj):
+#        nj = jobj.n
+#        jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+#        self.acc = self.get_acc(nj, jdata)
+
+        ni = self.n
+        idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
         nj = jobj.n
         jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-        self.acc = self.get_acc(nj, jdata)
+
+        gravity.acc.set_arg('IN', 0, ni)
+        gravity.acc.set_arg('IN', 1, idata)
+        gravity.acc.set_arg('IN', 2, nj)
+        gravity.acc.set_arg('IN', 3, jdata)
+        gravity.acc.set_arg('OUT', 4, (ni, 4))
+        gravity.acc.global_size = ni
+        gravity.acc.run()
+        self.acc = gravity.acc.get_result()[0][:,:3]
+
 
     def update_acc_jerk(self, jobj):
+#        nj = jobj.n
+#        jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+#        (self.acc, self.jerk) = self.get_acc_jerk(nj, jdata)
+
+        ni = self.n
+        idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
         nj = jobj.n
         jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-        (self.acc, self.jerk) = self.get_acc_jerk(nj, jdata)
+
+        gravity.acc_jerk.set_arg('IN', 0, ni)
+        gravity.acc_jerk.set_arg('IN', 1, idata)
+        gravity.acc_jerk.set_arg('IN', 2, nj)
+        gravity.acc_jerk.set_arg('IN', 3, jdata)
+        gravity.acc_jerk.set_arg('OUT', 4, (ni, 8))
+        gravity.acc_jerk.global_size = ni
+        gravity.acc_jerk.run()
+        result = gravity.acc_jerk.get_result()[0]
+        (self.acc, self.jerk) = (result[:,:3], result[:,4:7])
+
 
     def update_timestep(self, jobj, eta):
+#        nj = jobj.n
+#        jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
+#        self.dt_next = self.get_tstep(nj, jdata, eta)
+
+        ni = self.n
+        idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
         nj = jobj.n
         jdata = jobj.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-        self.dt_next = self.get_tstep(nj, jdata, eta)
+
+        gravity.tstep.set_arg('IN', 0, ni)
+        gravity.tstep.set_arg('IN', 1, idata)
+        gravity.tstep.set_arg('IN', 2, nj)
+        gravity.tstep.set_arg('IN', 3, jdata)
+        gravity.tstep.set_arg('IN', 4, eta/2)
+        gravity.tstep.set_arg('OUT', 5, (ni,))
+        gravity.tstep.global_size = ni
+        gravity.tstep.run()
+        self.dt_next = eta / gravity.tstep.get_result()[0]
 
 
     def get_phi(self, nj, jdata):

@@ -32,6 +32,89 @@ class Clight(object):
         self.inv7 = self.inv1**7
 
 
+class Phi(object):
+    """
+
+    """
+    def __init__(self):
+        self.kernel = ext.p2p_phi_kernel
+        self.kernel.local_size = 384
+        self.kernel.set_arg('LMEM', 5, 8)
+
+    def set_arg(self, mode, i, arg):
+        self.kernel.set_arg(mode, i, arg)
+
+    @property
+    def global_size(self):
+        return self.kernel.global_size
+
+    @global_size.setter
+    def global_size(self, value):
+        self.kernel.global_size = value
+
+    def run(self):
+        self.kernel.run()
+        return self
+
+    def get_result(self):
+        result = self.kernel.get_result()[0]
+        return result
+
+
+class Acc(object):
+    """
+
+    """
+    def __init__(self):
+        self.kernel = ext.p2p_acc_kernel
+        self.kernel.local_size = 384
+        self.kernel.set_arg('LMEM', 5, 8)
+
+    def set_arg(self, mode, i, arg):
+        self.kernel.set_arg(mode, i, arg)
+
+    @property
+    def global_size(self, value):
+        self.kernel.global_size = value
+
+    def run(self, ni):
+        self.kernel.global_size = ni
+        self.kernel.run()
+        return self
+
+    def get_result(self):
+        result = self.kernel.get_result()[0]
+        return result[:,:3]
+
+
+class Tstep(object):
+    """
+
+    """
+    def __init__(self):
+        self.kernel = ext.p2p_tstep_kernel
+        self.kernel.local_size = 384
+        self.kernel.set_arg('LMEM', 6, 8)
+
+    def set_arg(self, mode, i, arg):
+        self.kernel.set_arg(mode, i, arg)
+
+    @property
+    def global_size(self, value):
+        self.kernel.global_size = value
+
+    def run(self, ni):
+        self.kernel.global_size = ni
+        self.kernel.run()
+        return self
+
+    def get_result(self):
+        result = self.kernel.get_result()[0]
+        return result
+
+
+
+
 @decallmethods(timings)
 class Gravity(object):
     """
@@ -195,6 +278,30 @@ class Gravity(object):
 
 
 gravitation = Gravity()
+
+#phi = Phi()
+#acc = Acc()
+#tstep = Tstep()
+
+phi = ext.p2p_phi_kernel
+phi.local_size = 384
+phi.set_arg('LMEM', 5, 8)
+
+acc = ext.p2p_acc_kernel
+acc.local_size = 384
+acc.set_arg('LMEM', 5, 8)
+
+tstep = ext.p2p_tstep_kernel
+tstep.local_size = 384
+tstep.set_arg('LMEM', 6, 8)
+
+pnacc = ext.p2p_pnacc_kernel
+pnacc.local_size = 384
+pnacc.set_arg('LMEM', 13, 8)
+
+acc_jerk = ext.p2p_acc_jerk_kernel
+acc_jerk.local_size = 384
+acc_jerk.set_arg('LMEM', 5, 8)
 
 
 ########## end of file ##########
