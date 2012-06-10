@@ -271,7 +271,7 @@ _p2p_tstep_kernel(PyObject *_args)
                         jdata_ptr[j8+6], jdata_ptr[j8+7]};
             iinv_tstep = p2p_tstep_kernel_core(iinv_tstep, ri, vi, rj, vj, eta);
         }
-        ret_ptr[i] = iinv_tstep;
+        ret_ptr[i] = 2 * eta / iinv_tstep;
     }
 
     // Decrement the reference counts for i-objects

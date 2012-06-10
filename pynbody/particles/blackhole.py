@@ -9,7 +9,6 @@ from __future__ import print_function
 import numpy as np
 from .pbase import Pbase
 from ..lib import gravity
-from ..lib.gravity import gravitation
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -170,44 +169,13 @@ class BlackHole(Pbase):
 
     ### pn-gravity
 
-    def update_pnacc(self, jobj, pn_order, clight):
-#        nj = jobj.n
-#        jdata = jobj.stack_fields(('pos', 'mass', 'vel'), pad=8)
-#        self.pnacc = self.get_pnacc(nj, jdata, pn_order, clight)
-
-        ni = self.n
-        idata = self.stack_fields(('pos', 'mass', 'vel'), pad=8)
-        nj = jobj.n
-        jdata = jobj.stack_fields(('pos', 'mass', 'vel'), pad=8)
-
-        gravity.pnacc.set_arg('IN', 0, ni)
-        gravity.pnacc.set_arg('IN', 1, idata)
-        gravity.pnacc.set_arg('IN', 2, nj)
-        gravity.pnacc.set_arg('IN', 3, jdata)
-
-        clight = gravity.Clight(pn_order, clight)
-        gravity.pnacc.set_arg('IN', 4, clight.pn_order)
-        gravity.pnacc.set_arg('IN', 5, clight.inv1)
-        gravity.pnacc.set_arg('IN', 6, clight.inv2)
-        gravity.pnacc.set_arg('IN', 7, clight.inv3)
-        gravity.pnacc.set_arg('IN', 8, clight.inv4)
-        gravity.pnacc.set_arg('IN', 9, clight.inv5)
-        gravity.pnacc.set_arg('IN', 10, clight.inv6)
-        gravity.pnacc.set_arg('IN', 11, clight.inv7)
-
-        gravity.pnacc.set_arg('OUT', 12, (ni, 4))
-        gravity.pnacc.global_size = ni
+    def update_pnacc(self, objs, pn_order, clight):
+        """
+        Update individual post-newtonian gravitational acceleration due j-particles.
+        """
+        gravity.pnacc.set_args(self, objs, pn_order, clight)
         gravity.pnacc.run()
-        self.pnacc = gravity.pnacc.get_result()[0][:,:3]
-
-
-    def get_pnacc(self, nj, jdata, pn_order, clight):
-        """
-        Get individual post-newtonian gravitational acceleration due j-particles.
-        """
-        ni = self.n
-        idata = self.stack_fields(('pos', 'mass', 'vel'), pad=8)
-        return gravitation.get_pnacc(ni, idata, nj, jdata, pn_order, clight)
+        self.pnacc = gravity.pnacc.get_result()
 
 
     ### evolve corrections due to post-newtonian terms

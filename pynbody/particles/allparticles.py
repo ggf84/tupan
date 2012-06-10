@@ -221,174 +221,67 @@ class Particles(dict):
         """
         Update the individual gravitational potential due to other particles.
         """
-#        nj = objs.n
-#        jdata = objs.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-#        for iobj in self.values():
-#            if iobj.n:
-#                iobj.phi = iobj.get_phi(nj, jdata)
-
-
-        ni = self.n
-        idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-        nj = objs.n
-        jdata = objs.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-
-        gravity.phi.set_arg('IN', 0, ni)
-        gravity.phi.set_arg('IN', 1, idata)
-        gravity.phi.set_arg('IN', 2, nj)
-        gravity.phi.set_arg('IN', 3, jdata)
-        gravity.phi.set_arg('OUT', 4, (ni,))
-        gravity.phi.global_size = ni
+        gravity.phi.set_args(self, objs)
         gravity.phi.run()
-        result = gravity.phi.get_result()[0]
-
+        result = gravity.phi.get_result()
         for iobj in self.values():
             if iobj.n:
                 iobj.phi = result[:iobj.n]
                 result = result[iobj.n:]
 
-
     def update_acc(self, objs):
         """
         Update the individual gravitational acceleration due to other particles.
         """
-#        nj = objs.n
-#        jdata = objs.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-#        for iobj in self.values():
-#            if iobj.n:
-#                iobj.acc = iobj.get_acc(nj, jdata)
-
-
-        ni = self.n
-        idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-        nj = objs.n
-        jdata = objs.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-
-        gravity.acc.set_arg('IN', 0, ni)
-        gravity.acc.set_arg('IN', 1, idata)
-        gravity.acc.set_arg('IN', 2, nj)
-        gravity.acc.set_arg('IN', 3, jdata)
-        gravity.acc.set_arg('OUT', 4, (ni, 4))
-        gravity.acc.global_size = ni
+        gravity.acc.set_args(self, objs)
         gravity.acc.run()
-        result = gravity.acc.get_result()[0][:,:3]
-
+        result = gravity.acc.get_result()
         for iobj in self.values():
             if iobj.n:
                 iobj.acc = result[:iobj.n]
                 result = result[iobj.n:]
 
-
-    def update_acc_jerk(self, objs):
-        """
-        Update the individual gravitational acceleration and jerk due to other particles.
-        """
-#        nj = objs.n
-#        jdata = objs.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-#        for iobj in self.values():
-#            if iobj.n:
-#                (iobj.acc, iobj.jerk) = iobj.get_acc_jerk(nj, jdata)
-
-
-        ni = self.n
-        idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-        nj = objs.n
-        jdata = objs.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-
-        gravity.acc_jerk.set_arg('IN', 0, ni)
-        gravity.acc_jerk.set_arg('IN', 1, idata)
-        gravity.acc_jerk.set_arg('IN', 2, nj)
-        gravity.acc_jerk.set_arg('IN', 3, jdata)
-        gravity.acc_jerk.set_arg('OUT', 4, (ni, 8))
-        gravity.acc_jerk.global_size = ni
-        gravity.acc_jerk.run()
-        result = gravity.acc_jerk.get_result()[0]
-
-        for iobj in self.values():
-            if iobj.n:
-                iobj.acc = result[:iobj.n][:,:3]
-                iobj.jerk = result[:iobj.n][:,4:7]
-                result = result[iobj.n:]
-
-
-    def update_timestep(self, objs, eta):
+    def update_tstep(self, objs, eta):
         """
         Update the individual time-steps due to other particles.
         """
-#        nj = objs.n
-#        jdata = objs.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-#        for iobj in self.values():
-#            if iobj.n:
-#                iobj.dt_next = iobj.get_tstep(nj, jdata, eta)
-
-
-        ni = self.n
-        idata = self.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-        nj = objs.n
-        jdata = objs.stack_fields(('pos', 'mass', 'vel', 'eps2'))
-
-        gravity.tstep.set_arg('IN', 0, ni)
-        gravity.tstep.set_arg('IN', 1, idata)
-        gravity.tstep.set_arg('IN', 2, nj)
-        gravity.tstep.set_arg('IN', 3, jdata)
-        gravity.tstep.set_arg('IN', 4, eta/2)
-        gravity.tstep.set_arg('OUT', 5, (ni,))
-        gravity.tstep.global_size = ni
+        gravity.tstep.set_args(self, objs, eta/2)
         gravity.tstep.run()
-        result = gravity.tstep.get_result()[0]
-
+        result = gravity.tstep.get_result()
         for iobj in self.values():
             if iobj.n:
-                iobj.dt_next = eta / result[:iobj.n]
+                iobj.dt_next = result[:iobj.n]
                 result = result[iobj.n:]
-
 
     def update_pnacc(self, objs, pn_order, clight):
         """
         Update the individual post-newtonian gravitational acceleration due to other particles.
         """
-#        objs = objs['blackhole']
-#        nj = objs.n
-#        jdata = objs.stack_fields(('pos', 'mass', 'vel'), pad=8)
-#        for iobj in self.values():
-#            if iobj.n:
-#                if hasattr(iobj, "pnacc"):
-#                    if nj:
-#                        iobj.pnacc = iobj.get_pnacc(nj, jdata, pn_order, clight)
-#                    else:
-#                        iobj.pnacc = 0.0
-
-
         ni = self['blackhole'].n
-        idata = self['blackhole'].stack_fields(('pos', 'mass', 'vel'), pad=8)
         nj = objs['blackhole'].n
-        jdata = objs['blackhole'].stack_fields(('pos', 'mass', 'vel'), pad=8)
+        if ni and nj:
+            gravity.pnacc.set_args(self['blackhole'], objs['blackhole'], pn_order, clight)
+            gravity.pnacc.run()
+            result = gravity.pnacc.get_result()
+            for iobj in self.values():
+                if iobj.n:
+                    if hasattr(iobj, "pnacc"):
+                        iobj.pnacc = result[:iobj.n]
+                        result = result[iobj.n:]
 
-        gravity.pnacc.set_arg('IN', 0, ni)
-        gravity.pnacc.set_arg('IN', 1, idata)
-        gravity.pnacc.set_arg('IN', 2, nj)
-        gravity.pnacc.set_arg('IN', 3, jdata)
-
-        clight = gravity.Clight(pn_order, clight)
-        gravity.pnacc.set_arg('IN', 4, clight.pn_order)
-        gravity.pnacc.set_arg('IN', 5, clight.inv1)
-        gravity.pnacc.set_arg('IN', 6, clight.inv2)
-        gravity.pnacc.set_arg('IN', 7, clight.inv3)
-        gravity.pnacc.set_arg('IN', 8, clight.inv4)
-        gravity.pnacc.set_arg('IN', 9, clight.inv5)
-        gravity.pnacc.set_arg('IN', 10, clight.inv6)
-        gravity.pnacc.set_arg('IN', 11, clight.inv7)
-
-        gravity.pnacc.set_arg('OUT', 12, (ni, 4))
-        gravity.pnacc.global_size = ni
-        gravity.pnacc.run()
-        result = gravity.pnacc.get_result()[0][:,:3]
-
+    def update_acc_jerk(self, objs):
+        """
+        Update the individual gravitational acceleration and jerk due to other particles.
+        """
+        gravity.acc_jerk.set_args(self, objs)
+        gravity.acc_jerk.run()
+        (acc, jerk) = gravity.acc_jerk.get_result()
         for iobj in self.values():
             if iobj.n:
-                if hasattr(iobj, "pnacc"):
-                    iobj.pnacc = result[:iobj.n]
-                    result = result[iobj.n:]
+                iobj.acc = acc[:iobj.n]
+                iobj.jerk = jerk[:iobj.n]
+                acc = acc[iobj.n:]
+                jerk = jerk[iobj.n:]
 
 
     ### prev/next timestep

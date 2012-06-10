@@ -137,7 +137,7 @@ class LeapFrog(object):
         p.update_acc(p)
         if self.pn_order > 0:
             p.update_pnacc(p, self.pn_order, self.clight)
-        p.update_timestep(p, self.eta)
+        p.update_tstep(p, self.eta)
 
         tau = self.eta
         p.set_dt_next(tau)
@@ -216,7 +216,7 @@ class AdaptLF(LeapFrog):
         p.update_acc(p)
         if self.pn_order > 0:
             p.update_pnacc(p, self.pn_order, self.clight)
-        p.update_timestep(p, self.eta)
+        p.update_tstep(p, self.eta)
 
         tau = self.get_min_block_tstep(p, t_end)
         p.set_dt_next(tau)
@@ -262,7 +262,7 @@ class AdaptLF(LeapFrog):
         self.time += self.tstep / 2
 
         p.set_dt_prev(tau)
-        p.update_timestep(p, self.eta)
+        p.update_tstep(p, self.eta)
         self.particles = p
 
 

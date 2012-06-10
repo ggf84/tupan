@@ -49,7 +49,7 @@ class HTS(LeapFrog):
         p.update_acc(p)
         if self.pn_order > 0:
             p.update_pnacc(p, self.pn_order, self.clight)
-        p.update_timestep(p, self.eta)
+        p.update_tstep(p, self.eta)
 
 #        tau = 1.0/4
 #        tau = p.max_dt_next()
@@ -145,7 +145,7 @@ class HTS(LeapFrog):
 
     ### heapq0
 
-    def heapq0(self, p, tau, update_timestep):
+    def heapq0(self, p, tau, update_tstep):
 
         dt = tau
         t = self.time
@@ -166,8 +166,8 @@ class HTS(LeapFrog):
                 self.time = t
 
             self.merge(p, slow, fast, indexing)
-            if update_timestep: p.update_timestep(p, self.eta)      # True/False
-            if update_timestep: p.update_phi(p)      # True/False
+            if update_tstep: p.update_tstep(p, self.eta)      # True/False
+            if update_tstep: p.update_phi(p)      # True/False
             slow, fast, indexing = self.split(dt/2, p)
 
             if fast.n > 0:
@@ -188,7 +188,7 @@ class HTS(LeapFrog):
 #
 #            self.merge(p, slow, fast, indexing)
 #
-#            if update_timestep: p.update_timestep(p, self.eta)      # True/False
+#            if update_tstep: p.update_tstep(p, self.eta)      # True/False
 #
 #            slow, fast, indexing = self.split(tau/2, p)
 #
@@ -205,10 +205,10 @@ class HTS(LeapFrog):
 
     ### meth0
 
-    def meth0(self, p, tau, update_timestep):
+    def meth0(self, p, tau, update_tstep):
         self.level += 1
-#        if update_timestep: p.update_timestep(p, self.eta)      # False/True
-#        if update_timestep: p.update_phi(p)                     # False/True
+#        if update_tstep: p.update_tstep(p, self.eta)      # False/True
+#        if update_tstep: p.update_phi(p)                     # False/True
 
         slow, fast = self.split(tau, p)
 
@@ -231,8 +231,8 @@ class HTS(LeapFrog):
         if slow.n > 0: slow.set_dt_prev(tau)
 
         p = self.join(slow, fast)
-        if update_timestep: p.update_timestep(p, self.eta)      # True/False
-        if update_timestep: p.update_phi(p)                     # True/False
+        if update_tstep: p.update_tstep(p, self.eta)      # True/False
+        if update_tstep: p.update_phi(p)                     # True/False
 
         self.level -= 1
 
@@ -241,8 +241,8 @@ class HTS(LeapFrog):
 
     ### meth1
 
-    def meth1(self, p, tau, update_timestep):
-        if update_timestep: p.update_timestep(p, self.eta)
+    def meth1(self, p, tau, update_tstep):
+        if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
         if fast.n == 0: self.time += tau / 2
@@ -253,13 +253,13 @@ class HTS(LeapFrog):
         if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
-#        if update_timestep: p.update_timestep(p, self.eta)
+#        if update_tstep: p.update_tstep(p, self.eta)
 
 
     ### meth2
 
-    def meth2(self, p, tau, update_timestep):
-        if update_timestep: p.update_timestep(p, self.eta)
+    def meth2(self, p, tau, update_tstep):
+        if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
         if fast.n == 0: self.time += tau / 2
@@ -273,13 +273,13 @@ class HTS(LeapFrog):
         if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
-#        if update_timestep: p.update_timestep(p, self.eta)
+#        if update_tstep: p.update_tstep(p, self.eta)
 
 
     ### meth3
 
-    def meth3(self, p, tau, update_timestep):  # This method does not conserves the center of mass.
-        if update_timestep: p.update_timestep(p, self.eta)
+    def meth3(self, p, tau, update_tstep):  # This method does not conserves the center of mass.
+        if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
         if fast.n == 0: self.time += tau / 2
@@ -293,13 +293,13 @@ class HTS(LeapFrog):
         if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
-#        if update_timestep: p.update_timestep(p, self.eta)
+#        if update_tstep: p.update_tstep(p, self.eta)
 
 
     ### meth4
 
-    def meth4(self, p, tau, update_timestep):
-        if update_timestep: p.update_timestep(p, self.eta)
+    def meth4(self, p, tau, update_tstep):
+        if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
         if fast.n == 0: self.time += tau / 2
@@ -312,13 +312,13 @@ class HTS(LeapFrog):
         if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
-#        if update_timestep: p.update_timestep(p, self.eta)
+#        if update_tstep: p.update_tstep(p, self.eta)
 
 
     ### meth5
 
-    def meth5(self, p, tau, update_timestep):
-        if update_timestep: p.update_timestep(p, self.eta)
+    def meth5(self, p, tau, update_tstep):
+        if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
         if fast.n == 0: self.time += tau / 2
@@ -331,13 +331,13 @@ class HTS(LeapFrog):
         if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
-#        if update_timestep: p.update_timestep(p, self.eta)
+#        if update_tstep: p.update_tstep(p, self.eta)
 
 
     ### meth6
 
-    def meth6(self, p, tau, update_timestep):
-        if update_timestep: p.update_timestep(p, self.eta)
+    def meth6(self, p, tau, update_tstep):
+        if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
         if fast.n == 0: self.time += tau / 2
@@ -351,13 +351,13 @@ class HTS(LeapFrog):
         if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
-#        if update_timestep: p.update_timestep(p, self.eta)
+#        if update_tstep: p.update_tstep(p, self.eta)
 
 
     ### meth7
 
-    def meth7(self, p, tau, update_timestep):
-        if update_timestep: p.update_timestep(p, self.eta)
+    def meth7(self, p, tau, update_tstep):
+        if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
         if fast.n == 0: self.time += tau / 2
@@ -372,13 +372,13 @@ class HTS(LeapFrog):
         if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
-#        if update_timestep: p.update_timestep(p, self.eta)
+#        if update_tstep: p.update_tstep(p, self.eta)
 
 
     ### meth8
 
-    def meth8(self, p, tau, update_timestep):
-        if update_timestep: p.update_timestep(p, self.eta)
+    def meth8(self, p, tau, update_tstep):
+        if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
         if fast.n == 0: self.time += tau / 2
@@ -394,13 +394,13 @@ class HTS(LeapFrog):
         if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
-#        if update_timestep: p.update_timestep(p, self.eta)
+#        if update_tstep: p.update_tstep(p, self.eta)
 
 
     ### meth9
 
-    def meth9(self, p, tau, update_timestep):
-        if update_timestep: p.update_timestep(p, self.eta)
+    def meth9(self, p, tau, update_tstep):
+        if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
         if fast.n == 0: self.time += tau / 2
@@ -417,7 +417,7 @@ class HTS(LeapFrog):
         if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
-#        if update_timestep: p.update_timestep(p, self.eta)
+#        if update_tstep: p.update_tstep(p, self.eta)
 
 
     ### split

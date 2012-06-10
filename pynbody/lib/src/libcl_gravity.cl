@@ -303,16 +303,16 @@ __kernel void p2p_tstep_kernel(const uint ni,
                                const uint nj,
                                __global const REAL8 *jdata,
                                const REAL eta,
-                               __global REAL *iinv_tstep,
+                               __global REAL *itstep,
                                __local REAL8 *sharedJData
                               )
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);
-    iinv_tstep[i] = p2p_tstep_kernel_main_loop(idata[i],
-                                               nj, jdata,
-                                               eta,
-                                               sharedJData);
+    itstep[i] = 2 * eta / p2p_tstep_kernel_main_loop(idata[i],
+                                                     nj, jdata,
+                                                     eta,
+                                                     sharedJData);
 }
 
 
