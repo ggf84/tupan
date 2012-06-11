@@ -94,16 +94,21 @@ class Pbase(object):
         return obj
 
     def stack_fields(self, attrs, pad=-1):
-        def atleast_2d(attr):
+        arrays = []
+        for attr in attrs:
             arr = self.data[attr]
-            return arr.reshape(-1,1) if arr.ndim < 2 else arr
+            arrays.append(arr.reshape(-1,1) if arr.ndim < 2 else arr)
 
-        array = np.concatenate([atleast_2d(attr) for attr in attrs], axis=1)
-        col = array.shape[1] - pad
+        array = np.concatenate(arrays, axis=1)
+
+        ncols = array.shape[1]
+        col = ncols - pad
         if col < 0:
             pad_array = np.zeros((len(array),pad), dtype=array.dtype)
             pad_array[:,:col] = array
             return pad_array
+        if ncols > 1:
+            return array
         return array.squeeze()
 
 

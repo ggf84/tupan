@@ -10,7 +10,6 @@ from __future__ import print_function
 import sys
 import copy
 import numpy as np
-from numpy.lib import recfunctions as recf
 from .sph import Sph
 from .body import Body
 from .blackhole import BlackHole
@@ -69,34 +68,16 @@ class Particles(dict):
     def n(self):
         return sum([obj.n for obj in self.values()])
 
+    def stack_fields(self, attrs, pad=-1):
+        arrays = [obj.stack_fields(attrs, pad) for obj in self.values() if obj.n]
+        return np.concatenate(arrays)
+
 
     #
     # common attributes
     #
 
-    @property
-    def pos(self):
-        pos = [obj.pos for obj in self.values() if obj.n]
-        return recf.stack_arrays(pos).view(np.ndarray).reshape((-1,3))
-
-    @property
-    def vel(self):
-        vel = [obj.vel for obj in self.values() if obj.n]
-        return recf.stack_arrays(vel).view(np.ndarray).reshape((-1,3))
-
-    @property
-    def mass(self):
-        mass = [obj.mass for obj in self.values() if obj.n]
-        return recf.stack_arrays(mass).view(np.ndarray)
-
-    @property
-    def eps2(self):
-        eps2 = [obj.eps2 for obj in self.values() if obj.n]
-        return recf.stack_arrays(eps2).view(np.ndarray)
-
-    def stack_fields(self, attrs, pad=-1):
-        arrays = [obj.stack_fields(attrs, pad) for obj in self.values() if obj.n]
-        return recf.stack_arrays(arrays).reshape((self.n,-1)).squeeze()
+    ### ...
 
 
     #
