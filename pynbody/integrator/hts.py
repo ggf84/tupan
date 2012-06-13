@@ -51,13 +51,13 @@ class HTS(LeapFrog):
             p.update_pnacc(p, self.pn_order, self.clight)
         p.update_tstep(p, self.eta)
 
-#        tau = 1.0/4
+        tau = 1.0/4
 #        tau = p.max_dt_next()
 #        tau = p.mean_dt_next()
 #        tau = p.harmonic_mean_dt_next()
 #        self.tstep = tau if self.time+tau < t_end else t_end-self.time
 
-        tau = self.get_max_block_tstep(p)
+#        tau = self.get_max_block_tstep(p)
         self.tstep = tau
 
         self.snap_counter = {}
@@ -137,7 +137,7 @@ class HTS(LeapFrog):
 #        tau = p.harmonic_mean_dt_next()
 #        self.tstep = tau if self.time+tau < t_end else t_end-self.time
 
-        tau = self.get_max_block_tstep(p)
+#        tau = self.get_max_block_tstep(p)
         self.tstep = tau
 
         self.particles = p
