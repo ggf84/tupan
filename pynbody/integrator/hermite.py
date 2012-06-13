@@ -56,21 +56,18 @@ class Hermite(object):
                 self.prev_acc[key] = obj.acc.copy()
                 self.prev_jerk[key] = obj.jerk.copy()
 
-                obj.pos += obj.vel * tau + obj.acc * tau**2 / 2 + obj.jerk * tau**3 / 6
-                obj.vel += obj.acc * tau + obj.jerk * tau**2 / 2
+                obj.pos += tau * (obj.vel + (tau/2) * (obj.acc + (tau/3) * obj.jerk))
+                obj.vel += tau * (obj.acc + (tau/2) * obj.jerk)
 
 
     def correct(self, ip, tau):
-        alpha = 7.0 / 6.0
-        beta = 6 * alpha - 5
         for (key, obj) in ip.items():
             if obj.n:
-                obj.vel = (self.prev_vel[key] + (self.prev_acc[key] + obj.acc) * tau / 2
-                                              + (self.prev_jerk[key] - obj.jerk) * tau * tau / 12)
+                obj.vel = (self.prev_vel[key] + tau * ((self.prev_acc[key] + obj.acc)/2
+                                              + tau * (self.prev_jerk[key] - obj.jerk)/12))
+                obj.pos = (self.prev_pos[key] + tau * ((self.prev_vel[key] + obj.vel)/2
+                                              + tau * (self.prev_acc[key] - obj.acc)/12))
 
-                obj.pos = (self.prev_pos[key] + (self.prev_vel[key] + obj.vel) * tau / 2
-                                              + alpha * (self.prev_acc[key] - obj.acc) * tau * tau / 10
-                                              + beta * (self.prev_jerk[key] + obj.jerk) * tau * tau * tau / 120)
 
 
     def drift(self, ip, tau):
@@ -168,14 +165,9 @@ class Hermite(object):
 
         """
         self.predict(p, tau)
-        p.update_acc_jerk(p)
-
-#        for (key, obj) in p.items():
-#            if obj.n:
-#                obj.acc = 2 * obj.acc - self.prev_acc[key]
-#                obj.jerk = 2 * obj.jerk - self.prev_jerk[key]
-
-        self.correct(p, tau)
+        for i in range(2):
+            p.update_acc_jerk(p)
+            self.correct(p, tau)
 
 
 #        self.drift(p, tau / 2)
