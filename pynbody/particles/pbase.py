@@ -266,6 +266,21 @@ class Pbase(object):
         raise NotImplementedError()
 
 
+    ### nstep
+
+    @property
+    def nstep(self):
+        return self.data['nstep']
+
+    @nstep.setter
+    def nstep(self, values):
+        self.data['nstep'] = values
+
+    @nstep.deleter
+    def nstep(self):
+        raise NotImplementedError()
+
+
     #
     # common methods
     #
@@ -396,6 +411,12 @@ class Pbase(object):
 
 
     ### evolve
+
+    def update_nstep(self):
+        """
+        Update individual step number.
+        """
+        self.nstep += 1
 
     def evolve_current_time(self, tau):
         """

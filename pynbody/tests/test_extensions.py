@@ -45,7 +45,7 @@ class TestCase(unittest.TestCase):
     def test01(self):
         print('\ntest01: max deviation of grav-phi (in SP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
 
-        npart = len(small_system)
+        npart = small_system.n
         deviations = []
 
         for i in range(1, npart+1):
@@ -79,7 +79,7 @@ class TestCase(unittest.TestCase):
     def test02(self):
         print('\ntest02: max deviation of grav-acc (in SP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
 
-        npart = len(small_system)
+        npart = small_system.n
         deviations = []
 
         for i in range(1, npart+1):
@@ -113,7 +113,7 @@ class TestCase(unittest.TestCase):
     def test03(self):
         print('\ntest03: max deviation of grav-pnacc (in SP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
 
-        npart = len(small_system)
+        npart = small_system.n
         deviations = []
 
         for i in range(1, npart+1):
@@ -147,7 +147,7 @@ class TestCase(unittest.TestCase):
     def test04(self):
         print('\ntest04: max deviation of grav-phi (in DP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
 
-        npart = len(small_system)
+        npart = small_system.n
         deviations = []
 
         for i in range(1, npart+1):
@@ -181,7 +181,7 @@ class TestCase(unittest.TestCase):
     def test05(self):
         print('\ntest05: max deviation of grav-acc (in DP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
 
-        npart = len(small_system)
+        npart = small_system.n
         deviations = []
 
         for i in range(1, npart+1):
@@ -215,7 +215,7 @@ class TestCase(unittest.TestCase):
     def test06(self):
         print('\ntest06: max deviation of grav-pnacc (in DP on CPU and GPU) between all combinations of i- and j-particles:', end=' ')
 
-        npart = len(small_system)
+        npart = small_system.n
         deviations = []
 
         for i in range(1, npart+1):
@@ -227,13 +227,13 @@ class TestCase(unittest.TestCase):
                 jobj = small_system[:j].copy()
 
                 # calculating on CPU
-                kernel = gravity.PNAcc(libkernels['sp']['c'])
+                kernel = gravity.PNAcc(libkernels['dp']['c'])
                 kernel.set_args(iobj, jobj, 7, 128)
                 kernel.run()
                 result['cpu'] = kernel.get_result()
 
                 # calculating on GPU
-                kernel = gravity.PNAcc(libkernels['sp']['cl'])
+                kernel = gravity.PNAcc(libkernels['dp']['cl'])
                 kernel.set_args(iobj, jobj, 7, 128)
                 kernel.run()
                 result['gpu'] = kernel.get_result()

@@ -20,7 +20,7 @@ class Sph(Pbase):
     A base class for Sph.
     """
     attrs = ["id", "mass", "pos", "vel", "acc", "phi",
-             "eps2", "t_curr", "dt_prev", "dt_next"]
+             "eps2", "t_curr", "dt_prev", "dt_next", "nstep"]
     dtype = [# common attributes
              ("id", "u8"),
              ("mass", "f8"),
@@ -32,6 +32,7 @@ class Sph(Pbase):
              ("t_curr", "f8"),
              ("dt_prev", "f8"),
              ("dt_next", "f8"),
+             ("nstep", "u8"),
              # specific attributes
 
              # auxiliary attributes

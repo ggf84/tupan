@@ -49,6 +49,10 @@ class Particles(dict):
         fmt += '\n}'
         return fmt
 
+    @property
+    def n(self):
+        return sum([obj.n for obj in self.values()])
+
     def copy(self):
         return copy.deepcopy(self)
 
@@ -64,13 +68,17 @@ class Particles(dict):
         elif isinstance(objs, Sph):
             self["sph"].append(objs)
 
-    @property
-    def n(self):
-        return sum([obj.n for obj in self.values()])
-
     def stack_fields(self, attrs, pad=-1):
         arrays = [obj.stack_fields(attrs, pad) for obj in self.values() if obj.n]
         return np.concatenate(arrays)
+
+    def select(self, function, attr):
+        subset = self.__class__()
+        for obj in self.values():
+            if obj.n:
+                selection = function(getattr(obj, attr))
+                subset.append(obj[selection])
+        return subset
 
 
     #
@@ -263,6 +271,14 @@ class Particles(dict):
                 iobj.jerk = jerk[:iobj.n]
                 acc = acc[iobj.n:]
                 jerk = jerk[iobj.n:]
+
+
+    ### nstep
+
+    def update_nstep(self):
+        for obj in self.values():
+            if obj.n:
+                obj.update_nstep()
 
 
     ### prev/next timestep

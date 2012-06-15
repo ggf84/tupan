@@ -21,7 +21,7 @@ class BlackHole(Pbase):
     A base class for BlackHoles.
     """
     attrs = ["id", "mass", "pos", "vel", "acc", "spin", "phi",
-             "eps2", "t_curr", "dt_prev", "dt_next"]
+             "eps2", "t_curr", "dt_prev", "dt_next", "nstep"]
     dtype = [# common attributes
              ("id", "u8"),
              ("mass", "f8"),
@@ -33,6 +33,7 @@ class BlackHole(Pbase):
              ("t_curr", "f8"),
              ("dt_prev", "f8"),
              ("dt_next", "f8"),
+             ("nstep", "u8"),
              # specific attributes
              ("radius", "f8"),
              ("pnacc", "3f8"),

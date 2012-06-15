@@ -54,7 +54,7 @@ class HDF5IO(object):
                                                 )
                     dset.attrs['Class'] = pickle.dumps(v.__class__)
                     olen = len(dset)
-                    dset.resize((olen+len(v),))
+                    dset.resize((olen+v.n,))
                     nlen = len(dset)
 #                    dset[olen:nlen] = v.data
                     dset[olen:nlen] = state

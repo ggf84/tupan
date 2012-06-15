@@ -60,27 +60,29 @@ class HTS(LeapFrog):
 #        tau = self.get_max_block_tstep(p)
         self.tstep = tau
 
-        self.snap_counter = {}
         self.is_initialized = True
 
 
     def finalize(self, t_end):
         logger.info("Finalizing integrator.")
 
-        tau = self.tstep
-        p = self.particles
-
-        def final_dump(p, tau):
+        def final_dump(p, tau, stream):
             slow, fast = self.split(tau, p)
 
             if slow.n > 0:
                 slow.set_dt_next(tau)
-                if self.dumpper:
-                    self.dumpper.dump(slow)
+                if stream:
+                    stream.append(slow.select(lambda x: x%self.snap_freq == 0, 'nstep'))
 
-            if fast.n > 0: final_dump(fast, tau / 2)
+            if fast.n > 0: final_dump(fast, tau / 2, stream)
 
-        final_dump(p, tau)
+        tau = self.tstep
+        p = self.particles
+
+        if self.dumpper:
+            stream = p.__class__()
+            final_dump(p, tau, stream)
+            self.dumpper.dump(stream)
 
 
     def dkd(self, slow, fast, tau):
@@ -93,6 +95,7 @@ class HTS(LeapFrog):
         if fast.n > 0: self.kick(slow, fast, tau)
         self.drift(slow, tau / 2)
 
+        slow.update_nstep()
         return slow, fast
 
 
@@ -105,10 +108,14 @@ class HTS(LeapFrog):
 
         tau = self.tstep
         p = self.particles
-        self.level = -1
+
+        stream = None
+        if self.dumpper:
+            stream = p.__class__()
+
 
         if self.meth_type == 0:
-            p = self.meth0(p, tau, True)
+            p = self.meth0(p, tau, stream, True)
 #            p = self.heapq0(p, tau, True)
         elif self.meth_type == 1:
             self.meth1(p, tau, True)
@@ -139,6 +146,10 @@ class HTS(LeapFrog):
 
 #        tau = self.get_max_block_tstep(p)
         self.tstep = tau
+        self.time += tau
+
+        if stream:
+            self.dumpper.dump(stream)
 
         self.particles = p
 
@@ -205,8 +216,7 @@ class HTS(LeapFrog):
 
     ### meth0
 
-    def meth0(self, p, tau, update_tstep):
-        self.level += 1
+    def meth0(self, p, tau, stream, update_tstep):
 #        if update_tstep: p.update_tstep(p, self.eta)      # False/True
 #        if update_tstep: p.update_phi(p)                     # False/True
 
@@ -214,27 +224,19 @@ class HTS(LeapFrog):
 
         if slow.n > 0:
             slow.set_dt_next(tau)
-            if self.dumpper:
-                if not self.level in self.snap_counter:
-                    self.snap_counter[self.level] = self.snap_freq
-                self.snap_counter[self.level] += 1
-                if (self.snap_counter[self.level] >= self.snap_freq):
-                    self.snap_counter[self.level] -= self.snap_freq
-                    self.dumpper.dump(slow)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.snap_freq == 0, 'nstep'))
 
-        if fast.n == 0: self.time += tau / 2
-        if fast.n > 0: fast = self.meth0(fast, tau / 2, True)
+        if fast.n > 0: fast = self.meth0(fast, tau / 2, stream, True)
         if slow.n > 0: slow, fast = self.dkd(slow, fast, tau)
-        if fast.n > 0: fast = self.meth0(fast, tau / 2, False)
-        if fast.n == 0: self.time += tau / 2
+        if fast.n > 0: fast = self.meth0(fast, tau / 2, stream, False)
 
-        if slow.n > 0: slow.set_dt_prev(tau)
+        if slow.n > 0:
+            slow.set_dt_prev(tau)
 
         p = self.join(slow, fast)
         if update_tstep: p.update_tstep(p, self.eta)      # True/False
         if update_tstep: p.update_phi(p)                     # True/False
-
-        self.level -= 1
 
         return p
 
@@ -245,12 +247,10 @@ class HTS(LeapFrog):
         if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
-        if fast.n == 0: self.time += tau / 2
         if slow.n > 0: self.dkd(slow, fast, tau / 2)
         if fast.n > 0: self.meth1(fast, tau / 2, True)
         if fast.n > 0: self.meth1(fast, tau / 2, True)
         if slow.n > 0: self.dkd(slow, fast, tau / 2)
-        if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
 #        if update_tstep: p.update_tstep(p, self.eta)
@@ -262,7 +262,6 @@ class HTS(LeapFrog):
         if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
-        if fast.n == 0: self.time += tau / 2
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
         if fast.n > 0: self.meth2(fast, tau / 2, True)
@@ -270,7 +269,6 @@ class HTS(LeapFrog):
         if fast.n > 0: self.meth2(fast, tau / 2, True)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
 #        if update_tstep: p.update_tstep(p, self.eta)
@@ -282,7 +280,6 @@ class HTS(LeapFrog):
         if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
-        if fast.n == 0: self.time += tau / 2
         if fast.n > 0: self.meth3(fast, tau / 2, False)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
@@ -290,7 +287,6 @@ class HTS(LeapFrog):
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
         if fast.n > 0: self.meth3(fast, tau / 2, True)
-        if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
 #        if update_tstep: p.update_tstep(p, self.eta)
@@ -302,14 +298,12 @@ class HTS(LeapFrog):
         if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
-        if fast.n == 0: self.time += tau / 2
         if slow.n > 0: self.dkd(slow, fast, tau / 2)
         if fast.n > 0: self.meth4(fast, tau / 2, False)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
         if fast.n > 0: self.meth4(fast, tau / 2, True)
         if slow.n > 0: self.dkd(slow, fast, tau / 2)
-        if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
 #        if update_tstep: p.update_tstep(p, self.eta)
@@ -321,14 +315,12 @@ class HTS(LeapFrog):
         if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
-        if fast.n == 0: self.time += tau / 2
         if fast.n > 0: self.meth5(fast, tau / 2, False)
         if slow.n > 0: self.dkd(slow, fast, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
         if slow.n > 0: self.dkd(slow, fast, tau / 2)
         if fast.n > 0: self.meth5(fast, tau / 2, True)
-        if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
 #        if update_tstep: p.update_tstep(p, self.eta)
@@ -340,7 +332,6 @@ class HTS(LeapFrog):
         if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
-        if fast.n == 0: self.time += tau / 2
         if slow.n > 0: self.drift(slow, tau / 2)
         if fast.n > 0: self.meth6(fast, tau / 2, False)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
@@ -348,7 +339,6 @@ class HTS(LeapFrog):
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
         if fast.n > 0: self.meth6(fast, tau / 2, True)
         if slow.n > 0: self.drift(slow, tau / 2)
-        if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
 #        if update_tstep: p.update_tstep(p, self.eta)
@@ -360,7 +350,6 @@ class HTS(LeapFrog):
         if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
-        if fast.n == 0: self.time += tau / 2
         if slow.n > 0: self.drift(slow, tau / 2)
         if slow.n > 0: self.kick(slow, slow, tau / 2)
         if fast.n > 0: self.meth7(fast, tau / 2, False)
@@ -369,7 +358,6 @@ class HTS(LeapFrog):
         if fast.n > 0: self.meth7(fast, tau / 2, True)
         if slow.n > 0: self.kick(slow, slow, tau / 2)
         if slow.n > 0: self.drift(slow, tau / 2)
-        if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
 #        if update_tstep: p.update_tstep(p, self.eta)
@@ -381,7 +369,6 @@ class HTS(LeapFrog):
         if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
-        if fast.n == 0: self.time += tau / 2
         if slow.n > 0: self.drift(slow, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
@@ -391,7 +378,6 @@ class HTS(LeapFrog):
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
         if slow.n > 0: self.drift(slow, tau / 2)
-        if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
 #        if update_tstep: p.update_tstep(p, self.eta)
@@ -403,7 +389,6 @@ class HTS(LeapFrog):
         if update_tstep: p.update_tstep(p, self.eta)
         slow, fast, indexing = self.split(tau, p)
 
-        if fast.n == 0: self.time += tau / 2
         if slow.n > 0: self.drift(slow, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
@@ -414,7 +399,6 @@ class HTS(LeapFrog):
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
         if slow.n > 0: self.kick(slow, slow, tau / 2)
         if slow.n > 0: self.drift(slow, tau / 2)
-        if fast.n == 0: self.time += tau / 2
 
         self.merge(p, slow, fast, indexing)
 #        if update_tstep: p.update_tstep(p, self.eta)

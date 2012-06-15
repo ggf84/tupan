@@ -216,7 +216,7 @@ class Plummer(object):
         ###################################
 
         b = self.particles["body"]
-        n = len(b)
+        n = b.n
         x = b.pos[:,0]
         y = b.pos[:,1]
         radius = 2 * n * b.mass

@@ -31,11 +31,11 @@ class LeapFrog(object):
         self.pn_order = kwargs.pop("pn_order", 0)
         self.clight = kwargs.pop("clight", None)
         if self.pn_order > 0 and self.clight is None:
-            raise TypeError("'clight' is not defined. Please set the input "
-                            "argument 'clight' when using 'pn_order' != 0.")
+            raise TypeError("'clight' is not defined. Please set the speed of "
+                            "light argument 'clight' when using 'pn_order' > 0.")
 
         self.dumpper = kwargs.pop("dumpper", None)
-        self.snap_freq = kwargs.pop("snap_freq", 0)
+        self.snap_freq = kwargs.pop("snap_freq", 1)
         if kwargs:
             msg = "{0}.__init__ received unexpected keyword arguments: {1}."
             raise TypeError(msg.format(self.__class__.__name__,", ".join(kwargs.keys())))
@@ -126,6 +126,7 @@ class LeapFrog(object):
         self.kick(p, p, tau)
         self.drift(p, tau / 2)
 
+        p.update_nstep()
         return p
 
 
@@ -143,7 +144,6 @@ class LeapFrog(object):
         p.set_dt_next(tau)
         self.tstep = tau
 
-        self.snap_counter = self.snap_freq
         self.is_initialized = True
 
 
@@ -171,14 +171,10 @@ class LeapFrog(object):
         p.set_dt_next(tau)
 
         if self.dumpper:
-            self.snap_counter += 1
-            if (self.snap_counter >= self.snap_freq):
-                self.snap_counter -= self.snap_freq
-                self.dumpper.dump(p)
+            self.dumpper.dump(p.select(lambda x: x%self.snap_freq == 0, 'nstep'))
 
-        self.time += self.tstep / 2
         p = self.dkd(p, tau)
-        self.time += self.tstep / 2
+        self.time += tau
 
         p.set_dt_prev(tau)
         self.particles = p
@@ -222,7 +218,6 @@ class AdaptLF(LeapFrog):
         p.set_dt_next(tau)
         self.tstep = tau
 
-        self.snap_counter = self.snap_freq
         self.is_initialized = True
 
 
@@ -252,14 +247,10 @@ class AdaptLF(LeapFrog):
         self.tstep = tau
 
         if self.dumpper:
-            self.snap_counter += 1
-            if (self.snap_counter >= self.snap_freq):
-                self.snap_counter -= self.snap_freq
-                self.dumpper.dump(p)
+            self.dumpper.dump(p.select(lambda x: x%self.snap_freq == 0, 'nstep'))
 
-        self.time += self.tstep / 2
         p = self.dkd(p, tau)
-        self.time += self.tstep / 2
+        self.time += tau
 
         p.set_dt_prev(tau)
         p.update_tstep(p, self.eta)
