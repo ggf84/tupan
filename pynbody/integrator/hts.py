@@ -9,7 +9,7 @@ from __future__ import print_function
 import logging
 import heapq
 import numpy as np
-from .leapfrog import LeapFrog
+from .leapfrog import Base
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -19,70 +19,13 @@ logger = logging.getLogger(__name__)
 
 
 @decallmethods(timings)
-class HTS(LeapFrog):
+class HTS(Base):
     """
 
     """
     def __init__(self, eta, time, particles, **kwargs):
         super(HTS, self).__init__(eta, time, particles, **kwargs)
         self.meth_type = 0
-
-
-    def get_max_block_tstep(self, p):
-        max_tstep = p.max_dt_next()
-
-        power = int(np.log2(max_tstep) - 1)
-        max_block_tstep = 2.0**power
-
-        if (self.time+max_block_tstep)%(max_block_tstep) != 0:
-            max_block_tstep /= 2
-
-        return max_block_tstep
-
-
-    def initialize(self, t_end):
-        logger.info("Initializing integrator.")
-
-        p = self.particles
-
-        p.update_phi(p)
-        p.update_acc(p)
-        if self.pn_order > 0:
-            p.update_pnacc(p, self.pn_order, self.clight)
-        p.update_tstep(p, self.eta)
-
-        tau = 1.0/4
-#        tau = p.max_dt_next()
-#        tau = p.mean_dt_next()
-#        tau = p.harmonic_mean_dt_next()
-#        self.tstep = tau if self.time+tau < t_end else t_end-self.time
-
-#        tau = self.get_max_block_tstep(p)
-        self.tstep = tau
-
-        self.is_initialized = True
-
-
-    def finalize(self, t_end):
-        logger.info("Finalizing integrator.")
-
-        def final_dump(p, tau, stream):
-            slow, fast = self.split(tau, p)
-
-            if slow.n > 0:
-                slow.set_dt_next(tau)
-                if stream:
-                    stream.append(slow.select(lambda x: x%self.snap_freq == 0, 'nstep'))
-
-            if fast.n > 0: final_dump(fast, tau / 2, stream)
-
-        tau = self.tstep
-        p = self.particles
-
-        if self.dumpper:
-            stream = p.__class__()
-            final_dump(p, tau, stream)
-            self.dumpper.dump(stream)
 
 
     def dkd(self, slow, fast, tau):
@@ -95,8 +38,50 @@ class HTS(LeapFrog):
         if fast.n > 0: self.kick(slow, fast, tau)
         self.drift(slow, tau / 2)
 
+        slow.set_dt_prev(tau)
         slow.update_nstep()
         return slow, fast
+
+
+    def get_base_tstep(self, t_end):
+        tau = 1.0/4
+        self.tstep = tau if self.time + tau <= t_end else t_end - self.time
+        return self.tstep
+
+
+    def initialize(self, t_end):
+        logger.info("Initializing '%s' integrator.", self.__class__.__name__.lower())
+
+        p = self.particles
+
+        p.update_acc(p)
+        if self.pn_order > 0:
+            p.update_pnacc(p, self.pn_order, self.clight)
+
+        tau = self.get_base_tstep(t_end)
+        self.is_initialized = True
+
+
+    def finalize(self, t_end):
+        logger.info("Finalizing '%s' integrator.", self.__class__.__name__.lower())
+
+        def final_dump(p, tau, stream):
+            slow, fast = self.split(tau, p)
+
+            if slow.n > 0:
+                slow.set_dt_next(tau)
+                if stream:
+                    stream.append(slow)
+
+            if fast.n > 0: final_dump(fast, tau / 2, stream)
+
+        p = self.particles
+        tau = self.get_base_tstep(t_end)
+
+        if self.dumpper:
+            stream = p.__class__()
+            final_dump(p, tau, stream)
+            self.dumpper.dump(stream)
 
 
     def step(self, t_end):
@@ -106,8 +91,8 @@ class HTS(LeapFrog):
         if not self.is_initialized:
             self.initialize(t_end)
 
-        tau = self.tstep
         p = self.particles
+        tau = self.get_base_tstep(t_end)
 
         stream = None
         if self.dumpper:
@@ -115,43 +100,327 @@ class HTS(LeapFrog):
 
 
         if self.meth_type == 0:
-            p = self.meth0(p, tau, stream, True)
+            p = self.meth0(p, tau, True, stream)
 #            p = self.heapq0(p, tau, True)
         elif self.meth_type == 1:
-            self.meth1(p, tau, True)
+            p = self.meth1(p, tau, True, stream)
         elif self.meth_type == 2:
-            self.meth2(p, tau, True)
+            p = self.meth2(p, tau, True, stream)
         elif self.meth_type == 3:
-            self.meth3(p, tau, True)
+            p = self.meth3(p, tau, True, stream)
         elif self.meth_type == 4:
-            self.meth4(p, tau, True)
+            p = self.meth4(p, tau, True, stream)
         elif self.meth_type == 5:
-            self.meth5(p, tau, True)
+            p = self.meth5(p, tau, True, stream)
         elif self.meth_type == 6:
-            self.meth6(p, tau, True)
+            p = self.meth6(p, tau, True, stream)
         elif self.meth_type == 7:
-            self.meth7(p, tau, True)
+            p = self.meth7(p, tau, True, stream)
         elif self.meth_type == 8:
-            self.meth8(p, tau, True)
+            p = self.meth8(p, tau, True, stream)
         elif self.meth_type == 9:
-            self.meth9(p, tau, True)
+            p = self.meth9(p, tau, True, stream)
         else:
             raise ValueError("Unexpected HTS method type.")
 
-#        tau = 1.0/4
-#        tau = p.max_dt_next()
-#        tau = p.mean_dt_next()
-#        tau = p.harmonic_mean_dt_next()
-#        self.tstep = tau if self.time+tau < t_end else t_end-self.time
-
-#        tau = self.get_max_block_tstep(p)
-        self.tstep = tau
-        self.time += tau
 
         if stream:
             self.dumpper.dump(stream)
 
+        self.time += tau
         self.particles = p
+
+
+    ### split
+
+    def split(self, tau, p):
+        slow = p.select(lambda x: x >= tau, 'dt_next')
+        fast = p.select(lambda x: x < tau, 'dt_next')
+
+        # prevents the occurrence of a slow level with only one particle.
+        if slow.n == 1:
+            for obj in slow.values():
+                if obj.n:
+                    fast.append(obj.pop())
+
+        # prevents the occurrence of a fast level with only one particle.
+        if fast.n == 1:
+            for obj in fast.values():
+                if obj.n:
+                    slow.append(obj.pop())
+
+        if fast.n == 1: logger.error("fast level contains only *one* particle.")
+        if slow.n == 1: logger.error("slow level contains only *one* particle.")
+        if slow.n + fast.n != p.n: logger.error("slow.n + fast.n != p.n: %d, %d, %d.", slow.n, fast.n, p.n)
+
+        return slow, fast
+
+
+    ### join
+
+    def join(self, slow, fast, inplace=True):
+        if fast.n == 0:
+            return slow
+        if slow.n == 0:
+            return fast
+        if inplace:
+            p = slow
+        else:
+            p = slow.copy()
+        p.append(fast)
+        return p
+
+
+    ### meth0
+
+    def meth0(self, p, tau, update_tstep, stream):
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(tau, p)
+
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if fast.n > 0: fast = self.meth0(fast, tau / 2, False, stream)
+        if slow.n > 0: slow, fast = self.dkd(slow, fast, tau)
+        if fast.n > 0: fast = self.meth0(fast, tau / 2, True, stream)
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    #
+    # the following methods are for experimental purposes only.
+    #
+
+    ### meth1
+
+    def meth1(self, p, tau, update_tstep, stream):      # This method does not conserves the center of mass.
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(tau, p)
+
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if slow.n > 0: slow, fast = self.dkd(slow, fast, tau / 2)
+        if fast.n > 0: fast = self.meth1(fast, tau / 2, True, stream)
+        if fast.n > 0: fast = self.meth1(fast, tau / 2, True, stream)
+        if slow.n > 0: slow, fast = self.dkd(slow, fast, tau / 2)
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    ### meth2
+
+    def meth2(self, p, tau, update_tstep, stream):
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(tau, p)
+
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
+        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
+        if fast.n > 0: fast = self.meth2(fast, tau / 2, True, stream)
+        if slow.n > 0: slow, empty = self.dkd(slow, p.empty, tau)
+        if fast.n > 0: fast = self.meth2(fast, tau / 2, True, stream)
+        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
+        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    ### meth3
+
+    def meth3(self, p, tau, update_tstep, stream):      # This method does not conserves the center of mass.
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(tau, p)
+
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if fast.n > 0: fast = self.meth3(fast, tau / 2, False, stream)
+        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
+        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
+        if slow.n > 0: slow, empty = self.dkd(slow, p.empty, tau)
+        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
+        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
+        if fast.n > 0: fast = self.meth3(fast, tau / 2, True, stream)
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    ### meth4
+
+    def meth4(self, p, tau, update_tstep, stream):
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(tau, p)
+
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if slow.n > 0: slow, empty = self.dkd(slow, p.empty, tau / 2)
+        if fast.n > 0: fast = self.meth4(fast, tau / 2, False, stream)
+        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
+        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
+        if fast.n > 0: fast = self.meth4(fast, tau / 2, True, stream)
+        if slow.n > 0: slow, empty = self.dkd(slow, p.empty, tau / 2)
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    ### meth5
+
+    def meth5(self, p, tau, update_tstep, stream):
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(tau, p)
+
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if fast.n > 0: fast = self.meth5(fast, tau / 2, False, stream)
+        if slow.n > 0: slow, empty = self.dkd(slow, p.empty, tau / 2)
+        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
+        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
+        if slow.n > 0: slow, empty = self.dkd(slow, p.empty, tau / 2)
+        if fast.n > 0: fast = self.meth5(fast, tau / 2, True, stream)
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    ### meth6
+
+    def meth6(self, p, tau, update_tstep, stream):      # results are identical to the meth0
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(tau, p)
+
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if slow.n > 0: self.drift(slow, tau / 2)
+        if fast.n > 0: fast = self.meth6(fast, tau / 2, False, stream)
+        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
+        if slow.n > 0: self.kick(slow, slow, tau)
+        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
+        if fast.n > 0: fast = self.meth6(fast, tau / 2, True, stream)
+        if slow.n > 0: self.drift(slow, tau / 2)
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    ### meth7
+
+    def meth7(self, p, tau, update_tstep, stream):      # results are almost identical to the meth0
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(tau, p)
+
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if slow.n > 0: self.drift(slow, tau / 2)
+        if slow.n > 0: self.kick(slow, slow, tau / 2)
+        if fast.n > 0: fast = self.meth7(fast, tau / 2, False, stream)
+        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
+        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
+        if fast.n > 0: fast = self.meth7(fast, tau / 2, True, stream)
+        if slow.n > 0: self.kick(slow, slow, tau / 2)
+        if slow.n > 0: self.drift(slow, tau / 2)
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    ### meth8
+
+    def meth8(self, p, tau, update_tstep, stream):      # This method does not conserves the center of mass.
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(tau, p)
+
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if slow.n > 0: self.drift(slow, tau / 2)
+        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
+        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
+        if fast.n > 0: fast = self.meth8(fast, tau / 2, True, stream)
+        if slow.n > 0: self.kick(slow, slow, tau)
+        if fast.n > 0: fast = self.meth8(fast, tau / 2, True, stream)
+        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
+        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
+        if slow.n > 0: self.drift(slow, tau / 2)
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    ### meth9
+
+    def meth9(self, p, tau, update_tstep, stream):      # This method does not conserves the center of mass.
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(tau, p)
+
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if slow.n > 0: self.drift(slow, tau / 2)
+        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
+        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
+        if slow.n > 0: self.kick(slow, slow, tau / 2)
+        if fast.n > 0: fast = self.meth9(fast, tau / 2, True, stream)
+        if fast.n > 0: fast = self.meth9(fast, tau / 2, True, stream)
+        if slow.n > 0: self.kick(slow, slow, tau / 2)
+        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
+        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
+        if slow.n > 0: self.drift(slow, tau / 2)
+
+        p = self.join(slow, fast)
+
+        return p
+
 
 
     ### heapq0
@@ -210,241 +479,6 @@ class HTS(LeapFrog):
 #                tnext += tau
 #                heapq.heappush(p, (tnext, tau, p, slow, fast, indexing))
 
-
-
-
-
-    ### meth0
-
-    def meth0(self, p, tau, stream, update_tstep):
-#        if update_tstep: p.update_tstep(p, self.eta)      # False/True
-#        if update_tstep: p.update_phi(p)                     # False/True
-
-        slow, fast = self.split(tau, p)
-
-        if slow.n > 0:
-            slow.set_dt_next(tau)
-            if stream:
-                stream.append(slow.select(lambda x: x%self.snap_freq == 0, 'nstep'))
-
-        if fast.n > 0: fast = self.meth0(fast, tau / 2, stream, True)
-        if slow.n > 0: slow, fast = self.dkd(slow, fast, tau)
-        if fast.n > 0: fast = self.meth0(fast, tau / 2, stream, False)
-
-        if slow.n > 0:
-            slow.set_dt_prev(tau)
-
-        p = self.join(slow, fast)
-        if update_tstep: p.update_tstep(p, self.eta)      # True/False
-        if update_tstep: p.update_phi(p)                     # True/False
-
-        return p
-
-
-    ### meth1
-
-    def meth1(self, p, tau, update_tstep):
-        if update_tstep: p.update_tstep(p, self.eta)
-        slow, fast, indexing = self.split(tau, p)
-
-        if slow.n > 0: self.dkd(slow, fast, tau / 2)
-        if fast.n > 0: self.meth1(fast, tau / 2, True)
-        if fast.n > 0: self.meth1(fast, tau / 2, True)
-        if slow.n > 0: self.dkd(slow, fast, tau / 2)
-
-        self.merge(p, slow, fast, indexing)
-#        if update_tstep: p.update_tstep(p, self.eta)
-
-
-    ### meth2
-
-    def meth2(self, p, tau, update_tstep):
-        if update_tstep: p.update_tstep(p, self.eta)
-        slow, fast, indexing = self.split(tau, p)
-
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if fast.n > 0: self.meth2(fast, tau / 2, True)
-        if slow.n > 0: self.dkd(slow, fast, tau)
-        if fast.n > 0: self.meth2(fast, tau / 2, True)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-
-        self.merge(p, slow, fast, indexing)
-#        if update_tstep: p.update_tstep(p, self.eta)
-
-
-    ### meth3
-
-    def meth3(self, p, tau, update_tstep):  # This method does not conserves the center of mass.
-        if update_tstep: p.update_tstep(p, self.eta)
-        slow, fast, indexing = self.split(tau, p)
-
-        if fast.n > 0: self.meth3(fast, tau / 2, False)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0: self.dkd(slow, fast, tau)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if fast.n > 0: self.meth3(fast, tau / 2, True)
-
-        self.merge(p, slow, fast, indexing)
-#        if update_tstep: p.update_tstep(p, self.eta)
-
-
-    ### meth4
-
-    def meth4(self, p, tau, update_tstep):
-        if update_tstep: p.update_tstep(p, self.eta)
-        slow, fast, indexing = self.split(tau, p)
-
-        if slow.n > 0: self.dkd(slow, fast, tau / 2)
-        if fast.n > 0: self.meth4(fast, tau / 2, False)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
-        if fast.n > 0: self.meth4(fast, tau / 2, True)
-        if slow.n > 0: self.dkd(slow, fast, tau / 2)
-
-        self.merge(p, slow, fast, indexing)
-#        if update_tstep: p.update_tstep(p, self.eta)
-
-
-    ### meth5
-
-    def meth5(self, p, tau, update_tstep):
-        if update_tstep: p.update_tstep(p, self.eta)
-        slow, fast, indexing = self.split(tau, p)
-
-        if fast.n > 0: self.meth5(fast, tau / 2, False)
-        if slow.n > 0: self.dkd(slow, fast, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
-        if slow.n > 0: self.dkd(slow, fast, tau / 2)
-        if fast.n > 0: self.meth5(fast, tau / 2, True)
-
-        self.merge(p, slow, fast, indexing)
-#        if update_tstep: p.update_tstep(p, self.eta)
-
-
-    ### meth6
-
-    def meth6(self, p, tau, update_tstep):
-        if update_tstep: p.update_tstep(p, self.eta)
-        slow, fast, indexing = self.split(tau, p)
-
-        if slow.n > 0: self.drift(slow, tau / 2)
-        if fast.n > 0: self.meth6(fast, tau / 2, False)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
-        if slow.n > 0: self.kick(slow, slow, tau)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
-        if fast.n > 0: self.meth6(fast, tau / 2, True)
-        if slow.n > 0: self.drift(slow, tau / 2)
-
-        self.merge(p, slow, fast, indexing)
-#        if update_tstep: p.update_tstep(p, self.eta)
-
-
-    ### meth7
-
-    def meth7(self, p, tau, update_tstep):
-        if update_tstep: p.update_tstep(p, self.eta)
-        slow, fast, indexing = self.split(tau, p)
-
-        if slow.n > 0: self.drift(slow, tau / 2)
-        if slow.n > 0: self.kick(slow, slow, tau / 2)
-        if fast.n > 0: self.meth7(fast, tau / 2, False)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
-        if fast.n > 0: self.meth7(fast, tau / 2, True)
-        if slow.n > 0: self.kick(slow, slow, tau / 2)
-        if slow.n > 0: self.drift(slow, tau / 2)
-
-        self.merge(p, slow, fast, indexing)
-#        if update_tstep: p.update_tstep(p, self.eta)
-
-
-    ### meth8
-
-    def meth8(self, p, tau, update_tstep):
-        if update_tstep: p.update_tstep(p, self.eta)
-        slow, fast, indexing = self.split(tau, p)
-
-        if slow.n > 0: self.drift(slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if fast.n > 0: self.meth8(fast, tau / 2, True)
-        if slow.n > 0: self.kick(slow, slow, tau)
-        if fast.n > 0: self.meth8(fast, tau / 2, True)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if slow.n > 0: self.drift(slow, tau / 2)
-
-        self.merge(p, slow, fast, indexing)
-#        if update_tstep: p.update_tstep(p, self.eta)
-
-
-    ### meth9
-
-    def meth9(self, p, tau, update_tstep):
-        if update_tstep: p.update_tstep(p, self.eta)
-        slow, fast, indexing = self.split(tau, p)
-
-        if slow.n > 0: self.drift(slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if slow.n > 0: self.kick(slow, slow, tau / 2)
-        if fast.n > 0: self.meth9(fast, tau / 2, True)
-        if fast.n > 0: self.meth9(fast, tau / 2, True)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if slow.n > 0: self.kick(slow, slow, tau / 2)
-        if slow.n > 0: self.drift(slow, tau / 2)
-
-        self.merge(p, slow, fast, indexing)
-#        if update_tstep: p.update_tstep(p, self.eta)
-
-
-    ### split
-
-    def split(self, tau, p):
-        slow = p.__class__()
-        fast = p.__class__()
-        for obj in p.values():
-            if obj.n:
-                is_fast = obj.dt_next < tau
-                is_slow = ~is_fast
-                slow.append(obj[is_slow])
-                fast.append(obj[is_fast])
-
-        # prevents the occurrence of a slow level with only one particle.
-        if slow.n == 1:
-            for obj in slow.values():
-                if obj.n:
-                    fast.append(obj.pop())
-
-        # prevents the occurrence of a fast level with only one particle.
-        if fast.n == 1:
-            for obj in fast.values():
-                if obj.n:
-                    slow.append(obj.pop())
-
-        if fast.n == 1: logger.error("fast level contains only *one* particle.")
-        if slow.n == 1: logger.error("slow level contains only *one* particle.")
-        if slow.n + fast.n != p.n: logger.error("slow.n + fast.n != p.n: %d, %d, %d.", slow.n, fast.n, p.n)
-
-        return slow, fast
-
-
-    ### join
-
-    def join(self, slow, fast):
-        if fast.n == 0:
-            return slow
-        if slow.n == 0:
-            return fast
-        p = slow
-        p.append(fast)
-        return p
 
 
 ########## end of file ##########

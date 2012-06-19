@@ -16,8 +16,7 @@ __all__ = ["LeapFrog"]
 logger = logging.getLogger(__name__)
 
 
-@decallmethods(timings)
-class LeapFrog(object):
+class Base(object):
     """
 
     """
@@ -25,7 +24,6 @@ class LeapFrog(object):
         self.eta = eta
         self.time = time
         self.particles = particles
-        self.tstep = 0.0
         self.is_initialized = False
 
         self.pn_order = kwargs.pop("pn_order", 0)
@@ -35,7 +33,7 @@ class LeapFrog(object):
                             "light argument 'clight' when using 'pn_order' > 0.")
 
         self.dumpper = kwargs.pop("dumpper", None)
-        self.snap_freq = kwargs.pop("snap_freq", 1)
+        self.dump_freq = kwargs.pop("dump_freq", 1)
         if kwargs:
             msg = "{0}.__init__ received unexpected keyword arguments: {1}."
             raise TypeError(msg.format(self.__class__.__name__,", ".join(kwargs.keys())))
@@ -118,6 +116,16 @@ class LeapFrog(object):
                         obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
 
 
+
+@decallmethods(timings)
+class LeapFrog(Base):
+    """
+
+    """
+    def __init__(self, eta, time, particles, **kwargs):
+        super(LeapFrog, self).__init__(eta, time, particles, **kwargs)
+
+
     def dkd(self, p, tau):
         """
 
@@ -130,28 +138,30 @@ class LeapFrog(object):
         return p
 
 
+    def get_base_tstep(self, t_end):
+        tau = self.eta
+        self.tstep = tau if self.time + tau <= t_end else t_end - self.time
+        return self.tstep
+
+
     def initialize(self, t_end):
-        logger.info("Initializing integrator.")
+        logger.info("Initializing '%s' integrator.", self.__class__.__name__.lower())
 
         p = self.particles
 
         p.update_acc(p)
         if self.pn_order > 0:
             p.update_pnacc(p, self.pn_order, self.clight)
-        p.update_tstep(p, self.eta)
 
-        tau = self.eta
-        p.set_dt_next(tau)
-        self.tstep = tau
-
+        tau = self.get_base_tstep(t_end)
         self.is_initialized = True
 
 
     def finalize(self, t_end):
-        logger.info("Finalizing integrator.")
+        logger.info("Finalizing '%s' integrator.", self.__class__.__name__.lower())
 
         p = self.particles
-        tau = self.eta
+        tau = self.get_base_tstep(t_end)
         p.set_dt_next(tau)
 
         if self.dumpper:
@@ -165,13 +175,12 @@ class LeapFrog(object):
         if not self.is_initialized:
             self.initialize(t_end)
 
-        tau = self.tstep
-
         p = self.particles
+        tau = self.get_base_tstep(t_end)
         p.set_dt_next(tau)
 
         if self.dumpper:
-            self.dumpper.dump(p.select(lambda x: x%self.snap_freq == 0, 'nstep'))
+            self.dumpper.dump(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         p = self.dkd(p, tau)
         self.time += tau
@@ -190,42 +199,46 @@ class AdaptLF(LeapFrog):
         super(AdaptLF, self).__init__(eta, time, particles, **kwargs)
 
 
-    def get_min_block_tstep(self, p, t_end):
+    def get_min_block_tstep(self, p):
         min_tstep = p.min_dt_next()
 
         power = int(np.log2(min_tstep) - 1)
         min_block_tstep = 2.0**power
 
-        if (self.time+min_block_tstep)%(min_block_tstep) != 0:
+        next_time = self.time + min_block_tstep
+        if next_time % min_block_tstep != 0:
             min_block_tstep /= 2
 
-#        tau = min_block_tstep if self.time+min_block_tstep < t_end else t_end-self.time
-#        return tau
         return min_block_tstep
 
 
+    def get_base_tstep(self, t_end):
+        p = self.particles
+        tau = self.get_min_block_tstep(p)
+        self.tstep = tau if self.time + tau <= t_end else t_end - self.time
+        return self.tstep
+
+
     def initialize(self, t_end):
-        logger.info("Initializing integrator.")
+        logger.info("Initializing '%s' integrator.", self.__class__.__name__.lower())
 
         p = self.particles
 
         p.update_acc(p)
         if self.pn_order > 0:
             p.update_pnacc(p, self.pn_order, self.clight)
+
         p.update_tstep(p, self.eta)
-
-        tau = self.get_min_block_tstep(p, t_end)
-        p.set_dt_next(tau)
-        self.tstep = tau
-
+        tau = self.get_base_tstep(t_end)
         self.is_initialized = True
 
 
     def finalize(self, t_end):
-        logger.info("Finalizing integrator.")
+        logger.info("Finalizing '%s' integrator.", self.__class__.__name__.lower())
 
         p = self.particles
-        tau = self.get_min_block_tstep(p, t_end)
+        p.update_tstep(p, self.eta)
+        tau = self.get_base_tstep(t_end)
         p.set_dt_next(tau)
 
         if self.dumpper:
@@ -239,21 +252,18 @@ class AdaptLF(LeapFrog):
         if not self.is_initialized:
             self.initialize(t_end)
 
-        tau = self.tstep
         p = self.particles
-
-        tau = self.get_min_block_tstep(p, t_end)
+        p.update_tstep(p, self.eta)
+        tau = self.get_base_tstep(t_end)
         p.set_dt_next(tau)
-        self.tstep = tau
 
         if self.dumpper:
-            self.dumpper.dump(p.select(lambda x: x%self.snap_freq == 0, 'nstep'))
+            self.dumpper.dump(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         p = self.dkd(p, tau)
         self.time += tau
 
         p.set_dt_prev(tau)
-        p.update_tstep(p, self.eta)
         self.particles = p
 
 

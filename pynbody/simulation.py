@@ -139,7 +139,7 @@ class Simulation(object):
                                      pn_order=self.args.pn_order,
                                      clight=self.args.clight,
                                      dumpper=self.io,
-                                     snap_freq=self.args.snap_freq)
+                                     dump_freq=self.args.dump_freq)
         self.integrator.initialize(self.args.t_end)
 
         # Initializes the diagnostic of the simulation.
@@ -151,7 +151,7 @@ class Simulation(object):
         # Initializes some counters.
         self.gl_steps = 0
         self.res_steps = 0
-        self.diag_steps = 0
+        self.report_steps = 0
 
 
     def dump_restart_file(self):
@@ -173,26 +173,23 @@ class Simulation(object):
 
         while (self.integrator.current_time < self.args.t_end):
             self.integrator.step(self.args.t_end)
+            self.report_steps += 1
+            if (self.report_steps >= self.args.report_freq):
+                self.report_steps -= self.args.report_freq
+                particles = self.integrator.particles
+                self.dia.print_diagnostic(self.integrator.current_time,
+                                          self.integrator.tstep,
+                                          particles)
+            self.res_steps += 1
+            if (self.res_steps >= self.args.restart_freq):
+                self.res_steps -= self.args.restart_freq
+                self.dump_restart_file()
             self.gl_steps += 1
             if (self.gl_steps >= self.args.gl_freq):
                 self.gl_steps -= self.args.gl_freq
                 if self.viewer:
                     particles = self.integrator.particles
                     self.viewer.show_event(particles)
-            self.diag_steps += 1
-            if (self.diag_steps >= self.args.diag_freq):
-                self.diag_steps -= self.args.diag_freq
-                particles = self.integrator.particles
-                self.dia.print_diagnostic(self.integrator.current_time,
-                                          self.integrator.tstep,
-                                          particles)
-            self.res_steps += 1
-            if (self.res_steps >= self.args.res_freq):
-                self.res_steps -= self.args.res_freq
-                self.dump_restart_file()
-
-        self.dump_restart_file()
-        self.integrator.finalize(self.args.t_end)
 
         # final IO/diag operations
         if self.dia.time < self.args.t_end:
@@ -200,6 +197,8 @@ class Simulation(object):
             self.dia.print_diagnostic(self.integrator.current_time,
                                   self.integrator.tstep,
                                   particles)
+
+        self.integrator.finalize(self.args.t_end)
 
         if self.viewer:
             particles = self.integrator.particles
@@ -326,19 +325,19 @@ def parse_args():
                         help="File name where log messages should be written ("
                              "type: str, default: sys.stdout)."
                        )
-    newrun.add_argument("-d", "--diag_freq",
+    newrun.add_argument("-r", "--report_freq",
                         type=int,
-                        default=64,
-                        help="Number of time-steps between diagnostic of the "
-                             "simulation (type: int, default: 64)."
+                        default=4,
+                        help="Number of time-steps between diagnostic reports "
+                        "of the simulation (type: int, default: 64)."
                        )
-    newrun.add_argument("-s", "--snap_freq",
+    newrun.add_argument("-d", "--dump_freq",
                         type=int,
                         default=16,
-                        help="Number of time-steps between snapshots of the "
-                             "simulation (type: int, default: 16)."
+                        help="Number of time-steps between dump of snapshots "
+                             "(type: int, default: 16)."
                        )
-    newrun.add_argument("-r", "--res_freq",
+    newrun.add_argument("--restart_freq",
                         type=int,
                         default=1024,
                         help="Number of time-steps between rewrites of the "

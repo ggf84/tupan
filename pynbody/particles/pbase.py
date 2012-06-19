@@ -53,7 +53,7 @@ class Pbase(object):
         return self.n
 
     def __getitem__(self, index):
-        obj = copy.copy(self)
+        obj = self.__class__()
         obj.data = self.data[index]
         return obj
 
@@ -63,16 +63,16 @@ class Pbase(object):
     def append(self, obj):
         self.data = np.append(self.data, obj.data)
 
-    def remove(self, key):
-        index = np.where(self.key == key)
+    def remove(self, id):
+        index = np.where(self.id == id)
         self.data = np.delete(self.data, index)
 
     def insert(self, index, obj):
         self.data = np.insert(self.data, index, obj.data)
 
-    def pop(self, key=None):
-        if key:
-            index = np.where(self.key == key)
+    def pop(self, id=None):
+        if id:
+            index = np.where(self.id == id)
         else:
             index = -1
         obj = self[index]

@@ -53,6 +53,10 @@ class Particles(dict):
     def n(self):
         return sum([obj.n for obj in self.values()])
 
+    @property
+    def empty(self):
+        return self.__class__()
+
     def copy(self):
         return copy.deepcopy(self)
 
