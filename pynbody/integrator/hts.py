@@ -58,7 +58,6 @@ class HTS(Base):
         if self.pn_order > 0:
             p.update_pnacc(p, self.pn_order, self.clight)
 
-        tau = self.get_base_tstep(t_end)
         self.is_initialized = True
 
 
@@ -78,13 +77,15 @@ class HTS(Base):
         p = self.particles
         tau = self.get_base_tstep(t_end)
 
+        if self.reporter:
+            self.reporter.report(self.time, p)
         if self.dumpper:
             stream = p.__class__()
             final_dump(p, tau, stream)
             self.dumpper.dump(stream)
 
 
-    def step(self, t_end):
+    def evolve_step(self, t_end):
         """
 
         """
@@ -95,6 +96,8 @@ class HTS(Base):
         tau = self.get_base_tstep(t_end)
 
         stream = None
+        if self.reporter:
+            self.reporter.report(self.time, p)
         if self.dumpper:
             stream = p.__class__()
 

@@ -11,7 +11,7 @@ import numpy as np
 from ..lib.utils.timing import decallmethods, timings
 
 
-__all__ = ["LeapFrog"]
+__all__ = ["LeapFrog", "AdaptLF"]
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,7 @@ class Base(object):
             raise TypeError("'clight' is not defined. Please set the speed of "
                             "light argument 'clight' when using 'pn_order' > 0.")
 
+        self.reporter = kwargs.pop("reporter", None)
         self.dumpper = kwargs.pop("dumpper", None)
         self.dump_freq = kwargs.pop("dump_freq", 1)
         if kwargs:
@@ -134,6 +135,7 @@ class LeapFrog(Base):
         self.kick(p, p, tau)
         self.drift(p, tau / 2)
 
+        p.set_dt_prev(tau)
         p.update_nstep()
         return p
 
@@ -153,7 +155,6 @@ class LeapFrog(Base):
         if self.pn_order > 0:
             p.update_pnacc(p, self.pn_order, self.clight)
 
-        tau = self.get_base_tstep(t_end)
         self.is_initialized = True
 
 
@@ -164,11 +165,13 @@ class LeapFrog(Base):
         tau = self.get_base_tstep(t_end)
         p.set_dt_next(tau)
 
+        if self.reporter:
+            self.reporter.report(self.time, p)
         if self.dumpper:
             self.dumpper.dump(p)
 
 
-    def step(self, t_end):
+    def evolve_step(self, t_end):
         """
 
         """
@@ -179,13 +182,14 @@ class LeapFrog(Base):
         tau = self.get_base_tstep(t_end)
         p.set_dt_next(tau)
 
+        if self.reporter:
+            self.reporter.report(self.time, p)
         if self.dumpper:
             self.dumpper.dump(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         p = self.dkd(p, tau)
         self.time += tau
 
-        p.set_dt_prev(tau)
         self.particles = p
 
 
@@ -214,57 +218,10 @@ class AdaptLF(LeapFrog):
 
     def get_base_tstep(self, t_end):
         p = self.particles
+        p.update_tstep(p, self.eta)
         tau = self.get_min_block_tstep(p)
         self.tstep = tau if self.time + tau <= t_end else t_end - self.time
         return self.tstep
-
-
-    def initialize(self, t_end):
-        logger.info("Initializing '%s' integrator.", self.__class__.__name__.lower())
-
-        p = self.particles
-
-        p.update_acc(p)
-        if self.pn_order > 0:
-            p.update_pnacc(p, self.pn_order, self.clight)
-
-        p.update_tstep(p, self.eta)
-        tau = self.get_base_tstep(t_end)
-        self.is_initialized = True
-
-
-    def finalize(self, t_end):
-        logger.info("Finalizing '%s' integrator.", self.__class__.__name__.lower())
-
-        p = self.particles
-        p.update_tstep(p, self.eta)
-        tau = self.get_base_tstep(t_end)
-        p.set_dt_next(tau)
-
-        if self.dumpper:
-            self.dumpper.dump(p)
-
-
-    def step(self, t_end):
-        """
-
-        """
-        if not self.is_initialized:
-            self.initialize(t_end)
-
-        p = self.particles
-        p.update_tstep(p, self.eta)
-        tau = self.get_base_tstep(t_end)
-        p.set_dt_next(tau)
-
-        if self.dumpper:
-            self.dumpper.dump(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        p = self.dkd(p, tau)
-        self.time += tau
-
-        p.set_dt_prev(tau)
-        self.particles = p
 
 
 ########## end of file ##########

@@ -33,6 +33,7 @@ class Hermite(object):
             raise TypeError("'clight' is not defined. Please set the speed of "
                             "light argument 'clight' when using 'pn_order' > 0.")
 
+        self.reporter = kwargs.pop("reporter", None)
         self.dumpper = kwargs.pop("dumpper", None)
         self.dump_freq = kwargs.pop("dump_freq", 1)
         if kwargs:
@@ -77,6 +78,7 @@ class Hermite(object):
             p.update_acc_jerk(p)
             self.correct(p, tau)
 
+        p.set_dt_prev(tau)
         p.update_nstep()
         return p
 
@@ -96,7 +98,6 @@ class Hermite(object):
         if self.pn_order > 0:
             p.update_pnacc(p, self.pn_order, self.clight)
 
-        tau = self.get_base_tstep(t_end)
         self.is_initialized = True
 
 
@@ -107,11 +108,13 @@ class Hermite(object):
         tau = self.get_base_tstep(t_end)
         p.set_dt_next(tau)
 
+        if self.reporter:
+            self.reporter.report(self.time, p)
         if self.dumpper:
             self.dumpper.dump(p)
 
 
-    def step(self, t_end):
+    def evolve_step(self, t_end):
         """
 
         """
@@ -122,13 +125,14 @@ class Hermite(object):
         tau = self.get_base_tstep(t_end)
         p.set_dt_next(tau)
 
+        if self.reporter:
+            self.reporter.report(self.time, p)
         if self.dumpper:
             self.dumpper.dump(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         p = self.pec(2, p, tau)
         self.time += tau
 
-        p.set_dt_prev(tau)
         self.particles = p
 
 

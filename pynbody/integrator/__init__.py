@@ -47,15 +47,15 @@ class Integrator(object):
     def finalize(self, t_end):
         self.integrator.finalize(t_end)
 
-    def step(self, t_end):
-        self.integrator.step(t_end)
+    def evolve_step(self, t_end):
+        self.integrator.evolve_step(t_end)
 
     @property
     def tstep(self):
         return self.integrator.tstep
 
     @property
-    def current_time(self):
+    def time(self):
         return self.integrator.time
 
     @property

@@ -38,9 +38,11 @@ class Diagnostic(object):
     """
 
     """
-    def __init__(self, fname, particles):
-        self.time = 0.0
+    def __init__(self, fname, time, particles, report_freq):
         self.fname = fname
+        self.time = time
+        self.report_freq = report_freq
+        self.nreport = 0
 
         particles.update_phi(particles)
         self.ke0 = particles.get_total_kinetic_energy()
@@ -53,8 +55,8 @@ class Diagnostic(object):
         self.lmom0 = particles.get_total_linear_momentum()
         self.amom0 = particles.get_total_angular_momentum()
 
-        self.ceerr = 0.0
         self.count = 0
+        self.ceerr = 0.0
 
         self.print_header()
 
@@ -69,21 +71,28 @@ class Diagnostic(object):
               '{5:10s} {6:10s} {7:10s} '\
               '{8:10s} {9:10s} {10:10s} '\
               '{11:10s}'
-        myprint(fmt.format('#00:time', '#01:tstep',
+        myprint(fmt.format('#00:time', '#01:dtime',
                            '#02:ke', '#03:pe', '#04:te',
-                           '#05:ve', '#06:eerr', '#07:geerr',
+                           '#05:virial', '#06:eerr', '#07:geerr',
                            '#08:rcom', '#09:vcom', '#10:lmom',
                            '#11:amom'),
                 self.fname, 'w')
 
-    def print_diagnostic(self, time, tstep, particles):
+
+    def report(self, time, particles):
+        if self.nreport % self.report_freq == 0:
+            self.print_diagnostic(time, time-self.time, particles)
+        self.nreport += 1
+
+
+    def print_diagnostic(self, time, dtime, particles):
         self.time = time
 
         particles.update_phi(particles)
         ke = particles.get_total_kinetic_energy()
         pe = particles.get_total_potential_energy()
         te = ke + pe
-        ve = ke + te
+        virial = ke / (-pe)
 
         rcom = particles.get_center_of_mass_position()
         vcom = particles.get_center_of_mass_velocity()
@@ -91,22 +100,22 @@ class Diagnostic(object):
         amom = particles.get_total_angular_momentum()
 
         eerr = (te-self.te0)/(-pe)
-        self.ceerr += eerr**2
         self.count += 1
+        self.ceerr += eerr**2
         geerr = math.sqrt(self.ceerr / self.count)
         dRcom = (((rcom-self.rcom0)**2).sum())**0.5
         dVcom = (((vcom-self.vcom0)**2).sum())**0.5
         dLmom = (((lmom-self.lmom0)**2).sum())**0.5
         dAmom = (((amom-self.amom0)**2).sum())**0.5
 
-        fmt = '{time:< 13.6e} {tstep:< 10.3e} '\
+        fmt = '{time:< 13.6e} {dtime:< 10.3e} '\
               '{ke:< 10.3e} {pe:< 10.3e} {te:< 15.8e} '\
-              '{ve:< 10.3e} {eerr:< 10.3e} {geerr:< 10.3e} '\
+              '{virial:< 10.3e} {eerr:< 10.3e} {geerr:< 10.3e} '\
               '{rcom:< 10.3e} {vcom:< 10.3e} {lmom:< 10.3e} '\
               '{amom:< 10.3e}'
-        myprint(fmt.format(time=time, tstep=tstep,
+        myprint(fmt.format(time=time, dtime=dtime,
                            ke=ke, pe=pe,
-                           te=te, ve=ve,
+                           te=te, virial=virial,
                            eerr=eerr, geerr=geerr, rcom=dRcom,
                            vcom=dVcom, lmom=dLmom, amom=dAmom),
                 self.fname, 'a')
@@ -126,32 +135,35 @@ class Simulation(object):
         pprint(args.__dict__, stream=sys.stderr)
         print('#'*40, file=sys.stderr)
 
-        # Read the initial conditions.
+        # Read the initial conditions
         fname = self.args.input_file
         particles = IO(fname).load()
 
-        # Initializes snapshots output.
+        # Initializes snapshots output
         self.io = IO("snapshots", output_format=self.args.output_format)
 
-        # Initializes the integrator.
-        self.integrator = Integrator(self.args.eta, self.args.t_begin, particles,
+        # Initializes the diagnostic report of the simulation
+        self.dia = Diagnostic(self.args.log_file,
+                              self.args.t_begin,
+                              particles,
+                              self.args.report_freq
+                             )
+
+        # Initializes the integrator
+        self.integrator = Integrator(self.args.eta,
+                                     self.args.t_begin,
+                                     particles,
                                      method=self.args.meth,
                                      pn_order=self.args.pn_order,
                                      clight=self.args.clight,
+                                     reporter=self.dia,
                                      dumpper=self.io,
-                                     dump_freq=self.args.dump_freq)
-        self.integrator.initialize(self.args.t_end)
+                                     dump_freq=self.args.dump_freq,
+                                    )
 
-        # Initializes the diagnostic of the simulation.
-        self.dia = Diagnostic(self.args.log_file, particles)
-        self.dia.print_diagnostic(self.integrator.current_time,
-                                  self.integrator.tstep,
-                                  particles)
-
-        # Initializes some counters.
+        # Initializes some counters
         self.gl_steps = 0
         self.res_steps = 0
-        self.report_steps = 0
 
 
     def dump_restart_file(self):
@@ -171,33 +183,23 @@ class Simulation(object):
         if self.viewer:
             self.viewer.initialize()
 
-        while (self.integrator.current_time < self.args.t_end):
-            self.integrator.step(self.args.t_end)
-            self.report_steps += 1
-            if (self.report_steps >= self.args.report_freq):
-                self.report_steps -= self.args.report_freq
-                particles = self.integrator.particles
-                self.dia.print_diagnostic(self.integrator.current_time,
-                                          self.integrator.tstep,
-                                          particles)
-            self.res_steps += 1
-            if (self.res_steps >= self.args.restart_freq):
-                self.res_steps -= self.args.restart_freq
+        while (self.integrator.time < self.args.t_end):
+            # evolve a single time-step
+            self.integrator.evolve_step(self.args.t_end)
+
+            # dump restart file
+            if self.res_steps % self.args.restart_freq == 0:
                 self.dump_restart_file()
-            self.gl_steps += 1
-            if (self.gl_steps >= self.args.gl_freq):
-                self.gl_steps -= self.args.gl_freq
+            self.res_steps += 1
+
+            # call GL viewer (if enabled)
+            if self.gl_steps % self.args.gl_freq == 0:
                 if self.viewer:
                     particles = self.integrator.particles
                     self.viewer.show_event(particles)
+            self.gl_steps += 1
 
-        # final IO/diag operations
-        if self.dia.time < self.args.t_end:
-            particles = self.integrator.particles
-            self.dia.print_diagnostic(self.integrator.current_time,
-                                  self.integrator.tstep,
-                                  particles)
-
+        # Finalize the integrator
         self.integrator.finalize(self.args.t_end)
 
         if self.viewer:
