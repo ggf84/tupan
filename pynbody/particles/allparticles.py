@@ -36,6 +36,7 @@ class Particles(dict):
                                         body=Body(),
                                         blackhole=BlackHole(),
                                        )
+        self.__dict__.update(self)
 
 
     #
@@ -250,10 +251,10 @@ class Particles(dict):
         """
         Update the individual post-newtonian gravitational acceleration due to other particles.
         """
-        ni = self['blackhole'].n
-        nj = objs['blackhole'].n
+        ni = self.blackhole.n
+        nj = objs.blackhole.n
         if ni and nj:
-            gravity.pnacc.set_args(self['blackhole'], objs['blackhole'], pn_order, clight)
+            gravity.pnacc.set_args(self.blackhole, objs.blackhole, pn_order, clight)
             gravity.pnacc.run()
             result = gravity.pnacc.get_result()
             for iobj in self.values():

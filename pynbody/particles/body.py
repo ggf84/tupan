@@ -7,7 +7,7 @@
 
 from __future__ import print_function
 import numpy as np
-from .pbase import Pbase
+from .pbase import Pbase, with_properties
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -15,102 +15,38 @@ __all__ = ["Body"]
 
 
 @decallmethods(timings)
+@with_properties
 class Body(Pbase):
     """
     A base class for Stars.
     """
-    attrs = ["id", "mass", "pos", "vel", "acc", "phi",
-             "eps2", "t_curr", "dt_prev", "dt_next", "nstep", "radius"]
-    dtype = [# common attributes
-             ("id", "u8"),
-             ("mass", "f8"),
-             ("pos", "3f8"),
-             ("vel", "3f8"),
-             ("acc", "3f8"),
-             ("phi", "f8"),
-             ("eps2", "f8"),
-             ("t_curr", "f8"),
-             ("dt_prev", "f8"),
-             ("dt_next", "f8"),
-             ("nstep", "u8"),
-             # specific attributes
-             ("age", "f8"),
-             ("radius", "f8"),
-             ("metallicity", "f8"),
-             # auxiliary attributes
-             ("jerk", "3f8"),
-            ]
+    #--format--:  (name, type, doc)
+    attributes = [# common attributes
+                  ('id', 'u8', 'index'),
+                  ('mass', 'f8', 'mass'),
+                  ('pos', '3f8', 'position'),
+                  ('vel', '3f8', 'velocity'),
+                  ('acc', '3f8', 'acceleration'),
+                  ('phi', 'f8', 'potential'),
+                  ('eps2', 'f8', 'softening'),
+                  ('t_curr', 'f8', 'current time'),
+                  ('dt_prev', 'f8', 'previous time-step'),
+                  ('dt_next', 'f8', 'next time-step'),
+                  ('nstep', 'u8', 'step number'),
+                  # specific attributes
+                  ('age', 'f8', 'age'),
+                  ('radius', 'f8', 'radius'),
+                  ('metallicity', 'f8', 'metallicity'),
+                  # auxiliary attributes
+                  ('jerk', '3f8', 'a\' = d(a)/dt'),
+                 ]
+
+    attrs = ["id", "mass", "pos", "vel", "acc", "phi", "eps2",
+             "t_curr", "dt_prev", "dt_next", "nstep", "radius"]
+
+    dtype = [(i[0], i[1]) for i in attributes]
 
     zero = np.zeros(0, dtype)
-
-    def __init__(self, n=0):
-        super(Body, self).__init__(n)
-
-
-    #
-    # specific attributes
-    #
-
-    ### age
-
-    @property
-    def age(self):
-        return self.data['age']
-
-    @age.setter
-    def age(self, values):
-        self.data['age'] = values
-
-    @age.deleter
-    def age(self):
-        raise NotImplementedError()
-
-
-    ### radius
-
-    @property
-    def radius(self):
-        return self.data['radius']
-
-    @radius.setter
-    def radius(self, values):
-        self.data['radius'] = values
-
-    @radius.deleter
-    def radius(self):
-        raise NotImplementedError()
-
-
-    ### metallicity
-
-    @property
-    def metallicity(self):
-        return self.data['metallicity']
-
-    @metallicity.setter
-    def metallicity(self, values):
-        self.data['metallicity'] = values
-
-    @metallicity.deleter
-    def metallicity(self):
-        raise NotImplementedError()
-
-
-    #
-    # auxiliary attributes
-    #
-
-    @property
-    def jerk(self):
-        return self.data['jerk']
-
-    @jerk.setter
-    def jerk(self, values):
-        self.data['jerk'] = values
-
-    @jerk.deleter
-    def jerk(self):
-        raise NotImplementedError()
 
 
     #

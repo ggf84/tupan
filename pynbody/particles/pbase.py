@@ -15,16 +15,29 @@ from ..lib.utils.timing import decallmethods, timings
 __all__ = ['Pbase']
 
 
+def with_properties(cls):
+    def make_property(attr, doc):
+        def fget(self): return self.data[attr]
+        def fset(self, value): self.data[attr] = value
+        def fdel(self): raise NotImplementedError()
+        return property(fget, fset, fdel, doc)
+    attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.attributes)
+    for (attr, doc) in attrs:
+        setattr(cls, attr, make_property(attr, doc))
+    return cls
+
+
 @decallmethods(timings)
 class Pbase(object):
     """
 
     """
+    attributes = None
     attrs = None
     dtype = None
     zero = None
 
-    def __init__(self, n):
+    def __init__(self, n=0):
         self.data = np.zeros(n, self.dtype) if n else self.zero
 
 
@@ -107,175 +120,6 @@ class Pbase(object):
         if ncols > 1:
             return array
         return array.squeeze()
-
-
-    #
-    # common attributes
-    #
-
-    ### id
-
-    @property
-    def id(self):
-        return self.data['id']
-
-    @id.setter
-    def id(self, values):
-        self.data['id'] = values
-
-    @id.deleter
-    def id(self):
-        raise NotImplementedError()
-
-
-    ### mass
-
-    @property
-    def mass(self):
-        return self.data['mass']
-
-    @mass.setter
-    def mass(self, values):
-        self.data['mass'] = values
-
-    @mass.deleter
-    def mass(self):
-        raise NotImplementedError()
-
-
-    ### pos
-
-    @property
-    def pos(self):
-        return self.data['pos']
-
-    @pos.setter
-    def pos(self, values):
-        self.data['pos'] = values
-
-    @pos.deleter
-    def pos(self):
-        raise NotImplementedError()
-
-
-    ### vel
-
-    @property
-    def vel(self):
-        return self.data['vel']
-
-    @vel.setter
-    def vel(self, values):
-        self.data['vel'] = values
-
-    @vel.deleter
-    def vel(self):
-        raise NotImplementedError()
-
-
-    ### acc
-
-    @property
-    def acc(self):
-        return self.data['acc']
-
-    @acc.setter
-    def acc(self, values):
-        self.data['acc'] = values
-
-    @acc.deleter
-    def acc(self):
-        raise NotImplementedError()
-
-
-    ### phi
-
-    @property
-    def phi(self):
-        return self.data['phi']
-
-    @phi.setter
-    def phi(self, values):
-        self.data['phi'] = values
-
-    @phi.deleter
-    def phi(self):
-        raise NotImplementedError()
-
-
-    ### eps2
-
-    @property
-    def eps2(self):
-        return self.data['eps2']
-
-    @eps2.setter
-    def eps2(self, values):
-        self.data['eps2'] = values
-
-    @eps2.deleter
-    def eps2(self):
-        raise NotImplementedError()
-
-
-    ### t_curr
-
-    @property
-    def t_curr(self):
-        return self.data['t_curr']
-
-    @t_curr.setter
-    def t_curr(self, values):
-        self.data['t_curr'] = values
-
-    @t_curr.deleter
-    def t_curr(self):
-        raise NotImplementedError()
-
-
-    ### dt_prev
-
-    @property
-    def dt_prev(self):
-        return self.data['dt_prev']
-
-    @dt_prev.setter
-    def dt_prev(self, values):
-        self.data['dt_prev'] = values
-
-    @dt_prev.deleter
-    def dt_prev(self):
-        raise NotImplementedError()
-
-
-    ### dt_next
-
-    @property
-    def dt_next(self):
-        return self.data['dt_next']
-
-    @dt_next.setter
-    def dt_next(self, values):
-        self.data['dt_next'] = values
-
-    @dt_next.deleter
-    def dt_next(self):
-        raise NotImplementedError()
-
-
-    ### nstep
-
-    @property
-    def nstep(self):
-        return self.data['nstep']
-
-    @nstep.setter
-    def nstep(self, values):
-        self.data['nstep'] = values
-
-    @nstep.deleter
-    def nstep(self):
-        raise NotImplementedError()
 
 
     #
@@ -372,6 +216,21 @@ class Pbase(object):
         return 0.5 * float(np.sum(self.get_individual_potential_energy()))
 
 
+    ### update methods
+
+    def update_nstep(self):
+        """
+        Update individual step number.
+        """
+        self.nstep += 1
+
+    def update_t_curr(self, tau):
+        """
+        Evolves individual current time by tau.
+        """
+        self.t_curr += tau
+
+
     ### gravity
 
     def update_phi(self, objs):
@@ -405,21 +264,6 @@ class Pbase(object):
         gravity.acc_jerk.set_args(self, objs)
         gravity.acc_jerk.run()
         (self.acc, self.jerk) = gravity.acc_jerk.get_result()
-
-
-    ### evolve
-
-    def update_nstep(self):
-        """
-        Update individual step number.
-        """
-        self.nstep += 1
-
-    def update_t_curr(self, tau):
-        """
-        Evolves individual current time by tau.
-        """
-        self.t_curr += tau
 
 
 ########## end of file ##########
