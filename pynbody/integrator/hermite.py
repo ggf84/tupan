@@ -11,7 +11,7 @@ import numpy as np
 from ..lib.utils.timing import decallmethods, timings
 
 
-__all__ = ["Hermite"]
+__all__ = ["Hermite", "AdaptHermite"]
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +135,37 @@ class Hermite(object):
         self.time += tau
 
         self.particles = p
+
+
+
+@decallmethods(timings)
+class AdaptHermite(Hermite):
+    """
+
+    """
+    def __init__(self, eta, time, particles, **kwargs):
+        super(AdaptHermite, self).__init__(eta, time, particles, **kwargs)
+
+
+    def get_min_block_tstep(self, p):
+        min_tstep = p.min_dt_next()
+
+        power = int(np.log2(min_tstep) - 1)
+        min_block_tstep = 2.0**power
+
+        next_time = self.time + min_block_tstep
+        if next_time % min_block_tstep != 0:
+            min_block_tstep /= 2
+
+        return min_block_tstep
+
+
+    def get_base_tstep(self, t_end):
+        p = self.particles
+        p.update_tstep(p, self.eta)
+        tau = self.get_min_block_tstep(p)
+        self.tstep = tau if self.time + tau <= t_end else t_end - self.time
+        return self.tstep
 
 
 ########## end of file ##########

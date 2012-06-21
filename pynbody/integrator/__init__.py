@@ -15,7 +15,7 @@ class Integrator(object):
     """
 
     """
-    PROVIDED_METHODS = ['leapfrog', 'adaptlf', 'hts', 'hermite']
+    PROVIDED_METHODS = ['leapfrog', 'adaptlf', 'hts', 'hermite', 'adapthermite']
 
     def __init__(self, eta, time, particles, **kwargs):
         import logging
@@ -36,6 +36,9 @@ class Integrator(object):
         elif method == "hermite":
             logger.info("Using 'hermite' integrator.")
             self.integrator = hermite.Hermite(eta, time, particles, **kwargs)
+        elif method == "adapthermite":
+            logger.info("Using 'adapthermite' integrator.")
+            self.integrator = hermite.AdaptHermite(eta, time, particles, **kwargs)
         else:
             logger.critical("Unexpected integrator method: '%s'. Provided methods: %s",
                             method, str(self.PROVIDED_METHODS))
