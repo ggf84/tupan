@@ -79,6 +79,7 @@ class Hermite(object):
             self.correct(p, tau)
 
         p.set_dt_prev(tau)
+        p.update_t_curr(tau)
         p.update_nstep()
         return p
 

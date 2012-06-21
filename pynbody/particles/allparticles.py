@@ -284,6 +284,11 @@ class Particles(dict):
             if obj.n:
                 obj.update_nstep()
 
+    def update_t_curr(self, tau):
+        for obj in self.values():
+            if obj.n:
+                obj.update_t_curr(tau)
+
 
     ### prev/next timestep
 

@@ -39,6 +39,7 @@ class HTS(Base):
         self.drift(slow, tau / 2)
 
         slow.set_dt_prev(tau)
+        slow.update_t_curr(tau)
         slow.update_nstep()
         return slow, fast
 

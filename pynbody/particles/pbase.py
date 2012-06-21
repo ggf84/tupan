@@ -45,12 +45,9 @@ class Pbase(object):
         fmt += ']'
         return fmt
 
-    @property
-    def n(self):
-        return len(self.data)
-
     def __len__(self):
-        return self.n
+        return len(self.data)
+    n = property(__len__)
 
     def __getitem__(self, index):
         obj = self.__class__()
@@ -418,23 +415,11 @@ class Pbase(object):
         """
         self.nstep += 1
 
-    def evolve_current_time(self, tau):
+    def update_t_curr(self, tau):
         """
-        Evolves current time by tau.
+        Evolves individual current time by tau.
         """
         self.t_curr += tau
-
-    def evolve_position(self, tau):
-        """
-        Evolves position in time.
-        """
-        self.pos += tau * self.vel
-
-    def evolve_velocity(self, tau):
-        """
-        Evolves velocity in time.
-        """
-        self.vel += tau * self.acc
 
 
 ########## end of file ##########

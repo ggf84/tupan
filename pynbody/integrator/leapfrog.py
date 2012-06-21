@@ -46,10 +46,7 @@ class Base(object):
         """
         for (key, obj) in ip.items():
             if obj.n:
-                if hasattr(obj, "evolve_current_time"):
-                    obj.evolve_current_time(tau)
-                if hasattr(obj, "evolve_position"):
-                    obj.evolve_position(tau)
+                obj.pos += tau * obj.vel
                 if self.pn_order > 0:
                     if hasattr(obj, "evolve_center_of_mass_position_correction_due_to_pnterms"):
                         obj.evolve_center_of_mass_position_correction_due_to_pnterms(tau)
@@ -63,8 +60,7 @@ class Base(object):
         prev_pnacc = {}
         for (key, obj) in ip.items():
             if obj.n:
-                if hasattr(obj, "acc"):
-                    prev_acc[key] = obj.acc.copy()
+                prev_acc[key] = obj.acc.copy()
                 if self.pn_order > 0:
                     if hasattr(obj, "pnacc"):
                         prev_pnacc[key] = obj.pnacc.copy()
@@ -75,8 +71,7 @@ class Base(object):
 
         for (key, obj) in ip.items():
             if obj.n:
-                if hasattr(obj, "acc"):
-                    obj.acc = 2 * obj.acc - prev_acc[key]
+                obj.acc = 2 * obj.acc - prev_acc[key]
                 if self.pn_order > 0:
                     if hasattr(obj, "pnacc"):
                         obj.pnacc = 2 * obj.pnacc - prev_pnacc[key]
@@ -97,15 +92,13 @@ class Base(object):
                         obj.evolve_energy_correction_due_to_pnterms(tau / 2)
                     if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
                         obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_velocity"):
-                    obj.evolve_velocity(tau / 2)
+                obj.vel += (tau/2) * obj.acc
 
         self.forceDKD(ip, jp)
 
         for (key, obj) in ip.items():
             if obj.n:
-                if hasattr(obj, "evolve_velocity"):
-                    obj.evolve_velocity(tau / 2)
+                obj.vel += (tau/2) * obj.acc
                 if self.pn_order > 0:
                     if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
                         obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
@@ -115,6 +108,16 @@ class Base(object):
                         obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
                     if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
                         obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
+
+
+    def dkd(self, p, tau):
+        """
+
+        """
+        self.drift(p, tau / 2)
+        self.kick(p, p, tau)
+        self.drift(p, tau / 2)
+        return p
 
 
 
@@ -131,11 +134,10 @@ class LeapFrog(Base):
         """
 
         """
-        self.drift(p, tau / 2)
-        self.kick(p, p, tau)
-        self.drift(p, tau / 2)
+        p = super(LeapFrog, self).dkd(p, tau)
 
         p.set_dt_prev(tau)
+        p.update_t_curr(tau)
         p.update_nstep()
         return p
 
