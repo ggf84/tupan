@@ -9,7 +9,7 @@ between particles in Newtonian and post-Newtonian approach.
 
 import sys
 import numpy as np
-from .extensions import libgravity
+from .extensions import kernels
 from .utils.timing import decallmethods, timings
 
 
@@ -198,11 +198,11 @@ class AccJerk(object):
 
 
 
-phi = Phi(libgravity)
-acc = Acc(libgravity)
-tstep = Tstep(libgravity)
-pnacc = PNAcc(libgravity)
-acc_jerk = AccJerk(libgravity)
+phi = Phi(kernels)
+acc = Acc(kernels)
+tstep = Tstep(kernels)
+pnacc = PNAcc(kernels)
+acc_jerk = AccJerk(kernels)
 
 
 ########## end of file ##########

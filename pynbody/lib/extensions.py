@@ -356,7 +356,7 @@ def get_extension(use_sp=False, use_cl=False):
 use_cl = True if '--use_cl' in sys.argv else False
 use_sp = True if '--use_sp' in sys.argv else False
 
-libgravity = get_extension(use_sp=use_sp, use_cl=use_cl)
+kernels = get_extension(use_sp=use_sp, use_cl=use_cl)
 
 
 ########## end of file ##########
