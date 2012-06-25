@@ -7,6 +7,7 @@
 #include"p2p_acc_jerk_kernel.h"
 #include"p2p_tstep_kernel.h"
 #include"p2p_pnacc_kernel.h"
+#include"bios_kernel.h"
 
 //
 // Python methods' interface
@@ -46,6 +47,13 @@ p2p_pnacc_kernel(PyObject *_self, PyObject *_args)
 }
 
 
+static PyObject *
+bios_kernel(PyObject *_self, PyObject *_args)
+{
+    return _bios_kernel(_args);
+}
+
+
 static PyMethodDef libc_gravity_meths[] = {
     {"p2p_phi_kernel", (PyCFunction)p2p_phi_kernel, METH_VARARGS,
                 "returns the Newtonian gravitational potential."},
@@ -57,6 +65,9 @@ static PyMethodDef libc_gravity_meths[] = {
                 "returns the next time-step due to gravitational interaction."},
     {"p2p_pnacc_kernel", (PyCFunction)p2p_pnacc_kernel, METH_VARARGS,
                 "returns the post-Newtonian gravitational acceleration."},
+    {"bios_kernel", (PyCFunction)bios_kernel, METH_VARARGS,
+                "returns updated positions and velocities after application"
+                " of the BIOS integrator."},
     {NULL, NULL, 0, NULL},
 };
 
@@ -66,8 +77,7 @@ PyMODINIT_FUNC initlibc32_gravity(void)
     PyObject *ret;
 
     ret = Py_InitModule3("libc32_gravity", libc_gravity_meths,
-                         "A extension module for Newtonian and post-Newtonian"
-                         " gravity.");
+                         "An extension module for PyNbody.");
 
     import_array();
 
@@ -81,8 +91,7 @@ PyMODINIT_FUNC initlibc64_gravity(void)
     PyObject *ret;
 
     ret = Py_InitModule3("libc64_gravity", libc_gravity_meths,
-                         "A extension module for Newtonian and post-Newtonian"
-                         " gravity.");
+                         "An extension module for PyNbody.");
 
     import_array();
 

@@ -7,8 +7,6 @@ between particles in Newtonian and post-Newtonian approach.
 """
 
 
-import sys
-import numpy as np
 from .extensions import kernels
 from .utils.timing import decallmethods, timings
 

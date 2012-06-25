@@ -7,6 +7,7 @@
 
 
 from . import hts
+from . import bios
 from . import hermite
 from . import leapfrog
 
@@ -15,7 +16,7 @@ class Integrator(object):
     """
 
     """
-    PROVIDED_METHODS = ['leapfrog', 'adaptlf', 'hts', 'hermite', 'adapthermite']
+    PROVIDED_METHODS = ['leapfrog', 'adaptlf', 'bios', 'hts', 'hermite', 'adapthermite']
 
     def __init__(self, eta, time, particles, **kwargs):
         import logging
@@ -30,6 +31,9 @@ class Integrator(object):
         elif method == "adaptlf":
             logger.info("Using 'adaptlf' integrator.")
             self.integrator = leapfrog.AdaptLF(eta, time, particles, **kwargs)
+        elif method == "bios":
+            logger.info("Using 'bios' integrator.")
+            self.integrator = bios.BIOS(eta, time, particles, **kwargs)
         elif method == "hts":
             logger.info("Using 'hts' integrator.")
             self.integrator = hts.HTS(eta, time, particles, **kwargs)
