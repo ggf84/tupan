@@ -53,7 +53,7 @@ class HTS(Base):
 
 
     def get_base_tstep(self, t_end):
-        tau = 1.0/4
+        tau = self.eta
         self.tstep = tau if self.time + tau <= t_end else t_end - self.time
         return self.tstep
 
