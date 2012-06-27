@@ -44,70 +44,66 @@ class Base(object):
         """
 
         """
-        for (key, obj) in ip.items():
+        for obj in ip.values():
             if obj.n:
                 obj.pos += tau * obj.vel
-                if self.pn_order > 0:
-                    if hasattr(obj, "evolve_center_of_mass_position_correction_due_to_pnterms"):
-                        obj.evolve_center_of_mass_position_correction_due_to_pnterms(tau)
 
 
-    def forceDKD(self, ip, jp):
+    def kick(self, ip, jp, tau, update_acc):
         """
 
         """
-        prev_acc = {}
+        if update_acc: ip.update_acc(jp)
+        for obj in ip.values():
+            if obj.n:
+                obj.vel += tau * obj.acc
+
+
+    def drift_pn(self, ip, tau):
+        """
+
+        """
+        for obj in ip.values():
+            if obj.n:
+                if hasattr(obj, "evolve_center_of_mass_position_correction_due_to_pnterms"):
+                    obj.evolve_center_of_mass_position_correction_due_to_pnterms(tau)
+
+
+    def kick_pn(self, ip, jp, tau):
+        """
+
+        """
+        if not (ip.blackhole.n and jp.blackhole.n): return
         prev_pnacc = {}
         for (key, obj) in ip.items():
             if obj.n:
-                prev_acc[key] = obj.acc.copy()
-                if self.pn_order > 0:
-                    if hasattr(obj, "pnacc"):
-                        prev_pnacc[key] = obj.pnacc.copy()
+                if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
+                    obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
+                    obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
+                    obj.evolve_energy_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
+                    obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
 
-        ip.update_acc(jp)
-        if self.pn_order > 0 and self.clight > 0:
-            ip.update_pnacc(jp, self.pn_order, self.clight)
+                if hasattr(obj, "pnacc"):
+                    prev_pnacc[key] = obj.pnacc.copy()
 
-        for (key, obj) in ip.items():
-            if obj.n:
-                obj.acc = 2 * obj.acc - prev_acc[key]
-                if self.pn_order > 0:
-                    if hasattr(obj, "pnacc"):
-                        obj.pnacc = 2 * obj.pnacc - prev_pnacc[key]
-
-
-    def kick(self, ip, jp, tau):
-        """
-
-        """
-        for (key, obj) in ip.items():
-            if obj.n:
-                if self.pn_order > 0:
-                    if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
-                        obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
-                    if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
-                        obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
-                    if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
-                        obj.evolve_energy_correction_due_to_pnterms(tau / 2)
-                    if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
-                        obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
-                obj.vel += (tau/2) * obj.acc
-
-        self.forceDKD(ip, jp)
+        ip.update_pnacc(jp, self.pn_order, self.clight)
 
         for (key, obj) in ip.items():
             if obj.n:
-                obj.vel += (tau/2) * obj.acc
-                if self.pn_order > 0:
-                    if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
-                        obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
-                    if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
-                        obj.evolve_energy_correction_due_to_pnterms(tau / 2)
-                    if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
-                        obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
-                    if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
-                        obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "pnacc"):
+                    obj.pnacc = 2 * obj.pnacc - prev_pnacc[key]
+
+                if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
+                    obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
+                    obj.evolve_energy_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
+                    obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
+                    obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
 
 
     def dkd(self, p, tau):
@@ -115,7 +111,13 @@ class Base(object):
 
         """
         self.drift(p, tau / 2)
-        self.kick(p, p, tau)
+        if self.pn_order > 0: self.drift_pn(p, tau / 2)
+
+        self.kick(p, p, tau / 2, True)
+        if self.pn_order > 0: self.kick_pn(p, p, tau)
+        self.kick(p, p, tau / 2, False)
+
+        if self.pn_order > 0: self.drift_pn(p, tau / 2)
         self.drift(p, tau / 2)
         return p
 
@@ -154,8 +156,7 @@ class LeapFrog(Base):
         p = self.particles
 
         p.update_acc(p)
-        if self.pn_order > 0:
-            p.update_pnacc(p, self.pn_order, self.clight)
+        if self.pn_order > 0: p.update_pnacc(p, self.pn_order, self.clight)
 
         self.is_initialized = True
 

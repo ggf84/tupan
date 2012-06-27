@@ -33,9 +33,17 @@ class HTS(Base):
 
         """
         self.drift(slow, tau / 2)
-        if fast.n > 0: self.kick(fast, slow, tau)
-        self.kick(slow, slow, tau)
-        if fast.n > 0: self.kick(slow, fast, tau)
+        if self.pn_order > 0: self.drift_pn(slow, tau / 2)
+
+        if fast.n > 0: self.kick(fast, slow, tau, True)
+
+        self.kick(slow, slow, tau / 2, True)
+        if self.pn_order > 0: self.kick_pn(slow, slow, tau)
+        self.kick(slow, slow, tau / 2, False)
+
+        if fast.n > 0: self.kick(slow, fast, tau, True)
+
+        if self.pn_order > 0: self.drift_pn(slow, tau / 2)
         self.drift(slow, tau / 2)
 
         slow.set_dt_prev(tau)
@@ -56,8 +64,7 @@ class HTS(Base):
         p = self.particles
 
         p.update_acc(p)
-        if self.pn_order > 0:
-            p.update_pnacc(p, self.pn_order, self.clight)
+        if self.pn_order > 0: p.update_pnacc(p, self.pn_order, self.clight)
 
         self.is_initialized = True
 

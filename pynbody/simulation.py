@@ -359,9 +359,9 @@ def parse_args():
                        )
     newrun.add_argument("-g", "--gl_freq",
                         type=int,
-                        default=2,
+                        default=1,
                         help="Number of time-steps between GLviewer events "
-                             "(type: int, default: 2)."
+                             "(type: int, default: 1)."
                        )
     newrun.add_argument("--profile",
                         action="store_true",

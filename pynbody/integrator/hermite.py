@@ -96,8 +96,7 @@ class Hermite(object):
         p = self.particles
 
         p.update_acc_jerk(p)
-        if self.pn_order > 0:
-            p.update_pnacc(p, self.pn_order, self.clight)
+        if self.pn_order > 0: p.update_pnacc(p, self.pn_order, self.clight)
 
         self.is_initialized = True
 
