@@ -29,32 +29,15 @@ p2p_tstep_kernel_core(REAL iomega,
     REAL inv_r2 = 1 / (r2 + v.w);                                    // 2 FLOPs
     inv_r2 = (r2 > 0) ? (inv_r2):(0);
     REAL inv_r = sqrt(inv_r2);                                       // 1 FLOPs
-/*    REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
+    REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
 
-    REAL omega2a = v2 * inv_r2;                                      // 1 FLOPs
-    REAL omega2b = 2 * r.w * inv_r3;                                 // 2 FLOPs
-    REAL omega2 = omega2a + omega2b;                                 // 1 FLOPs
-    REAL omega2b_omega2 = omega2b / omega2;                          // 1 FLOPs
-    omega2b_omega2 = (r2 > 0) ? (omega2b_omega2):(0);
-    REAL weighting = 1 + omega2b_omega2;                             // 1 FLOPs
-    REAL dln_omega = -weighting * rv * inv_r2;                       // 2 FLOPs
+    REAL alpha = v2 * inv_r2;                                        // 1 FLOPs
+    REAL beta = 2 * r.w * inv_r3;                                    // 2 FLOPs
+    REAL omega2 = alpha + beta;                                      // 1 FLOPs
+    REAL gamma = 1 + beta / omega2;                                  // 2 FLOPs
+    gamma = (r2 > 0) ? (gamma):(0);
+    REAL dln_omega = -gamma * rv * inv_r2;                           // 2 FLOPs
     REAL omega = sqrt(omega2);                                       // 1 FLOPs
-    omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
-*/
-
-    REAL4 h;
-    h.x = r.y * v.z - r.z * v.y;                                     // 3 FLOPs
-    h.y = r.z * v.x - r.x * v.z;                                     // 3 FLOPs
-    h.z = r.x * v.y - r.y * v.x;                                     // 3 FLOPs
-    REAL h2 = h.x * h.x + h.y * h.y + h.z * h.z;                     // 5 FLOPs
-    REAL e = (v2 - 2 * r.w * inv_r);                                 // 3 FLOPs
-
-    REAL omega2_e = (e > 0) ? (e):(-e);
-    REAL omega2_h = ((REAL)1.5) * h2 * inv_r2;                       // 2 FLOPs
-    REAL omega2 = (omega2_e + omega2_h) * inv_r2;                    // 2 FLOPs
-    REAL omega = sqrt(omega2);                                       // 1 FLOPs
-    REAL weight = (1 + inv_r2 * omega2_h / omega2);                  // 3 FLOPs
-    REAL dln_omega = -weight * (rv * inv_r2);                        // 2 FLOPs
     omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
 
     iomega = (omega > iomega) ? (omega):(iomega);
