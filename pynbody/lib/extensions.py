@@ -60,7 +60,7 @@ class CLModule(object):
         # setting options
         options = " -I {path}".format(path=self.path)
         options += " -D JUNROLL={junroll}".format(junroll=junroll)
-        if self.env.dtype.char is 'd':
+        if prec is 'double':
             options += " -D DOUBLE"
         if self.env.fast_math:
             options += " -cl-fast-relaxed-math"
@@ -262,7 +262,7 @@ class CModule(object):
         prec = 'double' if self.env.dtype.char is 'd' else 'single'
         logger.debug("Building %s precision C extension module.", prec)
 
-        if self.env.dtype.char is 'd':
+        if prec is 'double':
             from pynbody.lib import libc64_gravity as program
         else:
             from pynbody.lib import libc32_gravity as program
