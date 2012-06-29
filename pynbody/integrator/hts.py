@@ -111,8 +111,10 @@ class HTS(Base):
 
 
         if self.meth_type == 0:
-            p = self.meth0(p, tau, True, stream)
-#            p = self.heapq0(p, tau, True)
+            p = self.meth0odr2s1(p, tau, True, stream)
+#            p = self.meth0odr4s3(p, tau, True, stream)
+#            p = self.meth0odr4s5(p, tau, True, stream)
+##            p = self.heapq0(p, tau, True)
         elif self.meth_type == 1:
             p = self.meth1(p, tau, True, stream)
         elif self.meth_type == 2:
@@ -184,7 +186,7 @@ class HTS(Base):
 
     ### meth0
 
-    def meth0(self, p, tau, update_tstep, stream):
+    def meth0odr2s1(self, p, tau, update_tstep, stream):
         if update_tstep: p.update_tstep(p, self.eta)
 
         slow, fast = self.split(tau, p)
@@ -194,9 +196,66 @@ class HTS(Base):
             if stream:
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
-        if fast.n > 0: fast = self.meth0(fast, tau / 2, False, stream)
+        if fast.n > 0: fast = self.meth0odr2s1(fast, tau / 2, False, stream)
         if slow.n > 0: slow, fast = self.dkd(slow, fast, tau)
-        if fast.n > 0: fast = self.meth0(fast, tau / 2, True, stream)
+        if fast.n > 0: fast = self.meth0odr2s1(fast, tau / 2, True, stream)
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    def meth0odr4s3(self, p, tau, update_tstep, stream):
+        a = 1.3512071919596575
+        b = -1.7024143839193150
+
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(abs(tau), p)
+
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if fast.n > 0: fast = self.meth0odr4s3(fast, a*tau / 2, False, stream)
+        if slow.n > 0: slow, fast = self.dkd(slow, fast, a*tau)
+        if fast.n > 0: fast = self.meth0odr4s3(fast, (a+b)*tau / 2, True, stream)
+        if slow.n > 0: slow, fast = self.dkd(slow, fast, b*tau)
+        if fast.n > 0: fast = self.meth0odr4s3(fast, (b+a)*tau / 2, True, stream)
+        if slow.n > 0: slow, fast = self.dkd(slow, fast, a*tau)
+        if fast.n > 0: fast = self.meth0odr4s3(fast, a*tau / 2, True, stream)
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    def meth0odr4s5(self, p, tau, update_tstep, stream):
+        a = 0.3221375960817983
+        b = 0.5413165481700432
+        c = -0.7269082885036829
+
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(abs(tau), p)
+
+        if slow.n > 0:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if fast.n > 0: fast = self.meth0odr4s5(fast, a*tau / 2, False, stream)
+        if slow.n > 0: slow, fast = self.dkd(slow, fast, a*tau)
+        if fast.n > 0: fast = self.meth0odr4s5(fast, (a+b)*tau / 2, True, stream)
+        if slow.n > 0: slow, fast = self.dkd(slow, fast, b*tau)
+        if fast.n > 0: fast = self.meth0odr4s5(fast, (b+c)*tau / 2, True, stream)
+        if slow.n > 0: slow, fast = self.dkd(slow, fast, c*tau)
+        if fast.n > 0: fast = self.meth0odr4s5(fast, (c+b)*tau / 2, True, stream)
+        if slow.n > 0: slow, fast = self.dkd(slow, fast, b*tau)
+        if fast.n > 0: fast = self.meth0odr4s5(fast, (b+a)*tau / 2, True, stream)
+        if slow.n > 0: slow, fast = self.dkd(slow, fast, a*tau)
+        if fast.n > 0: fast = self.meth0odr4s5(fast, a*tau / 2, True, stream)
 
         p = self.join(slow, fast)
 
