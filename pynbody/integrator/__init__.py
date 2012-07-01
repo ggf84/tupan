@@ -16,7 +16,8 @@ class Integrator(object):
     """
 
     """
-    PROVIDED_METHODS = ['leapfrog', 'adaptlf', 'bios', 'hts', 'hermite', 'adapthermite']
+    PROVIDED_METHODS = ['leapfrog', 'adaptlf', 'bios', 'hermite', 'adapthermite']
+    PROVIDED_METHODS.extend(hts.SIA.PROVIDED_METHODS)
 
     def __init__(self, eta, time, particles, **kwargs):
         import logging
@@ -34,9 +35,9 @@ class Integrator(object):
         elif method == "bios":
             logger.info("Using 'bios' integrator.")
             self.integrator = bios.BIOS(eta, time, particles, **kwargs)
-        elif method == "hts":
-            logger.info("Using 'hts' integrator.")
-            self.integrator = hts.HTS(eta, time, particles, **kwargs)
+        elif method in hts.SIA.PROVIDED_METHODS:
+            logger.info("Using %s integrator.", method)
+            self.integrator = hts.SIA(eta, time, particles, method, **kwargs)
         elif method == "hermite":
             logger.info("Using 'hermite' integrator.")
             self.integrator = hermite.Hermite(eta, time, particles, **kwargs)

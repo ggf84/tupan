@@ -9,47 +9,156 @@ from __future__ import print_function
 import logging
 import heapq
 import numpy as np
-from .leapfrog import Base
 from ..lib.utils.timing import decallmethods, timings
 
 
-__all__ = ["HTS"]
+__all__ = ["SIA"]
 
 logger = logging.getLogger(__name__)
 
 
-@decallmethods(timings)
-class HTS(Base):
+class Base(object):
     """
-
+    A base class for the Symplectic Integration Algorithms (SIAs).
     """
     def __init__(self, eta, time, particles, **kwargs):
-        super(HTS, self).__init__(eta, time, particles, **kwargs)
-        self.meth_type = 0
+        self.eta = eta
+        self.time = time
+        self.particles = particles
+        self.is_initialized = False
+
+        self.pn_order = kwargs.pop("pn_order", 0)
+        self.clight = kwargs.pop("clight", None)
+        if self.pn_order > 0 and self.clight is None:
+            raise TypeError("'clight' is not defined. Please set the speed of "
+                            "light argument 'clight' when using 'pn_order' > 0.")
+
+        self.reporter = kwargs.pop("reporter", None)
+        self.dumpper = kwargs.pop("dumpper", None)
+        self.dump_freq = kwargs.pop("dump_freq", 1)
+        if kwargs:
+            msg = "{0}.__init__ received unexpected keyword arguments: {1}."
+            raise TypeError(msg.format(self.__class__.__name__,", ".join(kwargs.keys())))
 
 
-    def dkd(self, slow, fast, tau):
+    def drift(self, ip, tau):
         """
+        Drift operator.
+        """
+        for obj in ip.values():
+            if obj.n:
+                obj.pos += tau * obj.vel
 
+
+    def kick(self, ip, jp, tau, update_acc):
+        """
+        Kick operator.
+        """
+        if update_acc: ip.update_acc(jp)
+        for obj in ip.values():
+            if obj.n:
+                obj.vel += tau * obj.acc
+
+
+    def drift_pn(self, ip, tau):
+        """
+        Drift operator for PN quantities.
+        """
+        for obj in ip.values():
+            if obj.n:
+                if hasattr(obj, "evolve_center_of_mass_position_correction_due_to_pnterms"):
+                    obj.evolve_center_of_mass_position_correction_due_to_pnterms(tau)
+
+
+    def kick_pn(self, ip, jp, tau):
+        """
+        Kick operator for PN quantities.
+        """
+        if not (ip.blackhole.n and jp.blackhole.n): return
+        prev_pnacc = {}
+        for (key, obj) in ip.items():
+            if obj.n:
+                if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
+                    obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
+                    obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
+                    obj.evolve_energy_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
+                    obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
+
+                if hasattr(obj, "pnacc"):
+                    prev_pnacc[key] = obj.pnacc.copy()
+
+        ip.update_pnacc(jp, self.pn_order, self.clight)
+
+        for (key, obj) in ip.items():
+            if obj.n:
+                if hasattr(obj, "pnacc"):
+                    obj.pnacc = 2 * obj.pnacc - prev_pnacc[key]
+
+                if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
+                    obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
+                    obj.evolve_energy_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
+                    obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
+                    obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
+
+
+    def dkd(self, p, tau):
+        """
+        The Drift-Kick-Drift operator.
+        """
+        self.drift(p, tau / 2)
+        if self.pn_order > 0: self.drift_pn(p, tau / 2)
+
+        self.kick(p, p, tau / 2, True)
+        if self.pn_order > 0: self.kick_pn(p, p, tau)
+        self.kick(p, p, tau / 2, False)
+
+        if self.pn_order > 0: self.drift_pn(p, tau / 2)
+        self.drift(p, tau / 2)
+        return p
+
+
+    def sf_dkd(self, slow, fast, tau):
+        """
+        The Drift-Kick-Drift operator for hierarchical methods.
         """
         self.drift(slow, tau / 2)
         if self.pn_order > 0: self.drift_pn(slow, tau / 2)
 
-        if fast.n > 0: self.kick(fast, slow, tau, True)
+        if fast.n: self.kick(fast, slow, tau, True)
 
         self.kick(slow, slow, tau / 2, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, tau)
         self.kick(slow, slow, tau / 2, False)
 
-        if fast.n > 0: self.kick(slow, fast, tau, True)
+        if fast.n: self.kick(slow, fast, tau, True)
 
         if self.pn_order > 0: self.drift_pn(slow, tau / 2)
         self.drift(slow, tau / 2)
 
-        slow.set_dt_prev(tau)
-        slow.update_t_curr(tau)
-        slow.update_nstep()
         return slow, fast
+
+
+
+
+@decallmethods(timings)
+class SIA(Base):
+    """
+
+    """
+    PROVIDED_METHODS = ['sia.dkd21std', 'sia.dkd21shr', 'sia.dkd21hcc',
+                        'sia.dkd43std', 'sia.dkd43shr', 'sia.dkd43hcc',
+                        'sia.dkd45std', 'sia.dkd45shr', 'sia.dkd45hcc',
+                       ]
+
+    def __init__(self, eta, time, particles, method, **kwargs):
+        super(SIA, self).__init__(eta, time, particles, **kwargs)
+        self.method = method
 
 
     def get_base_tstep(self, t_end):
@@ -93,55 +202,18 @@ class HTS(Base):
             self.dumpper.dump(stream)
 
 
-    def evolve_step(self, t_end):
-        """
+    def get_min_block_tstep(self, p, tau):
+        min_tstep = p.min_dt_next()
 
-        """
-        if not self.is_initialized:
-            self.initialize(t_end)
+        power = int(np.log2(min_tstep) - 1)
+        min_block_tstep = 2.0**power
 
-        p = self.particles
-        tau = self.get_base_tstep(t_end)
+        next_time = self.time + min_block_tstep
+        if next_time % min_block_tstep != 0:
+            min_block_tstep /= 2
 
-        stream = None
-        if self.reporter:
-            self.reporter.report(self.time, p)
-        if self.dumpper:
-            stream = p.__class__()
-
-
-        if self.meth_type == 0:
-            p = self.meth0odr2s1(p, tau, True, stream)
-#            p = self.meth0odr4s3(p, tau, True, stream)
-#            p = self.meth0odr4s5(p, tau, True, stream)
-##            p = self.heapq0(p, tau, True)
-        elif self.meth_type == 1:
-            p = self.meth1(p, tau, True, stream)
-        elif self.meth_type == 2:
-            p = self.meth2(p, tau, True, stream)
-        elif self.meth_type == 3:
-            p = self.meth3(p, tau, True, stream)
-        elif self.meth_type == 4:
-            p = self.meth4(p, tau, True, stream)
-        elif self.meth_type == 5:
-            p = self.meth5(p, tau, True, stream)
-        elif self.meth_type == 6:
-            p = self.meth6(p, tau, True, stream)
-        elif self.meth_type == 7:
-            p = self.meth7(p, tau, True, stream)
-        elif self.meth_type == 8:
-            p = self.meth8(p, tau, True, stream)
-        elif self.meth_type == 9:
-            p = self.meth9(p, tau, True, stream)
-        else:
-            raise ValueError("Unexpected HTS method type.")
-
-
-        if stream:
-            self.dumpper.dump(stream)
-
-        self.time += tau
-        self.particles = p
+        self.tstep = min_block_tstep if min_block_tstep < tau else tau
+        return self.tstep
 
 
     ### split
@@ -184,78 +256,244 @@ class HTS(Base):
         return p
 
 
-    ### meth0
+    ### evolve_step
 
-    def meth0odr2s1(self, p, tau, update_tstep, stream):
+    def evolve_step(self, t_end):
+        """
+
+        """
+        if not self.is_initialized:
+            self.initialize(t_end)
+
+        p = self.particles
+        tau = self.get_base_tstep(t_end)
+
+        stream = None
+        if self.reporter:
+            self.reporter.report(self.time, p)
+        if self.dumpper:
+            stream = p.__class__()
+
+
+        if self.method == "sia.dkd21std":
+            p = self.dkd21(p, tau, False, stream)
+        elif self.method == "sia.dkd21shr":
+            p = self.dkd21(p, tau, True, stream)
+        elif self.method == "sia.dkd21hcc":
+            p = self.dkd21hcc(p, tau, True, stream)
+        elif self.method == "sia.dkd43std":
+            p = self.dkd43(p, tau, False, stream)
+        elif self.method == "sia.dkd43shr":
+            p = self.dkd43(p, tau, True, stream)
+        elif self.method == "sia.dkd43hcc":
+            p = self.dkd43hcc(p, tau, True, stream)
+        elif self.method == "sia.dkd45std":
+            p = self.dkd45(p, tau, False, stream)
+        elif self.method == "sia.dkd45shr":
+            p = self.dkd45(p, tau, True, stream)
+        elif self.method == "sia.dkd45hcc":
+            p = self.dkd45hcc(p, tau, True, stream)
+        elif self.method == 1:
+            p = self.meth1(p, tau, True, stream)
+        elif self.method == 2:
+            p = self.meth2(p, tau, True, stream)
+        elif self.method == 3:
+            p = self.meth3(p, tau, True, stream)
+        elif self.method == 4:
+            p = self.meth4(p, tau, True, stream)
+        elif self.method == 5:
+            p = self.meth5(p, tau, True, stream)
+        elif self.method == 6:
+            p = self.meth6(p, tau, True, stream)
+        elif self.method == 7:
+            p = self.meth7(p, tau, True, stream)
+        elif self.method == 8:
+            p = self.meth8(p, tau, True, stream)
+        elif self.method == 9:
+            p = self.meth9(p, tau, True, stream)
+        elif self.method == 0:
+            pass
+##            p = self.heapq0(p, tau, True)
+        else:
+            raise ValueError("Unexpected HTS method type.")
+
+
+        if stream:
+            self.dumpper.dump(stream)
+
+        self.time += self.tstep
+        self.particles = p
+
+
+    #
+    # dkd21[std,shr,hcc] methods
+    #
+
+    def dkd21(self, p, tau, update_tstep, stream):
+        if update_tstep:
+            p.update_tstep(p, self.eta)
+            tau = self.get_min_block_tstep(p, tau)
+
+        p.set_dt_next(tau)
+
+        if stream:
+            stream.append(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        p = self.dkd(p, tau)
+
+        p.set_dt_prev(tau)
+        p.update_t_curr(tau)
+        p.update_nstep()
+
+        return p
+
+
+    def dkd21hcc(self, p, tau, update_tstep, stream):
         if update_tstep: p.update_tstep(p, self.eta)
 
         slow, fast = self.split(tau, p)
 
-        if slow.n > 0:
+        if slow.n:
             slow.set_dt_next(tau)
             if stream:
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
-        if fast.n > 0: fast = self.meth0odr2s1(fast, tau / 2, False, stream)
-        if slow.n > 0: slow, fast = self.dkd(slow, fast, tau)
-        if fast.n > 0: fast = self.meth0odr2s1(fast, tau / 2, True, stream)
+        if fast.n: fast = self.dkd21hcc(fast, tau / 2, False, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, tau)
+        if fast.n: fast = self.dkd21hcc(fast, tau / 2, True, stream)
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
 
         p = self.join(slow, fast)
 
         return p
 
 
-    def meth0odr4s3(self, p, tau, update_tstep, stream):
-        a = 1.3512071919596575
-        b = -1.7024143839193150
+    #
+    # dkd43[std,shr,hcc] methods
+    #
 
+    def dkd43(self, p, tau, update_tstep, stream,
+                    c0=1.3512071919596575,
+                    c1=-0.35120719195965755,    # c0+c2
+                    c2=-1.7024143839193150):
+        if update_tstep:
+            p.update_tstep(p, self.eta)
+            tau = self.get_min_block_tstep(p, tau)
+
+        p.set_dt_next(tau)
+
+        if stream:
+            stream.append(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        p = self.dkd(p, c0 * tau)
+        p = self.dkd(p, c2 * tau)
+        p = self.dkd(p, c0 * tau)
+
+        p.set_dt_prev(tau)
+        p.update_t_curr(tau)
+        p.update_nstep()
+
+        return p
+
+
+    def dkd43hcc(self, p, tau, update_tstep, stream,
+                       c0=1.3512071919596575,
+                       c1=-0.35120719195965755,    # c0+c2
+                       c2=-1.7024143839193150):
         if update_tstep: p.update_tstep(p, self.eta)
 
         slow, fast = self.split(abs(tau), p)
 
-        if slow.n > 0:
+        if slow.n:
             slow.set_dt_next(tau)
             if stream:
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
-        if fast.n > 0: fast = self.meth0odr4s3(fast, a*tau / 2, False, stream)
-        if slow.n > 0: slow, fast = self.dkd(slow, fast, a*tau)
-        if fast.n > 0: fast = self.meth0odr4s3(fast, (a+b)*tau / 2, True, stream)
-        if slow.n > 0: slow, fast = self.dkd(slow, fast, b*tau)
-        if fast.n > 0: fast = self.meth0odr4s3(fast, (b+a)*tau / 2, True, stream)
-        if slow.n > 0: slow, fast = self.dkd(slow, fast, a*tau)
-        if fast.n > 0: fast = self.meth0odr4s3(fast, a*tau / 2, True, stream)
+        if fast.n: fast = self.dkd43hcc(fast, c0 * tau / 2, False, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c0 * tau)
+        if fast.n: fast = self.dkd43hcc(fast, c1 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c2 * tau)
+        if fast.n: fast = self.dkd43hcc(fast, c1 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c0 * tau)
+        if fast.n: fast = self.dkd43hcc(fast, c0 * tau / 2, True, stream)
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
 
         p = self.join(slow, fast)
 
         return p
 
 
-    def meth0odr4s5(self, p, tau, update_tstep, stream):
-        a = 0.3221375960817983
-        b = 0.5413165481700432
-        c = -0.7269082885036829
+    #
+    # dkd45[std,shr,hcc] methods
+    #
 
+    def dkd45(self, p, tau, update_tstep, stream,
+                    c0=0.3221375960817983,
+                    c1=0.8634541442518415,      # c0+c2
+                    c2=0.5413165481700432,
+                    c3=-0.1855917403336398,     # c2+c4
+                    c4=-0.7269082885036829):
+        if update_tstep:
+            p.update_tstep(p, self.eta)
+            tau = self.get_min_block_tstep(p, tau)
+
+        p.set_dt_next(tau)
+
+        if stream:
+            stream.append(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        p = self.dkd(p, c0 * tau)
+        p = self.dkd(p, c2 * tau)
+        p = self.dkd(p, c4 * tau)
+        p = self.dkd(p, c2 * tau)
+        p = self.dkd(p, c0 * tau)
+
+        p.set_dt_prev(tau)
+        p.update_t_curr(tau)
+        p.update_nstep()
+
+        return p
+
+
+    def dkd45hcc(self, p, tau, update_tstep, stream,
+                       c0=0.3221375960817983,
+                       c1=0.8634541442518415,      # c0+c2
+                       c2=0.5413165481700432,
+                       c3=-0.1855917403336398,     # c2+c4
+                       c4=-0.7269082885036829):
         if update_tstep: p.update_tstep(p, self.eta)
 
         slow, fast = self.split(abs(tau), p)
 
-        if slow.n > 0:
+        if slow.n:
             slow.set_dt_next(tau)
             if stream:
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
-        if fast.n > 0: fast = self.meth0odr4s5(fast, a*tau / 2, False, stream)
-        if slow.n > 0: slow, fast = self.dkd(slow, fast, a*tau)
-        if fast.n > 0: fast = self.meth0odr4s5(fast, (a+b)*tau / 2, True, stream)
-        if slow.n > 0: slow, fast = self.dkd(slow, fast, b*tau)
-        if fast.n > 0: fast = self.meth0odr4s5(fast, (b+c)*tau / 2, True, stream)
-        if slow.n > 0: slow, fast = self.dkd(slow, fast, c*tau)
-        if fast.n > 0: fast = self.meth0odr4s5(fast, (c+b)*tau / 2, True, stream)
-        if slow.n > 0: slow, fast = self.dkd(slow, fast, b*tau)
-        if fast.n > 0: fast = self.meth0odr4s5(fast, (b+a)*tau / 2, True, stream)
-        if slow.n > 0: slow, fast = self.dkd(slow, fast, a*tau)
-        if fast.n > 0: fast = self.meth0odr4s5(fast, a*tau / 2, True, stream)
+        if fast.n: fast = self.dkd45hcc(fast, c0 * tau / 2, False, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c0 * tau)
+        if fast.n: fast = self.dkd45hcc(fast, c1 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c2 * tau)
+        if fast.n: fast = self.dkd45hcc(fast, c3 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c4 * tau)
+        if fast.n: fast = self.dkd45hcc(fast, c3 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c2 * tau)
+        if fast.n: fast = self.dkd45hcc(fast, c1 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c0 * tau)
+        if fast.n: fast = self.dkd45hcc(fast, c0 * tau / 2, True, stream)
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
 
         p = self.join(slow, fast)
 
@@ -278,10 +516,15 @@ class HTS(Base):
             if stream:
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
-        if slow.n > 0: slow, fast = self.dkd(slow, fast, tau / 2)
+        if slow.n > 0: slow, fast = self.sf_dkd(slow, fast, tau / 2)
         if fast.n > 0: fast = self.meth1(fast, tau / 2, True, stream)
         if fast.n > 0: fast = self.meth1(fast, tau / 2, True, stream)
-        if slow.n > 0: slow, fast = self.dkd(slow, fast, tau / 2)
+        if slow.n > 0: slow, fast = self.sf_dkd(slow, fast, tau / 2)
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
 
         p = self.join(slow, fast)
 
@@ -303,10 +546,15 @@ class HTS(Base):
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
         if fast.n > 0: fast = self.meth2(fast, tau / 2, True, stream)
-        if slow.n > 0: slow, empty = self.dkd(slow, p.empty, tau)
+        if slow.n > 0: slow, empty = self.sf_dkd(slow, p.empty, tau)
         if fast.n > 0: fast = self.meth2(fast, tau / 2, True, stream)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
 
         p = self.join(slow, fast)
 
@@ -328,10 +576,15 @@ class HTS(Base):
         if fast.n > 0: fast = self.meth3(fast, tau / 2, False, stream)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0: slow, empty = self.dkd(slow, p.empty, tau)
+        if slow.n > 0: slow, empty = self.sf_dkd(slow, p.empty, tau)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
         if fast.n > 0: fast = self.meth3(fast, tau / 2, True, stream)
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
 
         p = self.join(slow, fast)
 
@@ -350,12 +603,17 @@ class HTS(Base):
             if stream:
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
-        if slow.n > 0: slow, empty = self.dkd(slow, p.empty, tau / 2)
+        if slow.n > 0: slow, empty = self.sf_dkd(slow, p.empty, tau / 2)
         if fast.n > 0: fast = self.meth4(fast, tau / 2, False, stream)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
         if fast.n > 0: fast = self.meth4(fast, tau / 2, True, stream)
-        if slow.n > 0: slow, empty = self.dkd(slow, p.empty, tau / 2)
+        if slow.n > 0: slow, empty = self.sf_dkd(slow, p.empty, tau / 2)
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
 
         p = self.join(slow, fast)
 
@@ -375,11 +633,16 @@ class HTS(Base):
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         if fast.n > 0: fast = self.meth5(fast, tau / 2, False, stream)
-        if slow.n > 0: slow, empty = self.dkd(slow, p.empty, tau / 2)
+        if slow.n > 0: slow, empty = self.sf_dkd(slow, p.empty, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
-        if slow.n > 0: slow, empty = self.dkd(slow, p.empty, tau / 2)
+        if slow.n > 0: slow, empty = self.sf_dkd(slow, p.empty, tau / 2)
         if fast.n > 0: fast = self.meth5(fast, tau / 2, True, stream)
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
 
         p = self.join(slow, fast)
 
@@ -405,6 +668,11 @@ class HTS(Base):
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
         if fast.n > 0: fast = self.meth6(fast, tau / 2, True, stream)
         if slow.n > 0: self.drift(slow, tau / 2)
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
 
         p = self.join(slow, fast)
 
@@ -432,6 +700,11 @@ class HTS(Base):
         if slow.n > 0: self.kick(slow, slow, tau / 2)
         if slow.n > 0: self.drift(slow, tau / 2)
 
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
+
         p = self.join(slow, fast)
 
         return p
@@ -458,6 +731,11 @@ class HTS(Base):
         if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
         if slow.n > 0: self.drift(slow, tau / 2)
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
 
         p = self.join(slow, fast)
 
@@ -487,6 +765,11 @@ class HTS(Base):
         if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
         if slow.n > 0: self.drift(slow, tau / 2)
 
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
+
         p = self.join(slow, fast)
 
         return p
@@ -511,7 +794,7 @@ class HTS(Base):
         while ph[0][0] < tstop:
             (t, dt, p, slow, fast, indexing) = heapq.heappop(ph)
             if fast.n > 0:
-                self.dkd(slow, fast, dt)
+                self.sf_dkd(slow, fast, dt)
                 t += dt
                 self.time = t
 
@@ -533,7 +816,7 @@ class HTS(Base):
 #            tnext, tau, p, slow, fast, indexing = heapq.heappop(pheap)
 #
 #            if fast.n == 0: self.time += tau / 2
-#            if slow.n > 0: self.dkd(slow, fast, tau)
+#            if slow.n > 0: self.sf_dkd(slow, fast, tau)
 #            if fast.n == 0: self.time += tau / 2
 #
 #            self.merge(p, slow, fast, indexing)

@@ -132,18 +132,6 @@ class LeapFrog(Base):
         super(LeapFrog, self).__init__(eta, time, particles, **kwargs)
 
 
-    def dkd(self, p, tau):
-        """
-
-        """
-        p = super(LeapFrog, self).dkd(p, tau)
-
-        p.set_dt_prev(tau)
-        p.update_t_curr(tau)
-        p.update_nstep()
-        return p
-
-
     def get_base_tstep(self, t_end):
         tau = self.eta
         self.tstep = tau if self.time + tau <= t_end else t_end - self.time
@@ -191,8 +179,12 @@ class LeapFrog(Base):
             self.dumpper.dump(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         p = self.dkd(p, tau)
-        self.time += tau
 
+        p.set_dt_prev(tau)
+        p.update_t_curr(tau)
+        p.update_nstep()
+
+        self.time += tau
         self.particles = p
 
 
