@@ -154,6 +154,8 @@ class SIA(Base):
     PROVIDED_METHODS = ['sia.dkd21std', 'sia.dkd21shr', 'sia.dkd21hcc',
                         'sia.dkd43std', 'sia.dkd43shr', 'sia.dkd43hcc',
                         'sia.dkd45std', 'sia.dkd45shr', 'sia.dkd45hcc',
+                        'sia.dkd67std', 'sia.dkd67shr', 'sia.dkd67hcc',
+                        'sia.dkd69std', 'sia.dkd69shr', 'sia.dkd69hcc',
                        ]
 
     def __init__(self, eta, time, particles, method, **kwargs):
@@ -293,6 +295,18 @@ class SIA(Base):
             p = self.dkd45(p, tau, True, stream)
         elif self.method == "sia.dkd45hcc":
             p = self.dkd45hcc(p, tau, True, stream)
+        elif self.method == "sia.dkd67std":
+            p = self.dkd67(p, tau, False, stream)
+        elif self.method == "sia.dkd67shr":
+            p = self.dkd67(p, tau, True, stream)
+        elif self.method == "sia.dkd67hcc":
+            p = self.dkd67hcc(p, tau, True, stream)
+        elif self.method == "sia.dkd69std":
+            p = self.dkd69(p, tau, False, stream)
+        elif self.method == "sia.dkd69shr":
+            p = self.dkd69(p, tau, True, stream)
+        elif self.method == "sia.dkd69hcc":
+            p = self.dkd69hcc(p, tau, True, stream)
         elif self.method == 1:
             p = self.meth1(p, tau, True, stream)
         elif self.method == 2:
@@ -498,6 +512,175 @@ class SIA(Base):
         p = self.join(slow, fast)
 
         return p
+
+
+    #
+    # dkd67[std,shr,hcc] methods
+    #
+
+    def dkd67(self, p, tau, update_tstep, stream,
+                    c0=0.7845136104775573,
+                    c1=1.0200868238369154,     # c0+c2
+                    c2=0.23557321335935813,
+                    c3=-0.9421067708195129,    # c2+c4
+                    c4=-1.177679984178871,
+                    c5=0.13750633650504018,    # c4+c6
+                    c6=1.3151863206839112):
+        if update_tstep:
+            p.update_tstep(p, self.eta)
+            tau = self.get_min_block_tstep(p, tau)
+
+        p.set_dt_next(tau)
+
+        if stream:
+            stream.append(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        p = self.dkd(p, c0 * tau)
+        p = self.dkd(p, c2 * tau)
+        p = self.dkd(p, c4 * tau)
+        p = self.dkd(p, c6 * tau)
+        p = self.dkd(p, c4 * tau)
+        p = self.dkd(p, c2 * tau)
+        p = self.dkd(p, c0 * tau)
+
+        p.set_dt_prev(tau)
+        p.update_t_curr(tau)
+        p.update_nstep()
+
+        return p
+
+
+    def dkd67hcc(self, p, tau, update_tstep, stream,
+                       c0=0.7845136104775573,
+                       c1=1.0200868238369154,     # c0+c2
+                       c2=0.23557321335935813,
+                       c3=-0.9421067708195129,    # c2+c4
+                       c4=-1.177679984178871,
+                       c5=0.13750633650504018,    # c4+c6
+                       c6=1.3151863206839112):
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(abs(tau), p)
+
+        if slow.n:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if fast.n: fast = self.dkd67hcc(fast, c0 * tau / 2, False, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c0 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c1 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c2 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c3 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c4 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c5 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c6 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c5 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c4 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c3 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c2 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c1 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c0 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c0 * tau / 2, True, stream)
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    #
+    # dkd69[std,shr,hcc] methods
+    #
+
+    def dkd69(self, p, tau, update_tstep, stream,
+                    c0=0.3921614440073141,
+                    c1=0.7247605807966735,      # c0+c2
+                    c2=0.33259913678935943,
+                    c3=-0.3736470357682799,     # c2+c4
+                    c4=-0.7062461725576393,
+                    c5=-0.6240325762640886,     # c4+c6
+                    c6=0.0822135962935508,
+                    c7=0.8807575872283808,      # c6+c8
+                    c8=0.79854399093483):
+        if update_tstep:
+            p.update_tstep(p, self.eta)
+            tau = self.get_min_block_tstep(p, tau)
+
+        p.set_dt_next(tau)
+
+        if stream:
+            stream.append(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        p = self.dkd(p, c0 * tau)
+        p = self.dkd(p, c2 * tau)
+        p = self.dkd(p, c4 * tau)
+        p = self.dkd(p, c6 * tau)
+        p = self.dkd(p, c8 * tau)
+        p = self.dkd(p, c6 * tau)
+        p = self.dkd(p, c4 * tau)
+        p = self.dkd(p, c2 * tau)
+        p = self.dkd(p, c0 * tau)
+
+        p.set_dt_prev(tau)
+        p.update_t_curr(tau)
+        p.update_nstep()
+
+        return p
+
+
+    def dkd69hcc(self, p, tau, update_tstep, stream,
+                       c0=0.3921614440073141,
+                       c1=0.7247605807966735,      # c0+c2
+                       c2=0.33259913678935943,
+                       c3=-0.3736470357682799,     # c2+c4
+                       c4=-0.7062461725576393,
+                       c5=-0.6240325762640886,     # c4+c6
+                       c6=0.0822135962935508,
+                       c7=0.8807575872283808,      # c6+c8
+                       c8=0.79854399093483):
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        slow, fast = self.split(abs(tau), p)
+
+        if slow.n:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        if fast.n: fast = self.dkd67hcc(fast, c0 * tau / 2, False, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c0 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c1 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c2 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c3 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c4 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c5 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c6 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c7 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c8 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c7 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c6 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c5 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c4 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c3 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c2 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c1 * tau / 2, True, stream)
+        if slow.n: slow, fast = self.sf_dkd(slow, fast, c0 * tau)
+        if fast.n: fast = self.dkd67hcc(fast, c0 * tau / 2, True, stream)
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
+
+        p = self.join(slow, fast)
+
+        return p
+
 
 
     #
