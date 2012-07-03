@@ -43,6 +43,15 @@ class Particles(dict):
     # miscellaneous methods
     #
 
+    def __hash__(self):
+        i = None
+        for obj in self.values():
+            if i is None:
+                i = hash(obj)
+            else:
+                i ^= hash(obj)
+        return i
+
     def __repr__(self):
         fmt = self.__class__.__name__+'{'
         for key, obj in self.items():
