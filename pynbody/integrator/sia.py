@@ -65,17 +65,6 @@ class Base(object):
                     obj.vel += tau * obj.acc
 
 
-#        if ip.n and jp.n:
-#            if update_acc: ip.update_acc(jp)
-#            for obj in ip.values():
-#                if obj.n:
-#                    if update_acc:
-#                        obj.vel += tau * obj.acc
-#                        self.hashes[(obj, jp)] = obj.acc.copy()
-#                    else:
-#                        obj.vel += tau * self.hashes[(obj, jp)]
-
-
     def drift_pn(self, ip, tau):
         """
         Drift operator for PN quantities.
@@ -123,44 +112,6 @@ class Base(object):
                     obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
 
 
-    def dkd(self, p, tau):
-        """
-        The Drift-Kick-Drift operator.
-        """
-        self.drift(p, tau / 2)
-        if self.pn_order > 0: self.drift_pn(p, tau / 2)
-
-        self.kick(p, p, tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(p, p, tau)
-        self.kick(p, p, tau / 2, False)
-
-        if self.pn_order > 0: self.drift_pn(p, tau / 2)
-        self.drift(p, tau / 2)
-        return p
-
-
-    def sf_dkd(self, slow, fast, tau):
-        """
-        The Drift-Kick-Drift operator for hierarchical methods.
-        """
-        self.drift(slow, tau / 2)
-        if self.pn_order > 0: self.drift_pn(slow, tau / 2)
-
-        if fast.n: self.kick(fast, slow, tau, True)
-
-        self.kick(slow, slow, tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, tau)
-        self.kick(slow, slow, tau / 2, False)
-
-        if fast.n: self.kick(slow, fast, tau, True)
-
-        if self.pn_order > 0: self.drift_pn(slow, tau / 2)
-        self.drift(slow, tau / 2)
-
-        return slow, fast
-
-
-
 
 @decallmethods(timings)
 class SIA(Base):
@@ -188,18 +139,17 @@ class SIA(Base):
 
 
     def initialize(self, t_end):
-        logger.info("Initializing '%s' integrator.", self.__class__.__name__.lower())
+        logger.info("Initializing '%s' integrator.", self.method)
 
         p = self.particles
 
-        p.update_acc(p)
         if self.pn_order > 0: p.update_pnacc(p, self.pn_order, self.clight)
 
         self.is_initialized = True
 
 
     def finalize(self, t_end):
-        logger.info("Finalizing '%s' integrator.", self.__class__.__name__.lower())
+        logger.info("Finalizing '%s' integrator.", self.method)
 
         def final_dump(p, tau, stream):
             slow, fast = self.split(tau, p)
@@ -296,70 +246,52 @@ class SIA(Base):
 
 
         if self.method == "sia.dkd21std":
-            p = self.dkd21(p, tau, False, stream)
+            p = self.dkd21(p, tau, False, False, stream)
         elif self.method == "sia.dkd21shr":
-            p = self.dkd21(p, tau, True, stream)
+            p = self.dkd21(p, tau, True, False, stream)
         elif self.method == "sia.dkd21hcc":
-            p = self.dkd21hcc(p, tau, True, stream)
+            p = self.dkd21(p, tau, True, True, stream)
         elif self.method == "sia.dkd22std":
-            p = self.dkd22(p, tau, False, stream)
+            p = self.dkd22(p, tau, False, False, stream)
         elif self.method == "sia.dkd22shr":
-            p = self.dkd22(p, tau, True, stream)
+            p = self.dkd22(p, tau, True, False, stream)
         elif self.method == "sia.dkd22hcc":
-            p = self.dkd22hcc(p, tau, True, stream)
+            p = self.dkd22(p, tau, True, True, stream)
         elif self.method == "sia.dkd43std":
-            p = self.dkd43(p, tau, False, stream)
+            p = self.dkd43(p, tau, False, False, stream)
         elif self.method == "sia.dkd43shr":
-            p = self.dkd43(p, tau, True, stream)
+            p = self.dkd43(p, tau, True, False, stream)
         elif self.method == "sia.dkd43hcc":
-            p = self.dkd43hcc(p, tau, True, stream)
+            p = self.dkd43(p, tau, True, True, stream)
         elif self.method == "sia.dkd44std":
-            p = self.dkd44(p, tau, False, stream)
+            p = self.dkd44(p, tau, False, False, stream)
         elif self.method == "sia.dkd44shr":
-            p = self.dkd44(p, tau, True, stream)
+            p = self.dkd44(p, tau, True, False, stream)
         elif self.method == "sia.dkd44hcc":
-            p = self.dkd44hcc(p, tau, True, stream)
+            p = self.dkd44(p, tau, True, True, stream)
         elif self.method == "sia.dkd45std":
-            p = self.dkd45(p, tau, False, stream)
+            p = self.dkd45(p, tau, False, False, stream)
         elif self.method == "sia.dkd45shr":
-            p = self.dkd45(p, tau, True, stream)
+            p = self.dkd45(p, tau, True, False, stream)
         elif self.method == "sia.dkd45hcc":
-            p = self.dkd45hcc(p, tau, True, stream)
+            p = self.dkd45(p, tau, True, True, stream)
         elif self.method == "sia.dkd67std":
-            p = self.dkd67(p, tau, False, stream)
+            p = self.dkd67(p, tau, False, False, stream)
         elif self.method == "sia.dkd67shr":
-            p = self.dkd67(p, tau, True, stream)
+            p = self.dkd67(p, tau, True, False, stream)
         elif self.method == "sia.dkd67hcc":
-            p = self.dkd67hcc(p, tau, True, stream)
+            p = self.dkd67(p, tau, True, True, stream)
         elif self.method == "sia.dkd69std":
-            p = self.dkd69(p, tau, False, stream)
+            p = self.dkd69(p, tau, False, False, stream)
         elif self.method == "sia.dkd69shr":
-            p = self.dkd69(p, tau, True, stream)
+            p = self.dkd69(p, tau, True, False, stream)
         elif self.method == "sia.dkd69hcc":
-            p = self.dkd69hcc(p, tau, True, stream)
-        elif self.method == 1:
-            p = self.meth1(p, tau, True, stream)
-        elif self.method == 2:
-            p = self.meth2(p, tau, True, stream)
-        elif self.method == 3:
-            p = self.meth3(p, tau, True, stream)
-        elif self.method == 4:
-            p = self.meth4(p, tau, True, stream)
-        elif self.method == 5:
-            p = self.meth5(p, tau, True, stream)
-        elif self.method == 6:
-            p = self.meth6(p, tau, True, stream)
-        elif self.method == 7:
-            p = self.meth7(p, tau, True, stream)
-        elif self.method == 8:
-            p = self.meth8(p, tau, True, stream)
-        elif self.method == 9:
-            p = self.meth9(p, tau, True, stream)
+            p = self.dkd69(p, tau, True, True, stream)
         elif self.method == 0:
             pass
 ##            p = self.heapq0(p, tau, True)
         else:
-            raise ValueError("Unexpected HTS method type.")
+            raise ValueError("Unexpected method: {0}".format(self.method))
 
 
         if stream:
@@ -370,44 +302,19 @@ class SIA(Base):
 
 
     #
-    # dkd21[std,shr,hcc] methods -- D.K.D
+    # dkd21[std,shr,hcc] method -- D.K.D
     #
 
-    def dkd21(self, p, tau, update_tstep, stream,
+    def dkd21(self, p, tau, update_tstep, split, stream,
                     k0=1.0,
                     d0=0.5):
-        if update_tstep:
-            p.update_tstep(p, self.eta)
-            tau = self.get_min_block_tstep(p, tau)
-
-        p.set_dt_next(tau)
-
-        if stream:
-            stream.append(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        #
-        self.drift(p, d0 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d0 * tau)
-        #
-
-        p.set_dt_prev(tau)
-        p.update_t_curr(tau)
-        p.update_nstep()
-
-        return p
-
-
-    def dkd21hcc(self, p, tau, update_tstep, stream,
-                       k0=1.0,
-                       d0=0.5):
         if update_tstep: p.update_tstep(p, self.eta)
 
-        slow, fast = self.split(tau, p)
+        if split:
+            slow, fast = self.split(abs(tau), p)
+        else:
+            if update_tstep: tau = self.get_min_block_tstep(p, tau)
+            slow, fast = p, p.empty
 
         if slow.n:
             slow.set_dt_next(tau)
@@ -415,9 +322,9 @@ class SIA(Base):
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         #
-        if fast.n: fast = self.dkd21hcc(fast, d0 * tau / 2, False, stream)
+        if fast.n: fast = self.dkd21(fast, d0 * tau / 2, False, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd21hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd21(fast, d0 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -425,9 +332,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd21hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd21(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd21hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd21(fast, d0 * tau / 2, True, True, stream)
         #
 
         if slow.n:
@@ -441,52 +348,20 @@ class SIA(Base):
 
 
     #
-    # dkd22[std,shr,hcc] methods -- D.K.D.K.D
+    # dkd22[std,shr,hcc] method -- D.K.D.K.D
     #
 
-    def dkd22(self, p, tau, update_tstep, stream,
-                    k0=0.5,
-                    d0=0.1931833275037836,
-                    d1=0.6136333449924328):
-        if update_tstep:
-            p.update_tstep(p, self.eta)
-            tau = self.get_min_block_tstep(p, tau)
-
-        p.set_dt_next(tau)
-
-        if stream:
-            stream.append(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        #
-        self.drift(p, d0 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d1 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d0 * tau)
-        #
-
-        p.set_dt_prev(tau)
-        p.update_t_curr(tau)
-        p.update_nstep()
-
-        return p
-
-
-    def dkd22hcc(self, p, tau, update_tstep, stream,
+    def dkd22(self, p, tau, update_tstep, split, stream,
                     k0=0.5,
                     d0=0.1931833275037836,
                     d1=0.6136333449924328):
         if update_tstep: p.update_tstep(p, self.eta)
 
-        slow, fast = self.split(abs(tau), p)
+        if split:
+            slow, fast = self.split(abs(tau), p)
+        else:
+            if update_tstep: tau = self.get_min_block_tstep(p, tau)
+            slow, fast = p, p.empty
 
         if slow.n:
             slow.set_dt_next(tau)
@@ -494,9 +369,9 @@ class SIA(Base):
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         #
-        if fast.n: fast = self.dkd22hcc(fast, d0 * tau / 2, False, stream)
+        if fast.n: fast = self.dkd22(fast, d0 * tau / 2, False, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd22hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd22(fast, d0 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -504,9 +379,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd22hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd22(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
-        if fast.n: fast = self.dkd22hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd22(fast, d1 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -514,9 +389,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd22hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd22(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd22hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd22(fast, d0 * tau / 2, True, True, stream)
         #
 
         if slow.n:
@@ -530,60 +405,21 @@ class SIA(Base):
 
 
     #
-    # dkd43[std,shr,hcc] methods -- D.K.D.K.D.K.D
+    # dkd43[std,shr,hcc] method -- D.K.D.K.D.K.D
     #
 
-    def dkd43(self, p, tau, update_tstep, stream,
+    def dkd43(self, p, tau, update_tstep, split, stream,
                     k0=1.3512071919596575,
                     k1=-1.7024143839193150,
                     d0=0.6756035959798288,
                     d1=-0.17560359597982877):
-        if update_tstep:
-            p.update_tstep(p, self.eta)
-            tau = self.get_min_block_tstep(p, tau)
-
-        p.set_dt_next(tau)
-
-        if stream:
-            stream.append(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        #
-        self.drift(p, d0 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d1 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-        self.kick(p, p, k1 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-
-        self.drift(p, d1 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d0 * tau)
-        #
-
-        p.set_dt_prev(tau)
-        p.update_t_curr(tau)
-        p.update_nstep()
-
-        return p
-
-
-    def dkd43hcc(self, p, tau, update_tstep, stream,
-                       k0=1.3512071919596575,
-                       k1=-1.7024143839193150,
-                       d0=0.6756035959798288,
-                       d1=-0.17560359597982877):
         if update_tstep: p.update_tstep(p, self.eta)
 
-        slow, fast = self.split(abs(tau), p)
+        if split:
+            slow, fast = self.split(abs(tau), p)
+        else:
+            if update_tstep: tau = self.get_min_block_tstep(p, tau)
+            slow, fast = p, p.empty
 
         if slow.n:
             slow.set_dt_next(tau)
@@ -591,9 +427,9 @@ class SIA(Base):
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         #
-        if fast.n: fast = self.dkd43hcc(fast, d0 * tau / 2, False, stream)
+        if fast.n: fast = self.dkd43(fast, d0 * tau / 2, False, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd43hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd43(fast, d0 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -601,9 +437,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd43hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd43(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
-        if fast.n: fast = self.dkd43hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd43(fast, d1 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
         self.kick(fast, slow, k1 * tau, True)
@@ -611,9 +447,9 @@ class SIA(Base):
         self.kick(slow, fast, k1 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
 
-        if fast.n: fast = self.dkd43hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd43(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
-        if fast.n: fast = self.dkd43hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd43(fast, d1 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -621,9 +457,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd43hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd43(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd43hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd43(fast, d0 * tau / 2, True, True, stream)
         #
 
         if slow.n:
@@ -637,68 +473,22 @@ class SIA(Base):
 
 
     #
-    # dkd44[std,shr,hcc] methods -- D.K.D.K.D.K.D.K.D
+    # dkd44[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D
     #
 
-    def dkd44(self, p, tau, update_tstep, stream,
+    def dkd44(self, p, tau, update_tstep, split, stream,
                     k0=0.5915620307551568,
                     k1=-0.09156203075515679,
                     d0=0.1720865590295143,
                     d1=-0.1616217622107222,
                     d2=0.9790704063624158):
-        if update_tstep:
-            p.update_tstep(p, self.eta)
-            tau = self.get_min_block_tstep(p, tau)
-
-        p.set_dt_next(tau)
-
-        if stream:
-            stream.append(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        #
-        self.drift(p, d0 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d1 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-        self.kick(p, p, k1 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-
-        self.drift(p, d2 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-        self.kick(p, p, k1 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-
-        self.drift(p, d1 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d0 * tau)
-        #
-
-        p.set_dt_prev(tau)
-        p.update_t_curr(tau)
-        p.update_nstep()
-
-        return p
-
-
-    def dkd44hcc(self, p, tau, update_tstep, stream,
-                       k0=0.5915620307551568,
-                       k1=-0.09156203075515679,
-                       d0=0.1720865590295143,
-                       d1=-0.1616217622107222,
-                       d2=0.9790704063624158):
         if update_tstep: p.update_tstep(p, self.eta)
 
-        slow, fast = self.split(abs(tau), p)
+        if split:
+            slow, fast = self.split(abs(tau), p)
+        else:
+            if update_tstep: tau = self.get_min_block_tstep(p, tau)
+            slow, fast = p, p.empty
 
         if slow.n:
             slow.set_dt_next(tau)
@@ -706,9 +496,9 @@ class SIA(Base):
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         #
-        if fast.n: fast = self.dkd44hcc(fast, d0 * tau / 2, False, stream)
+        if fast.n: fast = self.dkd44(fast, d0 * tau / 2, False, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd44hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd44(fast, d0 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -716,9 +506,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd44hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd44(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
-        if fast.n: fast = self.dkd44hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd44(fast, d1 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
         self.kick(fast, slow, k1 * tau, True)
@@ -726,9 +516,9 @@ class SIA(Base):
         self.kick(slow, fast, k1 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
 
-        if fast.n: fast = self.dkd44hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd44(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
-        if fast.n: fast = self.dkd44hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd44(fast, d2 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
         self.kick(fast, slow, k1 * tau, True)
@@ -736,9 +526,9 @@ class SIA(Base):
         self.kick(slow, fast, k1 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
 
-        if fast.n: fast = self.dkd44hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd44(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
-        if fast.n: fast = self.dkd44hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd44(fast, d1 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -746,9 +536,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd44hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd44(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd44hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd44(fast, d0 * tau / 2, True, True, stream)
         #
 
         if slow.n:
@@ -762,76 +552,23 @@ class SIA(Base):
 
 
     #
-    # dkd45[std,shr,hcc] methods -- D.K.D.K.D.K.D.K.D.K.D
+    # dkd45[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D
     #
 
-    def dkd45(self, p, tau, update_tstep, stream,
+    def dkd45(self, p, tau, update_tstep, split, stream,
                     k0=-0.0844296195070715,
                     k1=0.354900057157426,
                     k2=0.459059124699291,
                     d0=0.2750081212332419,
                     d1=-0.1347950099106792,
                     d2=0.35978688867743724):
-        if update_tstep:
-            p.update_tstep(p, self.eta)
-            tau = self.get_min_block_tstep(p, tau)
-
-        p.set_dt_next(tau)
-
-        if stream:
-            stream.append(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        #
-        self.drift(p, d0 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d1 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-        self.kick(p, p, k1 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-
-        self.drift(p, d2 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k2 * tau / 2)
-        self.kick(p, p, k2 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k2 * tau / 2)
-
-        self.drift(p, d2 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-        self.kick(p, p, k1 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-
-        self.drift(p, d1 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d0 * tau)
-        #
-
-        p.set_dt_prev(tau)
-        p.update_t_curr(tau)
-        p.update_nstep()
-
-        return p
-
-
-    def dkd45hcc(self, p, tau, update_tstep, stream,
-                       k0=-0.0844296195070715,
-                       k1=0.354900057157426,
-                       k2=0.459059124699291,
-                       d0=0.2750081212332419,
-                       d1=-0.1347950099106792,
-                       d2=0.35978688867743724):
         if update_tstep: p.update_tstep(p, self.eta)
 
-        slow, fast = self.split(abs(tau), p)
+        if split:
+            slow, fast = self.split(abs(tau), p)
+        else:
+            if update_tstep: tau = self.get_min_block_tstep(p, tau)
+            slow, fast = p, p.empty
 
         if slow.n:
             slow.set_dt_next(tau)
@@ -839,9 +576,9 @@ class SIA(Base):
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         #
-        if fast.n: fast = self.dkd45hcc(fast, d0 * tau / 2, False, stream)
+        if fast.n: fast = self.dkd45(fast, d0 * tau / 2, False, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd45hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd45(fast, d0 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -849,9 +586,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd45hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd45(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
-        if fast.n: fast = self.dkd45hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd45(fast, d1 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
         self.kick(fast, slow, k1 * tau, True)
@@ -859,9 +596,9 @@ class SIA(Base):
         self.kick(slow, fast, k1 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
 
-        if fast.n: fast = self.dkd45hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd45(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
-        if fast.n: fast = self.dkd45hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd45(fast, d2 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau / 2)
         self.kick(fast, slow, k2 * tau, True)
@@ -869,9 +606,9 @@ class SIA(Base):
         self.kick(slow, fast, k2 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau / 2)
 
-        if fast.n: fast = self.dkd45hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd45(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
-        if fast.n: fast = self.dkd45hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd45(fast, d2 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
         self.kick(fast, slow, k1 * tau, True)
@@ -879,9 +616,9 @@ class SIA(Base):
         self.kick(slow, fast, k1 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
 
-        if fast.n: fast = self.dkd45hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd45(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
-        if fast.n: fast = self.dkd45hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd45(fast, d1 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -889,9 +626,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd45hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd45(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd45hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd45(fast, d0 * tau / 2, True, True, stream)
         #
 
         if slow.n:
@@ -905,10 +642,10 @@ class SIA(Base):
 
 
     #
-    # dkd67[std,shr,hcc] methods
+    # dkd67[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
 
-    def dkd67(self, p, tau, update_tstep, stream,
+    def dkd67(self, p, tau, update_tstep, split, stream,
                     k0=0.7845136104775573,
                     k1=0.23557321335935813,
                     k2=-1.177679984178871,
@@ -917,80 +654,13 @@ class SIA(Base):
                     d1=0.5100434119184577,
                     d2=-0.47105338540975644,
                     d3=0.06875316825252015):
-        if update_tstep:
-            p.update_tstep(p, self.eta)
-            tau = self.get_min_block_tstep(p, tau)
-
-        p.set_dt_next(tau)
-
-        if stream:
-            stream.append(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        #
-        self.drift(p, d0 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d1 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-        self.kick(p, p, k1 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-
-        self.drift(p, d2 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k2 * tau / 2)
-        self.kick(p, p, k2 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k2 * tau / 2)
-
-        self.drift(p, d3 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k3 * tau / 2)
-        self.kick(p, p, k3 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k3 * tau / 2)
-
-        self.drift(p, d3 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k2 * tau / 2)
-        self.kick(p, p, k2 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k2 * tau / 2)
-
-        self.drift(p, d2 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-        self.kick(p, p, k1 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-
-        self.drift(p, d1 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d0 * tau)
-        #
-
-        p.set_dt_prev(tau)
-        p.update_t_curr(tau)
-        p.update_nstep()
-
-        return p
-
-
-    def dkd67hcc(self, p, tau, update_tstep, stream,
-                       k0=0.7845136104775573,
-                       k1=0.23557321335935813,
-                       k2=-1.177679984178871,
-                       k3=1.3151863206839112,
-                       d0=0.39225680523877865,
-                       d1=0.5100434119184577,
-                       d2=-0.47105338540975644,
-                       d3=0.06875316825252015):
         if update_tstep: p.update_tstep(p, self.eta)
 
-        slow, fast = self.split(abs(tau), p)
+        if split:
+            slow, fast = self.split(abs(tau), p)
+        else:
+            if update_tstep: tau = self.get_min_block_tstep(p, tau)
+            slow, fast = p, p.empty
 
         if slow.n:
             slow.set_dt_next(tau)
@@ -998,9 +668,9 @@ class SIA(Base):
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         #
-        if fast.n: fast = self.dkd67hcc(fast, d0 * tau / 2, False, stream)
+        if fast.n: fast = self.dkd67(fast, d0 * tau / 2, False, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd67hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d0 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -1008,9 +678,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd67hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
-        if fast.n: fast = self.dkd67hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d1 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
         self.kick(fast, slow, k1 * tau, True)
@@ -1018,9 +688,9 @@ class SIA(Base):
         self.kick(slow, fast, k1 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
 
-        if fast.n: fast = self.dkd67hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
-        if fast.n: fast = self.dkd67hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d2 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau / 2)
         self.kick(fast, slow, k2 * tau, True)
@@ -1028,9 +698,9 @@ class SIA(Base):
         self.kick(slow, fast, k2 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau / 2)
 
-        if fast.n: fast = self.dkd67hcc(fast, d3 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d3 * tau / 2, True, True, stream)
         self.drift(slow, d3 * tau)
-        if fast.n: fast = self.dkd67hcc(fast, d3 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d3 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k3 * tau / 2)
         self.kick(fast, slow, k3 * tau, True)
@@ -1038,9 +708,9 @@ class SIA(Base):
         self.kick(slow, fast, k3 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k3 * tau / 2)
 
-        if fast.n: fast = self.dkd67hcc(fast, d3 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d3 * tau / 2, True, True, stream)
         self.drift(slow, d3 * tau)
-        if fast.n: fast = self.dkd67hcc(fast, d3 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d3 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau / 2)
         self.kick(fast, slow, k2 * tau, True)
@@ -1048,9 +718,9 @@ class SIA(Base):
         self.kick(slow, fast, k2 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau / 2)
 
-        if fast.n: fast = self.dkd67hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
-        if fast.n: fast = self.dkd67hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d2 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
         self.kick(fast, slow, k1 * tau, True)
@@ -1058,9 +728,9 @@ class SIA(Base):
         self.kick(slow, fast, k1 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
 
-        if fast.n: fast = self.dkd67hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
-        if fast.n: fast = self.dkd67hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d1 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -1068,9 +738,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd67hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd67hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd67(fast, d0 * tau / 2, True, True, stream)
         #
 
         if slow.n:
@@ -1084,10 +754,10 @@ class SIA(Base):
 
 
     #
-    # dkd69[std,shr,hcc] methods
+    # dkd69[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
 
-    def dkd69(self, p, tau, update_tstep, stream,
+    def dkd69(self, p, tau, update_tstep, split, stream,
                     k0=0.39103020330868477,
                     k1=0.334037289611136,
                     k2=-0.7062272811875614,
@@ -1098,94 +768,13 @@ class SIA(Base):
                     d2=-0.1860949957882127,
                     d3=-0.31217486576975095,
                     d4=0.44022101344371095):
-        if update_tstep:
-            p.update_tstep(p, self.eta)
-            tau = self.get_min_block_tstep(p, tau)
-
-        p.set_dt_next(tau)
-
-        if stream:
-            stream.append(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        #
-        self.drift(p, d0 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d1 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-        self.kick(p, p, k1 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-
-        self.drift(p, d2 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k2 * tau / 2)
-        self.kick(p, p, k2 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k2 * tau / 2)
-
-        self.drift(p, d3 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k3 * tau / 2)
-        self.kick(p, p, k3 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k3 * tau / 2)
-
-        self.drift(p, d4 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k4 * tau / 2)
-        self.kick(p, p, k4 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k4 * tau / 2)
-
-        self.drift(p, d4 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k3 * tau / 2)
-        self.kick(p, p, k3 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k3 * tau / 2)
-
-        self.drift(p, d3 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k2 * tau / 2)
-        self.kick(p, p, k2 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k2 * tau / 2)
-
-        self.drift(p, d2 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-        self.kick(p, p, k1 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k1 * tau / 2)
-
-        self.drift(p, d1 * tau)
-
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-        self.kick(p, p, k0 * tau, True)
-        if self.pn_order > 0: self.kick_pn(p, p, k0 * tau / 2)
-
-        self.drift(p, d0 * tau)
-        #
-
-        p.set_dt_prev(tau)
-        p.update_t_curr(tau)
-        p.update_nstep()
-
-        return p
-
-
-    def dkd69hcc(self, p, tau, update_tstep, stream,
-                       k0=0.39103020330868477,
-                       k1=0.334037289611136,
-                       k2=-0.7062272811875614,
-                       k3=0.08187754964805945,
-                       k4=0.7985644772393624,
-                       d0=0.19551510165434238,
-                       d1=0.3625337464599104,
-                       d2=-0.1860949957882127,
-                       d3=-0.31217486576975095,
-                       d4=0.44022101344371095):
         if update_tstep: p.update_tstep(p, self.eta)
 
-        slow, fast = self.split(abs(tau), p)
+        if split:
+            slow, fast = self.split(abs(tau), p)
+        else:
+            if update_tstep: tau = self.get_min_block_tstep(p, tau)
+            slow, fast = p, p.empty
 
         if slow.n:
             slow.set_dt_next(tau)
@@ -1193,9 +782,9 @@ class SIA(Base):
                 stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
 
         #
-        if fast.n: fast = self.dkd69hcc(fast, d0 * tau / 2, False, stream)
+        if fast.n: fast = self.dkd69(fast, d0 * tau / 2, False, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd69hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d0 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -1203,9 +792,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd69hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
-        if fast.n: fast = self.dkd69hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d1 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
         self.kick(fast, slow, k1 * tau, True)
@@ -1213,9 +802,9 @@ class SIA(Base):
         self.kick(slow, fast, k1 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
 
-        if fast.n: fast = self.dkd69hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
-        if fast.n: fast = self.dkd69hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d2 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau / 2)
         self.kick(fast, slow, k2 * tau, True)
@@ -1223,9 +812,9 @@ class SIA(Base):
         self.kick(slow, fast, k2 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau / 2)
 
-        if fast.n: fast = self.dkd69hcc(fast, d3 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d3 * tau / 2, True, True, stream)
         self.drift(slow, d3 * tau)
-        if fast.n: fast = self.dkd69hcc(fast, d3 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d3 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k3 * tau / 2)
         self.kick(fast, slow, k3 * tau, True)
@@ -1233,9 +822,9 @@ class SIA(Base):
         self.kick(slow, fast, k3 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k3 * tau / 2)
 
-        if fast.n: fast = self.dkd69hcc(fast, d4 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d4 * tau / 2, True, True, stream)
         self.drift(slow, d4 * tau)
-        if fast.n: fast = self.dkd69hcc(fast, d4 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d4 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k4 * tau / 2)
         self.kick(fast, slow, k4 * tau, True)
@@ -1243,9 +832,9 @@ class SIA(Base):
         self.kick(slow, fast, k4 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k4 * tau / 2)
 
-        if fast.n: fast = self.dkd69hcc(fast, d4 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d4 * tau / 2, True, True, stream)
         self.drift(slow, d4 * tau)
-        if fast.n: fast = self.dkd69hcc(fast, d4 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d4 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k3 * tau / 2)
         self.kick(fast, slow, k3 * tau, True)
@@ -1253,9 +842,9 @@ class SIA(Base):
         self.kick(slow, fast, k3 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k3 * tau / 2)
 
-        if fast.n: fast = self.dkd69hcc(fast, d3 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d3 * tau / 2, True, True, stream)
         self.drift(slow, d3 * tau)
-        if fast.n: fast = self.dkd69hcc(fast, d3 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d3 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau / 2)
         self.kick(fast, slow, k2 * tau, True)
@@ -1263,9 +852,9 @@ class SIA(Base):
         self.kick(slow, fast, k2 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau / 2)
 
-        if fast.n: fast = self.dkd69hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
-        if fast.n: fast = self.dkd69hcc(fast, d2 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d2 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
         self.kick(fast, slow, k1 * tau, True)
@@ -1273,9 +862,9 @@ class SIA(Base):
         self.kick(slow, fast, k1 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau / 2)
 
-        if fast.n: fast = self.dkd69hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
-        if fast.n: fast = self.dkd69hcc(fast, d1 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d1 * tau / 2, True, True, stream)
 
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
         self.kick(fast, slow, k0 * tau, True)
@@ -1283,9 +872,9 @@ class SIA(Base):
         self.kick(slow, fast, k0 * tau, True)
         if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau / 2)
 
-        if fast.n: fast = self.dkd69hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
-        if fast.n: fast = self.dkd69hcc(fast, d0 * tau / 2, True, stream)
+        if fast.n: fast = self.dkd69(fast, d0 * tau / 2, True, True, stream)
         #
 
         if slow.n:
@@ -1302,277 +891,6 @@ class SIA(Base):
     #
     # the following methods are for experimental purposes only.
     #
-
-    ### meth1
-
-    def meth1(self, p, tau, update_tstep, stream):      # This method does not conserves the center of mass.
-        if update_tstep: p.update_tstep(p, self.eta)
-
-        slow, fast = self.split(tau, p)
-
-        if slow.n > 0:
-            slow.set_dt_next(tau)
-            if stream:
-                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        if slow.n > 0: slow, fast = self.sf_dkd(slow, fast, tau / 2)
-        if fast.n > 0: fast = self.meth1(fast, tau / 2, True, stream)
-        if fast.n > 0: fast = self.meth1(fast, tau / 2, True, stream)
-        if slow.n > 0: slow, fast = self.sf_dkd(slow, fast, tau / 2)
-
-        if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
-
-        p = self.join(slow, fast)
-
-        return p
-
-
-    ### meth2
-
-    def meth2(self, p, tau, update_tstep, stream):
-        if update_tstep: p.update_tstep(p, self.eta)
-
-        slow, fast = self.split(tau, p)
-
-        if slow.n > 0:
-            slow.set_dt_next(tau)
-            if stream:
-                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if fast.n > 0: fast = self.meth2(fast, tau / 2, True, stream)
-        if slow.n > 0: slow, empty = self.sf_dkd(slow, p.empty, tau)
-        if fast.n > 0: fast = self.meth2(fast, tau / 2, True, stream)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-
-        if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
-
-        p = self.join(slow, fast)
-
-        return p
-
-
-    ### meth3
-
-    def meth3(self, p, tau, update_tstep, stream):      # This method does not conserves the center of mass.
-        if update_tstep: p.update_tstep(p, self.eta)
-
-        slow, fast = self.split(tau, p)
-
-        if slow.n > 0:
-            slow.set_dt_next(tau)
-            if stream:
-                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        if fast.n > 0: fast = self.meth3(fast, tau / 2, False, stream)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0: slow, empty = self.sf_dkd(slow, p.empty, tau)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if fast.n > 0: fast = self.meth3(fast, tau / 2, True, stream)
-
-        if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
-
-        p = self.join(slow, fast)
-
-        return p
-
-
-    ### meth4
-
-    def meth4(self, p, tau, update_tstep, stream):
-        if update_tstep: p.update_tstep(p, self.eta)
-
-        slow, fast = self.split(tau, p)
-
-        if slow.n > 0:
-            slow.set_dt_next(tau)
-            if stream:
-                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        if slow.n > 0: slow, empty = self.sf_dkd(slow, p.empty, tau / 2)
-        if fast.n > 0: fast = self.meth4(fast, tau / 2, False, stream)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
-        if fast.n > 0: fast = self.meth4(fast, tau / 2, True, stream)
-        if slow.n > 0: slow, empty = self.sf_dkd(slow, p.empty, tau / 2)
-
-        if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
-
-        p = self.join(slow, fast)
-
-        return p
-
-
-    ### meth5
-
-    def meth5(self, p, tau, update_tstep, stream):
-        if update_tstep: p.update_tstep(p, self.eta)
-
-        slow, fast = self.split(tau, p)
-
-        if slow.n > 0:
-            slow.set_dt_next(tau)
-            if stream:
-                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        if fast.n > 0: fast = self.meth5(fast, tau / 2, False, stream)
-        if slow.n > 0: slow, empty = self.sf_dkd(slow, p.empty, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
-        if slow.n > 0: slow, empty = self.sf_dkd(slow, p.empty, tau / 2)
-        if fast.n > 0: fast = self.meth5(fast, tau / 2, True, stream)
-
-        if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
-
-        p = self.join(slow, fast)
-
-        return p
-
-
-    ### meth6
-
-    def meth6(self, p, tau, update_tstep, stream):      # results are identical to the meth0
-        if update_tstep: p.update_tstep(p, self.eta)
-
-        slow, fast = self.split(tau, p)
-
-        if slow.n > 0:
-            slow.set_dt_next(tau)
-            if stream:
-                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        if slow.n > 0: self.drift(slow, tau / 2)
-        if fast.n > 0: fast = self.meth6(fast, tau / 2, False, stream)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
-        if slow.n > 0: self.kick(slow, slow, tau)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
-        if fast.n > 0: fast = self.meth6(fast, tau / 2, True, stream)
-        if slow.n > 0: self.drift(slow, tau / 2)
-
-        if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
-
-        p = self.join(slow, fast)
-
-        return p
-
-
-    ### meth7
-
-    def meth7(self, p, tau, update_tstep, stream):      # results are almost identical to the meth0
-        if update_tstep: p.update_tstep(p, self.eta)
-
-        slow, fast = self.split(tau, p)
-
-        if slow.n > 0:
-            slow.set_dt_next(tau)
-            if stream:
-                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        if slow.n > 0: self.drift(slow, tau / 2)
-        if slow.n > 0: self.kick(slow, slow, tau / 2)
-        if fast.n > 0: fast = self.meth7(fast, tau / 2, False, stream)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau)
-        if fast.n > 0: fast = self.meth7(fast, tau / 2, True, stream)
-        if slow.n > 0: self.kick(slow, slow, tau / 2)
-        if slow.n > 0: self.drift(slow, tau / 2)
-
-        if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
-
-        p = self.join(slow, fast)
-
-        return p
-
-
-    ### meth8
-
-    def meth8(self, p, tau, update_tstep, stream):      # This method does not conserves the center of mass.
-        if update_tstep: p.update_tstep(p, self.eta)
-
-        slow, fast = self.split(tau, p)
-
-        if slow.n > 0:
-            slow.set_dt_next(tau)
-            if stream:
-                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        if slow.n > 0: self.drift(slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if fast.n > 0: fast = self.meth8(fast, tau / 2, True, stream)
-        if slow.n > 0: self.kick(slow, slow, tau)
-        if fast.n > 0: fast = self.meth8(fast, tau / 2, True, stream)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0: self.drift(slow, tau / 2)
-
-        if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
-
-        p = self.join(slow, fast)
-
-        return p
-
-
-    ### meth9
-
-    def meth9(self, p, tau, update_tstep, stream):      # This method does not conserves the center of mass.
-        if update_tstep: p.update_tstep(p, self.eta)
-
-        slow, fast = self.split(tau, p)
-
-        if slow.n > 0:
-            slow.set_dt_next(tau)
-            if stream:
-                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
-
-        if slow.n > 0: self.drift(slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0: self.kick(slow, slow, tau / 2)
-        if fast.n > 0: fast = self.meth9(fast, tau / 2, True, stream)
-        if fast.n > 0: fast = self.meth9(fast, tau / 2, True, stream)
-        if slow.n > 0: self.kick(slow, slow, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(slow, fast, tau / 2)
-        if slow.n > 0 and fast.n > 0: self.kick(fast, slow, tau / 2)
-        if slow.n > 0: self.drift(slow, tau / 2)
-
-        if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
-
-        p = self.join(slow, fast)
-
-        return p
-
 
 
     ### heapq0
