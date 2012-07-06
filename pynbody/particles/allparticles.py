@@ -52,6 +52,7 @@ class Particles(dict):
                 i ^= hash(obj)
         return i
 
+
     def __repr__(self):
         fmt = self.__class__.__name__+'{'
         for key, obj in self.items():
@@ -59,16 +60,20 @@ class Particles(dict):
         fmt += '\n}'
         return fmt
 
-    @property
-    def n(self):
+
+    def __len__(self):
         return sum([obj.n for obj in self.values()])
+    n = property(__len__)
+
 
     @property
     def empty(self):
         return self.__class__()
 
+
     def copy(self):
         return copy.deepcopy(self)
+
 
     def append(self, objs):
         if isinstance(objs, Particles):
@@ -82,12 +87,14 @@ class Particles(dict):
         elif isinstance(objs, Sph):
             self["sph"].append(objs)
 
+
     def stack_fields(self, attrs, pad=-1):
         arrays = [obj.stack_fields(attrs, pad) for obj in self.values() if obj.n]
         return np.concatenate(arrays)
 
+
     def select(self, function, attr):
-        subset = self.__class__()
+        subset = self.empty
         for obj in self.values():
             if obj.n:
                 selection = function(getattr(obj, attr))

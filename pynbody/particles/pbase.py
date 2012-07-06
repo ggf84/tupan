@@ -58,27 +58,39 @@ class Pbase(object):
         fmt += ']'
         return fmt
 
+
     def __len__(self):
         return len(self.data)
     n = property(__len__)
 
+
+    @property
+    def empty(self):
+        return self.__class__()
+
+
     def __getitem__(self, index):
-        obj = self.__class__()
+        obj = self.empty
         obj.data = self.data[index]
         return obj
+
 
     def copy(self):
         return copy.deepcopy(self)
 
+
     def append(self, obj):
         self.data = np.append(self.data, obj.data)
+
 
     def remove(self, id):
         index = np.where(self.id == id)
         self.data = np.delete(self.data, index)
 
+
     def insert(self, index, obj):
         self.data = np.insert(self.data, index, obj.data)
+
 
     def pop(self, id=None):
         if id:
@@ -89,8 +101,10 @@ class Pbase(object):
         self.data = np.delete(self.data, index)
         return obj
 
+
     def get_state(self):
         return self.data[self.attrs]
+
 
     def set_state(self, state):
         self.data = np.zeros(len(state), dtype=self.dtype)
@@ -98,10 +112,12 @@ class Pbase(object):
             if name in self.data.dtype.names:
                 self.data[name] = state[name]
 
+
     def astype(self, cls):
         obj = cls()
         obj.set_state(self.get_state())
         return obj
+
 
     def stack_fields(self, attrs, pad=-1):
         arrays = []
