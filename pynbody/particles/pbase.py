@@ -59,6 +59,10 @@ class Pbase(object):
         return fmt
 
 
+    def __hash__(self):
+        return self.data.__hash__()
+
+
     def __len__(self):
         return len(self.data)
     n = property(__len__)

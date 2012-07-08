@@ -40,8 +40,6 @@ class Base(object):
             msg = "{0}.__init__ received unexpected keyword arguments: {1}."
             raise TypeError(msg.format(self.__class__.__name__,", ".join(kwargs.keys())))
 
-        self.hashes = {}
-
 
     def drift(self, ip, tau):
         """
@@ -214,10 +212,10 @@ class SIA(Base):
     ### join
 
     def join(self, slow, fast, inplace=True):
-        if fast.n == 0:
-            return slow
         if slow.n == 0:
             return fast
+        if fast.n == 0:
+            return slow
         if inplace:
             p = slow
         else:
@@ -242,7 +240,7 @@ class SIA(Base):
         if self.reporter:
             self.reporter.report(self.time, p)
         if self.dumpper:
-            stream = p.__class__()
+            stream = p.empty
 
 
         if self.method == "sia.dkd21std":
@@ -301,6 +299,20 @@ class SIA(Base):
         self.particles = p
 
 
+    def kick_sf(self, slow, fast, tau):
+        """
+        Slow<->Fast Kick operator.
+        """
+        p = self.join(slow, fast, inplace=False)
+        if self.pn_order > 0:
+            self.kick(slow, p, tau / 2, True)
+            self.kick_pn(slow, slow, tau)
+            self.kick(slow, p, tau / 2, False)
+        else:
+            self.kick(slow, p, tau, True)
+        self.kick(fast, slow, tau, True)
+
+
     #
     # dkd21[std,shr,hcc] method -- D.K.D
     #
@@ -326,11 +338,7 @@ class SIA(Base):
         self.drift(slow, d0 * tau)
         if fast.n: fast = self.dkd21(fast, d0 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd21(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
@@ -373,21 +381,13 @@ class SIA(Base):
         self.drift(slow, d0 * tau)
         if fast.n: fast = self.dkd22(fast, d0 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd22(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
         if fast.n: fast = self.dkd22(fast, d1 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd22(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
@@ -431,31 +431,19 @@ class SIA(Base):
         self.drift(slow, d0 * tau)
         if fast.n: fast = self.dkd43(fast, d0 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd43(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
         if fast.n: fast = self.dkd43(fast, d1 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k1 * tau, True)
-        self.kick(slow, slow, k1 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau)
-        self.kick(slow, slow, k1 * tau / 2, False)
-        self.kick(slow, fast, k1 * tau, True)
+        self.kick_sf(slow, fast, k1 * tau)
 
         if fast.n: fast = self.dkd43(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
         if fast.n: fast = self.dkd43(fast, d1 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd43(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
@@ -477,11 +465,11 @@ class SIA(Base):
     #
 
     def dkd44(self, p, tau, update_tstep, split, stream,
-                    k0=0.5915620307551568,
-                    k1=-0.09156203075515679,
-                    d0=0.1720865590295143,
-                    d1=-0.1616217622107222,
-                    d2=0.9790704063624158):
+                    k0=0.7123418310626056,
+                    k1=-0.21234183106260562,
+                    d0=0.1786178958448091,
+                    d1=-0.06626458266981843,
+                    d2=0.7752933736500186):
         if update_tstep: p.update_tstep(p, self.eta)
 
         if split:
@@ -500,41 +488,25 @@ class SIA(Base):
         self.drift(slow, d0 * tau)
         if fast.n: fast = self.dkd44(fast, d0 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd44(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
         if fast.n: fast = self.dkd44(fast, d1 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k1 * tau, True)
-        self.kick(slow, slow, k1 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau)
-        self.kick(slow, slow, k1 * tau / 2, False)
-        self.kick(slow, fast, k1 * tau, True)
+        self.kick_sf(slow, fast, k1 * tau)
 
         if fast.n: fast = self.dkd44(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
         if fast.n: fast = self.dkd44(fast, d2 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k1 * tau, True)
-        self.kick(slow, slow, k1 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau)
-        self.kick(slow, slow, k1 * tau / 2, False)
-        self.kick(slow, fast, k1 * tau, True)
+        self.kick_sf(slow, fast, k1 * tau)
 
         if fast.n: fast = self.dkd44(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
         if fast.n: fast = self.dkd44(fast, d1 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd44(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
@@ -580,51 +552,31 @@ class SIA(Base):
         self.drift(slow, d0 * tau)
         if fast.n: fast = self.dkd45(fast, d0 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd45(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
         if fast.n: fast = self.dkd45(fast, d1 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k1 * tau, True)
-        self.kick(slow, slow, k1 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau)
-        self.kick(slow, slow, k1 * tau / 2, False)
-        self.kick(slow, fast, k1 * tau, True)
+        self.kick_sf(slow, fast, k1 * tau)
 
         if fast.n: fast = self.dkd45(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
         if fast.n: fast = self.dkd45(fast, d2 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k2 * tau, True)
-        self.kick(slow, slow, k2 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau)
-        self.kick(slow, slow, k2 * tau / 2, False)
-        self.kick(slow, fast, k2 * tau, True)
+        self.kick_sf(slow, fast, k2 * tau)
 
         if fast.n: fast = self.dkd45(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
         if fast.n: fast = self.dkd45(fast, d2 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k1 * tau, True)
-        self.kick(slow, slow, k1 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau)
-        self.kick(slow, slow, k1 * tau / 2, False)
-        self.kick(slow, fast, k1 * tau, True)
+        self.kick_sf(slow, fast, k1 * tau)
 
         if fast.n: fast = self.dkd45(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
         if fast.n: fast = self.dkd45(fast, d1 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd45(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
@@ -672,71 +624,43 @@ class SIA(Base):
         self.drift(slow, d0 * tau)
         if fast.n: fast = self.dkd67(fast, d0 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd67(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
         if fast.n: fast = self.dkd67(fast, d1 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k1 * tau, True)
-        self.kick(slow, slow, k1 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau)
-        self.kick(slow, slow, k1 * tau / 2, False)
-        self.kick(slow, fast, k1 * tau, True)
+        self.kick_sf(slow, fast, k1 * tau)
 
         if fast.n: fast = self.dkd67(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
         if fast.n: fast = self.dkd67(fast, d2 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k2 * tau, True)
-        self.kick(slow, slow, k2 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau)
-        self.kick(slow, slow, k2 * tau / 2, False)
-        self.kick(slow, fast, k2 * tau, True)
+        self.kick_sf(slow, fast, k2 * tau)
 
         if fast.n: fast = self.dkd67(fast, d3 * tau / 2, True, True, stream)
         self.drift(slow, d3 * tau)
         if fast.n: fast = self.dkd67(fast, d3 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k3 * tau, True)
-        self.kick(slow, slow, k3 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k3 * tau)
-        self.kick(slow, slow, k3 * tau / 2, False)
-        self.kick(slow, fast, k3 * tau, True)
+        self.kick_sf(slow, fast, k3 * tau)
 
         if fast.n: fast = self.dkd67(fast, d3 * tau / 2, True, True, stream)
         self.drift(slow, d3 * tau)
         if fast.n: fast = self.dkd67(fast, d3 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k2 * tau, True)
-        self.kick(slow, slow, k2 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau)
-        self.kick(slow, slow, k2 * tau / 2, False)
-        self.kick(slow, fast, k2 * tau, True)
+        self.kick_sf(slow, fast, k2 * tau)
 
         if fast.n: fast = self.dkd67(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
         if fast.n: fast = self.dkd67(fast, d2 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k1 * tau, True)
-        self.kick(slow, slow, k1 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau)
-        self.kick(slow, slow, k1 * tau / 2, False)
-        self.kick(slow, fast, k1 * tau, True)
+        self.kick_sf(slow, fast, k1 * tau)
 
         if fast.n: fast = self.dkd67(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
         if fast.n: fast = self.dkd67(fast, d1 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd67(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
@@ -786,91 +710,55 @@ class SIA(Base):
         self.drift(slow, d0 * tau)
         if fast.n: fast = self.dkd69(fast, d0 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd69(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
         if fast.n: fast = self.dkd69(fast, d1 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k1 * tau, True)
-        self.kick(slow, slow, k1 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau)
-        self.kick(slow, slow, k1 * tau / 2, False)
-        self.kick(slow, fast, k1 * tau, True)
+        self.kick_sf(slow, fast, k1 * tau)
 
         if fast.n: fast = self.dkd69(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
         if fast.n: fast = self.dkd69(fast, d2 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k2 * tau, True)
-        self.kick(slow, slow, k2 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau)
-        self.kick(slow, slow, k2 * tau / 2, False)
-        self.kick(slow, fast, k2 * tau, True)
+        self.kick_sf(slow, fast, k2 * tau)
 
         if fast.n: fast = self.dkd69(fast, d3 * tau / 2, True, True, stream)
         self.drift(slow, d3 * tau)
         if fast.n: fast = self.dkd69(fast, d3 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k3 * tau, True)
-        self.kick(slow, slow, k3 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k3 * tau)
-        self.kick(slow, slow, k3 * tau / 2, False)
-        self.kick(slow, fast, k3 * tau, True)
+        self.kick_sf(slow, fast, k3 * tau)
 
         if fast.n: fast = self.dkd69(fast, d4 * tau / 2, True, True, stream)
         self.drift(slow, d4 * tau)
         if fast.n: fast = self.dkd69(fast, d4 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k4 * tau, True)
-        self.kick(slow, slow, k4 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k4 * tau)
-        self.kick(slow, slow, k4 * tau / 2, False)
-        self.kick(slow, fast, k4 * tau, True)
+        self.kick_sf(slow, fast, k4 * tau)
 
         if fast.n: fast = self.dkd69(fast, d4 * tau / 2, True, True, stream)
         self.drift(slow, d4 * tau)
         if fast.n: fast = self.dkd69(fast, d4 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k3 * tau, True)
-        self.kick(slow, slow, k3 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k3 * tau)
-        self.kick(slow, slow, k3 * tau / 2, False)
-        self.kick(slow, fast, k3 * tau, True)
+        self.kick_sf(slow, fast, k3 * tau)
 
         if fast.n: fast = self.dkd69(fast, d3 * tau / 2, True, True, stream)
         self.drift(slow, d3 * tau)
         if fast.n: fast = self.dkd69(fast, d3 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k2 * tau, True)
-        self.kick(slow, slow, k2 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k2 * tau)
-        self.kick(slow, slow, k2 * tau / 2, False)
-        self.kick(slow, fast, k2 * tau, True)
+        self.kick_sf(slow, fast, k2 * tau)
 
         if fast.n: fast = self.dkd69(fast, d2 * tau / 2, True, True, stream)
         self.drift(slow, d2 * tau)
         if fast.n: fast = self.dkd69(fast, d2 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k1 * tau, True)
-        self.kick(slow, slow, k1 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k1 * tau)
-        self.kick(slow, slow, k1 * tau / 2, False)
-        self.kick(slow, fast, k1 * tau, True)
+        self.kick_sf(slow, fast, k1 * tau)
 
         if fast.n: fast = self.dkd69(fast, d1 * tau / 2, True, True, stream)
         self.drift(slow, d1 * tau)
         if fast.n: fast = self.dkd69(fast, d1 * tau / 2, True, True, stream)
 
-        self.kick(fast, slow, k0 * tau, True)
-        self.kick(slow, slow, k0 * tau / 2, True)
-        if self.pn_order > 0: self.kick_pn(slow, slow, k0 * tau)
-        self.kick(slow, slow, k0 * tau / 2, False)
-        self.kick(slow, fast, k0 * tau, True)
+        self.kick_sf(slow, fast, k0 * tau)
 
         if fast.n: fast = self.dkd69(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)

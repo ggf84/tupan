@@ -76,16 +76,14 @@ class Particles(dict):
 
 
     def append(self, objs):
-        if isinstance(objs, Particles):
-            for (key, obj) in objs.items():
-                if obj.n:
-                    self[key].append(obj)
-        elif isinstance(objs, Body):
-            self["body"].append(objs)
-        elif isinstance(objs, BlackHole):
-            self["blackhole"].append(objs)
-        elif isinstance(objs, Sph):
-            self["sph"].append(objs)
+        if objs.n:
+            if isinstance(objs, Particles):
+                for (key, obj) in objs.items():
+                    if obj.n:
+                        self[key].append(obj)
+            else:
+                name = objs.__class__.__name__.lower()
+                self[name].append(objs)
 
 
     def stack_fields(self, attrs, pad=-1):
