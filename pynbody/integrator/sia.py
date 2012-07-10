@@ -121,6 +121,7 @@ class SIA(Base):
                         'sia.dkd43std', 'sia.dkd43shr', 'sia.dkd43hcc',
                         'sia.dkd44std', 'sia.dkd44shr', 'sia.dkd44hcc',
                         'sia.dkd45std', 'sia.dkd45shr', 'sia.dkd45hcc',
+                        'sia.dkd46std', 'sia.dkd46shr', 'sia.dkd46hcc',
                         'sia.dkd67std', 'sia.dkd67shr', 'sia.dkd67hcc',
                         'sia.dkd69std', 'sia.dkd69shr', 'sia.dkd69hcc',
                        ]
@@ -273,6 +274,12 @@ class SIA(Base):
             p = self.dkd45(p, tau, True, False, stream)
         elif self.method == "sia.dkd45hcc":
             p = self.dkd45(p, tau, True, True, stream)
+        elif self.method == "sia.dkd46std":
+            p = self.dkd46(p, tau, False, False, stream)
+        elif self.method == "sia.dkd46shr":
+            p = self.dkd46(p, tau, True, False, stream)
+        elif self.method == "sia.dkd46hcc":
+            p = self.dkd46(p, tau, True, True, stream)
         elif self.method == "sia.dkd67std":
             p = self.dkd67(p, tau, False, False, stream)
         elif self.method == "sia.dkd67shr":
@@ -581,6 +588,83 @@ class SIA(Base):
         if fast.n: fast = self.dkd45(fast, d0 * tau / 2, True, True, stream)
         self.drift(slow, d0 * tau)
         if fast.n: fast = self.dkd45(fast, d0 * tau / 2, True, True, stream)
+        #
+
+        if slow.n:
+            slow.set_dt_prev(tau)
+            slow.update_t_curr(tau)
+            slow.update_nstep()
+
+        p = self.join(slow, fast)
+
+        return p
+
+
+    #
+    # dkd46[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D
+    #
+
+    def dkd46(self, p, tau, update_tstep, split, stream,
+                    k0=0.209515106613362,
+                    k1=-0.143851773179818,
+                    k2=0.434336666566456,
+                    d0=0.0792036964311957,
+                    d1=0.353172906049774,
+                    d2=-0.0420650803577195,
+                    d3=0.21937695575349958):
+        if update_tstep: p.update_tstep(p, self.eta)
+
+        if split:
+            slow, fast = self.split(abs(tau), p)
+        else:
+            if update_tstep: tau = self.get_min_block_tstep(p, tau)
+            slow, fast = p, p.empty
+
+        if slow.n:
+            slow.set_dt_next(tau)
+            if stream:
+                stream.append(slow.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+
+        #
+        if fast.n: fast = self.dkd46(fast, d0 * tau / 2, False, True, stream)
+        self.drift(slow, d0 * tau)
+        if fast.n: fast = self.dkd46(fast, d0 * tau / 2, True, True, stream)
+
+        self.kick_sf(slow, fast, k0 * tau)
+
+        if fast.n: fast = self.dkd46(fast, d1 * tau / 2, True, True, stream)
+        self.drift(slow, d1 * tau)
+        if fast.n: fast = self.dkd46(fast, d1 * tau / 2, True, True, stream)
+
+        self.kick_sf(slow, fast, k1 * tau)
+
+        if fast.n: fast = self.dkd46(fast, d2 * tau / 2, True, True, stream)
+        self.drift(slow, d2 * tau)
+        if fast.n: fast = self.dkd46(fast, d2 * tau / 2, True, True, stream)
+
+        self.kick_sf(slow, fast, k2 * tau)
+
+        if fast.n: fast = self.dkd46(fast, d3 * tau / 2, True, True, stream)
+        self.drift(slow, d3 * tau)
+        if fast.n: fast = self.dkd46(fast, d3 * tau / 2, True, True, stream)
+
+        self.kick_sf(slow, fast, k2 * tau)
+
+        if fast.n: fast = self.dkd46(fast, d2 * tau / 2, True, True, stream)
+        self.drift(slow, d2 * tau)
+        if fast.n: fast = self.dkd46(fast, d2 * tau / 2, True, True, stream)
+
+        self.kick_sf(slow, fast, k1 * tau)
+
+        if fast.n: fast = self.dkd46(fast, d1 * tau / 2, True, True, stream)
+        self.drift(slow, d1 * tau)
+        if fast.n: fast = self.dkd46(fast, d1 * tau / 2, True, True, stream)
+
+        self.kick_sf(slow, fast, k0 * tau)
+
+        if fast.n: fast = self.dkd46(fast, d0 * tau / 2, True, True, stream)
+        self.drift(slow, d0 * tau)
+        if fast.n: fast = self.dkd46(fast, d0 * tau / 2, True, True, stream)
         #
 
         if slow.n:
