@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include"common.h"
 #include"smoothing.h"
+#include"universal_kepler_solver.h"
+
 
 /*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -139,7 +141,8 @@ twobody_solver(const REAL dt,
 {
 
 //    return leapfrog(dt, r0, v0);
-    return TTL(dt, r0, v0);
+//    return TTL(dt, r0, v0);
+    return universal_kepler_solver(dt, r0, v0);
 }
 
 
