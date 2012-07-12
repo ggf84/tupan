@@ -4,9 +4,8 @@
 #include"common.h"
 
 
-//#define TOLERANCE  1.52587890625e-05    // 2^-16
-#define TOLERANCE  5.960464477539063e-08    // 2^-24
-//#define TOLERANCE  2.2737367544323206e-13    // 2^-42
+#define TOLERANCE  1.0536712127723509e-08   // sqrt(2^-53)
+//#define TOLERANCE  2.44140625E-4            // sqrt(2^-24)
 #define MAXITER 50
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 
@@ -130,13 +129,10 @@ universal_kepler(const REAL s,
                  const REAL mu,
                  const REAL alpha)
 {
-//    REAL s2 = s * s;
-//    REAL zeta = alpha * s2;
-//    return r0 * s * stumpff_c1(zeta) + rv0 * s2 * stumpff_c2(zeta) + mu * s * s2 * stumpff_c3(zeta);
+
     REAL s2 = s * s;
     REAL zeta = alpha * s2;
-    REAL s_smu = s / mu;
-    return s * (r0 * (1 + rv0 * s_smu * stumpff_c2(zeta)) + (1 - alpha * r0) * s2 * stumpff_c3(zeta));
+    return r0 * s * stumpff_c1(zeta) + rv0 * s2 * stumpff_c2(zeta) + mu * s * s2 * stumpff_c3(zeta);
 }
 
 
@@ -147,13 +143,10 @@ universal_kepler_dxi(const REAL s,
                      const REAL mu,
                      const REAL alpha)
 {
-//    REAL s2 = s * s;
-//    REAL zeta = alpha * s2;
-//    return r0 * stumpff_c0(zeta) + rv0 * s * stumpff_c1(zeta) + mu * s2 * stumpff_c2(zeta);
+
     REAL s2 = s * s;
     REAL zeta = alpha * s2;
-    REAL s_smu = s / mu;
-    return r0 * (1 + rv0 * s_smu * (1 - zeta * stumpff_c3(zeta))) + (1 - alpha * r0) * s2 * stumpff_c2(zeta);
+    return r0 * stumpff_c0(zeta) + rv0 * s * stumpff_c1(zeta) + mu * s2 * stumpff_c2(zeta);
 }
 
 
@@ -164,10 +157,10 @@ universal_kepler_dxidxi(const REAL s,
                         const REAL mu,
                         const REAL alpha)
 {
-//    REAL s2 = s * s;
-//    REAL zeta = alpha * s2;
-//    return (mu - alpha * r0) * s * stumpff_c1(zeta) + rv0 * stumpff_c0(zeta);
-    return s + r0 * rv0 / mu - alpha * universal_kepler(s, r0, rv0, mu, alpha);
+
+    REAL s2 = s * s;
+    REAL zeta = alpha * s2;
+    return (mu - alpha * r0) * s * stumpff_c1(zeta) + rv0 * stumpff_c0(zeta);
 }
 
 
@@ -198,7 +191,7 @@ fprimeprime(const REAL xi,
 
 typedef REAL (ftype)(const REAL x, REAL *arg);
 
-#define ORDER 6
+#define ORDER 8
 inline int
 laguerre(REAL x0,
          REAL *x,
@@ -211,18 +204,19 @@ laguerre(REAL x0,
     int i = 0;
     REAL delta;
 
-    *x=x0;
+    *x = x0;
     do {
         REAL fv = (*f)(*x, arg);
         REAL dfv = (*fprime)(*x, arg);
         REAL ddfv = (*fprimeprime)(*x, arg);
         if (dfv == 0  || ddfv == 0) return -2;
-        delta = -ORDER * fv / (dfv + SIGN(dfv) * sqrt(fabs((ORDER - 1) * (ORDER - 1) * dfv * dfv - ORDER * (ORDER - 1) * fv * ddfv)));
+        delta = -ORDER * fv / (dfv + SIGN(dfv) * sqrt(fabs(((ORDER - 1) * (ORDER - 1)) * dfv * dfv - (ORDER * (ORDER - 1)) * fv * ddfv)));
         (*x) += delta;
         i += 1;
         if (i > MAXITER) return -1;
 //        printf("%d %e %e\n", i, delta, tol);
-    } while (fabs(delta) > tol);
+    } while (fabs(delta/(*x)) > tol);
+    if (SIGN((*x)) != SIGN(arg[0])) return -3;
     return 0;
 }
 
@@ -233,41 +227,41 @@ universal_kepler_solver(const REAL dt0,
                         const REAL4 vel0)
 {
     REAL mu = pos0.w;
-    REAL smu = sqrt(mu);
     REAL r0sqr = pos0.x * pos0.x + pos0.y * pos0.y + pos0.z * pos0.z;
     REAL v0sqr = vel0.x * vel0.x + vel0.y * vel0.y + vel0.z * vel0.z;
     REAL rv0 = pos0.x * vel0.x + pos0.y * vel0.y + pos0.z * vel0.z;
     REAL r0 = sqrt(r0sqr);
-    rv0 /= r0;
 
     REAL alpha = 2 * mu / r0 - v0sqr;
 
     REAL dt = dt0;
+/*
     REAL P = 2 * PI * sqrt(alpha * alpha * alpha) / (mu * mu);
     double nP;
-    if (dt0 > P)
+    if (dt0 > P) {
         dt = modf(dt0/P, &nP) * P;
-
-
-    REAL xi0 = smu * dt / r0;
+//        printf("%e %e %e\n", dt0, P, dt);
+    }
+*/
+    REAL xi0 = dt / r0;
 
     REAL xi, arg[5], tol;
 
-    arg[0] = smu * dt;
+    arg[0] = dt;
     arg[1] = r0;
     arg[2] = rv0;
-    arg[3] = smu;
-    arg[4] = alpha / mu;
-    tol = fabs(TOLERANCE * xi0);
+    arg[3] = mu;
+    arg[4] = alpha;
+    tol = TOLERANCE;
 
     int err = laguerre(xi0, &xi, arg, tol, &f, &fprime, &fprimeprime);
-    if (err != 0 || SIGN(xi) != SIGN(dt)) {
+    if (err != 0) {
         fprintf(stderr, "ERROR: %d\nxi: %.17g xi0: %.17g\narg: %.17g %.17g %.17g %.17g %.17g\n",
                 err, xi, xi0, arg[0], arg[1], arg[2], arg[3], arg[4]);
     }
 
-    REAL lf = lagrange_f(xi/smu, r0, mu, alpha);
-    REAL lg = lagrange_g(dt, xi/smu, mu, alpha);
+    REAL lf = lagrange_f(xi, r0, mu, alpha);
+    REAL lg = lagrange_g(dt, xi, mu, alpha);
     REAL4 pos1;
     pos1.x = pos0.x * lf + vel0.x * lg;
     pos1.y = pos0.y * lf + vel0.y * lg;
@@ -277,8 +271,8 @@ universal_kepler_solver(const REAL dt0,
     REAL r1sqr = pos1.x * pos1.x + pos1.y * pos1.y + pos1.z * pos1.z;
     REAL r1 = sqrt(r1sqr);
 
-    REAL ldf = lagrange_dfdxi(xi/smu, r0, r1, mu, alpha);
-    REAL ldg = lagrange_dgdxi(xi/smu, r1, mu, alpha);
+    REAL ldf = lagrange_dfdxi(xi, r0, r1, mu, alpha);
+    REAL ldg = lagrange_dgdxi(xi, r1, mu, alpha);
     REAL4 vel1;
     vel1.x = pos0.x * ldf + vel0.x * ldg;
     vel1.y = pos0.y * ldf + vel0.y * ldg;

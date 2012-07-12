@@ -90,12 +90,14 @@ class BIOS(AbstractBIOS):
         """
 
         """
+        vcm = p.get_center_of_mass_velocity()
+
         self.set_args(p, p, tau)
         self.run()
         (dr, dv) = self.get_result()
         for iobj in p.values():
             if iobj.n:
-                iobj.pos += dr[:iobj.n]
+                iobj.pos += dr[:iobj.n] - tau * vcm
                 iobj.vel += dv[:iobj.n]
                 dr = dr[iobj.n:]
                 dv = dv[iobj.n:]
@@ -145,6 +147,13 @@ class BIOS(AbstractBIOS):
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
+
+#        p.update_tstep(p, self.eta)
+#        tau = p.min_dt_next()
+#        tau = p.mean_dt_next()
+#        tau = p.harmonic_mean_dt_next()
+
+
         p.set_dt_next(tau)
 
         if self.reporter:
