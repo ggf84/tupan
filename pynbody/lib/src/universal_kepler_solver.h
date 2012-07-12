@@ -4,14 +4,45 @@
 #include"common.h"
 
 
-#define TOLERANCE  5.9604644775390625E-8
-#define ORDER  4
+//#define TOLERANCE  1.52587890625e-05    // 2^-16
+#define TOLERANCE  5.960464477539063e-08    // 2^-24
+//#define TOLERANCE  2.2737367544323206e-13    // 2^-42
 #define MAXITER 50
-#define SIGN(x)   (((x) > 0) - ((x) < 0))
+#define SIGN(x) (((x) > 0) - ((x) < 0))
 
 
 inline REAL
-stumpff_C(const REAL zeta)
+stumpff_c0(const REAL zeta)
+{
+    if (zeta > 0) {
+        REAL sz = sqrt(zeta);
+        return cos(sz);
+    }
+    if (zeta < 0) {
+        REAL sz = sqrt(-zeta);
+        return cosh(sz);
+    }
+    return ((REAL)1);
+}
+
+
+inline REAL
+stumpff_c1(const REAL zeta)
+{
+    if (zeta > 0) {
+        REAL sz = sqrt(zeta);
+        return sin(sz) / sz;
+    }
+    if (zeta < 0) {
+        REAL sz = sqrt(-zeta);
+        return sinh(sz) / sz;
+    }
+    return ((REAL)1);
+}
+
+
+inline REAL
+stumpff_c2(const REAL zeta)
 {
     if (zeta > 0) {
         REAL sz = sqrt(zeta);
@@ -26,124 +57,117 @@ stumpff_C(const REAL zeta)
 
 
 inline REAL
-stumpff_S(const REAL zeta)
+stumpff_c3(const REAL zeta)
 {
     if (zeta > 0) {
         REAL sz = sqrt(zeta);
-        return (sz - sin(sz)) / (sz * zeta);
+        return (1 - sin(sz) / sz) / zeta;
     }
     if (zeta < 0) {
         REAL sz = sqrt(-zeta);
-        return (sz - sinh(sz)) / (sz * zeta);
+        return (1 - sinh(sz) / sz) / zeta;
     }
     return 1/((REAL)6);
 }
 
 
 inline REAL
-stumpff_C_prime(const REAL zeta)
-{
-    return (stumpff_C(zeta) - 3 * stumpff_S(zeta)) / (2*zeta);
-}
-
-
-inline REAL
-stumpff_S_prime(const REAL zeta)
-{
-    return (1 - stumpff_S(zeta) - 2 * stumpff_C(zeta)) / (2*zeta);
-}
-
-
-inline REAL
-lagrange_f(const REAL xi,
+lagrange_f(const REAL s,
            const REAL r0,
-           const REAL rv0,
-           const REAL smu,
+           const REAL mu,
            const REAL alpha)
 {
-    REAL xi2 = xi * xi;
-    REAL xi2_r0 = xi2 / r0;
-    return 1 - xi2_r0 * stumpff_C(alpha * xi2);
+    REAL s2 = s * s;
+    REAL zeta = alpha * s2;
+    REAL mu_r0 = mu / r0;
+    return 1 - mu_r0 * s2 * stumpff_c2(zeta);
 }
 
 
 inline REAL
-lagrange_dfdxi(const REAL xi,
+lagrange_dfdxi(const REAL s,
                const REAL r0,
-               const REAL rv0,
-               const REAL smu,
+               const REAL r1,
+               const REAL mu,
                const REAL alpha)
 {
-    REAL zeta = alpha * xi * xi;
-    REAL xi_r0 = xi / r0;
-    return xi_r0 * (zeta * stumpff_S(zeta) - 1);
+    REAL s2 = s * s;
+    REAL zeta = alpha * s2;
+    REAL mu_r0r1 = mu / (r0 * r1);
+    return -mu_r0r1 * s * stumpff_c1(zeta);
 }
 
 
 inline REAL
-lagrange_g(const REAL xi,
-           const REAL r0,
-           const REAL rv0,
-           const REAL smu,
+lagrange_g(const REAL dt,
+           const REAL s,
+           const REAL mu,
            const REAL alpha)
 {
-    REAL zeta = alpha * xi * xi;
-    REAL xi_smu = xi / smu;
-    REAL r0xi_smu = r0 * xi_smu;
-    return r0xi_smu * (xi_smu * rv0 * stumpff_C(zeta) - (zeta * stumpff_S(zeta) - 1));
+    REAL s2 = s * s;
+    REAL zeta = alpha * s2;
+    return dt - mu * s * s2 * stumpff_c3(zeta);
 }
 
 
 inline REAL
-lagrange_dgdxi(const REAL xi,
-               const REAL r0,
-               const REAL rv0,
-               const REAL smu,
+lagrange_dgdxi(const REAL s,
+               const REAL r1,
+               const REAL mu,
                const REAL alpha)
 {
-    REAL zeta = alpha * xi * xi;
-    REAL xi_smu = xi / smu;
-    REAL r0_smu = r0 / smu;
-    return r0_smu * (rv0 * xi_smu * (1 - zeta * stumpff_S(zeta)) - (zeta * stumpff_C(zeta) - 1));
+    REAL s2 = s * s;
+    REAL zeta = alpha * s2;
+    REAL mu_r1 = mu / r1;
+    return 1 - mu_r1 * s2 * stumpff_c2(zeta);
 }
 
 
 inline REAL
-universal_kepler(const REAL xi,
+universal_kepler(const REAL s,
                  const REAL r0,
                  const REAL rv0,
-                 const REAL smu,
+                 const REAL mu,
                  const REAL alpha)
 {
-    REAL xi2 = xi * xi;
-    REAL zeta = alpha * xi2;
-    REAL xi_smu = xi / smu;
-    return xi * (r0 * (1 + rv0 * xi_smu * stumpff_C(zeta)) + (1 - alpha * r0) * xi2 * stumpff_S(zeta));
+//    REAL s2 = s * s;
+//    REAL zeta = alpha * s2;
+//    return r0 * s * stumpff_c1(zeta) + rv0 * s2 * stumpff_c2(zeta) + mu * s * s2 * stumpff_c3(zeta);
+    REAL s2 = s * s;
+    REAL zeta = alpha * s2;
+    REAL s_smu = s / mu;
+    return s * (r0 * (1 + rv0 * s_smu * stumpff_c2(zeta)) + (1 - alpha * r0) * s2 * stumpff_c3(zeta));
 }
 
 
 inline REAL
-universal_kepler_dxi(const REAL xi,
+universal_kepler_dxi(const REAL s,
                      const REAL r0,
                      const REAL rv0,
-                     const REAL smu,
+                     const REAL mu,
                      const REAL alpha)
 {
-    REAL xi2 = xi * xi;
-    REAL zeta = alpha * xi2;
-    REAL xi_smu = xi / smu;
-    return r0 * (1 + rv0 * xi_smu * (1 - zeta * stumpff_S(zeta))) + (1 - alpha * r0) * xi2 * stumpff_C(zeta);
+//    REAL s2 = s * s;
+//    REAL zeta = alpha * s2;
+//    return r0 * stumpff_c0(zeta) + rv0 * s * stumpff_c1(zeta) + mu * s2 * stumpff_c2(zeta);
+    REAL s2 = s * s;
+    REAL zeta = alpha * s2;
+    REAL s_smu = s / mu;
+    return r0 * (1 + rv0 * s_smu * (1 - zeta * stumpff_c3(zeta))) + (1 - alpha * r0) * s2 * stumpff_c2(zeta);
 }
 
 
 inline REAL
-universal_kepler_dxidxi(const REAL xi,
+universal_kepler_dxidxi(const REAL s,
                         const REAL r0,
                         const REAL rv0,
-                        const REAL smu,
+                        const REAL mu,
                         const REAL alpha)
 {
-    return xi + r0 * rv0 / smu - alpha * universal_kepler(xi, r0, rv0, smu, alpha);
+//    REAL s2 = s * s;
+//    REAL zeta = alpha * s2;
+//    return (mu - alpha * r0) * s * stumpff_c1(zeta) + rv0 * stumpff_c0(zeta);
+    return s + r0 * rv0 / mu - alpha * universal_kepler(s, r0, rv0, mu, alpha);
 }
 
 
@@ -174,39 +198,37 @@ fprimeprime(const REAL xi,
 
 typedef REAL (ftype)(const REAL x, REAL *arg);
 
+#define ORDER 6
 inline int
 laguerre(REAL x0,
          REAL *x,
          REAL *arg,
-         REAL xtol,
-         REAL ytol,
+         REAL tol,
          ftype *f,
          ftype *fprime,
          ftype *fprimeprime)
 {
     int i = 0;
-    REAL fv, dfv, ddfv, delta;
+    REAL delta;
 
     *x=x0;
-    delta = 2*xtol;
-    while (fabs(delta) > xtol) {
-        fv = (*f)(*x, arg);
-        if (fabs(fv) <= ytol) return 0;
-        dfv = (*fprime)(*x, arg);
-        ddfv = (*fprimeprime)(*x, arg);
+    do {
+        REAL fv = (*f)(*x, arg);
+        REAL dfv = (*fprime)(*x, arg);
+        REAL ddfv = (*fprimeprime)(*x, arg);
         if (dfv == 0  || ddfv == 0) return -2;
         delta = -ORDER * fv / (dfv + SIGN(dfv) * sqrt(fabs((ORDER - 1) * (ORDER - 1) * dfv * dfv - ORDER * (ORDER - 1) * fv * ddfv)));
         (*x) += delta;
-//        printf("%d\n", i);
         i += 1;
         if (i > MAXITER) return -1;
-    }
+//        printf("%d %e %e\n", i, delta, tol);
+    } while (fabs(delta) > tol);
     return 0;
 }
 
 
 inline REAL8
-universal_kepler_solver(const REAL dt,
+universal_kepler_solver(const REAL dt0,
                         const REAL4 pos0,
                         const REAL4 vel0)
 {
@@ -218,34 +240,34 @@ universal_kepler_solver(const REAL dt,
     REAL r0 = sqrt(r0sqr);
     rv0 /= r0;
 
-    REAL alpha = 2 / r0 - v0sqr / mu;
+    REAL alpha = 2 * mu / r0 - v0sqr;
+
+    REAL dt = dt0;
+    REAL P = 2 * PI * sqrt(alpha * alpha * alpha) / (mu * mu);
+    double nP;
+    if (dt0 > P)
+        dt = modf(dt0/P, &nP) * P;
+
 
     REAL xi0 = smu * dt / r0;
 
-    REAL xi, arg[5], xtol, ytol;
+    REAL xi, arg[5], tol;
 
     arg[0] = smu * dt;
     arg[1] = r0;
     arg[2] = rv0;
     arg[3] = smu;
-    arg[4] = alpha;
-    ytol = fabs(TOLERANCE * smu * dt);
-    xtol = fabs(TOLERANCE * xi0);
+    arg[4] = alpha / mu;
+    tol = fabs(TOLERANCE * xi0);
 
-//    err = findroot(xi0, &xi, arg, xtol, ytol, &f, &fprime, &fprimeprime);
-    int err = laguerre(xi0, &xi, arg, xtol, ytol, &f, &fprime, &fprimeprime);
+    int err = laguerre(xi0, &xi, arg, tol, &f, &fprime, &fprimeprime);
     if (err != 0 || SIGN(xi) != SIGN(dt)) {
-        printf("ERROR:\nxi: %.17g xi0: %.17g\narg: %.17g %.17g %.17g %.17g %.17g\n",
-                xi, xi0, arg[0], arg[1], arg[2], arg[3], arg[4]);
-
-        exit(0);
+        fprintf(stderr, "ERROR: %d\nxi: %.17g xi0: %.17g\narg: %.17g %.17g %.17g %.17g %.17g\n",
+                err, xi, xi0, arg[0], arg[1], arg[2], arg[3], arg[4]);
     }
 
-    REAL lf = lagrange_f(xi, r0, rv0, smu, alpha);
-    REAL lg = lagrange_g(xi, r0, rv0, smu, alpha);
-    REAL ldf = lagrange_dfdxi(xi, r0, rv0, smu, alpha);
-    REAL ldg = lagrange_dgdxi(xi, r0, rv0, smu, alpha);
-
+    REAL lf = lagrange_f(xi/smu, r0, mu, alpha);
+    REAL lg = lagrange_g(dt, xi/smu, mu, alpha);
     REAL4 pos1;
     pos1.x = pos0.x * lf + vel0.x * lg;
     pos1.y = pos0.y * lf + vel0.y * lg;
@@ -254,12 +276,13 @@ universal_kepler_solver(const REAL dt,
 
     REAL r1sqr = pos1.x * pos1.x + pos1.y * pos1.y + pos1.z * pos1.z;
     REAL r1 = sqrt(r1sqr);
-    REAL smu_r = smu / r1;
 
+    REAL ldf = lagrange_dfdxi(xi/smu, r0, r1, mu, alpha);
+    REAL ldg = lagrange_dgdxi(xi/smu, r1, mu, alpha);
     REAL4 vel1;
-    vel1.x = (pos0.x * ldf + vel0.x * ldg) * smu_r;
-    vel1.y = (pos0.y * ldf + vel0.y * ldg) * smu_r;
-    vel1.z = (pos0.z * ldf + vel0.z * ldg) * smu_r;
+    vel1.x = pos0.x * ldf + vel0.x * ldg;
+    vel1.y = pos0.y * ldf + vel0.y * ldg;
+    vel1.z = pos0.z * ldf + vel0.z * ldg;
     vel1.w = 0;
 
     REAL8 posvel = {pos1.x, pos1.y, pos1.z, pos1.w, vel1.x, vel1.y, vel1.z, vel1.w};
