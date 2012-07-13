@@ -124,8 +124,10 @@ TTL(const REAL dt,
     REAL t = 0;
     REAL8 rv_new = TTL_core(tau, u0, k0, r, v, &t);
 
-    while (fabs(t-dt)/dt > 5.9604644775390625E-8) {
-        tau *= sqrt(dt/t);
+    REAL tol = 5.9604644775390625E-8 * dt;
+    while (fabs(fabs(t) - dt) > tol) {
+//        tau *= sqrt(dt/fabs(t));
+        tau -=  0.25 * fabs(tau) * (fabs(t) - dt) / (fabs(t) + dt);
         t = 0;
         rv_new = TTL_core(tau, u0, k0, r, v, &t);
     }
