@@ -52,7 +52,7 @@ class AbstractBIOS(Base):
         super(AbstractBIOS, self).__init__(eta, time, particles, **kwargs)
         self.kernel = kernels.bios_kernel
         self.kernel.local_size = 384
-        self.kernel.set_arg('LMEM', 5, 8)
+        self.kernel.set_arg('LMEM', 6, 8)
         self.fields = ('pos', 'mass', 'vel', 'eps2')
 
     def set_args(self, iobj, jobj, dt):
@@ -97,7 +97,7 @@ class BIOS(AbstractBIOS):
         (dr, dv) = self.get_result()
         for iobj in p.values():
             if iobj.n:
-                iobj.pos += dr[:iobj.n] - tau * vcm
+                iobj.pos += dr[:iobj.n] + tau * (iobj.vel - vcm)
                 iobj.vel += dv[:iobj.n]
                 dr = dr[iobj.n:]
                 dv = dv[iobj.n:]

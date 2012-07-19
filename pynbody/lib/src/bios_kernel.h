@@ -1,7 +1,6 @@
 #ifndef BIOS_KERNEL_H
 #define BIOS_KERNEL_H
 
-#include <stdlib.h>
 #include"common.h"
 #include"smoothing.h"
 #include"universal_kepler_solver.h"
@@ -168,15 +167,20 @@ bios_kernel_core(REAL8 iposvel,
     v.z = vi.z - vj.z;                                               // 1 FLOPs
     v.w = vi.w + vj.w;                                               // 1 FLOPs
     REAL mu = (ri.w * rj.w) / r.w;                                   // 2 FLOPs
+
     if (r.x == 0 && r.y == 0 && r.z == 0) {
         return iposvel;
     }
 
     REAL8 rv_new = twobody_solver(dt, r, v);                         // ? FLOPS
 
-    iposvel.s0 += mu * ((rv_new.s0 - r.x) - v.x * dt);               // 4 FLOPs
-    iposvel.s1 += mu * ((rv_new.s1 - r.y) - v.y * dt);               // 4 FLOPs
-    iposvel.s2 += mu * ((rv_new.s2 - r.z) - v.z * dt);               // 4 FLOPs
+    r.x += v.x * dt;                                                 // 1 FLOPs
+    r.y += v.y * dt;                                                 // 1 FLOPs
+    r.z += v.z * dt;                                                 // 1 FLOPs
+
+    iposvel.s0 += mu * (rv_new.s0 - r.x);                            // 3 FLOPs
+    iposvel.s1 += mu * (rv_new.s1 - r.y);                            // 3 FLOPs
+    iposvel.s2 += mu * (rv_new.s2 - r.z);                            // 3 FLOPs
     iposvel.s3  = 0;
     iposvel.s4 += mu * (rv_new.s4 - v.x);                            // 2 FLOPs
     iposvel.s5 += mu * (rv_new.s5 - v.y);                            // 2 FLOPs
@@ -194,6 +198,89 @@ bios_kernel_core(REAL8 iposvel,
 //
 // OpenCL implementation
 ////////////////////////////////////////////////////////////////////////////////
+inline REAL8
+bios_kernel_accum(REAL8 myPosVel,
+                  const REAL8 myData,
+                  const REAL dt,
+                  uint j_begin,
+                  uint j_end,
+                  __local REAL8 *sharedJData
+                 )
+{
+    uint j;
+    for (j = j_begin; j < j_end; ++j) {
+        myPosVel = bios_kernel_core(myPosVel, myData.lo, myData.hi,
+                                    sharedJData[j].lo, sharedJData[j].hi,
+                                    dt);
+    }
+    return myPosVel;
+}
+
+
+inline REAL8
+bios_kernel_main_loop(const REAL8 myData,
+                      const uint nj,
+                      __global const REAL8 *jdata,
+                      const REAL dt,
+                      __local REAL8 *sharedJData
+                     )
+{
+    uint lsize = get_local_size(0);
+
+    REAL8 myPosVel = (REAL8){0, 0, 0, 0, 0, 0, 0, 0};
+
+    uint tile;
+    uint numTiles = (nj - 1)/lsize + 1;
+    for (tile = 0; tile < numTiles; ++tile) {
+        uint nb = min(lsize, (nj - (tile * lsize)));
+
+        event_t e[1];
+        e[0] = async_work_group_copy(sharedJData, jdata + tile * lsize, nb, 0);
+        wait_group_events(1, e);
+
+        uint j = 0;
+        uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
+        for (; j < j_max; j += JUNROLL) {
+            myPosVel = bios_kernel_accum(myPosVel, myData,
+                                         dt, j, j + JUNROLL,
+                                         sharedJData);
+        }
+        myPosVel = bios_kernel_accum(myPosVel, myData,
+                                     dt, j, nb,
+                                     sharedJData);
+
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
+    myPosVel.s0 /= myData.s3;
+    myPosVel.s1 /= myData.s3;
+    myPosVel.s2 /= myData.s3;
+    myPosVel.s3 /= myData.s3;
+    myPosVel.s4 /= myData.s3;
+    myPosVel.s5 /= myData.s3;
+    myPosVel.s6 /= myData.s3;
+    myPosVel.s7 /= myData.s3;
+
+    return myPosVel;
+}
+
+
+__kernel void bios_kernel(const uint ni,
+                          __global const REAL8 *idata,
+                          const uint nj,
+                          __global const REAL8 *jdata,
+                          const REAL dt,
+                          __global REAL8 *iposvel,
+                          __local REAL8 *sharedJData
+                              )
+{
+    uint gid = get_global_id(0);
+    uint i = (gid < ni) ? (gid) : (ni-1);
+    iposvel[i] = bios_kernel_main_loop(idata[i],
+                                       nj, jdata,
+                                       dt,
+                                       sharedJData);
+}
 
 #else
 //
@@ -252,14 +339,14 @@ _bios_kernel(PyObject *_args)
                         jdata_ptr[j8+6], jdata_ptr[j8+7]};
             iposvel = bios_kernel_core(iposvel, ri, vi, rj, vj, dt);
         }
-        ret_ptr[i8  ] = iposvel.s0 / ri.w + vi.x * dt;
-        ret_ptr[i8+1] = iposvel.s1 / ri.w + vi.y * dt;
-        ret_ptr[i8+2] = iposvel.s2 / ri.w + vi.z * dt;
-        ret_ptr[i8+3] = iposvel.s3;
+        ret_ptr[i8  ] = iposvel.s0 / ri.w;
+        ret_ptr[i8+1] = iposvel.s1 / ri.w;
+        ret_ptr[i8+2] = iposvel.s2 / ri.w;
+        ret_ptr[i8+3] = iposvel.s3 / ri.w;
         ret_ptr[i8+4] = iposvel.s4 / ri.w;
         ret_ptr[i8+5] = iposvel.s5 / ri.w;
         ret_ptr[i8+6] = iposvel.s6 / ri.w;
-        ret_ptr[i8+7] = iposvel.s7;
+        ret_ptr[i8+7] = iposvel.s7 / ri.w;
     }
 
     // Decrement the reference counts for i-objects

@@ -4,8 +4,11 @@
 #include"common.h"
 
 
-#define TOLERANCE  1.0536712127723509e-08   // sqrt(2^-53)
-//#define TOLERANCE  2.44140625E-4            // sqrt(2^-24)
+#ifdef DOUBLE
+    #define TOLERANCE  1.0536712127723509e-8   // sqrt(2^-53)
+#else
+    #define TOLERANCE  2.44140625E-4            // sqrt(2^-24)
+#endif
 #define MAXITER 100
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 
@@ -188,28 +191,22 @@ fprimeprime(const REAL s,
 }
 
 
-
-typedef REAL (ftype)(const REAL x, REAL *arg);
-
 #define ORDER 8
 inline int
 laguerre(REAL x0,
          REAL *x,
-         REAL *arg,
-         REAL tol,
-         ftype *f,
-         ftype *fprime,
-         ftype *fprimeprime)
+         REAL *arg
+        )
 {
     int i = 0;
     REAL delta;
 
     *x = x0;
     do {
-        REAL fv = (*f)(*x, arg);
-        REAL dfv = (*fprime)(*x, arg);
-        REAL ddfv = (*fprimeprime)(*x, arg);
-        if (fv == 0 || dfv == 0  || ddfv == 0) return 0;
+        REAL fv = f(*x, arg);
+        if (fv == 0) return 0;
+        REAL dfv = fprime(*x, arg);
+        REAL ddfv = fprimeprime(*x, arg);
         REAL g = dfv / fv;
         REAL g2 = g * g;
         REAL h = g2 - ddfv / fv;
@@ -217,15 +214,14 @@ laguerre(REAL x0,
         (*x) += delta;
         i += 1;
         if (i > MAXITER) return -1;
-//        printf("%d %e %e\n", i, delta, tol);
-    } while (fabs(delta * (*x + x0)) > 2 * tol * fabs(*x - x0));
-    if (SIGN((*x)) != SIGN(x0)) return -3;
+    } while (fabs(delta) > TOLERANCE);
+    if (SIGN((*x)) != SIGN(x0)) return -2;
     return 0;
 }
 
 
 inline REAL8
-universal_kepler_solver(const REAL dt0,
+universal_kepler_solver(const REAL dt,
                         const REAL4 pos0,
                         const REAL4 vel0)
 {
@@ -237,31 +233,21 @@ universal_kepler_solver(const REAL dt0,
 
     REAL alpha = 2 * mu / r0 - v0sqr;
 
-    REAL dt = dt0;
-/*
-    REAL P = 2 * PI * sqrt(alpha * alpha * alpha) / (mu * mu);
-    double nP;
-    if (dt0 > P) {
-        dt = modf(dt0/P, &nP) * P;
-//        printf("%e %e %e\n", dt0, P, dt);
-    }
-*/
     REAL s0 = dt / r0;
 
-    REAL s, arg[5], tol;
+    REAL s, arg[5];
 
     arg[0] = dt;
     arg[1] = r0;
     arg[2] = rv0;
     arg[3] = mu;
     arg[4] = alpha;
-    tol = TOLERANCE;
 
-    int err = laguerre(s0, &s, arg, tol, &f, &fprime, &fprimeprime);
-    if (err != 0) {
-        fprintf(stderr, "ERROR: %d\ns: %.17g s0: %.17g\narg: %.17g %.17g %.17g %.17g %.17g\n",
-                err, s, s0, arg[0], arg[1], arg[2], arg[3], arg[4]);
-    }
+    int err = laguerre(s0, &s, arg);
+//    if (err != 0) {
+//        printf("ERROR: %d\ns: %.17g s0: %.17g\narg: %.17g %.17g %.17g %.17g %.17g\n",
+//               err, s, s0, arg[0], arg[1], arg[2], arg[3], arg[4]);
+//    }
 
     REAL lf = lagrange_f(s, r0, mu, alpha);
     REAL lg = lagrange_g(dt, s, mu, alpha);
