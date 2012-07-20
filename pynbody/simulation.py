@@ -183,14 +183,14 @@ class Simulation(object):
         if self.viewer:
             self.viewer.initialize()
 
-        while (self.integrator.time < self.args.t_end):
+        while (abs(self.integrator.time) < self.args.t_end):
             # evolve a single time-step
             self.integrator.evolve_step(self.args.t_end)
 
-#            # dump restart file
-#            if self.res_steps % self.args.restart_freq == 0:
-#                self.dump_restart_file()
-#            self.res_steps += 1
+            # dump restart file
+            if self.res_steps % self.args.restart_freq == 0:
+                self.dump_restart_file()
+            self.res_steps += 1
 
             # call GL viewer (if enabled)
             if self.gl_steps % self.args.gl_freq == 0:

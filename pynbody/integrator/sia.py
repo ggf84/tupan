@@ -8,6 +8,7 @@
 from __future__ import print_function
 import logging
 import heapq
+import math
 import numpy as np
 from ..lib.utils.timing import decallmethods, timings
 
@@ -132,8 +133,9 @@ class SIA(Base):
 
 
     def get_base_tstep(self, t_end):
-        tau = self.eta
-        self.tstep = tau if self.time + tau <= t_end else t_end - self.time
+        self.tstep = self.eta
+        if abs(self.time + self.tstep) > t_end:
+            self.tstep = math.copysign(t_end - abs(self.time), self.eta)
         return self.tstep
 
 
@@ -181,15 +183,19 @@ class SIA(Base):
         if next_time % min_block_tstep != 0:
             min_block_tstep /= 2
 
-        self.tstep = min_block_tstep if min_block_tstep < tau else tau
+        self.tstep = min_block_tstep
+        if self.tstep > abs(tau):
+            self.tstep = tau
+
+        self.tstep = math.copysign(self.tstep, self.eta)
         return self.tstep
 
 
     ### split
 
     def split(self, tau, p):
-        slow = p.select(lambda x: x >= tau, 'dt_next')
-        fast = p.select(lambda x: x < tau, 'dt_next')
+        slow = p.select(lambda x: abs(x) >= tau, 'dt_next')
+        fast = p.select(lambda x: abs(x) < tau, 'dt_next')
 
         # prevents the occurrence of a slow level with only one particle.
         if slow.n == 1:

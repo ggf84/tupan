@@ -8,6 +8,7 @@
 
 from __future__ import print_function
 import logging
+import math
 import numpy as np
 from ..lib.extensions import kernels
 from ..lib.utils.timing import decallmethods, timings
@@ -44,12 +45,11 @@ class Base(object):
 
 
 @decallmethods(timings)
-class AbstractBIOS(Base):
+class LLBIOS(object):
     """
 
     """
-    def __init__(self, eta, time, particles, **kwargs):
-        super(AbstractBIOS, self).__init__(eta, time, particles, **kwargs)
+    def __init__(self):
         self.kernel = kernels.bios_kernel
         self.kernel.local_size = 384
         self.kernel.set_arg('LMEM', 6, 8)
@@ -76,9 +76,11 @@ class AbstractBIOS(Base):
         return (result[:,:3], result[:,4:7])
 
 
+llbios = LLBIOS()
+
 
 @decallmethods(timings)
-class BIOS(AbstractBIOS):
+class BIOS(Base):
     """
 
     """
@@ -92,9 +94,9 @@ class BIOS(AbstractBIOS):
         """
         vcm = p.get_center_of_mass_velocity()
 
-        self.set_args(p, p, tau)
-        self.run()
-        (dr, dv) = self.get_result()
+        llbios.set_args(p, p, tau)
+        llbios.run()
+        (dr, dv) = llbios.get_result()
         for iobj in p.values():
             if iobj.n:
                 iobj.pos += dr[:iobj.n] + tau * (iobj.vel - vcm)
@@ -109,8 +111,9 @@ class BIOS(AbstractBIOS):
 
 
     def get_base_tstep(self, t_end):
-        tau = self.eta
-        self.tstep = tau if self.time + tau <= t_end else t_end - self.time
+        self.tstep = self.eta
+        if abs(self.time + self.tstep) > t_end:
+            self.tstep = math.copysign(t_end - abs(self.time), self.eta)
         return self.tstep
 
 
@@ -149,10 +152,7 @@ class BIOS(AbstractBIOS):
         tau = self.get_base_tstep(t_end)
 
 #        p.update_tstep(p, self.eta)
-#        tau = p.min_dt_next()
-#        tau = p.mean_dt_next()
-#        tau = p.harmonic_mean_dt_next()
-
+#        tau = p.power_averaged_dt_next(-1)
 
         p.set_dt_next(tau)
 

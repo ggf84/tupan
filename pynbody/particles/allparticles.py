@@ -331,7 +331,7 @@ class Particles(dict):
         min_value = sys.float_info.max
         for obj in self.values():
             if obj.n:
-                min_value = min(min_value, obj.dt_prev.min())
+                min_value = min(min_value, np.abs(obj.dt_prev).min())
         return min_value
 
     def min_dt_next(self):
@@ -341,7 +341,7 @@ class Particles(dict):
         min_value = sys.float_info.max
         for obj in self.values():
             if obj.n:
-                min_value = min(min_value, obj.dt_next.min())
+                min_value = min(min_value, np.abs(obj.dt_next).min())
         return min_value
 
 
@@ -352,7 +352,7 @@ class Particles(dict):
         max_value = 0.0
         for obj in self.values():
             if obj.n:
-                max_value = max(max_value, obj.dt_prev.max())
+                max_value = max(max_value, np.abs(obj.dt_prev).max())
         return max_value
 
     def max_dt_next(self):
@@ -362,62 +362,36 @@ class Particles(dict):
         max_value = 0.0
         for obj in self.values():
             if obj.n:
-                max_value = max(max_value, obj.dt_next.max())
+                max_value = max(max_value, np.abs(obj.dt_next).max())
         return max_value
 
 
-    def mean_dt_prev(self):
+    def power_averaged_dt_prev(self, power):
         """
 
         """
         n = 0
-        mean_value = 0.0
+        average = 0.0
         for obj in self.values():
             if obj.n:
-                mean_value += obj.dt_prev.sum()
+                average += (obj.dt_prev**power).sum()
                 n += obj.n
-        mean_value = mean_value / n
-        return mean_value
+        average = (average / n)**(1.0/power)
+        return average
 
-    def mean_dt_next(self):
+
+    def power_averaged_dt_next(self, power):
         """
 
         """
         n = 0
-        mean_value = 0.0
+        average = 0.0
         for obj in self.values():
             if obj.n:
-                mean_value += obj.dt_next.sum()
+                average += (obj.dt_next**power).sum()
                 n += obj.n
-        mean_value = mean_value / n
-        return mean_value
-
-
-    def harmonic_mean_dt_prev(self):
-        """
-
-        """
-        n = 0
-        harmonic_mean_value = 0.0
-        for obj in self.values():
-            if obj.n:
-                harmonic_mean_value += (1 / obj.dt_prev).sum()
-                n += obj.n
-        harmonic_mean_value = n / harmonic_mean_value
-        return harmonic_mean_value
-
-    def harmonic_mean_dt_next(self):
-        """
-
-        """
-        n = 0
-        harmonic_mean_value = 0.0
-        for obj in self.values():
-            if obj.n:
-                harmonic_mean_value += (1 / obj.dt_next).sum()
-                n += obj.n
-        harmonic_mean_value = n / harmonic_mean_value
-        return harmonic_mean_value
+        average = (average / n)**(1.0/power)
+        return average
 
 
 ########## end of file ##########

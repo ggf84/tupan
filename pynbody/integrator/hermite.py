@@ -7,6 +7,7 @@
 
 from __future__ import print_function
 import logging
+import math
 import numpy as np
 from ..lib.utils.timing import decallmethods, timings
 
@@ -85,8 +86,9 @@ class Hermite(object):
 
 
     def get_base_tstep(self, t_end):
-        tau = self.eta
-        self.tstep = tau if self.time + tau <= t_end else t_end - self.time
+        self.tstep = self.eta
+        if abs(self.time + self.tstep) > t_end:
+            self.tstep = math.copysign(t_end - abs(self.time), self.eta)
         return self.tstep
 
 
@@ -156,14 +158,16 @@ class AdaptHermite(Hermite):
         if next_time % min_block_tstep != 0:
             min_block_tstep /= 2
 
-        return min_block_tstep
+        return math.copysign(min_block_tstep, self.eta)
 
 
     def get_base_tstep(self, t_end):
         p = self.particles
         p.update_tstep(p, self.eta)
         tau = self.get_min_block_tstep(p)
-        self.tstep = tau if self.time + tau <= t_end else t_end - self.time
+        self.tstep = tau
+        if abs(self.time + self.tstep) > t_end:
+            self.tstep = math.copysign(t_end - abs(self.time), self.eta)
         return self.tstep
 
 
