@@ -272,7 +272,7 @@ __kernel void bios_kernel(const uint ni,
                           const REAL dt,
                           __global REAL8 *iposvel,
                           __local REAL8 *sharedJData
-                              )
+                         )
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);
