@@ -6,7 +6,9 @@
 """
 
 from __future__ import print_function
+import sys
 import copy
+import hashlib
 import numpy as np
 from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
@@ -45,7 +47,7 @@ class Pbase(object):
     # miscellaneous methods
     #
 
-    def __repr__(self):
+    def __str__(self):
         fmt = self.__class__.__name__+'['
         if self:
             fmt += '\n'
@@ -59,8 +61,12 @@ class Pbase(object):
         return fmt
 
 
+    def __repr__(self):
+        return str(self.data)
+
+
     def __hash__(self):
-        return self.data.__hash__()
+        return int(hashlib.md5(self.data).hexdigest(), 32) % sys.maxint
 
 
     def __len__(self):

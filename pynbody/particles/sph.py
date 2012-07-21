@@ -42,7 +42,7 @@ class Sph(Pbase):
     attrs = ["id", "mass", "pos", "vel", "acc", "phi", "eps2",
              "t_curr", "dt_prev", "dt_next", "nstep"]
 
-    dtype = [(i[0], i[1]) for i in attributes]
+    dtype = [(_[0], _[1]) for _ in attributes]
 
     zero = np.zeros(0, dtype)
 

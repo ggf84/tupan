@@ -22,6 +22,7 @@ __all__ = ["Particles"]
 
 ALL_PARTICLE_TYPES = ["sph", "body", "blackhole"]
 
+
 @decallmethods(timings)
 class Particles(dict):
     """
@@ -53,7 +54,7 @@ class Particles(dict):
         return i
 
 
-    def __repr__(self):
+    def __str__(self):
         fmt = self.__class__.__name__+'{'
         for key, obj in self.items():
             fmt += '\n{0},'.format(obj)
