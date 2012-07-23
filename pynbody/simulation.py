@@ -14,7 +14,7 @@ from pprint import pprint
 from .io import IO
 from .analysis.glviewer import GLviewer
 from .integrator import Integrator
-from .lib.utils.timing import decallmethods, timings
+from .lib.utils.timing import decallmethods, timings, Timer
 
 
 __all__ = ['Simulation']
@@ -58,6 +58,9 @@ class Diagnostic(object):
         self.count = 0
         self.ceerr = 0.0
 
+        self.timer = Timer()
+        self.timer.start()
+
         self.print_header()
 
 
@@ -70,12 +73,12 @@ class Diagnostic(object):
               '{2:10s} {3:10s} {4:15s} '\
               '{5:10s} {6:10s} {7:10s} '\
               '{8:10s} {9:10s} {10:10s} '\
-              '{11:10s}'
+              '{11:10s} {12:13s}'
         myprint(fmt.format('#00:time', '#01:dtime',
                            '#02:ke', '#03:pe', '#04:te',
                            '#05:virial', '#06:eerr', '#07:geerr',
                            '#08:rcom', '#09:vcom', '#10:lmom',
-                           '#11:amom'),
+                           '#11:amom', '#12:wct'),
                 self.fname, 'w')
 
 
@@ -112,12 +115,13 @@ class Diagnostic(object):
               '{ke:< 10.3e} {pe:< 10.3e} {te:< 15.8e} '\
               '{virial:< 10.3e} {eerr:< 10.3e} {geerr:< 10.3e} '\
               '{rcom:< 10.3e} {vcom:< 10.3e} {lmom:< 10.3e} '\
-              '{amom:< 10.3e}'
+              '{amom:< 10.3e} {wct:< 13.6e}'
         myprint(fmt.format(time=time, dtime=dtime,
                            ke=ke, pe=pe,
                            te=te, virial=virial,
                            eerr=eerr, geerr=geerr, rcom=dRcom,
-                           vcom=dVcom, lmom=dLmom, amom=dAmom),
+                           vcom=dVcom, lmom=dLmom, amom=dAmom,
+                           wct=self.timer.elapsed()),
                 self.fname, 'a')
 
 
