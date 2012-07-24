@@ -115,17 +115,21 @@ class CLKernel(object):
         self._gsize = ((ni-1)//lsize + 1) * lsize
 
 
-    def _set_local_memory(self, i, arg):
+    def set_local_memory(self, i, arg):
         def foo(x, y): return x * y
         size = self.env.dtype.itemsize * reduce(foo, self.local_size)
-        self.dev_args[i] = cl.LocalMemory(size * arg)
+        arg = cl.LocalMemory(size * arg)
+        self.kernel.set_arg(i, arg)
 
 
-    def _set_int(self, i, arg):
-        self.dev_args[i] = np.uint32(arg)
+    def set_int(self, i, arg):
+        arg = np.uint32(arg)
+        self.kernel.set_arg(i, arg)
 
-    def _set_float(self, i, arg):
-        self.dev_args[i] = self.env.dtype.type(arg)
+
+    def set_float(self, i, arg):
+        arg = self.env.dtype.type(arg)
+        self.kernel.set_arg(i, arg)
 
 
     def _allocate_in_buffer(self, arg):
@@ -143,7 +147,7 @@ class CLKernel(object):
 #        return (dev_buf, in_buf)
         return (pin_buf, in_buf)
 
-    def _set_in_buffer(self, i, arg):
+    def set_input_buffer(self, i, arg):
         if not i in self.dev_args:
             (self.dev_args[i], self.in_buffers[i]) = self._allocate_in_buffer(arg)
             logger.debug("%s: allocating buffer for input arg #%d - %s.",
@@ -153,16 +157,17 @@ class CLKernel(object):
             logger.debug("%s: reallocating buffer for input arg #%d - %s.",
                          self.kernel.function_name, i, self.dev_args[i])
 
-        self.in_buffers[i][:len(arg)] = arg
+#        self.in_buffers[i][:len(arg)] = arg
 #        cl.enqueue_copy(self.env.queue, self.dev_args[i], self.in_buffers[i][:len(arg)])
-        cl.enqueue_copy(self.env.queue, self.dev_args[i], self.in_buffers[i][:len(arg)], is_blocking=False)
 
-#        cl.enqueue_copy(self.env.queue, self.dev_args[i], np.ascontiguousarray(arg, dtype=self.env.dtype), is_blocking=False)
+        cl.enqueue_copy(self.env.queue, self.dev_args[i], np.ascontiguousarray(arg, dtype=self.env.dtype))
 
 #        memf = cl.mem_flags
 #        self.dev_args[i] = cl.Buffer(self.env.ctx, memf.READ_ONLY | memf.COPY_HOST_PTR, hostbuf=np.ascontiguousarray(arg, dtype=self.env.dtype))
 #        self.dev_args[i] = cl.Buffer(self.env.ctx, memf.READ_ONLY | memf.USE_HOST_PTR, hostbuf=np.ascontiguousarray(arg, dtype=self.env.dtype))
 
+        arg = self.dev_args[i]
+        self.kernel.set_arg(i, arg)
 
 
     def _allocate_out_buffer(self, arg):
@@ -180,7 +185,7 @@ class CLKernel(object):
 #        return (dev_buf, out_buf, out_buf.shape)
         return (pin_buf, out_buf, out_buf.shape)
 
-    def _set_out_buffer(self, i, arg):
+    def set_output_shape(self, i, arg):
         if not i in self.dev_args:
             ary = np.empty(arg, dtype=self.env.dtype)
             (self.dev_args[i], self.out_buffers[i], self.out_shapes[i]) = self._allocate_out_buffer(ary)
@@ -192,29 +197,6 @@ class CLKernel(object):
             logger.debug("%s: reallocating buffer for output arg #%d - %s.",
                          self.kernel.function_name, i, self.dev_args[i])
         self.out_shapes[i] = arg
-
-
-    def set_arg(self, mode, i, arg):
-        """
-        mode: 'IN', 'OUT', 'LMEM'
-        i: arg index
-        arg: arg value
-        """
-        if mode is 'IN':
-            if isinstance(arg, int):
-                self._set_int(i, arg)
-            elif isinstance(arg, float):
-                self._set_float(i, arg)
-            elif isinstance(arg, np.ndarray):
-                self._set_in_buffer(i, arg)
-            else:
-                raise TypeError("CLKernel.set_arg recived unexpected argument type: {}".format(type(arg)))
-        elif mode is 'OUT':
-            self._set_out_buffer(i, arg)
-        elif mode is 'LMEM':
-            self._set_local_memory(i, arg)
-        else:
-            raise TypeError("CLKernel.set_arg recived unexpected mode setting: {}".format(mode))
 
         arg = self.dev_args[i]
         self.kernel.set_arg(i, arg)
@@ -285,35 +267,24 @@ class CKernel(object):
         self.dev_args = {}
 
 
-    def _set_int(self, i, arg):
+    def set_int(self, i, arg):
         self.dev_args[i] = np.uint32(arg)
 
-    def _set_float(self, i, arg):
+
+    def set_float(self, i, arg):
         self.dev_args[i] = self.env.dtype.type(arg)
 
-    def _set_in_buffer(self, i, arg):
+
+    def set_input_buffer(self, i, arg):
         self.dev_args[i] = self.env.dtype.type(arg)
 
 
-    def set_arg(self, mode, i, arg):
-        """
-        mode: 'IN', 'OUT', 'LMEM'
-        i: arg index
-        arg: arg value
-        """
-        if mode is 'IN':
-            if isinstance(arg, int):
-                self._set_int(i, arg)
-            elif isinstance(arg, float):
-                self._set_float(i, arg)
-            elif isinstance(arg, np.ndarray):
-                self._set_in_buffer(i, arg)
-            else:
-                raise TypeError()
-        elif mode is 'OUT':
-            pass
-        elif mode is 'LMEM':
-            pass
+    def set_local_memory(self, i, arg):
+        pass
+
+
+    def set_output_shape(self, i, arg):
+        pass
 
 
     def run(self):

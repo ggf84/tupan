@@ -92,12 +92,11 @@ class Particles(dict):
         return np.concatenate(arrays)
 
 
-    def select(self, function, attr):
+    def select(self, function):
         subset = self.empty
-        for obj in self.values():
+        for (key, obj) in self.items():
             if obj.n:
-                selection = function(getattr(obj, attr))
-                subset.append(obj[selection])
+                subset[key].append(obj.select(function))
         return subset
 
 

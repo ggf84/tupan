@@ -133,7 +133,9 @@ class Pbase(object):
         arrays = []
         for attr in attrs:
             arr = self.data[attr]
-            arrays.append(arr.reshape(-1,1) if arr.ndim < 2 else arr)
+            if arr.ndim < 2:
+                arr = arr.reshape(-1,1)
+            arrays.append(arr)
 
         array = np.concatenate(arrays, axis=1)
 
@@ -146,6 +148,10 @@ class Pbase(object):
         if ncols > 1:
             return array
         return array.squeeze()
+
+
+    def select(self, function):
+        return self[function(self)]
 
 
     #

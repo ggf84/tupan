@@ -52,28 +52,33 @@ class LLBIOS(object):
     def __init__(self):
         self.kernel = kernels.bios_kernel
         self.kernel.local_size = 384
-        self.kernel.set_arg('LMEM', 6, 8)
         self.fields = ('pos', 'mass', 'vel', 'eps2')
+
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
         idata = iobj.stack_fields(self.fields)
         jdata = jobj.stack_fields(self.fields)
-        self.kernel.set_arg('IN', 0, ni)
-        self.kernel.set_arg('IN', 1, idata)
-        self.kernel.set_arg('IN', 2, nj)
-        self.kernel.set_arg('IN', 3, jdata)
-        self.kernel.set_arg('IN', 4, dt)
-        self.kernel.set_arg('OUT', 5, (ni, 8))
+
         self.kernel.global_size = ni
+        self.kernel.set_int(0, ni)
+        self.kernel.set_input_buffer(1, idata)
+        self.kernel.set_int(2, nj)
+        self.kernel.set_input_buffer(3, jdata)
+        self.kernel.set_float(4, dt)
+        self.kernel.set_output_shape(5, (ni, 8))
+        self.kernel.set_local_memory(6, 8)
+
 
     def run(self):
         self.kernel.run()
 
+
     def get_result(self):
         result = self.kernel.get_result()[0]
         return (result[:,:3], result[:,4:7])
+
 
 
 llbios = LLBIOS()
@@ -159,7 +164,7 @@ class BIOS(Base):
         if self.reporter:
             self.reporter.report(self.time, p)
         if self.dumpper:
-            self.dumpper.dump(p.select(lambda x: x%self.dump_freq == 0, 'nstep'))
+            self.dumpper.dump(p.select(lambda x: x.nstep % self.dump_freq == 0))
 
         p = self.do_step(p, tau)
         self.time += tau
