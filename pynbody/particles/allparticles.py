@@ -27,20 +27,18 @@ def make_common_attrs(cls):
     def make_property(attr, doc):
         def fget(self):
             seq = [getattr(obj, attr) for obj in self.values() if obj.n]
+            if len(seq) == 1:
+                return seq[0]
             if len(seq) > 1:
                 return np.concatenate(seq)
-            if seq:
-                return seq[0]
             return np.concatenate([getattr(obj, attr) for obj in self.values()])
         def fset(self, value):
-            if isinstance(value, (np.ndarray, list, tuple)):
-                for obj in self.values():
-                    if obj.n:
+            for obj in self.values():
+                if obj.n:
+                    try:
                         setattr(obj, attr, value[:obj.n])
                         value = value[obj.n:]
-            else:
-                for obj in self.values():
-                    if obj.n:
+                    except:
                         setattr(obj, attr, value)
         def fdel(self):
             raise NotImplementedError()
@@ -71,14 +69,14 @@ class Particles(dict):
                   ('nstep', 'u8', 'step number'),
                  ]
 
-    def __init__(self):
+    def __init__(self, nstar=0, nbh=0, nsph=0):
         """
         Initializer
         """
         super(Particles, self).__init__(
-                                        sph=Sph(),
-                                        body=Body(),
-                                        blackhole=BlackHole(),
+                                        sph=Sph(nsph),
+                                        body=Body(nstar),
+                                        blackhole=BlackHole(nbh),
                                        )
         self.__dict__.update(self)
 

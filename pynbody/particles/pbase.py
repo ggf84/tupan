@@ -90,7 +90,7 @@ class Pbase(object):
 
 
     def append(self, obj):
-        self.data = np.append(self.data, obj.data)
+        self.data = np.concatenate((self.data, obj.data))
 
 
     def remove(self, id):
