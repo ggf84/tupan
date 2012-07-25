@@ -87,6 +87,14 @@ class Particles(dict):
     # miscellaneous methods
     #
 
+    def __str__(self):
+        fmt = self.__class__.__name__+'{'
+        for key, obj in self.items():
+            fmt += '\n{0},'.format(obj)
+        fmt += '\n}'
+        return fmt
+
+
     def __hash__(self):
         i = None
         for obj in self.values():
@@ -95,14 +103,6 @@ class Particles(dict):
             else:
                 i ^= hash(obj)
         return i
-
-
-    def __str__(self):
-        fmt = self.__class__.__name__+'{'
-        for key, obj in self.items():
-            fmt += '\n{0},'.format(obj)
-        fmt += '\n}'
-        return fmt
 
 
     def __len__(self):
@@ -126,13 +126,8 @@ class Particles(dict):
                     if obj.n:
                         self[key].append(obj)
             else:
-                name = objs.__class__.__name__.lower()
-                self[name].append(objs)
-
-
-    def stack_fields(self, attrs, pad=-1):
-        arrays = [obj.stack_fields(attrs, pad) for obj in self.values() if obj.n]
-        return np.concatenate(arrays)
+                key = objs.__class__.__name__.lower()
+                self[key].append(objs)
 
 
     def select(self, function):
@@ -141,6 +136,25 @@ class Particles(dict):
             if obj.n:
                 subset[key].append(obj.select(function))
         return subset
+
+
+    def stack_fields(self, attrs, pad=-1):
+#        arrays = [obj.stack_fields(attrs, pad) for obj in self.values() if obj.n]
+#        return np.concatenate(arrays)
+
+        arrays = [(arr.reshape(-1,1) if arr.ndim < 2 else arr)
+                  for arr in [getattr(self, attr) for attr in attrs]]
+        array = np.concatenate(arrays, axis=1)
+
+        ncols = array.shape[1]
+        col = ncols - pad
+        if col < 0:
+            pad_array = np.zeros((len(array),pad), dtype=array.dtype)
+            pad_array[:,:col] = array
+            return pad_array
+        if ncols > 1:
+            return array
+        return array.squeeze()
 
 
     #
@@ -158,94 +172,79 @@ class Particles(dict):
 
     def get_total_mass(self):
         """
-        Get the total mass of the whole system of particles.
+        Get the total mass.
         """
-        return sum([obj.get_total_mass() for obj in self.values() if obj.n])
+        return float(self.mass.sum())
 
     def get_center_of_mass_position(self):
         """
         Get the center-of-mass position.
         """
-        com_pos = 0.0
-        total_mass = 0.0
+        mtot = self.get_total_mass()
+        rcom = (self.mass * self.pos.T).sum(1)
         for obj in self.values():
             if obj.n:
-                mass = obj.get_total_mass()
-                pos = obj.get_center_of_mass_position()
-                com_pos += pos * mass
-                total_mass += mass
                 if hasattr(obj, "get_pn_correction_for_center_of_mass_position"):
-                    com_pos += obj.get_pn_correction_for_center_of_mass_position()
-        return (com_pos / total_mass)
+                    rcom += obj.get_pn_correction_for_center_of_mass_position()
+        return (rcom / mtot)
 
     def get_center_of_mass_velocity(self):
         """
         Get the center-of-mass velocity.
         """
-        com_vel = 0.0
-        total_mass = 0.0
+        mtot = self.get_total_mass()
+        vcom = (self.mass * self.vel.T).sum(1)
         for obj in self.values():
             if obj.n:
-                mass = obj.get_total_mass()
-                vel = obj.get_center_of_mass_velocity()
-                com_vel += vel * mass
-                total_mass += mass
                 if hasattr(obj, "get_pn_correction_for_center_of_mass_velocity"):
-                    com_vel += obj.get_pn_correction_for_center_of_mass_velocity()
-        return (com_vel / total_mass)
+                    vcom += obj.get_pn_correction_for_center_of_mass_velocity()
+        return (vcom / mtot)
 
     def correct_center_of_mass(self):
         """
         Correct the center-of-mass to origin of coordinates.
         """
-        com_pos = self.get_center_of_mass_position()
-        com_vel = self.get_center_of_mass_velocity()
-        for obj in self.values():
-            if obj.n:
-                obj.pos -= com_pos
-                obj.vel -= com_vel
+        self.pos -= self.get_center_of_mass_position()
+        self.vel -= self.get_center_of_mass_velocity()
 
 
     ### linear momentum
 
     def get_total_linear_momentum(self):
         """
-        Get the total linear momentum for the whole system of particles.
+        Get the total linear momentum.
         """
-        lin_mom = 0.0
+        lmom = (self.mass * self.vel.T).sum(1)
         for obj in self.values():
             if obj.n:
-                lin_mom += obj.get_total_linear_momentum()
                 if hasattr(obj, "get_pn_correction_for_total_linear_momentum"):
-                    lin_mom += obj.get_pn_correction_for_total_linear_momentum()
-        return lin_mom
+                    lmom += obj.get_pn_correction_for_total_linear_momentum()
+        return lmom
 
 
     ### angular momentum
 
     def get_total_angular_momentum(self):
         """
-        Get the total angular momentum for the whole system of particles.
+        Get the total angular momentum.
         """
-        ang_mom = 0.0
+        amom = (self.mass * np.cross(self.pos, self.vel).T).sum(1)
         for obj in self.values():
             if obj.n:
-                ang_mom += obj.get_total_angular_momentum()
                 if hasattr(obj, "get_pn_correction_for_total_angular_momentum"):
-                    ang_mom += obj.get_pn_correction_for_total_angular_momentum()
-        return ang_mom
+                    amom += obj.get_pn_correction_for_total_angular_momentum()
+        return amom
 
 
     ### kinetic energy
 
     def get_total_kinetic_energy(self):
         """
-        Get the total kinectic energy for the whole system of particles.
+        Get the total kinetic energy.
         """
-        ke = 0.0
+        ke = float((0.5 * self.mass * (self.vel**2).sum(1)).sum())
         for obj in self.values():
             if obj.n:
-                ke += obj.get_total_kinetic_energy()
                 if hasattr(obj, "get_pn_correction_for_total_energy"):
                     ke += obj.get_pn_correction_for_total_energy()
         return ke
@@ -255,15 +254,24 @@ class Particles(dict):
 
     def get_total_potential_energy(self):
         """
-        Get the total potential energy for the whole system of particles.
+        Get the total potential energy.
         """
-        pe = 0.0
-        for obj in self.values():
-            if obj.n:
-                pe += obj.get_total_potential_energy()     ### :FIXME: (when include BHs) ###
-#                value = obj.get_total_potential_energy()
-#                pe += 0.5*(value + obj._self_total_epot)
-        return pe
+        return 0.5 * float((self.mass * self.phi).sum())
+
+
+    ### update methods
+
+    def update_nstep(self):
+        """
+        Update individual step number.
+        """
+        self.nstep += 1
+
+    def update_t_curr(self, tau):
+        """
+        Update individual current time by tau.
+        """
+        self.t_curr += tau
 
 
     ### gravity
@@ -292,6 +300,18 @@ class Particles(dict):
         gravity.tstep.run()
         self.dt_next = gravity.tstep.get_result()
 
+    def update_acc_jerk(self, objs):
+        """
+        Update the individual gravitational acceleration and jerk due to other particles.
+        """
+        gravity.acc_jerk.set_args(self, objs)
+        gravity.acc_jerk.run()
+        (self.acc, jerk) = gravity.acc_jerk.get_result()
+        for iobj in self.values():
+            if iobj.n:
+                iobj.jerk = jerk[:iobj.n]
+                jerk = jerk[iobj.n:]
+
     def update_pnacc(self, objs, pn_order, clight):
         """
         Update the individual post-newtonian gravitational acceleration due to other particles.
@@ -307,33 +327,6 @@ class Particles(dict):
                     if hasattr(iobj, "pnacc"):
                         iobj.pnacc = result[:iobj.n]
                         result = result[iobj.n:]
-
-    def update_acc_jerk(self, objs):
-        """
-        Update the individual gravitational acceleration and jerk due to other particles.
-        """
-        gravity.acc_jerk.set_args(self, objs)
-        gravity.acc_jerk.run()
-        (acc, jerk) = gravity.acc_jerk.get_result()
-        for iobj in self.values():
-            if iobj.n:
-                iobj.acc = acc[:iobj.n]
-                iobj.jerk = jerk[:iobj.n]
-                acc = acc[iobj.n:]
-                jerk = jerk[iobj.n:]
-
-
-    ### nstep
-
-    def update_nstep(self):
-        for obj in self.values():
-            if obj.n:
-                obj.update_nstep()
-
-    def update_t_curr(self, tau):
-        for obj in self.values():
-            if obj.n:
-                obj.update_t_curr(tau)
 
 
     ### prev/next timestep

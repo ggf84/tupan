@@ -129,14 +129,13 @@ class Pbase(object):
         return obj
 
 
-    def stack_fields(self, attrs, pad=-1):
-        arrays = []
-        for attr in attrs:
-            arr = self.data[attr]
-            if arr.ndim < 2:
-                arr = arr.reshape(-1,1)
-            arrays.append(arr)
+    def select(self, function):
+        return self[function(self)]
 
+
+    def stack_fields(self, attrs, pad=-1):
+        arrays = [(arr.reshape(-1,1) if arr.ndim < 2 else arr)
+                  for arr in [getattr(self, attr) for attr in attrs]]
         array = np.concatenate(arrays, axis=1)
 
         ncols = array.shape[1]
@@ -150,10 +149,6 @@ class Pbase(object):
         return array.squeeze()
 
 
-    def select(self, function):
-        return self[function(self)]
-
-
     #
     # common methods
     #
@@ -164,7 +159,7 @@ class Pbase(object):
         """
         Get the total mass.
         """
-        return float(np.sum(self.mass))
+        return float(self.mass.sum())
 
     def get_center_of_mass_position(self):
         """
@@ -230,7 +225,7 @@ class Pbase(object):
         """
         Get the total kinetic energy.
         """
-        return float(np.sum(self.get_individual_kinetic_energy()))
+        return float(self.get_individual_kinetic_energy().sum())
 
 
     ### potential energy
@@ -245,7 +240,7 @@ class Pbase(object):
         """
         Get the total potential energy.
         """
-        return 0.5 * float(np.sum(self.get_individual_potential_energy()))
+        return 0.5 * float(self.get_individual_potential_energy().sum())
 
 
     ### update methods
@@ -258,7 +253,7 @@ class Pbase(object):
 
     def update_t_curr(self, tau):
         """
-        Evolves individual current time by tau.
+        Update individual current time by tau.
         """
         self.t_curr += tau
 
@@ -267,7 +262,7 @@ class Pbase(object):
 
     def update_phi(self, objs):
         """
-        Update individual gravitational potential due j-particles.
+        Update the individual gravitational potential due to other particles.
         """
         gravity.phi.set_args(self, objs)
         gravity.phi.run()
@@ -275,7 +270,7 @@ class Pbase(object):
 
     def update_acc(self, objs):
         """
-        Update individual gravitational acceleration due j-particles.
+        Update the individual gravitational acceleration due to other particles.
         """
         gravity.acc.set_args(self, objs)
         gravity.acc.run()
@@ -283,7 +278,7 @@ class Pbase(object):
 
     def update_tstep(self, objs, eta):
         """
-        Update individual time-step due j-particles.
+        Update the individual time-steps due to other particles.
         """
         gravity.tstep.set_args(self, objs, eta/2)
         gravity.tstep.run()
@@ -291,7 +286,7 @@ class Pbase(object):
 
     def update_acc_jerk(self, objs):
         """
-        Update individual gravitational acceleration and jerk due j-particles.
+        Update the individual gravitational acceleration and jerk due to other particles.
         """
         gravity.acc_jerk.set_args(self, objs)
         gravity.acc_jerk.run()
