@@ -17,7 +17,7 @@ from ..lib.utils.timing import decallmethods, timings
 __all__ = ['Pbase']
 
 
-def with_properties(cls):
+def make_attrs(cls):
     def make_property(attr, doc):
         def fget(self): return self.data[attr]
         def fset(self, value): self.data[attr] = value

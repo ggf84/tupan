@@ -23,11 +23,54 @@ __all__ = ["Particles"]
 ALL_PARTICLE_TYPES = ["sph", "body", "blackhole"]
 
 
+def make_common_attrs(cls):
+    def make_property(attr, doc):
+        def fget(self):
+            seq = [getattr(obj, attr) for obj in self.values() if obj.n]
+            if len(seq) > 1:
+                return np.concatenate(seq)
+            if seq:
+                return seq[0]
+            return np.concatenate([getattr(obj, attr) for obj in self.values()])
+        def fset(self, value):
+            if isinstance(value, (np.ndarray, list, tuple)):
+                for obj in self.values():
+                    if obj.n:
+                        setattr(obj, attr, value[:obj.n])
+                        value = value[obj.n:]
+            else:
+                for obj in self.values():
+                    if obj.n:
+                        setattr(obj, attr, value)
+        def fdel(self):
+            raise NotImplementedError()
+        return property(fget, fset, fdel, doc)
+    attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.attributes)
+    for (attr, doc) in attrs:
+        setattr(cls, attr, make_property(attr, doc))
+    return cls
+
+
 @decallmethods(timings)
+@make_common_attrs
 class Particles(dict):
     """
     This class holds the particle types in the simulation.
     """
+    attributes = [# common attributes
+                  ('id', 'u8', 'index'),
+                  ('mass', 'f8', 'mass'),
+                  ('pos', '3f8', 'position'),
+                  ('vel', '3f8', 'velocity'),
+                  ('acc', '3f8', 'acceleration'),
+                  ('phi', 'f8', 'potential'),
+                  ('eps2', 'f8', 'softening'),
+                  ('t_curr', 'f8', 'current time'),
+                  ('dt_prev', 'f8', 'previous time-step'),
+                  ('dt_next', 'f8', 'next time-step'),
+                  ('nstep', 'u8', 'step number'),
+                 ]
+
     def __init__(self):
         """
         Initializer
@@ -231,11 +274,7 @@ class Particles(dict):
         """
         gravity.phi.set_args(self, objs)
         gravity.phi.run()
-        result = gravity.phi.get_result()
-        for iobj in self.values():
-            if iobj.n:
-                iobj.phi = result[:iobj.n]
-                result = result[iobj.n:]
+        self.phi = gravity.phi.get_result()
 
     def update_acc(self, objs):
         """
@@ -243,11 +282,7 @@ class Particles(dict):
         """
         gravity.acc.set_args(self, objs)
         gravity.acc.run()
-        result = gravity.acc.get_result()
-        for iobj in self.values():
-            if iobj.n:
-                iobj.acc = result[:iobj.n]
-                result = result[iobj.n:]
+        self.acc = gravity.acc.get_result()
 
     def update_tstep(self, objs, eta):
         """
@@ -255,11 +290,7 @@ class Particles(dict):
         """
         gravity.tstep.set_args(self, objs, eta/2)
         gravity.tstep.run()
-        result = gravity.tstep.get_result()
-        for iobj in self.values():
-            if iobj.n:
-                iobj.dt_next = result[:iobj.n]
-                result = result[iobj.n:]
+        self.dt_next = gravity.tstep.get_result()
 
     def update_pnacc(self, objs, pn_order, clight):
         """
