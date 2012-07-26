@@ -13,6 +13,7 @@ import numpy as np
 from .sph import Sph
 from .body import Body
 from .blackhole import BlackHole
+from .pbase import AbstractNbodyMethods
 from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
 
@@ -43,7 +44,7 @@ def make_common_attrs(cls):
         def fdel(self):
             raise NotImplementedError()
         return property(fget, fset, fdel, doc)
-    attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.attributes)
+    attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.common_attributes)
     for (attr, doc) in attrs:
         setattr(cls, attr, make_property(attr, doc))
     return cls
@@ -51,24 +52,10 @@ def make_common_attrs(cls):
 
 @decallmethods(timings)
 @make_common_attrs
-class Particles(dict):
+class Particles(dict, AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
     """
-    attributes = [# common attributes
-                  ('id', 'u8', 'index'),
-                  ('mass', 'f8', 'mass'),
-                  ('pos', '3f8', 'position'),
-                  ('vel', '3f8', 'velocity'),
-                  ('acc', '3f8', 'acceleration'),
-                  ('phi', 'f8', 'potential'),
-                  ('eps2', 'f8', 'softening'),
-                  ('t_curr', 'f8', 'current time'),
-                  ('dt_prev', 'f8', 'previous time-step'),
-                  ('dt_next', 'f8', 'next time-step'),
-                  ('nstep', 'u8', 'step number'),
-                 ]
-
     def __init__(self, nstar=0, nbh=0, nsph=0):
         """
         Initializer
@@ -136,167 +123,80 @@ class Particles(dict):
         return subset
 
 
-    def stack_fields(self, attrs, pad=-1):
-#        arrays = [obj.stack_fields(attrs, pad) for obj in self.values() if obj.n]
-#        return np.concatenate(arrays)
-
-        arrays = [(arr.reshape(-1,1) if arr.ndim < 2 else arr)
-                  for arr in [getattr(self, attr) for attr in attrs]]
-        array = np.concatenate(arrays, axis=1)
-
-        ncols = array.shape[1]
-        col = ncols - pad
-        if col < 0:
-            pad_array = np.zeros((len(array),pad), dtype=array.dtype)
-            pad_array[:,:col] = array
-            return pad_array
-        if ncols > 1:
-            return array
-        return array.squeeze()
-
-
     #
-    # common attributes
-    #
-
-    ### ...
-
-
-    #
-    # common methods
+    # uncommon methods
     #
 
     ### total mass and center-of-mass
 
-    def get_total_mass(self):
+    def get_rcom_pn_shift(self):
         """
-        Get the total mass.
-        """
-        return float(self.mass.sum())
 
-    def get_center_of_mass_position(self):
-        """
-        Get the center-of-mass position.
         """
         mtot = self.get_total_mass()
-        rcom = (self.mass * self.pos.T).sum(1)
+        rcom_shift = 0.0
         for obj in self.values():
             if obj.n:
                 if hasattr(obj, "get_pn_correction_for_center_of_mass_position"):
-                    rcom += obj.get_pn_correction_for_center_of_mass_position()
-        return (rcom / mtot)
+                    rcom_shift += obj.get_pn_correction_for_center_of_mass_position()
+        return (rcom_shift / mtot)
 
-    def get_center_of_mass_velocity(self):
+    def get_vcom_pn_shift(self):
         """
-        Get the center-of-mass velocity.
+
         """
         mtot = self.get_total_mass()
-        vcom = (self.mass * self.vel.T).sum(1)
+        vcom_shift = 0.0
         for obj in self.values():
             if obj.n:
                 if hasattr(obj, "get_pn_correction_for_center_of_mass_velocity"):
-                    vcom += obj.get_pn_correction_for_center_of_mass_velocity()
-        return (vcom / mtot)
-
-    def correct_center_of_mass(self):
-        """
-        Correct the center-of-mass to origin of coordinates.
-        """
-        self.pos -= self.get_center_of_mass_position()
-        self.vel -= self.get_center_of_mass_velocity()
+                    vcom_shift += obj.get_pn_correction_for_center_of_mass_velocity()
+        return (vcom_shift / mtot)
 
 
     ### linear momentum
 
-    def get_total_linear_momentum(self):
+    def get_lmom_pn_shift(self):
         """
-        Get the total linear momentum.
+
         """
-        lmom = (self.mass * self.vel.T).sum(1)
+        lmom_shift = 0.0
         for obj in self.values():
             if obj.n:
                 if hasattr(obj, "get_pn_correction_for_total_linear_momentum"):
-                    lmom += obj.get_pn_correction_for_total_linear_momentum()
-        return lmom
+                    lmom_shift += obj.get_pn_correction_for_total_linear_momentum()
+        return lmom_shift
 
 
     ### angular momentum
 
-    def get_total_angular_momentum(self):
+    def get_amom_pn_shift(self):
         """
-        Get the total angular momentum.
+
         """
-        amom = (self.mass * np.cross(self.pos, self.vel).T).sum(1)
+        amom_shift = 0.0
         for obj in self.values():
             if obj.n:
                 if hasattr(obj, "get_pn_correction_for_total_angular_momentum"):
-                    amom += obj.get_pn_correction_for_total_angular_momentum()
-        return amom
+                    amom_shift += obj.get_pn_correction_for_total_angular_momentum()
+        return amom_shift
 
 
     ### kinetic energy
 
-    def get_total_kinetic_energy(self):
+    def get_ke_pn_shift(self):
         """
-        Get the total kinetic energy.
+
         """
-        ke = float((0.5 * self.mass * (self.vel**2).sum(1)).sum())
+        ke_shift = 0.0
         for obj in self.values():
             if obj.n:
                 if hasattr(obj, "get_pn_correction_for_total_energy"):
-                    ke += obj.get_pn_correction_for_total_energy()
-        return ke
-
-
-    ### potential energy
-
-    def get_total_potential_energy(self):
-        """
-        Get the total potential energy.
-        """
-        return 0.5 * float((self.mass * self.phi).sum())
-
-
-    ### update methods
-
-    def update_nstep(self):
-        """
-        Update individual step number.
-        """
-        self.nstep += 1
-
-    def update_t_curr(self, tau):
-        """
-        Update individual current time by tau.
-        """
-        self.t_curr += tau
+                    ke_shift += obj.get_pn_correction_for_total_energy()
+        return ke_shift
 
 
     ### gravity
-
-    def update_phi(self, objs):
-        """
-        Update the individual gravitational potential due to other particles.
-        """
-        gravity.phi.set_args(self, objs)
-        gravity.phi.run()
-        self.phi = gravity.phi.get_result()
-
-    def update_acc(self, objs):
-        """
-        Update the individual gravitational acceleration due to other particles.
-        """
-        gravity.acc.set_args(self, objs)
-        gravity.acc.run()
-        self.acc = gravity.acc.get_result()
-
-    def update_tstep(self, objs, eta):
-        """
-        Update the individual time-steps due to other particles.
-        """
-        gravity.tstep.set_args(self, objs, eta/2)
-        gravity.tstep.run()
-        self.dt_next = gravity.tstep.get_result()
 
     def update_acc_jerk(self, objs):
         """
@@ -328,65 +228,6 @@ class Particles(dict):
 
 
     ### prev/next timestep
-
-    def set_dt_prev(self, tau):
-        """
-
-        """
-        for obj in self.values():
-            if obj.n:
-                obj.dt_prev = tau
-
-    def set_dt_next(self, tau):
-        """
-
-        """
-        for obj in self.values():
-            if obj.n:
-                obj.dt_next = tau
-
-
-    def min_dt_prev(self):
-        """
-
-        """
-        min_value = sys.float_info.max
-        for obj in self.values():
-            if obj.n:
-                min_value = min(min_value, np.abs(obj.dt_prev).min())
-        return min_value
-
-    def min_dt_next(self):
-        """
-
-        """
-        min_value = sys.float_info.max
-        for obj in self.values():
-            if obj.n:
-                min_value = min(min_value, np.abs(obj.dt_next).min())
-        return min_value
-
-
-    def max_dt_prev(self):
-        """
-
-        """
-        max_value = 0.0
-        for obj in self.values():
-            if obj.n:
-                max_value = max(max_value, np.abs(obj.dt_prev).max())
-        return max_value
-
-    def max_dt_next(self):
-        """
-
-        """
-        max_value = 0.0
-        for obj in self.values():
-            if obj.n:
-                max_value = max(max_value, np.abs(obj.dt_next).max())
-        return max_value
-
 
     def power_averaged_dt_prev(self, power):
         """

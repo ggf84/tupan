@@ -47,9 +47,7 @@ class Base(object):
         Drift operator.
         """
         if ip.n:
-            for obj in ip.values():
-                if obj.n:
-                    obj.pos += tau * obj.vel
+            ip.pos += tau * ip.vel
             if self.pn_order > 0: self.drift_pn(ip, tau)
 
 
@@ -59,9 +57,7 @@ class Base(object):
         """
         if ip.n and jp.n:
             if update_acc: ip.update_acc(jp)
-            for obj in ip.values():
-                if obj.n:
-                    obj.vel += tau * obj.acc
+            ip.vel += tau * ip.acc
 
 
     def drift_pn(self, ip, tau):
@@ -156,7 +152,7 @@ class SIA(Base):
             slow, fast = self.split(tau, p)
 
             if slow.n > 0:
-                slow.set_dt_next(tau)
+                slow.dt_next = tau
                 if stream:
                     stream.append(slow)
 
@@ -342,7 +338,7 @@ class SIA(Base):
             slow, fast = p, p.empty
 
         if slow.n:
-            slow.set_dt_next(tau)
+            slow.dt_next = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -359,9 +355,9 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
+            slow.dt_prev = tau
+            slow.t_curr += tau
+            slow.nstep += 1
 
         p = self.join(slow, fast)
 
@@ -385,7 +381,7 @@ class SIA(Base):
             slow, fast = p, p.empty
 
         if slow.n:
-            slow.set_dt_next(tau)
+            slow.dt_next = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -408,9 +404,9 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
+            slow.dt_prev = tau
+            slow.t_curr += tau
+            slow.nstep += 1
 
         p = self.join(slow, fast)
 
@@ -435,7 +431,7 @@ class SIA(Base):
             slow, fast = p, p.empty
 
         if slow.n:
-            slow.set_dt_next(tau)
+            slow.dt_next = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -464,9 +460,9 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
+            slow.dt_prev = tau
+            slow.t_curr += tau
+            slow.nstep += 1
 
         p = self.join(slow, fast)
 
@@ -492,7 +488,7 @@ class SIA(Base):
             slow, fast = p, p.empty
 
         if slow.n:
-            slow.set_dt_next(tau)
+            slow.dt_next = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -527,9 +523,9 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
+            slow.dt_prev = tau
+            slow.t_curr += tau
+            slow.nstep += 1
 
         p = self.join(slow, fast)
 
@@ -556,7 +552,7 @@ class SIA(Base):
             slow, fast = p, p.empty
 
         if slow.n:
-            slow.set_dt_next(tau)
+            slow.dt_next = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -597,9 +593,9 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
+            slow.dt_prev = tau
+            slow.t_curr += tau
+            slow.nstep += 1
 
         p = self.join(slow, fast)
 
@@ -627,7 +623,7 @@ class SIA(Base):
             slow, fast = p, p.empty
 
         if slow.n:
-            slow.set_dt_next(tau)
+            slow.dt_next = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -674,9 +670,9 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
+            slow.dt_prev = tau
+            slow.t_curr += tau
+            slow.nstep += 1
 
         p = self.join(slow, fast)
 
@@ -705,7 +701,7 @@ class SIA(Base):
             slow, fast = p, p.empty
 
         if slow.n:
-            slow.set_dt_next(tau)
+            slow.dt_next = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -758,9 +754,9 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
+            slow.dt_prev = tau
+            slow.t_curr += tau
+            slow.nstep += 1
 
         p = self.join(slow, fast)
 
@@ -791,7 +787,7 @@ class SIA(Base):
             slow, fast = p, p.empty
 
         if slow.n:
-            slow.set_dt_next(tau)
+            slow.dt_next = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -856,9 +852,9 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.set_dt_prev(tau)
-            slow.update_t_curr(tau)
-            slow.update_nstep()
+            slow.dt_prev = tau
+            slow.t_curr += tau
+            slow.nstep += 1
 
         p = self.join(slow, fast)
 

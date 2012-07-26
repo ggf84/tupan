@@ -29,8 +29,153 @@ def make_attrs(cls):
     return cls
 
 
+
+class AbstractNbodyMethods(object):
+    """
+    This class holds common methods for particles in n-body systems.
+    """
+    common_attributes = [# name, dtype, doc
+                         ('id', 'u8', 'index'),
+                         ('mass', 'f8', 'mass'),
+                         ('pos', '3f8', 'position'),
+                         ('vel', '3f8', 'velocity'),
+                         ('acc', '3f8', 'acceleration'),
+                         ('phi', 'f8', 'potential'),
+                         ('eps2', 'f8', 'softening'),
+                         ('t_curr', 'f8', 'current time'),
+                         ('dt_prev', 'f8', 'previous time-step'),
+                         ('dt_next', 'f8', 'next time-step'),
+                         ('nstep', 'u8', 'step number'),
+                        ]
+
+    ### total mass and center-of-mass
+
+    def get_total_mass(self):
+        """
+        Get the total mass.
+        """
+        return float(self.mass.sum())
+
+    def get_center_of_mass_position(self):
+        """
+        Get the center-of-mass position.
+        """
+        mtot = self.get_total_mass()
+        rcom = (self.mass * self.pos.T).sum(1)
+        return (rcom / mtot)
+
+    def get_center_of_mass_velocity(self):
+        """
+        Get the center-of-mass velocity.
+        """
+        mtot = self.get_total_mass()
+        vcom = (self.mass * self.vel.T).sum(1)
+        return (vcom / mtot)
+
+    def correct_center_of_mass(self):
+        """
+        Correct the center-of-mass to origin of coordinates.
+        """
+        self.pos -= self.get_center_of_mass_position()
+        self.vel -= self.get_center_of_mass_velocity()
+
+
+    ### linear momentum
+
+    def get_total_linear_momentum(self):
+        """
+        Get the total linear momentum.
+        """
+        return (self.mass * self.vel.T).sum(1)
+
+
+    ### angular momentum
+
+    def get_total_angular_momentum(self):
+        """
+        Get the total angular momentum.
+        """
+        return (self.mass * np.cross(self.pos, self.vel).T).sum(1)
+
+
+    ### kinetic energy
+
+    def get_total_kinetic_energy(self):
+        """
+        Get the total kinetic energy.
+        """
+        return float((0.5 * self.mass * (self.vel**2).sum(1)).sum())
+
+
+    ### potential energy
+
+    def get_total_potential_energy(self):
+        """
+        Get the total potential energy.
+        """
+        return 0.5 * float((self.mass * self.phi).sum())
+
+
+    ### gravity
+
+    def update_phi(self, objs):
+        """
+        Update the individual gravitational potential due to other particles.
+        """
+        gravity.phi.set_args(self, objs)
+        gravity.phi.run()
+        self.phi = gravity.phi.get_result()
+
+    def update_acc(self, objs):
+        """
+        Update the individual gravitational acceleration due to other particles.
+        """
+        gravity.acc.set_args(self, objs)
+        gravity.acc.run()
+        self.acc = gravity.acc.get_result()
+
+    def update_tstep(self, objs, eta):
+        """
+        Update the individual time-steps due to other particles.
+        """
+        gravity.tstep.set_args(self, objs, eta/2)
+        gravity.tstep.run()
+        self.dt_next = gravity.tstep.get_result()
+
+
+    ### miscellaneous methods
+
+    def min_dt_prev(self):
+        """
+        Minimum absolute value of dt_prev.
+        """
+        return np.abs(self.dt_prev).min()
+
+    def max_dt_prev(self):
+        """
+        Maximum absolute value of dt_prev.
+        """
+        return np.abs(self.dt_prev).max()
+
+
+    def min_dt_next(self):
+        """
+        Minimum absolute value of dt_next.
+        """
+        return np.abs(self.dt_next).min()
+
+    def max_dt_next(self):
+        """
+        Maximum absolute value of dt_nex.
+        """
+        return np.abs(self.dt_next).max()
+
+
+
+
+
 @decallmethods(timings)
-class Pbase(object):
+class Pbase(AbstractNbodyMethods):
     """
 
     """
@@ -90,7 +235,10 @@ class Pbase(object):
 
 
     def append(self, obj):
-        self.data = np.concatenate((self.data, obj.data))
+        try:
+            self.data = np.concatenate((self.data, obj.data))
+        except:
+            self.data = np.append(self.data, obj.data)
 
 
     def remove(self, id):
@@ -133,55 +281,9 @@ class Pbase(object):
         return self[function(self)]
 
 
-    def stack_fields(self, attrs, pad=-1):
-        arrays = [(arr.reshape(-1,1) if arr.ndim < 2 else arr)
-                  for arr in [getattr(self, attr) for attr in attrs]]
-        array = np.concatenate(arrays, axis=1)
-
-        ncols = array.shape[1]
-        col = ncols - pad
-        if col < 0:
-            pad_array = np.zeros((len(array),pad), dtype=array.dtype)
-            pad_array[:,:col] = array
-            return pad_array
-        if ncols > 1:
-            return array
-        return array.squeeze()
-
-
     #
     # common methods
     #
-
-    ### total mass and center-of-mass
-
-    def get_total_mass(self):
-        """
-        Get the total mass.
-        """
-        return float(self.mass.sum())
-
-    def get_center_of_mass_position(self):
-        """
-        Get the center-of-mass position.
-        """
-        mtot = self.get_total_mass()
-        return (self.mass * self.pos.T).sum(1) / mtot
-
-    def get_center_of_mass_velocity(self):
-        """
-        Get the center-of-mass velocity.
-        """
-        mtot = self.get_total_mass()
-        return (self.mass * self.vel.T).sum(1) / mtot
-
-    def correct_center_of_mass(self):
-        """
-        Correct the center-of-mass to origin of coordinates.
-        """
-        self.pos -= self.get_center_of_mass_position()
-        self.vel -= self.get_center_of_mass_velocity()
-
 
     ### linear momentum
 
@@ -190,12 +292,6 @@ class Pbase(object):
         Get the individual linear momentum.
         """
         return (self.mass * self.vel.T).T
-
-    def get_total_linear_momentum(self):
-        """
-        Get the total linear momentum.
-        """
-        return self.get_individual_linear_momentum().sum(0)
 
 
     ### angular momentum
@@ -206,12 +302,6 @@ class Pbase(object):
         """
         return (self.mass * np.cross(self.pos, self.vel).T).T
 
-    def get_total_angular_momentum(self):
-        """
-        Get the total angular momentum.
-        """
-        return self.get_individual_angular_momentum().sum(0)
-
 
     ### kinetic energy
 
@@ -220,12 +310,6 @@ class Pbase(object):
         Get the individual kinetic energy.
         """
         return 0.5 * self.mass * (self.vel**2).sum(1)
-
-    def get_total_kinetic_energy(self):
-        """
-        Get the total kinetic energy.
-        """
-        return float(self.get_individual_kinetic_energy().sum())
 
 
     ### potential energy
@@ -236,53 +320,8 @@ class Pbase(object):
         """
         return self.mass * self.phi
 
-    def get_total_potential_energy(self):
-        """
-        Get the total potential energy.
-        """
-        return 0.5 * float(self.get_individual_potential_energy().sum())
-
-
-    ### update methods
-
-    def update_nstep(self):
-        """
-        Update individual step number.
-        """
-        self.nstep += 1
-
-    def update_t_curr(self, tau):
-        """
-        Update individual current time by tau.
-        """
-        self.t_curr += tau
-
 
     ### gravity
-
-    def update_phi(self, objs):
-        """
-        Update the individual gravitational potential due to other particles.
-        """
-        gravity.phi.set_args(self, objs)
-        gravity.phi.run()
-        self.phi = gravity.phi.get_result()
-
-    def update_acc(self, objs):
-        """
-        Update the individual gravitational acceleration due to other particles.
-        """
-        gravity.acc.set_args(self, objs)
-        gravity.acc.run()
-        self.acc = gravity.acc.get_result()
-
-    def update_tstep(self, objs, eta):
-        """
-        Update the individual time-steps due to other particles.
-        """
-        gravity.tstep.set_args(self, objs, eta/2)
-        gravity.tstep.run()
-        self.dt_next = gravity.tstep.get_result()
 
     def update_acc_jerk(self, objs):
         """

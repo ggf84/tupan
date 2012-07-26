@@ -79,9 +79,9 @@ class Hermite(object):
             p.update_acc_jerk(p)
             self.correct(p, tau)
 
-        p.set_dt_prev(tau)
-        p.update_t_curr(tau)
-        p.update_nstep()
+        p.dt_prev = tau
+        p.t_curr += tau
+        p.nstep += 1
         return p
 
 
@@ -108,7 +108,7 @@ class Hermite(object):
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
-        p.set_dt_next(tau)
+        p.dt_next = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)
@@ -125,7 +125,7 @@ class Hermite(object):
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
-        p.set_dt_next(tau)
+        p.dt_next = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)

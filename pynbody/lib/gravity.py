@@ -7,6 +7,7 @@ between particles in Newtonian and post-Newtonian approach.
 """
 
 
+import numpy as np
 from .extensions import kernels
 from .utils.timing import decallmethods, timings
 
@@ -43,14 +44,15 @@ class Phi(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_phi_kernel
         self.kernel.local_size = 384
-        self.fields = ('pos', 'mass', 'vel', 'eps2')
 
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
-        idata = iobj.stack_fields(self.fields)
-        jdata = jobj.stack_fields(self.fields)
+        idata = np.concatenate((iobj.pos, iobj.mass.reshape(-1,1),
+                                iobj.vel, iobj.eps2.reshape(-1,1)), axis=1)
+        jdata = np.concatenate((jobj.pos, jobj.mass.reshape(-1,1),
+                                jobj.vel, jobj.eps2.reshape(-1,1)), axis=1)
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -78,14 +80,15 @@ class Acc(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_acc_kernel
         self.kernel.local_size = 384
-        self.fields = ('pos', 'mass', 'vel', 'eps2')
 
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
-        idata = iobj.stack_fields(self.fields)
-        jdata = jobj.stack_fields(self.fields)
+        idata = np.concatenate((iobj.pos, iobj.mass.reshape(-1,1),
+                                iobj.vel, iobj.eps2.reshape(-1,1)), axis=1)
+        jdata = np.concatenate((jobj.pos, jobj.mass.reshape(-1,1),
+                                jobj.vel, jobj.eps2.reshape(-1,1)), axis=1)
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -113,14 +116,15 @@ class Tstep(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_tstep_kernel
         self.kernel.local_size = 384
-        self.fields = ('pos', 'mass', 'vel', 'eps2')
 
 
     def set_args(self, iobj, jobj, eta):
         ni = iobj.n
         nj = jobj.n
-        idata = iobj.stack_fields(self.fields)
-        jdata = jobj.stack_fields(self.fields)
+        idata = np.concatenate((iobj.pos, iobj.mass.reshape(-1,1),
+                                iobj.vel, iobj.eps2.reshape(-1,1)), axis=1)
+        jdata = np.concatenate((jobj.pos, jobj.mass.reshape(-1,1),
+                                jobj.vel, jobj.eps2.reshape(-1,1)), axis=1)
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -149,14 +153,16 @@ class PNAcc(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_pnacc_kernel
         self.kernel.local_size = 384
-        self.fields = ('pos', 'mass', 'vel')
 
 
     def set_args(self, iobj, jobj, pn_order, clight):
         ni = iobj.n
         nj = jobj.n
-        idata = iobj.stack_fields(self.fields, pad=8)
-        jdata = jobj.stack_fields(self.fields, pad=8)
+        idata = np.concatenate((iobj.pos, iobj.mass.reshape(-1,1),
+                                iobj.vel, iobj.eps2.reshape(-1,1)), axis=1)
+        jdata = np.concatenate((jobj.pos, jobj.mass.reshape(-1,1),
+                                jobj.vel, jobj.eps2.reshape(-1,1)), axis=1)
+
         clight = Clight(pn_order, clight)
 
         self.kernel.global_size = ni
@@ -193,14 +199,15 @@ class AccJerk(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_acc_jerk_kernel
         self.kernel.local_size = 384
-        self.fields = ('pos', 'mass', 'vel', 'eps2')
 
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
-        idata = iobj.stack_fields(self.fields)
-        jdata = jobj.stack_fields(self.fields)
+        idata = np.concatenate((iobj.pos, iobj.mass.reshape(-1,1),
+                                iobj.vel, iobj.eps2.reshape(-1,1)), axis=1)
+        jdata = np.concatenate((jobj.pos, jobj.mass.reshape(-1,1),
+                                jobj.vel, jobj.eps2.reshape(-1,1)), axis=1)
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)

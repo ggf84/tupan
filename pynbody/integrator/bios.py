@@ -52,14 +52,15 @@ class LLBIOS(object):
     def __init__(self):
         self.kernel = kernels.bios_kernel
         self.kernel.local_size = 384
-        self.fields = ('pos', 'mass', 'vel', 'eps2')
 
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
-        idata = iobj.stack_fields(self.fields)
-        jdata = jobj.stack_fields(self.fields)
+        idata = np.concatenate((iobj.pos, iobj.mass.reshape(-1,1),
+                                iobj.vel, iobj.eps2.reshape(-1,1)), axis=1)
+        jdata = np.concatenate((jobj.pos, jobj.mass.reshape(-1,1),
+                                jobj.vel, jobj.eps2.reshape(-1,1)), axis=1)
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -102,16 +103,13 @@ class BIOS(Base):
         llbios.set_args(p, p, tau)
         llbios.run()
         (dr, dv) = llbios.get_result()
-        for iobj in p.values():
-            if iobj.n:
-                iobj.pos += dr[:iobj.n] + tau * (iobj.vel - vcm)
-                iobj.vel += dv[:iobj.n]
-                dr = dr[iobj.n:]
-                dv = dv[iobj.n:]
 
-        p.set_dt_prev(tau)
-        p.update_t_curr(tau)
-        p.update_nstep()
+        p.pos += dr + tau * (p.vel - vcm)
+        p.vel += dv
+
+        p.dt_prev = tau
+        p.t_curr += tau
+        p.nstep += 1
         return p
 
 
@@ -138,7 +136,7 @@ class BIOS(Base):
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
-        p.set_dt_next(tau)
+        p.dt_next = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)
@@ -159,7 +157,7 @@ class BIOS(Base):
 #        p.update_tstep(p, self.eta)
 #        tau = p.power_averaged_dt_next(-1)
 
-        p.set_dt_next(tau)
+        p.dt_next = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)
