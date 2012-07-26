@@ -198,18 +198,6 @@ class Particles(dict, AbstractNbodyMethods):
 
     ### gravity
 
-    def update_acc_jerk(self, objs):
-        """
-        Update the individual gravitational acceleration and jerk due to other particles.
-        """
-        gravity.acc_jerk.set_args(self, objs)
-        gravity.acc_jerk.run()
-        (self.acc, jerk) = gravity.acc_jerk.get_result()
-        for iobj in self.values():
-            if iobj.n:
-                iobj.jerk = jerk[:iobj.n]
-                jerk = jerk[iobj.n:]
-
     def update_pnacc(self, objs, pn_order, clight):
         """
         Update the individual post-newtonian gravitational acceleration due to other particles.

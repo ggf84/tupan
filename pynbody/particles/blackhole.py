@@ -45,7 +45,7 @@ class BlackHole(Pbase):
                   ('pncorrection_center_of_mass_position', '3f8', 'post-Newtonian correction for the center-of-mass position'),
                  ]
 
-    attrs = ["id", "mass", "pos", "vel", "acc", "spin", "phi",
+    attrs = ["id", "mass", "pos", "vel", "spin", "phi",
              "eps2", "t_curr", "dt_prev", "dt_next", "nstep"]
 
     dtype = [(_[0], _[1]) for _ in attributes]

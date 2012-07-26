@@ -46,28 +46,20 @@ class Hermite(object):
         """
 
         """
-        self.prev_pos = {}
-        self.prev_vel = {}
-        self.prev_acc = {}
-        self.prev_jerk = {}
-        for (key, obj) in ip.items():
-            if obj.n:
-                self.prev_pos[key] = obj.pos.copy()
-                self.prev_vel[key] = obj.vel.copy()
-                self.prev_acc[key] = obj.acc.copy()
-                self.prev_jerk[key] = obj.jerk.copy()
+        ip.prev_pos = ip.pos.copy()
+        ip.prev_vel = ip.vel.copy()
+        ip.prev_acc = ip.acc.copy()
+        ip.prev_jerk = ip.jerk.copy()
 
-                obj.pos += tau * (obj.vel + (tau/2) * (obj.acc + (tau/3) * obj.jerk))
-                obj.vel += tau * (obj.acc + (tau/2) * obj.jerk)
+        ip.pos += tau * (ip.vel + (tau/2) * (ip.acc + (tau/3) * ip.jerk))
+        ip.vel += tau * (ip.acc + (tau/2) * ip.jerk)
 
 
     def correct(self, ip, tau):
-        for (key, obj) in ip.items():
-            if obj.n:
-                obj.vel = (self.prev_vel[key] + tau * ((self.prev_acc[key] + obj.acc)/2
-                                              + tau * (self.prev_jerk[key] - obj.jerk)/12))
-                obj.pos = (self.prev_pos[key] + tau * ((self.prev_vel[key] + obj.vel)/2
-                                              + tau * (self.prev_acc[key] - obj.acc)/12))
+        ip.vel = (ip.prev_vel + tau * ((ip.prev_acc + ip.acc)/2
+                              + tau * (ip.prev_jerk - ip.jerk)/12))
+        ip.pos = (ip.prev_pos + tau * ((ip.prev_vel + ip.vel)/2
+                              + tau * (ip.prev_acc - ip.acc)/12))
 
 
     def pec(self, n, p, tau):

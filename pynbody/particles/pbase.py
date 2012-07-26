@@ -118,6 +118,14 @@ class AbstractNbodyMethods(object):
 
     ### gravity
 
+    def update_tstep(self, objs, eta):
+        """
+        Update the individual time-steps due to other particles.
+        """
+        gravity.tstep.set_args(self, objs, eta/2)
+        gravity.tstep.run()
+        self.dt_next = gravity.tstep.get_result()
+
     def update_phi(self, objs):
         """
         Update the individual gravitational potential due to other particles.
@@ -134,13 +142,13 @@ class AbstractNbodyMethods(object):
         gravity.acc.run()
         self.acc = gravity.acc.get_result()
 
-    def update_tstep(self, objs, eta):
+    def update_acc_jerk(self, objs):
         """
-        Update the individual time-steps due to other particles.
+        Update the individual gravitational acceleration and jerk due to other particles.
         """
-        gravity.tstep.set_args(self, objs, eta/2)
-        gravity.tstep.run()
-        self.dt_next = gravity.tstep.get_result()
+        gravity.acc_jerk.set_args(self, objs)
+        gravity.acc_jerk.run()
+        (self.acc, self.jerk) = gravity.acc_jerk.get_result()
 
 
     ### miscellaneous methods
@@ -319,17 +327,6 @@ class Pbase(AbstractNbodyMethods):
         Get the individual potential energy.
         """
         return self.mass * self.phi
-
-
-    ### gravity
-
-    def update_acc_jerk(self, objs):
-        """
-        Update the individual gravitational acceleration and jerk due to other particles.
-        """
-        gravity.acc_jerk.set_args(self, objs)
-        gravity.acc_jerk.run()
-        (self.acc, self.jerk) = gravity.acc_jerk.get_result()
 
 
 ########## end of file ##########

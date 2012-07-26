@@ -38,10 +38,10 @@ class Body(Pbase):
                   ('radius', 'f8', 'radius'),
                   ('metallicity', 'f8', 'metallicity'),
                   # auxiliary attributes
-                  ('jerk', '3f8', 'a\' = d(a)/dt'),
+
                  ]
 
-    attrs = ["id", "mass", "pos", "vel", "acc", "phi", "eps2",
+    attrs = ["id", "mass", "pos", "vel", "phi", "eps2",
              "t_curr", "dt_prev", "dt_next", "nstep", "radius"]
 
     dtype = [(_[0], _[1]) for _ in attributes]
