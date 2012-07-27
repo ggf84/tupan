@@ -27,14 +27,14 @@ ALL_PARTICLE_TYPES = ["sph", "body", "blackhole"]
 def make_common_attrs(cls):
     def make_property(attr, doc):
         def fget(self):
-            seq = [getattr(obj, attr) for obj in self.values() if obj.n]
+            seq = [getattr(obj, attr) for obj in self.objs if obj.n]
             if len(seq) == 1:
                 return seq[0]
             if len(seq) > 1:
                 return np.concatenate(seq)
-            return np.concatenate([getattr(obj, attr) for obj in self.values()])
+            return np.concatenate([getattr(obj, attr) for obj in self.objs])
         def fset(self, value):
-            for obj in self.values():
+            for obj in self.objs:
                 if obj.n:
                     try:
                         setattr(obj, attr, value[:obj.n])
@@ -52,7 +52,7 @@ def make_common_attrs(cls):
 
 @decallmethods(timings)
 @make_common_attrs
-class Particles(dict, AbstractNbodyMethods):
+class Particles(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
     """
@@ -60,12 +60,13 @@ class Particles(dict, AbstractNbodyMethods):
         """
         Initializer
         """
-        super(Particles, self).__init__(
-                                        sph=Sph(nsph),
-                                        body=Body(nstar),
-                                        blackhole=BlackHole(nbh),
-                                       )
-        self.__dict__.update(self)
+        self.sph = Sph(nsph)
+        self.body = Body(nstar)
+        self.blackhole = BlackHole(nbh)
+
+        self.keys = ['sph', 'body', 'blackhole']
+        self.objs = [vars(self)[k] for k in self.keys]
+        self.items = list(zip(self.keys, self.objs))
 
 
     #
@@ -74,15 +75,23 @@ class Particles(dict, AbstractNbodyMethods):
 
     def __str__(self):
         fmt = self.__class__.__name__+'{'
-        for key, obj in self.items():
+        for (key, obj) in self.items:
             fmt += '\n{0},'.format(obj)
         fmt += '\n}'
         return fmt
 
 
+    def __repr__(self):
+        return str(dict(self.items))
+
+
+    def __getitem__(self, name):
+        return vars(self)[name]
+
+
     def __hash__(self):
         i = None
-        for obj in self.values():
+        for obj in self.objs:
             if i is None:
                 i = hash(obj)
             else:
@@ -91,7 +100,7 @@ class Particles(dict, AbstractNbodyMethods):
 
 
     def __len__(self):
-        return sum([obj.n for obj in self.values()])
+        return sum([obj.n for obj in self.objs])
     n = property(__len__)
 
 
@@ -107,19 +116,19 @@ class Particles(dict, AbstractNbodyMethods):
     def append(self, objs):
         if objs.n:
             if isinstance(objs, Particles):
-                for (key, obj) in objs.items():
+                for (key, obj) in objs.items:
                     if obj.n:
-                        self[key].append(obj)
+                        vars(self)[key].append(obj)
             else:
                 key = objs.__class__.__name__.lower()
-                self[key].append(objs)
+                vars(self)[key].append(objs)
 
 
     def select(self, function):
         subset = self.empty
-        for (key, obj) in self.items():
+        for (key, obj) in self.items:
             if obj.n:
-                subset[key].append(obj.select(function))
+                vars(subset)[key].append(obj.select(function))
         return subset
 
 
@@ -135,7 +144,7 @@ class Particles(dict, AbstractNbodyMethods):
         """
         mtot = self.get_total_mass()
         rcom_shift = 0.0
-        for obj in self.values():
+        for obj in self.objs:
             if obj.n:
                 if hasattr(obj, "get_pn_correction_for_center_of_mass_position"):
                     rcom_shift += obj.get_pn_correction_for_center_of_mass_position()
@@ -147,7 +156,7 @@ class Particles(dict, AbstractNbodyMethods):
         """
         mtot = self.get_total_mass()
         vcom_shift = 0.0
-        for obj in self.values():
+        for obj in self.objs:
             if obj.n:
                 if hasattr(obj, "get_pn_correction_for_center_of_mass_velocity"):
                     vcom_shift += obj.get_pn_correction_for_center_of_mass_velocity()
@@ -161,7 +170,7 @@ class Particles(dict, AbstractNbodyMethods):
 
         """
         lmom_shift = 0.0
-        for obj in self.values():
+        for obj in self.objs:
             if obj.n:
                 if hasattr(obj, "get_pn_correction_for_total_linear_momentum"):
                     lmom_shift += obj.get_pn_correction_for_total_linear_momentum()
@@ -175,7 +184,7 @@ class Particles(dict, AbstractNbodyMethods):
 
         """
         amom_shift = 0.0
-        for obj in self.values():
+        for obj in self.objs:
             if obj.n:
                 if hasattr(obj, "get_pn_correction_for_total_angular_momentum"):
                     amom_shift += obj.get_pn_correction_for_total_angular_momentum()
@@ -189,7 +198,7 @@ class Particles(dict, AbstractNbodyMethods):
 
         """
         ke_shift = 0.0
-        for obj in self.values():
+        for obj in self.objs:
             if obj.n:
                 if hasattr(obj, "get_pn_correction_for_total_energy"):
                     ke_shift += obj.get_pn_correction_for_total_energy()
@@ -205,44 +214,17 @@ class Particles(dict, AbstractNbodyMethods):
         ni = self.blackhole.n
         nj = objs.blackhole.n
         if ni and nj:
-            gravity.pnacc.set_args(self.blackhole, objs.blackhole, pn_order, clight)
-            gravity.pnacc.run()
-            result = gravity.pnacc.get_result()
-            for iobj in self.values():
-                if iobj.n:
-                    if hasattr(iobj, "pnacc"):
-                        iobj.pnacc = result[:iobj.n]
-                        result = result[iobj.n:]
+            self.blackhole.update_pnacc(objs.blackhole, pn_order, clight)
 
 
-    ### prev/next timestep
-
-    def power_averaged_dt_prev(self, power):
-        """
-
-        """
-        n = 0
-        average = 0.0
-        for obj in self.values():
-            if obj.n:
-                average += (obj.dt_prev**power).sum()
-                n += obj.n
-        average = (average / n)**(1.0/power)
-        return average
-
-
-    def power_averaged_dt_next(self, power):
-        """
-
-        """
-        n = 0
-        average = 0.0
-        for obj in self.values():
-            if obj.n:
-                average += (obj.dt_next**power).sum()
-                n += obj.n
-        average = (average / n)**(1.0/power)
-        return average
+#            gravity.pnacc.set_args(self.blackhole, objs.blackhole, pn_order, clight)
+#            gravity.pnacc.run()
+#            result = gravity.pnacc.get_result()
+#            for iobj in self.objs:
+#                if iobj.n:
+#                    if hasattr(iobj, "pnacc"):
+#                        iobj.pnacc = result[:iobj.n]
+#                        result = result[iobj.n:]
 
 
 ########## end of file ##########

@@ -101,8 +101,8 @@ class Stream(yaml.YAMLObject):
     @classmethod
     def to_dumper(cls, particles):
         data = []
-        for (key, objs) in particles.items():
-            if objs:
+        for (key, objs) in particles.items:
+            if objs.n:
                 for obj in objs:
                     p = cls()
                     attributes = obj.data.dtype.names

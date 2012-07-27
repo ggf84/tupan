@@ -22,17 +22,17 @@ logger = logging.getLogger(__name__)
 
 
 def scale_mass(particles, m_scale):
-    for obj in particles.values():
+    for obj in particles.objs:
         if obj.n:
             obj.mass *= m_scale
 
 def scale_pos(particles, r_scale):
-    for obj in particles.values():
+    for obj in particles.objs:
         if obj.n:
             obj.pos *= r_scale
 
 def scale_vel(particles, v_scale):
-    for obj in particles.values():
+    for obj in particles.objs:
         if obj.n:
             obj.vel *= v_scale
 

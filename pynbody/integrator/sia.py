@@ -64,7 +64,7 @@ class Base(object):
         """
         Drift operator for PN quantities.
         """
-        for obj in ip.values():
+        for obj in ip.objs:
             if obj.n:
                 if hasattr(obj, "evolve_center_of_mass_position_correction_due_to_pnterms"):
                     obj.evolve_center_of_mass_position_correction_due_to_pnterms(tau)
@@ -76,7 +76,7 @@ class Base(object):
         """
         if not (ip.blackhole.n and jp.blackhole.n): return
         prev_pnacc = {}
-        for (key, obj) in ip.items():
+        for (key, obj) in ip.items:
             if obj.n:
                 if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
                     obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
@@ -92,7 +92,7 @@ class Base(object):
 
         ip.update_pnacc(jp, self.pn_order, self.clight)
 
-        for (key, obj) in ip.items():
+        for (key, obj) in ip.items:
             if obj.n:
                 if hasattr(obj, "pnacc"):
                     obj.pnacc = 2 * obj.pnacc - prev_pnacc[key]
@@ -195,13 +195,13 @@ class SIA(Base):
 
         # prevents the occurrence of a slow level with only one particle.
         if slow.n == 1:
-            for obj in slow.values():
+            for obj in slow.objs:
                 if obj.n:
                     fast.append(obj.pop())
 
         # prevents the occurrence of a fast level with only one particle.
         if fast.n == 1:
-            for obj in fast.values():
+            for obj in fast.objs:
                 if obj.n:
                     slow.append(obj.pop())
 

@@ -36,7 +36,7 @@ class HDF5IO(object):
             group_name = particles.__class__.__name__.lower()
             group = fobj.require_group(group_name)
             group.attrs['Class'] = pickle.dumps(particles.__class__)
-            for (k, v) in particles.items():
+            for (k, v) in particles.items:
                 if v.n:
                     dset_name = v.__class__.__name__.lower()
                     dset_length = 0

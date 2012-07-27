@@ -165,6 +165,12 @@ class AbstractNbodyMethods(object):
         """
         return np.abs(self.dt_prev).max()
 
+    def power_averaged_dt_prev(self, power):
+        """
+
+        """
+        return ((self.dt_prev**power).mean())**(1.0 / power)
+
 
     def min_dt_next(self):
         """
@@ -178,6 +184,11 @@ class AbstractNbodyMethods(object):
         """
         return np.abs(self.dt_next).max()
 
+    def power_averaged_dt_next(self, power):
+        """
+
+        """
+        return ((self.dt_next**power).mean())**(1.0 / power)
 
 
 
