@@ -48,6 +48,9 @@ class AbstractNbodyMethods(object):
                          ('nstep', 'u8', 'step number'),
                         ]
 
+    common_names = [_[0] for _ in common_attributes]
+
+
     ### total mass and center-of-mass
 
     def get_total_mass(self):
@@ -165,12 +168,6 @@ class AbstractNbodyMethods(object):
         """
         return np.abs(self.dt_prev).max()
 
-    def power_averaged_dt_prev(self, power):
-        """
-
-        """
-        return ((self.dt_prev**power).mean())**(1.0 / power)
-
 
     def min_dt_next(self):
         """
@@ -184,13 +181,6 @@ class AbstractNbodyMethods(object):
         """
         return np.abs(self.dt_next).max()
 
-    def power_averaged_dt_next(self, power):
-        """
-
-        """
-        return ((self.dt_next**power).mean())**(1.0 / power)
-
-
 
 
 @decallmethods(timings)
@@ -199,12 +189,12 @@ class Pbase(AbstractNbodyMethods):
 
     """
     attributes = None
-    attrs = None
+    names = None
     dtype = None
-    zero = None
+    data0 = None
 
     def __init__(self, n=0):
-        self.data = np.zeros(n, self.dtype) if n else self.zero
+        self.data = np.zeros(n, self.dtype) if n else self.data0
 
 
     #
@@ -213,7 +203,7 @@ class Pbase(AbstractNbodyMethods):
 
     def __str__(self):
         fmt = self.__class__.__name__+'['
-        if self:
+        if self.n:
             fmt += '\n'
             for item in self:
                 if item:
@@ -280,13 +270,13 @@ class Pbase(AbstractNbodyMethods):
 
 
     def get_state(self):
-        return self.data[self.attrs]
+        return self.data[self.names]
 
 
     def set_state(self, state):
         self.data = np.zeros(len(state), dtype=self.dtype)
         for name in state.dtype.names:
-            if name in self.data.dtype.names:
+            if name in self.names:
                 self.data[name] = state[name]
 
 

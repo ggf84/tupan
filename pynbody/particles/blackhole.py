@@ -21,36 +21,24 @@ class BlackHole(Pbase):
     """
     A base class for BlackHoles.
     """
-    #--format--:  (name, type, doc)
-    attributes = [# common attributes
-                  ('id', 'u8', 'index'),
-                  ('mass', 'f8', 'mass'),
-                  ('pos', '3f8', 'position'),
-                  ('vel', '3f8', 'velocity'),
-                  ('acc', '3f8', 'acceleration'),
-                  ('phi', 'f8', 'potential'),
-                  ('eps2', 'f8', 'softening'),
-                  ('t_curr', 'f8', 'current time'),
-                  ('dt_prev', 'f8', 'previous time-step'),
-                  ('dt_next', 'f8', 'next time-step'),
-                  ('nstep', 'u8', 'step number'),
-                  # specific attributes
-                  ('radius', 'f8', 'radius'),
-                  ('pnacc', '3f8', 'post-Newtonian acceleration'),
-                  ('spin', '3f8', 'spin'),
-                  # auxiliary attributes
-                  ('pncorrection_energy', 'f8', 'post-Newtonian correction for the energy'),
-                  ('pncorrection_linear_momentum', '3f8', 'post-Newtonian correction for the linear momentum'),
-                  ('pncorrection_angular_momentum', '3f8', 'post-Newtonian correction for the angular momentum'),
-                  ('pncorrection_center_of_mass_position', '3f8', 'post-Newtonian correction for the center-of-mass position'),
-                 ]
+    specific_attributes = [# name, dtype, doc
+                           ('radius', 'f8', 'radius'),
+                           ('pnacc', '3f8', 'post-Newtonian acceleration'),
+                           ('spin', '3f8', 'spin'),
+                           # auxiliary attributes
+                           ('pncorrection_energy', 'f8', 'post-Newtonian correction for the energy'),
+                           ('pncorrection_linear_momentum', '3f8', 'post-Newtonian correction for the linear momentum'),
+                           ('pncorrection_angular_momentum', '3f8', 'post-Newtonian correction for the angular momentum'),
+                           ('pncorrection_center_of_mass_position', '3f8', 'post-Newtonian correction for the center-of-mass position'),
+                          ]
 
-    attrs = ["id", "mass", "pos", "vel", "spin", "phi",
-             "eps2", "t_curr", "dt_prev", "dt_next", "nstep"]
+    specific_names = [_[0] for _ in specific_attributes]
+
+    attributes = Pbase.common_attributes + specific_attributes
+    names = Pbase.common_names + specific_names
 
     dtype = [(_[0], _[1]) for _ in attributes]
-
-    zero = np.zeros(0, dtype)
+    data0 = np.zeros(0, dtype)
 
 
     #

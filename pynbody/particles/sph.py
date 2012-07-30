@@ -20,31 +20,17 @@ class Sph(Pbase):
     """
     A base class for Sph.
     """
-    #--format--:  (name, type, doc)
-    attributes = [# common attributes
-                  ('id', 'u8', 'index'),
-                  ('mass', 'f8', 'mass'),
-                  ('pos', '3f8', 'position'),
-                  ('vel', '3f8', 'velocity'),
-                  ('acc', '3f8', 'acceleration'),
-                  ('phi', 'f8', 'potential'),
-                  ('eps2', 'f8', 'softening'),
-                  ('t_curr', 'f8', 'current time'),
-                  ('dt_prev', 'f8', 'previous time-step'),
-                  ('dt_next', 'f8', 'next time-step'),
-                  ('nstep', 'u8', 'step number'),
-                  # specific attributes
+    specific_attributes = [# name, dtype, doc
 
-                  # auxiliary attributes
+                          ]
 
-                 ]
+    specific_names = [_[0] for _ in specific_attributes]
 
-    attrs = ["id", "mass", "pos", "vel", "phi", "eps2",
-             "t_curr", "dt_prev", "dt_next", "nstep"]
+    attributes = Pbase.common_attributes + specific_attributes
+    names = Pbase.common_names + specific_names
 
     dtype = [(_[0], _[1]) for _ in attributes]
-
-    zero = np.zeros(0, dtype)
+    data0 = np.zeros(0, dtype)
 
 
     #

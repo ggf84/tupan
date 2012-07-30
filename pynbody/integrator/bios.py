@@ -154,9 +154,6 @@ class BIOS(Base):
         p = self.particles
         tau = self.get_base_tstep(t_end)
 
-#        p.update_tstep(p, self.eta)
-#        tau = p.power_averaged_dt_next(-1)
-
         p.dt_next = tau
 
         if self.reporter:

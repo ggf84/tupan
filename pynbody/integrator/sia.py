@@ -199,15 +199,8 @@ class SIA(Base):
                 if obj.n:
                     fast.append(obj.pop())
 
-        # prevents the occurrence of a fast level with only one particle.
-        if fast.n == 1:
-            for obj in fast.objs:
-                if obj.n:
-                    slow.append(obj.pop())
-
-        if fast.n == 1: logger.error("fast level contains only *one* particle.")
-        if slow.n == 1: logger.error("slow level contains only *one* particle.")
-        if slow.n + fast.n != p.n: logger.error("slow.n + fast.n != p.n: %d, %d, %d.", slow.n, fast.n, p.n)
+        if slow.n + fast.n != p.n:
+            logger.error("slow.n + fast.n != p.n: %d, %d, %d.", slow.n, fast.n, p.n)
 
         return slow, fast
 

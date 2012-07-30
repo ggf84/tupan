@@ -50,6 +50,7 @@ def make_common_attrs(cls):
     return cls
 
 
+
 @decallmethods(timings)
 @make_common_attrs
 class Particles(AbstractNbodyMethods):
@@ -65,7 +66,7 @@ class Particles(AbstractNbodyMethods):
         self.blackhole = BlackHole(nbh)
 
         self.keys = ['sph', 'body', 'blackhole']
-        self.objs = [vars(self)[k] for k in self.keys]
+        self.objs = [getattr(self, k) for k in self.keys]
         self.items = list(zip(self.keys, self.objs))
 
 
@@ -86,7 +87,7 @@ class Particles(AbstractNbodyMethods):
 
 
     def __getitem__(self, name):
-        return vars(self)[name]
+        return getattr(self, name)
 
 
     def __hash__(self):
@@ -118,17 +119,17 @@ class Particles(AbstractNbodyMethods):
             if isinstance(objs, Particles):
                 for (key, obj) in objs.items:
                     if obj.n:
-                        vars(self)[key].append(obj)
+                        self[key].append(obj)
             else:
                 key = objs.__class__.__name__.lower()
-                vars(self)[key].append(objs)
+                self[key].append(objs)
 
 
     def select(self, function):
         subset = self.empty
         for (key, obj) in self.items:
             if obj.n:
-                vars(subset)[key].append(obj.select(function))
+                subset[key].append(obj[function(obj)])
         return subset
 
 
@@ -215,16 +216,6 @@ class Particles(AbstractNbodyMethods):
         nj = objs.blackhole.n
         if ni and nj:
             self.blackhole.update_pnacc(objs.blackhole, pn_order, clight)
-
-
-#            gravity.pnacc.set_args(self.blackhole, objs.blackhole, pn_order, clight)
-#            gravity.pnacc.run()
-#            result = gravity.pnacc.get_result()
-#            for iobj in self.objs:
-#                if iobj.n:
-#                    if hasattr(iobj, "pnacc"):
-#                        iobj.pnacc = result[:iobj.n]
-#                        result = result[iobj.n:]
 
 
 ########## end of file ##########
