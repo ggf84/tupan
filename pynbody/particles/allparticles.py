@@ -57,18 +57,47 @@ class Particles(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
     """
-    keys = ['sph', 'body', 'blackhole']
 
     def __init__(self, nstar=0, nbh=0, nsph=0):
         """
         Initializer
         """
-        self.sph = Sph(nsph)
-        self.body = Body(nstar)
-        self.blackhole = BlackHole(nbh)
+        self.keys = []
+        self.objs = []
 
-        self.objs = [getattr(self, k) for k in self.keys]
-        self.items = list(zip(self.keys, self.objs))
+        self.body = Body(nstar)
+        self.keys += ['body']
+        self.objs += [self.body]
+
+        self.blackhole = BlackHole(nbh)
+        self.keys += ['blackhole']
+        self.objs += [self.blackhole]
+
+        self.sph = Sph(nsph)
+        self.keys += ['sph']
+        self.objs += [self.sph]
+
+
+    def _setup_obj(self, key, n=0):
+        if key == 'body':
+            self.body = Body(n)
+            self.keys += ['body']
+            self.objs += [self.body]
+
+        if key == 'blackhole':
+            self.blackhole = BlackHole(n)
+            self.keys += ['blackhole']
+            self.objs += [self.blackhole]
+
+        if key == 'sph':
+            self.sph = Sph(n)
+            self.keys += ['sph']
+            self.objs += [self.sph]
+
+
+    @property
+    def items(self):
+        return zip(self.keys, self.objs)
 
 
     #
@@ -85,6 +114,10 @@ class Particles(AbstractNbodyMethods):
 
     def __repr__(self):
         return str(dict(self.items))
+
+
+    def __contains__(self, name):
+        return name in self.__dict__
 
 
     def __getitem__(self, name):
