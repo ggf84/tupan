@@ -29,8 +29,21 @@ def make_attrs(cls):
     return cls
 
 
+def empty_copy(obj, *args, **kwargs):
+    return obj.__class__(*args, **kwargs)
 
-class AbstractNbodyMethods(object):
+
+class AbstractNbodyUtils(object):
+    """
+
+    """
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+
+
+class AbstractNbodyMethods(AbstractNbodyUtils):
     """
     This class holds common methods for particles in n-body systems.
     """
@@ -228,19 +241,10 @@ class Pbase(AbstractNbodyMethods):
     n = property(__len__)
 
 
-    @property
-    def empty(self):
-        return self.__class__()
-
-
-    def __getitem__(self, index):
-        obj = self.empty
-        obj.data = self.data[index]
+    def __getitem__(self, slc):
+        obj = empty_copy(self)
+        obj.data = self.data[slc]
         return obj
-
-
-    def copy(self):
-        return copy.deepcopy(self)
 
 
     def append(self, obj):

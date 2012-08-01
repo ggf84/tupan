@@ -10,6 +10,7 @@ import logging
 import heapq
 import math
 import numpy as np
+from ..particles.pbase import empty_copy
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -236,7 +237,7 @@ class SIA(Base):
         if self.reporter:
             self.reporter.report(self.time, p)
         if self.dumpper:
-            stream = p.empty
+            stream = empty_copy(p)
 
 
         if self.method == "sia.dkd21std":
@@ -328,7 +329,7 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, p.empty
+            slow, fast = p, empty_copy(p)
 
         if slow.n:
             slow.dt_next = tau
@@ -371,7 +372,7 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, p.empty
+            slow, fast = p, empty_copy(p)
 
         if slow.n:
             slow.dt_next = tau
@@ -421,7 +422,7 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, p.empty
+            slow, fast = p, empty_copy(p)
 
         if slow.n:
             slow.dt_next = tau
@@ -478,7 +479,7 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, p.empty
+            slow, fast = p, empty_copy(p)
 
         if slow.n:
             slow.dt_next = tau
@@ -542,7 +543,7 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, p.empty
+            slow, fast = p, empty_copy(p)
 
         if slow.n:
             slow.dt_next = tau
@@ -613,7 +614,7 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, p.empty
+            slow, fast = p, empty_copy(p)
 
         if slow.n:
             slow.dt_next = tau
@@ -691,7 +692,7 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, p.empty
+            slow, fast = p, empty_copy(p)
 
         if slow.n:
             slow.dt_next = tau
@@ -777,7 +778,7 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, p.empty
+            slow, fast = p, empty_copy(p)
 
         if slow.n:
             slow.dt_next = tau

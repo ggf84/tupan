@@ -13,7 +13,7 @@ import numpy as np
 from .sph import Sph
 from .body import Body
 from .blackhole import BlackHole
-from .pbase import AbstractNbodyMethods
+from .pbase import AbstractNbodyMethods, empty_copy
 from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
 
@@ -57,6 +57,8 @@ class Particles(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
     """
+    keys = ['sph', 'body', 'blackhole']
+
     def __init__(self, nstar=0, nbh=0, nsph=0):
         """
         Initializer
@@ -65,7 +67,6 @@ class Particles(AbstractNbodyMethods):
         self.body = Body(nstar)
         self.blackhole = BlackHole(nbh)
 
-        self.keys = ['sph', 'body', 'blackhole']
         self.objs = [getattr(self, k) for k in self.keys]
         self.items = list(zip(self.keys, self.objs))
 
@@ -105,15 +106,6 @@ class Particles(AbstractNbodyMethods):
     n = property(__len__)
 
 
-    @property
-    def empty(self):
-        return self.__class__()
-
-
-    def copy(self):
-        return copy.deepcopy(self)
-
-
     def append(self, objs):
         if objs.n:
             if isinstance(objs, Particles):
@@ -126,7 +118,7 @@ class Particles(AbstractNbodyMethods):
 
 
     def select(self, function):
-        subset = self.empty
+        subset = empty_copy(self)
         for (key, obj) in self.items:
             if obj.n:
                 subset[key].append(obj[function(obj)])
