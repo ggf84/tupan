@@ -7,6 +7,7 @@
 
 from __future__ import print_function
 import pickle
+import numpy as np
 import h5py
 from ..particles import Particles
 from ..lib.utils.timing import decallmethods, timings
@@ -24,9 +25,23 @@ class HDF5IO(object):
         self.fname = fname
 
 
-    def set_fobj(self, fmode='a'):
+    def setup(self, fmode='a'):
         self.fobj = h5py.File(self.fname, fmode)
+        self.p = Particles()
         return self
+
+
+    def append(self, p):
+        self.p.append(p)
+
+
+    def flush(self):
+        with self.fobj as fobj:
+            self.dumpper(self.p, fobj)
+
+
+    def close(self):
+        self.fobj.close()
 
 
     def dumpper(self, p, fobj=None):
@@ -45,11 +60,9 @@ class HDF5IO(object):
                 dset_length = 0
                 if k in group:
                     dset_length = len(group[k])
-                state = v.get_state()   # XXX:
                 dset = group.require_dataset(dset_name,
                                              (dset_length,),
-                                             dtype=state.dtype,
-#                                             dtype=v.dtype,
+                                             dtype=v.dtype,
                                              maxshape=(None,),
                                              chunks=True,
                                              compression='gzip',
@@ -59,18 +72,14 @@ class HDF5IO(object):
                 olen = len(dset)
                 dset.resize((olen+v.n,))
                 nlen = len(dset)
-                dset[olen:nlen] = state
-
-
-    def close(self):
-        self.fobj.close()
+                dset[olen:nlen] = v.get_state()
 
 
     def dump(self, particles, fmode='a'):
         """
 
         """
-        self.set_fobj(fmode)
+        self.setup(fmode)
         with self.fobj as fobj:
             self.dumpper(particles, fobj)
 

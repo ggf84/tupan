@@ -107,7 +107,7 @@ class BIOS(Base):
         p.pos += dr + tau * (p.vel - vcm)
         p.vel += dv
 
-        p.dt_prev = tau
+        p.dt_prev[:] = tau
         p.t_curr += tau
         p.nstep += 1
         return p
@@ -136,7 +136,7 @@ class BIOS(Base):
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
-        p.dt_next = tau
+        p.dt_next[:] = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)
@@ -154,7 +154,7 @@ class BIOS(Base):
         p = self.particles
         tau = self.get_base_tstep(t_end)
 
-        p.dt_next = tau
+        p.dt_next[:] = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)

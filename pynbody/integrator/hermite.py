@@ -56,10 +56,10 @@ class Hermite(object):
 
 
     def correct(self, ip, tau):
-        ip.vel = (ip.prev_vel + tau * ((ip.prev_acc + ip.acc)/2
-                              + tau * (ip.prev_jerk - ip.jerk)/12))
-        ip.pos = (ip.prev_pos + tau * ((ip.prev_vel + ip.vel)/2
-                              + tau * (ip.prev_acc - ip.acc)/12))
+        ip.vel[:] = (ip.prev_vel + tau * ((ip.prev_acc + ip.acc)/2
+                                 + tau * (ip.prev_jerk - ip.jerk)/12))
+        ip.pos[:] = (ip.prev_pos + tau * ((ip.prev_vel + ip.vel)/2
+                                 + tau * (ip.prev_acc - ip.acc)/12))
 
 
     def pec(self, n, p, tau):
@@ -71,7 +71,7 @@ class Hermite(object):
             p.update_acc_jerk(p)
             self.correct(p, tau)
 
-        p.dt_prev = tau
+        p.dt_prev[:] = tau
         p.t_curr += tau
         p.nstep += 1
         return p
@@ -100,7 +100,7 @@ class Hermite(object):
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
-        p.dt_next = tau
+        p.dt_next[:] = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)
@@ -117,7 +117,7 @@ class Hermite(object):
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
-        p.dt_next = tau
+        p.dt_next[:] = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)

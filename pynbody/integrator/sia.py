@@ -68,8 +68,8 @@ class Base(object):
         if not ip['blackhole'].n: return
         for obj in ip.objs:
             if obj.n:
-                if hasattr(obj, "evolve_center_of_mass_position_correction_due_to_pnterms"):
-                    obj.evolve_center_of_mass_position_correction_due_to_pnterms(tau)
+                if hasattr(obj, "evolve_rcom_pn_shift"):
+                    obj.evolve_rcom_pn_shift(tau)
 
 
     def kick_pn(self, ip, jp, tau):
@@ -80,16 +80,15 @@ class Base(object):
         prev_pnacc = {}
         for (key, obj) in ip.items:
             if obj.n:
-                if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
-                    obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
-                    obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
-                    obj.evolve_energy_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
-                    obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_lmom_pn_shift"):
+                    obj.evolve_lmom_pn_shift(tau / 2)
+                if hasattr(obj, "evolve_amom_pn_shift"):
+                    obj.evolve_amom_pn_shift(tau / 2)
+                if hasattr(obj, "evolve_ke_pn_shift"):
+                    obj.evolve_ke_pn_shift(tau / 2)
 
                 if hasattr(obj, "pnacc"):
+                    obj.vel += (tau / 2) * obj.pnacc
                     prev_pnacc[key] = obj.pnacc.copy()
 
         ip.update_pnacc(jp, self.pn_order, self.clight)
@@ -98,15 +97,14 @@ class Base(object):
             if obj.n:
                 if hasattr(obj, "pnacc"):
                     obj.pnacc = 2 * obj.pnacc - prev_pnacc[key]
+                    obj.vel += (tau / 2) * obj.pnacc
 
-                if hasattr(obj, "evolve_velocity_correction_due_to_pnterms"):
-                    obj.evolve_velocity_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_energy_correction_due_to_pnterms"):
-                    obj.evolve_energy_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_angular_momentum_correction_due_to_pnterms"):
-                    obj.evolve_angular_momentum_correction_due_to_pnterms(tau / 2)
-                if hasattr(obj, "evolve_linear_momentum_correction_due_to_pnterms"):
-                    obj.evolve_linear_momentum_correction_due_to_pnterms(tau / 2)
+                if hasattr(obj, "evolve_ke_pn_shift"):
+                    obj.evolve_ke_pn_shift(tau / 2)
+                if hasattr(obj, "evolve_amom_pn_shift"):
+                    obj.evolve_amom_pn_shift(tau / 2)
+                if hasattr(obj, "evolve_lmom_pn_shift"):
+                    obj.evolve_lmom_pn_shift(tau / 2)
 
 
 
@@ -155,7 +153,7 @@ class SIA(Base):
 
             if slow.n > 0:
                 slow.dt_next[:] = tau
-                if self.dumpper:
+                if stream:
                     stream.append(slow)
 
             if fast.n > 0: final_dump(fast, tau / 2, stream)
@@ -166,9 +164,9 @@ class SIA(Base):
         if self.reporter:
             self.reporter.report(self.time, p)
         if self.dumpper:
-            stream = empty_copy(p)
+            stream = self.dumpper.setup()
             final_dump(p, tau, stream)
-            self.dumpper.dump(stream)
+            stream.flush()
 
 
     def get_min_block_tstep(self, p, tau):
@@ -237,8 +235,7 @@ class SIA(Base):
         if self.reporter:
             self.reporter.report(self.time, p)
         if self.dumpper:
-            stream = empty_copy(p)
-#            stream = self.dumpper.set_fobj()
+            stream = self.dumpper.setup()
 
 
         if self.method == "sia.dkd21std":
@@ -297,8 +294,7 @@ class SIA(Base):
 
 
         if stream:
-            self.dumpper.dump(stream)
-#            stream.close()
+            stream.flush()
 
         self.time += self.tstep
         self.particles = p
@@ -335,9 +331,8 @@ class SIA(Base):
 
         if slow.n:
             slow.dt_next[:] = tau
-            if self.dumpper:
+            if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
-#                self.dumpper.dumpper(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
         #
         if fast.n: fast = self.dkd21(fast, d0 * tau / 2, False, True, stream)

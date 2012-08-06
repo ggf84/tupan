@@ -20,23 +20,23 @@ class BlackHole(Pbase):
     """
     A base class for BlackHoles.
     """
-    specific_attributes = [# name, dtype, doc
-                           ('radius', 'f8', 'radius'),
-                           ('pnacc', '3f8', 'post-Newtonian acceleration'),
-                           ('spin', '3f8', 'spin'),
-                           # auxiliary attributes
-                           ('pncorrection_energy', 'f8', 'post-Newtonian correction for the energy'),
-                           ('pncorrection_linear_momentum', '3f8', 'post-Newtonian correction for the linear momentum'),
-                           ('pncorrection_angular_momentum', '3f8', 'post-Newtonian correction for the angular momentum'),
-                           ('pncorrection_center_of_mass_position', '3f8', 'post-Newtonian correction for the center-of-mass position'),
-                          ]
+    specific_attrs = [# name, dtype, doc
+                      ('radius', 'f8', 'radius'),
+                      ('pnacc', '3f8', 'post-Newtonian acceleration'),
+                      ('spin', '3f8', 'spin'),
+                      # auxiliary attributes
+                      ('ke_pn_shift', 'f8', 'post-Newtonian correction for the kinetic energy'),
+                      ('lmom_pn_shift', '3f8', 'post-Newtonian correction for the linear momentum'),
+                      ('amom_pn_shift', '3f8', 'post-Newtonian correction for the angular momentum'),
+                      ('rcom_pn_shift', '3f8', 'post-Newtonian correction for the center-of-mass position'),
+                     ]
 
-    specific_names = [_[0] for _ in specific_attributes]
+    specific_names = [_[0] for _ in specific_attrs]
 
-    attributes = Pbase.common_attributes + specific_attributes
+    attrs = Pbase.common_attrs + specific_attrs
     names = Pbase.common_names + specific_names
 
-    dtype = [(_[0], _[1]) for _ in attributes]
+    dtype = [(_[0], _[1]) for _ in attrs]
     data0 = np.zeros(0, dtype)
 
 
@@ -55,64 +55,58 @@ class BlackHole(Pbase):
         self.pnacc = gravity.pnacc.get_result()
 
 
-    ### evolve corrections due to post-newtonian terms
+    ### evolves shift in quantities due to post-newtonian terms
 
-    def evolve_velocity_correction_due_to_pnterms(self, tstep):
+    def evolve_ke_pn_shift(self, tstep):
         """
-        Evolves velocity correction in time due to post-newtonian terms.
-        """
-        self.vel += tstep * self.pnacc
-
-    def evolve_energy_correction_due_to_pnterms(self, tstep):
-        """
-        Evolves energy correction in time due to post-newtonian terms.
+        Evolves kinetic energy shift in time due to post-newtonian terms.
         """
         pnforce = -(self.mass * self.pnacc.T).T
-        e_jump = tstep * (self.vel * pnforce).sum(1)
-        self.pncorrection_energy += e_jump
+        ke_jump = tstep * (self.vel * pnforce).sum(1)
+        self.ke_pn_shift += ke_jump
 
-    def evolve_linear_momentum_correction_due_to_pnterms(self, tstep):
+    def evolve_lmom_pn_shift(self, tstep):
         """
-        Evolves linear momentum correction in time due to post-newtonian terms.
+        Evolves linear momentum shift in time due to post-newtonian terms.
         """
         pnforce = -(self.mass * self.pnacc.T).T
-        lm_jump = tstep * pnforce
-        self.pncorrection_linear_momentum += lm_jump
+        lmom_jump = tstep * pnforce
+        self.lmom_pn_shift += lmom_jump
 
-    def evolve_angular_momentum_correction_due_to_pnterms(self, tstep):
+    def evolve_amom_pn_shift(self, tstep):
         """
-        Evolves angular momentum correction in time due to post-newtonian terms.
+        Evolves angular momentum shift in time due to post-newtonian terms.
         """
         pnforce = -(self.mass * self.pnacc.T).T
-        am_jump = tstep * np.cross(self.pos, pnforce)
-        self.pncorrection_angular_momentum += am_jump
+        amom_jump = tstep * np.cross(self.pos, pnforce)
+        self.amom_pn_shift += amom_jump
 
-    def evolve_center_of_mass_position_correction_due_to_pnterms(self, tstep):
+    def evolve_rcom_pn_shift(self, tstep):
         """
-        Evolves center of mass position correction in time due to post-newtonian terms.
+        Evolves center of mass position shift in time due to post-newtonian terms.
         """
-        comp_jump = tstep * self.pncorrection_linear_momentum
-        self.pncorrection_center_of_mass_position += comp_jump
+        rcom_jump = tstep * self.lmom_pn_shift
+        self.rcom_pn_shift += rcom_jump
 
 
     #
     # auxiliary methods
     #
 
-    def get_pn_correction_for_total_energy(self):
-        return self.pncorrection_energy.sum(0)
+    def get_ke_pn_shift(self):
+        return self.ke_pn_shift.sum(0)
 
-    def get_pn_correction_for_total_linear_momentum(self):
-        return self.pncorrection_linear_momentum.sum(0)
+    def get_lmom_pn_shift(self):
+        return self.lmom_pn_shift.sum(0)
 
-    def get_pn_correction_for_total_angular_momentum(self):
-        return self.pncorrection_angular_momentum.sum(0)
+    def get_amom_pn_shift(self):
+        return self.amom_pn_shift.sum(0)
 
-    def get_pn_correction_for_center_of_mass_position(self):
-        return self.pncorrection_center_of_mass_position.sum(0)
+    def get_rcom_pn_shift(self):
+        return self.rcom_pn_shift.sum(0)
 
-    def get_pn_correction_for_center_of_mass_velocity(self):
-        return self.get_pn_correction_for_total_linear_momentum()
+    def get_vcom_pn_shift(self):
+        return self.lmom_pn_shift.sum(0)
 
 
     #

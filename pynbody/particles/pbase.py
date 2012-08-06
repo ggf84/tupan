@@ -23,7 +23,7 @@ def make_attrs(cls):
         def fset(self, value): getattr(self, attr)[:] = value
         def fdel(self): raise NotImplementedError()
         return property(fget, fset, fdel, doc)
-    attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.attributes)
+    attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.attrs)
     for (attr, doc) in attrs:
         setattr(cls, attr, make_property(attr, doc))
     return cls
@@ -49,21 +49,21 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
     """
     This class holds common methods for particles in n-body systems.
     """
-    common_attributes = [# name, dtype, doc
-                         ('id', 'u8', 'index'),
-                         ('mass', 'f8', 'mass'),
-                         ('pos', '3f8', 'position'),
-                         ('vel', '3f8', 'velocity'),
-                         ('acc', '3f8', 'acceleration'),
-                         ('phi', 'f8', 'potential'),
-                         ('eps2', 'f8', 'softening'),
-                         ('t_curr', 'f8', 'current time'),
-                         ('dt_prev', 'f8', 'previous time-step'),
-                         ('dt_next', 'f8', 'next time-step'),
-                         ('nstep', 'u8', 'step number'),
-                        ]
+    common_attrs = [# name, dtype, doc
+                    ('id', 'u8', 'index'),
+                    ('mass', 'f8', 'mass'),
+                    ('pos', '3f8', 'position'),
+                    ('vel', '3f8', 'velocity'),
+                    ('acc', '3f8', 'acceleration'),
+                    ('phi', 'f8', 'potential'),
+                    ('eps2', 'f8', 'softening'),
+                    ('t_curr', 'f8', 'current time'),
+                    ('dt_prev', 'f8', 'previous time-step'),
+                    ('dt_next', 'f8', 'next time-step'),
+                    ('nstep', 'u8', 'step number'),
+                   ]
 
-    common_names = [_[0] for _ in common_attributes]
+    common_names = [_[0] for _ in common_attrs]
 
 
     ### total mass and center-of-mass
@@ -203,7 +203,7 @@ class Pbase(AbstractNbodyMethods):
     """
 
     """
-    attributes = None
+    attrs = None
     names = None
     dtype = None
     data0 = None
@@ -231,7 +231,7 @@ class Pbase(AbstractNbodyMethods):
             for obj in self:
                 fmt += '{\n'
                 for name in self.names:
-                    fmt += ' {0}: {1},\n'.format(name, vars(obj)[name].tolist())
+                    fmt += ' {0}: {1},\n'.format(name, getattr(obj, name).tolist())
                 fmt += '},\n'
         fmt += '])'
         return fmt
@@ -284,11 +284,11 @@ class Pbase(AbstractNbodyMethods):
         return obj
 
 
-    def get_state(self):    # XXX
+    def get_state(self):
         data = np.zeros(self.n, self.dtype)
         for (k, v) in vars(self).items():
             data[k][:] = v
-        return data[self.common_names]
+        return data
 
 
     def set_state(self, state):

@@ -93,19 +93,19 @@ class Diagnostic(object):
 
         particles.update_phi(particles)
         ke = particles.get_total_kinetic_energy()
-        if hasattr(particles, 'get_ke_pn_shift'): ke += particles.get_ke_pn_shift()
+        if hasattr(particles, 'get_total_ke_pn_shift'): ke += particles.get_total_ke_pn_shift()
         pe = particles.get_total_potential_energy()
         te = ke + pe
         virial = ke / (-pe)
 
         rcom = particles.get_center_of_mass_position()
-        if hasattr(particles, 'get_rcom_pn_shift'): rcom += particles.get_rcom_pn_shift()
+        if hasattr(particles, 'get_total_rcom_pn_shift'): rcom += particles.get_total_rcom_pn_shift()
         vcom = particles.get_center_of_mass_velocity()
-        if hasattr(particles, 'get_vcom_pn_shift'): vcom += particles.get_vcom_pn_shift()
+        if hasattr(particles, 'get_total_vcom_pn_shift'): vcom += particles.get_total_vcom_pn_shift()
         lmom = particles.get_total_linear_momentum()
-        if hasattr(particles, 'get_lmom_pn_shift'): lmom += particles.get_lmom_pn_shift()
+        if hasattr(particles, 'get_total_lmom_pn_shift'): lmom += particles.get_total_lmom_pn_shift()
         amom = particles.get_total_angular_momentum()
-        if hasattr(particles, 'get_amom_pn_shift'): amom += particles.get_amom_pn_shift()
+        if hasattr(particles, 'get_total_amom_pn_shift'): amom += particles.get_total_amom_pn_shift()
 
         eerr = (te-self.te0)/(-pe)
         self.count += 1

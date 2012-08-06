@@ -41,7 +41,7 @@ def make_common_attrs(cls):
         def fdel(self):
             raise NotImplementedError()
         return property(fget, fset, fdel, doc)
-    attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.common_attributes)
+    attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.common_attrs)
     for (attr, doc) in attrs:
         setattr(cls, attr, make_property(attr, doc))
     return cls
@@ -171,7 +171,7 @@ class Particles(AbstractNbodyMethods):
 
     ### total mass and center-of-mass
 
-    def get_rcom_pn_shift(self):
+    def get_total_rcom_pn_shift(self):
         """
 
         """
@@ -179,11 +179,11 @@ class Particles(AbstractNbodyMethods):
         rcom_shift = 0.0
         for obj in self.objs:
             if obj.n:
-                if hasattr(obj, "get_pn_correction_for_center_of_mass_position"):
-                    rcom_shift += obj.get_pn_correction_for_center_of_mass_position()
+                if hasattr(obj, "get_rcom_pn_shift"):
+                    rcom_shift += obj.get_rcom_pn_shift()
         return (rcom_shift / mtot)
 
-    def get_vcom_pn_shift(self):
+    def get_total_vcom_pn_shift(self):
         """
 
         """
@@ -191,50 +191,50 @@ class Particles(AbstractNbodyMethods):
         vcom_shift = 0.0
         for obj in self.objs:
             if obj.n:
-                if hasattr(obj, "get_pn_correction_for_center_of_mass_velocity"):
-                    vcom_shift += obj.get_pn_correction_for_center_of_mass_velocity()
+                if hasattr(obj, "get_vcom_pn_shift"):
+                    vcom_shift += obj.get_vcom_pn_shift()
         return (vcom_shift / mtot)
 
 
     ### linear momentum
 
-    def get_lmom_pn_shift(self):
+    def get_total_lmom_pn_shift(self):
         """
 
         """
         lmom_shift = 0.0
         for obj in self.objs:
             if obj.n:
-                if hasattr(obj, "get_pn_correction_for_total_linear_momentum"):
-                    lmom_shift += obj.get_pn_correction_for_total_linear_momentum()
+                if hasattr(obj, "get_lmom_pn_shift"):
+                    lmom_shift += obj.get_lmom_pn_shift()
         return lmom_shift
 
 
     ### angular momentum
 
-    def get_amom_pn_shift(self):
+    def get_total_amom_pn_shift(self):
         """
 
         """
         amom_shift = 0.0
         for obj in self.objs:
             if obj.n:
-                if hasattr(obj, "get_pn_correction_for_total_angular_momentum"):
-                    amom_shift += obj.get_pn_correction_for_total_angular_momentum()
+                if hasattr(obj, "get_amom_pn_shift"):
+                    amom_shift += obj.get_amom_pn_shift()
         return amom_shift
 
 
     ### kinetic energy
 
-    def get_ke_pn_shift(self):
+    def get_total_ke_pn_shift(self):
         """
 
         """
         ke_shift = 0.0
         for obj in self.objs:
             if obj.n:
-                if hasattr(obj, "get_pn_correction_for_total_energy"):
-                    ke_shift += obj.get_pn_correction_for_total_energy()
+                if hasattr(obj, "get_ke_pn_shift"):
+                    ke_shift += obj.get_ke_pn_shift()
         return ke_shift
 
 

@@ -32,7 +32,7 @@ def set_particles(npart):
     imf = IMF.padoan2007(0.075, 120.0)
     p = Plummer(npart, imf, eps=0.0, seed=1)
     p.make_plummer()
-    bi = p.particles['body']
+    bi = p.particles.body
     return bi
 
 small_system = set_particles(32)

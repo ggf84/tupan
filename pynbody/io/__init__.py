@@ -22,28 +22,37 @@ class IO(object):
         self.output_format = output_format
 
 
-    def set_fobj(self, *args, **kwargs):
+    def setup(self, *args, **kwargs):
         fname = self.fname
         if self.output_format == "psdf":
             if not fname.endswith(".psdf"):
                 fname += ".psdf"
-            self.io_obj = psdfio.PSDFIO(fname).set_fobj(*args, **kwargs)
+            self.io_obj = psdfio.PSDFIO(fname).setup(*args, **kwargs)
         elif self.output_format == "hdf5":
             if not fname.endswith(".hdf5"):
                 fname += ".hdf5"
-            self.io_obj = hdf5io.HDF5IO(fname).set_fobj(*args, **kwargs)
+            self.io_obj = hdf5io.HDF5IO(fname).setup(*args, **kwargs)
         else:
             raise NotImplementedError('Unknown format: {}. '
                                       'Choose from: {}'.format(self.output_format,
                                        self.PROVIDED_FORMATS))
+        return self
 
 
-    def dumpper(self, *args, **kwargs):
-        self.io_obj.dumpper(*args, **kwargs)
+    def append(self, *args, **kwargs):
+        self.io_obj.append(*args, **kwargs)
+
+
+    def flush(self, *args, **kwargs):
+        self.io_obj.flush(*args, **kwargs)
 
 
     def close(self, *args, **kwargs):
         self.io_obj.close(*args, **kwargs)
+
+
+    def dumpper(self, *args, **kwargs):
+        self.io_obj.dumpper(*args, **kwargs)
 
 
     def dump(self, *args, **kwargs):
