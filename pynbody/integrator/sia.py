@@ -65,6 +65,7 @@ class Base(object):
         """
         Drift operator for PN quantities.
         """
+        if not ip['blackhole'].n: return
         for obj in ip.objs:
             if obj.n:
                 if hasattr(obj, "evolve_center_of_mass_position_correction_due_to_pnterms"):
@@ -75,7 +76,7 @@ class Base(object):
         """
         Kick operator for PN quantities.
         """
-        if not (ip.blackhole.n and jp.blackhole.n): return
+        if not (ip['blackhole'].n and jp['blackhole'].n): return
         prev_pnacc = {}
         for (key, obj) in ip.items:
             if obj.n:
@@ -153,8 +154,8 @@ class SIA(Base):
             slow, fast = self.split(tau, p)
 
             if slow.n > 0:
-                slow.dt_next = tau
-                if stream:
+                slow.dt_next[:] = tau
+                if self.dumpper:
                     stream.append(slow)
 
             if fast.n > 0: final_dump(fast, tau / 2, stream)
@@ -165,7 +166,7 @@ class SIA(Base):
         if self.reporter:
             self.reporter.report(self.time, p)
         if self.dumpper:
-            stream = p.__class__()
+            stream = empty_copy(p)
             final_dump(p, tau, stream)
             self.dumpper.dump(stream)
 
@@ -196,9 +197,8 @@ class SIA(Base):
 
         # prevents the occurrence of a slow level with only one particle.
         if slow.n == 1:
-            for obj in slow.objs:
-                if obj.n:
-                    fast.append(obj.pop())
+            fast.append(slow)
+            slow = empty_copy(p)
 
         if slow.n + fast.n != p.n:
             logger.error("slow.n + fast.n != p.n: %d, %d, %d.", slow.n, fast.n, p.n)
@@ -238,6 +238,7 @@ class SIA(Base):
             self.reporter.report(self.time, p)
         if self.dumpper:
             stream = empty_copy(p)
+#            stream = self.dumpper.set_fobj()
 
 
         if self.method == "sia.dkd21std":
@@ -297,6 +298,7 @@ class SIA(Base):
 
         if stream:
             self.dumpper.dump(stream)
+#            stream.close()
 
         self.time += self.tstep
         self.particles = p
@@ -332,9 +334,10 @@ class SIA(Base):
             slow, fast = p, empty_copy(p)
 
         if slow.n:
-            slow.dt_next = tau
-            if stream:
+            slow.dt_next[:] = tau
+            if self.dumpper:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
+#                self.dumpper.dumpper(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
         #
         if fast.n: fast = self.dkd21(fast, d0 * tau / 2, False, True, stream)
@@ -349,7 +352,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev = tau
+            slow.dt_prev[:] = tau
             slow.t_curr += tau
             slow.nstep += 1
 
@@ -375,7 +378,7 @@ class SIA(Base):
             slow, fast = p, empty_copy(p)
 
         if slow.n:
-            slow.dt_next = tau
+            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -398,7 +401,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev = tau
+            slow.dt_prev[:] = tau
             slow.t_curr += tau
             slow.nstep += 1
 
@@ -425,7 +428,7 @@ class SIA(Base):
             slow, fast = p, empty_copy(p)
 
         if slow.n:
-            slow.dt_next = tau
+            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -454,7 +457,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev = tau
+            slow.dt_prev[:] = tau
             slow.t_curr += tau
             slow.nstep += 1
 
@@ -482,7 +485,7 @@ class SIA(Base):
             slow, fast = p, empty_copy(p)
 
         if slow.n:
-            slow.dt_next = tau
+            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -517,7 +520,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev = tau
+            slow.dt_prev[:] = tau
             slow.t_curr += tau
             slow.nstep += 1
 
@@ -546,7 +549,7 @@ class SIA(Base):
             slow, fast = p, empty_copy(p)
 
         if slow.n:
-            slow.dt_next = tau
+            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -587,7 +590,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev = tau
+            slow.dt_prev[:] = tau
             slow.t_curr += tau
             slow.nstep += 1
 
@@ -617,7 +620,7 @@ class SIA(Base):
             slow, fast = p, empty_copy(p)
 
         if slow.n:
-            slow.dt_next = tau
+            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -664,7 +667,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev = tau
+            slow.dt_prev[:] = tau
             slow.t_curr += tau
             slow.nstep += 1
 
@@ -695,7 +698,7 @@ class SIA(Base):
             slow, fast = p, empty_copy(p)
 
         if slow.n:
-            slow.dt_next = tau
+            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -748,7 +751,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev = tau
+            slow.dt_prev[:] = tau
             slow.t_curr += tau
             slow.nstep += 1
 
@@ -781,7 +784,7 @@ class SIA(Base):
             slow, fast = p, empty_copy(p)
 
         if slow.n:
-            slow.dt_next = tau
+            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
 
@@ -846,7 +849,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev = tau
+            slow.dt_prev[:] = tau
             slow.t_curr += tau
             slow.nstep += 1
 

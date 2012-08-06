@@ -19,8 +19,8 @@ __all__ = ['Pbase']
 
 def make_attrs(cls):
     def make_property(attr, doc):
-        def fget(self): return self.data[attr]
-        def fset(self, value): self.data[attr] = value
+        def fget(self): return getattr(self, attr)
+        def fset(self, value): getattr(self, attr)[:] = value
         def fdel(self): raise NotImplementedError()
         return property(fget, fset, fdel, doc)
     attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.attributes)
@@ -31,6 +31,8 @@ def make_attrs(cls):
 
 def empty_copy(obj, *args, **kwargs):
     return obj.__class__(*args, **kwargs)
+
+new = empty_copy
 
 
 class AbstractNbodyUtils(object):
@@ -206,8 +208,16 @@ class Pbase(AbstractNbodyMethods):
     dtype = None
     data0 = None
 
-    def __init__(self, n=0):
-        self.data = np.zeros(n, self.dtype) if n else self.data0
+    def __init__(self, n=0, data=None):
+        if data is None:
+            if n: data = {attr: np.zeros(n, dtype) for (attr, dtype) in self.dtype}
+            else: data = {attr: self.data0[attr] for attr in self.names}
+        self.__dict__ = data
+
+
+    @property
+    def items(self):
+        return [(self.__class__.__name__.lower(), self)]
 
 
     #
@@ -215,73 +225,77 @@ class Pbase(AbstractNbodyMethods):
     #
 
     def __str__(self):
-        fmt = self.__class__.__name__+'['
+        fmt = self.__class__.__name__+'(['
         if self.n:
             fmt += '\n'
-            for item in self:
-                if item:
-                    fmt += '(\n'
-                    for name in self.data.dtype.names:
-                        fmt += '{0} = {1},\n'.format(name, getattr(item, name).tolist())
-                    fmt += '),\n'
-        fmt += ']'
+            for obj in self:
+                fmt += '{\n'
+                for name in self.names:
+                    fmt += ' {0}: {1},\n'.format(name, vars(obj)[name].tolist())
+                fmt += '},\n'
+        fmt += '])'
         return fmt
 
 
     def __repr__(self):
-        return str(self.data)
+        return str(vars(self))
 
 
     def __hash__(self):
-        return int(hashlib.md5(self.data).hexdigest(), 32) % sys.maxint
+        return int(hashlib.md5(self.id).hexdigest(), 32) % sys.maxint
 
 
     def __len__(self):
-        return len(self.data)
+        return len(self.id)
     n = property(__len__)
 
 
     def __getitem__(self, slc):
-        obj = empty_copy(self)
-        obj.data = self.data[slc]
-        return obj
+        data = {k: v[[slc]] for (k, v) in vars(self).items()}
+        return new(self, data=data)
 
 
     def append(self, obj):
-        try:
-            self.data = np.concatenate((self.data, obj.data))
-        except:
-            self.data = np.append(self.data, obj.data)
+        for (k, v) in vars(obj).items():
+            setattr(self, k, np.concatenate((getattr(self, k), v)))
 
 
     def remove(self, id):
-        index = np.where(self.id == id)
-        self.data = np.delete(self.data, index)
+        slc = np.where(self.id == id)
+        for k in vars(self).keys():
+            setattr(self, k, np.delete(getattr(self, k), slc, 0))
 
 
-    def insert(self, index, obj):
-        self.data = np.insert(self.data, index, obj.data)
+    def insert(self, id, obj):
+        index = np.where(self.id == id)[0]
+        for k in vars(self).keys():
+            v = getattr(obj, k)
+            setattr(self, k, np.insert(getattr(self, k), index*np.ones(len(v)), v, 0))
 
 
     def pop(self, id=None):
-        if id:
-            index = np.where(self.id == id)
-        else:
+        if id is None:
             index = -1
+            id = self.id[-1]
+        else:
+            index = np.where(self.id == id)[0]
         obj = self[index]
-        self.data = np.delete(self.data, index)
+        self.remove(id)
         return obj
 
 
-    def get_state(self):
-        return self.data[self.names]
+    def get_state(self):    # XXX
+        data = np.zeros(self.n, self.dtype)
+        for (k, v) in vars(self).items():
+            data[k][:] = v
+        return data[self.common_names]
 
 
     def set_state(self, state):
-        self.data = np.zeros(len(state), dtype=self.dtype)
+        self.__dict__ = new(self, len(state)).__dict__
         for name in state.dtype.names:
             if name in self.names:
-                self.data[name] = state[name]
+                getattr(self, name)[:] = state[name]
 
 
     def astype(self, cls):

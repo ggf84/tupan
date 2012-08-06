@@ -36,11 +36,8 @@ def make_common_attrs(cls):
         def fset(self, value):
             for obj in self.objs:
                 if obj.n:
-                    try:
-                        setattr(obj, attr, value[:obj.n])
-                        value = value[obj.n:]
-                    except:
-                        setattr(obj, attr, value)
+                    getattr(obj, attr)[:] = value[:obj.n]
+                    value = value[obj.n:]
         def fdel(self):
             raise NotImplementedError()
         return property(fget, fset, fdel, doc)
@@ -57,42 +54,51 @@ class Particles(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
     """
-
     def __init__(self, nstar=0, nbh=0, nsph=0):
         """
         Initializer
         """
         self.keys = []
         self.objs = []
+        self.n = 0
 
-        self.body = Body(nstar)
-        self.keys += ['body']
-        self.objs += [self.body]
+        if nstar:
+            self.body = Body(nstar)
+            self.keys.append('body')
+            self.objs.append(self.body)
+            self.n += nstar
 
-        self.blackhole = BlackHole(nbh)
-        self.keys += ['blackhole']
-        self.objs += [self.blackhole]
+        if nbh:
+            self.blackhole = BlackHole(nbh)
+            self.keys.append('blackhole')
+            self.objs.append(self.blackhole)
+            self.n += nbh
 
-        self.sph = Sph(nsph)
-        self.keys += ['sph']
-        self.objs += [self.sph]
+        if nsph:
+            self.sph = Sph(nsph)
+            self.keys.append('sph')
+            self.objs.append(self.sph)
+            self.n += nsph
 
 
     def _setup_obj(self, key, n=0):
         if key == 'body':
             self.body = Body(n)
-            self.keys += ['body']
-            self.objs += [self.body]
+            self.keys.append('body')
+            self.objs.append(self.body)
+            self.n += n
 
         if key == 'blackhole':
             self.blackhole = BlackHole(n)
-            self.keys += ['blackhole']
-            self.objs += [self.blackhole]
+            self.keys.append('blackhole')
+            self.objs.append(self.blackhole)
+            self.n += n
 
         if key == 'sph':
             self.sph = Sph(n)
-            self.keys += ['sph']
-            self.objs += [self.sph]
+            self.keys.append('sph')
+            self.objs.append(self.sph)
+            self.n += n
 
 
     @property
@@ -105,10 +111,10 @@ class Particles(AbstractNbodyMethods):
     #
 
     def __str__(self):
-        fmt = self.__class__.__name__+'{'
+        fmt = self.__class__.__name__+'(['
         for (key, obj) in self.items:
             fmt += '\n{0},'.format(obj)
-        fmt += '\n}'
+        fmt += '\n])'
         return fmt
 
 
@@ -121,6 +127,7 @@ class Particles(AbstractNbodyMethods):
 
 
     def __getitem__(self, name):
+        if name not in self: self._setup_obj(name)
         return getattr(self, name)
 
 
@@ -136,7 +143,6 @@ class Particles(AbstractNbodyMethods):
 
     def __len__(self):
         return sum([obj.n for obj in self.objs])
-    n = property(__len__)
 
 
     def append(self, objs):
@@ -148,13 +154,14 @@ class Particles(AbstractNbodyMethods):
             else:
                 key = objs.__class__.__name__.lower()
                 self[key].append(objs)
+            self.n = len(self)
 
 
     def select(self, function):
         subset = empty_copy(self)
         for (key, obj) in self.items:
             if obj.n:
-                subset[key].append(obj[function(obj)])
+                subset.append(obj[function(obj)])
         return subset
 
 

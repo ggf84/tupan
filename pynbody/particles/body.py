@@ -7,7 +7,7 @@
 
 from __future__ import print_function
 import numpy as np
-from .pbase import Pbase, make_attrs
+from .pbase import Pbase
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -15,7 +15,6 @@ __all__ = ["Body"]
 
 
 @decallmethods(timings)
-@make_attrs
 class Body(Pbase):
     """
     A base class for Stars.

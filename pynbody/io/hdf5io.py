@@ -24,40 +24,55 @@ class HDF5IO(object):
         self.fname = fname
 
 
+    def set_fobj(self, fmode='a'):
+        self.fobj = h5py.File(self.fname, fmode)
+        return self
+
+
+    def dumpper(self, p, fobj=None):
+        if not p.n: return
+        if not isinstance(p, Particles):
+            tmp = Particles()
+            tmp.append(p)
+            p = tmp
+        if fobj is None: fobj = self.fobj
+        group_name = p.__class__.__name__.lower()
+        group = fobj.require_group(group_name)
+        group.attrs['Class'] = pickle.dumps(p.__class__)
+        for (k, v) in p.items:
+            if v.n:
+                dset_name = v.__class__.__name__.lower()
+                dset_length = 0
+                if k in group:
+                    dset_length = len(group[k])
+                state = v.get_state()   # XXX:
+                dset = group.require_dataset(dset_name,
+                                             (dset_length,),
+                                             dtype=state.dtype,
+#                                             dtype=v.dtype,
+                                             maxshape=(None,),
+                                             chunks=True,
+                                             compression='gzip',
+                                             shuffle=True,
+                                            )
+                dset.attrs['Class'] = pickle.dumps(v.__class__)
+                olen = len(dset)
+                dset.resize((olen+v.n,))
+                nlen = len(dset)
+                dset[olen:nlen] = state
+
+
+    def close(self):
+        self.fobj.close()
+
+
     def dump(self, particles, fmode='a'):
         """
 
         """
-        if not isinstance(particles, Particles):
-            p = Particles()
-            p.append(particles)
-            particles = p
-        with h5py.File(self.fname, fmode) as fobj:
-            group_name = particles.__class__.__name__.lower()
-            group = fobj.require_group(group_name)
-            group.attrs['Class'] = pickle.dumps(particles.__class__)
-            for (k, v) in particles.items:
-                if v.n:
-                    dset_name = v.__class__.__name__.lower()
-                    dset_length = 0
-                    if k in group:
-                        dset_length = len(group[k])
-                    state = v.get_state()   # XXX:
-                    dset = group.require_dataset(dset_name,
-                                                 (dset_length,),
-#                                                 dtype=v.dtype,
-                                                 dtype=state.dtype,
-                                                 maxshape=(None,),
-                                                 chunks=True,
-                                                 compression='gzip',
-                                                 shuffle=True,
-                                                )
-                    dset.attrs['Class'] = pickle.dumps(v.__class__)
-                    olen = len(dset)
-                    dset.resize((olen+v.n,))
-                    nlen = len(dset)
-#                    dset[olen:nlen] = v.data
-                    dset[olen:nlen] = state
+        self.set_fobj(fmode)
+        with self.fobj as fobj:
+            self.dumpper(particles, fobj)
 
 
     def load(self):
@@ -70,7 +85,6 @@ class HDF5IO(object):
             particles = pickle.loads(group.attrs['Class'])()
             for (k, v) in group.items():
                 obj = pickle.loads(v.attrs['Class'])()
-#                obj.data = v[:]
                 obj.set_state(v[:])
                 particles.append(obj)
         return particles
