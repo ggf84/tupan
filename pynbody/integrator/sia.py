@@ -10,7 +10,6 @@ import logging
 import heapq
 import math
 import numpy as np
-from ..particles.pbase import empty_copy
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -40,7 +39,7 @@ class Base(object):
         self.dump_freq = kwargs.pop("dump_freq", 1)
         if kwargs:
             msg = "{0}.__init__ received unexpected keyword arguments: {1}."
-            raise TypeError(msg.format(self.__class__.__name__,", ".join(kwargs.keys())))
+            raise TypeError(msg.format(type(self).__name__,", ".join(kwargs.keys())))
 
 
     def drift(self, ip, tau):
@@ -190,13 +189,13 @@ class SIA(Base):
     ### split
 
     def split(self, tau, p):
-        slow = p.select(lambda x: abs(x.dt_next) >= tau)
-        fast = p.select(lambda x: abs(x.dt_next) < tau)
+        slow = p.select(abs(p.dt_next) >= tau)
+        fast = p.select(abs(p.dt_next) < tau)
 
         # prevents the occurrence of a slow level with only one particle.
         if slow.n == 1:
             fast.append(slow)
-            slow = empty_copy(p)
+            slow = type(p)()
 
         if slow.n + fast.n != p.n:
             logger.error("slow.n + fast.n != p.n: %d, %d, %d.", slow.n, fast.n, p.n)
@@ -327,12 +326,12 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, empty_copy(p)
+            slow, fast = p, type(p)()
 
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
+                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
 
         #
         if fast.n: fast = self.dkd21(fast, d0 * tau / 2, False, True, stream)
@@ -370,12 +369,12 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, empty_copy(p)
+            slow, fast = p, type(p)()
 
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
+                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
 
         #
         if fast.n: fast = self.dkd22(fast, d0 * tau / 2, False, True, stream)
@@ -420,12 +419,12 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, empty_copy(p)
+            slow, fast = p, type(p)()
 
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
+                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
 
         #
         if fast.n: fast = self.dkd43(fast, d0 * tau / 2, False, True, stream)
@@ -477,12 +476,12 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, empty_copy(p)
+            slow, fast = p, type(p)()
 
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
+                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
 
         #
         if fast.n: fast = self.dkd44(fast, d0 * tau / 2, False, True, stream)
@@ -541,12 +540,12 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, empty_copy(p)
+            slow, fast = p, type(p)()
 
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
+                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
 
         #
         if fast.n: fast = self.dkd45(fast, d0 * tau / 2, False, True, stream)
@@ -612,12 +611,12 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, empty_copy(p)
+            slow, fast = p, type(p)()
 
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
+                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
 
         #
         if fast.n: fast = self.dkd46(fast, d0 * tau / 2, False, True, stream)
@@ -690,12 +689,12 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, empty_copy(p)
+            slow, fast = p, type(p)()
 
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
+                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
 
         #
         if fast.n: fast = self.dkd67(fast, d0 * tau / 2, False, True, stream)
@@ -776,12 +775,12 @@ class SIA(Base):
             slow, fast = self.split(abs(tau), p)
         else:
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
-            slow, fast = p, empty_copy(p)
+            slow, fast = p, type(p)()
 
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(lambda x: x.nstep % self.dump_freq == 0))
+                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
 
         #
         if fast.n: fast = self.dkd69(fast, d0 * tau / 2, False, True, stream)

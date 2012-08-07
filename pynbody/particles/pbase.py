@@ -29,11 +29,6 @@ def make_attrs(cls):
     return cls
 
 
-def empty_copy(obj, *args, **kwargs):
-    return obj.__class__(*args, **kwargs)
-
-new = empty_copy
-
 
 class AbstractNbodyUtils(object):
     """
@@ -217,7 +212,7 @@ class Pbase(AbstractNbodyMethods):
 
     @property
     def items(self):
-        return [(self.__class__.__name__.lower(), self)]
+        return [(type(self).__name__.lower(), self)]
 
 
     #
@@ -225,7 +220,7 @@ class Pbase(AbstractNbodyMethods):
     #
 
     def __str__(self):
-        fmt = self.__class__.__name__+'(['
+        fmt = type(self).__name__+'(['
         if self.n:
             fmt += '\n'
             for obj in self:
@@ -252,7 +247,7 @@ class Pbase(AbstractNbodyMethods):
 
     def __getitem__(self, slc):
         data = {k: v[[slc]] for (k, v) in vars(self).items()}
-        return new(self, data=data)
+        return type(self)(data=data)
 
 
     def append(self, obj):
@@ -292,7 +287,7 @@ class Pbase(AbstractNbodyMethods):
 
 
     def set_state(self, state):
-        self.__dict__ = new(self, len(state)).__dict__
+        self.__dict__ = type(self)(len(state)).__dict__
         for name in state.dtype.names:
             if name in self.names:
                 getattr(self, name)[:] = state[name]
@@ -304,8 +299,10 @@ class Pbase(AbstractNbodyMethods):
         return obj
 
 
-    def select(self, function):
-        return self[function(self)]
+    def select(self, slc):
+        if slc.all(): return self
+        if slc.any(): return self[slc]
+        return new(self)
 
 
     #

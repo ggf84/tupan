@@ -40,7 +40,7 @@ class Base(object):
         self.dump_freq = kwargs.pop("dump_freq", 1)
         if kwargs:
             msg = "{0}.__init__ received unexpected keyword arguments: {1}."
-            raise TypeError(msg.format(self.__class__.__name__,", ".join(kwargs.keys())))
+            raise TypeError(msg.format(type(self).__name__,", ".join(kwargs.keys())))
 
 
 
@@ -121,7 +121,7 @@ class BIOS(Base):
 
 
     def initialize(self, t_end):
-        logger.info("Initializing '%s' integrator.", self.__class__.__name__.lower())
+        logger.info("Initializing '%s' integrator.", type(self).__name__.lower())
 
         p = self.particles
 
@@ -132,7 +132,7 @@ class BIOS(Base):
 
 
     def finalize(self, t_end):
-        logger.info("Finalizing '%s' integrator.", self.__class__.__name__.lower())
+        logger.info("Finalizing '%s' integrator.", type(self).__name__.lower())
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
@@ -159,7 +159,7 @@ class BIOS(Base):
         if self.reporter:
             self.reporter.report(self.time, p)
         if self.dumpper:
-            self.dumpper.dump(p.select(lambda x: x.nstep % self.dump_freq == 0))
+            self.dumpper.dump(p.select(p.nstep % self.dump_freq == 0))
 
         p = self.do_step(p, tau)
         self.time += tau

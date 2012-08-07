@@ -51,12 +51,12 @@ class HDF5IO(object):
             tmp.append(p)
             p = tmp
         if fobj is None: fobj = self.fobj
-        group_name = p.__class__.__name__.lower()
+        group_name = type(p).__name__.lower()
         group = fobj.require_group(group_name)
-        group.attrs['Class'] = pickle.dumps(p.__class__)
+        group.attrs['Class'] = pickle.dumps(type(p))
         for (k, v) in p.items:
             if v.n:
-                dset_name = v.__class__.__name__.lower()
+                dset_name = type(v).__name__.lower()
                 dset_length = 0
                 if k in group:
                     dset_length = len(group[k])
@@ -68,7 +68,7 @@ class HDF5IO(object):
                                              compression='gzip',
                                              shuffle=True,
                                             )
-                dset.attrs['Class'] = pickle.dumps(v.__class__)
+                dset.attrs['Class'] = pickle.dumps(type(v))
                 olen = len(dset)
                 dset.resize((olen+v.n,))
                 nlen = len(dset)

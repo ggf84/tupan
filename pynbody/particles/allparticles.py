@@ -13,7 +13,7 @@ import numpy as np
 from .sph import Sph
 from .body import Body
 from .blackhole import BlackHole
-from .pbase import AbstractNbodyMethods, empty_copy
+from .pbase import AbstractNbodyMethods
 from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
 
@@ -111,7 +111,7 @@ class Particles(AbstractNbodyMethods):
     #
 
     def __str__(self):
-        fmt = self.__class__.__name__+'(['
+        fmt = type(self).__name__+'(['
         for (key, obj) in self.items:
             fmt += '\n{0},'.format(obj)
         fmt += '\n])'
@@ -146,23 +146,31 @@ class Particles(AbstractNbodyMethods):
 
 
     def append(self, objs):
-        if objs.n:
-            if isinstance(objs, Particles):
+        if isinstance(objs, Particles):
+            if objs.n:
                 for (key, obj) in objs.items:
                     if obj.n:
                         self[key].append(obj)
-            else:
-                key = objs.__class__.__name__.lower()
+                self.n = len(self)
+        elif isinstance(objs, (Body, BlackHole, Sph)):
+            if objs.n:
+                key = type(objs).__name__.lower()
                 self[key].append(objs)
-            self.n = len(self)
+                self.n = len(self)
+        else:
+            raise TypeError("{} can not append obj: {}".format(type(self).__name__, type(objs)))
 
 
-    def select(self, function):
-        subset = empty_copy(self)
-        for (key, obj) in self.items:
-            if obj.n:
-                subset.append(obj[function(obj)])
-        return subset
+    def select(self, slc):
+        if slc.all(): return self
+        if slc.any():
+            subset = type(self)()
+            for (key, obj) in self.items:
+                if obj.n:
+                    subset.append(obj[slc[:obj.n]])
+                    slc = slc[obj.n:]
+            return subset
+        return type(self)()
 
 
     #
