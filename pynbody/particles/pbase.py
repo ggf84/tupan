@@ -12,6 +12,7 @@ import hashlib
 import numpy as np
 from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.memoize import cache
 
 
 __all__ = ['Pbase']
@@ -95,6 +96,13 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
 
     ### linear momentum
 
+    @property
+    def p(self):
+        """
+        Individual linear momentum.
+        """
+        return (self.mass * self.vel.T).T
+
     def get_total_linear_momentum(self):
         """
         Get the total linear momentum.
@@ -103,6 +111,13 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
 
 
     ### angular momentum
+
+    @property
+    def a(self):
+        """
+        Individual angular momentum.
+        """
+        return (self.mass * np.cross(self.pos, self.vel).T).T
 
     def get_total_angular_momentum(self):
         """
@@ -113,6 +128,13 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
 
     ### kinetic energy
 
+    @property
+    def ke(self):
+        """
+        Individual kinetic energy.
+        """
+        return 0.5 * self.mass * (self.vel**2).sum(1)
+
     def get_total_kinetic_energy(self):
         """
         Get the total kinetic energy.
@@ -121,6 +143,13 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
 
 
     ### potential energy
+
+    @property
+    def pe(self):
+        """
+        Individual potential energy.
+        """
+        return self.mass * self.phi
 
     def get_total_potential_energy(self):
         """
@@ -237,7 +266,7 @@ class Pbase(AbstractNbodyMethods):
 
 
     def __hash__(self):
-        return int(hashlib.md5(self.id).hexdigest(), 32) % sys.maxint
+        return int(hashlib.md5(self.get_state()).hexdigest(), 32) % sys.maxint
 
 
     def __len__(self):
@@ -303,46 +332,6 @@ class Pbase(AbstractNbodyMethods):
         if slc.all(): return self
         if slc.any(): return self[slc]
         return new(self)
-
-
-    #
-    # common methods
-    #
-
-    ### linear momentum
-
-    def get_individual_linear_momentum(self):
-        """
-        Get the individual linear momentum.
-        """
-        return (self.mass * self.vel.T).T
-
-
-    ### angular momentum
-
-    def get_individual_angular_momentum(self):
-        """
-        Get the individual angular momentum.
-        """
-        return (self.mass * np.cross(self.pos, self.vel).T).T
-
-
-    ### kinetic energy
-
-    def get_individual_kinetic_energy(self):
-        """
-        Get the individual kinetic energy.
-        """
-        return 0.5 * self.mass * (self.vel**2).sum(1)
-
-
-    ### potential energy
-
-    def get_individual_potential_energy(self):
-        """
-        Get the individual potential energy.
-        """
-        return self.mass * self.phi
 
 
 ########## end of file ##########
