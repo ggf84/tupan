@@ -58,8 +58,9 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
                     ('dt_next', 'f8', 'next time-step'),
                     ('nstep', 'u8', 'step number'),
                    ]
-
     common_names = [_[0] for _ in common_attrs]
+    common_dtype = [(_[0], _[1]) for _ in common_attrs]
+    common_data0 = np.zeros(0, common_dtype)
 
 
     ### total mass and center-of-mass
@@ -237,6 +238,7 @@ class Pbase(AbstractNbodyMethods):
             if n: data = np.zeros(n, self.dtype)
             else: data = self.data0
         self.data = data
+        self.n = len(self)
 
 
     @property
@@ -254,15 +256,19 @@ class Pbase(AbstractNbodyMethods):
             fmt += '\n'
             for obj in self:
                 fmt += '{\n'
-                for name in self.names:
-                    fmt += ' {0}: {1},\n'.format(name, getattr(obj, name).tolist())
+                for name in obj.data.dtype.names:
+                    fmt += ' {0}: {1},\n'.format(name, getattr(obj, name).tolist()[0])
                 fmt += '},\n'
         fmt += '])'
         return fmt
 
 
     def __repr__(self):
-        return str(self.data)
+        fmt = type(self).__name__+'('
+        if self.n: fmt += str(self.data)
+        else: fmt += '[]'
+        fmt += ')'
+        return fmt
 
 
     def __hash__(self):
@@ -271,7 +277,6 @@ class Pbase(AbstractNbodyMethods):
 
     def __len__(self):
         return len(self.data)
-    n = property(__len__)
 
 
     def __getitem__(self, slc):
@@ -280,18 +285,22 @@ class Pbase(AbstractNbodyMethods):
 
 
     def append(self, obj):
-        self.data = np.concatenate((self.data, obj.data))
+        if obj.n:
+            self.data = np.concatenate((self.data, obj.data))
+            self.n = len(self)
 
 
     def remove(self, id):
         slc = np.where(self.id == id)
         self.data = np.delete(self.data, slc, 0)
+        self.n = len(self)
 
 
     def insert(self, id, obj):
         index = np.where(self.id == id)[0]
         v = obj.data
         self.data = np.insert(self.data, index*np.ones(len(v)), v, 0)
+        self.n = len(self)
 
 
     def pop(self, id=None):
@@ -312,6 +321,7 @@ class Pbase(AbstractNbodyMethods):
     def set_state(self, state):
         self.data = type(self)(len(state)).data
         self.data[:] = state
+        self.n = len(self)
 
 
     def astype(self, cls):

@@ -88,10 +88,10 @@ class Particles(AbstractNbodyMethods):
     #
 
     def __str__(self):
-        fmt = type(self).__name__+'(['
+        fmt = type(self).__name__+'([\n'
         for (key, obj) in self.items:
-            fmt += '\n{0},'.format(obj)
-        fmt += '\n])'
+            fmt += '{0},\n'.format(obj)
+        fmt += '])'
         return fmt
 
 

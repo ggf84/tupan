@@ -21,22 +21,22 @@ class BlackHole(Pbase):
     """
     A base class for BlackHoles.
     """
-    specific_attrs = [# name, dtype, doc
-                      ('radius', 'f8', 'radius'),
-                      ('pnacc', '3f8', 'post-Newtonian acceleration'),
-                      ('spin', '3f8', 'spin'),
-                      # auxiliary attributes
-                      ('ke_pn_shift', 'f8', 'post-Newtonian correction for the kinetic energy'),
-                      ('lmom_pn_shift', '3f8', 'post-Newtonian correction for the linear momentum'),
-                      ('amom_pn_shift', '3f8', 'post-Newtonian correction for the angular momentum'),
-                      ('rcom_pn_shift', '3f8', 'post-Newtonian correction for the center-of-mass position'),
-                     ]
+    special_attrs = [# name, dtype, doc
+                     ('radius', 'f8', 'radius'),
+                     ('pnacc', '3f8', 'post-Newtonian acceleration'),
+                     ('spin', '3f8', 'spin'),
+                     # auxiliary attributes
+                     ('ke_pn_shift', 'f8', 'post-Newtonian correction for the kinetic energy'),
+                     ('lmom_pn_shift', '3f8', 'post-Newtonian correction for the linear momentum'),
+                     ('amom_pn_shift', '3f8', 'post-Newtonian correction for the angular momentum'),
+                     ('rcom_pn_shift', '3f8', 'post-Newtonian correction for the center-of-mass position'),
+                    ]
+    special_names = [_[0] for _ in special_attrs]
+    special_dtype = [(_[0], _[1]) for _ in special_attrs]
+    special_data0 = np.zeros(0, special_dtype) if special_attrs else None
 
-    specific_names = [_[0] for _ in specific_attrs]
-
-    attrs = Pbase.common_attrs + specific_attrs
-    names = Pbase.common_names + specific_names
-
+    attrs = Pbase.common_attrs + special_attrs
+    names = Pbase.common_names + special_names
     dtype = [(_[0], _[1]) for _ in attrs]
     data0 = np.zeros(0, dtype)
 

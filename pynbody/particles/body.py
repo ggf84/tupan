@@ -20,19 +20,17 @@ class Body(Pbase):
     """
     A base class for Stars.
     """
-    #--format--:  (name, type, doc)
+    special_attrs = [# name, dtype, doc
+                     ('age', 'f8', 'age'),
+                     ('radius', 'f8', 'radius'),
+                     ('metallicity', 'f8', 'metallicity'),
+                    ]
+    special_names = [_[0] for _ in special_attrs]
+    special_dtype = [(_[0], _[1]) for _ in special_attrs]
+    special_data0 = np.zeros(0, special_dtype) if special_attrs else None
 
-    specific_attrs = [# name, dtype, doc
-                      ('age', 'f8', 'age'),
-                      ('radius', 'f8', 'radius'),
-                      ('metallicity', 'f8', 'metallicity'),
-                     ]
-
-    specific_names = [_[0] for _ in specific_attrs]
-
-    attrs = Pbase.common_attrs + specific_attrs
-    names = Pbase.common_names + specific_names
-
+    attrs = Pbase.common_attrs + special_attrs
+    names = Pbase.common_names + special_names
     dtype = [(_[0], _[1]) for _ in attrs]
     data0 = np.zeros(0, dtype)
 
