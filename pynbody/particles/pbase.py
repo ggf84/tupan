@@ -20,8 +20,8 @@ __all__ = ['Pbase']
 
 def make_attrs(cls):
     def make_property(attr, doc):
-        def fget(self): return getattr(self, attr)
-        def fset(self, value): getattr(self, attr)[:] = value
+        def fget(self): return self.data[attr]
+        def fset(self, value): self.data[attr][:] = value
         def fdel(self): raise NotImplementedError()
         return property(fget, fset, fdel, doc)
     attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.attrs)
@@ -234,9 +234,9 @@ class Pbase(AbstractNbodyMethods):
 
     def __init__(self, n=0, data=None):
         if data is None:
-            if n: data = {attr: np.zeros(n, dtype) for (attr, dtype) in self.dtype}
-            else: data = {attr: self.data0[attr] for attr in self.names}
-        self.__dict__ = data
+            if n: data = np.zeros(n, self.dtype)
+            else: data = self.data0
+        self.data = data
 
 
     @property
@@ -262,39 +262,36 @@ class Pbase(AbstractNbodyMethods):
 
 
     def __repr__(self):
-        return str(vars(self))
+        return str(self.data)
 
 
     def __hash__(self):
-        return int(hashlib.md5(self.get_state()).hexdigest(), 32) % sys.maxint
+        return int(hashlib.md5(self.data).hexdigest(), 32) % sys.maxint
 
 
     def __len__(self):
-        return len(self.id)
+        return len(self.data)
     n = property(__len__)
 
 
     def __getitem__(self, slc):
-        data = {k: v[[slc]] for (k, v) in vars(self).items()}
+        data = self.data[[slc]]
         return type(self)(data=data)
 
 
     def append(self, obj):
-        for (k, v) in vars(obj).items():
-            setattr(self, k, np.concatenate((getattr(self, k), v)))
+        self.data = np.concatenate((self.data, obj.data))
 
 
     def remove(self, id):
         slc = np.where(self.id == id)
-        for k in vars(self).keys():
-            setattr(self, k, np.delete(getattr(self, k), slc, 0))
+        self.data = np.delete(self.data, slc, 0)
 
 
     def insert(self, id, obj):
         index = np.where(self.id == id)[0]
-        for k in vars(self).keys():
-            v = getattr(obj, k)
-            setattr(self, k, np.insert(getattr(self, k), index*np.ones(len(v)), v, 0))
+        v = obj.data
+        self.data = np.insert(self.data, index*np.ones(len(v)), v, 0)
 
 
     def pop(self, id=None):
@@ -309,17 +306,12 @@ class Pbase(AbstractNbodyMethods):
 
 
     def get_state(self):
-        data = np.zeros(self.n, self.dtype)
-        for (k, v) in vars(self).items():
-            data[k][:] = v
-        return data
+        return self.data
 
 
     def set_state(self, state):
-        self.__dict__ = type(self)(len(state)).__dict__
-        for name in state.dtype.names:
-            if name in self.names:
-                getattr(self, name)[:] = state[name]
+        self.data = type(self)(len(state)).data
+        self.data[:] = state
 
 
     def astype(self, cls):
@@ -331,7 +323,7 @@ class Pbase(AbstractNbodyMethods):
     def select(self, slc):
         if slc.all(): return self
         if slc.any(): return self[slc]
-        return new(self)
+        return type(self)()
 
 
 ########## end of file ##########

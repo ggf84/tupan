@@ -7,7 +7,7 @@
 
 from __future__ import print_function
 import numpy as np
-from .pbase import Pbase
+from .pbase import Pbase, make_attrs
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -15,6 +15,7 @@ __all__ = ['Sph']
 
 
 @decallmethods(timings)
+@make_attrs
 class Sph(Pbase):
     """
     A base class for Sph.

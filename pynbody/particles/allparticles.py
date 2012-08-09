@@ -62,43 +62,20 @@ class Particles(AbstractNbodyMethods):
         self.objs = []
         self.n = 0
 
-        if nstar:
-            self.body = Body(nstar)
-            self.keys.append('body')
-            self.objs.append(self.body)
-            self.n += nstar
+        self.body = Body(nstar)
+        self.keys.append('body')
+        self.objs.append(self.body)
+        self.n += nstar
 
-        if nbh:
-            self.blackhole = BlackHole(nbh)
-            self.keys.append('blackhole')
-            self.objs.append(self.blackhole)
-            self.n += nbh
+        self.blackhole = BlackHole(nbh)
+        self.keys.append('blackhole')
+        self.objs.append(self.blackhole)
+        self.n += nbh
 
-        if nsph:
-            self.sph = Sph(nsph)
-            self.keys.append('sph')
-            self.objs.append(self.sph)
-            self.n += nsph
-
-
-    def _setup_obj(self, key, n=0):
-        if key == 'body':
-            self.body = Body(n)
-            self.keys.append('body')
-            self.objs.append(self.body)
-            self.n += n
-
-        if key == 'blackhole':
-            self.blackhole = BlackHole(n)
-            self.keys.append('blackhole')
-            self.objs.append(self.blackhole)
-            self.n += n
-
-        if key == 'sph':
-            self.sph = Sph(n)
-            self.keys.append('sph')
-            self.objs.append(self.sph)
-            self.n += n
+        self.sph = Sph(nsph)
+        self.keys.append('sph')
+        self.objs.append(self.sph)
+        self.n += nsph
 
 
     @property
@@ -127,7 +104,6 @@ class Particles(AbstractNbodyMethods):
 
 
     def __getitem__(self, name):
-        if name not in self: self._setup_obj(name)
         return getattr(self, name)
 
 
