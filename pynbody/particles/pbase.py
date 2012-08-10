@@ -12,7 +12,6 @@ import hashlib
 import numpy as np
 from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
-from ..lib.utils.memoize import cache
 
 
 __all__ = ['Pbase']

@@ -10,6 +10,7 @@ def cache(func):
     def wrapper(*args, **kwargs):
         key = args
         if kwargs: key += (kwmark,) + tuple(sorted(kwargs.items()))
+        key = hash(key)
         try:
             result = cache[key]
         except:
