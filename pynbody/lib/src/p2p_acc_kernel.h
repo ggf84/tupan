@@ -113,19 +113,21 @@ _p2p_acc_kernel(PyObject *_args)
     unsigned int ni, nj;
     PyObject *_idata = NULL;
     PyObject *_jdata = NULL;
+    PyObject *_output = NULL;
 
     int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "IOIO";
+        fmt = "IOIOO!";
         typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "IOIO";
+        fmt = "IOIOO!";
         typenum = NPY_FLOAT32;
     }
 
     if (!PyArg_ParseTuple(_args, fmt, &ni, &_idata,
-                                      &nj, &_jdata))
+                                      &nj, &_jdata,
+                                      &PyArray_Type, &_output))
         return NULL;
 
     // i-data
@@ -136,13 +138,12 @@ _p2p_acc_kernel(PyObject *_args)
     PyObject *_jdata_arr = PyArray_FROM_OTF(_jdata, typenum, NPY_IN_ARRAY);
     REAL *jdata_ptr = (REAL *)PyArray_DATA(_jdata_arr);
 
-    // allocate a PyArrayObject to be returned
-    npy_intp dims[2] = {ni, 3};
-    PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(2, dims, typenum, 0);
+    // output-array
+    PyObject *ret = PyArray_FROM_OTF(_output, typenum, NPY_INOUT_ARRAY);
     REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
 
     // main calculation
-    unsigned int i, i3, i8, j, j8;
+    unsigned int i, i4, i8, j, j8;
     for (i = 0; i < ni; ++i) {
         i8 = 8*i;
         REAL3 iacc = (REAL3){0, 0, 0};
@@ -156,10 +157,11 @@ _p2p_acc_kernel(PyObject *_args)
             REAL jeps2 = jdata_ptr[j8+7];
             iacc = p2p_acc_kernel_core(iacc, ri, ieps2, rj, jeps2);
         }
-        i3 = 3*i;
-        ret_ptr[i3  ] = iacc.x;
-        ret_ptr[i3+1] = iacc.y;
-        ret_ptr[i3+2] = iacc.z;
+        i4 = 4*i;
+        ret_ptr[i4  ] = iacc.x;
+        ret_ptr[i4+1] = iacc.y;
+        ret_ptr[i4+2] = iacc.z;
+        ret_ptr[i4+3] = 0;
     }
 
     // Decrement the reference counts for i-objects
@@ -168,8 +170,11 @@ _p2p_acc_kernel(PyObject *_args)
     // Decrement the reference counts for j-objects
     Py_DECREF(_jdata_arr);
 
-    // returns a PyArrayObject
-    return PyArray_Return(ret);
+    // Decrement the reference counts for ret-objects
+    Py_DECREF(ret);
+
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 #endif  // __OPENCL_VERSION__

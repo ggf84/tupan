@@ -44,6 +44,7 @@ class Phi(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_phi_kernel
         self.kernel.local_size = 384
+        self.output = np.zeros((0,), dtype=self.kernel.env.dtype)
 
 
     def set_args(self, iobj, jobj):
@@ -54,12 +55,15 @@ class Phi(object):
         jdata = np.concatenate((jobj.pos, jobj.mass.reshape(-1,1),
                                 jobj.vel, jobj.eps2.reshape(-1,1)), axis=1)
 
+        if ni > len(self.output):
+            self.output = np.zeros((ni,), dtype=self.kernel.env.dtype)
+
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
         self.kernel.set_input_buffer(1, idata)
         self.kernel.set_int(2, nj)
         self.kernel.set_input_buffer(3, jdata)
-        self.kernel.set_output_shape(4, (ni,))
+        self.kernel.set_output_buffer(4, self.output[:ni])
         self.kernel.set_local_memory(5, 8)
 
 
@@ -80,6 +84,7 @@ class Acc(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_acc_kernel
         self.kernel.local_size = 384
+        self.output = np.zeros((0, 4), dtype=self.kernel.env.dtype)
 
 
     def set_args(self, iobj, jobj):
@@ -90,12 +95,15 @@ class Acc(object):
         jdata = np.concatenate((jobj.pos, jobj.mass.reshape(-1,1),
                                 jobj.vel, jobj.eps2.reshape(-1,1)), axis=1)
 
+        if ni > len(self.output):
+            self.output = np.zeros((ni, 4), dtype=self.kernel.env.dtype)
+
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
         self.kernel.set_input_buffer(1, idata)
         self.kernel.set_int(2, nj)
         self.kernel.set_input_buffer(3, jdata)
-        self.kernel.set_output_shape(4, (ni, 4))
+        self.kernel.set_output_buffer(4, self.output[:ni])
         self.kernel.set_local_memory(5, 8)
 
 
@@ -116,6 +124,7 @@ class Tstep(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_tstep_kernel
         self.kernel.local_size = 384
+        self.output = np.zeros((0,), dtype=self.kernel.env.dtype)
 
 
     def set_args(self, iobj, jobj, eta):
@@ -126,13 +135,16 @@ class Tstep(object):
         jdata = np.concatenate((jobj.pos, jobj.mass.reshape(-1,1),
                                 jobj.vel, jobj.eps2.reshape(-1,1)), axis=1)
 
+        if ni > len(self.output):
+            self.output = np.zeros((ni,), dtype=self.kernel.env.dtype)
+
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
         self.kernel.set_input_buffer(1, idata)
         self.kernel.set_int(2, nj)
         self.kernel.set_input_buffer(3, jdata)
         self.kernel.set_float(4, eta)
-        self.kernel.set_output_shape(5, (ni,))
+        self.kernel.set_output_buffer(5, self.output[:ni])
         self.kernel.set_local_memory(6, 8)
 
 
@@ -153,6 +165,7 @@ class PNAcc(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_pnacc_kernel
         self.kernel.local_size = 384
+        self.output = np.zeros((0, 4), dtype=self.kernel.env.dtype)
 
 
     def set_args(self, iobj, jobj, pn_order, clight):
@@ -164,6 +177,9 @@ class PNAcc(object):
                                 jobj.vel, jobj.eps2.reshape(-1,1)), axis=1)
 
         clight = Clight(pn_order, clight)
+
+        if ni > len(self.output):
+            self.output = np.zeros((ni, 4), dtype=self.kernel.env.dtype)
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -178,7 +194,7 @@ class PNAcc(object):
         self.kernel.set_float(9, clight.inv5)
         self.kernel.set_float(10, clight.inv6)
         self.kernel.set_float(11, clight.inv7)
-        self.kernel.set_output_shape(12, (ni, 4))
+        self.kernel.set_output_buffer(12, self.output[:ni])
         self.kernel.set_local_memory(13, 8)
 
 
@@ -199,6 +215,7 @@ class AccJerk(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_acc_jerk_kernel
         self.kernel.local_size = 384
+        self.output = np.zeros((0, 8), dtype=self.kernel.env.dtype)
 
 
     def set_args(self, iobj, jobj):
@@ -209,12 +226,15 @@ class AccJerk(object):
         jdata = np.concatenate((jobj.pos, jobj.mass.reshape(-1,1),
                                 jobj.vel, jobj.eps2.reshape(-1,1)), axis=1)
 
+        if ni > len(self.output):
+            self.output = np.zeros((ni, 8), dtype=self.kernel.env.dtype)
+
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
         self.kernel.set_input_buffer(1, idata)
         self.kernel.set_int(2, nj)
         self.kernel.set_input_buffer(3, jdata)
-        self.kernel.set_output_shape(4, (ni, 8))
+        self.kernel.set_output_buffer(4, self.output[:ni])
         self.kernel.set_local_memory(5, 8)
 
 

@@ -157,10 +157,14 @@ class CLKernel(object):
             logger.debug("%s: reallocating buffer for input arg #%d - %s.",
                          self.kernel.function_name, i, self.dev_buff[i])
 
+        inbuff = self.input_buffer[i][:len(arr)]
+        inbuff[:] = arr
+        cl.enqueue_copy(self.env.queue, self.dev_buff[i], inbuff)
+
 #        self.input_buffer[i][:len(arr)] = arr
 #        cl.enqueue_copy(self.env.queue, self.dev_buff[i], self.input_buffer[i][:len(arr)])
 
-        cl.enqueue_copy(self.env.queue, self.dev_buff[i], np.ascontiguousarray(arr, dtype=self.env.dtype))
+#        cl.enqueue_copy(self.env.queue, self.dev_buff[i], np.ascontiguousarray(arr, dtype=self.env.dtype))
 
 #        memf = cl.mem_flags
 #        self.dev_buff[i] = cl.Buffer(self.env.ctx, memf.READ_ONLY | memf.COPY_HOST_PTR, hostbuf=np.ascontiguousarray(arr, dtype=self.env.dtype))
@@ -170,9 +174,8 @@ class CLKernel(object):
         self.kernel.set_arg(i, arg)
 
 
-    def set_output_shape(self, i, shape):
-        def allocate_buffer(shape):
-            arr = np.empty(shape, dtype=self.env.dtype)
+    def set_output_buffer(self, i, arr):
+        def allocate_buffer(arr):
             memf = cl.mem_flags
             mapf = cl.map_flags
             dev_buf = cl.Buffer(self.env.ctx,
@@ -188,15 +191,15 @@ class CLKernel(object):
             return (pin_buf, out_buf)
 
         if not i in self.dev_buff:
-            (self.dev_buff[i], self.output_buffer[i]) = allocate_buffer(shape)
+            (self.dev_buff[i], self.output_buffer[i]) = allocate_buffer(arr)
             logger.debug("%s: allocating buffer for output arg #%d - %s.",
                          self.kernel.function_name, i, self.dev_buff[i])
-        if shape > self.output_buffer[i].shape:
-            (self.dev_buff[i], self.output_buffer[i]) = allocate_buffer(shape)
+        if arr.shape > self.output_buffer[i].shape:
+            (self.dev_buff[i], self.output_buffer[i]) = allocate_buffer(arr)
             logger.debug("%s: reallocating buffer for output arg #%d - %s.",
                          self.kernel.function_name, i, self.dev_buff[i])
 
-        self.output_shape[i] = shape
+        self.output_shape[i] = arr.shape
         arg = self.dev_buff[i]
         self.kernel.set_arg(i, arg)
 
@@ -264,6 +267,7 @@ class CKernel(object):
         self.env = env
         self.kernel = kernel
         self.dev_args = {}
+        self.res_id = None
 
 
     def set_int(self, i, arg):
@@ -278,21 +282,22 @@ class CKernel(object):
         self.dev_args[i] = self.env.dtype.type(arg)
 
 
+    def set_output_buffer(self, i, arg):
+        self.dev_args[i] = self.env.dtype.type(arg)
+        self.res_id = i
+
+
     def set_local_memory(self, i, arg):
-        pass
-
-
-    def set_output_shape(self, i, arg):
         pass
 
 
     def run(self):
         args = self.dev_args.values()
-        self.dev_result = self.kernel(*args)
+        self.dev_result = self.kernel(*args)    # self.dev_result == None
 
 
     def get_result(self):       # XXX: FIXME
-        return [self.dev_result]
+        return [self.dev_args[self.res_id]]
 
 
 

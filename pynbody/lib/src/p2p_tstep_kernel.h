@@ -137,20 +137,22 @@ _p2p_tstep_kernel(PyObject *_args)
     REAL eta;
     PyObject *_idata = NULL;
     PyObject *_jdata = NULL;
+    PyObject *_output = NULL;
 
     int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "IOIOd";
+        fmt = "IOIOdO!";
         typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "IOIOf";
+        fmt = "IOIOfO!";
         typenum = NPY_FLOAT32;
     }
 
     if (!PyArg_ParseTuple(_args, fmt, &ni, &_idata,
                                       &nj, &_jdata,
-                                      &eta))
+                                      &eta,
+                                      &PyArray_Type, &_output))
         return NULL;
 
     // i-data
@@ -161,9 +163,8 @@ _p2p_tstep_kernel(PyObject *_args)
     PyObject *_jdata_arr = PyArray_FROM_OTF(_jdata, typenum, NPY_IN_ARRAY);
     REAL *jdata_ptr = (REAL *)PyArray_DATA(_jdata_arr);
 
-    // allocate a PyArrayObject to be returned
-    npy_intp dims[1] = {ni};
-    PyArrayObject *ret = (PyArrayObject *)PyArray_EMPTY(1, dims, typenum, 0);
+    // output-array
+    PyObject *ret = PyArray_FROM_OTF(_output, typenum, NPY_INOUT_ARRAY);
     REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
 
     // main calculation
@@ -192,8 +193,11 @@ _p2p_tstep_kernel(PyObject *_args)
     // Decrement the reference counts for j-objects
     Py_DECREF(_jdata_arr);
 
-    // returns a PyArrayObject
-    return PyArray_Return(ret);
+    // Decrement the reference counts for ret-objects
+    Py_DECREF(ret);
+
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 #endif  // __OPENCL_VERSION__

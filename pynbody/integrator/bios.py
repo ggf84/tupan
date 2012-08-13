@@ -52,6 +52,7 @@ class LLBIOS(object):
     def __init__(self):
         self.kernel = kernels.bios_kernel
         self.kernel.local_size = 384
+        self.output = np.zeros((0, 8), dtype=self.kernel.env.dtype)
 
 
     def set_args(self, iobj, jobj, dt):
@@ -62,13 +63,16 @@ class LLBIOS(object):
         jdata = np.concatenate((jobj.pos, jobj.mass.reshape(-1,1),
                                 jobj.vel, jobj.eps2.reshape(-1,1)), axis=1)
 
+        if ni > len(self.output):
+            self.output = np.zeros((ni, 8), dtype=self.kernel.env.dtype)
+
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
         self.kernel.set_input_buffer(1, idata)
         self.kernel.set_int(2, nj)
         self.kernel.set_input_buffer(3, jdata)
         self.kernel.set_float(4, dt)
-        self.kernel.set_output_shape(5, (ni, 8))
+        self.kernel.set_output_buffer(5, self.output[:ni])
         self.kernel.set_local_memory(6, 8)
 
 
