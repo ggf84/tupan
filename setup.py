@@ -11,7 +11,8 @@ from distutils.core import setup
 from distutils.core import Extension
 
 
-execfile(os.path.join('pynbody', 'version.py'))
+with open(os.path.join('pynbody', 'version.py'), 'r') as fobj:
+    exec(fobj.read())
 
 
 extension_modules = []
