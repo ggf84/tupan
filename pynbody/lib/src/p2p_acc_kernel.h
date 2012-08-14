@@ -50,7 +50,7 @@ p2p_accum_acc(REAL3 myAcc,
 }
 
 
-inline REAL4
+inline REAL3
 p2p_acc_kernel_main_loop(const REAL8 myData,
                          const uint nj,
                          __global const REAL8 *jdata,
@@ -84,7 +84,7 @@ p2p_acc_kernel_main_loop(const REAL8 myData,
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
-    return (REAL4){myAcc.x, myAcc.y, myAcc.z, 0};
+    return myAcc;
 }
 
 
@@ -92,7 +92,7 @@ __kernel void p2p_acc_kernel(const uint ni,
                              __global const REAL8 *idata,
                              const uint nj,
                              __global const REAL8 *jdata,
-                             __global REAL4 *iacc,  // XXX: Bug!!! if we use __global REAL3
+                             __global REAL3 *iacc,
                              __local REAL8 *sharedJData
                             )
 {
@@ -141,9 +141,10 @@ _p2p_acc_kernel(PyObject *_args)
     // output-array
     PyObject *ret = PyArray_FROM_OTF(_output, typenum, NPY_INOUT_ARRAY);
     REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
+    int k = PyArray_DIM((PyArrayObject *)ret, 1);
 
     // main calculation
-    unsigned int i, i4, i8, j, j8;
+    unsigned int i, ik, i8, j, j8;
     for (i = 0; i < ni; ++i) {
         i8 = 8*i;
         REAL3 iacc = (REAL3){0, 0, 0};
@@ -157,11 +158,10 @@ _p2p_acc_kernel(PyObject *_args)
             REAL jeps2 = jdata_ptr[j8+7];
             iacc = p2p_acc_kernel_core(iacc, ri, ieps2, rj, jeps2);
         }
-        i4 = 4*i;
-        ret_ptr[i4  ] = iacc.x;
-        ret_ptr[i4+1] = iacc.y;
-        ret_ptr[i4+2] = iacc.z;
-        ret_ptr[i4+3] = 0;
+        ik = i * k;
+        ret_ptr[ik  ] = iacc.x;
+        ret_ptr[ik+1] = iacc.y;
+        ret_ptr[ik+2] = iacc.z;
     }
 
     // Decrement the reference counts for i-objects

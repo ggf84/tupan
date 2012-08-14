@@ -221,54 +221,76 @@ laguerre(REAL x0,
 
 
 inline REAL8
-universal_kepler_solver(const REAL dt,
-                        const REAL4 pos0,
-                        const REAL4 vel0)
+universal_kepler_solver(const REAL DT,
+                        const REAL4 pos,
+                        const REAL4 vel)
 {
-    REAL mu = pos0.w;
-    REAL r0sqr = pos0.x * pos0.x + pos0.y * pos0.y + pos0.z * pos0.z;
-    REAL v0sqr = vel0.x * vel0.x + vel0.y * vel0.y + vel0.z * vel0.z;
-    REAL rv0 = pos0.x * vel0.x + pos0.y * vel0.y + pos0.z * vel0.z;
-    REAL r0 = sqrt(r0sqr);
+    REAL4 pos0 = pos;
+    REAL4 vel0 = vel;
+    REAL dt_sum = 0;
+    int err = -1;
+    int count = 1;
 
-    REAL alpha = 2 * mu / r0 - v0sqr;
+    while (err != 0) {
+        REAL dt = DT / count;
+        int i;
+        for (i = 0; i < count; ++i) {
 
-    REAL s0 = dt / r0;
+            REAL mu = pos0.w;
+            REAL r0sqr = pos0.x * pos0.x + pos0.y * pos0.y + pos0.z * pos0.z;
+            REAL v0sqr = vel0.x * vel0.x + vel0.y * vel0.y + vel0.z * vel0.z;
+            REAL rv0 = pos0.x * vel0.x + pos0.y * vel0.y + pos0.z * vel0.z;
+            REAL r0 = sqrt(r0sqr);
 
-    REAL s, arg[5];
+            REAL alpha = 2 * mu / r0 - v0sqr;
 
-    arg[0] = dt;
-    arg[1] = r0;
-    arg[2] = rv0;
-    arg[3] = mu;
-    arg[4] = alpha;
+            REAL s0, s, arg[5];
 
-    int err = laguerre(s0, &s, arg);
-//    if (err != 0) {
-//        printf("ERROR: %d\ns: %.17g s0: %.17g\narg: %.17g %.17g %.17g %.17g %.17g\n",
-//               err, s, s0, arg[0], arg[1], arg[2], arg[3], arg[4]);
-//    }
+            s0 = dt / r0;
+            arg[0] = dt;
+            arg[1] = r0;
+            arg[2] = rv0;
+            arg[3] = mu;
+            arg[4] = alpha;
 
-    REAL lf = lagrange_f(s, r0, mu, alpha);
-    REAL lg = lagrange_g(dt, s, mu, alpha);
-    REAL4 pos1;
-    pos1.x = pos0.x * lf + vel0.x * lg;
-    pos1.y = pos0.y * lf + vel0.y * lg;
-    pos1.z = pos0.z * lf + vel0.z * lg;
-    pos1.w = 0;
+            err = laguerre(s0, &s, arg);
 
-    REAL r1sqr = pos1.x * pos1.x + pos1.y * pos1.y + pos1.z * pos1.z;
-    REAL r1 = sqrt(r1sqr);
+            if (err == 0) {
+                REAL lf = lagrange_f(s, r0, mu, alpha);
+                REAL lg = lagrange_g(dt, s, mu, alpha);
+                REAL4 pos1;
+                pos1.x = pos0.x * lf + vel0.x * lg;
+                pos1.y = pos0.y * lf + vel0.y * lg;
+                pos1.z = pos0.z * lf + vel0.z * lg;
+                pos1.w = pos0.w;
 
-    REAL ldf = lagrange_dfds(s, r0, r1, mu, alpha);
-    REAL ldg = lagrange_dgds(s, r1, mu, alpha);
-    REAL4 vel1;
-    vel1.x = pos0.x * ldf + vel0.x * ldg;
-    vel1.y = pos0.y * ldf + vel0.y * ldg;
-    vel1.z = pos0.z * ldf + vel0.z * ldg;
-    vel1.w = 0;
+                REAL r1sqr = pos1.x * pos1.x + pos1.y * pos1.y + pos1.z * pos1.z;
+                REAL r1 = sqrt(r1sqr);
 
-    REAL8 posvel = {pos1.x, pos1.y, pos1.z, pos1.w, vel1.x, vel1.y, vel1.z, vel1.w};
+                REAL ldf = lagrange_dfds(s, r0, r1, mu, alpha);
+                REAL ldg = lagrange_dgds(s, r1, mu, alpha);
+                REAL4 vel1;
+                vel1.x = pos0.x * ldf + vel0.x * ldg;
+                vel1.y = pos0.y * ldf + vel0.y * ldg;
+                vel1.z = pos0.z * ldf + vel0.z * ldg;
+                vel1.w = vel0.w;
+
+                pos0 = pos1;
+                vel0 = vel1;
+                dt_sum += dt;
+            } else {
+//                printf("ERROR: %d\ns: %.17g s0: %.17g\narg: %.17g %.17g %.17g %.17g %.17g\n",
+//                       err, s, s0, arg[0], arg[1], arg[2], arg[3], arg[4]);
+                pos0 = pos;
+                vel0 = vel;
+                dt_sum = 0;
+                count *= 2;
+                break;
+            }
+        }
+    }
+
+    REAL8 posvel = {pos0.x, pos0.y, pos0.z, pos0.w, vel0.x, vel0.y, vel0.z, vel0.w};
     return posvel;
 }
 

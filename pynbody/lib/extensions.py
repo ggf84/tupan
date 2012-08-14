@@ -267,7 +267,7 @@ class CKernel(object):
         self.env = env
         self.kernel = kernel
         self.dev_args = {}
-        self.res_id = None
+        self.res_ids = {}
 
 
     def set_int(self, i, arg):
@@ -284,7 +284,7 @@ class CKernel(object):
 
     def set_output_buffer(self, i, arg):
         self.dev_args[i] = self.env.dtype.type(arg)
-        self.res_id = i
+        self.res_ids[i] = i
 
 
     def set_local_memory(self, i, arg):
@@ -297,7 +297,7 @@ class CKernel(object):
 
 
     def get_result(self):       # XXX: FIXME
-        return [self.dev_args[self.res_id]]
+        return [self.dev_args[i] for i in self.res_ids.values()]
 
 
 

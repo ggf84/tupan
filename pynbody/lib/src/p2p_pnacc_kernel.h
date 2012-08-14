@@ -85,7 +85,7 @@ p2p_accum_pnacc(REAL3 myPNAcc,
 }
 
 
-inline REAL4
+inline REAL3
 p2p_pnacc_kernel_main_loop(const REAL8 myData,
                            const uint nj,
                            __global const REAL8 *jdata,
@@ -120,7 +120,7 @@ p2p_pnacc_kernel_main_loop(const REAL8 myData,
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
-    return (REAL4){myPNAcc.x, myPNAcc.y, myPNAcc.z, 0};
+    return myPNAcc;
 }
 
 
@@ -136,7 +136,7 @@ __kernel void p2p_pnacc_kernel(const uint ni,
                                const REAL cinv5,
                                const REAL cinv6,
                                const REAL cinv7,
-                               __global REAL4 *ipnacc,  // XXX: Bug!!! if we use __global REAL3
+                               __global REAL3 *ipnacc,
                                __local REAL8 *sharedJData
                               )
 {
@@ -196,9 +196,10 @@ _p2p_pnacc_kernel(PyObject *_args)
     // output-array
     PyObject *ret = PyArray_FROM_OTF(_output, typenum, NPY_INOUT_ARRAY);
     REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
+    int k = PyArray_DIM((PyArrayObject *)ret, 1);
 
     // main calculation
-    unsigned int i, i4, i8, j, j8;
+    unsigned int i, ik, i8, j, j8;
     for (i = 0; i < ni; ++i) {
         i8 = 8*i;
         REAL3 ipnacc = (REAL3){0, 0, 0};
@@ -216,11 +217,10 @@ _p2p_pnacc_kernel(PyObject *_args)
             vj.w = vj.x * vj.x + vj.y * vj.y + vj.z * vj.z;
             ipnacc = p2p_pnacc_kernel_core(ipnacc, ri, vi, rj, vj, clight);
         }
-        i4 = 4*i;
-        ret_ptr[i4  ] = ipnacc.x;
-        ret_ptr[i4+1] = ipnacc.y;
-        ret_ptr[i4+2] = ipnacc.z;
-        ret_ptr[i4+2] = 0;
+        ik = i * k;
+        ret_ptr[ik  ] = ipnacc.x;
+        ret_ptr[ik+1] = ipnacc.y;
+        ret_ptr[ik+2] = ipnacc.z;
     }
 
     // Decrement the reference counts for i-objects
