@@ -135,15 +135,19 @@ TTL(const REAL dt,
 }
 
 
-inline REAL8
+//inline REAL8
+inline void
 twobody_solver(const REAL dt,
                const REAL4 r0,
-               const REAL4 v0)
+               const REAL4 v0,
+               REAL4 *r1,
+               REAL4 *v1)
 {
 
 //    return leapfrog(dt, r0, v0);
 //    return TTL(dt, r0, v0);
-    return universal_kepler_solver(dt, r0, v0);
+//    return universal_kepler_solver(dt, r0, v0, r1, v1);
+    universal_kepler_solver(dt, r0, v0, r1, v1);
 }
 
 
@@ -156,35 +160,36 @@ bios_kernel_core(REAL8 iposvel,
                  const REAL4 rj, const REAL4 vj,
                  const REAL dt)
 {
-    REAL4 r;
-    r.x = ri.x - rj.x;                                               // 1 FLOPs
-    r.y = ri.y - rj.y;                                               // 1 FLOPs
-    r.z = ri.z - rj.z;                                               // 1 FLOPs
-    r.w = ri.w + rj.w;                                               // 1 FLOPs
-    REAL4 v;
-    v.x = vi.x - vj.x;                                               // 1 FLOPs
-    v.y = vi.y - vj.y;                                               // 1 FLOPs
-    v.z = vi.z - vj.z;                                               // 1 FLOPs
-    v.w = vi.w + vj.w;                                               // 1 FLOPs
-    REAL mu = (ri.w * rj.w) / r.w;                                   // 2 FLOPs
+    REAL4 r0;
+    r0.x = ri.x - rj.x;                                              // 1 FLOPs
+    r0.y = ri.y - rj.y;                                              // 1 FLOPs
+    r0.z = ri.z - rj.z;                                              // 1 FLOPs
+    r0.w = ri.w + rj.w;                                              // 1 FLOPs
+    REAL4 v0;
+    v0.x = vi.x - vj.x;                                              // 1 FLOPs
+    v0.y = vi.y - vj.y;                                              // 1 FLOPs
+    v0.z = vi.z - vj.z;                                              // 1 FLOPs
+    v0.w = vi.w + vj.w;                                              // 1 FLOPs
+    REAL mu = (ri.w * rj.w) / r0.w;                                  // 2 FLOPs
 
-    if (r.x == 0 && r.y == 0 && r.z == 0) {
+    if (r0.x == 0 && r0.y == 0 && r0.z == 0) {
         return iposvel;
     }
 
-    REAL8 rv_new = twobody_solver(dt, r, v);                         // ? FLOPS
+    REAL4 r1, v1;
+    twobody_solver(dt, r0, v0, &r1, &v1);                            // ? FLOPS
 
-    r.x += v.x * dt;                                                 // 1 FLOPs
-    r.y += v.y * dt;                                                 // 1 FLOPs
-    r.z += v.z * dt;                                                 // 1 FLOPs
+    r0.x += v0.x * dt;                                               // 1 FLOPs
+    r0.y += v0.y * dt;                                               // 1 FLOPs
+    r0.z += v0.z * dt;                                               // 1 FLOPs
 
-    iposvel.s0 += mu * (rv_new.s0 - r.x);                            // 3 FLOPs
-    iposvel.s1 += mu * (rv_new.s1 - r.y);                            // 3 FLOPs
-    iposvel.s2 += mu * (rv_new.s2 - r.z);                            // 3 FLOPs
+    iposvel.s0 += mu * (r1.x - r0.x);                                // 3 FLOPs
+    iposvel.s1 += mu * (r1.y - r0.y);                                // 3 FLOPs
+    iposvel.s2 += mu * (r1.z - r0.z);                                // 3 FLOPs
     iposvel.s3  = 0;
-    iposvel.s4 += mu * (rv_new.s4 - v.x);                            // 2 FLOPs
-    iposvel.s5 += mu * (rv_new.s5 - v.y);                            // 2 FLOPs
-    iposvel.s6 += mu * (rv_new.s6 - v.z);                            // 2 FLOPs
+    iposvel.s4 += mu * (v1.x - v0.x);                                // 2 FLOPs
+    iposvel.s5 += mu * (v1.y - v0.y);                                // 2 FLOPs
+    iposvel.s6 += mu * (v1.z - v0.z);                                // 2 FLOPs
     iposvel.s7  = 0;
 
     return iposvel;
