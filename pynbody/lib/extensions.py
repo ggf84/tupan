@@ -213,9 +213,9 @@ class CLKernel(object):
 
 
     def get_result(self):
-#        def __getter(item):
+#        def getter(item):
 #            (i, shape) = item
-#            return self.dev_args[i].get_host_array(shape, self.env.dtype)
+#            return self.dev_buff[i].get_host_array(shape, self.env.dtype)
 
         def getter(item):
             (i, shape) = item
@@ -279,11 +279,11 @@ class CKernel(object):
 
 
     def set_input_buffer(self, i, arg):
-        self.dev_args[i] = self.env.dtype.type(arg)
+        self.dev_args[i] = arg.astype(self.env.dtype)
 
 
     def set_output_buffer(self, i, arg):
-        self.dev_args[i] = self.env.dtype.type(arg)
+        self.dev_args[i] = arg.astype(self.env.dtype)
         self.res_ids[i] = i
 
 
