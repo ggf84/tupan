@@ -122,7 +122,7 @@ class Hermite(object):
         if self.reporter:
             self.reporter.report(self.time, p)
         if self.dumpper:
-            self.dumpper.dump(p.select(p.nstep % self.dump_freq == 0))
+            self.dumpper.dump(p[p.nstep % self.dump_freq == 0])
 
         p = self.pec(2, p, tau)
         self.time += tau

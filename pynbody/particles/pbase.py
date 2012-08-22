@@ -20,7 +20,7 @@ __all__ = ['Pbase']
 def make_attrs(cls):
     def make_property(attr, doc):
         def fget(self): return self.data[attr]
-        def fset(self, value): self.data[attr][:] = value
+        def fset(self, value): self.data[attr] = value
         def fdel(self): raise NotImplementedError()
         return property(fget, fset, fdel, doc)
     attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.attrs)
@@ -34,6 +34,14 @@ class AbstractNbodyUtils(object):
     """
 
     """
+
+    def __len__(self):
+        return len(self.id)
+
+
+    def __contains__(self, id):
+        return id in self.id
+
 
     def copy(self):
         return copy.deepcopy(self)
@@ -274,12 +282,21 @@ class Pbase(AbstractNbodyMethods):
         return int(hashlib.md5(self.data).hexdigest(), 32) % sys.maxint
 
 
-    def __len__(self):
-        return len(self.data)
-
-
     def __getitem__(self, slc):
-        data = self.data[[slc]]
+        if isinstance(slc, int):
+            data = self.data[[slc]]
+        if isinstance(slc, slice):
+            data = self.data[slc]
+        if isinstance(slc, list):
+            data = self.data[slc]
+        if isinstance(slc, np.ndarray):
+            if slc.all():
+                return self
+            if slc.any():
+                data = self.data[slc]
+            else:
+                data = None
+
         return type(self)(data=data)
 
 
@@ -327,12 +344,6 @@ class Pbase(AbstractNbodyMethods):
         obj = cls()
         obj.set_state(self.get_state())
         return obj
-
-
-    def select(self, slc):
-        if slc.all(): return self
-        if slc.any(): return self[slc]
-        return type(self)()
 
 
 ########## end of file ##########

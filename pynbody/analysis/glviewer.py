@@ -500,7 +500,7 @@ class GLviewer(object):
 
         Ntot = self.particle.n
 
-        blackholes = self.particle['blackhole']
+        blackholes = self.particle.blackhole
         if blackholes.n:
             points = blackholes.pos
             colors = self.get_colors(blackholes.mass)
@@ -520,7 +520,7 @@ class GLviewer(object):
 #            gl.glAlphaFunc(gl.GL_GREATER, 0)
 
 
-        bodies = self.particle['body']
+        bodies = self.particle.body
         if bodies.n:
             points = bodies.pos
             colors = self.get_colors(bodies.mass)
@@ -533,7 +533,7 @@ class GLviewer(object):
             gl.glDisable(gl.GL_BLEND)
 
 
-        sph = self.particle['sph']
+        sph = self.particle.sph
         if sph.n:
             points = sph.pos
             colors = self.get_colors(sph.mass)

@@ -64,7 +64,7 @@ class Base(object):
         """
         Drift operator for PN quantities.
         """
-        if not ip['blackhole'].n: return
+        if not ip.blackhole.n: return
         for obj in ip.objs:
             if obj.n:
                 if hasattr(obj, "evolve_rcom_pn_shift"):
@@ -75,7 +75,7 @@ class Base(object):
         """
         Kick operator for PN quantities.
         """
-        if not (ip['blackhole'].n and jp['blackhole'].n): return
+        if not (ip.blackhole.n and jp.blackhole.n): return
         prev_pnacc = {}
         for (key, obj) in ip.items:
             if obj.n:
@@ -189,8 +189,8 @@ class SIA(Base):
     ### split
 
     def split(self, tau, p):
-        slow = p.select(abs(p.dt_next) >= tau)
-        fast = p.select(abs(p.dt_next) < tau)
+        slow = p[abs(p.dt_next) >= tau]
+        fast = p[abs(p.dt_next) < tau]
 
         # prevents the occurrence of a slow level with only one particle.
         if slow.n == 1:
@@ -331,7 +331,7 @@ class SIA(Base):
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         #
         if fast.n: fast = self.dkd21(fast, d0 * tau / 2, False, True, stream)
@@ -374,7 +374,7 @@ class SIA(Base):
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         #
         if fast.n: fast = self.dkd22(fast, d0 * tau / 2, False, True, stream)
@@ -424,7 +424,7 @@ class SIA(Base):
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         #
         if fast.n: fast = self.dkd43(fast, d0 * tau / 2, False, True, stream)
@@ -481,7 +481,7 @@ class SIA(Base):
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         #
         if fast.n: fast = self.dkd44(fast, d0 * tau / 2, False, True, stream)
@@ -545,7 +545,7 @@ class SIA(Base):
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         #
         if fast.n: fast = self.dkd45(fast, d0 * tau / 2, False, True, stream)
@@ -616,7 +616,7 @@ class SIA(Base):
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         #
         if fast.n: fast = self.dkd46(fast, d0 * tau / 2, False, True, stream)
@@ -694,7 +694,7 @@ class SIA(Base):
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         #
         if fast.n: fast = self.dkd67(fast, d0 * tau / 2, False, True, stream)
@@ -780,7 +780,7 @@ class SIA(Base):
         if slow.n:
             slow.dt_next[:] = tau
             if stream:
-                stream.append(slow.select(slow.nstep % self.dump_freq == 0))
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         #
         if fast.n: fast = self.dkd69(fast, d0 * tau / 2, False, True, stream)

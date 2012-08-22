@@ -141,34 +141,34 @@ class Plummer(object):
         ilist = np.arange(n)
 
         # set index
-        self.particles["body"].id[:] = ilist
+        self.particles.body.id[:] = ilist
 
         srand = np.random.get_state()
 
         # set mass
-        self.particles["body"].mass[:] = self.imf.sample(n)
-        self.particles["body"].mass /= self.particles["body"].get_total_mass()
+        self.particles.body.mass[:] = self.imf.sample(n)
+        self.particles.body.mass /= self.particles.body.get_total_mass()
 
         # set eps2
-        self.particles["body"].eps2[:] = self.set_eps2(self.particles["body"].mass)
+        self.particles.body.eps2[:] = self.set_eps2(self.particles.body.mass)
 
         np.random.set_state(srand)
 
         # set pos
-        self.particles["body"].pos[:] = self.set_pos(np.random.permutation(ilist))
+        self.particles.body.pos[:] = self.set_pos(np.random.permutation(ilist))
 
         # set phi
         self.particles.update_phi(self.particles)
 
         # set vel
-        self.particles["body"].vel[:] = self.set_vel(self.particles["body"].phi)
+        self.particles.body.vel[:] = self.set_vel(self.particles.body.phi)
 
 
     def make_plummer(self):
         self.set_bodies()
         self.particles.correct_center_of_mass()
         scale_to_nbody_units(self.particles)
-        self.particles["body"].phi[:] = 0.0
+        self.particles.body.phi[:] = 0.0
 
 
 
@@ -181,7 +181,7 @@ class Plummer(object):
         import matplotlib.pyplot as plt
         from matplotlib.patches import Circle
 
-        mass = self.imf._mtot * self.particles["body"].mass.copy()
+        mass = self.imf._mtot * self.particles.body.mass.copy()
 
         ###################################
 
@@ -215,7 +215,7 @@ class Plummer(object):
 
         ###################################
 
-        b = self.particles["body"]
+        b = self.particles.body
         n = b.n
         x = b.pos[:,0]
         y = b.pos[:,1]

@@ -27,17 +27,20 @@ ALL_PARTICLE_TYPES = ["sph", "body", "blackhole"]
 def make_common_attrs(cls):
     def make_property(attr, doc):
         def fget(self):
-            seq = [getattr(obj, attr) for obj in self.objs if obj.n]
+            seq = [obj.data[attr] for obj in self.objs if obj.n]
             if len(seq) == 1:
                 return seq[0]
             if len(seq) > 1:
                 return np.concatenate(seq)
-            return np.concatenate([getattr(obj, attr) for obj in self.objs])
+            return np.concatenate([obj.data[attr] for obj in self.objs])
         def fset(self, value):
             for obj in self.objs:
                 if obj.n:
-                    getattr(obj, attr)[:] = value[:obj.n]
-                    value = value[obj.n:]
+                    try:
+                        obj.data[attr] = value[:obj.n]
+                        value = value[obj.n:]
+                    except:
+                        obj.data[attr] = value
         def fdel(self):
             raise NotImplementedError()
         return property(fget, fset, fdel, doc)
@@ -99,14 +102,6 @@ class Particles(AbstractNbodyMethods):
         return str(dict(self.items))
 
 
-    def __contains__(self, name):
-        return name in self.__dict__
-
-
-    def __getitem__(self, name):
-        return getattr(self, name)
-
-
     def __hash__(self):
         i = None
         for obj in self.objs:
@@ -117,8 +112,53 @@ class Particles(AbstractNbodyMethods):
         return i
 
 
-    def __len__(self):
-        return sum([obj.n for obj in self.objs])
+    def __getitem__(self, slc):
+        if isinstance(slc, int):
+            if slc < 0: slc = self.n + slc
+            if abs(slc) > self.n-1:
+                raise IndexError('index {0} out of bounds 0<=index<{1}'.format(slc, self.n))
+            subset = type(self)()
+            n = 0
+            for (key, obj) in self.items:
+                if obj.n:
+                    if n <= slc < n+obj.n:
+                        subset.append(obj[slc-n])
+                    n += obj.n
+            return subset
+
+        if isinstance(slc, slice):
+            subset = type(self)()
+            start = slc.start
+            stop = slc.stop
+            if start is None: start = 0
+            if stop is None: stop = self.n
+            if start < 0: start = self.n + start
+            if stop < 0: stop = self.n + stop
+            for (key, obj) in self.items:
+                if obj.n:
+                    if stop >= 0:
+                        if start < obj.n:
+                            subset.append(obj[start-obj.n:stop])
+                    start -= obj.n
+                    stop -= obj.n
+
+            return subset
+
+        if isinstance(slc, list):
+            raise NotImplementedError()
+
+        if isinstance(slc, np.ndarray):
+            if slc.all():
+                return self
+            if slc.any():
+                subset = type(self)()
+                for (key, obj) in self.items:
+                    if obj.n:
+                        subset.append(obj[slc[:obj.n]])
+                        slc = slc[obj.n:]
+                return subset
+            return type(self)()
+
 
 
     def append(self, objs):
@@ -126,27 +166,16 @@ class Particles(AbstractNbodyMethods):
             if objs.n:
                 for (key, obj) in objs.items:
                     if obj.n:
-                        self[key].append(obj)
+                        getattr(self, key).append(obj)
                 self.n = len(self)
         elif isinstance(objs, (Body, BlackHole, Sph)):
             if objs.n:
                 key = type(objs).__name__.lower()
-                self[key].append(objs)
+                getattr(self, key).append(objs)
                 self.n = len(self)
         else:
             raise TypeError("{} can not append obj: {}".format(type(self).__name__, type(objs)))
 
-
-    def select(self, slc):
-        if slc.all(): return self
-        if slc.any():
-            subset = type(self)()
-            for (key, obj) in self.items:
-                if obj.n:
-                    subset.append(obj[slc[:obj.n]])
-                    slc = slc[obj.n:]
-            return subset
-        return type(self)()
 
 
     #
