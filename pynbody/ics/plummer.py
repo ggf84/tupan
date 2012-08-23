@@ -42,7 +42,7 @@ def scale_to_virial(particles, ke, pe, te):
     te = ke + pe
     scale_pos(particles, -te / 0.25)
     particles.update_phi(particles)
-    pe = particles.get_total_potential_energy()
+    pe = particles.potential_energy
     scale_vel(particles, math.sqrt(0.5 * abs(pe / te)))
 
 
@@ -50,16 +50,16 @@ def scale_to_nbody_units(particles):
 #    scale_mass(particles["body"], 1.0/particles["body"].get_mass())
 #    particles["body"].set_phi(particles)
 
-    ke = particles.get_total_kinetic_energy()
-    pe = particles.get_total_potential_energy()
+    ke = particles.kinetic_energy
+    pe = particles.potential_energy
     te = ke + pe
     ve = ke + te
     print(ke, pe, te, ve)
 
     scale_to_virial(particles, ke, pe, te)
 
-    ke = particles.get_total_kinetic_energy()
-    pe = particles.get_total_potential_energy()
+    ke = particles.kinetic_energy
+    pe = particles.potential_energy
     te = ke + pe
     ve = ke + te
     print(ke, pe, te, ve)
@@ -147,7 +147,7 @@ class Plummer(object):
 
         # set mass
         self.particles.body.mass[:] = self.imf.sample(n)
-        self.particles.body.mass /= self.particles.body.get_total_mass()
+        self.particles.body.mass /= self.particles.body.total_mass
 
         # set eps2
         self.particles.body.eps2[:] = self.set_eps2(self.particles.body.mass)
@@ -166,7 +166,7 @@ class Plummer(object):
 
     def make_plummer(self):
         self.set_bodies()
-        self.particles.correct_center_of_mass()
+        self.particles.move_to_center()
         scale_to_nbody_units(self.particles)
         self.particles.body.phi[:] = 0.0
 

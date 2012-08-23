@@ -188,7 +188,7 @@ class Particles(AbstractNbodyMethods):
         """
 
         """
-        mtot = self.get_total_mass()
+        mtot = self.total_mass
         rcom_shift = 0.0
         for obj in self.objs:
             if obj.n:
@@ -200,7 +200,7 @@ class Particles(AbstractNbodyMethods):
         """
 
         """
-        mtot = self.get_total_mass()
+        mtot = self.total_mass
         vcom_shift = 0.0
         for obj in self.objs:
             if obj.n:

@@ -102,13 +102,11 @@ class BIOS(Base):
         """
 
         """
-        vcm = p.get_center_of_mass_velocity()
-
         llbios.set_args(p, p, tau)
         llbios.run()
         (dr, dv) = llbios.get_result()
 
-        p.pos += dr + tau * (p.vel - vcm)
+        p.pos += dr + tau * (p.vel - p.vcom)
         p.vel += dv
 
         p.dt_prev[:] = tau

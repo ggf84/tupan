@@ -45,15 +45,15 @@ class Diagnostic(object):
         self.nreport = 0
 
         particles.update_phi(particles)
-        self.ke0 = particles.get_total_kinetic_energy()
-        self.pe0 = particles.get_total_potential_energy()
+        self.ke0 = particles.kinetic_energy
+        self.pe0 = particles.potential_energy
         self.te0 = self.ke0 + self.pe0
         self.ve0 = self.ke0 + self.te0
 
-        self.rcom0 = particles.get_center_of_mass_position()
-        self.vcom0 = particles.get_center_of_mass_velocity()
-        self.lmom0 = particles.get_total_linear_momentum()
-        self.amom0 = particles.get_total_angular_momentum()
+        self.rcom0 = particles.rcom
+        self.vcom0 = particles.vcom
+        self.lmom0 = particles.linear_momentum
+        self.amom0 = particles.angular_momentum
 
         self.count = 0
         self.ceerr = 0.0
@@ -92,19 +92,19 @@ class Diagnostic(object):
         self.time = time
 
         particles.update_phi(particles)
-        ke = particles.get_total_kinetic_energy()
+        ke = particles.kinetic_energy
         if hasattr(particles, 'get_total_ke_pn_shift'): ke += particles.get_total_ke_pn_shift()
-        pe = particles.get_total_potential_energy()
+        pe = particles.potential_energy
         te = ke + pe
         virial = ke / (-pe)
 
-        rcom = particles.get_center_of_mass_position()
+        rcom = particles.rcom
         if hasattr(particles, 'get_total_rcom_pn_shift'): rcom += particles.get_total_rcom_pn_shift()
-        vcom = particles.get_center_of_mass_velocity()
+        vcom = particles.vcom
         if hasattr(particles, 'get_total_vcom_pn_shift'): vcom += particles.get_total_vcom_pn_shift()
-        lmom = particles.get_total_linear_momentum()
+        lmom = particles.linear_momentum
         if hasattr(particles, 'get_total_lmom_pn_shift'): lmom += particles.get_total_lmom_pn_shift()
-        amom = particles.get_total_angular_momentum()
+        amom = particles.angular_momentum
         if hasattr(particles, 'get_total_amom_pn_shift'): amom += particles.get_total_amom_pn_shift()
 
         eerr = (te-self.te0)/(-pe)

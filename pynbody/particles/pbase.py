@@ -72,66 +72,71 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
 
     ### total mass and center-of-mass
 
-    def get_total_mass(self):
+    @property
+    def total_mass(self):
         """
-        Get the total mass.
+        Total mass.
         """
         return float(self.mass.sum())
 
-    def get_center_of_mass_position(self):
+    @property
+    def rcom(self):
         """
-        Get the center-of-mass position.
+        Position of the center-of-mass.
         """
-        mtot = self.get_total_mass()
+        mtot = self.total_mass
         rcom = (self.mass * self.pos.T).sum(1)
         return (rcom / mtot)
 
-    def get_center_of_mass_velocity(self):
+    @property
+    def vcom(self):
         """
-        Get the center-of-mass velocity.
+        Velocity of the center-of-mass.
         """
-        mtot = self.get_total_mass()
+        mtot = self.total_mass
         vcom = (self.mass * self.vel.T).sum(1)
         return (vcom / mtot)
 
-    def correct_center_of_mass(self):
+    def move_to_center(self):
         """
-        Correct the center-of-mass to origin of coordinates.
+        Moves the center-of-mass to the origin of coordinates.
         """
-        self.pos -= self.get_center_of_mass_position()
-        self.vel -= self.get_center_of_mass_velocity()
+        self.pos -= self.rcom
+        self.vel -= self.vcom
 
 
     ### linear momentum
 
     @property
-    def p(self):
+    def lm(self):
         """
         Individual linear momentum.
         """
         return (self.mass * self.vel.T).T
 
-    def get_total_linear_momentum(self):
+    @property
+    def linear_momentum(self):
         """
-        Get the total linear momentum.
+        Total linear momentum.
         """
-        return (self.mass * self.vel.T).sum(1)
+        return self.lm.sum(0)
 
 
     ### angular momentum
 
     @property
-    def a(self):
+    def am(self):
         """
         Individual angular momentum.
         """
         return (self.mass * np.cross(self.pos, self.vel).T).T
 
-    def get_total_angular_momentum(self):
+    @property
+    def angular_momentum(self):
         """
-        Get the total angular momentum.
+        Total angular momentum.
         """
-        return (self.mass * np.cross(self.pos, self.vel).T).sum(1)
+        return self.am.sum(0)
 
 
     ### kinetic energy
@@ -143,11 +148,12 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         """
         return 0.5 * self.mass * (self.vel**2).sum(1)
 
-    def get_total_kinetic_energy(self):
+    @property
+    def kinetic_energy(self):
         """
-        Get the total kinetic energy.
+        Total kinetic energy.
         """
-        return float((0.5 * self.mass * (self.vel**2).sum(1)).sum())
+        return float(self.ke.sum())
 
 
     ### potential energy
@@ -159,11 +165,12 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         """
         return self.mass * self.phi
 
-    def get_total_potential_energy(self):
+    @property
+    def potential_energy(self):
         """
-        Get the total potential energy.
+        Total potential energy.
         """
-        return 0.5 * float((self.mass * self.phi).sum())
+        return 0.5 * float(self.pe.sum())
 
 
     ### gravity
