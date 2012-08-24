@@ -191,7 +191,7 @@ fprimeprime(const REAL s,
 }
 
 
-#define ORDER 8
+#define ORDER 5
 inline int
 laguerre(REAL x0,
          REAL *x,
@@ -204,13 +204,15 @@ laguerre(REAL x0,
     *x = x0;
     do {
         REAL fv = f(*x, arg);
-        if (fv == 0) return 0;
+        if (fv == 0) return -3;
         REAL dfv = fprime(*x, arg);
         REAL ddfv = fprimeprime(*x, arg);
         REAL g = dfv / fv;
         REAL g2 = g * g;
         REAL h = g2 - ddfv / fv;
-        delta = -ORDER / (g + SIGN(g) * sqrt(fabs((ORDER - 1) * (ORDER * h - g2))));
+        REAL d = (g + SIGN(g) * sqrt(fabs((ORDER - 1) * (ORDER * h - g2))));
+        if (d == 0) return -4;
+        delta = -ORDER / d;
         (*x) += delta;
         i += 1;
         if (i > MAXITER) return -1;
@@ -300,7 +302,7 @@ universal_kepler_solver(const REAL dt0,
                 pos = pos0;
                 vel = vel0;
                 counter *= 2;
-                break;
+                i = counter;    // break
             }
         }
     }

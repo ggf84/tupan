@@ -68,6 +68,7 @@ class CLModule(object):
         # building program
         self.program = cl.Program(self.env.ctx, self.src).build(options=options)
 
+        logger.debug("done.")
         return self
 
 
@@ -252,6 +253,7 @@ class CModule(object):
             from pynbody.lib import libc32_gravity as program
         self.program = program
 
+        logger.debug("done.")
         return self
 
 
