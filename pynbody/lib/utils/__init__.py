@@ -7,6 +7,7 @@
 
 
 from . import timing
+from . import memoize
 
 
 ########## end of file ##########

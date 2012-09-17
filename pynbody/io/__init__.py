@@ -122,38 +122,51 @@ class IO(object):
         from collections import OrderedDict
 
 
-#        #######################################################################
-#        import matplotlib.pyplot as plt
-#        from pynbody.io import IO
-#        p0 = IO('snapshots0.hdf5').load()
-#        p = IO('snapshots.hdf5').load()
-#
-#        index = p[p.nstep == p.nstep.max()].id.item()
-#        a0 = p0[p0.id == index]
-#        a = p[p.id == index]
-#        x = np.linspace(0,100,10000)
-#        k = 0
+        #######################################################################
+        import matplotlib.pyplot as plt
+        from pynbody.io import IO
+        p0 = IO('snapshots0.hdf5').load()
+        p1 = IO('snapshots1.hdf5').load()
+        p = IO('snapshots.hdf5').load()
+
+        index = p[p.nstep == p.nstep.max()].id[0]
+        a0 = p0[p0.id == index]
+        a1 = p1[p1.id == index]
+        a = p[p.id == index]
+
+
+        plt.plot(a0.pos[:,0], a0.pos[:,1], label='PBaSS: l=1')
+        plt.plot(a1.pos[:,0], a1.pos[:,1], label='fixed-dt sampling')
+        plt.plot(a.pos[:,0], a.pos[:,1], label='PBaSS: l=8')
+        plt.legend(loc='best', shadow=True,
+                   fancybox=True, borderaxespad=0.75)
+        plt.show()
+
+
+        x = np.linspace(0,25,100000)
+        k = 0
 #        f1 = interpolate.UnivariateSpline(a.t_curr, a.pos[:,k], s=0, k=1)
 #        f2 = interpolate.UnivariateSpline(a.t_curr, a.pos[:,k], s=0, k=2)
-#        f3 = interpolate.UnivariateSpline(a.t_curr, a.pos[:,k], s=0, k=3)
+        f3 = interpolate.UnivariateSpline(a.t_curr, a.pos[:,k], s=0, k=3)
 #        f4 = interpolate.UnivariateSpline(a.t_curr, a.pos[:,k], s=0, k=4)
 #        f5 = interpolate.UnivariateSpline(a.t_curr, a.pos[:,k], s=0, k=5)
 #        y1 = f1(x)
 #        y2 = f2(x)
-#        y3 = f3(x)
+        y3 = f3(x)
 #        y4 = f4(x)
 #        y5 = f5(x)
-#        plt.plot(a0.t_curr, a0.pos[:,k], label='data0')
-#        plt.plot(a.t_curr, a.pos[:,k], label='data')
+        plt.plot(a0.t_curr, a0.pos[:,k], label='PBaSS: l=1')
+        plt.plot(a1.t_curr, a1.pos[:,k], label='fixed-dt sampling')
+        plt.plot(a.t_curr, a.pos[:,k], label='PBass: l=8')
 #        plt.plot(x, y1, label='f1')
 #        plt.plot(x, y2, label='f2')
-#        plt.plot(x, y3, label='f3')
+        plt.plot(x, y3, label='3rd order interp. func.')
 #        plt.plot(x, y4, label='f4')
 #        plt.plot(x, y5, label='f5')
-#        plt.legend(loc='upper right', shadow=True,
-#                   fancybox=True, borderaxespad=0.75)
-#        plt.show()
-#        #######################################################################
+        plt.legend(loc='best', shadow=True,
+                   fancybox=True, borderaxespad=0.75)
+        plt.show()
+        #######################################################################
 
 
         p = self.load()
