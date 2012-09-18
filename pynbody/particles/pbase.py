@@ -59,10 +59,9 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
                     ('vel', '3f8', 'velocity'),
                     ('acc', '3f8', 'acceleration'),
                     ('phi', 'f8', 'potential'),
-                    ('eps2', 'f8', 'softening'),
-                    ('t_curr', 'f8', 'current time'),
-                    ('dt_prev', 'f8', 'previous time-step'),
-                    ('dt_next', 'f8', 'next time-step'),
+                    ('eps2', 'f8', 'squared softening'),
+                    ('time', 'f8', 'current time'),
+                    ('tstep', 'f8', 'time step'),
                     ('nstep', 'u8', 'step number'),
                    ]
     common_names = [_[0] for _ in common_attrs]
@@ -181,7 +180,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         """
         gravity.tstep.set_args(self, objs, eta/2)
         gravity.tstep.run()
-        self.dt_next = gravity.tstep.get_result()
+        self.tstep = gravity.tstep.get_result()
 
     def update_phi(self, objs):
         """
@@ -210,30 +209,18 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
 
     ### miscellaneous methods
 
-    def min_dt_prev(self):
+    def min_tstep(self):
         """
-        Minimum absolute value of dt_prev.
+        Minimum absolute value of tstep.
         """
-        return np.abs(self.dt_prev).min()
+        return np.abs(self.tstep).min()
 
-    def max_dt_prev(self):
+    def max_tstep(self):
         """
-        Maximum absolute value of dt_prev.
+        Maximum absolute value of tstep.
         """
-        return np.abs(self.dt_prev).max()
+        return np.abs(self.tstep).max()
 
-
-    def min_dt_next(self):
-        """
-        Minimum absolute value of dt_next.
-        """
-        return np.abs(self.dt_next).min()
-
-    def max_dt_next(self):
-        """
-        Maximum absolute value of dt_nex.
-        """
-        return np.abs(self.dt_next).max()
 
 
 

@@ -145,19 +145,19 @@ class IO(object):
 
         x = np.linspace(0,25,100000)
         k = 0
-#        f1 = interpolate.UnivariateSpline(a.t_curr, a.pos[:,k], s=0, k=1)
-#        f2 = interpolate.UnivariateSpline(a.t_curr, a.pos[:,k], s=0, k=2)
-        f3 = interpolate.UnivariateSpline(a.t_curr, a.pos[:,k], s=0, k=3)
-#        f4 = interpolate.UnivariateSpline(a.t_curr, a.pos[:,k], s=0, k=4)
-#        f5 = interpolate.UnivariateSpline(a.t_curr, a.pos[:,k], s=0, k=5)
+#        f1 = interpolate.UnivariateSpline(a.time, a.pos[:,k], s=0, k=1)
+#        f2 = interpolate.UnivariateSpline(a.time, a.pos[:,k], s=0, k=2)
+        f3 = interpolate.UnivariateSpline(a.time, a.pos[:,k], s=0, k=3)
+#        f4 = interpolate.UnivariateSpline(a.time, a.pos[:,k], s=0, k=4)
+#        f5 = interpolate.UnivariateSpline(a.time, a.pos[:,k], s=0, k=5)
 #        y1 = f1(x)
 #        y2 = f2(x)
         y3 = f3(x)
 #        y4 = f4(x)
 #        y5 = f5(x)
-        plt.plot(a0.t_curr, a0.pos[:,k], label='PBaSS: l=1')
-        plt.plot(a1.t_curr, a1.pos[:,k], label='fixed-dt sampling')
-        plt.plot(a.t_curr, a.pos[:,k], label='PBass: l=8')
+        plt.plot(a0.time, a0.pos[:,k], label='PBaSS: l=1')
+        plt.plot(a1.time, a1.pos[:,k], label='fixed-dt sampling')
+        plt.plot(a.time, a.pos[:,k], label='PBass: l=8')
 #        plt.plot(x, y1, label='f1')
 #        plt.plot(x, y2, label='f2')
         plt.plot(x, y3, label='3rd order interp. func.')
@@ -172,31 +172,31 @@ class IO(object):
         p = self.load()
 
         snaps = OrderedDict()
-        for time in times:
-            snaps[time] = type(p)()
+        for t in times:
+            snaps[t] = type(p)()
 
         for key, obj in p.items:
             if obj.n:
                 n = int(obj.id.max())+1
 
                 snap = type(obj)(n)
-                for time in times:
-                    snaps[time].append(snap)
+                for t in times:
+                    snaps[t].append(snap)
 
                 for i in xrange(n):
                     stream = obj[obj.id == i]
-                    t_curr = stream.t_curr
+                    time = stream.time
                     for name in obj.names:
                         attr = getattr(stream, name)
                         if attr.ndim > 1:
                             for k in xrange(attr.shape[1]):
-                                f = interpolate.UnivariateSpline(t_curr, attr[:,k], s=0, k=3)
-                                for time in times:
-                                    getattr(getattr(snaps[time], key), name)[i,k] = f(time)
+                                f = interpolate.UnivariateSpline(time, attr[:,k], s=0, k=3)
+                                for t in times:
+                                    getattr(getattr(snaps[t], key), name)[i,k] = f(t)
                         else:
-                            f = interpolate.UnivariateSpline(t_curr, attr[:], s=0, k=3)
-                            for time in times:
-                                getattr(getattr(snaps[time], key), name)[i] = f(time)
+                            f = interpolate.UnivariateSpline(time, attr[:], s=0, k=3)
+                            for t in times:
+                                getattr(getattr(snaps[t], key), name)[i] = f(t)
 
         return snaps.values()
 

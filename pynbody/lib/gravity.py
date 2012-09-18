@@ -137,7 +137,7 @@ class Tstep(object):
         self.kernel.set_int(2, nj)
         self.kernel.set_input_buffer(3, jdata)
         self.kernel.set_float(4, eta)
-        self.kernel.set_output_buffer(5, iobj.dt_next)
+        self.kernel.set_output_buffer(5, iobj.tstep)
         self.kernel.set_local_memory(6, 8)
 
 

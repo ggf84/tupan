@@ -141,6 +141,11 @@ class SIA(Base):
 
         if self.pn_order > 0: p.update_pnacc(p, self.pn_order, self.clight)
 
+        if self.dumpper:
+            stream = self.dumpper.setup()
+            stream.append(p)
+            stream.flush()
+
         self.is_initialized = True
 
 
@@ -151,7 +156,6 @@ class SIA(Base):
             slow, fast = self.split(tau, p)
 
             if slow.n > 0:
-                slow.dt_next[:] = tau
                 if stream:
                     stream.append(slow)
 
@@ -162,14 +166,14 @@ class SIA(Base):
 
         if self.reporter:
             self.reporter.report(self.time, p)
-        if self.dumpper:
-            stream = self.dumpper.setup()
-            final_dump(p, tau, stream)
-            stream.flush()
+#        if self.dumpper:
+#            stream = self.dumpper.setup()
+#            final_dump(p, tau, stream)
+#            stream.flush()
 
 
     def get_min_block_tstep(self, p, tau):
-        min_tstep = p.min_dt_next()
+        min_tstep = p.min_tstep()
 
         power = int(np.log2(min_tstep) - 1)
         min_block_tstep = 2.0**power
@@ -189,8 +193,8 @@ class SIA(Base):
     ### split
 
     def split(self, tau, p):
-        slow = p[abs(p.dt_next) >= tau]
-        fast = p[abs(p.dt_next) < tau]
+        slow = p[abs(p.tstep) >= tau]
+        fast = p[abs(p.tstep) < tau]
 
         # prevents the occurrence of a slow level with only one particle.
         if slow.n == 1:
@@ -339,10 +343,9 @@ class SIA(Base):
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
             slow, fast = p, type(p)()
 
-        if slow.n:
-            slow.dt_next[:] = tau
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
+#        if slow.n:
+#            if stream:
+#                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         #
         slow, fast = self.drift_sf(self.dkd21, slow, fast, d0 * tau, False, stream)
@@ -351,9 +354,12 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev[:] = tau
-            slow.t_curr += tau
+            slow.tstep[:] = tau
+            slow.time += tau
             slow.nstep += 1
+
+            if stream:
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -377,7 +383,6 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         if slow.n:
-            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow[slow.nstep % self.dump_freq == 0])
 
@@ -390,8 +395,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev[:] = tau
-            slow.t_curr += tau
+            slow.time += tau
             slow.nstep += 1
 
         p = self.join(slow, fast)
@@ -417,7 +421,6 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         if slow.n:
-            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow[slow.nstep % self.dump_freq == 0])
 
@@ -432,8 +435,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev[:] = tau
-            slow.t_curr += tau
+            slow.time += tau
             slow.nstep += 1
 
         p = self.join(slow, fast)
@@ -460,7 +462,6 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         if slow.n:
-            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow[slow.nstep % self.dump_freq == 0])
 
@@ -477,8 +478,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev[:] = tau
-            slow.t_curr += tau
+            slow.time += tau
             slow.nstep += 1
 
         p = self.join(slow, fast)
@@ -506,7 +506,6 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         if slow.n:
-            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow[slow.nstep % self.dump_freq == 0])
 
@@ -525,8 +524,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev[:] = tau
-            slow.t_curr += tau
+            slow.time += tau
             slow.nstep += 1
 
         p = self.join(slow, fast)
@@ -555,7 +553,6 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         if slow.n:
-            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow[slow.nstep % self.dump_freq == 0])
 
@@ -576,8 +573,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev[:] = tau
-            slow.t_curr += tau
+            slow.time += tau
             slow.nstep += 1
 
         p = self.join(slow, fast)
@@ -607,7 +603,6 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         if slow.n:
-            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow[slow.nstep % self.dump_freq == 0])
 
@@ -630,8 +625,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev[:] = tau
-            slow.t_curr += tau
+            slow.time += tau
             slow.nstep += 1
 
         p = self.join(slow, fast)
@@ -663,7 +657,6 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         if slow.n:
-            slow.dt_next[:] = tau
             if stream:
                 stream.append(slow[slow.nstep % self.dump_freq == 0])
 
@@ -690,8 +683,7 @@ class SIA(Base):
         #
 
         if slow.n:
-            slow.dt_prev[:] = tau
-            slow.t_curr += tau
+            slow.time += tau
             slow.nstep += 1
 
         p = self.join(slow, fast)

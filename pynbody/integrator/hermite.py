@@ -71,8 +71,8 @@ class Hermite(object):
             p.update_acc_jerk(p)
             self.correct(p, tau)
 
-        p.dt_prev[:] = tau
-        p.t_curr += tau
+        p.tstep[:] = tau
+        p.time += tau
         p.nstep += 1
         return p
 
@@ -100,7 +100,7 @@ class Hermite(object):
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
-        p.dt_next[:] = tau
+        p.tstep[:] = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)
@@ -117,7 +117,7 @@ class Hermite(object):
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
-        p.dt_next[:] = tau
+        p.tstep[:] = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)
@@ -141,7 +141,7 @@ class AdaptHermite(Hermite):
 
 
     def get_min_block_tstep(self, p):
-        min_tstep = p.min_dt_next()
+        min_tstep = p.min_tstep()
 
         power = int(np.log2(min_tstep) - 1)
         min_block_tstep = 2.0**power
