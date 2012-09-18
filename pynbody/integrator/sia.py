@@ -343,10 +343,6 @@ class SIA(Base):
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
             slow, fast = p, type(p)()
 
-#        if slow.n:
-#            if stream:
-#                stream.append(slow[slow.nstep % self.dump_freq == 0])
-
         #
         slow, fast = self.drift_sf(self.dkd21, slow, fast, d0 * tau, False, stream)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
@@ -357,7 +353,6 @@ class SIA(Base):
             slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
-
             if stream:
                 stream.append(slow[slow.nstep % self.dump_freq == 0])
 
@@ -382,10 +377,6 @@ class SIA(Base):
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
             slow, fast = p, type(p)()
 
-        if slow.n:
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
-
         #
         slow, fast = self.drift_sf(self.dkd22, slow, fast, d0 * tau, False, stream)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
@@ -395,8 +386,11 @@ class SIA(Base):
         #
 
         if slow.n:
+            slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
+            if stream:
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -420,10 +414,6 @@ class SIA(Base):
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
             slow, fast = p, type(p)()
 
-        if slow.n:
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
-
         #
         slow, fast = self.drift_sf(self.dkd43, slow, fast, d0 * tau, False, stream)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
@@ -435,8 +425,11 @@ class SIA(Base):
         #
 
         if slow.n:
+            slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
+            if stream:
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -461,10 +454,6 @@ class SIA(Base):
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
             slow, fast = p, type(p)()
 
-        if slow.n:
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
-
         #
         slow, fast = self.drift_sf(self.dkd44, slow, fast, d0 * tau, False, stream)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
@@ -478,8 +467,11 @@ class SIA(Base):
         #
 
         if slow.n:
+            slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
+            if stream:
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -505,10 +497,6 @@ class SIA(Base):
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
             slow, fast = p, type(p)()
 
-        if slow.n:
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
-
         #
         slow, fast = self.drift_sf(self.dkd45, slow, fast, d0 * tau, False, stream)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
@@ -524,8 +512,11 @@ class SIA(Base):
         #
 
         if slow.n:
+            slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
+            if stream:
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -552,10 +543,6 @@ class SIA(Base):
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
             slow, fast = p, type(p)()
 
-        if slow.n:
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
-
         #
         slow, fast = self.drift_sf(self.dkd46, slow, fast, d0 * tau, False, stream)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
@@ -573,8 +560,11 @@ class SIA(Base):
         #
 
         if slow.n:
+            slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
+            if stream:
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -602,10 +592,6 @@ class SIA(Base):
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
             slow, fast = p, type(p)()
 
-        if slow.n:
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
-
         #
         slow, fast = self.drift_sf(self.dkd67, slow, fast, d0 * tau, False, stream)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
@@ -625,8 +611,11 @@ class SIA(Base):
         #
 
         if slow.n:
+            slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
+            if stream:
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -656,10 +645,6 @@ class SIA(Base):
             if update_tstep: tau = self.get_min_block_tstep(p, tau)
             slow, fast = p, type(p)()
 
-        if slow.n:
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
-
         #
         slow, fast = self.drift_sf(self.dkd69, slow, fast, d0 * tau, False, stream)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
@@ -683,8 +668,11 @@ class SIA(Base):
         #
 
         if slow.n:
+            slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
+            if stream:
+                stream.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
