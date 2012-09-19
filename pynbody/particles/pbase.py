@@ -12,6 +12,7 @@ import hashlib
 import numpy as np
 from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.memoize import cache
 
 
 __all__ = ['Pbase']
@@ -72,6 +73,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
     ### total mass and center-of-mass
 
     @property
+    @cache
     def total_mass(self):
         """
         Total mass.
@@ -79,6 +81,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         return float(self.mass.sum())
 
     @property
+    @cache
     def rcom(self):
         """
         Position of the center-of-mass.
@@ -88,6 +91,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         return (rcom / mtot)
 
     @property
+    @cache
     def vcom(self):
         """
         Velocity of the center-of-mass.
@@ -107,6 +111,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
     ### linear momentum
 
     @property
+    @cache
     def lm(self):
         """
         Individual linear momentum.
@@ -114,6 +119,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         return (self.mass * self.vel.T).T
 
     @property
+    @cache
     def linear_momentum(self):
         """
         Total linear momentum.
@@ -124,6 +130,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
     ### angular momentum
 
     @property
+    @cache
     def am(self):
         """
         Individual angular momentum.
@@ -131,6 +138,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         return (self.mass * np.cross(self.pos, self.vel).T).T
 
     @property
+    @cache
     def angular_momentum(self):
         """
         Total angular momentum.
@@ -141,6 +149,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
     ### kinetic energy
 
     @property
+    @cache
     def ke(self):
         """
         Individual kinetic energy.
@@ -148,6 +157,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         return 0.5 * self.mass * (self.vel**2).sum(1)
 
     @property
+    @cache
     def kinetic_energy(self):
         """
         Total kinetic energy.
@@ -158,13 +168,16 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
     ### potential energy
 
     @property
+    @cache
     def pe(self):
         """
         Individual potential energy.
         """
-        return self.mass * self.phi
+        phi = self.get_phi(self)
+        return self.mass * phi
 
     @property
+    @cache
     def potential_energy(self):
         """
         Total potential energy.
@@ -172,39 +185,86 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         return 0.5 * float(self.pe.sum())
 
 
+    ### virial energy
+
+    @property
+    @cache
+    def ve(self):
+        """
+        Individual virial energy.
+        """
+        acc = self.get_acc(self)
+        force = (self.mass * acc.T).T
+        return self.pos * force
+
+    @property
+    @cache
+    def virial_energy(self):
+        """
+        Total virial energy.
+        """
+        return float(self.ve.sum())
+
+
+
     ### gravity
+
+    def get_tstep(self, objs, eta):
+        """
+        Get the individual time-steps due to other particles.
+        """
+        gravity.tstep.set_args(self, objs, eta/2)
+        gravity.tstep.run()
+        return gravity.tstep.get_result()
+
+    def get_phi(self, objs):
+        """
+        Get the individual gravitational potential due to other particles.
+        """
+        gravity.phi.set_args(self, objs)
+        gravity.phi.run()
+        return gravity.phi.get_result()
+
+    def get_acc(self, objs):
+        """
+        Get the individual gravitational acceleration due to other particles.
+        """
+        gravity.acc.set_args(self, objs)
+        gravity.acc.run()
+        return gravity.acc.get_result()
+
+    def get_acc_jerk(self, objs):
+        """
+        Get the individual gravitational acceleration and jerk due to other particles.
+        """
+        gravity.acc_jerk.set_args(self, objs)
+        gravity.acc_jerk.run()
+        return gravity.acc_jerk.get_result()
+
 
     def update_tstep(self, objs, eta):
         """
         Update the individual time-steps due to other particles.
         """
-        gravity.tstep.set_args(self, objs, eta/2)
-        gravity.tstep.run()
-        self.tstep = gravity.tstep.get_result()
+        self.tstep = self.get_tstep(objs, eta)
 
     def update_phi(self, objs):
         """
         Update the individual gravitational potential due to other particles.
         """
-        gravity.phi.set_args(self, objs)
-        gravity.phi.run()
-        self.phi = gravity.phi.get_result()
+        self.phi = self.get_phi(objs)
 
     def update_acc(self, objs):
         """
         Update the individual gravitational acceleration due to other particles.
         """
-        gravity.acc.set_args(self, objs)
-        gravity.acc.run()
-        self.acc = gravity.acc.get_result()
+        self.acc = self.get_acc(objs)
 
     def update_acc_jerk(self, objs):
         """
         Update the individual gravitational acceleration and jerk due to other particles.
         """
-        gravity.acc_jerk.set_args(self, objs)
-        gravity.acc_jerk.run()
-        (self.acc, self.jerk) = gravity.acc_jerk.get_result()
+        (self.acc, self.jerk) = self.get_acc_jerk(objs)
 
 
     ### miscellaneous methods

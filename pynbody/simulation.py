@@ -44,16 +44,16 @@ class Diagnostic(object):
         self.report_freq = report_freq
         self.nreport = 0
 
-        particles.update_phi(particles)
-        self.ke0 = particles.kinetic_energy
-        self.pe0 = particles.potential_energy
-        self.te0 = self.ke0 + self.pe0
-        self.ve0 = self.ke0 + self.te0
+        p = particles
 
-        self.rcom0 = particles.rcom
-        self.vcom0 = particles.vcom
-        self.lmom0 = particles.linear_momentum
-        self.amom0 = particles.angular_momentum
+        self.ke0 = p.kinetic_energy
+        self.pe0 = p.potential_energy
+        self.te0 = self.ke0 + self.pe0
+
+        self.rcom0 = p.rcom
+        self.vcom0 = p.vcom
+        self.lmom0 = p.linear_momentum
+        self.amom0 = p.angular_momentum
 
         self.count = 0
         self.ceerr = 0.0
@@ -91,21 +91,22 @@ class Diagnostic(object):
     def print_diagnostic(self, time, dtime, particles):
         self.time = time
 
-        particles.update_phi(particles)
-        ke = particles.kinetic_energy
-        if hasattr(particles, 'get_total_ke_pn_shift'): ke += particles.get_total_ke_pn_shift()
-        pe = particles.potential_energy
-        te = ke + pe
-        virial = ke / (-pe)
+        p = particles
 
-        rcom = particles.rcom
-        if hasattr(particles, 'get_total_rcom_pn_shift'): rcom += particles.get_total_rcom_pn_shift()
-        vcom = particles.vcom
-        if hasattr(particles, 'get_total_vcom_pn_shift'): vcom += particles.get_total_vcom_pn_shift()
-        lmom = particles.linear_momentum
-        if hasattr(particles, 'get_total_lmom_pn_shift'): lmom += particles.get_total_lmom_pn_shift()
-        amom = particles.angular_momentum
-        if hasattr(particles, 'get_total_amom_pn_shift'): amom += particles.get_total_amom_pn_shift()
+        ke = p.kinetic_energy
+        if hasattr(p, 'get_total_ke_pn_shift'): ke += p.get_total_ke_pn_shift()
+        pe = p.potential_energy
+        te = ke + pe
+        virial = p.virial_energy
+
+        rcom = p.rcom
+        if hasattr(p, 'get_total_rcom_pn_shift'): rcom += p.get_total_rcom_pn_shift()
+        vcom = p.vcom
+        if hasattr(p, 'get_total_vcom_pn_shift'): vcom += p.get_total_vcom_pn_shift()
+        lmom = p.linear_momentum
+        if hasattr(p, 'get_total_lmom_pn_shift'): lmom += p.get_total_lmom_pn_shift()
+        amom = p.angular_momentum
+        if hasattr(p, 'get_total_amom_pn_shift'): amom += p.get_total_amom_pn_shift()
 
         eerr = (te-self.te0)/(-pe)
         self.count += 1
@@ -350,9 +351,9 @@ def parse_args():
                        )
     newrun.add_argument("--restart_freq",
                         type=int,
-                        default=1024,
+                        default=128,
                         help="Number of time-steps between rewrites of the "
-                             "restart file (type: int, default: 1024)."
+                             "restart file (type: int, default: 128)."
                        )
     newrun.add_argument("--use_cl",
                         action="store_true",
