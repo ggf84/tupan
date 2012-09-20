@@ -7,6 +7,7 @@
 
 from __future__ import print_function
 import pickle
+import math
 import numpy as np
 import h5py
 from ..particles import Particles
@@ -28,6 +29,7 @@ class HDF5IO(object):
     def setup(self, fmode='a'):
         self.fobj = h5py.File(self.fname, fmode)
         self.p = Particles()
+        self.nz = None
         return self
 
 
@@ -37,14 +39,31 @@ class HDF5IO(object):
 
     def flush(self):
         with self.fobj as fobj:
-            self.dumpper(self.p, fobj)
+            self.snapshot_dumpper(self.p, fobj)
+#            self.worldline_dumpper(self.p, fobj)
 
 
     def close(self):
         self.fobj.close()
 
 
-    def dumpper(self, p, fobj=None):
+    def store_dset(self, group, name, data):
+        olen = len(group[name]) if name in group else 0
+        nlen = olen + len(data)
+        dset = group.require_dataset(name,
+                                     (olen,),
+                                     dtype=data.dtype,
+                                     maxshape=(None,),
+                                     chunks=True,
+                                     compression='gzip',
+                                     shuffle=True,
+                                    )
+        dset.resize((nlen,))
+        dset[olen:] = data
+        return dset
+
+
+    def snapshot_dumpper(self, p, fobj=None):
         if not p.n: return
         if not isinstance(p, Particles):
             tmp = Particles()
@@ -56,32 +75,44 @@ class HDF5IO(object):
         group.attrs['Class'] = pickle.dumps(type(p))
         for (k, v) in p.items:
             if v.n:
-                dset_name = type(v).__name__.lower()
-                dset_length = 0
-                if k in group:
-                    dset_length = len(group[k])
-                dset = group.require_dataset(dset_name,
-                                             (dset_length,),
-                                             dtype=v.dtype,
-                                             maxshape=(None,),
-                                             chunks=True,
-                                             compression='gzip',
-                                             shuffle=True,
-                                            )
+                name = type(v).__name__.lower()
+                data = v.get_state()
+                dset = self.store_dset(group, name, data)
                 dset.attrs['Class'] = pickle.dumps(type(v))
-                olen = len(dset)
-                dset.resize((olen+v.n,))
-                nlen = len(dset)
-                dset[olen:nlen] = v.get_state()
 
 
-    def dump(self, particles, fmode='a'):
+
+    def worldline_dumpper(self, p, fobj=None):
+        if not p.n: return
+        if not isinstance(p, Particles):
+            tmp = Particles()
+            tmp.append(p)
+            p = tmp
+        if fobj is None: fobj = self.fobj
+
+        if self.nz is None:
+            n = int(p.id.max()+1)
+            self.nz = int(math.log10(n))+2
+
+        main_group = fobj.require_group("WorldLines")
+        for (key, obj) in p.items:
+            if obj.n:
+                group = main_group.require_group(key)
+                group.attrs['Class'] = pickle.dumps(type(obj))
+                for i in np.unique(obj.id):
+                    name = "wl"+str(i).zfill(self.nz)
+                    data = obj.data[obj.id == i]
+                    dset = self.store_dset(group, name, data)
+
+
+
+    def dump(self, p, fmode='a'):
         """
 
         """
         self.setup(fmode)
         with self.fobj as fobj:
-            self.dumpper(particles, fobj)
+            self.dumpper(p, fobj)
 
 
     def load(self):
