@@ -11,10 +11,62 @@ import math
 import numpy as np
 import h5py
 from ..particles import Particles
+from ..particles.allparticles import Body, BlackHole, Sph
 from ..lib.utils.timing import decallmethods, timings
 
 
 __all__ = ['HDF5IO']
+
+
+#@decallmethods(timings)
+#class WorldLine(object):
+#    """
+#
+#    """
+#    def __init__(self):
+#        self.wl = {'body': {'name': [], 'data': [], 'dtype': None},
+#                   'blackhole': {'name': [], 'data': [], 'dtype': None},
+#                   'sph': {'name': [], 'data': [], 'dtype': None}
+#                  }
+#
+#    def append(self, p):
+#        if p.n:
+#            for (key, obj) in p.items:
+#                if obj.n:
+#                    self.wl[key]['dtype'] = obj.data.dtype
+#                    for d in obj.data:
+#                        name = "wl"+str(int(d['id'])).zfill(4)
+#                        data = d.item()
+#
+#                        if name in self.wl[key]['name']:
+#                            index = self.wl[key]['name'].index(name)
+#                            self.wl[key]['data'][index].append(data)
+#                        else:
+#                            self.wl[key]['name'].append(name)
+#                            self.wl[key]['data'].append([data])
+#
+#
+#    def worldline_dumpper(self, wl, fobj=None):
+#        if fobj is None: fobj = self.fobj
+#
+#        main_group = fobj.require_group("WorldLines")
+#
+#        for (key, d) in wl.wl.items():
+#            group = main_group.require_group(key)
+#            for (name, data) in zip(d['name'], d['data']):
+#                dset = self.store_dset(group, name, data, d['dtype'])
+#
+#
+#
+#
+#    @property
+#    def min_size(self):
+#        size = 64
+#        for (key, d) in self.wl.items():
+#            for (name, data) in zip(d['name'], d['data']):
+#                if len(data) < size:
+#                    size = len(data)
+#        return size
 
 
 @decallmethods(timings)
@@ -26,33 +78,48 @@ class HDF5IO(object):
         self.fname = fname
 
 
-    def setup(self, fmode='a'):
-        self.fobj = h5py.File(self.fname, fmode)
+    def setup(self):
         self.p = Particles()
         self.nz = None
         return self
 
 
-    def append(self, p):
+    def append(self, p, buffer_length=32768):
+        if self.nz is None:
+            n = int(p.id.max()+1)
+            self.nz = int(math.log10(n))+2
+
         self.p.append(p)
+        if self.p.n >= buffer_length:
+            print('append', self.p.n)
+            self.dump(self.p)
+            self.p = Particles()
 
 
     def flush(self):
-        with self.fobj as fobj:
-            self.snapshot_dumpper(self.p, fobj)
-#            self.worldline_dumpper(self.p, fobj)
+        if self.p.n:
+            print('flush', self.p.n)
+            self.dump(self.p)
+            self.p = Particles()
 
 
-    def close(self):
-        self.fobj.close()
+
+    def dump(self, p, fmode='a'):
+        """
+
+        """
+        with h5py.File(self.fname, fmode) as fobj:
+            self.snapshot_dumpper(p, fobj)
+#            self.worldline_dumpper(p, fobj)
 
 
-    def store_dset(self, group, name, data):
+
+    def store_dset(self, group, name, data, dtype):
         olen = len(group[name]) if name in group else 0
         nlen = olen + len(data)
         dset = group.require_dataset(name,
                                      (olen,),
-                                     dtype=data.dtype,
+                                     dtype=dtype,
                                      maxshape=(None,),
                                      chunks=True,
                                      compression='gzip',
@@ -63,37 +130,19 @@ class HDF5IO(object):
         return dset
 
 
-    def snapshot_dumpper(self, p, fobj=None):
-        if not p.n: return
-        if not isinstance(p, Particles):
-            tmp = Particles()
-            tmp.append(p)
-            p = tmp
-        if fobj is None: fobj = self.fobj
+    def snapshot_dumpper(self, p, fobj):
         group_name = type(p).__name__.lower()
         group = fobj.require_group(group_name)
         group.attrs['Class'] = pickle.dumps(type(p))
-        for (k, v) in p.items:
-            if v.n:
-                name = type(v).__name__.lower()
-                data = v.get_state()
-                dset = self.store_dset(group, name, data)
-                dset.attrs['Class'] = pickle.dumps(type(v))
+        for (key, obj) in p.items:
+            if obj.n:
+                name = type(obj).__name__.lower()
+                data = obj.get_state()
+                dset = self.store_dset(group, name, data, data.dtype)
+                dset.attrs['Class'] = pickle.dumps(type(obj))
 
 
-
-    def worldline_dumpper(self, p, fobj=None):
-        if not p.n: return
-        if not isinstance(p, Particles):
-            tmp = Particles()
-            tmp.append(p)
-            p = tmp
-        if fobj is None: fobj = self.fobj
-
-        if self.nz is None:
-            n = int(p.id.max()+1)
-            self.nz = int(math.log10(n))+2
-
+    def worldline_dumpper(self, p, fobj):
         main_group = fobj.require_group("WorldLines")
         for (key, obj) in p.items:
             if obj.n:
@@ -102,17 +151,13 @@ class HDF5IO(object):
                 for i in np.unique(obj.id):
                     name = "wl"+str(i).zfill(self.nz)
                     data = obj.data[obj.id == i]
-                    dset = self.store_dset(group, name, data)
+                    dset = self.store_dset(group, name, data, data.dtype)
 
 
 
-    def dump(self, p, fmode='a'):
-        """
 
-        """
-        self.setup(fmode)
-        with self.fobj as fobj:
-            self.dumpper(p, fobj)
+    def close(self):
+        self.fobj.close()
 
 
     def load(self):

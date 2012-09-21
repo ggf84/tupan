@@ -142,9 +142,8 @@ class SIA(Base):
         if self.pn_order > 0: p.update_pnacc(p, self.pn_order, self.clight)
 
         if self.dumpper:
-            stream = self.dumpper.setup()
-            stream.append(p)
-            stream.flush()
+            worldline = self.dumpper.setup()
+            worldline.append(p)
 
         self.is_initialized = True
 
@@ -152,14 +151,14 @@ class SIA(Base):
     def finalize(self, t_end):
         logger.info("Finalizing '%s' integrator.", self.method)
 
-        def final_dump(p, tau, stream):
+        def final_dump(p, tau, worldline):
             slow, fast = self.split(tau, p)
 
             if slow.n > 0:
-                if stream:
-                    stream.append(slow)
+                if worldline:
+                    worldline.append(slow)
 
-            if fast.n > 0: final_dump(fast, tau / 2, stream)
+            if fast.n > 0: final_dump(fast, tau / 2, worldline)
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
@@ -167,9 +166,11 @@ class SIA(Base):
         if self.reporter:
             self.reporter.report(self.time, p)
 #        if self.dumpper:
-#            stream = self.dumpper.setup()
-#            final_dump(p, tau, stream)
-#            stream.flush()
+#            worldline = self.dumpper.setup()
+#            final_dump(p, tau, worldline)
+#            worldline.flush()
+        if self.dumpper:
+            self.dumpper.flush()
 
 
     def get_min_block_tstep(self, p, tau):
@@ -234,61 +235,59 @@ class SIA(Base):
         p = self.particles
         tau = self.get_base_tstep(t_end)
 
-        stream = None
         if self.reporter:
             self.reporter.report(self.time, p)
-        if self.dumpper:
-            stream = self.dumpper.setup()
+        worldline = self.dumpper
 
 
         if self.method == "sia.dkd21std":
-            p = self.dkd21(p, tau, False, False, stream)
+            p = self.dkd21(p, tau, False, False, worldline)
         elif self.method == "sia.dkd21shr":
-            p = self.dkd21(p, tau, True, False, stream)
+            p = self.dkd21(p, tau, True, False, worldline)
         elif self.method == "sia.dkd21hcc":
-            p = self.dkd21(p, tau, True, True, stream)
+            p = self.dkd21(p, tau, True, True, worldline)
         elif self.method == "sia.dkd22std":
-            p = self.dkd22(p, tau, False, False, stream)
+            p = self.dkd22(p, tau, False, False, worldline)
         elif self.method == "sia.dkd22shr":
-            p = self.dkd22(p, tau, True, False, stream)
+            p = self.dkd22(p, tau, True, False, worldline)
         elif self.method == "sia.dkd22hcc":
-            p = self.dkd22(p, tau, True, True, stream)
+            p = self.dkd22(p, tau, True, True, worldline)
         elif self.method == "sia.dkd43std":
-            p = self.dkd43(p, tau, False, False, stream)
+            p = self.dkd43(p, tau, False, False, worldline)
         elif self.method == "sia.dkd43shr":
-            p = self.dkd43(p, tau, True, False, stream)
+            p = self.dkd43(p, tau, True, False, worldline)
         elif self.method == "sia.dkd43hcc":
-            p = self.dkd43(p, tau, True, True, stream)
+            p = self.dkd43(p, tau, True, True, worldline)
         elif self.method == "sia.dkd44std":
-            p = self.dkd44(p, tau, False, False, stream)
+            p = self.dkd44(p, tau, False, False, worldline)
         elif self.method == "sia.dkd44shr":
-            p = self.dkd44(p, tau, True, False, stream)
+            p = self.dkd44(p, tau, True, False, worldline)
         elif self.method == "sia.dkd44hcc":
-            p = self.dkd44(p, tau, True, True, stream)
+            p = self.dkd44(p, tau, True, True, worldline)
         elif self.method == "sia.dkd45std":
-            p = self.dkd45(p, tau, False, False, stream)
+            p = self.dkd45(p, tau, False, False, worldline)
         elif self.method == "sia.dkd45shr":
-            p = self.dkd45(p, tau, True, False, stream)
+            p = self.dkd45(p, tau, True, False, worldline)
         elif self.method == "sia.dkd45hcc":
-            p = self.dkd45(p, tau, True, True, stream)
+            p = self.dkd45(p, tau, True, True, worldline)
         elif self.method == "sia.dkd46std":
-            p = self.dkd46(p, tau, False, False, stream)
+            p = self.dkd46(p, tau, False, False, worldline)
         elif self.method == "sia.dkd46shr":
-            p = self.dkd46(p, tau, True, False, stream)
+            p = self.dkd46(p, tau, True, False, worldline)
         elif self.method == "sia.dkd46hcc":
-            p = self.dkd46(p, tau, True, True, stream)
+            p = self.dkd46(p, tau, True, True, worldline)
         elif self.method == "sia.dkd67std":
-            p = self.dkd67(p, tau, False, False, stream)
+            p = self.dkd67(p, tau, False, False, worldline)
         elif self.method == "sia.dkd67shr":
-            p = self.dkd67(p, tau, True, False, stream)
+            p = self.dkd67(p, tau, True, False, worldline)
         elif self.method == "sia.dkd67hcc":
-            p = self.dkd67(p, tau, True, True, stream)
+            p = self.dkd67(p, tau, True, True, worldline)
         elif self.method == "sia.dkd69std":
-            p = self.dkd69(p, tau, False, False, stream)
+            p = self.dkd69(p, tau, False, False, worldline)
         elif self.method == "sia.dkd69shr":
-            p = self.dkd69(p, tau, True, False, stream)
+            p = self.dkd69(p, tau, True, False, worldline)
         elif self.method == "sia.dkd69hcc":
-            p = self.dkd69(p, tau, True, True, stream)
+            p = self.dkd69(p, tau, True, True, worldline)
         elif self.method == 0:
             pass
 ##            p = self.heapq0(p, tau, True)
@@ -296,20 +295,17 @@ class SIA(Base):
             raise ValueError("Unexpected method: {0}".format(self.method))
 
 
-        if stream:
-            stream.flush()
-
         self.time += self.tstep
         self.particles = p
 
 
-    def drift_sf(self, fn, slow, fast, tau, update_tstep, stream):
+    def drift_sf(self, fn, slow, fast, tau, update_tstep, worldline):
         """
         Slow<->Fast Drift operator.
         """
-        if fast.n: fast = fn(fast, tau / 2, update_tstep, True, stream)
+        if fast.n: fast = fn(fast, tau / 2, update_tstep, True, worldline)
         self.drift(slow, tau)
-        if fast.n: fast = fn(fast, tau / 2, True, True, stream)
+        if fast.n: fast = fn(fast, tau / 2, True, True, worldline)
         return slow, fast
 
 
@@ -332,7 +328,7 @@ class SIA(Base):
     # dkd21[std,shr,hcc] method -- D.K.D
     #
 
-    def dkd21(self, p, tau, update_tstep, split, stream,
+    def dkd21(self, p, tau, update_tstep, split, worldline,
                     k0=1.0,
                     d0=0.5):
         if update_tstep: p.update_tstep(p, self.eta)
@@ -344,17 +340,17 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         #
-        slow, fast = self.drift_sf(self.dkd21, slow, fast, d0 * tau, False, stream)
+        slow, fast = self.drift_sf(self.dkd21, slow, fast, d0 * tau, False, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd21, slow, fast, d0 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd21, slow, fast, d0 * tau, True, worldline)
         #
 
         if slow.n:
             slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
+            if worldline:
+                worldline.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -365,7 +361,7 @@ class SIA(Base):
     # dkd22[std,shr,hcc] method -- D.K.D.K.D
     #
 
-    def dkd22(self, p, tau, update_tstep, split, stream,
+    def dkd22(self, p, tau, update_tstep, split, worldline,
                     k0=0.5,
                     d0=0.1931833275037836,
                     d1=0.6136333449924328):
@@ -378,19 +374,19 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         #
-        slow, fast = self.drift_sf(self.dkd22, slow, fast, d0 * tau, False, stream)
+        slow, fast = self.drift_sf(self.dkd22, slow, fast, d0 * tau, False, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd22, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd22, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd22, slow, fast, d0 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd22, slow, fast, d0 * tau, True, worldline)
         #
 
         if slow.n:
             slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
+            if worldline:
+                worldline.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -401,7 +397,7 @@ class SIA(Base):
     # dkd43[std,shr,hcc] method -- D.K.D.K.D.K.D
     #
 
-    def dkd43(self, p, tau, update_tstep, split, stream,
+    def dkd43(self, p, tau, update_tstep, split, worldline,
                     k0=1.3512071919596575,
                     k1=-1.7024143839193150,
                     d0=0.6756035959798288,
@@ -415,21 +411,21 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         #
-        slow, fast = self.drift_sf(self.dkd43, slow, fast, d0 * tau, False, stream)
+        slow, fast = self.drift_sf(self.dkd43, slow, fast, d0 * tau, False, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd43, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd43, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k1 * tau)
-        slow, fast = self.drift_sf(self.dkd43, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd43, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd43, slow, fast, d0 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd43, slow, fast, d0 * tau, True, worldline)
         #
 
         if slow.n:
             slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
+            if worldline:
+                worldline.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -440,7 +436,7 @@ class SIA(Base):
     # dkd44[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D
     #
 
-    def dkd44(self, p, tau, update_tstep, split, stream,
+    def dkd44(self, p, tau, update_tstep, split, worldline,
                     k0=0.7123418310626056,
                     k1=-0.21234183106260562,
                     d0=0.1786178958448091,
@@ -455,23 +451,23 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         #
-        slow, fast = self.drift_sf(self.dkd44, slow, fast, d0 * tau, False, stream)
+        slow, fast = self.drift_sf(self.dkd44, slow, fast, d0 * tau, False, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd44, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd44, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k1 * tau)
-        slow, fast = self.drift_sf(self.dkd44, slow, fast, d2 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd44, slow, fast, d2 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k1 * tau)
-        slow, fast = self.drift_sf(self.dkd44, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd44, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd44, slow, fast, d0 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd44, slow, fast, d0 * tau, True, worldline)
         #
 
         if slow.n:
             slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
+            if worldline:
+                worldline.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -482,7 +478,7 @@ class SIA(Base):
     # dkd45[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D
     #
 
-    def dkd45(self, p, tau, update_tstep, split, stream,
+    def dkd45(self, p, tau, update_tstep, split, worldline,
                     k0=-0.0844296195070715,
                     k1=0.354900057157426,
                     k2=0.459059124699291,
@@ -498,25 +494,25 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         #
-        slow, fast = self.drift_sf(self.dkd45, slow, fast, d0 * tau, False, stream)
+        slow, fast = self.drift_sf(self.dkd45, slow, fast, d0 * tau, False, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd45, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd45, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k1 * tau)
-        slow, fast = self.drift_sf(self.dkd45, slow, fast, d2 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd45, slow, fast, d2 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k2 * tau)
-        slow, fast = self.drift_sf(self.dkd45, slow, fast, d2 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd45, slow, fast, d2 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k1 * tau)
-        slow, fast = self.drift_sf(self.dkd45, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd45, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd45, slow, fast, d0 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd45, slow, fast, d0 * tau, True, worldline)
         #
 
         if slow.n:
             slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
+            if worldline:
+                worldline.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -527,7 +523,7 @@ class SIA(Base):
     # dkd46[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D
     #
 
-    def dkd46(self, p, tau, update_tstep, split, stream,
+    def dkd46(self, p, tau, update_tstep, split, worldline,
                     k0=0.209515106613362,
                     k1=-0.143851773179818,
                     k2=0.434336666566456,
@@ -544,27 +540,27 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         #
-        slow, fast = self.drift_sf(self.dkd46, slow, fast, d0 * tau, False, stream)
+        slow, fast = self.drift_sf(self.dkd46, slow, fast, d0 * tau, False, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd46, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd46, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k1 * tau)
-        slow, fast = self.drift_sf(self.dkd46, slow, fast, d2 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd46, slow, fast, d2 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k2 * tau)
-        slow, fast = self.drift_sf(self.dkd46, slow, fast, d3 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd46, slow, fast, d3 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k2 * tau)
-        slow, fast = self.drift_sf(self.dkd46, slow, fast, d2 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd46, slow, fast, d2 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k1 * tau)
-        slow, fast = self.drift_sf(self.dkd46, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd46, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd46, slow, fast, d0 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd46, slow, fast, d0 * tau, True, worldline)
         #
 
         if slow.n:
             slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
+            if worldline:
+                worldline.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -575,7 +571,7 @@ class SIA(Base):
     # dkd67[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
 
-    def dkd67(self, p, tau, update_tstep, split, stream,
+    def dkd67(self, p, tau, update_tstep, split, worldline,
                     k0=0.7845136104775573,
                     k1=0.23557321335935813,
                     k2=-1.177679984178871,
@@ -593,29 +589,29 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         #
-        slow, fast = self.drift_sf(self.dkd67, slow, fast, d0 * tau, False, stream)
+        slow, fast = self.drift_sf(self.dkd67, slow, fast, d0 * tau, False, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd67, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd67, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k1 * tau)
-        slow, fast = self.drift_sf(self.dkd67, slow, fast, d2 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd67, slow, fast, d2 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k2 * tau)
-        slow, fast = self.drift_sf(self.dkd67, slow, fast, d3 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd67, slow, fast, d3 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k3 * tau)
-        slow, fast = self.drift_sf(self.dkd67, slow, fast, d3 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd67, slow, fast, d3 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k2 * tau)
-        slow, fast = self.drift_sf(self.dkd67, slow, fast, d2 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd67, slow, fast, d2 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k1 * tau)
-        slow, fast = self.drift_sf(self.dkd67, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd67, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd67, slow, fast, d0 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd67, slow, fast, d0 * tau, True, worldline)
         #
 
         if slow.n:
             slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
+            if worldline:
+                worldline.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
@@ -626,7 +622,7 @@ class SIA(Base):
     # dkd69[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
 
-    def dkd69(self, p, tau, update_tstep, split, stream,
+    def dkd69(self, p, tau, update_tstep, split, worldline,
                     k0=0.39103020330868477,
                     k1=0.334037289611136,
                     k2=-0.7062272811875614,
@@ -646,33 +642,33 @@ class SIA(Base):
             slow, fast = p, type(p)()
 
         #
-        slow, fast = self.drift_sf(self.dkd69, slow, fast, d0 * tau, False, stream)
+        slow, fast = self.drift_sf(self.dkd69, slow, fast, d0 * tau, False, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd69, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd69, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k1 * tau)
-        slow, fast = self.drift_sf(self.dkd69, slow, fast, d2 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd69, slow, fast, d2 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k2 * tau)
-        slow, fast = self.drift_sf(self.dkd69, slow, fast, d3 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd69, slow, fast, d3 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k3 * tau)
-        slow, fast = self.drift_sf(self.dkd69, slow, fast, d4 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd69, slow, fast, d4 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k4 * tau)
-        slow, fast = self.drift_sf(self.dkd69, slow, fast, d4 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd69, slow, fast, d4 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k3 * tau)
-        slow, fast = self.drift_sf(self.dkd69, slow, fast, d3 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd69, slow, fast, d3 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k2 * tau)
-        slow, fast = self.drift_sf(self.dkd69, slow, fast, d2 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd69, slow, fast, d2 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k1 * tau)
-        slow, fast = self.drift_sf(self.dkd69, slow, fast, d1 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd69, slow, fast, d1 * tau, True, worldline)
         slow, fast = self.kick_sf(slow, fast, k0 * tau)
-        slow, fast = self.drift_sf(self.dkd69, slow, fast, d0 * tau, True, stream)
+        slow, fast = self.drift_sf(self.dkd69, slow, fast, d0 * tau, True, worldline)
         #
 
         if slow.n:
             slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
-            if stream:
-                stream.append(slow[slow.nstep % self.dump_freq == 0])
+            if worldline:
+                worldline.append(slow[slow.nstep % self.dump_freq == 0])
 
         p = self.join(slow, fast)
 
