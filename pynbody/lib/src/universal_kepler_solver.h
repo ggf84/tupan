@@ -9,7 +9,7 @@
 #else
     #define TOLERANCE  2.44140625E-4            // sqrt(2^-24)
 #endif
-#define MAXITER 10
+#define MAXITER 128
 #define SIGN(x) (((x) > 0) - ((x) < 0))
 
 
@@ -191,7 +191,7 @@ fprimeprime(const REAL s,
 }
 
 
-#define ORDER 5
+//#define ORDER 5
 inline int
 laguerre(REAL x0,
          REAL *x,
@@ -204,15 +204,21 @@ laguerre(REAL x0,
     *x = x0;
     do {
         REAL fv = f(*x, arg);
-        if (fv == 0) return -3;
+//        if (fv == 0) return -3;
         REAL dfv = fprime(*x, arg);
         REAL ddfv = fprimeprime(*x, arg);
-        REAL g = dfv / fv;
-        REAL g2 = g * g;
-        REAL h = g2 - ddfv / fv;
-        REAL d = (g + SIGN(g) * sqrt(fabs((ORDER - 1) * (ORDER * h - g2))));
-        if (d == 0) return -4;
-        delta = -ORDER / d;
+//        REAL g = dfv / fv;
+//        REAL g2 = g * g;
+//        REAL h = g2 - ddfv / fv;
+//        REAL d = (g + SIGN(g) * sqrt(fabs((ORDER - 1) * (ORDER * h - g2))));
+//        if (d == 0) return -4;
+//        delta = -ORDER / d;
+
+        REAL g = 2 * fv * dfv;
+        REAL h = (2 * dfv * dfv - fv * ddfv);
+        if (h == 0) return -3;
+        delta = -g / h;
+
         (*x) += delta;
         i += 1;
         if (i > MAXITER) return -1;
