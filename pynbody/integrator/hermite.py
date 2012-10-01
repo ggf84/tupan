@@ -92,6 +92,11 @@ class Hermite(object):
         p.update_acc_jerk(p)
         if self.pn_order > 0: p.update_pnacc(p, self.pn_order, self.clight)
 
+        if self.dumpper:
+            worldline = self.dumpper.setup()
+            worldline.append(p)
+            worldline.flush(1)
+
         self.is_initialized = True
 
 
@@ -105,7 +110,7 @@ class Hermite(object):
         if self.reporter:
             self.reporter.report(self.time, p)
         if self.dumpper:
-            self.dumpper.dump(p)
+            self.dumpper.flush(1)
 
 
     def evolve_step(self, t_end):
@@ -121,11 +126,13 @@ class Hermite(object):
 
         if self.reporter:
             self.reporter.report(self.time, p)
-        if self.dumpper:
-            self.dumpper.dump(p[p.nstep % self.dump_freq == 0])
+        worldline = self.dumpper
 
         p = self.pec(2, p, tau)
         self.time += tau
+
+        if worldline:
+            worldline.append(p[p.nstep % self.dump_freq == 0])
 
         self.particles = p
 

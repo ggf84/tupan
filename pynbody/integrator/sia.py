@@ -144,6 +144,7 @@ class SIA(Base):
         if self.dumpper:
             worldline = self.dumpper.setup()
             worldline.append(p)
+            worldline.flush(1)
 
         self.is_initialized = True
 
@@ -170,7 +171,7 @@ class SIA(Base):
 #            final_dump(p, tau, worldline)
 #            worldline.flush()
         if self.dumpper:
-            self.dumpper.flush()
+            self.dumpper.flush(1)
 
 
     def get_min_block_tstep(self, p, tau):
@@ -294,6 +295,8 @@ class SIA(Base):
         else:
             raise ValueError("Unexpected method: {0}".format(self.method))
 
+#        if worldline:
+#            worldline.flush()
 
         self.time += self.tstep
         self.particles = p

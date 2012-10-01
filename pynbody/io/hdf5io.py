@@ -11,8 +11,6 @@ import math
 from collections import defaultdict
 import numpy as np
 import h5py
-from ..particles import Particles
-from ..particles.allparticles import Body, BlackHole, Sph
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -25,7 +23,9 @@ class WorldLine(object):
 
     """
     def __init__(self):
-        self.kind = defaultdict(list)
+#        self.kind = defaultdict(list)
+        self.kind = defaultdict(dict)
+        self.dtype = {}
         self.nz = None
         self.cls = None
         self.clear()
@@ -40,11 +40,22 @@ class WorldLine(object):
         if self.cls is None: self.cls = type(p)
         if self.nz is None: self.nz = int(math.log10(p.n+1))+2
 
+#        for (key, obj) in p.items():
+#            if obj.n:
+#                data = obj.data.copy()
+#                self.kind[key].append(data)
+#                self.n += len(data)
+
+
+        self.n = 0
         for (key, obj) in p.items():
             if obj.n:
-                data = obj.data.copy()
-                self.kind[key].append(data)
-                self.n += len(data)
+                self.dtype[key] = obj.data.dtype
+                d = self.kind[key]
+                for data in obj.data.copy():
+                    i = data[0]
+                    d.setdefault(i, []).append(data)
+                    self.n = max(self.n, len(d[i]))
 
 
     def keys(self):
@@ -75,27 +86,26 @@ class HDF5IO(object):
         return self
 
 
-    def append(self, p, buffer_length=32768):
+    def append(self, p):
         self.wl.append(p)
-        if self.wl.n > buffer_length:
-            print('append', self.wl.n)
-            self.dump(self.wl)
+        self.flush(128)
 
 
-    def flush(self):
-        if self.wl.n:
-            print('flush', self.wl.n)
-            self.dump(self.wl)
+    def flush(self, size=1):
+        if self.wl.n >= size:
+#            print('flush', self.wl.n)
+            self.dump(self.wl, size)
 
 
-    def dump(self, wl, fmode='a'):
+    def dump(self, wl, size=1, fmode='a'):
         """
 
         """
         with h5py.File(self.fname, fmode) as fobj:
-            self.snapshot_dumpper(wl, fobj)
+#            self.snapshot_dumpper(wl, fobj)
 #            self.worldline_dumpper(wl, fobj)
-        wl.clear()
+            self.worldline_dumpper(wl, fobj, size)
+#        wl.clear()
 
 
     def store_dset(self, group, name, data, dtype):
@@ -125,19 +135,39 @@ class HDF5IO(object):
                 self.store_dset(group, name, data, data.dtype)
 
 
-    def worldline_dumpper(self, wl, fobj):
+#    def worldline_dumpper(self, wl, fobj):
+#        base_group = fobj.require_group("Worldlines")
+#        main_group_name = wl.cls.__name__.lower()
+#        main_group = base_group.require_group(main_group_name)
+#        main_group.attrs['Class'] = pickle.dumps(wl.cls)
+#        for (k, v) in wl.items():
+#            if v:
+#                group = main_group.require_group(k)
+#                d = {}
+#                for obj in v:
+#                    for o in obj:
+#                        name = "wl"+str(int(o['id'])).zfill(wl.nz)
+#                        data = [o]
+#                        d.setdefault(name, type(data)()).extend(data)
+#                for (name, data) in d.items():
+#                    dtype = data[0].dtype
+#                    self.store_dset(group, name, data, dtype)
+
+
+    def worldline_dumpper(self, wl, fobj, size=1):
         base_group = fobj.require_group("Worldlines")
         main_group_name = wl.cls.__name__.lower()
         main_group = base_group.require_group(main_group_name)
         main_group.attrs['Class'] = pickle.dumps(wl.cls)
-        for (k, v) in wl.items():
-            if v:
+        for (k, d) in wl.items():
+            if d:
+                dtype = wl.dtype[k]
                 group = main_group.require_group(k)
-                array = np.concatenate(v)
-                for i in np.unique(array['id']):
-                    name = "wl"+str(i).zfill(wl.nz)
-                    data = array[array['id'] == i]
-                    self.store_dset(group, name, data, data.dtype)
+                for (i, data) in d.items():
+                    if len(data) >= size:
+                        name = "wl"+str(i).zfill(wl.nz)
+                        self.store_dset(group, name, data, dtype)
+                        d[i] = []
 
 
     def close(self):
