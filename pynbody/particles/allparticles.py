@@ -27,14 +27,14 @@ ALL_PARTICLE_TYPES = ["sph", "body", "blackhole"]
 def make_common_attrs(cls):
     def make_property(attr, doc):
         def fget(self):
-            seq = [obj.data[attr] for obj in self.objs if obj.n]
+            seq = [obj.data[attr] for obj in self.objs() if obj.n]
             if len(seq) == 1:
                 return seq[0]
             if len(seq) > 1:
                 return np.concatenate(seq)
-            return np.concatenate([obj.data[attr] for obj in self.objs])
+            return np.concatenate([obj.data[attr] for obj in self.objs()])
         def fset(self, value):
-            for obj in self.objs:
+            for obj in self.objs():
                 if obj.n:
                     try:
                         obj.data[attr] = value[:obj.n]
@@ -61,29 +61,39 @@ class Particles(AbstractNbodyMethods):
         """
         Initializer
         """
-        self.keys = []
-        self.objs = []
+        self.kind = {}
         self.n = 0
 
-        self.body = Body(nstar)
-        self.keys.append('body')
-        self.objs.append(self.body)
+        self.kind['body'] = Body(nstar)
         self.n += nstar
 
-        self.blackhole = BlackHole(nbh)
-        self.keys.append('blackhole')
-        self.objs.append(self.blackhole)
+        self.kind['blackhole'] = BlackHole(nbh)
         self.n += nbh
 
-        self.sph = Sph(nsph)
-        self.keys.append('sph')
-        self.objs.append(self.sph)
+        self.kind['sph'] = Sph(nsph)
         self.n += nsph
 
 
     @property
+    def body(self):
+        return self.kind['body']
+
+    @property
+    def blackhole(self):
+        return self.kind['blackhole']
+
+    @property
+    def sph(self):
+        return self.kind['sph']
+
+    def keys(self):
+        return self.kind.keys()
+
+    def objs(self):
+        return self.kind.values()
+
     def items(self):
-        return zip(self.keys, self.objs)
+        return self.kind.items()
 
 
     #
@@ -92,19 +102,19 @@ class Particles(AbstractNbodyMethods):
 
     def __str__(self):
         fmt = type(self).__name__+'([\n'
-        for (key, obj) in self.items:
+        for (key, obj) in self.items():
             fmt += '{0},\n'.format(obj)
         fmt += '])'
         return fmt
 
 
     def __repr__(self):
-        return str(dict(self.items))
+        return str(dict(self.items()))
 
 
     def __hash__(self):
         i = None
-        for obj in self.objs:
+        for obj in self.objs():
             if i is None:
                 i = hash(obj)
             else:
@@ -119,7 +129,7 @@ class Particles(AbstractNbodyMethods):
                 raise IndexError('index {0} out of bounds 0<=index<{1}'.format(slc, self.n))
             subset = type(self)()
             n = 0
-            for (key, obj) in self.items:
+            for (key, obj) in self.items():
                 if obj.n:
                     if n <= slc < n+obj.n:
                         subset.append(obj[slc-n])
@@ -134,7 +144,7 @@ class Particles(AbstractNbodyMethods):
             if stop is None: stop = self.n
             if start < 0: start = self.n + start
             if stop < 0: stop = self.n + stop
-            for (key, obj) in self.items:
+            for (key, obj) in self.items():
                 if obj.n:
                     if stop >= 0:
                         if start < obj.n:
@@ -152,7 +162,7 @@ class Particles(AbstractNbodyMethods):
                 return self
             if slc.any():
                 subset = type(self)()
-                for (key, obj) in self.items:
+                for (key, obj) in self.items():
                     if obj.n:
                         subset.append(obj[slc[:obj.n]])
                         slc = slc[obj.n:]
@@ -164,7 +174,7 @@ class Particles(AbstractNbodyMethods):
     def append(self, objs):
         if isinstance(objs, Particles):
             if objs.n:
-                for (key, obj) in objs.items:
+                for (key, obj) in objs.items():
                     if obj.n:
                         getattr(self, key).append(obj)
                 self.n = len(self)
@@ -190,7 +200,7 @@ class Particles(AbstractNbodyMethods):
         """
         mtot = self.total_mass
         rcom_shift = 0.0
-        for obj in self.objs:
+        for obj in self.objs():
             if obj.n:
                 if hasattr(obj, "get_rcom_pn_shift"):
                     rcom_shift += obj.get_rcom_pn_shift()
@@ -202,7 +212,7 @@ class Particles(AbstractNbodyMethods):
         """
         mtot = self.total_mass
         vcom_shift = 0.0
-        for obj in self.objs:
+        for obj in self.objs():
             if obj.n:
                 if hasattr(obj, "get_vcom_pn_shift"):
                     vcom_shift += obj.get_vcom_pn_shift()
@@ -216,7 +226,7 @@ class Particles(AbstractNbodyMethods):
 
         """
         lmom_shift = 0.0
-        for obj in self.objs:
+        for obj in self.objs():
             if obj.n:
                 if hasattr(obj, "get_lmom_pn_shift"):
                     lmom_shift += obj.get_lmom_pn_shift()
@@ -230,7 +240,7 @@ class Particles(AbstractNbodyMethods):
 
         """
         amom_shift = 0.0
-        for obj in self.objs:
+        for obj in self.objs():
             if obj.n:
                 if hasattr(obj, "get_amom_pn_shift"):
                     amom_shift += obj.get_amom_pn_shift()
@@ -244,7 +254,7 @@ class Particles(AbstractNbodyMethods):
 
         """
         ke_shift = 0.0
-        for obj in self.objs:
+        for obj in self.objs():
             if obj.n:
                 if hasattr(obj, "get_ke_pn_shift"):
                     ke_shift += obj.get_ke_pn_shift()

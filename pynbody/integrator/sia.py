@@ -65,7 +65,7 @@ class Base(object):
         Drift operator for PN quantities.
         """
         if not ip.blackhole.n: return
-        for obj in ip.objs:
+        for obj in ip.objs():
             if obj.n:
                 if hasattr(obj, "evolve_rcom_pn_shift"):
                     obj.evolve_rcom_pn_shift(tau)
@@ -77,7 +77,7 @@ class Base(object):
         """
         if not (ip.blackhole.n and jp.blackhole.n): return
         prev_pnacc = {}
-        for (key, obj) in ip.items:
+        for (key, obj) in ip.items():
             if obj.n:
                 if hasattr(obj, "evolve_lmom_pn_shift"):
                     obj.evolve_lmom_pn_shift(tau / 2)
@@ -92,7 +92,7 @@ class Base(object):
 
         ip.update_pnacc(jp, self.pn_order, self.clight)
 
-        for (key, obj) in ip.items:
+        for (key, obj) in ip.items():
             if obj.n:
                 if hasattr(obj, "pnacc"):
                     obj.pnacc = 2 * obj.pnacc - prev_pnacc[key]

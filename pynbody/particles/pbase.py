@@ -302,7 +302,6 @@ class Pbase(AbstractNbodyMethods):
         self.n = len(self)
 
 
-    @property
     def items(self):
         return [(type(self).__name__.lower(), self)]
 
