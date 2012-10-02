@@ -23,8 +23,8 @@ class WorldLine(object):
 
     """
     def __init__(self):
-#        self.kind = defaultdict(list)
-        self.kind = defaultdict(dict)
+        self.kind = defaultdict(list)
+#        self.kind = defaultdict(dict)
         self.dtype = {}
         self.nz = None
         self.cls = None
@@ -40,22 +40,22 @@ class WorldLine(object):
         if self.cls is None: self.cls = type(p)
         if self.nz is None: self.nz = int(math.log10(p.n+1))+2
 
-#        for (key, obj) in p.items():
-#            if obj.n:
-#                data = obj.data.copy()
-#                self.kind[key].append(data)
-#                self.n += len(data)
-
-
-        self.n = 0
         for (key, obj) in p.items():
             if obj.n:
-                self.dtype[key] = obj.data.dtype
-                d = self.kind[key]
-                for data in obj.data.copy():
-                    i = data[0]
-                    d.setdefault(i, []).append(data)
-                    self.n = max(self.n, len(d[i]))
+                data = obj.data.copy()
+                self.kind[key].append(data)
+                self.n += len(data)
+
+
+#        self.n = 0
+#        for (key, obj) in p.items():
+#            if obj.n:
+#                self.dtype[key] = obj.data.dtype
+#                d = self.kind[key]
+#                for data in obj.data.copy():
+#                    i = data[0]
+#                    d.setdefault(i, []).append(data)
+#                    self.n = max(self.n, len(d[i]))
 
 
     def keys(self):
@@ -102,10 +102,10 @@ class HDF5IO(object):
 
         """
         with h5py.File(self.fname, fmode) as fobj:
-#            self.snapshot_dumpper(wl, fobj)
+            self.snapshot_dumpper(wl, fobj)
 #            self.worldline_dumpper(wl, fobj)
-            self.worldline_dumpper(wl, fobj, size)
-#        wl.clear()
+#            self.worldline_dumpper(wl, fobj, size)
+        wl.clear()
 
 
     def store_dset(self, group, name, data, dtype):
@@ -174,7 +174,7 @@ class HDF5IO(object):
         self.fobj.close()
 
 
-    def load(self):
+    def load2(self):
         """
 
         """
@@ -187,6 +187,23 @@ class HDF5IO(object):
                 obj.set_state(v[:])
                 particles.append(obj)
         return particles
+
+
+    def load(self):
+        """
+
+        """
+        with h5py.File(self.fname, 'r') as fobj:
+#            base_group = fobj.require_group("Snapshots")
+#            group_name = base_group.keys()[0]
+#            group = base_group.require_group(group_name)
+            group = fobj["Snapshots"]["particles"]
+            p = pickle.loads(group.attrs['Class'])()
+            for (k, v) in group.items():
+                obj = type(p.kind[k])()
+                obj.set_state(v[:])
+                p.append(obj)
+        return p
 
 
     def to_psdf(self):
