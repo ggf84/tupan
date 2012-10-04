@@ -17,8 +17,9 @@ class IO(object):
 
     PROVIDED_FORMATS = ['hdf5', 'psdf']
 
-    def __init__(self, fname, output_format=None):
+    def __init__(self, fname, fmode, output_format=None):
         self.fname = fname
+        self.fmode = fmode
         self.output_format = output_format
 
 
@@ -65,6 +66,23 @@ class IO(object):
             if not fname.endswith(".hdf5"):
                 fname += ".hdf5"
             hdf5io.HDF5IO(fname).dump(*args, **kwargs)
+        else:
+            raise NotImplementedError('Unknown format: {}. '
+                                      'Choose from: {}'.format(self.output_format,
+                                       self.PROVIDED_FORMATS))
+
+
+    def dump_snapshot(self, *args, **kwargs):
+        fname = self.fname
+        fmode = self.fmode
+        if self.output_format == "psdf":
+            if not fname.endswith(".psdf"):
+                fname += ".psdf"
+            psdfio.PSDFIO(fname, fmode).dump_snapshot(*args, **kwargs)
+        elif self.output_format == "hdf5":
+            if not fname.endswith(".hdf5"):
+                fname += ".hdf5"
+            hdf5io.HDF5IO(fname, fmode).dump_snapshot(*args, **kwargs)
         else:
             raise NotImplementedError('Unknown format: {}. '
                                       'Choose from: {}'.format(self.output_format,

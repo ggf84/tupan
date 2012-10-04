@@ -77,8 +77,9 @@ class HDF5IO(object):
     """
 
     """
-    def __init__(self, fname):
+    def __init__(self, fname, fmode='a'):
         self.fname = fname
+        self.fmode = fmode
 
 
     def setup(self):
@@ -108,6 +109,14 @@ class HDF5IO(object):
         wl.clear()
 
 
+    def dump_snapshot(self, p, snap_number=None):
+        """
+
+        """
+        with h5py.File(self.fname, self.fmode) as fobj:
+            self.snapshot_dumpper(p, snap_number, fobj)
+
+
     def store_dset(self, group, name, data, dtype):
         olen = len(group[name]) if name in group else 0
         nlen = olen + len(data)
@@ -123,15 +132,18 @@ class HDF5IO(object):
         dset[olen:] = data
 
 
-    def snapshot_dumpper(self, wl, fobj):
-        base_group = fobj.require_group("Snapshots")
-        group_name = wl.cls.__name__.lower()
+    def snapshot_dumpper(self, p, snap_number, fobj):
+        base_name = "Snapshot"
+        if isinstance(snap_number, int):
+            base_name += "_"+str(snap_number).zfill(6)
+        base_group = fobj.require_group(base_name)
+        group_name = type(p).__name__.lower()
         group = base_group.require_group(group_name)
-        group.attrs['Class'] = pickle.dumps(wl.cls)
-        for (k, v) in wl.items():
-            if v:
-                name = k
-                data = np.concatenate(v)
+        group.attrs['Class'] = pickle.dumps(type(p))
+        for (key, obj) in p.items():
+            if obj.n:
+                name = key
+                data = obj.data
                 self.store_dset(group, name, data, data.dtype)
 
 
@@ -174,7 +186,7 @@ class HDF5IO(object):
         self.fobj.close()
 
 
-    def load2(self):
+    def load(self):
         """
 
         """
@@ -189,7 +201,7 @@ class HDF5IO(object):
         return particles
 
 
-    def load(self):
+    def load2(self):
         """
 
         """
