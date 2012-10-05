@@ -23,8 +23,8 @@ class WorldLine(object):
 
     """
     def __init__(self):
-        self.kind = defaultdict(list)
-#        self.kind = defaultdict(dict)
+#        self.kind = defaultdict(list)
+        self.kind = defaultdict(dict)
         self.dtype = {}
         self.nz = None
         self.cls = None
@@ -40,22 +40,22 @@ class WorldLine(object):
         if self.cls is None: self.cls = type(p)
         if self.nz is None: self.nz = int(math.log10(p.n+1))+2
 
-        for (key, obj) in p.items():
-            if obj.n:
-                data = obj.data.copy()
-                self.kind[key].append(data)
-                self.n += len(data)
-
-
-#        self.n = 0
 #        for (key, obj) in p.items():
 #            if obj.n:
-#                self.dtype[key] = obj.data.dtype
-#                d = self.kind[key]
-#                for data in obj.data.copy():
-#                    i = data[0]
-#                    d.setdefault(i, []).append(data)
-#                    self.n = max(self.n, len(d[i]))
+#                data = obj.data.copy()
+#                self.kind[key].append(data)
+#                self.n += len(data)
+
+
+        self.n = 0
+        for (key, obj) in p.items():
+            if obj.n:
+                self.dtype[key] = obj.data.dtype
+                d = self.kind[key]
+                for data in obj.data.copy():
+                    i = data[0]
+                    d.setdefault(i, []).append(data)
+                    self.n = max(self.n, len(d[i]))
 
 
     def keys(self):
@@ -95,26 +95,11 @@ class HDF5IO(object):
     def flush(self, size=1):
         if self.wl.n >= size:
 #            print('flush', self.wl.n)
-            self.dump(self.wl, size)
+            self.dump_worldline(self.wl, size)
 
 
-    def dump(self, wl, size=1, fmode='a'):
-        """
-
-        """
-        with h5py.File(self.fname, fmode) as fobj:
-            self.snapshot_dumpper(wl, fobj)
-#            self.worldline_dumpper(wl, fobj)
-#            self.worldline_dumpper(wl, fobj, size)
-        wl.clear()
-
-
-    def dump_snapshot(self, p, snap_number=None):
-        """
-
-        """
-        with h5py.File(self.fname, self.fmode) as fobj:
-            self.snapshot_dumpper(p, snap_number, fobj)
+    def close(self):
+        self.fobj.close()
 
 
     def store_dset(self, group, name, data, dtype):
@@ -132,7 +117,15 @@ class HDF5IO(object):
         dset[olen:] = data
 
 
-    def snapshot_dumpper(self, p, snap_number, fobj):
+    def dump_snapshot(self, p, snap_number=None):
+        """
+
+        """
+        with h5py.File(self.fname, self.fmode) as fobj:
+            self.snapshot_dumpper(fobj, p, snap_number)
+
+
+    def snapshot_dumpper(self, fobj, p, snap_number):
         base_name = "Snapshot"
         if isinstance(snap_number, int):
             base_name += "_"+str(snap_number).zfill(6)
@@ -147,26 +140,15 @@ class HDF5IO(object):
                 self.store_dset(group, name, data, data.dtype)
 
 
-#    def worldline_dumpper(self, wl, fobj):
-#        base_group = fobj.require_group("Worldlines")
-#        main_group_name = wl.cls.__name__.lower()
-#        main_group = base_group.require_group(main_group_name)
-#        main_group.attrs['Class'] = pickle.dumps(wl.cls)
-#        for (k, v) in wl.items():
-#            if v:
-#                group = main_group.require_group(k)
-#                d = {}
-#                for obj in v:
-#                    for o in obj:
-#                        name = "wl"+str(int(o['id'])).zfill(wl.nz)
-#                        data = [o]
-#                        d.setdefault(name, type(data)()).extend(data)
-#                for (name, data) in d.items():
-#                    dtype = data[0].dtype
-#                    self.store_dset(group, name, data, dtype)
+    def dump_worldline(self, wl, size=1):
+        """
+
+        """
+        with h5py.File(self.fname, self.fmode) as fobj:
+            self.worldline_dumpper(fobj, wl, size)
 
 
-    def worldline_dumpper(self, wl, fobj, size=1):
+    def worldline_dumpper(self, fobj, wl, size=1):
         base_group = fobj.require_group("Worldlines")
         main_group_name = wl.cls.__name__.lower()
         main_group = base_group.require_group(main_group_name)
@@ -182,34 +164,39 @@ class HDF5IO(object):
                         d[i] = []
 
 
-    def close(self):
-        self.fobj.close()
+#    def load(self):
+#        """
+#
+#        """
+#        with h5py.File(self.fname, 'r') as fobj:
+#            group_name = fobj.keys()[0]
+#            group = fobj.require_group(group_name)
+#            particles = pickle.loads(group.attrs['Class'])()
+#            for (k, v) in group.items():
+#                obj = type(particles.kind[k])()
+#                obj.set_state(v[:])
+#                particles.append(obj)
+#        return particles
 
 
-    def load(self):
+    def load_worldline(self, wl_number):
         """
 
         """
-        with h5py.File(self.fname, 'r') as fobj:
-            group_name = fobj.keys()[0]
-            group = fobj.require_group(group_name)
-            particles = pickle.loads(group.attrs['Class'])()
-            for (k, v) in group.items():
-                obj = type(particles.kind[k])()
-                obj.set_state(v[:])
-                particles.append(obj)
-        return particles
+        with h5py.File(self.fname, self.fmode) as fobj:
+            pass
+        raise NotImplementedError()
 
 
-    def load2(self):
+    def load_snapshot(self, snap_number=None):
         """
 
         """
-        with h5py.File(self.fname, 'r') as fobj:
-#            base_group = fobj.require_group("Snapshots")
-#            group_name = base_group.keys()[0]
-#            group = base_group.require_group(group_name)
-            group = fobj["Snapshots"]["particles"]
+        with h5py.File(self.fname, self.fmode) as fobj:
+            base_name = "Snapshot"
+            if isinstance(snap_number, int):
+                base_name += "_"+str(snap_number).zfill(6)
+            group = fobj[base_name]["particles"]
             p = pickle.loads(group.attrs['Class'])()
             for (k, v) in group.items():
                 obj = type(p.kind[k])()

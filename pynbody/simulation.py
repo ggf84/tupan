@@ -147,9 +147,9 @@ class Simulation(object):
 
         # Read the initial conditions
         fname = self.args.input_file
-        particles = IO(fname, 'r').load()
+        particles = IO(fname, 'r').load_snapshot()
 
-        # Initializes snapshots output
+        # Initializes output file
         self.io = IO("snapshots", 'a', output_format=self.args.output_format)
 
         # Initializes the diagnostic report of the simulation

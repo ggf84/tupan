@@ -163,7 +163,6 @@ class BIOS(Base):
 
         if self.reporter:
             self.reporter.report(self.time, p)
-        worldline = self.dumpper
 
         p = self.do_step(p, tau)
         self.time += tau

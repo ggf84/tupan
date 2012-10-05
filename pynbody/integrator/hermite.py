@@ -124,7 +124,6 @@ class Hermite(object):
 
         if self.reporter:
             self.reporter.report(self.time, p)
-        worldline = self.dumpper
 
         p = self.pec(2, p, tau)
         self.time += tau

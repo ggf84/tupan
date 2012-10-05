@@ -24,8 +24,8 @@ if __name__ == "__main__":
         p.make_plummer()
 
         fname = "plummer"+str(numBodies).zfill(4)
-        io = IO(fname, 'hdf5')
-        io.dump(p.particles, fmode='w')
+        io = IO(fname, 'w', 'hdf5')
+        io.dump_snapshot(p.particles)
 
         p.show()
 
