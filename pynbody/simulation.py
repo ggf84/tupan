@@ -150,7 +150,8 @@ class Simulation(object):
         particles = IO(fname, 'r').load_snapshot()
 
         # Initializes output file
-        self.io = IO("snapshots", 'a', output_format=self.args.output_format)
+        fname = self.args.output_file
+        self.io = IO(fname, 'a')
 
         # Initializes the diagnostic report of the simulation
         self.dia = Diagnostic(self.args.log_file,
@@ -283,6 +284,14 @@ def parse_args():
                              "must be read from. The file format, if supported, "
                              "is automatically discovered (type: str, default: None)."
                        )
+    newrun.add_argument("-o", "--output_file",
+                        type=str,
+                        default=None,
+                        required=True,
+#                        choices=IO.PROVIDED_FORMATS,
+                        help="The name of the output file to store the simulation data."
+                             "is automatically discovered (type: str, default: None)."
+                       )
     newrun.add_argument("-m", "--meth",
                         type=str,
                         default=None,
@@ -323,13 +332,6 @@ def parse_args():
                         default=None,
                         help="Speed of light value to use in Post-Newtonian"
                              "corrections (type: int, default: None)."
-                       )
-    newrun.add_argument("-o", "--output_format",
-                        type=str,
-                        default="hdf5",
-                        choices=IO.PROVIDED_FORMATS,
-                        help="Output format to store the particle stream. "
-                             "(type: str, default: 'hdf5')."
                        )
     newrun.add_argument("--log_file",
                         type=str,
