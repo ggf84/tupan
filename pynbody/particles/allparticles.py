@@ -33,6 +33,10 @@ def make_common_attrs(cls):
             if len(seq) > 1:
                 return np.concatenate(seq)
             return np.concatenate([obj.data[attr] for obj in self.objs()])
+
+#            seq = [v for obj in self.objs() for v in obj.data[attr]]
+#            return np.array(seq)
+
         def fset(self, value):
             for obj in self.objs():
                 if obj.n:
@@ -41,6 +45,17 @@ def make_common_attrs(cls):
                         value = value[obj.n:]
                     except:
                         obj.data[attr] = value
+
+#            for obj in self.objs():
+#                if obj.n:
+#                    try:
+#                        items = value[:obj.n]
+#                        value = value[obj.n:]
+#                    except:
+#                        items = [value]*obj.n
+#                    for i, v in enumerate(items):
+#                        obj.data[attr][i] = v
+
         def fdel(self):
             raise NotImplementedError()
         return property(fget, fset, fdel, doc)

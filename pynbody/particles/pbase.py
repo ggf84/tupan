@@ -305,6 +305,10 @@ class Pbase(AbstractNbodyMethods):
     def items(self):
         return [(type(self).__name__.lower(), self)]
 
+    @property
+    def kind(self):
+        return dict(self.items())
+
 
     #
     # miscellaneous methods
