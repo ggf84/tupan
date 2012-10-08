@@ -19,8 +19,8 @@ from .utils.timing import decallmethods, timings
 __all__ = ["Extensions"]
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='spam.log', filemode='w',
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logging.basicConfig(filename="spam.log", filemode='w',
+                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                     level=logging.DEBUG)
 
 
@@ -54,13 +54,13 @@ class CLModule(object):
 
 
     def build(self, junroll=8):
-        prec = 'double' if self.env.dtype.char is 'd' else 'single'
+        prec = "double" if self.env.dtype.char is 'd' else "single"
         logger.debug("Building %s precision CL extension module.", prec)
 
         # setting options
         options = " -I {path}".format(path=self.path)
         options += " -D JUNROLL={junroll}".format(junroll=junroll)
-        if prec is 'double':
+        if prec is "double":
             options += " -D DOUBLE"
         if self.env.fast_math:
             options += " -cl-fast-relaxed-math"
@@ -145,7 +145,7 @@ class CLKernel(object):
                                 size=arr.nbytes)
             (in_buf, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buf,
                                                  mapf.WRITE, 0, arr.shape,
-                                                 self.env.dtype, 'C')
+                                                 self.env.dtype, "C")
 #            return (dev_buf, in_buf)
             return (pin_buf, in_buf)
 
@@ -187,7 +187,7 @@ class CLKernel(object):
                                 size=arr.nbytes)
             (out_buf, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buf,
                                                   mapf.READ, 0, arr.shape,
-                                                  self.env.dtype, 'C')
+                                                  self.env.dtype, "C")
 #            return (dev_buf, out_buf)
             return (pin_buf, out_buf)
 
@@ -244,10 +244,10 @@ class CModule(object):
 
 
     def build(self):
-        prec = 'double' if self.env.dtype.char is 'd' else 'single'
+        prec = "double" if self.env.dtype.char is 'd' else "single"
         logger.debug("Building %s precision C extension module.", prec)
 
-        if prec is 'double':
+        if prec is "double":
             from pynbody.lib import libc64_gravity as program
         else:
             from pynbody.lib import libc32_gravity as program
@@ -304,34 +304,34 @@ class CKernel(object):
 
 
 
-libkernels = {'sp': {'c': None, 'cl': None}, 'dp': {'c': None, 'cl': None}}
-libkernels['sp']['c'] = CModule(CEnv(dtype='f', fast_math=True)).build()
-libkernels['sp']['cl'] = CLModule(CLEnv(dtype='f', fast_math=True)).build(junroll=8)
-libkernels['dp']['c'] = CModule(CEnv(dtype='d', fast_math=True)).build()
-libkernels['dp']['cl'] = CLModule(CLEnv(dtype='d', fast_math=True)).build(junroll=8)
+libkernels = {"sp": {"c": None, "cl": None}, "dp": {"c": None, "cl": None}}
+libkernels["sp"]["c"] = CModule(CEnv(dtype='f', fast_math=True)).build()
+libkernels["sp"]["cl"] = CLModule(CLEnv(dtype='f', fast_math=True)).build(junroll=8)
+libkernels["dp"]["c"] = CModule(CEnv(dtype='d', fast_math=True)).build()
+libkernels["dp"]["cl"] = CLModule(CLEnv(dtype='d', fast_math=True)).build(junroll=8)
 
 
 def get_extension(use_sp=False, use_cl=False):
     if use_sp:
-        prec = 'single'
+        prec = "single"
         if use_cl:
             logger.debug("Using %s precision CL extension module.", prec)
-            return libkernels['sp']['cl']
+            return libkernels["sp"]["cl"]
         else:
             logger.debug("Using %s precision C extension module.", prec)
-            return libkernels['sp']['c']
+            return libkernels["sp"]["c"]
     else:
-        prec = 'double'
+        prec = "double"
         if use_cl:
             logger.debug("Using %s precision CL extension module.", prec)
-            return libkernels['dp']['cl']
+            return libkernels["dp"]["cl"]
         else:
             logger.debug("Using %s precision C extension module.", prec)
-            return libkernels['dp']['c']
+            return libkernels["dp"]["c"]
 
 
-use_cl = True if '--use_cl' in sys.argv else False
-use_sp = True if '--use_sp' in sys.argv else False
+use_cl = True if "--use_cl" in sys.argv else False
+use_sp = True if "--use_sp" in sys.argv else False
 
 kernels = get_extension(use_sp=use_sp, use_cl=use_cl)
 

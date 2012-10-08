@@ -15,7 +15,7 @@ from ..lib.utils.timing import decallmethods, timings
 from ..lib.utils.memoize import cache
 
 
-__all__ = ['Pbase']
+__all__ = ["Pbase"]
 
 
 def make_attrs(cls):
@@ -24,7 +24,7 @@ def make_attrs(cls):
         def fset(self, value): self.data[attr] = value
         def fdel(self): raise NotImplementedError()
         return property(fget, fset, fdel, doc)
-    attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.attrs)
+    attrs = ((i[0], cls.__name__+"\'s "+i[2]) for i in cls.attrs)
     for (attr, doc) in attrs:
         setattr(cls, attr, make_property(attr, doc))
     return cls
@@ -54,16 +54,16 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
     This class holds common methods for particles in n-body systems.
     """
     common_attrs = [# name, dtype, doc
-                    ('id', 'u8', 'index'),
-                    ('mass', 'f8', 'mass'),
-                    ('pos', '3f8', 'position'),
-                    ('vel', '3f8', 'velocity'),
-                    ('acc', '3f8', 'acceleration'),
-                    ('phi', 'f8', 'potential'),
-                    ('eps2', 'f8', 'squared softening'),
-                    ('time', 'f8', 'current time'),
-                    ('tstep', 'f8', 'time step'),
-                    ('nstep', 'u8', 'step number'),
+                    ("id", "u8", "index"),
+                    ("mass", "f8", "mass"),
+                    ("pos", "3f8", "position"),
+                    ("vel", "3f8", "velocity"),
+                    ("acc", "3f8", "acceleration"),
+                    ("phi", "f8", "potential"),
+                    ("eps2", "f8", "squared softening"),
+                    ("time", "f8", "current time"),
+                    ("tstep", "f8", "time step"),
+                    ("nstep", "u8", "step number"),
                    ]
     common_names = [_[0] for _ in common_attrs]
     common_dtype = [(_[0], _[1]) for _ in common_attrs]
@@ -311,23 +311,23 @@ class Pbase(AbstractNbodyMethods):
     #
 
     def __str__(self):
-        fmt = type(self).__name__+'(['
+        fmt = type(self).__name__+"(["
         if self.n:
-            fmt += '\n'
+            fmt += "\n"
             for obj in self:
-                fmt += '{\n'
+                fmt += "{\n"
                 for name in obj.data.dtype.names:
-                    fmt += ' {0}: {1},\n'.format(name, getattr(obj, name).tolist()[0])
-                fmt += '},\n'
-        fmt += '])'
+                    fmt += " {0}: {1},\n".format(name, getattr(obj, name).tolist()[0])
+                fmt += "},\n"
+        fmt += "])"
         return fmt
 
 
     def __repr__(self):
-        fmt = type(self).__name__+'('
+        fmt = type(self).__name__+"("
         if self.n: fmt += str(self.data)
-        else: fmt += '[]'
-        fmt += ')'
+        else: fmt += "[]"
+        fmt += ")"
         return fmt
 
 

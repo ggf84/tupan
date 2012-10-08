@@ -44,7 +44,7 @@ def make_common_attrs(cls):
         def fdel(self):
             raise NotImplementedError()
         return property(fget, fset, fdel, doc)
-    attrs = ((i[0], cls.__name__+'\'s '+i[2]) for i in cls.common_attrs)
+    attrs = ((i[0], cls.__name__+"\'s "+i[2]) for i in cls.common_attrs)
     for (attr, doc) in attrs:
         setattr(cls, attr, make_property(attr, doc))
     return cls
@@ -64,27 +64,27 @@ class Particles(AbstractNbodyMethods):
         self.kind = {}
         self.n = 0
 
-        self.kind['body'] = Body(nstar)
+        self.kind["body"] = Body(nstar)
         self.n += nstar
 
-        self.kind['blackhole'] = BlackHole(nbh)
+        self.kind["blackhole"] = BlackHole(nbh)
         self.n += nbh
 
-        self.kind['sph'] = Sph(nsph)
+        self.kind["sph"] = Sph(nsph)
         self.n += nsph
 
 
     @property
     def body(self):
-        return self.kind['body']
+        return self.kind["body"]
 
     @property
     def blackhole(self):
-        return self.kind['blackhole']
+        return self.kind["blackhole"]
 
     @property
     def sph(self):
-        return self.kind['sph']
+        return self.kind["sph"]
 
     def keys(self):
         return self.kind.keys()
@@ -101,10 +101,10 @@ class Particles(AbstractNbodyMethods):
     #
 
     def __str__(self):
-        fmt = type(self).__name__+'([\n'
+        fmt = type(self).__name__+"([\n"
         for (key, obj) in self.items():
-            fmt += '{0},\n'.format(obj)
-        fmt += '])'
+            fmt += "{0},\n".format(obj)
+        fmt += "])"
         return fmt
 
 
@@ -126,7 +126,7 @@ class Particles(AbstractNbodyMethods):
         if isinstance(slc, int):
             if slc < 0: slc = self.n + slc
             if abs(slc) > self.n-1:
-                raise IndexError('index {0} out of bounds 0<=index<{1}'.format(slc, self.n))
+                raise IndexError("index {0} out of bounds 0<=index<{1}".format(slc, self.n))
             subset = type(self)()
             n = 0
             for (key, obj) in self.items():
@@ -176,15 +176,15 @@ class Particles(AbstractNbodyMethods):
             if objs.n:
                 for (key, obj) in objs.items():
                     if obj.n:
-                        getattr(self, key).append(obj)
+                        self.kind[key].append(obj)
                 self.n = len(self)
         elif isinstance(objs, (Body, BlackHole, Sph)):
             if objs.n:
                 key = type(objs).__name__.lower()
-                getattr(self, key).append(objs)
+                self.kind[key].append(objs)
                 self.n = len(self)
         else:
-            raise TypeError("{} can not append obj: {}".format(type(self).__name__, type(objs)))
+            raise TypeError("'{}' can not append obj of type: '{}'".format(type(self).__name__, type(objs)))
 
 
 

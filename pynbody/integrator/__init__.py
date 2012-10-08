@@ -15,7 +15,7 @@ class Integrator(object):
     """
 
     """
-    PROVIDED_METHODS = ['bios', 'hermite', 'adapthermite']
+    PROVIDED_METHODS = ["bios", "hermite", "adapthermite"]
     PROVIDED_METHODS.extend(sia.SIA.PROVIDED_METHODS)
 
     def __init__(self, eta, time, particles, **kwargs):

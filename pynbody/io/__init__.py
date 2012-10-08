@@ -14,42 +14,11 @@ class IO(object):
     """
 
     """
-
-    PROVIDED_FORMATS = ['hdf5', 'psdf']
+    PROVIDED_FORMATS = ["hdf5", "psdf"]
 
     def __init__(self, fname, fmode):
         self.fname = fname
         self.fmode = fmode
-
-
-    def setup(self, *args, **kwargs):
-        fname = self.fname
-        fmode = self.fmode
-        if fname.endswith(".psdf"):
-            self.io_obj = psdfio.PSDFIO(fname, fmode).setup(*args, **kwargs)
-        elif fname.endswith(".hdf5"):
-            self.io_obj = hdf5io.HDF5IO(fname, fmode).setup(*args, **kwargs)
-        else:
-            raise NotImplementedError("Unknown format: '{}'. "
-                                      "Choose from: {}".format(fname.rpartition('.')[-1],
-                                       self.PROVIDED_FORMATS))
-        return self
-
-
-    def append(self, *args, **kwargs):
-        self.io_obj.append(*args, **kwargs)
-
-
-    def flush(self, *args, **kwargs):
-        self.io_obj.flush(*args, **kwargs)
-
-
-    def close(self, *args, **kwargs):
-        self.io_obj.close(*args, **kwargs)
-
-
-    def dumpper(self, *args, **kwargs):
-        self.io_obj.dumpper(*args, **kwargs)
 
 
     def dump_snapshot(self, *args, **kwargs):
@@ -129,7 +98,7 @@ class IO(object):
                 return loader(fname, fmode).to_psdf()
             except Exception:
                 pass
-        raise ValueError('This file is already in \'psdf\' format!')
+        raise ValueError("This file is already in 'psdf' format!")
 
 
     def to_hdf5(self):
@@ -141,7 +110,7 @@ class IO(object):
                 return loader(fname, fmode).to_hdf5()
             except Exception:
                 pass
-        raise ValueError('This file is already in \'hdf5\' format!')
+        raise ValueError("This file is already in 'hdf5' format!")
 
 
 
@@ -156,30 +125,30 @@ class IO(object):
         #######################################################################
         import matplotlib.pyplot as plt
         from pynbody.io import IO
-        p0 = IO('snapshots0.hdf5').load()
-        p1 = IO('snapshots1.hdf5').load()
-        p = IO('snapshots.hdf5').load()
+        p0 = IO("snapshots0.hdf5").load()
+        p1 = IO("snapshots1.hdf5").load()
+        p = IO("snapshots.hdf5").load()
 
         index = p[p.nstep == p.nstep.max()].id[0]
         a0 = p0[p0.id == index]
         a1 = p1[p1.id == index]
         a = p[p.id == index]
 
-        plt.plot(a0.pos[:,0], a0.pos[:,1], label='PBaSS: l=1')
-        plt.plot(a1.pos[:,0], a1.pos[:,1], label='PBaSS: l=8')
-        plt.plot(a.pos[:,0], a.pos[:,1], label='PBaSS: l=64')
-        plt.legend(loc='best', shadow=True,
+        plt.plot(a0.pos[:,0], a0.pos[:,1], label="PBaSS: l=1")
+        plt.plot(a1.pos[:,0], a1.pos[:,1], label="PBaSS: l=8")
+        plt.plot(a.pos[:,0], a.pos[:,1], label="PBaSS: l=64")
+        plt.legend(loc="best", shadow=True,
                    fancybox=True, borderaxespad=0.75)
         plt.show()
 
         axis = 0
         x = np.linspace(0,25,1000000)
         f = interpolate.UnivariateSpline(a1.time, a1.pos[:,axis], s=0, k=2)
-        plt.plot(a0.time, a0.pos[:,axis], label='PBaSS: l=1')
-        plt.plot(a1.time, a1.pos[:,axis], label='PBaSS: l=8')
-        plt.plot(a.time, a.pos[:,axis], label='PBass: l=64')
-        plt.plot(x, f(x), label='interp. function')
-        plt.legend(loc='best', shadow=True,
+        plt.plot(a0.time, a0.pos[:,axis], label="PBaSS: l=1")
+        plt.plot(a1.time, a1.pos[:,axis], label="PBaSS: l=8")
+        plt.plot(a.time, a.pos[:,axis], label="PBass: l=64")
+        plt.plot(x, f(x), label="interp. function")
+        plt.legend(loc="best", shadow=True,
                    fancybox=True, borderaxespad=0.75)
         plt.show()
         #######################################################################

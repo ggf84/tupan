@@ -22,14 +22,14 @@ class BlackHole(Pbase):
     A base class for BlackHoles.
     """
     special_attrs = [# name, dtype, doc
-                     ('radius', 'f8', 'radius'),
-                     ('pnacc', '3f8', 'post-Newtonian acceleration'),
-                     ('spin', '3f8', 'spin'),
+                     ("radius", "f8", "radius"),
+                     ("pnacc", "3f8", "post-Newtonian acceleration"),
+                     ("spin", "3f8", "spin"),
                      # auxiliary attributes
-                     ('ke_pn_shift', 'f8', 'post-Newtonian correction for the kinetic energy'),
-                     ('lmom_pn_shift', '3f8', 'post-Newtonian correction for the linear momentum'),
-                     ('amom_pn_shift', '3f8', 'post-Newtonian correction for the angular momentum'),
-                     ('rcom_pn_shift', '3f8', 'post-Newtonian correction for the center-of-mass position'),
+                     ("ke_pn_shift", "f8", "post-Newtonian correction for the kinetic energy"),
+                     ("lmom_pn_shift", "3f8", "post-Newtonian correction for the linear momentum"),
+                     ("amom_pn_shift", "3f8", "post-Newtonian correction for the angular momentum"),
+                     ("rcom_pn_shift", "3f8", "post-Newtonian correction for the center-of-mass position"),
                     ]
     special_names = [_[0] for _ in special_attrs]
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
@@ -47,13 +47,19 @@ class BlackHole(Pbase):
 
     ### pn-gravity
 
-    def update_pnacc(self, objs, pn_order, clight):
+    def get_pnacc(self, objs, pn_order, clight):
         """
-        Update individual post-newtonian gravitational acceleration due j-particles.
+        Get the individual post-newtonian gravitational acceleration due to other particles.
         """
         gravity.pnacc.set_args(self, objs, pn_order, clight)
         gravity.pnacc.run()
-        self.pnacc = gravity.pnacc.get_result()
+        return gravity.pnacc.get_result()
+
+    def update_pnacc(self, objs, pn_order, clight):
+        """
+        Update individual post-newtonian gravitational acceleration due to other particles.
+        """
+        self.pnacc = self.get_pnacc(objs, pn_order, clight)
 
 
     ### evolves shift in quantities due to post-newtonian terms

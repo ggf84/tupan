@@ -132,7 +132,6 @@ class BIOS(Base):
 
         if self.dumpper:
             self.snap_number = 0
-            self.dumpper.setup()
             self.dumpper.dump_snapshot(p, self.snap_number)
 
         self.is_initialized = True

@@ -21,9 +21,9 @@ class Body(Pbase):
     A base class for Stars.
     """
     special_attrs = [# name, dtype, doc
-                     ('age', 'f8', 'age'),
-                     ('radius', 'f8', 'radius'),
-                     ('metallicity', 'f8', 'metallicity'),
+                     ("age", "f8", "age"),
+                     ("radius", "f8", "radius"),
+                     ("metallicity", "f8", "metallicity"),
                     ]
     special_names = [_[0] for _ in special_attrs]
     special_dtype = [(_[0], _[1]) for _ in special_attrs]

@@ -11,7 +11,7 @@ from .pbase import Pbase, make_attrs
 from ..lib.utils.timing import decallmethods, timings
 
 
-__all__ = ['Sph']
+__all__ = ["Sph"]
 
 
 @decallmethods(timings)

@@ -13,7 +13,7 @@ import inspect
 import functools
 
 
-__all__ = ['Timer', 'decallmethods', 'timings']
+__all__ = ["Timer", "decallmethods", "timings"]
 
 
 class Timer(object):
@@ -47,6 +47,7 @@ class Timing(object):
         self.timings = {}
         self.is_enabled = is_enabled
 
+
     def collector(self, module, name, elapsed):
         if module in self.timings:
             if name in self.timings[module]:
@@ -66,10 +67,11 @@ class Timing(object):
                 self.timings[module][name]["count"] = 1
                 self.timings[module][name]["total"] = elapsed
 
+
     def __call__(self, func):
         if not self.is_enabled:
             return func
-        if func.func_code.co_name == 'wrapper':
+        if func.func_code.co_name == "wrapper":
             return func
         timer = Timer()
         @functools.wraps(func)
@@ -91,6 +93,7 @@ class Timing(object):
                                     # becomes unnecessary with functools module
                                     # from Python v3.2+.
         return wrapper
+
 
     def __str__(self):
         mcount = 0
@@ -127,7 +130,7 @@ def decallmethods(decorator, prefix=''):
     return wrapper
 
 
-profile = True if '--profile' in sys.argv else False
+profile = True if "--profile" in sys.argv else False
 
 timings = Timing(profile)
 
