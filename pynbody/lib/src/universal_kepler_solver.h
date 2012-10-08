@@ -191,7 +191,7 @@ fprimeprime(const REAL s,
 }
 
 
-//#define ORDER 5
+#define ORDER 4
 inline int
 laguerre(REAL x0,
          REAL *x,
@@ -204,26 +204,85 @@ laguerre(REAL x0,
     *x = x0;
     do {
         REAL fv = f(*x, arg);
-//        if (fv == 0) return -3;
         REAL dfv = fprime(*x, arg);
         REAL ddfv = fprimeprime(*x, arg);
-//        REAL g = dfv / fv;
-//        REAL g2 = g * g;
-//        REAL h = g2 - ddfv / fv;
-//        REAL d = (g + SIGN(g) * sqrt(fabs((ORDER - 1) * (ORDER * h - g2))));
-//        if (d == 0) return -4;
-//        delta = -ORDER / d;
 
-        REAL g = 2 * fv * dfv;
-        REAL h = (2 * dfv * dfv - fv * ddfv);
-        if (h == 0) return -3;
+        REAL a = dfv;
+        REAL a2 = a * a;
+        REAL b = a2 - fv * ddfv;
+        REAL g = ORDER * fv;
+        REAL h = a + SIGN(a) * sqrt(fabs((ORDER - 1) * (ORDER * b - a2)));
+        if (h == 0) return -1;
         delta = -g / h;
 
         (*x) += delta;
         i += 1;
-        if (i > MAXITER) return -1;
+        if (i > MAXITER) return -2;
     } while (fabs(delta) > TOLERANCE);
-    if (SIGN((*x)) != SIGN(x0)) return -2;
+    if (SIGN((*x)) != SIGN(x0)) return -3;
+    return 0;
+}
+
+
+inline int
+halley(REAL x0,
+       REAL *x,
+       REAL *arg
+      )
+{
+    int i = 0;
+    REAL delta;
+
+    *x = x0;
+    do {
+        REAL fv = f(*x, arg);
+        REAL dfv = fprime(*x, arg);
+        REAL ddfv = fprimeprime(*x, arg);
+
+        REAL g = 2 * fv * dfv;
+        REAL h = (2 * dfv * dfv - fv * ddfv);
+        if (h == 0) return -1;
+        delta = -g / h;
+
+        (*x) += delta;
+        i += 1;
+        if (i > MAXITER) return -2;
+    } while (fabs(delta) > TOLERANCE);
+    if (SIGN((*x)) != SIGN(x0)) return -3;
+    return 0;
+}
+
+
+inline int
+newton(REAL x0,
+       REAL *x,
+       REAL *arg
+      )
+{
+    int i = 0;
+    REAL delta;
+
+    *x = x0;
+    do {
+        REAL fv = f(*x, arg);
+        REAL dfv = fprime(*x, arg);
+/*
+        REAL alpha = 0.5;
+        if (fv * dfv < 0) {
+            alpha = -0.5;
+        }
+        dfv += alpha * fv;
+*/
+        REAL g = fv;
+        REAL h = dfv;
+        if (h == 0) return -1;
+        delta = -g / h;
+
+        (*x) += delta;
+        i += 1;
+        if (i > MAXITER) return -2;
+    } while (fabs(delta) > TOLERANCE);
+    if (SIGN((*x)) != SIGN(x0)) return -3;
     return 0;
 }
 
@@ -298,7 +357,9 @@ universal_kepler_solver(const REAL dt0,
             arg[3] = mu;
             arg[4] = alpha;
 
-            err = laguerre(s0, &s, arg);
+//            err = laguerre(s0, &s, arg);
+//            err = halley(s0, &s, arg);
+            err = newton(s0, &s, arg);
 
             if (err == 0) {
                 set_new_pos_vel(dt, s, r0, mu, alpha, &pos, &vel);
