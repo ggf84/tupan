@@ -42,30 +42,20 @@ class Base(object):
             raise TypeError(msg.format(type(self).__name__,", ".join(kwargs.keys())))
 
 
-    def drift(self, ip, tau):
+    def drift_n(self, ip, tau):
         """
-        Drift operator.
+        Drift operator for Newtonian quantities.
         """
         if ip.n:
             ip.pos += tau * ip.vel
-            if self.pn_order > 0: ip = self.drift_pn(ip, tau)
-        return ip
-
-
-    def kick(self, ip, jp, tau, update_acc):
-        """
-        Kick operator.
-        """
-        if ip.n and jp.n:
-            if update_acc: ip.update_acc(jp)
-            ip.vel += tau * ip.acc
         return ip
 
 
     def drift_pn(self, ip, tau):
         """
-        Drift operator for PN quantities.
+        Drift operator for post-Newtonian quantities.
         """
+        ip = self.drift_n(ip, tau)
         if ip.blackhole.n:
             for obj in ip.objs():
                 if obj.n:
@@ -74,10 +64,21 @@ class Base(object):
         return ip
 
 
+    def kick_n(self, ip, jp, tau, update_acc):
+        """
+        Kick operator for Newtonian quantities.
+        """
+        if ip.n and jp.n:
+            if update_acc: ip.update_acc(jp)
+            ip.vel += tau * ip.acc
+        return ip
+
+
     def kick_pn(self, ip, jp, tau):
         """
-        Kick operator for PN quantities.
+        Kick operator for post-Newtonian quantities.
         """
+        ip = self.kick_n(ip, jp, tau / 2, True)
         if ip.blackhole.n and jp.blackhole.n:
             for (key, obj) in ip.items():
                 if obj.n:
@@ -102,7 +103,28 @@ class Base(object):
                         obj.evolve_amom_pn_shift(tau / 2)
                     if hasattr(obj, "evolve_lmom_pn_shift"):
                         obj.evolve_lmom_pn_shift(tau / 2)
+        ip = self.kick_n(ip, jp, tau / 2, False)
         return ip
+
+
+    def drift(self, ip, tau):
+        """
+        Drift operator.
+        """
+        if self.pn_order > 0:
+            return self.drift_pn(ip, tau)
+        return self.drift_n(ip, tau)
+
+
+    def kick(self, ip, jp, tau, pn, update_acc=True):
+        """
+        Kick operator.
+        """
+        if pn and self.pn_order > 0:
+            return self.kick_pn(ip, jp, tau)
+        return self.kick_n(ip, jp, tau, update_acc)
+
+
 
 
 
@@ -298,15 +320,14 @@ class SIA(Base):
         """
         Slow<->Fast Kick operator.
         """
-        p = self.join(slow, fast, inplace=False)
-        if self.pn_order > 0:
-            slow = self.kick(slow, p, tau / 2, True)
-            slow = self.kick_pn(slow, slow, tau)
-            slow = self.kick(slow, p, tau / 2, False)
-            fast = self.kick(fast, slow, tau, True)
-        else:
-            slow = self.kick(slow, p, tau, True)
-            fast = self.kick(fast, slow, tau, True)
+        fast = self.kick(fast, slow, tau / 2, pn=False)
+        slow = self.kick(slow, fast, tau / 2, pn=False)
+
+        slow = self.kick(slow, slow, tau, pn=True)
+
+        slow = self.kick(slow, fast, tau / 2, pn=False)
+        fast = self.kick(fast, slow, tau / 2, pn=False)
+
         return slow, fast
 
 

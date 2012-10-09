@@ -37,6 +37,7 @@ def make_common_attrs(cls):
 #            seq = [v for obj in self.objs() for v in obj.data[attr]]
 #            return np.array(seq)
 
+
         def fset(self, value):
             for obj in self.objs():
                 if obj.n:
@@ -55,6 +56,7 @@ def make_common_attrs(cls):
 #                        items = [value]*obj.n
 #                    for i, v in enumerate(items):
 #                        obj.data[attr][i] = v
+
 
         def fdel(self):
             raise NotImplementedError()
