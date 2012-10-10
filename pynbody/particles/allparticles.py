@@ -126,7 +126,7 @@ class Particles(AbstractNbodyMethods):
 
 
     def __repr__(self):
-        return str(dict(self.items()))
+        return str(self.kind)
 
 
     def __hash__(self):

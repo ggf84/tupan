@@ -80,7 +80,6 @@ class Base(object):
         """
         Kick operator for post-Newtonian quantities.
         """
-        ip = self.kick_n(ip, jp, tau / 2, True)
         if ip.blackhole.n and jp.blackhole.n:
             for (key, obj) in ip.items():
                 if obj.n:
@@ -88,24 +87,25 @@ class Base(object):
                         obj.evolve_lmom_pn_shift(tau / 2)
                     if hasattr(obj, "evolve_amom_pn_shift"):
                         obj.evolve_amom_pn_shift(tau / 2)
-                    if hasattr(obj, "evolve_ke_pn_shift"):
-                        obj.evolve_ke_pn_shift(tau / 2)
 
+                    obj.vel += (tau / 2) * obj.get_acc(jp)
                     if hasattr(obj, "get_pnacc"):
                         obj.vel += (tau / 2) * obj.pnacc
+                        obj.evolve_ke_pn_shift(tau / 2)
 
                         args = (jp.kind[key], self.pn_order, self.clight)
                         obj.pnacc = 2 * obj.get_pnacc(*args) - obj.pnacc
 
-                        obj.vel += (tau / 2) * obj.pnacc
-
-                    if hasattr(obj, "evolve_ke_pn_shift"):
                         obj.evolve_ke_pn_shift(tau / 2)
+                        obj.vel += (tau / 2) * obj.pnacc
+                    obj.vel += (tau / 2) * obj.get_acc(jp)
+
                     if hasattr(obj, "evolve_amom_pn_shift"):
                         obj.evolve_amom_pn_shift(tau / 2)
                     if hasattr(obj, "evolve_lmom_pn_shift"):
                         obj.evolve_lmom_pn_shift(tau / 2)
-        ip = self.kick_n(ip, jp, tau / 2, False)
+        else:
+            ip = self.kick_n(ip, jp, tau, True)
         return ip
 
 
@@ -209,7 +209,7 @@ class SIA(Base):
 
     ### split
 
-    def split(self, tau, p):
+    def split(self, p, tau):
         slow = p[abs(p.tstep) >= tau]
         fast = p[abs(p.tstep) < tau]
 
@@ -347,7 +347,7 @@ class SIA(Base):
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
 
-            slow, fast = self.split(abs(tau), p)
+            slow, fast = self.split(p, abs(tau))
 
             #
             fast = self.dkd21(fast, d0 * tau / 2, False)
@@ -388,7 +388,7 @@ class SIA(Base):
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
 
-            slow, fast = self.split(abs(tau), p)
+            slow, fast = self.split(p, abs(tau))
 
             #
             fast = self.dkd22(fast, d0 * tau / 2, False)
@@ -436,7 +436,7 @@ class SIA(Base):
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
 
-            slow, fast = self.split(abs(tau), p)
+            slow, fast = self.split(p, abs(tau))
 
             #
             fast = self.dkd43(fast, d0 * tau / 2, False)
@@ -491,7 +491,7 @@ class SIA(Base):
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
 
-            slow, fast = self.split(abs(tau), p)
+            slow, fast = self.split(p, abs(tau))
 
             #
             fast = self.dkd44(fast, d0 * tau / 2, False)
@@ -553,7 +553,7 @@ class SIA(Base):
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
 
-            slow, fast = self.split(abs(tau), p)
+            slow, fast = self.split(p, abs(tau))
 
             #
             fast = self.dkd45(fast, d0 * tau / 2, False)
@@ -622,7 +622,7 @@ class SIA(Base):
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
 
-            slow, fast = self.split(abs(tau), p)
+            slow, fast = self.split(p, abs(tau))
 
             #
             fast = self.dkd46(fast, d0 * tau / 2, False)
@@ -698,7 +698,7 @@ class SIA(Base):
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
 
-            slow, fast = self.split(abs(tau), p)
+            slow, fast = self.split(p, abs(tau))
 
             #
             fast = self.dkd67(fast, d0 * tau / 2, False)
@@ -782,7 +782,7 @@ class SIA(Base):
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
 
-            slow, fast = self.split(abs(tau), p)
+            slow, fast = self.split(p, abs(tau))
 
             #
             fast = self.dkd69(fast, d0 * tau / 2, False)

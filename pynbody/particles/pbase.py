@@ -273,12 +273,14 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
 
     ### miscellaneous methods
 
+    @cache
     def min_tstep(self):
         """
         Minimum absolute value of tstep.
         """
         return np.abs(self.tstep).min()
 
+    @cache
     def max_tstep(self):
         """
         Maximum absolute value of tstep.
