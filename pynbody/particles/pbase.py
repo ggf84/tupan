@@ -12,7 +12,7 @@ import hashlib
 import numpy as np
 from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
-from ..lib.utils.memoize import cache
+from ..lib.utils.memoize import cache, cache_arg
 
 
 __all__ = ["Pbase"]
@@ -209,6 +209,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
 
     ### gravity
 
+    @cache_arg(1)
     def get_tstep(self, objs, eta):
         """
         Get the individual time-steps due to other particles.
@@ -217,6 +218,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         gravity.tstep.run()
         return gravity.tstep.get_result()
 
+    @cache_arg(1)
     def get_phi(self, objs):
         """
         Get the individual gravitational potential due to other particles.
@@ -225,6 +227,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         gravity.phi.run()
         return gravity.phi.get_result()
 
+    @cache_arg(1)
     def get_acc(self, objs):
         """
         Get the individual gravitational acceleration due to other particles.
@@ -233,6 +236,7 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         gravity.acc.run()
         return gravity.acc.get_result()
 
+    @cache_arg(1)
     def get_acc_jerk(self, objs):
         """
         Get the individual gravitational acceleration and jerk due to other particles.
@@ -336,7 +340,7 @@ class Pbase(AbstractNbodyMethods):
 
 
     def __hash__(self):
-        return int(hashlib.md5(self.data).hexdigest(), 32) % sys.maxint
+        return hash(buffer(self.data))
 
 
     def __getitem__(self, slc):

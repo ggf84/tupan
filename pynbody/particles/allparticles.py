@@ -130,13 +130,7 @@ class Particles(AbstractNbodyMethods):
 
 
     def __hash__(self):
-        i = None
-        for obj in self.objs():
-            if i is None:
-                i = hash(obj)
-            else:
-                i ^= hash(obj)
-        return i
+        return hash(tuple(self.items()))
 
 
     def __getitem__(self, slc):
