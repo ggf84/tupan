@@ -5,12 +5,12 @@
 
 
 #ifdef DOUBLE
-    #define TOLERANCE  1.0536712127723509e-8   // sqrt(2^-53)
+    #define TOLERANCE  1.0536712127723509e-8    // sqrt(2^-53)
 #else
     #define TOLERANCE  2.44140625E-4            // sqrt(2^-24)
 #endif
 #define MAXITER 128
-#define SIGN(x) (((x) > 0) - ((x) < 0))
+#define SIGN(x) (((x) > 0) ? (+1):(-1))
 
 
 inline REAL
@@ -191,7 +191,7 @@ fprimeprime(const REAL s,
 }
 
 
-#define ORDER 4
+#define ORDER 5
 inline int
 laguerre(REAL x0,
          REAL *x,
@@ -266,13 +266,7 @@ newton(REAL x0,
     do {
         REAL fv = f(*x, arg);
         REAL dfv = fprime(*x, arg);
-/*
-        REAL alpha = 0.5;
-        if (fv * dfv < 0) {
-            alpha = -0.5;
-        }
-        dfv += alpha * fv;
-*/
+
         REAL g = fv;
         REAL h = dfv;
         if (h == 0) return -1;
@@ -357,9 +351,14 @@ universal_kepler_solver(const REAL dt0,
             arg[3] = mu;
             arg[4] = alpha;
 
-//            err = laguerre(s0, &s, arg);
-//            err = halley(s0, &s, arg);
-            err = newton(s0, &s, arg);
+            err = -1;
+            REAL a = mu / fabs(alpha);
+            REAL P = TWOPI * a * sqrt(a / mu);
+            if (dt < P) {
+                err = laguerre(s0, &s, arg);
+//                err = halley(s0, &s, arg);
+//                err = newton(s0, &s, arg);
+            }
 
             if (err == 0) {
                 set_new_pos_vel(dt, s, r0, mu, alpha, &pos, &vel);
