@@ -308,10 +308,10 @@ p2p_pn7(REAL mi, REAL mj, REAL mi2, REAL mj2, REAL mimj, REAL inv_r, REAL inv_r2
 
 inline REAL2
 p2p_pnterms(REAL mi, REAL mj,
-            REAL inv_r, REAL inv_r2,
-            REAL3 n, REAL3 v, REAL v2,
+            REAL3 r, REAL3 v, REAL v2,
             REAL vi2, REAL3 vi,
             REAL vj2, REAL3 vj,
+            REAL inv_r, REAL inv_r2, REAL inv_r3,
             CLIGHT clight)
 {
     REAL2 pn1 = {0.0, 0.0};
@@ -321,6 +321,12 @@ p2p_pnterms(REAL mi, REAL mj,
     REAL2 pn5 = {0.0, 0.0};
     REAL2 pn6 = {0.0, 0.0};
     REAL2 pn7 = {0.0, 0.0};
+
+    REAL3 n;
+    n.x = r.x * inv_r;                                               // 1 FLOPs
+    n.y = r.y * inv_r;                                               // 1 FLOPs
+    n.z = r.z * inv_r;                                               // 1 FLOPs
+
     if (clight.order > 0) {
         // XXX: not implemented.
         if (clight.order > 1) {
@@ -379,8 +385,9 @@ p2p_pnterms(REAL mi, REAL mj,
     pn.x += (((((((pn7.x) + pn6.x) + pn5.x) + pn4.x) + pn3.x) + pn2.x) + pn1.x);
     pn.y += (((((((pn7.y) + pn6.y) + pn5.y) + pn4.y) + pn3.y) + pn2.y) + pn1.y);
 
+    REAL gm_r3 = mj * inv_r3;
     REAL gm_r2 = mj * inv_r2;
-    pn.x *= gm_r2;
+    pn.x *= gm_r3;
     pn.y *= gm_r2;
 
     return pn;

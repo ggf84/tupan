@@ -9,17 +9,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL3
 p2p_acc_kernel_core(REAL3 acc,
-                    const REAL4 ri, const REAL hi2,
-                    const REAL4 rj, const REAL hj2)
+                    const REAL4 rmi, const REAL hi2,
+                    const REAL4 rmj, const REAL hj2)
 {
-    REAL4 r;
-    r.x = ri.x - rj.x;                                               // 1 FLOPs
-    r.y = ri.y - rj.y;                                               // 1 FLOPs
-    r.z = ri.z - rj.z;                                               // 1 FLOPs
+    REAL3 r;
+    r.x = rmi.x - rmj.x;                                             // 1 FLOPs
+    r.y = rmi.y - rmj.y;                                             // 1 FLOPs
+    r.z = rmi.z - rmj.z;                                             // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
     REAL inv_r3 = acc_smooth(r2, hi2 + hj2);                         // 5 FLOPs
 
-    inv_r3 *= rj.w;                                                  // 1 FLOPs
+    inv_r3 *= rmj.w;                                                 // 1 FLOPs
 
     acc.x -= inv_r3 * r.x;                                           // 2 FLOPs
     acc.y -= inv_r3 * r.y;                                           // 2 FLOPs
