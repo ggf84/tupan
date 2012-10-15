@@ -9,6 +9,7 @@ from __future__ import print_function
 import numpy as np
 from .pbase import Pbase, make_attrs
 from ..lib import gravity
+from ..lib.utils.memoize import cache, cache_arg
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -47,6 +48,7 @@ class BlackHole(Pbase):
 
     ### pn-gravity
 
+    @cache_arg(1)
     def get_pnacc(self, objs, pn_order, clight):
         """
         Get the individual post-newtonian gravitational acceleration due to other particles.
