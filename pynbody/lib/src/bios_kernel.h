@@ -21,7 +21,7 @@ get_phi(const REAL m,
         const REAL eps2)
 {
     REAL r2 = x * x + y * y + z * z;                                 // 5 FLOPs
-    REAL inv_r = phi_smooth(r2, eps2);                               // 3 FLOPs
+    REAL inv_r = smoothed_inv_r1(r2, eps2);                          // 3 FLOPs
     return m * inv_r;                                                // 1 FLOPs
 }
 
@@ -34,7 +34,7 @@ get_acc(const REAL m,
         const REAL eps2)
 {
     REAL r2 = x * x + y * y + z * z;                                 // 5 FLOPs
-    REAL inv_r3 = acc_smooth(r2, eps2);                              // 4 FLOPs
+    REAL inv_r3 = smoothed_inv_r3(r2, eps2);                         // 4 FLOPs
     REAL m_r3 = m * inv_r3;                                          // 1 FLOPs
     REAL3 a;
     a.x = -m_r3 * x;                                                 // 1 FLOPs

@@ -9,35 +9,35 @@
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL
 p2p_tstep_kernel_core(REAL iomega,
-                      const REAL4 ri, const REAL4 vi,
-                      const REAL4 rj, const REAL4 vj,
+                      const REAL4 rmi, const REAL4 vei,
+                      const REAL4 rmj, const REAL4 vej,
                       const REAL eta)
 {
     REAL4 r;
-    r.x = ri.x - rj.x;                                               // 1 FLOPs
-    r.y = ri.y - rj.y;                                               // 1 FLOPs
-    r.z = ri.z - rj.z;                                               // 1 FLOPs
-    r.w = ri.w + rj.w;                                               // 1 FLOPs
+    r.x = rmi.x - rmj.x;                                             // 1 FLOPs
+    r.y = rmi.y - rmj.y;                                             // 1 FLOPs
+    r.z = rmi.z - rmj.z;                                             // 1 FLOPs
+    r.w = rmi.w + rmj.w;                                             // 1 FLOPs
     REAL4 v;
-    v.x = vi.x - vj.x;                                               // 1 FLOPs
-    v.y = vi.y - vj.y;                                               // 1 FLOPs
-    v.z = vi.z - vj.z;                                               // 1 FLOPs
-    v.w = vi.w + vj.w;                                               // 1 FLOPs
+    v.x = vei.x - vej.x;                                             // 1 FLOPs
+    v.y = vei.y - vej.y;                                             // 1 FLOPs
+    v.z = vei.z - vej.z;                                             // 1 FLOPs
+    v.w = vei.w + vej.w;                                             // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
     REAL v2 = v.x * v.x + v.y * v.y + v.z * v.z;                     // 5 FLOPs
     REAL rv = r.x * v.x + r.y * v.y + r.z * v.z;                     // 5 FLOPs
-    REAL inv_r2 = 1 / (r2 + v.w);                                    // 2 FLOPs
-    inv_r2 = (r2 > 0) ? (inv_r2):(0);
-    REAL inv_r = sqrt(inv_r2);                                       // 1 FLOPs
-    REAL inv_r3 = inv_r * inv_r2;                                    // 1 FLOPs
+
+    REAL2 ret = smoothed_inv_r2r3(r2, v.w);                          // 4 FLOPs
+    REAL inv_r2 = ret.x;
+    REAL inv_r3 = ret.y;
 
     REAL alpha = v2 * inv_r2;                                        // 1 FLOPs
     REAL beta = 2 * r.w * inv_r3;                                    // 2 FLOPs
     REAL omega2 = alpha + beta;                                      // 1 FLOPs
+    REAL omega = sqrt(omega2);                                       // 1 FLOPs
     REAL gamma = 1 + beta / omega2;                                  // 2 FLOPs
     gamma = (r2 > 0) ? (gamma):(0);
     REAL dln_omega = -gamma * rv * inv_r2;                           // 2 FLOPs
-    REAL omega = sqrt(omega2);                                       // 1 FLOPs
     omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
 
     iomega = (omega > iomega) ? (omega):(iomega);
@@ -172,17 +172,17 @@ _p2p_tstep_kernel(PyObject *_args)
     for (i = 0; i < ni; ++i) {
         i8 = 8*i;
         REAL iomega = (REAL)0;
-        REAL4 ri = {idata_ptr[i8  ], idata_ptr[i8+1],
-                    idata_ptr[i8+2], idata_ptr[i8+3]};
-        REAL4 vi = {idata_ptr[i8+4], idata_ptr[i8+5],
-                    idata_ptr[i8+6], idata_ptr[i8+7]};
+        REAL4 rmi = {idata_ptr[i8  ], idata_ptr[i8+1],
+                     idata_ptr[i8+2], idata_ptr[i8+3]};
+        REAL4 vei = {idata_ptr[i8+4], idata_ptr[i8+5],
+                     idata_ptr[i8+6], idata_ptr[i8+7]};
         for (j = 0; j < nj; ++j) {
             j8 = 8*j;
-            REAL4 rj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
-                        jdata_ptr[j8+2], jdata_ptr[j8+3]};
-            REAL4 vj = {jdata_ptr[j8+4], jdata_ptr[j8+5],
-                        jdata_ptr[j8+6], jdata_ptr[j8+7]};
-            iomega = p2p_tstep_kernel_core(iomega, ri, vi, rj, vj, eta);
+            REAL4 rmj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
+                         jdata_ptr[j8+2], jdata_ptr[j8+3]};
+            REAL4 vej = {jdata_ptr[j8+4], jdata_ptr[j8+5],
+                         jdata_ptr[j8+6], jdata_ptr[j8+7]};
+            iomega = p2p_tstep_kernel_core(iomega, rmi, vei, rmj, vej, eta);
         }
         ret_ptr[i] = 2 * eta / iomega;
     }

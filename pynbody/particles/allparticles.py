@@ -274,14 +274,14 @@ class Particles(AbstractNbodyMethods):
 
     ### gravity
 
-    def update_pnacc(self, objs, pn_order, clight):
-        """
-        Update the individual post-newtonian gravitational acceleration due to other particles.
-        """
-        ni = self.blackhole.n
-        nj = objs.blackhole.n
-        if ni and nj:
-            self.blackhole.update_pnacc(objs.blackhole, pn_order, clight)
+#    def update_pnacc(self, objs, pn_order, clight):
+#        """
+#        Update the individual post-newtonian gravitational acceleration due to other particles.
+#        """
+#        ni = self.blackhole.n
+#        nj = objs.blackhole.n
+#        if ni and nj:
+#            self.blackhole.update_pnacc(objs.blackhole, pn_order, clight)
 
 
 ########## end of file ##########

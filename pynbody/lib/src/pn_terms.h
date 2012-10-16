@@ -309,8 +309,7 @@ p2p_pn7(REAL mi, REAL mj, REAL mi2, REAL mj2, REAL mimj, REAL inv_r, REAL inv_r2
 inline REAL2
 p2p_pnterms(REAL mi, REAL mj,
             REAL3 r, REAL3 v, REAL v2,
-            REAL vi2, REAL3 vi,
-            REAL vj2, REAL3 vj,
+            REAL3 vi, REAL3 vj,
             REAL inv_r, REAL inv_r2, REAL inv_r3,
             CLIGHT clight)
 {
@@ -326,6 +325,8 @@ p2p_pnterms(REAL mi, REAL mj,
     n.x = r.x * inv_r;                                               // 1 FLOPs
     n.y = r.y * inv_r;                                               // 1 FLOPs
     n.z = r.z * inv_r;                                               // 1 FLOPs
+    REAL vi2 = vi.x * vi.x + vi.y * vi.y + vi.z * vi.z;
+    REAL vj2 = vj.x * vj.x + vj.y * vj.y + vj.z * vj.z;
 
     if (clight.order > 0) {
         // XXX: not implemented.

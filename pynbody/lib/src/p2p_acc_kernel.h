@@ -17,7 +17,7 @@ p2p_acc_kernel_core(REAL3 acc,
     r.y = rmi.y - rmj.y;                                             // 1 FLOPs
     r.z = rmi.z - rmj.z;                                             // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
-    REAL inv_r3 = acc_smooth(r2, hi2 + hj2);                         // 5 FLOPs
+    REAL inv_r3 = smoothed_inv_r3(r2, hi2 + hj2);                    // 5 FLOPs
 
     inv_r3 *= rmj.w;                                                 // 1 FLOPs
 
@@ -148,15 +148,15 @@ _p2p_acc_kernel(PyObject *_args)
     for (i = 0; i < ni; ++i) {
         i8 = 8*i;
         REAL3 iacc = (REAL3){0, 0, 0};
-        REAL4 ri = {idata_ptr[i8  ], idata_ptr[i8+1],
-                    idata_ptr[i8+2], idata_ptr[i8+3]};
+        REAL4 rmi = {idata_ptr[i8  ], idata_ptr[i8+1],
+                     idata_ptr[i8+2], idata_ptr[i8+3]};
         REAL ieps2 = idata_ptr[i8+7];
         for (j = 0; j < nj; ++j) {
             j8 = 8*j;
-            REAL4 rj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
-                        jdata_ptr[j8+2], jdata_ptr[j8+3]};
+            REAL4 rmj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
+                         jdata_ptr[j8+2], jdata_ptr[j8+3]};
             REAL jeps2 = jdata_ptr[j8+7];
-            iacc = p2p_acc_kernel_core(iacc, ri, ieps2, rj, jeps2);
+            iacc = p2p_acc_kernel_core(iacc, rmi, ieps2, rmj, jeps2);
         }
         ik = i * k;
         ret_ptr[ik  ] = iacc.x;

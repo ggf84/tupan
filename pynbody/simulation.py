@@ -38,10 +38,11 @@ class Diagnostic(object):
     """
 
     """
-    def __init__(self, fname, time, particles, report_freq):
+    def __init__(self, fname, time, particles, report_freq=4, pn_order=0):
         self.fname = fname
         self.time = time
         self.report_freq = report_freq
+        self.pn_order = pn_order
         self.nreport = 0
 
         p = particles
@@ -94,19 +95,19 @@ class Diagnostic(object):
         p = particles
 
         ke = p.kinetic_energy
-        if hasattr(p, 'get_total_ke_pn_shift'): ke += p.get_total_ke_pn_shift()
+        if self.pn_order > 0 and hasattr(p, 'get_total_ke_pn_shift'): ke += p.get_total_ke_pn_shift()
         pe = p.potential_energy
         te = ke + pe
         virial = p.virial_energy
 
         rcom = p.rcom
-        if hasattr(p, 'get_total_rcom_pn_shift'): rcom += p.get_total_rcom_pn_shift()
+        if self.pn_order > 0 and hasattr(p, 'get_total_rcom_pn_shift'): rcom += p.get_total_rcom_pn_shift()
         vcom = p.vcom
-        if hasattr(p, 'get_total_vcom_pn_shift'): vcom += p.get_total_vcom_pn_shift()
+        if self.pn_order > 0 and hasattr(p, 'get_total_vcom_pn_shift'): vcom += p.get_total_vcom_pn_shift()
         lmom = p.linear_momentum
-        if hasattr(p, 'get_total_lmom_pn_shift'): lmom += p.get_total_lmom_pn_shift()
+        if self.pn_order > 0 and hasattr(p, 'get_total_lmom_pn_shift'): lmom += p.get_total_lmom_pn_shift()
         amom = p.angular_momentum
-        if hasattr(p, 'get_total_amom_pn_shift'): amom += p.get_total_amom_pn_shift()
+        if self.pn_order > 0 and hasattr(p, 'get_total_amom_pn_shift'): amom += p.get_total_amom_pn_shift()
 
         eerr = (te-self.te0)/(-pe)
         self.count += 1
@@ -157,7 +158,8 @@ class Simulation(object):
         self.dia = Diagnostic(self.args.log_file,
                               self.args.t_begin,
                               particles,
-                              self.args.report_freq
+                              report_freq=self.args.report_freq,
+                              pn_order=self.args.pn_order,
                              )
 
         # Initializes the integrator
@@ -323,7 +325,7 @@ def parse_args():
     newrun.add_argument("--pn_order",
                         type=int,
                         default=0,
-                        choices=[2, 4, 5, 6, 7],
+                        choices=[0, 2, 4, 5, 6, 7],
                         help="Order of the Post-Newtonian corrections"
                              "(type: int, default: 0)."
                        )
@@ -343,7 +345,7 @@ def parse_args():
                         type=int,
                         default=4,
                         help="Number of time-steps between diagnostic reports "
-                        "of the simulation (type: int, default: 64)."
+                        "of the simulation (type: int, default: 4)."
                        )
     newrun.add_argument("-d", "--dump_freq",
                         type=int,

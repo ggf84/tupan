@@ -9,25 +9,25 @@
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL8
 p2p_acc_jerk_kernel_core(REAL8 accjerk,
-                         const REAL4 ri, const REAL4 vi,
-                         const REAL4 rj, const REAL4 vj)
+                         const REAL4 rmi, const REAL4 vei,
+                         const REAL4 rmj, const REAL4 vej)
 {
-    REAL4 r;
-    r.x = ri.x - rj.x;                                               // 1 FLOPs
-    r.y = ri.y - rj.y;                                               // 1 FLOPs
-    r.z = ri.z - rj.z;                                               // 1 FLOPs
+    REAL3 r;
+    r.x = rmi.x - rmj.x;                                             // 1 FLOPs
+    r.y = rmi.y - rmj.y;                                             // 1 FLOPs
+    r.z = rmi.z - rmj.z;                                             // 1 FLOPs
     REAL4 v;
-    v.x = vi.x - vj.x;                                               // 1 FLOPs
-    v.y = vi.y - vj.y;                                               // 1 FLOPs
-    v.z = vi.z - vj.z;                                               // 1 FLOPs
-    v.w = vi.w + vj.w;                                               // 1 FLOPs
+    v.x = vei.x - vej.x;                                             // 1 FLOPs
+    v.y = vei.y - vej.y;                                             // 1 FLOPs
+    v.z = vei.z - vej.z;                                             // 1 FLOPs
+    v.w = vei.w + vej.w;                                             // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
     REAL rv = r.x * v.x + r.y * v.y + r.z * v.z;                     // 5 FLOPs
-    REAL2 ret = accjerk_smooth(r2, v.w);                             // 4 FLOPs
+    REAL2 ret = smoothed_inv_r2r3(r2, v.w);                          // 4 FLOPs
     REAL inv_r2 = ret.x;
     REAL inv_r3 = ret.y;
 
-    inv_r3 *= rj.w;                                                  // 1 FLOPs
+    inv_r3 *= rmj.w;                                                 // 1 FLOPs
     rv *= 3 * inv_r2;                                                // 2 FLOPs
 
     accjerk.s0 -= inv_r3 * r.x;                                      // 2 FLOPs
@@ -169,17 +169,17 @@ _p2p_acc_jerk_kernel(PyObject *_args)
     for (i = 0; i < ni; ++i) {
         i8 = 8*i;
         REAL8 iaccjerk = (REAL8){0, 0, 0, 0, 0, 0, 0, 0};
-        REAL4 ri = {idata_ptr[i8  ], idata_ptr[i8+1],
-                    idata_ptr[i8+2], idata_ptr[i8+3]};
-        REAL4 vi = {idata_ptr[i8+4], idata_ptr[i8+5],
-                    idata_ptr[i8+6], idata_ptr[i8+7]};
+        REAL4 rmi = {idata_ptr[i8  ], idata_ptr[i8+1],
+                     idata_ptr[i8+2], idata_ptr[i8+3]};
+        REAL4 vei = {idata_ptr[i8+4], idata_ptr[i8+5],
+                     idata_ptr[i8+6], idata_ptr[i8+7]};
         for (j = 0; j < nj; ++j) {
             j8 = 8*j;
-            REAL4 rj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
-                        jdata_ptr[j8+2], jdata_ptr[j8+3]};
-            REAL4 vj = {jdata_ptr[j8+4], jdata_ptr[j8+5],
-                        jdata_ptr[j8+6], jdata_ptr[j8+7]};
-            iaccjerk = p2p_acc_jerk_kernel_core(iaccjerk, ri, vi, rj, vj);
+            REAL4 rmj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
+                         jdata_ptr[j8+2], jdata_ptr[j8+3]};
+            REAL4 vej = {jdata_ptr[j8+4], jdata_ptr[j8+5],
+                         jdata_ptr[j8+6], jdata_ptr[j8+7]};
+            iaccjerk = p2p_acc_jerk_kernel_core(iaccjerk, rmi, vei, rmj, vej);
         }
         ret_ptr[i8  ] = iaccjerk.s0;
         ret_ptr[i8+1] = iaccjerk.s1;

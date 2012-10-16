@@ -58,12 +58,18 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
                     ("mass", "f8", "mass"),
                     ("pos", "3f8", "position"),
                     ("vel", "3f8", "velocity"),
-                    ("acc", "3f8", "acceleration"),
-                    ("phi", "f8", "potential"),
+#                    ("acc", "3f8", "acceleration"),
+#                    ("phi", "f8", "potential"),
                     ("eps2", "f8", "squared softening"),
                     ("time", "f8", "current time"),
                     ("tstep", "f8", "time step"),
                     ("nstep", "u8", "step number"),
+                    # PN attrs
+                    ("pnacc", "3f8", "post-Newtonian acceleration"),
+                    ("ke_pn_shift", "f8", "post-Newtonian correction for the kinetic energy"),
+                    ("lmom_pn_shift", "3f8", "post-Newtonian correction for the linear momentum"),
+                    ("amom_pn_shift", "3f8", "post-Newtonian correction for the angular momentum"),
+                    ("rcom_pn_shift", "3f8", "post-Newtonian correction for the center-of-mass position"),
                    ]
     common_names = [_[0] for _ in common_attrs]
     common_dtype = [(_[0], _[1]) for _ in common_attrs]
@@ -286,6 +292,71 @@ class AbstractNbodyMethods(AbstractNbodyUtils):
         Maximum absolute value of tstep.
         """
         return np.abs(self.tstep).max()
+
+
+    ### PN stuff
+
+    @cache_arg(1)
+    def get_pnacc(self, objs, pn_order, clight):
+        """
+        Get the individual post-newtonian gravitational acceleration due to other particles.
+        """
+        gravity.pnacc.set_args(self, objs, pn_order, clight)
+        gravity.pnacc.run()
+        return gravity.pnacc.get_result()
+
+    def update_pnacc(self, objs, pn_order, clight):
+        """
+        Update individual post-newtonian gravitational acceleration due to other particles.
+        """
+        self.pnacc = self.get_pnacc(objs, pn_order, clight)
+
+
+    def evolve_ke_pn_shift(self, tstep):
+        """
+        Evolves kinetic energy shift in time due to post-newtonian terms.
+        """
+        pnforce = -(self.mass * self.pnacc.T).T
+        ke_jump = tstep * (self.vel * pnforce).sum(1)
+        self.ke_pn_shift += ke_jump
+
+    def get_ke_pn_shift(self):
+        return self.ke_pn_shift.sum(0)
+
+    def evolve_lmom_pn_shift(self, tstep):
+        """
+        Evolves linear momentum shift in time due to post-newtonian terms.
+        """
+        pnforce = -(self.mass * self.pnacc.T).T
+        lmom_jump = tstep * pnforce
+        self.lmom_pn_shift += lmom_jump
+
+    def get_lmom_pn_shift(self):
+        return self.lmom_pn_shift.sum(0)
+
+    def evolve_amom_pn_shift(self, tstep):
+        """
+        Evolves angular momentum shift in time due to post-newtonian terms.
+        """
+        pnforce = -(self.mass * self.pnacc.T).T
+        amom_jump = tstep * np.cross(self.pos, pnforce)
+        self.amom_pn_shift += amom_jump
+
+    def get_amom_pn_shift(self):
+        return self.amom_pn_shift.sum(0)
+
+    def evolve_rcom_pn_shift(self, tstep):
+        """
+        Evolves center of mass position shift in time due to post-newtonian terms.
+        """
+        rcom_jump = tstep * self.lmom_pn_shift
+        self.rcom_pn_shift += rcom_jump
+
+    def get_rcom_pn_shift(self):
+        return self.rcom_pn_shift.sum(0)
+
+    def get_vcom_pn_shift(self):
+        return self.lmom_pn_shift.sum(0)
 
 
 

@@ -15,39 +15,41 @@ p2p_pnacc_kernel_core(REAL3 pnacc,
                       const CLIGHT clight)
 {
     REAL3 r;
-    r.x = rmi.x - rmj.x;                                               // 1 FLOPs
-    r.y = rmi.y - rmj.y;                                               // 1 FLOPs
-    r.z = rmi.z - rmj.z;                                               // 1 FLOPs
+    r.x = rmi.x - rmj.x;                                             // 1 FLOPs
+    r.y = rmi.y - rmj.y;                                             // 1 FLOPs
+    r.z = rmi.z - rmj.z;                                             // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
 
     REAL3 v;
-    v.x = vei.x - vej.x;                                               // 1 FLOPs
-    v.y = vei.y - vej.y;                                               // 1 FLOPs
-    v.z = vei.z - vej.z;                                               // 1 FLOPs
+    v.x = vei.x - vej.x;                                             // 1 FLOPs
+    v.y = vei.y - vej.y;                                             // 1 FLOPs
+    v.z = vei.z - vej.z;                                             // 1 FLOPs
     REAL v2 = v.x * v.x + v.y * v.y + v.z * v.z;                     // 5 FLOPs
-    REAL vi2 = vei.x * vei.x + vei.y * vei.y + vei.z * vei.z;
-    REAL vj2 = vej.x * vej.x + vej.y * vej.y + vej.z * vej.z;
-
-
-    REAL3 vi = {vei.x, vei.y, vei.z};
-    REAL3 vj = {vej.x, vej.y, vej.z};
 
     REAL3 ret = smoothed_inv_r1r2r3(r2, vei.w + vej.w);
     REAL inv_r = ret.x;
     REAL inv_r2 = ret.y;
     REAL inv_r3 = ret.z;
 
+    REAL mij = rmi.w + rmj.w;                                        // 1 FLOPs
+    REAL r_sch = 2 * mij * clight.inv2;
+    REAL gamma = r_sch * inv_r;
 
-    REAL2 pn = p2p_pnterms(rmi.w, rmj.w,
-                           r, v, v2,
-                           vi2, vi,
-                           vj2, vj,
-                           inv_r, inv_r2, inv_r3,
-                           clight);                                  // ? FLOPs
+    if (16777216*gamma > 1) {
+//    if (mij > 1.9) {
+//      printf("mi: %e, mj: %e, mij: %e\n", rmi.w, rmj.w, mij);
+        REAL3 vi = {vei.x, vei.y, vei.z};
+        REAL3 vj = {vej.x, vej.y, vej.z};
+        REAL2 pn = p2p_pnterms(rmi.w, rmj.w,
+                               r, v, v2,
+                               vi, vj,
+                               inv_r, inv_r2, inv_r3,
+                               clight);                              // ? FLOPs
 
-    pnacc.x += pn.x * r.x + pn.y * v.x;                              // 4 FLOPs
-    pnacc.y += pn.x * r.y + pn.y * v.y;                              // 4 FLOPs
-    pnacc.z += pn.x * r.z + pn.y * v.z;                              // 4 FLOPs
+        pnacc.x += pn.x * r.x + pn.y * v.x;                          // 4 FLOPs
+        pnacc.y += pn.x * r.y + pn.y * v.y;                          // 4 FLOPs
+        pnacc.z += pn.x * r.z + pn.y * v.z;                          // 4 FLOPs
+    }
 
     return pnacc;
 }
@@ -195,17 +197,17 @@ _p2p_pnacc_kernel(PyObject *_args)
     for (i = 0; i < ni; ++i) {
         i8 = 8*i;
         REAL3 ipnacc = (REAL3){0, 0, 0};
-        REAL4 ri = {idata_ptr[i8  ], idata_ptr[i8+1],
-                    idata_ptr[i8+2], idata_ptr[i8+3]};
-        REAL4 vi = {idata_ptr[i8+4], idata_ptr[i8+5],
-                    idata_ptr[i8+6], idata_ptr[i8+7]};
+        REAL4 rmi = {idata_ptr[i8  ], idata_ptr[i8+1],
+                     idata_ptr[i8+2], idata_ptr[i8+3]};
+        REAL4 vei = {idata_ptr[i8+4], idata_ptr[i8+5],
+                     idata_ptr[i8+6], idata_ptr[i8+7]};
         for (j = 0; j < nj; ++j) {
             j8 = 8*j;
-            REAL4 rj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
-                        jdata_ptr[j8+2], jdata_ptr[j8+3]};
-            REAL4 vj = {jdata_ptr[j8+4], jdata_ptr[j8+5],
-                        jdata_ptr[j8+6], jdata_ptr[j8+7]};
-            ipnacc = p2p_pnacc_kernel_core(ipnacc, ri, vi, rj, vj, clight);
+            REAL4 rmj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
+                         jdata_ptr[j8+2], jdata_ptr[j8+3]};
+            REAL4 vej = {jdata_ptr[j8+4], jdata_ptr[j8+5],
+                         jdata_ptr[j8+6], jdata_ptr[j8+7]};
+            ipnacc = p2p_pnacc_kernel_core(ipnacc, rmi, vei, rmj, vej, clight);
         }
         ik = i * k;
         ret_ptr[ik  ] = ipnacc.x;

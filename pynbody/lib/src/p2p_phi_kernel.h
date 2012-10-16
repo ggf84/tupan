@@ -9,16 +9,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL
 p2p_phi_kernel_core(REAL phi,
-                    const REAL4 ri, const REAL hi2,
-                    const REAL4 rj, const REAL hj2)
+                    const REAL4 rmi, const REAL hi2,
+                    const REAL4 rmj, const REAL hj2)
 {
-    REAL4 r;
-    r.x = ri.x - rj.x;                                               // 1 FLOPs
-    r.y = ri.y - rj.y;                                               // 1 FLOPs
-    r.z = ri.z - rj.z;                                               // 1 FLOPs
+    REAL3 r;
+    r.x = rmi.x - rmj.x;                                             // 1 FLOPs
+    r.y = rmi.y - rmj.y;                                             // 1 FLOPs
+    r.z = rmi.z - rmj.z;                                             // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
-    REAL inv_r = phi_smooth(r2, hi2 + hj2);                          // 4 FLOPs
-    phi -= rj.w * inv_r;                                             // 2 FLOPs
+    REAL inv_r = smoothed_inv_r1(r2, hi2 + hj2);                     // 4 FLOPs
+    phi -= rmj.w * inv_r;                                            // 2 FLOPs
     return phi;
 }
 // Total flop count: 14
@@ -142,15 +142,15 @@ _p2p_phi_kernel(PyObject *_args)
     for (i = 0; i < ni; ++i) {
         i8 = 8*i;
         REAL iphi = (REAL)0;
-        REAL4 ri = {idata_ptr[i8  ], idata_ptr[i8+1],
-                    idata_ptr[i8+2], idata_ptr[i8+3]};
+        REAL4 rmi = {idata_ptr[i8  ], idata_ptr[i8+1],
+                     idata_ptr[i8+2], idata_ptr[i8+3]};
         REAL ieps2 = idata_ptr[i8+7];
         for (j = 0; j < nj; ++j) {
             j8 = 8*j;
-            REAL4 rj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
-                        jdata_ptr[j8+2], jdata_ptr[j8+3]};
+            REAL4 rmj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
+                         jdata_ptr[j8+2], jdata_ptr[j8+3]};
             REAL jeps2 = jdata_ptr[j8+7];
-            iphi = p2p_phi_kernel_core(iphi, ri, ieps2, rj, jeps2);
+            iphi = p2p_phi_kernel_core(iphi, rmi, ieps2, rmj, jeps2);
         }
         ret_ptr[i] = iphi;
     }
