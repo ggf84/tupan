@@ -12,7 +12,7 @@ import math
 import logging
 import numpy as np
 from ..particles import Particles
-from ..particles.body import Body
+from ..particles.star import Star
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -47,8 +47,8 @@ def scale_to_virial(particles, ke, pe, te):
 
 
 def scale_to_nbody_units(particles):
-#    scale_mass(particles["body"], 1.0/particles["body"].get_mass())
-#    particles["body"].set_phi(particles)
+#    scale_mass(particles["star"], 1.0/particles["star"].get_mass())
+#    particles["star"].set_phi(particles)
 
     ke = particles.kinetic_energy
     pe = particles.potential_energy
@@ -77,7 +77,7 @@ class Plummer(object):
         self.eps2 = eps*eps
         self.eps_parametrization = eps_parametrization
         self.particles = Particles()
-        self.particles.append(Body(num))
+        self.particles.append(Star(num))
         np.random.seed(seed)
 
     def set_eps2(self, mass):
@@ -141,34 +141,30 @@ class Plummer(object):
         ilist = np.arange(n)
 
         # set index
-        self.particles.body.id[:] = ilist
+        self.particles.star.id[:] = ilist
 
         srand = np.random.get_state()
 
         # set mass
-        self.particles.body.mass[:] = self.imf.sample(n)
-        self.particles.body.mass /= self.particles.body.total_mass
+        self.particles.star.mass[:] = self.imf.sample(n)
+        self.particles.star.mass /= self.particles.star.total_mass
 
         # set eps2
-        self.particles.body.eps2[:] = self.set_eps2(self.particles.body.mass)
+        self.particles.star.eps2[:] = self.set_eps2(self.particles.star.mass)
 
         np.random.set_state(srand)
 
         # set pos
-        self.particles.body.pos[:] = self.set_pos(np.random.permutation(ilist))
-
-        # set phi
-        self.particles.update_phi(self.particles)
+        self.particles.star.pos[:] = self.set_pos(np.random.permutation(ilist))
 
         # set vel
-        self.particles.body.vel[:] = self.set_vel(self.particles.body.phi)
+        self.particles.star.vel[:] = self.set_vel(self.particles.get_phi(self.particles))
 
 
     def make_plummer(self):
         self.set_bodies()
         self.particles.move_to_center()
         scale_to_nbody_units(self.particles)
-        self.particles.body.phi[:] = 0.0
 
 
 
@@ -181,7 +177,7 @@ class Plummer(object):
         import matplotlib.pyplot as plt
         from matplotlib.patches import Circle
 
-        mass = self.imf._mtot * self.particles.body.mass.copy()
+        mass = self.imf._mtot * self.particles.star.mass.copy()
 
         ###################################
 
@@ -215,7 +211,7 @@ class Plummer(object):
 
         ###################################
 
-        b = self.particles.body
+        b = self.particles.star
         n = b.n
         x = b.pos[:,0]
         y = b.pos[:,1]

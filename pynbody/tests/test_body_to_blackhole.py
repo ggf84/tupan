@@ -23,8 +23,8 @@ if __name__ == "__main__":
         p = Plummer(numBodies, imf, eps=4.0/numBodies, eps_parametrization=0, seed=1)
         p.make_plummer()
 
-        fname = "plummer"+str(numBodies).zfill(4)
-        io = IO(fname, 'w', 'hdf5')
+        fname = "plummer"+str(numBodies).zfill(4)+".hdf5"
+        io = IO(fname, 'w')
         io.dump_snapshot(p.particles)
 
 #        p.show()
@@ -39,8 +39,8 @@ if __name__ == "__main__":
     bh = figure8.make_system().astype(BlackHole)
     p.append(bh)
 
-    fname = "plummer"+str(numBodies).zfill(4)+'-'+"3bh"
-    io = IO(fname, 'w', 'hdf5')
+    fname = "plummer"+str(numBodies).zfill(4)+'-'+"3bh"+".hdf5"
+    io = IO(fname, 'w')
     io.dump_snapshot(p)
 
 

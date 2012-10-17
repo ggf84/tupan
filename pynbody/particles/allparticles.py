@@ -11,9 +11,9 @@ import sys
 import copy
 import numpy as np
 from .sph import Sph
-from .body import Body
+from .star import Star
 from .blackhole import BlackHole
-from .pbase import AbstractNbodyMethods
+from .body import AbstractNbodyMethods
 from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
 
@@ -21,7 +21,7 @@ from ..lib.utils.timing import decallmethods, timings
 __all__ = ["Particles"]
 
 
-ALL_PARTICLE_TYPES = ["sph", "body", "blackhole"]
+ALL_PARTICLE_TYPES = ["sph", "star", "blackhole"]
 
 
 def make_common_attrs(cls):
@@ -61,7 +61,7 @@ def make_common_attrs(cls):
         def fdel(self):
             raise NotImplementedError()
         return property(fget, fset, fdel, doc)
-    attrs = ((i[0], cls.__name__+"\'s "+i[2]) for i in cls.common_attrs)
+    attrs = ((i[0], cls.__name__+"\'s "+i[2]) for i in cls.attrs)
     for (attr, doc) in attrs:
         setattr(cls, attr, make_property(attr, doc))
     return cls
@@ -81,7 +81,7 @@ class Particles(AbstractNbodyMethods):
         self.kind = {}
         self.n = 0
 
-        self.kind["body"] = Body(nstar)
+        self.kind["star"] = Star(nstar)
         self.n += nstar
 
         self.kind["blackhole"] = BlackHole(nbh)
@@ -92,8 +92,8 @@ class Particles(AbstractNbodyMethods):
 
 
     @property
-    def body(self):
-        return self.kind["body"]
+    def star(self):
+        return self.kind["star"]
 
     @property
     def blackhole(self):
@@ -189,99 +189,13 @@ class Particles(AbstractNbodyMethods):
                     if obj.n:
                         self.kind[key].append(obj)
                 self.n = len(self)
-        elif isinstance(objs, (Body, BlackHole, Sph)):
+        elif isinstance(objs, (Star, BlackHole, Sph)):
             if objs.n:
                 key = type(objs).__name__.lower()
                 self.kind[key].append(objs)
                 self.n = len(self)
         else:
             raise TypeError("'{}' can not append obj of type: '{}'".format(type(self).__name__, type(objs)))
-
-
-
-    #
-    # uncommon methods
-    #
-
-    ### total mass and center-of-mass
-
-    def get_total_rcom_pn_shift(self):
-        """
-
-        """
-        mtot = self.total_mass
-        rcom_shift = 0.0
-        for obj in self.objs():
-            if obj.n:
-                if hasattr(obj, "get_rcom_pn_shift"):
-                    rcom_shift += obj.get_rcom_pn_shift()
-        return (rcom_shift / mtot)
-
-    def get_total_vcom_pn_shift(self):
-        """
-
-        """
-        mtot = self.total_mass
-        vcom_shift = 0.0
-        for obj in self.objs():
-            if obj.n:
-                if hasattr(obj, "get_vcom_pn_shift"):
-                    vcom_shift += obj.get_vcom_pn_shift()
-        return (vcom_shift / mtot)
-
-
-    ### linear momentum
-
-    def get_total_lmom_pn_shift(self):
-        """
-
-        """
-        lmom_shift = 0.0
-        for obj in self.objs():
-            if obj.n:
-                if hasattr(obj, "get_lmom_pn_shift"):
-                    lmom_shift += obj.get_lmom_pn_shift()
-        return lmom_shift
-
-
-    ### angular momentum
-
-    def get_total_amom_pn_shift(self):
-        """
-
-        """
-        amom_shift = 0.0
-        for obj in self.objs():
-            if obj.n:
-                if hasattr(obj, "get_amom_pn_shift"):
-                    amom_shift += obj.get_amom_pn_shift()
-        return amom_shift
-
-
-    ### kinetic energy
-
-    def get_total_ke_pn_shift(self):
-        """
-
-        """
-        ke_shift = 0.0
-        for obj in self.objs():
-            if obj.n:
-                if hasattr(obj, "get_ke_pn_shift"):
-                    ke_shift += obj.get_ke_pn_shift()
-        return ke_shift
-
-
-    ### gravity
-
-#    def update_pnacc(self, objs, pn_order, clight):
-#        """
-#        Update the individual post-newtonian gravitational acceleration due to other particles.
-#        """
-#        ni = self.blackhole.n
-#        nj = objs.blackhole.n
-#        if ni and nj:
-#            self.blackhole.update_pnacc(objs.blackhole, pn_order, clight)
 
 
 ########## end of file ##########

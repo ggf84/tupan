@@ -95,19 +95,19 @@ class Diagnostic(object):
         p = particles
 
         ke = p.kinetic_energy
-        if self.pn_order > 0 and hasattr(p, 'get_total_ke_pn_shift'): ke += p.get_total_ke_pn_shift()
+        if self.pn_order > 0: ke += p.get_ke_pn_shift()
         pe = p.potential_energy
         te = ke + pe
         virial = p.virial_energy
 
         rcom = p.rcom
-        if self.pn_order > 0 and hasattr(p, 'get_total_rcom_pn_shift'): rcom += p.get_total_rcom_pn_shift()
+        if self.pn_order > 0: rcom += p.get_rcom_pn_shift()
         vcom = p.vcom
-        if self.pn_order > 0 and hasattr(p, 'get_total_vcom_pn_shift'): vcom += p.get_total_vcom_pn_shift()
+        if self.pn_order > 0: vcom += p.get_vcom_pn_shift()
         lmom = p.linear_momentum
-        if self.pn_order > 0 and hasattr(p, 'get_total_lmom_pn_shift'): lmom += p.get_total_lmom_pn_shift()
+        if self.pn_order > 0: lmom += p.get_lmom_pn_shift()
         amom = p.angular_momentum
-        if self.pn_order > 0 and hasattr(p, 'get_total_amom_pn_shift'): amom += p.get_total_amom_pn_shift()
+        if self.pn_order > 0: amom += p.get_amom_pn_shift()
 
         eerr = (te-self.te0)/(-pe)
         self.count += 1

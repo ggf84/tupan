@@ -8,23 +8,23 @@
 from __future__ import print_function
 import numpy as np
 from .body import Body, make_attrs
-from ..lib import gravity
-from ..lib.utils.memoize import cache, cache_arg
 from ..lib.utils.timing import decallmethods, timings
 
 
-__all__ = ["BlackHole"]
+__all__ = ["Star"]
 
 
 @decallmethods(timings)
 @make_attrs
-class BlackHole(Body):
+class Star(Body):
     """
-    A base class for BlackHoles.
+    A base class for Stars.
     """
     special_attrs = [# name, dtype, doc
                      ("spin", "3f8", "spin"),
                      ("radius", "f8", "radius"),
+                     ("age", "f8", "age"),
+                     ("metallicity", "f8", "metallicity"),
                     ]
     special_names = [_[0] for _ in special_attrs]
     special_dtype = [(_[0], _[1]) for _ in special_attrs]

@@ -37,7 +37,7 @@ p2p_pnacc_kernel_core(REAL3 pnacc,
 
     if (16777216*gamma > 1) {
 //    if (mij > 1.9) {
-//      printf("mi: %e, mj: %e, mij: %e\n", rmi.w, rmj.w, mij);
+//        printf("mi: %e, mj: %e, mij: %e\n", rmi.w, rmj.w, mij);
         REAL3 vi = {vei.x, vei.y, vei.z};
         REAL3 vj = {vej.x, vej.y, vej.z};
         REAL2 pn = p2p_pnterms(rmi.w, rmj.w,

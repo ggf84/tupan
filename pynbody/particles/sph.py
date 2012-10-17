@@ -7,7 +7,7 @@
 
 from __future__ import print_function
 import numpy as np
-from .pbase import Pbase, make_attrs
+from .body import Body, make_attrs
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -16,7 +16,7 @@ __all__ = ["Sph"]
 
 @decallmethods(timings)
 @make_attrs
-class Sph(Pbase):
+class Sph(Body):
     """
     A base class for Sph.
     """
@@ -27,8 +27,8 @@ class Sph(Pbase):
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
     special_data0 = np.zeros(0, special_dtype) if special_attrs else None
 
-    attrs = Pbase.common_attrs + special_attrs
-    names = Pbase.common_names + special_names
+    attrs = Body.attrs + special_attrs
+    names = Body.names + special_names
     dtype = [(_[0], _[1]) for _ in attrs]
     data0 = np.zeros(0, dtype)
 

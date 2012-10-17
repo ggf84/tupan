@@ -56,12 +56,7 @@ class Base(object):
         Drift operator for post-Newtonian quantities.
         """
         ip = self.drift_n(ip, tau)
-#        if ip.blackhole.n:
-        if ip.n:
-            for obj in ip.objs():
-                if obj.n:
-                    if hasattr(obj, "evolve_rcom_pn_shift"):
-                        obj.evolve_rcom_pn_shift(tau)
+        if ip.n: ip.evolve_rcom_pn_shift(tau)
         return ip
 
 
@@ -77,10 +72,8 @@ class Base(object):
         """
         Kick operator for post-Newtonian quantities.
         """
-#        if ip.blackhole.n and jp.blackhole.n:
         if ip.n and jp.n:
             ip = self.kick_n(ip, jp, tau / 2)
-
 
             ip.evolve_lmom_pn_shift(tau / 2)
             ip.evolve_amom_pn_shift(tau / 2)
@@ -97,33 +90,7 @@ class Base(object):
             ip.evolve_amom_pn_shift(tau / 2)
             ip.evolve_lmom_pn_shift(tau / 2)
 
-
-#            for (key, obj) in ip.items():
-#                if obj.n:
-#                    if hasattr(obj, "evolve_lmom_pn_shift"):
-#                        obj.evolve_lmom_pn_shift(tau / 2)
-#                    if hasattr(obj, "evolve_amom_pn_shift"):
-#                        obj.evolve_amom_pn_shift(tau / 2)
-#
-#                    if hasattr(obj, "get_pnacc"):
-#                        obj.vel += (tau / 2) * obj.pnacc
-#                        obj.evolve_ke_pn_shift(tau / 2)
-#
-#                        args = (jp.kind[key], self.pn_order, self.clight)
-#                        obj.pnacc = 2 * obj.get_pnacc(*args) - obj.pnacc
-#
-#                        obj.evolve_ke_pn_shift(tau / 2)
-#                        obj.vel += (tau / 2) * obj.pnacc
-#
-#                    if hasattr(obj, "evolve_amom_pn_shift"):
-#                        obj.evolve_amom_pn_shift(tau / 2)
-#                    if hasattr(obj, "evolve_lmom_pn_shift"):
-#                        obj.evolve_lmom_pn_shift(tau / 2)
-
-
             ip = self.kick_n(ip, jp, tau / 2)
-        else:
-            ip = self.kick_n(ip, jp, tau)
         return ip
 
 
