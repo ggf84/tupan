@@ -103,15 +103,6 @@ class Particles(AbstractNbodyMethods):
     def sph(self):
         return self.kind["sph"]
 
-    def keys(self):
-        return self.kind.keys()
-
-    def objs(self):
-        return self.kind.values()
-
-    def items(self):
-        return self.kind.items()
-
 
     #
     # miscellaneous methods
@@ -130,7 +121,7 @@ class Particles(AbstractNbodyMethods):
 
 
     def __hash__(self):
-        return hash(tuple(self.items()))
+        return hash(tuple(self.objs()))
 
 
     def __getitem__(self, slc):
@@ -166,7 +157,7 @@ class Particles(AbstractNbodyMethods):
             return subset
 
         if isinstance(slc, list):
-            raise NotImplementedError()
+            slc = np.array(slc)
 
         if isinstance(slc, np.ndarray):
             if slc.all():
@@ -182,20 +173,12 @@ class Particles(AbstractNbodyMethods):
 
 
 
-    def append(self, objs):
-        if isinstance(objs, Particles):
-            if objs.n:
-                for (key, obj) in objs.items():
-                    if obj.n:
-                        self.kind[key].append(obj)
-                self.n = len(self)
-        elif isinstance(objs, (Star, BlackHole, Sph)):
-            if objs.n:
-                key = type(objs).__name__.lower()
-                self.kind[key].append(objs)
-                self.n = len(self)
-        else:
-            raise TypeError("'{}' can not append obj of type: '{}'".format(type(self).__name__, type(objs)))
+    def append(self, obj):
+        if obj.n:
+            for (k, v) in obj.items():
+                if v.n:
+                    self.kind[k].append(v)
+            self.n = len(self)
 
 
 ########## end of file ##########

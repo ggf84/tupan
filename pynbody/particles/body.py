@@ -35,16 +35,25 @@ class NbodyUtils(object):
 
     """
 
+    def keys(self):
+        return self.kind.keys()
+
+    def objs(self):
+        return self.kind.values()
+
+    def items(self):
+        return self.kind.items()
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+
     def __len__(self):
         return len(self.id)
 
 
     def __contains__(self, id):
         return id in self.id
-
-
-    def copy(self):
-        return copy.deepcopy(self)
 
 
 
@@ -392,14 +401,9 @@ class Body(AbstractNbodyMethods):
         self.data = data
         self.n = len(self)
 
-
-    def items(self):
-        return [(type(self).__name__.lower(), self)]
-
     @property
     def kind(self):
-        return dict(self.items())
-
+        return {type(self).__name__.lower(): self}
 
     #
     # miscellaneous methods

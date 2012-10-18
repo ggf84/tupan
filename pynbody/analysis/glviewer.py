@@ -520,11 +520,11 @@ class GLviewer(object):
 #            gl.glAlphaFunc(gl.GL_GREATER, 0)
 
 
-        bodies = self.particle.body
-        if bodies.n:
-            points = bodies.pos
-            colors = self.get_colors(bodies.mass)
-            sizes = np.sqrt(bodies.eps2 * Ntot)
+        stars = self.particle.star
+        if stars.n:
+            points = stars.pos
+            colors = self.get_colors(stars.mass)
+            sizes = np.sqrt(stars.eps2 * Ntot)
 
             gl.glEnable(gl.GL_BLEND)
 #            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)

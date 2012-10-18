@@ -211,7 +211,7 @@ class SIA(Base):
 
     ### join
 
-    def join(self, slow, fast, inplace=True):
+    def join(self, slow, fast, inplace=False):
         if slow.n == 0:
             return fast
         if fast.n == 0:
@@ -308,11 +308,7 @@ class SIA(Base):
         Slow<->Fast Kick operator.
         """
         fast = self.kick(fast, slow, tau / 2, pn=True)
-
-        slow = self.kick(slow, fast, tau / 2, pn=True)
-        slow = self.kick(slow, slow, tau, pn=True)
-        slow = self.kick(slow, fast, tau / 2, pn=True)
-
+        slow = self.kick(slow, self.join(slow, fast), tau, pn=True)
         fast = self.kick(fast, slow, tau / 2, pn=True)
 
         return slow, fast
@@ -353,7 +349,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp)
 
-            p = self.join(slow, fast)
+            p = self.join(slow, fast, inplace=True)
 
         return p
 
@@ -400,7 +396,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp)
 
-            p = self.join(slow, fast)
+            p = self.join(slow, fast, inplace=True)
 
         return p
 
@@ -454,7 +450,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp)
 
-            p = self.join(slow, fast)
+            p = self.join(slow, fast, inplace=True)
 
         return p
 
@@ -515,7 +511,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp)
 
-            p = self.join(slow, fast)
+            p = self.join(slow, fast, inplace=True)
 
         return p
 
@@ -583,7 +579,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp)
 
-            p = self.join(slow, fast)
+            p = self.join(slow, fast, inplace=True)
 
         return p
 
@@ -658,7 +654,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp)
 
-            p = self.join(slow, fast)
+            p = self.join(slow, fast, inplace=True)
 
         return p
 
@@ -740,7 +736,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp)
 
-            p = self.join(slow, fast)
+            p = self.join(slow, fast, inplace=True)
 
         return p
 
@@ -836,7 +832,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp)
 
-            p = self.join(slow, fast)
+            p = self.join(slow, fast, inplace=True)
 
         return p
 
