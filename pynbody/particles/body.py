@@ -34,6 +34,12 @@ class NbodyUtils(object):
     """
 
     """
+    def __len__(self):
+        return len(self.id)
+
+    def __contains__(self, id):
+        return id in self.id
+
 
     def keys(self):
         return self.kind.keys()
@@ -47,13 +53,14 @@ class NbodyUtils(object):
     def copy(self):
         return copy.deepcopy(self)
 
+    def astype(self, cls):
+        newobj = cls()
+        for obj in self.objs():
+            tmp = cls()
+            tmp.set_state(obj.get_state())
+            newobj.append(tmp)
+        return newobj
 
-    def __len__(self):
-        return len(self.id)
-
-
-    def __contains__(self, id):
-        return id in self.id
 
 
 
@@ -444,10 +451,9 @@ class Body(AbstractNbodyMethods):
         if isinstance(slc, np.ndarray):
             if slc.all():
                 return self
+            data = None
             if slc.any():
                 data = self.data[slc]
-            else:
-                data = None
 
         return type(self)(data=data)
 
@@ -486,16 +492,10 @@ class Body(AbstractNbodyMethods):
         return self.data
 
 
-    def set_state(self, state):
-        self.data = type(self)(len(state)).data
-        self.data[:] = state
+    def set_state(self, array):
+        self.data = type(self)(len(array)).data
+        self.data[:] = array
         self.n = len(self)
-
-
-    def astype(self, cls):
-        obj = cls()
-        obj.set_state(self.get_state())
-        return obj
 
 
 ########## end of file ##########

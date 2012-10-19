@@ -162,15 +162,13 @@ class Particles(AbstractNbodyMethods):
         if isinstance(slc, np.ndarray):
             if slc.all():
                 return self
+            subset = type(self)()
             if slc.any():
-                subset = type(self)()
                 for (key, obj) in self.items():
                     if obj.n:
                         subset.append(obj[slc[:obj.n]])
                         slc = slc[obj.n:]
-                return subset
-            return type(self)()
-
+            return subset
 
 
     def append(self, obj):
