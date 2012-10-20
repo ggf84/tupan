@@ -57,4 +57,31 @@ class Star(Body):
     ### ...
 
 
+
+
+###############################################################################
+
+from .body import vBody, vBodies, make_properties   # XXX
+
+class vStar(vBody):
+    """
+
+    """
+    def __init__(self, _id):
+        super(vStar, self).__init__(_id)
+        self.rad = 0.0
+
+
+@make_properties
+class vStars(vBodies):
+    """
+
+    """
+    dtype = vBodies.dtype + [('rad', np.float64), ]
+    def __init__(self, n=0, objs=None):
+        if n: self.objs = np.vectorize(vStar)(xrange(n))
+        elif objs is not None: self.objs = objs
+        else: self.objs = np.zeros(n, object)
+
+
 ########## end of file ##########

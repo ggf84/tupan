@@ -54,4 +54,31 @@ class Sph(Body):
     ### ...
 
 
+
+
+###############################################################################
+
+from .body import vBody, vBodies, make_properties   # XXX
+
+class vSph(vBody):
+    """
+
+    """
+    def __init__(self, _id):
+        super(vSph, self).__init__(_id)
+        self.rho = 0.0
+
+
+@make_properties
+class vSphs(vBodies):
+    """
+
+    """
+    dtype = vBodies.dtype + [('rho', np.float64), ]
+    def __init__(self, n=0, objs=None):
+        if n: self.objs = np.vectorize(vSph)(xrange(n))
+        elif objs is not None: self.objs = objs
+        else: self.objs = np.zeros(n, object)
+
+
 ########## end of file ##########

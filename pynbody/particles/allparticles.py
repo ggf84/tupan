@@ -179,4 +179,62 @@ class Particles(AbstractNbodyMethods):
             self.n = len(self)
 
 
+
+
+###############################################################################
+
+from .sph import vSph, vSphs
+from .star import vStar, vStars
+from .blackhole import vBlackhole, vBlackholes
+from .body import vBody, vBodies, make_properties
+
+
+@make_properties
+class Sys(vBodies):
+    """
+
+    """
+    def __init__(self, *args, **kwargs):
+        if args:
+            objs = [obj.objs for obj in args if obj.n]
+            if objs: self.objs = np.concatenate(objs)
+            else: self.objs = np.zeros(0, object)
+        elif kwargs:
+            objs = kwargs.get('objs', None)
+            if objs is not None: self.objs = objs
+            else: self.objs = np.zeros(0, object)
+        else: self.objs = np.zeros(0, object)
+
+
+    @property
+    def stars(self):
+        @np.vectorize
+        def selection(obj):
+            return isinstance(obj, vStar)
+        objs = self.objs[selection(self.objs)]
+        return vStars(objs=objs)
+
+
+    @property
+    def sphs(self):
+        @np.vectorize
+        def selection(obj):
+            return isinstance(obj, vSph)
+        objs = self.objs[selection(self.objs)]
+        return vSphs(objs=objs)
+
+
+    @property
+    def blackholes(self):
+        @np.vectorize
+        def selection(obj):
+            return isinstance(obj, vBlackhole)
+        objs = self.objs[selection(self.objs)]
+        return vBlackholes(objs=objs)
+
+
+
+
+
+
 ########## end of file ##########

@@ -498,4 +498,87 @@ class Body(AbstractNbodyMethods):
         self.n = len(self)
 
 
+
+
+###############################################################################
+
+
+def make_properties(cls):
+    def make_property(attr, dty):
+        get_attr = np.frompyfunc(getattr, 2, 1)
+        set_attr = np.frompyfunc(setattr, 3, 1) # set nout=1 because setattr returns None
+
+        def fget(self):
+            return get_attr(self.objs, attr).astype(dty)
+        def fset(self, value):
+            set_attr(self.objs, attr, dty(value))
+        return property(fget, fset, fdel=None, doc=None)
+
+    for (attr, dty) in cls.dtype:
+        setattr(cls, attr, make_property(attr, dty))
+
+    return cls
+
+
+class vBody(object):
+    """
+
+    """
+    def __init__(self, _id):
+        self.id = id(self)
+        self.mass = 0.0
+        self.eps2 = 0.0
+        self.rx = 0.0
+        self.ry = 0.0
+        self.rz = 0.0
+        self.vx = 0.0
+        self.vy = 0.0
+        self.vz = 0.0
+
+
+    def __repr__(self):
+        attrs = ", ".join([str(k)+'='+str(v) for k,v in sorted(self.__dict__.items())])
+        return "{0}({1})".format(type(self).__name__, attrs)
+
+
+
+@make_properties
+class vBodies(object):
+    """
+
+    """
+    dtype = [('id', np.uint64), ('mass', np.float64), ('eps2', np.float64),
+             ('rx', np.float64), ('ry', np.float64), ('rz', np.float64),
+             ('vx', np.float64), ('vy', np.float64), ('vz', np.float64), ]
+    def __init__(self, n=0, objs=None):
+        if n: self.objs = np.vectorize(vBody)(xrange(n))
+        elif objs is not None: self.objs = objs
+        else: self.objs = np.zeros(n, object)
+
+
+    @property
+    def n(self):
+        return len(self)
+
+    def __repr__(self):
+        return repr(self.objs)
+
+    def __len__(self):
+        return len(self.objs)
+
+    def __getitem__(self, slc):
+        if isinstance(slc, int): slc = [slc]
+        item = self.objs[slc]
+        if isinstance(item, type(self)): return item
+        return type(self)(objs=item)
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+    def append(self, obj):
+        if obj.n:
+            self.objs = np.concatenate((self.objs, obj.objs))
+
+
+
 ########## end of file ##########

@@ -8,8 +8,6 @@
 from __future__ import print_function
 import numpy as np
 from .body import Body, make_attrs
-from ..lib import gravity
-from ..lib.utils.memoize import cache, cache_arg
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -55,6 +53,39 @@ class BlackHole(Body):
     #
 
     ### ...
+
+
+
+
+###############################################################################
+
+from .body import vBody, vBodies, make_properties   # XXX
+
+class vBlackhole(vBody):
+    """
+
+    """
+    def __init__(self, _id):
+        super(vBlackhole, self).__init__(_id)
+        self.rad = 0.0
+        self.pnaccx = 0.0
+        self.pnaccy = 0.0
+        self.pnaccz = 0.0
+
+
+@make_properties
+class vBlackholes(vBodies):
+    """
+
+    """
+    dtype = vBodies.dtype + [('rad', np.float64),
+                             ('pnaccx', np.float64),
+                             ('pnaccy', np.float64),
+                             ('pnaccx', np.float64), ]
+    def __init__(self, n=0, objs=None):
+        if n: self.objs = np.vectorize(vBlackhole)(xrange(n))
+        elif objs is not None: self.objs = objs
+        else: self.objs = np.zeros(n, object)
 
 
 ########## end of file ##########
