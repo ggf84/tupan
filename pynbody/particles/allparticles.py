@@ -27,19 +27,19 @@ ALL_PARTICLE_TYPES = ["sph", "star", "blackhole"]
 def make_common_attrs(cls):
     def make_property(attr, doc):
         def fget(self):
-            seq = [obj.data[attr] for obj in self.objs() if obj.n]
+            seq = [obj.data[attr] for obj in self.values() if obj.n]
             if len(seq) == 1:
                 return seq[0]
             if len(seq) > 1:
                 return np.concatenate(seq)
-            return np.concatenate([obj.data[attr] for obj in self.objs()])
+            return np.concatenate([obj.data[attr] for obj in self.values()])
 
-#            seq = [v for obj in self.objs() for v in obj.data[attr]]
+#            seq = [v for obj in self.values() for v in obj.data[attr]]
 #            return np.array(seq)
 
 
         def fset(self, value):
-            for obj in self.objs():
+            for obj in self.values():
                 if obj.n:
                     try:
                         obj.data[attr] = value[:obj.n]
@@ -47,7 +47,7 @@ def make_common_attrs(cls):
                     except:
                         obj.data[attr] = value
 
-#            for obj in self.objs():
+#            for obj in self.values():
 #                if obj.n:
 #                    try:
 #                        items = value[:obj.n]
@@ -70,7 +70,7 @@ def make_common_attrs(cls):
 
 @decallmethods(timings)
 @make_common_attrs
-class Particles(AbstractNbodyMethods):
+class Particles__(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
     """
@@ -121,7 +121,7 @@ class Particles(AbstractNbodyMethods):
 
 
     def __hash__(self):
-        return hash(tuple(self.objs()))
+        return hash(tuple(self.values()))
 
 
     def __getitem__(self, slc):
@@ -183,58 +183,71 @@ class Particles(AbstractNbodyMethods):
 
 ###############################################################################
 
-from .sph import vSph, vSphs
-from .star import vStar, vStars
-from .blackhole import vBlackhole, vBlackholes
-from .body import vBody, vBodies, make_properties
+from .sph import vSph, Sphs
+from .star import vStar, Stars
+from .blackhole import vBlackhole, Blackholes
+from .body import vBody, Bodies, make_properties
 
 
+@decallmethods(timings)
 @make_properties
-class Sys(vBodies):
+class Particles(Bodies):
     """
 
     """
-    def __init__(self, *args, **kwargs):
-        if args:
-            objs = [obj.objs for obj in args if obj.n]
-            if objs: self.objs = np.concatenate(objs)
-            else: self.objs = np.zeros(0, object)
-        elif kwargs:
-            objs = kwargs.get('objs', None)
-            if objs is not None: self.objs = objs
-            else: self.objs = np.zeros(0, object)
-        else: self.objs = np.zeros(0, object)
+    def __init__(self, nstar=0, nbh=0, nsph=0, objs=None):
+        if objs is None:
+            self.objs = np.concatenate([
+                                        np.array([vSph() for i in xrange(nsph)], object),
+                                        np.array([vStar() for i in xrange(nstar)], object),
+                                        np.array([vBlackhole() for i in xrange(nbh)], object),
+                                       ])
+        else:
+            self.objs = objs
+
+
+#    def __init__(self, *args, **kwargs):
+#        if args:
+#            objs = [obj.objs for obj in args if obj.n]
+#            if objs: self.objs = np.concatenate(objs)
+#            else: self.objs = np.zeros(0, object)
+#        elif kwargs:
+#            objs = kwargs.get('objs', None)
+#            if objs is not None: self.objs = objs
+#            else: self.objs = np.zeros(0, object)
+#        else: self.objs = np.zeros(0, object)
 
 
     @property
     def stars(self):
-        @np.vectorize
-        def selection(obj):
-            return isinstance(obj, vStar)
-        objs = self.objs[selection(self.objs)]
-        return vStars(objs=objs)
-
+        select = np.frompyfunc(isinstance, 2, 1)
+        slc = select(self.objs, Stars.basetype).astype(bool)
+        objs = self.objs[slc]
+        return Stars(objs=objs)
 
     @property
     def sphs(self):
-        @np.vectorize
-        def selection(obj):
-            return isinstance(obj, vSph)
-        objs = self.objs[selection(self.objs)]
-        return vSphs(objs=objs)
-
+        select = np.frompyfunc(isinstance, 2, 1)
+        slc = select(self.objs, Sphs.basetype).astype(bool)
+        objs = self.objs[slc]
+        return Sphs(objs=objs)
 
     @property
     def blackholes(self):
-        @np.vectorize
-        def selection(obj):
-            return isinstance(obj, vBlackhole)
-        objs = self.objs[selection(self.objs)]
-        return vBlackholes(objs=objs)
+        select = np.frompyfunc(isinstance, 2, 1)
+        slc = select(self.objs, Blackholes.basetype).astype(bool)
+        objs = self.objs[slc]
+        return Blackholes(objs=objs)
 
-
-
-
+    @property
+    def kind(self):
+        sphs = self.sphs
+        stars = self.stars
+        blackholes = self.blackholes
+        return {type(sphs).__name__.lower(): sphs,
+                type(stars).__name__.lower(): stars,
+                type(blackholes).__name__.lower(): blackholes,
+               }
 
 
 ########## end of file ##########

@@ -51,8 +51,8 @@ p2p_tstep_kernel_core(REAL iomega,
 // OpenCL implementation
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL
-p2p_accum_tstep(REAL myOmega,
-                const REAL8 myData,
+p2p_accum_tstep(REAL iOmega,
+                const REAL8 iData,
                 const REAL eta,
                 uint j_begin,
                 uint j_end,
@@ -61,16 +61,18 @@ p2p_accum_tstep(REAL myOmega,
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-        myOmega = p2p_tstep_kernel_core(myOmega, myData.lo, myData.hi,
-                                        sharedJData[j].lo, sharedJData[j].hi,
-                                        eta);
+        REAL8 jData = sharedJData[j];
+        iOmega = p2p_tstep_kernel_core(iOmega,
+                                       iData.lo, iData.hi,
+                                       jData.lo, jData.hi,
+                                       eta);
     }
-    return myOmega;
+    return iOmega;
 }
 
 
 inline REAL
-p2p_tstep_kernel_main_loop(const REAL8 myData,
+p2p_tstep_kernel_main_loop(const REAL8 iData,
                            const uint nj,
                            __global const REAL8 *jdata,
                            const REAL eta,
@@ -79,7 +81,7 @@ p2p_tstep_kernel_main_loop(const REAL8 myData,
 {
     uint lsize = get_local_size(0);
 
-    REAL myOmega = (REAL)0;
+    REAL iOmega = (REAL)0;
 
     uint tile;
     uint numTiles = (nj - 1)/lsize + 1;
@@ -93,18 +95,18 @@ p2p_tstep_kernel_main_loop(const REAL8 myData,
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            myOmega = p2p_accum_tstep(myOmega, myData,
-                                      eta, j, j + JUNROLL,
-                                      sharedJData);
+            iOmega = p2p_accum_tstep(iOmega, iData,
+                                     eta, j, j + JUNROLL,
+                                     sharedJData);
         }
-        myOmega = p2p_accum_tstep(myOmega, myData,
-                                  eta, j, nb,
-                                  sharedJData);
+        iOmega = p2p_accum_tstep(iOmega, iData,
+                                 eta, j, nb,
+                                 sharedJData);
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
-    return myOmega;
+    return iOmega;
 }
 
 

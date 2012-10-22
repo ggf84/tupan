@@ -8,18 +8,18 @@
 // p2p_phi_kernel_core
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL
-p2p_phi_kernel_core(REAL phi,
-                    const REAL4 rmi, const REAL hi2,
-                    const REAL4 rmj, const REAL hj2)
+p2p_phi_kernel_core(REAL iphi,
+                    const REAL4 rmi, const REAL4 vei,
+                    const REAL4 rmj, const REAL4 vej)
 {
     REAL3 r;
     r.x = rmi.x - rmj.x;                                             // 1 FLOPs
     r.y = rmi.y - rmj.y;                                             // 1 FLOPs
     r.z = rmi.z - rmj.z;                                             // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
-    REAL inv_r = smoothed_inv_r1(r2, hi2 + hj2);                     // 4 FLOPs
-    phi -= rmj.w * inv_r;                                            // 2 FLOPs
-    return phi;
+    REAL inv_r = smoothed_inv_r1(r2, vei.w + vej.w);                 // 4 FLOPs
+    iphi -= rmj.w * inv_r;                                           // 2 FLOPs
+    return iphi;
 }
 // Total flop count: 14
 
@@ -29,8 +29,8 @@ p2p_phi_kernel_core(REAL phi,
 // OpenCL implementation
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL
-p2p_accum_phi(REAL myPhi,
-              const REAL8 myData,
+p2p_accum_phi(REAL iPhi,
+              const REAL8 iData,
               uint j_begin,
               uint j_end,
               __local REAL8 *sharedJData
@@ -38,15 +38,17 @@ p2p_accum_phi(REAL myPhi,
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-        myPhi = p2p_phi_kernel_core(myPhi, myData.lo, myData.s7,
-                                    sharedJData[j].lo, sharedJData[j].s7);
+        REAL8 jData = sharedJData[j];
+        iPhi = p2p_phi_kernel_core(iPhi,
+                                   iData.lo, iData.hi,
+                                   jData.lo, jData.hi);
     }
-    return myPhi;
+    return iPhi;
 }
 
 
 inline REAL
-p2p_phi_kernel_main_loop(const REAL8 myData,
+p2p_phi_kernel_main_loop(const REAL8 iData,
                          const uint nj,
                          __global const REAL8 *jdata,
                          __local REAL8 *sharedJData
@@ -54,7 +56,7 @@ p2p_phi_kernel_main_loop(const REAL8 myData,
 {
     uint lsize = get_local_size(0);
 
-    REAL myPhi = (REAL)0;
+    REAL iPhi = (REAL)0;
 
     uint tile;
     uint numTiles = (nj - 1)/lsize + 1;
@@ -68,18 +70,18 @@ p2p_phi_kernel_main_loop(const REAL8 myData,
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            myPhi = p2p_accum_phi(myPhi, myData,
-                                  j, j + JUNROLL,
-                                  sharedJData);
+            iPhi = p2p_accum_phi(iPhi, iData,
+                                 j, j + JUNROLL,
+                                 sharedJData);
         }
-        myPhi = p2p_accum_phi(myPhi, myData,
-                              j, nb,
-                              sharedJData);
+        iPhi = p2p_accum_phi(iPhi, iData,
+                             j, nb,
+                             sharedJData);
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
-    return myPhi;
+    return iPhi;
 }
 
 
@@ -144,13 +146,15 @@ _p2p_phi_kernel(PyObject *_args)
         REAL iphi = (REAL)0;
         REAL4 rmi = {idata_ptr[i8  ], idata_ptr[i8+1],
                      idata_ptr[i8+2], idata_ptr[i8+3]};
-        REAL ieps2 = idata_ptr[i8+7];
+        REAL4 vei = {idata_ptr[i8+4], idata_ptr[i8+5],
+                     idata_ptr[i8+6], idata_ptr[i8+7]};
         for (j = 0; j < nj; ++j) {
             j8 = 8*j;
             REAL4 rmj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
                          jdata_ptr[j8+2], jdata_ptr[j8+3]};
-            REAL jeps2 = jdata_ptr[j8+7];
-            iphi = p2p_phi_kernel_core(iphi, rmi, ieps2, rmj, jeps2);
+            REAL4 vej = {jdata_ptr[j8+4], jdata_ptr[j8+5],
+                         jdata_ptr[j8+6], jdata_ptr[j8+7]};
+            iphi = p2p_phi_kernel_core(iphi, rmi, vei, rmj, vej);
         }
         ret_ptr[i] = iphi;
     }

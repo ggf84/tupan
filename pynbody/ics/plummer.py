@@ -12,7 +12,6 @@ import math
 import logging
 import numpy as np
 from ..particles import Particles
-from ..particles.star import Star
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -21,20 +20,18 @@ __all__ = ['Plummer']
 logger = logging.getLogger(__name__)
 
 
-def scale_mass(particles, m_scale):
-    for obj in particles.objs():
-        if obj.n:
-            obj.mass *= m_scale
+def scale_mass(p, m_scale):
+    p.mass *= m_scale
 
-def scale_pos(particles, r_scale):
-    for obj in particles.objs():
-        if obj.n:
-            obj.pos *= r_scale
+def scale_pos(p, r_scale):
+    p.x *= r_scale
+    p.y *= r_scale
+    p.z *= r_scale
 
-def scale_vel(particles, v_scale):
-    for obj in particles.objs():
-        if obj.n:
-            obj.vel *= v_scale
+def scale_vel(p, v_scale):
+    p.vx *= v_scale
+    p.vy *= v_scale
+    p.vz *= v_scale
 
 def scale_to_virial(particles, ke, pe, te):
     scale_vel(particles, math.sqrt(-0.5*pe/ke))
@@ -76,8 +73,7 @@ class Plummer(object):
         self.mfrac = mfrac
         self.eps2 = eps*eps
         self.eps_parametrization = eps_parametrization
-        self.particles = Particles()
-        self.particles.append(Star(num))
+        self.particles = Particles(nstar=num)
         np.random.seed(seed)
 
     def set_eps2(self, mass):
@@ -113,7 +109,7 @@ class Plummer(object):
         rx = radius * np.sin(theta) * np.cos(phi)
         ry = radius * np.sin(theta) * np.sin(phi)
         rz = radius * np.cos(theta)
-        return np.vstack((rx, ry, rz)).T
+        return (rx, ry, rz)
 
 
     def set_vel(self, pot):
@@ -132,7 +128,7 @@ class Plummer(object):
         vx = velocity * np.sin(theta) * np.cos(phi)
         vy = velocity * np.sin(theta) * np.sin(phi)
         vz = velocity * np.cos(theta)
-        return np.vstack((vx, vy, vz)).T
+        return (vx, vy, vz)
 
 
     def set_bodies(self):
@@ -141,24 +137,30 @@ class Plummer(object):
         ilist = np.arange(n)
 
         # set index
-        self.particles.star.id[:] = ilist
+        self.particles.id = ilist
 
         srand = np.random.get_state()
 
         # set mass
-        self.particles.star.mass[:] = self.imf.sample(n)
-        self.particles.star.mass /= self.particles.star.total_mass
+        self.particles.mass = self.imf.sample(n)
+        self.particles.mass /= self.particles.total_mass
 
         # set eps2
-        self.particles.star.eps2[:] = self.set_eps2(self.particles.star.mass)
+        self.particles.eps2 = self.set_eps2(self.particles.mass)
 
         np.random.set_state(srand)
 
         # set pos
-        self.particles.star.pos[:] = self.set_pos(np.random.permutation(ilist))
+        pos = self.set_pos(np.random.permutation(ilist))
+        self.particles.x = pos[0]
+        self.particles.y = pos[1]
+        self.particles.z = pos[2]
 
         # set vel
-        self.particles.star.vel[:] = self.set_vel(self.particles.get_phi(self.particles))
+        vel = self.set_vel(self.particles.get_phi(self.particles))
+        self.particles.vx = vel[0]
+        self.particles.vy = vel[1]
+        self.particles.vz = vel[2]
 
 
     def make_plummer(self):
@@ -177,7 +179,7 @@ class Plummer(object):
         import matplotlib.pyplot as plt
         from matplotlib.patches import Circle
 
-        mass = self.imf._mtot * self.particles.star.mass.copy()
+        mass = self.imf._mtot * self.particles.mass.copy()
 
         ###################################
 
@@ -211,10 +213,10 @@ class Plummer(object):
 
         ###################################
 
-        b = self.particles.star
+        b = self.particles
         n = b.n
-        x = b.pos[:,0]
-        y = b.pos[:,1]
+        x = b.x
+        y = b.y
         radius = 2 * n * b.mass
         color = n * b.mass
 

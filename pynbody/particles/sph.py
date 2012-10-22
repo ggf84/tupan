@@ -21,7 +21,7 @@ class Sph(Body):
     A base class for Sph.
     """
     special_attrs = [# name, dtype, doc
-
+                     ("rho", "f8", "density"),
                     ]
     special_names = [_[0] for _ in special_attrs]
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
@@ -58,27 +58,28 @@ class Sph(Body):
 
 ###############################################################################
 
-from .body import vBody, vBodies, make_properties   # XXX
+from .body import vBody, Bodies, make_properties   # XXX
 
+@decallmethods(timings)
 class vSph(vBody):
     """
 
     """
-    def __init__(self, _id):
-        super(vSph, self).__init__(_id)
+    def __init__(self):
+        super(vSph, self).__init__()
         self.rho = 0.0
 
 
+@decallmethods(timings)
 @make_properties
-class vSphs(vBodies):
+class Sphs(Bodies):
     """
 
     """
-    dtype = vBodies.dtype + [('rho', np.float64), ]
-    def __init__(self, n=0, objs=None):
-        if n: self.objs = np.vectorize(vSph)(xrange(n))
-        elif objs is not None: self.objs = objs
-        else: self.objs = np.zeros(n, object)
+    basetype = vSph
+    dtype = Bodies.dtype + [
+                            ('rho', np.float64),
+                           ]
 
 
 ########## end of file ##########

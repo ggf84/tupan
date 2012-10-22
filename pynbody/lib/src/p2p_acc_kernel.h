@@ -9,15 +9,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL3
 p2p_acc_kernel_core(REAL3 acc,
-                    const REAL4 rmi, const REAL hi2,
-                    const REAL4 rmj, const REAL hj2)
+                    const REAL4 rmi, const REAL4 vei,
+                    const REAL4 rmj, const REAL4 vej)
 {
     REAL3 r;
     r.x = rmi.x - rmj.x;                                             // 1 FLOPs
     r.y = rmi.y - rmj.y;                                             // 1 FLOPs
     r.z = rmi.z - rmj.z;                                             // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
-    REAL inv_r3 = smoothed_inv_r3(r2, hi2 + hj2);                    // 5 FLOPs
+    REAL inv_r3 = smoothed_inv_r3(r2, vei.w + vej.w);                // 5 FLOPs
 
     inv_r3 *= rmj.w;                                                 // 1 FLOPs
 
@@ -34,8 +34,8 @@ p2p_acc_kernel_core(REAL3 acc,
 // OpenCL implementation
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL3
-p2p_accum_acc(REAL3 myAcc,
-              const REAL8 myData,
+p2p_accum_acc(REAL3 iAcc,
+              const REAL8 iData,
               uint j_begin,
               uint j_end,
               __local REAL8 *sharedJData
@@ -43,15 +43,17 @@ p2p_accum_acc(REAL3 myAcc,
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-        myAcc = p2p_acc_kernel_core(myAcc, myData.lo, myData.s7,
-                                    sharedJData[j].lo, sharedJData[j].s7);
+        REAL8 jData = sharedJData[j];
+        iAcc = p2p_acc_kernel_core(iAcc,
+                                   iData.lo, iData.hi,
+                                   jData.lo, jData.hi);
     }
-    return myAcc;
+    return iAcc;
 }
 
 
 inline REAL3
-p2p_acc_kernel_main_loop(const REAL8 myData,
+p2p_acc_kernel_main_loop(const REAL8 iData,
                          const uint nj,
                          __global const REAL8 *jdata,
                          __local REAL8 *sharedJData
@@ -59,7 +61,7 @@ p2p_acc_kernel_main_loop(const REAL8 myData,
 {
     uint lsize = get_local_size(0);
 
-    REAL3 myAcc = (REAL3){0, 0, 0};
+    REAL3 iAcc = (REAL3){0, 0, 0};
 
     uint tile;
     uint numTiles = (nj - 1)/lsize + 1;
@@ -73,18 +75,18 @@ p2p_acc_kernel_main_loop(const REAL8 myData,
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            myAcc = p2p_accum_acc(myAcc, myData,
-                                  j, j + JUNROLL,
-                                  sharedJData);
+            iAcc = p2p_accum_acc(iAcc, iData,
+                                 j, j + JUNROLL,
+                                 sharedJData);
         }
-        myAcc = p2p_accum_acc(myAcc, myData,
-                              j, nb,
-                              sharedJData);
+        iAcc = p2p_accum_acc(iAcc, iData,
+                             j, nb,
+                             sharedJData);
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
-    return myAcc;
+    return iAcc;
 }
 
 
@@ -150,13 +152,15 @@ _p2p_acc_kernel(PyObject *_args)
         REAL3 iacc = (REAL3){0, 0, 0};
         REAL4 rmi = {idata_ptr[i8  ], idata_ptr[i8+1],
                      idata_ptr[i8+2], idata_ptr[i8+3]};
-        REAL ieps2 = idata_ptr[i8+7];
+        REAL4 vei = {idata_ptr[i8+4], idata_ptr[i8+5],
+                     idata_ptr[i8+6], idata_ptr[i8+7]};
         for (j = 0; j < nj; ++j) {
             j8 = 8*j;
             REAL4 rmj = {jdata_ptr[j8  ], jdata_ptr[j8+1],
                          jdata_ptr[j8+2], jdata_ptr[j8+3]};
-            REAL jeps2 = jdata_ptr[j8+7];
-            iacc = p2p_acc_kernel_core(iacc, rmi, ieps2, rmj, jeps2);
+            REAL4 vej = {jdata_ptr[j8+4], jdata_ptr[j8+5],
+                         jdata_ptr[j8+6], jdata_ptr[j8+7]};
+            iacc = p2p_acc_kernel_core(iacc, rmi, vei, rmj, vej);
         }
         ik = i * k;
         ret_ptr[ik  ] = iacc.x;

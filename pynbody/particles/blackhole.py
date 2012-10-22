@@ -21,7 +21,9 @@ class BlackHole(Body):
     A base class for BlackHoles.
     """
     special_attrs = [# name, dtype, doc
-                     ("spin", "3f8", "spin"),
+                     ("sx", "f8", "x-spin"),
+                     ("sy", "f8", "y-spin"),
+                     ("sz", "f8", "z-spin"),
                      ("radius", "f8", "radius"),
                     ]
     special_names = [_[0] for _ in special_attrs]
@@ -59,33 +61,34 @@ class BlackHole(Body):
 
 ###############################################################################
 
-from .body import vBody, vBodies, make_properties   # XXX
+from .body import vBody, Bodies, make_properties   # XXX
 
+@decallmethods(timings)
 class vBlackhole(vBody):
     """
 
     """
-    def __init__(self, _id):
-        super(vBlackhole, self).__init__(_id)
-        self.rad = 0.0
-        self.pnaccx = 0.0
-        self.pnaccy = 0.0
-        self.pnaccz = 0.0
+    def __init__(self):
+        super(vBlackhole, self).__init__()
+        self.sx = 0.0
+        self.sy = 0.0
+        self.sz = 0.0
+        self.radius = 0.0
 
 
+@decallmethods(timings)
 @make_properties
-class vBlackholes(vBodies):
+class Blackholes(Bodies):
     """
 
     """
-    dtype = vBodies.dtype + [('rad', np.float64),
-                             ('pnaccx', np.float64),
-                             ('pnaccy', np.float64),
-                             ('pnaccx', np.float64), ]
-    def __init__(self, n=0, objs=None):
-        if n: self.objs = np.vectorize(vBlackhole)(xrange(n))
-        elif objs is not None: self.objs = objs
-        else: self.objs = np.zeros(n, object)
+    basetype = vBlackhole
+    dtype = Bodies.dtype + [
+                            ("sx", np.float64),
+                            ("sy", np.float64),
+                            ("sz", np.float64),
+                            ("radius", np.float64),
+                           ]
 
 
 ########## end of file ##########

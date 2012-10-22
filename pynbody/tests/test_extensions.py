@@ -49,26 +49,26 @@ class TestCase(unittest.TestCase):
 
         for i in range(1, npart+1):
             for j in range(1, npart+1):
-                result = {'cpu': None, 'gpu': None}
+                res = {'cpu': None, 'gpu': None}
 
                 # setup data
-                iobj = small_system[:i].copy()
-                jobj = small_system[:j].copy()
+                iobj = small_system[:i]
+                jobj = small_system[:j]
 
                 # calculating on CPU
                 kernel = gravity.Phi(libkernels['sp']['c'])
                 kernel.set_args(iobj, jobj)
                 kernel.run()
-                result['cpu'] = kernel.get_result()
+                res['cpu'] = kernel.get_result()
 
                 # calculating on GPU
                 kernel = gravity.Phi(libkernels['sp']['cl'])
                 kernel.set_args(iobj, jobj)
                 kernel.run()
-                result['gpu'] = kernel.get_result()
+                res['gpu'] = kernel.get_result()
 
                 # calculating deviation of result
-                deviation = np.abs(result['cpu'] - result['gpu'])
+                deviation = np.abs(res['cpu'] - res['gpu'])
                 deviations.append(deviation.max())
 
         deviations = np.array(deviations)
@@ -83,26 +83,26 @@ class TestCase(unittest.TestCase):
 
         for i in range(1, npart+1):
             for j in range(1, npart+1):
-                result = {'cpu': None, 'gpu': None}
+                res = {'cpu': None, 'gpu': None}
 
                 # setup data
-                iobj = small_system[:i].copy()
-                jobj = small_system[:j].copy()
+                iobj = small_system[:i]
+                jobj = small_system[:j]
 
                 # calculating on CPU
                 kernel = gravity.Acc(libkernels['sp']['c'])
                 kernel.set_args(iobj, jobj)
                 kernel.run()
-                result['cpu'] = kernel.get_result()
+                res['cpu'] = kernel.get_result()
 
                 # calculating on GPU
                 kernel = gravity.Acc(libkernels['sp']['cl'])
                 kernel.set_args(iobj, jobj)
                 kernel.run()
-                result['gpu'] = kernel.get_result()
+                res['gpu'] = kernel.get_result()
 
                 # calculating deviation of result
-                deviation = np.sqrt(((result['cpu']-result['gpu'])**2).sum(1))
+                deviation = np.sqrt(sum((a_cpu-a_gpu)**2 for a_cpu, a_gpu in zip(res["cpu"], res["gpu"])))
                 deviations.append(deviation.max())
 
         deviations = np.array(deviations)
@@ -117,26 +117,26 @@ class TestCase(unittest.TestCase):
 
         for i in range(1, npart+1):
             for j in range(1, npart+1):
-                result = {'cpu': None, 'gpu': None}
+                res = {'cpu': None, 'gpu': None}
 
                 # setup data
-                iobj = small_system[:i].copy()
-                jobj = small_system[:j].copy()
+                iobj = small_system[:i]
+                jobj = small_system[:j]
 
                 # calculating on CPU
                 kernel = gravity.PNAcc(libkernels['sp']['c'])
                 kernel.set_args(iobj, jobj, 7, 128)
                 kernel.run()
-                result['cpu'] = kernel.get_result()
+                res['cpu'] = kernel.get_result()
 
                 # calculating on GPU
                 kernel = gravity.PNAcc(libkernels['sp']['cl'])
                 kernel.set_args(iobj, jobj, 7, 128)
                 kernel.run()
-                result['gpu'] = kernel.get_result()
+                res['gpu'] = kernel.get_result()
 
                 # calculating deviation of result
-                deviation = np.sqrt(((result['cpu']-result['gpu'])**2).sum(1))
+                deviation = np.sqrt(sum((a_cpu-a_gpu)**2 for a_cpu, a_gpu in zip(res["cpu"], res["gpu"])))
                 deviations.append(deviation.max())
 
         deviations = np.array(deviations)
@@ -151,26 +151,26 @@ class TestCase(unittest.TestCase):
 
         for i in range(1, npart+1):
             for j in range(1, npart+1):
-                result = {'cpu': None, 'gpu': None}
+                res = {'cpu': None, 'gpu': None}
 
                 # setup data
-                iobj = small_system[:i].copy()
-                jobj = small_system[:j].copy()
+                iobj = small_system[:i]
+                jobj = small_system[:j]
 
                 # calculating on CPU
                 kernel = gravity.Phi(libkernels['dp']['c'])
                 kernel.set_args(iobj, jobj)
                 kernel.run()
-                result['cpu'] = kernel.get_result()
+                res['cpu'] = kernel.get_result()
 
                 # calculating on GPU
                 kernel = gravity.Phi(libkernels['dp']['cl'])
                 kernel.set_args(iobj, jobj)
                 kernel.run()
-                result['gpu'] = kernel.get_result()
+                res['gpu'] = kernel.get_result()
 
                 # calculating deviation of result
-                deviation = np.abs(result['cpu'] - result['gpu'])
+                deviation = np.abs(res['cpu'] - res['gpu'])
                 deviations.append(deviation.max())
 
         deviations = np.array(deviations)
@@ -185,26 +185,26 @@ class TestCase(unittest.TestCase):
 
         for i in range(1, npart+1):
             for j in range(1, npart+1):
-                result = {'cpu': None, 'gpu': None}
+                res = {'cpu': None, 'gpu': None}
 
                 # setup data
-                iobj = small_system[:i].copy()
-                jobj = small_system[:j].copy()
+                iobj = small_system[:i]
+                jobj = small_system[:j]
 
                 # calculating on CPU
                 kernel = gravity.Acc(libkernels['dp']['c'])
                 kernel.set_args(iobj, jobj)
                 kernel.run()
-                result['cpu'] = kernel.get_result()
+                res['cpu'] = kernel.get_result()
 
                 # calculating on GPU
                 kernel = gravity.Acc(libkernels['dp']['cl'])
                 kernel.set_args(iobj, jobj)
                 kernel.run()
-                result['gpu'] = kernel.get_result()
+                res['gpu'] = kernel.get_result()
 
                 # calculating deviation of result
-                deviation = np.sqrt(((result['cpu']-result['gpu'])**2).sum(1))
+                deviation = np.sqrt(sum((a_cpu-a_gpu)**2 for a_cpu, a_gpu in zip(res["cpu"], res["gpu"])))
                 deviations.append(deviation.max())
 
         deviations = np.array(deviations)
@@ -219,26 +219,26 @@ class TestCase(unittest.TestCase):
 
         for i in range(1, npart+1):
             for j in range(1, npart+1):
-                result = {'cpu': None, 'gpu': None}
+                res = {'cpu': None, 'gpu': None}
 
                 # setup data
-                iobj = small_system[:i].copy()
-                jobj = small_system[:j].copy()
+                iobj = small_system[:i]
+                jobj = small_system[:j]
 
                 # calculating on CPU
                 kernel = gravity.PNAcc(libkernels['dp']['c'])
                 kernel.set_args(iobj, jobj, 7, 128)
                 kernel.run()
-                result['cpu'] = kernel.get_result()
+                res['cpu'] = kernel.get_result()
 
                 # calculating on GPU
                 kernel = gravity.PNAcc(libkernels['dp']['cl'])
                 kernel.set_args(iobj, jobj, 7, 128)
                 kernel.run()
-                result['gpu'] = kernel.get_result()
+                res['gpu'] = kernel.get_result()
 
                 # calculating deviation of result
-                deviation = np.sqrt(((result['cpu']-result['gpu'])**2).sum(1))
+                deviation = np.sqrt(sum((a_cpu-a_gpu)**2 for a_cpu, a_gpu in zip(res["cpu"], res["gpu"])))
                 deviations.append(deviation.max())
 
         deviations = np.array(deviations)
@@ -254,8 +254,8 @@ class TestCase(unittest.TestCase):
                 'get_result': {'sp': None, 'dp': None}}
 
         # setup data
-        iobj = large_system.copy()
-        jobj = large_system.copy()
+        iobj = large_system
+        jobj = large_system
 
         # calculating using SP on CPU
         kernel = gravity.Phi(libkernels['sp']['c'])
@@ -290,8 +290,8 @@ class TestCase(unittest.TestCase):
                 'get_result': {'sp': None, 'dp': None}}
 
         # setup data
-        iobj = large_system.copy()
-        jobj = large_system.copy()
+        iobj = large_system
+        jobj = large_system
 
         # calculating using SP on CPU
         kernel = gravity.Acc(libkernels['sp']['c'])
@@ -326,8 +326,8 @@ class TestCase(unittest.TestCase):
                 'get_result': {'sp': None, 'dp': None}}
 
         # setup data
-        iobj = large_system.copy()
-        jobj = large_system.copy()
+        iobj = large_system
+        jobj = large_system
 
         # calculating using SP on CPU
         kernel = gravity.PNAcc(libkernels['sp']['c'])
@@ -362,8 +362,8 @@ class TestCase(unittest.TestCase):
                 'get_result': {'sp': None, 'dp': None}}
 
         # setup data
-        iobj = large_system.copy()
-        jobj = large_system.copy()
+        iobj = large_system
+        jobj = large_system
 
         # calculating using SP on CPU
         kernel = gravity.Phi(libkernels['sp']['cl'])
@@ -398,8 +398,8 @@ class TestCase(unittest.TestCase):
                 'get_result': {'sp': None, 'dp': None}}
 
         # setup data
-        iobj = large_system.copy()
-        jobj = large_system.copy()
+        iobj = large_system
+        jobj = large_system
 
         # calculating using SP on CPU
         kernel = gravity.Acc(libkernels['sp']['cl'])
@@ -434,8 +434,8 @@ class TestCase(unittest.TestCase):
                 'get_result': {'sp': None, 'dp': None}}
 
         # setup data
-        iobj = large_system.copy()
-        jobj = large_system.copy()
+        iobj = large_system
+        jobj = large_system
 
         # calculating using SP on CPU
         kernel = gravity.PNAcc(libkernels['sp']['cl'])

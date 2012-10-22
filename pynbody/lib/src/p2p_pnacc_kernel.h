@@ -61,8 +61,8 @@ p2p_pnacc_kernel_core(REAL3 pnacc,
 // OpenCL implementation
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL3
-p2p_accum_pnacc(REAL3 myPNAcc,
-                const REAL8 myData,
+p2p_accum_pnacc(REAL3 iPNAcc,
+                const REAL8 iData,
                 const CLIGHT clight,
                 uint j_begin,
                 uint j_end,
@@ -72,16 +72,17 @@ p2p_accum_pnacc(REAL3 myPNAcc,
     uint j;
     for (j = j_begin; j < j_end; ++j) {
         REAL8 jData = sharedJData[j];
-        myPNAcc = p2p_pnacc_kernel_core(myPNAcc, myData.lo, myData.hi,
-                                        jData.lo, jData.hi,
-                                        clight);
+        iPNAcc = p2p_pnacc_kernel_core(iPNAcc,
+                                       iData.lo, iData.hi,
+                                       jData.lo, jData.hi,
+                                       clight);
     }
-    return myPNAcc;
+    return iPNAcc;
 }
 
 
 inline REAL3
-p2p_pnacc_kernel_main_loop(const REAL8 myData,
+p2p_pnacc_kernel_main_loop(const REAL8 iData,
                            const uint nj,
                            __global const REAL8 *jdata,
                            const CLIGHT clight,
@@ -90,7 +91,7 @@ p2p_pnacc_kernel_main_loop(const REAL8 myData,
 {
     uint lsize = get_local_size(0);
 
-    REAL3 myPNAcc = (REAL3){0, 0, 0};
+    REAL3 iPNAcc = (REAL3){0, 0, 0};
 
     uint tile;
     uint numTiles = (nj - 1)/lsize + 1;
@@ -104,18 +105,18 @@ p2p_pnacc_kernel_main_loop(const REAL8 myData,
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            myPNAcc = p2p_accum_pnacc(myPNAcc, myData,
-                                      clight, j, j + JUNROLL,
-                                      sharedJData);
+            iPNAcc = p2p_accum_pnacc(iPNAcc, iData,
+                                     clight, j, j + JUNROLL,
+                                     sharedJData);
         }
-        myPNAcc = p2p_accum_pnacc(myPNAcc, myData,
-                                  clight, j, nb,
-                                  sharedJData);
+        iPNAcc = p2p_accum_pnacc(iPNAcc, iData,
+                                 clight, j, nb,
+                                 sharedJData);
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
-    return myPNAcc;
+    return iPNAcc;
 }
 
 
@@ -140,8 +141,8 @@ __kernel void p2p_pnacc_kernel(const uint ni,
     const CLIGHT clight = (CLIGHT){cinv1, cinv2, cinv3,
                                    cinv4, cinv5, cinv6,
                                    cinv7, order};
-    REAL8 myData = idata[i];
-    ipnacc[i] = p2p_pnacc_kernel_main_loop(myData,
+    REAL8 iData = idata[i];
+    ipnacc[i] = p2p_pnacc_kernel_main_loop(iData,
                                            nj, jdata,
                                            clight,
                                            sharedJData);

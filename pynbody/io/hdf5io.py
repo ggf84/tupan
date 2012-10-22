@@ -25,7 +25,7 @@ class HDF5IO(object):
         self.fmode = fmode
 
 
-    def store_dset(self, group, name, data, dtype):
+    def store_dset(self, group, name, data, dtype, cls):
         """
 
         """
@@ -39,6 +39,7 @@ class HDF5IO(object):
                                      compression="gzip",
                                      shuffle=True,
                                     )
+        dset.attrs["Class"] = pickle.dumps(cls)
         dset.resize((nlen,))
         dset[olen:] = data
 
@@ -58,7 +59,7 @@ class HDF5IO(object):
             if obj.n:
                 name = key
                 data = obj.data
-                self.store_dset(group, name, data, data.dtype)
+                self.store_dset(group, name, data, data.dtype, type(obj))
 
 
     def dump_snapshot(self, p, snap_number=None):
@@ -76,10 +77,10 @@ class HDF5IO(object):
         base_name = "Snapshot"
         if isinstance(snap_number, int):
             base_name += "_"+str(snap_number).zfill(6)
-        group = fobj[base_name]["particles"]
+        group = fobj[base_name].values()[0]
         p = pickle.loads(group.attrs["Class"])()
         for (k, v) in group.items():
-            obj = type(p.kind[k])()
+            obj = pickle.loads(v.attrs["Class"])()
             obj.set_state(v[:])
             p.append(obj)
         return p
@@ -106,7 +107,7 @@ class HDF5IO(object):
             if obj.n:
                 name = key
                 data = obj.data
-                self.store_dset(group, name, data, data.dtype)
+                self.store_dset(group, name, data, data.dtype, type(obj))
 
 
     def dump_worldline(self, wl):

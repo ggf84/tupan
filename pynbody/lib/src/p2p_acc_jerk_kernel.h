@@ -8,7 +8,7 @@
 // p2p_acc_jerk_kernel_core
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL8
-p2p_acc_jerk_kernel_core(REAL8 accjerk,
+p2p_acc_jerk_kernel_core(REAL8 iaccjerk,
                          const REAL4 rmi, const REAL4 vei,
                          const REAL4 rmj, const REAL4 vej)
 {
@@ -30,16 +30,16 @@ p2p_acc_jerk_kernel_core(REAL8 accjerk,
     inv_r3 *= rmj.w;                                                 // 1 FLOPs
     rv *= 3 * inv_r2;                                                // 2 FLOPs
 
-    accjerk.s0 -= inv_r3 * r.x;                                      // 2 FLOPs
-    accjerk.s1 -= inv_r3 * r.y;                                      // 2 FLOPs
-    accjerk.s2 -= inv_r3 * r.z;                                      // 2 FLOPs
-    accjerk.s3  = 0;
-    accjerk.s4 -= inv_r3 * (v.x - rv * r.x);                         // 4 FLOPs
-    accjerk.s5 -= inv_r3 * (v.y - rv * r.y);                         // 4 FLOPs
-    accjerk.s6 -= inv_r3 * (v.z - rv * r.z);                         // 4 FLOPs
-    accjerk.s7  = 0;
+    iaccjerk.s0 -= inv_r3 * r.x;                                     // 2 FLOPs
+    iaccjerk.s1 -= inv_r3 * r.y;                                     // 2 FLOPs
+    iaccjerk.s2 -= inv_r3 * r.z;                                     // 2 FLOPs
+    iaccjerk.s3  = 0;
+    iaccjerk.s4 -= inv_r3 * (v.x - rv * r.x);                        // 4 FLOPs
+    iaccjerk.s5 -= inv_r3 * (v.y - rv * r.y);                        // 4 FLOPs
+    iaccjerk.s6 -= inv_r3 * (v.z - rv * r.z);                        // 4 FLOPs
+    iaccjerk.s7  = 0;
 
-    return accjerk;
+    return iaccjerk;
 }
 // Total flop count: 42
 
@@ -49,8 +49,8 @@ p2p_acc_jerk_kernel_core(REAL8 accjerk,
 // OpenCL implementation
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL8
-p2p_accum_acc_jerk(REAL8 myAccJerk,
-                   const REAL8 myData,
+p2p_accum_acc_jerk(REAL8 iAccJerk,
+                   const REAL8 iData,
                    uint j_begin,
                    uint j_end,
                    __local REAL8 *sharedJData
@@ -58,15 +58,17 @@ p2p_accum_acc_jerk(REAL8 myAccJerk,
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-        myAccJerk = p2p_acc_jerk_kernel_core(myAccJerk, myData.lo, myData.hi,
-                                             sharedJData[j].lo, sharedJData[j].hi);
+        REAL8 jData = sharedJData[j];
+        iAccJerk = p2p_acc_jerk_kernel_core(iAccJerk,
+                                            iData.lo, iData.hi,
+                                            jData.lo, jData.hi);
     }
-    return myAccJerk;
+    return iAccJerk;
 }
 
 
 inline REAL8
-p2p_acc_jerk_kernel_main_loop(const REAL8 myData,
+p2p_acc_jerk_kernel_main_loop(const REAL8 iData,
                               const uint nj,
                               __global const REAL8 *jdata,
                               __local REAL8 *sharedJData
@@ -74,7 +76,7 @@ p2p_acc_jerk_kernel_main_loop(const REAL8 myData,
 {
     uint lsize = get_local_size(0);
 
-    REAL8 myAccJerk = (REAL8){0, 0, 0, 0, 0, 0, 0, 0};
+    REAL8 iAccJerk = (REAL8){0, 0, 0, 0, 0, 0, 0, 0};
 
     uint tile;
     uint numTiles = (nj - 1)/lsize + 1;
@@ -88,18 +90,18 @@ p2p_acc_jerk_kernel_main_loop(const REAL8 myData,
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            myAccJerk = p2p_accum_acc_jerk(myAccJerk, myData,
-                                           j, j + JUNROLL,
-                                           sharedJData);
+            iAccJerk = p2p_accum_acc_jerk(iAccJerk, iData,
+                                          j, j + JUNROLL,
+                                          sharedJData);
         }
-        myAccJerk = p2p_accum_acc_jerk(myAccJerk, myData,
-                                       j, nb,
-                                       sharedJData);
+        iAccJerk = p2p_accum_acc_jerk(iAccJerk, iData,
+                                      j, nb,
+                                      sharedJData);
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
-    return myAccJerk;
+    return iAccJerk;
 }
 
 

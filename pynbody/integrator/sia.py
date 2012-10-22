@@ -47,7 +47,10 @@ class Base(object):
         """
         Drift operator for Newtonian quantities.
         """
-        if ip.n: ip.pos += tau * ip.vel
+        if ip.n:
+            ip.x += tau * ip.vx
+            ip.y += tau * ip.vy
+            ip.z += tau * ip.vz
         return ip
 
 
@@ -64,7 +67,11 @@ class Base(object):
         """
         Kick operator for Newtonian quantities.
         """
-        if ip.n and jp.n: ip.vel += tau * ip.get_acc(jp)
+        if ip.n and jp.n:
+            (ax, ay, az) = ip.get_acc(jp)
+            ip.vx += tau * ax
+            ip.vy += tau * ay
+            ip.vz += tau * az
         return ip
 
 
@@ -78,14 +85,20 @@ class Base(object):
             ip.evolve_lmom_pn_shift(tau / 2)
             ip.evolve_amom_pn_shift(tau / 2)
 
-            ip.vel += (tau / 2) * ip.pnacc
+            ip.vx += (tau / 2) * ip.pnax
+            ip.vy += (tau / 2) * ip.pnay
+            ip.vz += (tau / 2) * ip.pnaz
             ip.evolve_ke_pn_shift(tau / 2)
 
-            args = (jp, self.pn_order, self.clight)
-            ip.pnacc = 2 * ip.get_pnacc(*args) - ip.pnacc
+            (pnax, pnay, pnaz) = ip.get_pnacc(jp, self.pn_order, self.clight)
+            ip.pnax = 2 * pnax - ip.pnax
+            ip.pnay = 2 * pnay - ip.pnay
+            ip.pnaz = 2 * pnaz - ip.pnaz
 
             ip.evolve_ke_pn_shift(tau / 2)
-            ip.vel += (tau / 2) * ip.pnacc
+            ip.vz += (tau / 2) * ip.pnaz
+            ip.vy += (tau / 2) * ip.pnay
+            ip.vx += (tau / 2) * ip.pnax
 
             ip.evolve_amom_pn_shift(tau / 2)
             ip.evolve_lmom_pn_shift(tau / 2)
@@ -211,15 +224,12 @@ class SIA(Base):
 
     ### join
 
-    def join(self, slow, fast, inplace=False):
+    def join(self, slow, fast):
         if slow.n == 0:
             return fast
         if fast.n == 0:
             return slow
-        if inplace:
-            p = slow
-        else:
-            p = slow.copy()
+        p = slow[:]
         p.append(fast)
         return p
 
@@ -343,13 +353,13 @@ class SIA(Base):
             #
 
             if slow.n:
-                slow.tstep[:] = tau
+                slow.tstep = tau
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast, inplace=True)
+            p = self.join(slow, fast)
 
         return p
 
@@ -390,13 +400,13 @@ class SIA(Base):
             #
 
             if slow.n:
-                slow.tstep[:] = tau
+                slow.tstep = tau
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast, inplace=True)
+            p = self.join(slow, fast)
 
         return p
 
@@ -444,13 +454,13 @@ class SIA(Base):
             #
 
             if slow.n:
-                slow.tstep[:] = tau
+                slow.tstep = tau
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast, inplace=True)
+            p = self.join(slow, fast)
 
         return p
 
@@ -505,13 +515,13 @@ class SIA(Base):
             #
 
             if slow.n:
-                slow.tstep[:] = tau
+                slow.tstep = tau
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast, inplace=True)
+            p = self.join(slow, fast)
 
         return p
 
@@ -573,13 +583,13 @@ class SIA(Base):
             #
 
             if slow.n:
-                slow.tstep[:] = tau
+                slow.tstep = tau
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast, inplace=True)
+            p = self.join(slow, fast)
 
         return p
 
@@ -648,13 +658,13 @@ class SIA(Base):
             #
 
             if slow.n:
-                slow.tstep[:] = tau
+                slow.tstep = tau
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast, inplace=True)
+            p = self.join(slow, fast)
 
         return p
 
@@ -730,13 +740,13 @@ class SIA(Base):
             #
 
             if slow.n:
-                slow.tstep[:] = tau
+                slow.tstep = tau
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast, inplace=True)
+            p = self.join(slow, fast)
 
         return p
 
@@ -826,13 +836,13 @@ class SIA(Base):
             #
 
             if slow.n:
-                slow.tstep[:] = tau
+                slow.tstep = tau
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast, inplace=True)
+            p = self.join(slow, fast)
 
         return p
 

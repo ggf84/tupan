@@ -35,8 +35,8 @@ if __name__ == "__main__":
     p = main()
 
     from pynbody.ics import *
-    from pynbody.particles.blackhole import BlackHole
-    bh = figure8.make_system().astype(BlackHole)
+    from pynbody.particles.blackhole import Blackholes
+    bh = figure8.make_system().astype(Blackholes)
     p.append(bh)
 
     fname = "plummer"+str(numBodies).zfill(4)+'-'+"3bh"+".hdf5"

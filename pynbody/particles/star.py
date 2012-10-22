@@ -21,7 +21,9 @@ class Star(Body):
     A base class for Stars.
     """
     special_attrs = [# name, dtype, doc
-                     ("spin", "3f8", "spin"),
+                     ("sx", "f8", "x-spin"),
+                     ("sy", "f8", "y-spin"),
+                     ("sz", "f8", "z-spin"),
                      ("radius", "f8", "radius"),
                      ("age", "f8", "age"),
                      ("metallicity", "f8", "metallicity"),
@@ -61,27 +63,39 @@ class Star(Body):
 
 ###############################################################################
 
-from .body import vBody, vBodies, make_properties   # XXX
+from .body import vBody, Bodies, make_properties   # XXX
 
+@decallmethods(timings)
 class vStar(vBody):
     """
 
     """
-    def __init__(self, _id):
-        super(vStar, self).__init__(_id)
-        self.rad = 0.0
+    def __init__(self):
+        super(vStar, self).__init__()
+        self.sx = 0.0
+        self.sy = 0.0
+        self.sz = 0.0
+        self.radius = 0.0
+        self.age = 0.0
+        self.metallicity = 0.0
 
 
+
+@decallmethods(timings)
 @make_properties
-class vStars(vBodies):
+class Stars(Bodies):
     """
 
     """
-    dtype = vBodies.dtype + [('rad', np.float64), ]
-    def __init__(self, n=0, objs=None):
-        if n: self.objs = np.vectorize(vStar)(xrange(n))
-        elif objs is not None: self.objs = objs
-        else: self.objs = np.zeros(n, object)
+    basetype = vStar
+    dtype = Bodies.dtype + [
+                            ("sx", np.float64),
+                            ("sy", np.float64),
+                            ("sz", np.float64),
+                            ("radius", np.float64),
+                            ("age", np.float64),
+                            ("metallicity", np.float64),
+                           ]
 
 
 ########## end of file ##########

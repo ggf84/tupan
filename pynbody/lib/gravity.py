@@ -50,10 +50,10 @@ class Phi(object):
     def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
-        idata = np.concatenate((iobj.pos.T, iobj.mass.reshape(1,-1),
-                                iobj.vel.T, iobj.eps2.reshape(1,-1))).T
-        jdata = np.concatenate((jobj.pos.T, jobj.mass.reshape(1,-1),
-                                jobj.vel.T, jobj.eps2.reshape(1,-1))).T
+        idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
+                                iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
+        jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
+                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         if ni > len(self.output):
             self.output = np.zeros(ni, dtype=self.kernel.env.dtype)
@@ -90,10 +90,10 @@ class Acc(object):
     def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
-        idata = np.concatenate((iobj.pos.T, iobj.mass.reshape(1,-1),
-                                iobj.vel.T, iobj.eps2.reshape(1,-1))).T
-        jdata = np.concatenate((jobj.pos.T, jobj.mass.reshape(1,-1),
-                                jobj.vel.T, jobj.eps2.reshape(1,-1))).T
+        idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
+                                iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
+        jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
+                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         if ni > len(self.output):
             self.output = np.zeros((ni, 4), dtype=self.kernel.env.dtype)
@@ -112,7 +112,8 @@ class Acc(object):
 
 
     def get_result(self):
-        return self.kernel.get_result()[0][:,:3]
+        ret = self.kernel.get_result()[0]
+        return (ret[:,0], ret[:,1], ret[:,2])
 
 
 
@@ -130,10 +131,10 @@ class Tstep(object):
     def set_args(self, iobj, jobj, eta):
         ni = iobj.n
         nj = jobj.n
-        idata = np.concatenate((iobj.pos.T, iobj.mass.reshape(1,-1),
-                                iobj.vel.T, iobj.eps2.reshape(1,-1))).T
-        jdata = np.concatenate((jobj.pos.T, jobj.mass.reshape(1,-1),
-                                jobj.vel.T, jobj.eps2.reshape(1,-1))).T
+        idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
+                                iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
+        jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
+                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         if ni > len(self.output):
             self.output = np.zeros(ni, dtype=self.kernel.env.dtype)
@@ -171,10 +172,10 @@ class PNAcc(object):
     def set_args(self, iobj, jobj, pn_order, clight):
         ni = iobj.n
         nj = jobj.n
-        idata = np.concatenate((iobj.pos.T, iobj.mass.reshape(1,-1),
-                                iobj.vel.T, iobj.eps2.reshape(1,-1))).T
-        jdata = np.concatenate((jobj.pos.T, jobj.mass.reshape(1,-1),
-                                jobj.vel.T, jobj.eps2.reshape(1,-1))).T
+        idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
+                                iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
+        jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
+                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         clight = Clight(pn_order, clight)
 
@@ -203,7 +204,8 @@ class PNAcc(object):
 
 
     def get_result(self):
-        return self.kernel.get_result()[0][:,:3]
+        ret = self.kernel.get_result()[0]
+        return (ret[:,0], ret[:,1], ret[:,2])
 
 
 
@@ -221,10 +223,10 @@ class AccJerk(object):
     def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
-        idata = np.concatenate((iobj.pos.T, iobj.mass.reshape(1,-1),
-                                iobj.vel.T, iobj.eps2.reshape(1,-1))).T
-        jdata = np.concatenate((jobj.pos.T, jobj.mass.reshape(1,-1),
-                                jobj.vel.T, jobj.eps2.reshape(1,-1))).T
+        idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
+                                iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
+        jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
+                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         if ni > len(self.output):
             self.output = np.zeros((ni, 8), dtype=self.kernel.env.dtype)
