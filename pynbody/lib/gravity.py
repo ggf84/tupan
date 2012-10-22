@@ -245,8 +245,8 @@ class AccJerk(object):
 
 
     def get_result(self):
-        result = self.kernel.get_result()[0]
-        return (result[:,:3], result[:,4:7])
+        ret = self.kernel.get_result()[0]
+        return (ret[:,0], ret[:,1], ret[:,2], ret[:,4], ret[:,5], ret[:,6])
 
 
 

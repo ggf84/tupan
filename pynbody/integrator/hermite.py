@@ -46,20 +46,42 @@ class Hermite(object):
         """
 
         """
-        ip.prev_pos = ip.pos.copy()
-        ip.prev_vel = ip.vel.copy()
-        ip.prev_acc = ip.acc.copy()
-        ip.prev_jerk = ip.jerk.copy()
+        (ax, ay, az, jx, jy, jz) = ip.get_acc_jerk(ip)
+        ip.prev_x = ip.x.copy()
+        ip.prev_y = ip.y.copy()
+        ip.prev_z = ip.z.copy()
+        ip.prev_vx = ip.vx.copy()
+        ip.prev_vy = ip.vy.copy()
+        ip.prev_vz = ip.vz.copy()
+        ip.prev_ax = ax.copy()
+        ip.prev_ay = ay.copy()
+        ip.prev_az = az.copy()
+        ip.prev_jx = jx.copy()
+        ip.prev_jy = jy.copy()
+        ip.prev_jz = jz.copy()
 
-        ip.pos += tau * (ip.vel + (tau/2) * (ip.acc + (tau/3) * ip.jerk))
-        ip.vel += tau * (ip.acc + (tau/2) * ip.jerk)
+        ip.x += tau * (ip.vx + (tau/2) * (ax + (tau/3) * jx))
+        ip.y += tau * (ip.vy + (tau/2) * (ay + (tau/3) * jy))
+        ip.z += tau * (ip.vz + (tau/2) * (az + (tau/3) * jz))
+        ip.vx += tau * (ax + (tau/2) * jx)
+        ip.vy += tau * (ay + (tau/2) * jy)
+        ip.vz += tau * (az + (tau/2) * jz)
 
 
-    def correct(self, ip, tau):
-        ip.vel[:] = (ip.prev_vel + tau * ((ip.prev_acc + ip.acc)/2
-                                 + tau * (ip.prev_jerk - ip.jerk)/12))
-        ip.pos[:] = (ip.prev_pos + tau * ((ip.prev_vel + ip.vel)/2
-                                 + tau * (ip.prev_acc - ip.acc)/12))
+    def ecorrect(self, ip, tau):
+        (ax, ay, az, jx, jy, jz) = ip.get_acc_jerk(ip)
+        ip.vx = (ip.prev_vx + tau * ((ip.prev_ax + ax)/2
+                            + tau * (ip.prev_jx - jx)/12))
+        ip.vy = (ip.prev_vy + tau * ((ip.prev_ay + ay)/2
+                            + tau * (ip.prev_jy - jy)/12))
+        ip.vz = (ip.prev_vz + tau * ((ip.prev_az + az)/2
+                            + tau * (ip.prev_jz - jz)/12))
+        ip.x = (ip.prev_x + tau * ((ip.prev_vx + ip.vx)/2
+                          + tau * (ip.prev_ax - ax)/12))
+        ip.y = (ip.prev_y + tau * ((ip.prev_vy + ip.vy)/2
+                          + tau * (ip.prev_ay - ay)/12))
+        ip.z = (ip.prev_z + tau * ((ip.prev_vz + ip.vz)/2
+                          + tau * (ip.prev_az - az)/12))
 
 
     def pec(self, n, p, tau):
@@ -68,10 +90,9 @@ class Hermite(object):
         """
         self.predict(p, tau)
         for i in range(n):
-            p.update_acc_jerk(p)
-            self.correct(p, tau)
+            self.ecorrect(p, tau)
 
-        p.tstep[:] = tau
+        p.tstep = tau
         p.time += tau
         p.nstep += 1
         return p
@@ -89,7 +110,6 @@ class Hermite(object):
 
         p = self.particles
 
-        p.update_acc_jerk(p)
         if self.pn_order > 0: p.update_pnacc(p, self.pn_order, self.clight)
 
         if self.dumpper:
@@ -104,7 +124,7 @@ class Hermite(object):
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
-        p.tstep[:] = tau
+        p.tstep = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)
@@ -119,12 +139,12 @@ class Hermite(object):
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
-        p.tstep[:] = tau
+        p.tstep = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)
 
-        p = self.pec(2, p, tau)
+        p = self.pec(1, p, tau)
         self.time += tau
 
         if self.dumpper:

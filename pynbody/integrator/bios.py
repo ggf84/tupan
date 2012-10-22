@@ -58,10 +58,10 @@ class LLBIOS(object):
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
-        idata = np.concatenate((iobj.pos.T, iobj.mass.reshape(1,-1),
-                                iobj.vel.T, iobj.eps2.reshape(1,-1))).T
-        jdata = np.concatenate((jobj.pos.T, jobj.mass.reshape(1,-1),
-                                jobj.vel.T, jobj.eps2.reshape(1,-1))).T
+        idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
+                                iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
+        jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
+                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         if ni > len(self.output):
             self.output = np.zeros((ni, 8), dtype=self.kernel.env.dtype)
@@ -81,8 +81,8 @@ class LLBIOS(object):
 
 
     def get_result(self):
-        result = self.kernel.get_result()[0]
-        return (result[:,:3], result[:,4:7])
+        ret = self.kernel.get_result()[0]
+        return (ret[:,0], ret[:,1], ret[:,2], ret[:,4], ret[:,5], ret[:,6])
 
 
 
@@ -104,12 +104,16 @@ class BIOS(Base):
         """
         llbios.set_args(p, p, tau)
         llbios.run()
-        (dr, dv) = llbios.get_result()
+        (dx, dy, dz, dvx, dvy, dvz) = llbios.get_result()
 
-        p.pos += dr + tau * (p.vel - p.vcom)
-        p.vel += dv
+        p.x += dx + tau * p.vx
+        p.y += dy + tau * p.vy
+        p.z += dz + tau * p.vz
+        p.vx += dvx
+        p.vy += dvy
+        p.vz += dvz
 
-        p.tstep[:] = tau
+        p.tstep = tau
         p.time += tau
         p.nstep += 1
         return p
@@ -142,7 +146,7 @@ class BIOS(Base):
 
         p = self.particles
         tau = self.get_base_tstep(t_end)
-        p.tstep[:] = tau
+        p.tstep = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)
@@ -158,7 +162,7 @@ class BIOS(Base):
         p = self.particles
         tau = self.get_base_tstep(t_end)
 
-        p.tstep[:] = tau
+        p.tstep = tau
 
         if self.reporter:
             self.reporter.report(self.time, p)

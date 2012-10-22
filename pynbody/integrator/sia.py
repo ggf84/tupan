@@ -337,8 +337,9 @@ class SIA(Base):
             if update_tstep:
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+            flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau))
+            slow, fast = self.split(p, abs(tau*flag))
 
             #
             fast = self.dkd21(fast, d0 * tau / 2, False)
@@ -378,8 +379,9 @@ class SIA(Base):
             if update_tstep:
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+            flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau))
+            slow, fast = self.split(p, abs(tau*flag))
 
             #
             fast = self.dkd22(fast, d0 * tau / 2, False)
@@ -426,8 +428,9 @@ class SIA(Base):
             if update_tstep:
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+            flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau))
+            slow, fast = self.split(p, abs(tau*flag))
 
             #
             fast = self.dkd43(fast, d0 * tau / 2, False)
@@ -481,8 +484,9 @@ class SIA(Base):
             if update_tstep:
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+            flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau))
+            slow, fast = self.split(p, abs(tau*flag))
 
             #
             fast = self.dkd44(fast, d0 * tau / 2, False)
@@ -543,8 +547,9 @@ class SIA(Base):
             if update_tstep:
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+            flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau))
+            slow, fast = self.split(p, abs(tau*flag))
 
             #
             fast = self.dkd45(fast, d0 * tau / 2, False)
@@ -612,8 +617,9 @@ class SIA(Base):
             if update_tstep:
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+            flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau))
+            slow, fast = self.split(p, abs(tau*flag))
 
             #
             fast = self.dkd46(fast, d0 * tau / 2, False)
@@ -688,8 +694,9 @@ class SIA(Base):
             if update_tstep:
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+            flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau))
+            slow, fast = self.split(p, abs(tau*flag))
 
             #
             fast = self.dkd67(fast, d0 * tau / 2, False)
@@ -772,8 +779,9 @@ class SIA(Base):
             if update_tstep:
                 p.update_tstep(p, self.eta)
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+            flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau))
+            slow, fast = self.split(p, abs(tau*flag))
 
             #
             fast = self.dkd69(fast, d0 * tau / 2, False)
