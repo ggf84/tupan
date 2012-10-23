@@ -134,6 +134,7 @@ class CLKernel(object):
 
 
     def set_input_buffer(self, i, arr):
+        arr = self.env.dtype.type(arr)
         def allocate_buffer(arr):
             memf = cl.mem_flags
             mapf = cl.map_flags
@@ -281,11 +282,11 @@ class CKernel(object):
 
 
     def set_input_buffer(self, i, arg):
-        self.dev_args[i] = arg.astype(self.env.dtype)
+        self.dev_args[i] = self.env.dtype.type(arg)
 
 
     def set_output_buffer(self, i, arg):
-        self.dev_args[i] = arg.astype(self.env.dtype)
+        self.dev_args[i] = self.env.dtype.type(arg)
         self.res_ids[i] = i
 
 

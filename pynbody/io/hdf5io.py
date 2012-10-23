@@ -58,7 +58,7 @@ class HDF5IO(object):
         for (key, obj) in p.items():
             if obj.n:
                 name = key
-                data = obj.data
+                data = obj.get_state()
                 self.store_dset(group, name, data, data.dtype, type(obj))
 
 
@@ -106,7 +106,7 @@ class HDF5IO(object):
         for (key, obj) in wl.items():
             if obj.n:
                 name = key
-                data = obj.data
+                data = obj.get_state()
                 self.store_dset(group, name, data, data.dtype, type(obj))
 
 

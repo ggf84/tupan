@@ -642,23 +642,17 @@ class Bodies(AbstractNbodyMethods):
             self.objs = objs
 
 
-    @property
-    def data(self):
-        data = np.zeros(self.n, dtype=self.dtype)
-        for k,dt in self.dtype:
-            data[k] = getattr(self, k)
-        return data
-
     def get_state(self):
-        return self.data
+        data = np.zeros(self.n, dtype=self.dtype)
+        for attr, dty in self.dtype:
+            data[attr] = getattr(self, attr)
+        return data
 
     def set_state(self, array):
         self.objs = type(self)(len(array)).objs
-        for k,dt in self.dtype:
-            if k in array.dtype.names:
-                setattr(self, k, array[k])
-
-
+        for attr, dty in self.dtype:
+            if attr in array.dtype.names:
+                setattr(self, attr, array[attr])
 
 
     @property
