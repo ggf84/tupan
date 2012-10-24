@@ -131,9 +131,6 @@ class BIOS(Base):
 
         p = self.particles
 
-        p.update_acc(p)
-        if self.pn_order > 0: p.update_pnacc(p, self.pn_order, self.clight)
-
         if self.dumpper:
             self.snap_number = 0
             self.dumpper.dump_snapshot(p, self.snap_number)

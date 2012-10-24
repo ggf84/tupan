@@ -368,9 +368,9 @@ class PNbodyMethods(NbodyMethods):
     This class holds common methods for particles in n-body systems with post-Newtonian corrections.
     """
     special_attrs = [# name, dtype, doc
-                     ("pnax", "f8", "post-Newtonian x-acceleration"),
-                     ("pnay", "f8", "post-Newtonian y-acceleration"),
-                     ("pnaz", "f8", "post-Newtonian z-acceleration"),
+                     ("pn_dvx", "f8", "post-Newtonian correction for the x-velocity"),
+                     ("pn_dvy", "f8", "post-Newtonian correction for the y-velocity"),
+                     ("pn_dvz", "f8", "post-Newtonian correction for the z-velocity"),
                      ("pn_ke", "f8", "post-Newtonian correction for the kinetic energy"),
                      ("pn_rcomx", "f8", "post-Newtonian correction for the center-of-mass x-position"),
                      ("pn_rcomy", "f8", "post-Newtonian correction for the center-of-mass y-position"),
@@ -402,19 +402,14 @@ class PNbodyMethods(NbodyMethods):
         gravity.pnacc.run()
         return gravity.pnacc.get_result()
 
-    def update_pnacc(self, objs, pn_order, clight):
-        """
-        Update individual post-newtonian gravitational acceleration due to other particles.
-        """
-        (self.pnax, self.pnay, self.pnaz) = self.get_pnacc(objs, pn_order, clight)
-
 
     def evolve_ke_pn_shift(self, tstep):
         """
         Evolves kinetic energy shift in time due to post-newtonian terms.
         """
-        ke_jump = self.mass * (self.vx * self.pnax + self.vy * self.pnay + self.vz * self.pnaz)
-        self.pn_ke -= tstep * ke_jump
+        self.pn_ke -= self.mass * (  self.vx * self.pn_dvx
+                                   + self.vy * self.pn_dvy
+                                   + self.vz * self.pn_dvz)
 
     def get_ke_pn_shift(self):
         return float(self.pn_ke.sum())
@@ -439,12 +434,9 @@ class PNbodyMethods(NbodyMethods):
         """
         Evolves linear momentum shift in time due to post-newtonian terms.
         """
-        dlmx = self.mass * self.pnax
-        dlmy = self.mass * self.pnay
-        dlmz = self.mass * self.pnaz
-        self.pn_lmx -= tstep * dlmx
-        self.pn_lmy -= tstep * dlmy
-        self.pn_lmz -= tstep * dlmz
+        self.pn_lmx -= self.mass * self.pn_dvx
+        self.pn_lmy -= self.mass * self.pn_dvy
+        self.pn_lmz -= self.mass * self.pn_dvz
 
     def get_lmom_pn_shift(self):
         lmx = self.pn_lmx.sum()
@@ -460,12 +452,9 @@ class PNbodyMethods(NbodyMethods):
         """
         Evolves angular momentum shift in time due to post-newtonian terms.
         """
-        damx = self.mass * ((self.y * self.pnaz) - (self.z * self.pnay))
-        damy = self.mass * ((self.z * self.pnax) - (self.x * self.pnaz))
-        damz = self.mass * ((self.x * self.pnay) - (self.y * self.pnax))
-        self.pn_amx -= tstep * damx
-        self.pn_amy -= tstep * damy
-        self.pn_amz -= tstep * damz
+        self.pn_amx -= self.mass * ((self.y * self.pn_dvz) - (self.z * self.pn_dvy))
+        self.pn_amy -= self.mass * ((self.z * self.pn_dvx) - (self.x * self.pn_dvz))
+        self.pn_amz -= self.mass * ((self.x * self.pn_dvy) - (self.y * self.pn_dvx))
 
     def get_amom_pn_shift(self):
         amx = self.pn_amx.sum()

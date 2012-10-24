@@ -82,26 +82,27 @@ class Base(object):
         if ip.n and jp.n:
             ip = self.kick_n(ip, jp, tau / 2)
 
+            ip.vx += ip.pn_dvx
+            ip.vy += ip.pn_dvy
+            ip.vz += ip.pn_dvz
+
+            ip.evolve_ke_pn_shift(tau / 2)
             ip.evolve_lmom_pn_shift(tau / 2)
             ip.evolve_amom_pn_shift(tau / 2)
-
-            ip.vx += (tau / 2) * ip.pnax
-            ip.vy += (tau / 2) * ip.pnay
-            ip.vz += (tau / 2) * ip.pnaz
-            ip.evolve_ke_pn_shift(tau / 2)
 
             (pnax, pnay, pnaz) = ip.get_pnacc(jp, self.pn_order, self.clight)
-            ip.pnax = 2 * pnax - ip.pnax
-            ip.pnay = 2 * pnay - ip.pnay
-            ip.pnaz = 2 * pnaz - ip.pnaz
-
-            ip.evolve_ke_pn_shift(tau / 2)
-            ip.vz += (tau / 2) * ip.pnaz
-            ip.vy += (tau / 2) * ip.pnay
-            ip.vx += (tau / 2) * ip.pnax
+            g = 2 * tau
+            ip.pn_dvx = (tau * pnax - (1 - g) * ip.pn_dvx) / (1 + g)
+            ip.pn_dvy = (tau * pnay - (1 - g) * ip.pn_dvy) / (1 + g)
+            ip.pn_dvz = (tau * pnaz - (1 - g) * ip.pn_dvz) / (1 + g)
 
             ip.evolve_amom_pn_shift(tau / 2)
             ip.evolve_lmom_pn_shift(tau / 2)
+            ip.evolve_ke_pn_shift(tau / 2)
+
+            ip.vz += ip.pn_dvz
+            ip.vy += ip.pn_dvy
+            ip.vx += ip.pn_dvx
 
             ip = self.kick_n(ip, jp, tau / 2)
         return ip
@@ -159,8 +160,6 @@ class SIA(Base):
         logger.info("Initializing '%s' integrator.", self.method)
 
         p = self.particles
-
-        if self.pn_order > 0: p.update_pnacc(p, self.pn_order, self.clight)
 
         if self.dumpper:
             self.dumpper.dump_worldline(p)
