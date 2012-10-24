@@ -195,15 +195,15 @@ class Particles(Bodies):
     """
 
     """
-    def __init__(self, nstar=0, nbh=0, nsph=0, objs=None):
-        if objs is None:
+    def __init__(self, nstar=0, nbh=0, nsph=0, items=None):
+        if items is None:
             self.objs = np.concatenate([
                                         np.array([vSph() for i in xrange(nsph)], object),
                                         np.array([vStar() for i in xrange(nstar)], object),
                                         np.array([vBlackhole() for i in xrange(nbh)], object),
                                        ])
         else:
-            self.objs = objs
+            self.__dict__.update(items)
 
 
 #    def __init__(self, *args, **kwargs):
@@ -222,22 +222,22 @@ class Particles(Bodies):
     def stars(self):
         select = np.frompyfunc(isinstance, 2, 1)
         slc = select(self.objs, Stars.basetype).astype(bool)
-        objs = self.objs[slc]
-        return Stars(objs=objs)
+        items = {k: v[slc] for k, v in self.__dict__.items()}
+        return Stars(items=items)
 
     @property
     def sphs(self):
         select = np.frompyfunc(isinstance, 2, 1)
         slc = select(self.objs, Sphs.basetype).astype(bool)
-        objs = self.objs[slc]
-        return Sphs(objs=objs)
+        items = {k: v[slc] for k, v in self.__dict__.items()}
+        return Sphs(items=items)
 
     @property
     def blackholes(self):
         select = np.frompyfunc(isinstance, 2, 1)
         slc = select(self.objs, Blackholes.basetype).astype(bool)
-        objs = self.objs[slc]
-        return Blackholes(objs=objs)
+        items = {k: v[slc] for k, v in self.__dict__.items()}
+        return Blackholes(items=items)
 
     @property
     def kind(self):

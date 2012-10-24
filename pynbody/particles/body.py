@@ -583,11 +583,24 @@ def make_properties(cls):
         get_attr = np.frompyfunc(getattr, 2, 1)
         set_attr = np.frompyfunc(setattr, 3, 1) # set nout=1 because setattr returns None
 
+        @timings
         def fget(self):
-            return get_attr(self.objs, attr).astype(dty)
+            try:
+                return self.__dict__[attr]
+            except:
+                value = get_attr(self.objs, attr).astype(dty)
+                self.__dict__[attr] = value
+                return value
 
+
+        @timings
         def fset(self, value):
             set_attr(self.objs, attr, dty(value))
+
+            if not isinstance(value, np.ndarray):
+                value = dty([value] * self.n)
+            self.__dict__[attr] = value
+
 
         return property(fget, fset, fdel=None, doc=None)
 
@@ -624,24 +637,23 @@ class Bodies(AbstractNbodyMethods):
     basetype = vBody
     dtype = [(_[0], np.typeDict[_[1]]) for _ in AbstractNbodyMethods.attrs]
 
-    def __init__(self, n=0, objs=None):
-        if objs is None:
+    def __init__(self, n=0, items=None):
+        if items is None:
             self.objs = np.array([self.basetype() for i in xrange(n)], object)
         else:
-            self.objs = objs
+            self.__dict__.update(items)
 
 
-    def get_state(self):
-        data = np.zeros(self.n, dtype=self.dtype)
-        for attr, dty in self.dtype:
-            data[attr] = getattr(self, attr)
-        return data
+    def __repr__(self):
+        return repr(self.objs)
 
-    def set_state(self, array):
-        self.objs = type(self)(len(array)).objs
-        for attr, dty in self.dtype:
-            if attr in array.dtype.names:
-                setattr(self, attr, array[attr])
+    def __len__(self):
+        return len(self.objs)
+
+    def __getitem__(self, slc):
+        if isinstance(slc, int): slc = [slc]
+        items = {k: v[slc] for k, v in self.__dict__.items()}
+        return type(self)(items=items)
 
 
     @property
@@ -652,24 +664,26 @@ class Bodies(AbstractNbodyMethods):
     def n(self):
         return len(self)
 
-    def __repr__(self):
-        return repr(self.objs)
-
-    def __len__(self):
-        return len(self.objs)
-
-    def __getitem__(self, slc):
-        if isinstance(slc, int): slc = [slc]
-        item = self.objs[slc]
-        return type(self)(objs=item)
-
     def copy(self):
         return copy.deepcopy(self)
 
     def append(self, obj):
         if obj.n:
-            self.objs = np.concatenate((self.objs, obj.objs))
+            items = {k: np.concatenate((v, obj.__dict__[k])) for k, v in self.__dict__.items()}
+            self.__dict__.update(items)
 
+
+    def get_state(self):
+        array = np.zeros(self.n, dtype=self.dtype)
+        for attr, dty in self.dtype:
+            array[attr] = getattr(self, attr)
+        return array
+
+    def set_state(self, array):
+        self.objs = type(self)(len(array)).objs
+        for attr, dty in self.dtype:
+            if attr in array.dtype.names:
+                setattr(self, attr, array[attr])
 
 
 ########## end of file ##########
