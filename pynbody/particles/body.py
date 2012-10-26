@@ -585,6 +585,7 @@ def make_properties(cls):
 
         @timings
         def fget(self):
+#            return get_attr(self.objs, attr).astype(dty)
             try:
                 return self.__dict__[attr]
             except:
@@ -595,6 +596,7 @@ def make_properties(cls):
 
         @timings
         def fset(self, value):
+#            if attr not in self.__dict__:
             set_attr(self.objs, attr, dty(value))
 
             if not isinstance(value, np.ndarray):
@@ -669,7 +671,7 @@ class Bodies(AbstractNbodyMethods):
 
     def append(self, obj):
         if obj.n:
-            items = {k: np.concatenate((v, obj.__dict__[k])) for k, v in self.__dict__.items()}
+            items = {k: np.concatenate((v, getattr(obj, k))) for k, v in self.__dict__.items()}
             self.__dict__.update(items)
 
 

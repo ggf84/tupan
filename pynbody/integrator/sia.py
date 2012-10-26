@@ -19,6 +19,175 @@ __all__ = ["SIA"]
 logger = logging.getLogger(__name__)
 
 
+#
+# global constants
+#
+pn_order = 0
+clight = None
+
+
+#
+# drift_n
+#
+@timings
+def drift_n(ip, tau):
+    """
+    Drift operator for Newtonian quantities.
+    """
+    if ip.n:
+        ip.x += tau * ip.vx
+        ip.y += tau * ip.vy
+        ip.z += tau * ip.vz
+    return ip
+
+
+#
+# kick_n
+#
+@timings
+def kick_n(ip, jp, tau):
+    """
+    Kick operator for Newtonian quantities.
+    """
+    if ip.n and jp.n:
+        (ax, ay, az) = ip.get_acc(jp)
+        ip.vx += tau * ax
+        ip.vy += tau * ay
+        ip.vz += tau * az
+    return ip
+
+
+#
+# drift_pn
+#
+@timings
+def drift_pn(ip, tau):
+    """
+    Drift operator for post-Newtonian quantities.
+    """
+    ip = drift_n(ip, tau)
+    if ip.n: ip.evolve_rcom_pn_shift(tau)
+    return ip
+
+
+#
+# kick_pn
+#
+@timings
+def kick_pn(ip, jp, tau, pn_order, clight):
+    """
+    Kick operator for post-Newtonian quantities.
+    """
+    if ip.n and jp.n:
+        ip = kick_n(ip, jp, tau / 2)
+
+        ip.vx += ip.pn_dvx
+        ip.vy += ip.pn_dvy
+        ip.vz += ip.pn_dvz
+
+        ip.evolve_ke_pn_shift(tau / 2)
+        ip.evolve_lmom_pn_shift(tau / 2)
+        ip.evolve_amom_pn_shift(tau / 2)
+
+        (pnax, pnay, pnaz) = ip.get_pnacc(jp, pn_order, clight)
+        g = 2 * tau * 0
+        ip.pn_dvx = (tau * pnax - (1 - g) * ip.pn_dvx) / (1 + g)
+        ip.pn_dvy = (tau * pnay - (1 - g) * ip.pn_dvy) / (1 + g)
+        ip.pn_dvz = (tau * pnaz - (1 - g) * ip.pn_dvz) / (1 + g)
+
+        ip.evolve_amom_pn_shift(tau / 2)
+        ip.evolve_lmom_pn_shift(tau / 2)
+        ip.evolve_ke_pn_shift(tau / 2)
+
+        ip.vz += ip.pn_dvz
+        ip.vy += ip.pn_dvy
+        ip.vx += ip.pn_dvx
+
+        ip = kick_n(ip, jp, tau / 2)
+    return ip
+
+
+#
+# drift
+#
+@timings
+def drift(ip, tau):
+    """
+    Drift operator.
+    """
+    if pn_order > 0:
+        return drift_pn(ip, tau)
+    return drift_n(ip, tau)
+
+
+#
+# kick
+#
+@timings
+def kick(ip, jp, tau, pn):
+    """
+    Kick operator.
+    """
+    if pn and pn_order > 0:
+        return kick_pn(ip, jp, tau, pn_order, clight)
+    return kick_n(ip, jp, tau)
+
+
+#
+# split
+#
+@timings
+def split(p, tau):
+    slow = p[abs(p.tstep) >= tau]
+    fast = p[abs(p.tstep) < tau]
+
+    # prevents the occurrence of a slow level with only one particle.
+    if slow.n == 1:
+        fast.append(slow)
+        slow = type(p)()
+
+    if slow.n + fast.n != p.n:
+        logger.error("slow.n + fast.n != p.n: %d, %d, %d.", slow.n, fast.n, p.n)
+
+    return slow, fast
+
+
+#
+# join
+#
+@timings
+def join(slow, fast):
+    if slow.n == 0:
+        return fast
+    if fast.n == 0:
+        return slow
+    p = slow[:]
+    p.append(fast)
+    return p
+
+
+#
+# kick_sf
+#
+@timings
+def kick_sf(slow, fast, tau):
+    """
+    Slow<->Fast Kick operator.
+    """
+#    fast = kick(fast, slow, tau / 2, pn=True)
+#    slow = kick(slow, join(slow, fast), tau, pn=True)
+#    fast = kick(fast, slow, tau / 2, pn=True)
+
+    fast = kick(fast, slow, tau / 2, pn=True)
+    slow = kick(slow, fast, tau / 2, pn=True)
+    slow = kick(slow, slow, tau, pn=True)
+    slow = kick(slow, fast, tau / 2, pn=True)
+    fast = kick(fast, slow, tau / 2, pn=True)
+
+    return slow, fast
+
+
+
 class Base(object):
     """
     A base class for the Symplectic Integration Algorithms (SIAs).
@@ -29,9 +198,11 @@ class Base(object):
         self.particles = particles
         self.is_initialized = False
 
-        self.pn_order = kwargs.pop("pn_order", 0)
-        self.clight = kwargs.pop("clight", None)
-        if self.pn_order > 0 and self.clight is None:
+        global pn_order
+        global clight
+        pn_order = kwargs.pop("pn_order", 0)
+        clight = kwargs.pop("clight", None)
+        if pn_order > 0 and clight is None:
             raise TypeError("'clight' is not defined. Please set the speed of "
                             "light argument 'clight' when using 'pn_order' > 0.")
 
@@ -41,89 +212,6 @@ class Base(object):
         if kwargs:
             msg = "{0}.__init__ received unexpected keyword arguments: {1}."
             raise TypeError(msg.format(type(self).__name__,", ".join(kwargs.keys())))
-
-
-    def drift_n(self, ip, tau):
-        """
-        Drift operator for Newtonian quantities.
-        """
-        if ip.n:
-            ip.x += tau * ip.vx
-            ip.y += tau * ip.vy
-            ip.z += tau * ip.vz
-        return ip
-
-
-    def drift_pn(self, ip, tau):
-        """
-        Drift operator for post-Newtonian quantities.
-        """
-        ip = self.drift_n(ip, tau)
-        if ip.n: ip.evolve_rcom_pn_shift(tau)
-        return ip
-
-
-    def kick_n(self, ip, jp, tau):
-        """
-        Kick operator for Newtonian quantities.
-        """
-        if ip.n and jp.n:
-            (ax, ay, az) = ip.get_acc(jp)
-            ip.vx += tau * ax
-            ip.vy += tau * ay
-            ip.vz += tau * az
-        return ip
-
-
-    def kick_pn(self, ip, jp, tau):
-        """
-        Kick operator for post-Newtonian quantities.
-        """
-        if ip.n and jp.n:
-            ip = self.kick_n(ip, jp, tau / 2)
-
-            ip.vx += ip.pn_dvx
-            ip.vy += ip.pn_dvy
-            ip.vz += ip.pn_dvz
-
-            ip.evolve_ke_pn_shift(tau / 2)
-            ip.evolve_lmom_pn_shift(tau / 2)
-            ip.evolve_amom_pn_shift(tau / 2)
-
-            (pnax, pnay, pnaz) = ip.get_pnacc(jp, self.pn_order, self.clight)
-            g = 2 * tau
-            ip.pn_dvx = (tau * pnax - (1 - g) * ip.pn_dvx) / (1 + g)
-            ip.pn_dvy = (tau * pnay - (1 - g) * ip.pn_dvy) / (1 + g)
-            ip.pn_dvz = (tau * pnaz - (1 - g) * ip.pn_dvz) / (1 + g)
-
-            ip.evolve_amom_pn_shift(tau / 2)
-            ip.evolve_lmom_pn_shift(tau / 2)
-            ip.evolve_ke_pn_shift(tau / 2)
-
-            ip.vz += ip.pn_dvz
-            ip.vy += ip.pn_dvy
-            ip.vx += ip.pn_dvx
-
-            ip = self.kick_n(ip, jp, tau / 2)
-        return ip
-
-
-    def drift(self, ip, tau):
-        """
-        Drift operator.
-        """
-        if self.pn_order > 0:
-            return self.drift_pn(ip, tau)
-        return self.drift_n(ip, tau)
-
-
-    def kick(self, ip, jp, tau, pn):
-        """
-        Kick operator.
-        """
-        if pn and self.pn_order > 0:
-            return self.kick_pn(ip, jp, tau)
-        return self.kick_n(ip, jp, tau)
 
 
 
@@ -171,7 +259,7 @@ class SIA(Base):
         logger.info("Finalizing '%s' integrator.", self.method)
 
         def final_dump(p, tau, worldline):
-            slow, fast = self.split(tau, p)
+            slow, fast = split(tau, p)
 
             if slow.n > 0:
                 if worldline:
@@ -202,35 +290,6 @@ class SIA(Base):
 
         self.tstep = math.copysign(self.tstep, self.eta)
         return self.tstep
-
-
-    ### split
-
-    def split(self, p, tau):
-        slow = p[abs(p.tstep) >= tau]
-        fast = p[abs(p.tstep) < tau]
-
-        # prevents the occurrence of a slow level with only one particle.
-        if slow.n == 1:
-            fast.append(slow)
-            slow = type(p)()
-
-        if slow.n + fast.n != p.n:
-            logger.error("slow.n + fast.n != p.n: %d, %d, %d.", slow.n, fast.n, p.n)
-
-        return slow, fast
-
-
-    ### join
-
-    def join(self, slow, fast):
-        if slow.n == 0:
-            return fast
-        if fast.n == 0:
-            return slow
-        p = slow[:]
-        p.append(fast)
-        return p
 
 
     ### evolve_step
@@ -312,17 +371,6 @@ class SIA(Base):
         self.particles = p
 
 
-    def kick_sf(self, slow, fast, tau):
-        """
-        Slow<->Fast Kick operator.
-        """
-        fast = self.kick(fast, slow, tau / 2, pn=True)
-        slow = self.kick(slow, self.join(slow, fast), tau, pn=True)
-        fast = self.kick(fast, slow, tau / 2, pn=True)
-
-        return slow, fast
-
-
     #
     # dkd21[std,shr,hcc] method -- D.K.D
     #
@@ -338,17 +386,17 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau*flag))
+            slow, fast = split(p, abs(tau*flag))
 
             #
             fast = self.dkd21(fast, d0 * tau / 2, False)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd21(fast, d0 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd21(fast, d0 * tau / 2, True)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd21(fast, d0 * tau / 2, True)
             #
 
@@ -359,7 +407,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast)
+            p = join(slow, fast)
 
         return p
 
@@ -380,23 +428,23 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau*flag))
+            slow, fast = split(p, abs(tau*flag))
 
             #
             fast = self.dkd22(fast, d0 * tau / 2, False)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd22(fast, d0 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd22(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd22(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd22(fast, d0 * tau / 2, True)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd22(fast, d0 * tau / 2, True)
             #
 
@@ -407,7 +455,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast)
+            p = join(slow, fast)
 
         return p
 
@@ -429,29 +477,29 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau*flag))
+            slow, fast = split(p, abs(tau*flag))
 
             #
             fast = self.dkd43(fast, d0 * tau / 2, False)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd43(fast, d0 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd43(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd43(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k1 * tau)
+            slow, fast = kick_sf(slow, fast, k1 * tau)
 
             fast = self.dkd43(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd43(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd43(fast, d0 * tau / 2, True)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd43(fast, d0 * tau / 2, True)
             #
 
@@ -462,7 +510,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast)
+            p = join(slow, fast)
 
         return p
 
@@ -485,35 +533,35 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau*flag))
+            slow, fast = split(p, abs(tau*flag))
 
             #
             fast = self.dkd44(fast, d0 * tau / 2, False)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd44(fast, d0 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd44(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd44(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k1 * tau)
+            slow, fast = kick_sf(slow, fast, k1 * tau)
 
             fast = self.dkd44(fast, d2 * tau / 2, True)
-            slow = self.drift(slow, d2 * tau)
+            slow = drift(slow, d2 * tau)
             fast = self.dkd44(fast, d2 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k1 * tau)
+            slow, fast = kick_sf(slow, fast, k1 * tau)
 
             fast = self.dkd44(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd44(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd44(fast, d0 * tau / 2, True)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd44(fast, d0 * tau / 2, True)
             #
 
@@ -524,7 +572,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast)
+            p = join(slow, fast)
 
         return p
 
@@ -548,41 +596,41 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau*flag))
+            slow, fast = split(p, abs(tau*flag))
 
             #
             fast = self.dkd45(fast, d0 * tau / 2, False)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd45(fast, d0 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd45(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd45(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k1 * tau)
+            slow, fast = kick_sf(slow, fast, k1 * tau)
 
             fast = self.dkd45(fast, d2 * tau / 2, True)
-            slow = self.drift(slow, d2 * tau)
+            slow = drift(slow, d2 * tau)
             fast = self.dkd45(fast, d2 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k2 * tau)
+            slow, fast = kick_sf(slow, fast, k2 * tau)
 
             fast = self.dkd45(fast, d2 * tau / 2, True)
-            slow = self.drift(slow, d2 * tau)
+            slow = drift(slow, d2 * tau)
             fast = self.dkd45(fast, d2 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k1 * tau)
+            slow, fast = kick_sf(slow, fast, k1 * tau)
 
             fast = self.dkd45(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd45(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd45(fast, d0 * tau / 2, True)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd45(fast, d0 * tau / 2, True)
             #
 
@@ -593,7 +641,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast)
+            p = join(slow, fast)
 
         return p
 
@@ -618,47 +666,47 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau*flag))
+            slow, fast = split(p, abs(tau*flag))
 
             #
             fast = self.dkd46(fast, d0 * tau / 2, False)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd46(fast, d0 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd46(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd46(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k1 * tau)
+            slow, fast = kick_sf(slow, fast, k1 * tau)
 
             fast = self.dkd46(fast, d2 * tau / 2, True)
-            slow = self.drift(slow, d2 * tau)
+            slow = drift(slow, d2 * tau)
             fast = self.dkd46(fast, d2 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k2 * tau)
+            slow, fast = kick_sf(slow, fast, k2 * tau)
 
             fast = self.dkd46(fast, d3 * tau / 2, True)
-            slow = self.drift(slow, d3 * tau)
+            slow = drift(slow, d3 * tau)
             fast = self.dkd46(fast, d3 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k2 * tau)
+            slow, fast = kick_sf(slow, fast, k2 * tau)
 
             fast = self.dkd46(fast, d2 * tau / 2, True)
-            slow = self.drift(slow, d2 * tau)
+            slow = drift(slow, d2 * tau)
             fast = self.dkd46(fast, d2 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k1 * tau)
+            slow, fast = kick_sf(slow, fast, k1 * tau)
 
             fast = self.dkd46(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd46(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd46(fast, d0 * tau / 2, True)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd46(fast, d0 * tau / 2, True)
             #
 
@@ -669,7 +717,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast)
+            p = join(slow, fast)
 
         return p
 
@@ -695,53 +743,53 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau*flag))
+            slow, fast = split(p, abs(tau*flag))
 
             #
             fast = self.dkd67(fast, d0 * tau / 2, False)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd67(fast, d0 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd67(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd67(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k1 * tau)
+            slow, fast = kick_sf(slow, fast, k1 * tau)
 
             fast = self.dkd67(fast, d2 * tau / 2, True)
-            slow = self.drift(slow, d2 * tau)
+            slow = drift(slow, d2 * tau)
             fast = self.dkd67(fast, d2 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k2 * tau)
+            slow, fast = kick_sf(slow, fast, k2 * tau)
 
             fast = self.dkd67(fast, d3 * tau / 2, True)
-            slow = self.drift(slow, d3 * tau)
+            slow = drift(slow, d3 * tau)
             fast = self.dkd67(fast, d3 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k3 * tau)
+            slow, fast = kick_sf(slow, fast, k3 * tau)
 
             fast = self.dkd67(fast, d3 * tau / 2, True)
-            slow = self.drift(slow, d3 * tau)
+            slow = drift(slow, d3 * tau)
             fast = self.dkd67(fast, d3 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k2 * tau)
+            slow, fast = kick_sf(slow, fast, k2 * tau)
 
             fast = self.dkd67(fast, d2 * tau / 2, True)
-            slow = self.drift(slow, d2 * tau)
+            slow = drift(slow, d2 * tau)
             fast = self.dkd67(fast, d2 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k1 * tau)
+            slow, fast = kick_sf(slow, fast, k1 * tau)
 
             fast = self.dkd67(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd67(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd67(fast, d0 * tau / 2, True)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd67(fast, d0 * tau / 2, True)
             #
 
@@ -752,7 +800,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast)
+            p = join(slow, fast)
 
         return p
 
@@ -780,65 +828,65 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = self.split(p, abs(tau*flag))
+            slow, fast = split(p, abs(tau*flag))
 
             #
             fast = self.dkd69(fast, d0 * tau / 2, False)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd69(fast, d0 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd69(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd69(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k1 * tau)
+            slow, fast = kick_sf(slow, fast, k1 * tau)
 
             fast = self.dkd69(fast, d2 * tau / 2, True)
-            slow = self.drift(slow, d2 * tau)
+            slow = drift(slow, d2 * tau)
             fast = self.dkd69(fast, d2 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k2 * tau)
+            slow, fast = kick_sf(slow, fast, k2 * tau)
 
             fast = self.dkd69(fast, d3 * tau / 2, True)
-            slow = self.drift(slow, d3 * tau)
+            slow = drift(slow, d3 * tau)
             fast = self.dkd69(fast, d3 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k3 * tau)
+            slow, fast = kick_sf(slow, fast, k3 * tau)
 
             fast = self.dkd69(fast, d4 * tau / 2, True)
-            slow = self.drift(slow, d4 * tau)
+            slow = drift(slow, d4 * tau)
             fast = self.dkd69(fast, d4 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k4 * tau)
+            slow, fast = kick_sf(slow, fast, k4 * tau)
 
             fast = self.dkd69(fast, d4 * tau / 2, True)
-            slow = self.drift(slow, d4 * tau)
+            slow = drift(slow, d4 * tau)
             fast = self.dkd69(fast, d4 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k3 * tau)
+            slow, fast = kick_sf(slow, fast, k3 * tau)
 
             fast = self.dkd69(fast, d3 * tau / 2, True)
-            slow = self.drift(slow, d3 * tau)
+            slow = drift(slow, d3 * tau)
             fast = self.dkd69(fast, d3 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k2 * tau)
+            slow, fast = kick_sf(slow, fast, k2 * tau)
 
             fast = self.dkd69(fast, d2 * tau / 2, True)
-            slow = self.drift(slow, d2 * tau)
+            slow = drift(slow, d2 * tau)
             fast = self.dkd69(fast, d2 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k1 * tau)
+            slow, fast = kick_sf(slow, fast, k1 * tau)
 
             fast = self.dkd69(fast, d1 * tau / 2, True)
-            slow = self.drift(slow, d1 * tau)
+            slow = drift(slow, d1 * tau)
             fast = self.dkd69(fast, d1 * tau / 2, True)
 
-            slow, fast = self.kick_sf(slow, fast, k0 * tau)
+            slow, fast = kick_sf(slow, fast, k0 * tau)
 
             fast = self.dkd69(fast, d0 * tau / 2, True)
-            slow = self.drift(slow, d0 * tau)
+            slow = drift(slow, d0 * tau)
             fast = self.dkd69(fast, d0 * tau / 2, True)
             #
 
@@ -849,7 +897,7 @@ class SIA(Base):
                 wp = slow[slow.nstep % self.dump_freq == 0]
                 if wp.n: self.wl.append(wp.copy())
 
-            p = self.join(slow, fast)
+            p = join(slow, fast)
 
         return p
 
@@ -868,7 +916,7 @@ class SIA(Base):
         t = self.time
         ph = []
         while p.n > 0:
-            slow, fast, indexing = self.split(dt, p)
+            slow, fast, indexing = split(dt, p)
             ph.append((t+dt, dt, p, slow, fast, indexing))
             dt /= 2
             p = fast
@@ -885,7 +933,7 @@ class SIA(Base):
             self.merge(p, slow, fast, indexing)
             if update_tstep: p.update_tstep(p, self.eta)      # True/False
             if update_tstep: p.update_phi(p)      # True/False
-            slow, fast, indexing = self.split(dt/2, p)
+            slow, fast, indexing = split(dt/2, p)
 
             if fast.n > 0:
                 heapq.heappush(ph, (t+dt/2, dt/2, p, slow, fast, indexing))
@@ -907,7 +955,7 @@ class SIA(Base):
 #
 #            if update_tstep: p.update_tstep(p, self.eta)      # True/False
 #
-#            slow, fast, indexing = self.split(tau/2, p)
+#            slow, fast, indexing = split(tau/2, p)
 #
 #            if fast.n > 0:
 #                tnext += tau/2
