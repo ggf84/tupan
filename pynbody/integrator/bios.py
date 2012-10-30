@@ -89,6 +89,21 @@ class LLBIOS(object):
 llbios = LLBIOS()
 
 
+def sakura(p, tau):
+    llbios.set_args(p, p, tau)
+    llbios.run()
+    (dx, dy, dz, dvx, dvy, dvz) = llbios.get_result()
+
+    p.x += dx + tau * p.vx
+    p.y += dy + tau * p.vy
+    p.z += dz + tau * p.vz
+    p.vx += dvx
+    p.vy += dvy
+    p.vz += dvz
+
+    return p
+
+
 @decallmethods(timings)
 class BIOS(Base):
     """
@@ -102,16 +117,7 @@ class BIOS(Base):
         """
 
         """
-        llbios.set_args(p, p, tau)
-        llbios.run()
-        (dx, dy, dz, dvx, dvy, dvz) = llbios.get_result()
-
-        p.x += dx + tau * p.vx
-        p.y += dy + tau * p.vy
-        p.z += dz + tau * p.vz
-        p.vx += dvx
-        p.vy += dvy
-        p.vz += dvz
+        p = sakura(p, tau)
 
         p.tstep = tau
         p.time += tau
