@@ -72,30 +72,121 @@ static PyMethodDef libc_gravity_meths[] = {
 };
 
 
-PyMODINIT_FUNC initlibc32_gravity(void)
-{
-    PyObject *ret;
+//
+// Module initialization and state
+// (http://docs.python.org/3/howto/cporting.html#module-initialization-and-state)
+////////////////////////////////////////////////////////////////////////////////
 
-    ret = Py_InitModule3("libc32_gravity", libc_gravity_meths,
-                         "An extension module for PyNbody.");
+struct module_state {
+    PyObject *error;
+};
+
+#if PY_MAJOR_VERSION >= 3
+#define INITERROR return NULL
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+static int myextension_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(GETSTATE(m)->error);
+    return 0;
+}
+static int myextension_clear(PyObject *m) {
+    Py_CLEAR(GETSTATE(m)->error);
+    return 0;
+}
+#else
+#define INITERROR return
+#define GETSTATE(m) (&_state)
+static struct module_state _state;
+#endif
+
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef32 = {
+        PyModuleDef_HEAD_INIT,
+        "libc32_gravity",
+        "An extension module for PyNbody.",
+        sizeof(struct module_state),
+        libc_gravity_meths,
+        NULL,
+        myextension_traverse,
+        myextension_clear,
+        NULL
+};
+
+PyObject *
+PyInit_libc32_gravity(void)
+#else
+PyMODINIT_FUNC
+initlibc32_gravity(void)
+#endif
+{
+
+#if PY_MAJOR_VERSION >= 3
+    PyObject *module = PyModule_Create(&moduledef32);
+#else
+    PyObject *module = Py_InitModule3("libc32_gravity", libc_gravity_meths,
+                                      "An extension module for PyNbody.");
+#endif
 
     import_array();
 
-    if (ret == NULL)
-        return;
+    if (module == NULL)
+        INITERROR;
+    struct module_state *st = GETSTATE(module);
+
+    st->error = PyErr_NewException("libc32_gravity.Error", NULL, NULL);
+    if (st->error == NULL) {
+        Py_DECREF(module);
+        INITERROR;
+    }
+
+#if PY_MAJOR_VERSION >= 3
+    return module;
+#endif
 }
 
 
-PyMODINIT_FUNC initlibc64_gravity(void)
-{
-    PyObject *ret;
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef64 = {
+        PyModuleDef_HEAD_INIT,
+        "libc64_gravity",
+        "An extension module for PyNbody.",
+        sizeof(struct module_state),
+        libc_gravity_meths,
+        NULL,
+        myextension_traverse,
+        myextension_clear,
+        NULL
+};
 
-    ret = Py_InitModule3("libc64_gravity", libc_gravity_meths,
-                         "An extension module for PyNbody.");
+PyObject *
+PyInit_libc64_gravity(void)
+#else
+PyMODINIT_FUNC
+initlibc64_gravity(void)
+#endif
+{
+
+#if PY_MAJOR_VERSION >= 3
+    PyObject *module = PyModule_Create(&moduledef64);
+#else
+    PyObject *module = Py_InitModule3("libc64_gravity", libc_gravity_meths,
+                                      "An extension module for PyNbody.");
+#endif
 
     import_array();
 
-    if (ret == NULL)
-        return;
+    if (module == NULL)
+        INITERROR;
+    struct module_state *st = GETSTATE(module);
+
+    st->error = PyErr_NewException("libc64_gravity.Error", NULL, NULL);
+    if (st->error == NULL) {
+        Py_DECREF(module);
+        INITERROR;
+    }
+
+#if PY_MAJOR_VERSION >= 3
+    return module;
+#endif
 }
 

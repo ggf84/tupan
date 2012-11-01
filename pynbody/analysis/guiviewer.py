@@ -308,14 +308,14 @@ if __name__ == "__main__":
     finished = False
     while not finished:
         gui.expose_event()
-#        
-        print "rotx:", gui.app.widget.rotx
+#
+        print("rotx:", gui.app.widget.rotx)
         gui.app.widget.rotx += 2
         gui.app.widget.roty += 1
         if gui.app.widget.rotx > 359:
             finished = True
 #        time.sleep(0.02)
-#        
+#
 
     gui.keep_exposure()
 
