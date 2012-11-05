@@ -30,10 +30,11 @@ class HDF5IO(object):
 
         """
         olen = len(group[key]) if key in group else 0
+        dtype = group[key].dtype if key in group else obj.dtype
         nlen = olen + len(obj)
         dset = group.require_dataset(key,
                                      (olen,),
-                                     dtype=obj.dtype,
+                                     dtype=dtype,
                                      maxshape=(None,),
                                      chunks=True,
                                      compression="gzip",
@@ -78,9 +79,10 @@ class HDF5IO(object):
         group = fobj[base_name].values()[0]
         p = pickle.loads(group.attrs["Class"])()
         for (k, v) in group.items():
-            obj = pickle.loads(v.attrs["Class"])()
+            obj = pickle.loads(v.attrs["Class"])(len(v))
             obj.set_state(v[:])
-            p.append(obj)
+#            p.append(obj)
+            p = obj
         return p
 
 

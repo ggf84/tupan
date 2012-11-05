@@ -77,18 +77,18 @@ class vBlackhole(vBody):
 
 
 @decallmethods(timings)
-@make_properties
+#@make_properties
 class Blackholes(Bodies):
     """
 
     """
-    basetype = vBlackhole
-    dtype = Bodies.dtype + [
-                            ("sx", np.float64),
-                            ("sy", np.float64),
-                            ("sz", np.float64),
-                            ("radius", np.float64),
-                           ]
+#    basetype = vBlackhole
+#    dtype = Bodies.dtype + [
+#                            ("sx", np.float64),
+#                            ("sy", np.float64),
+#                            ("sz", np.float64),
+#                            ("radius", np.float64),
+#                           ]
 
 
 ########## end of file ##########

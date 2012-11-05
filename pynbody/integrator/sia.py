@@ -43,7 +43,7 @@ def split(p, tau):
     # prevents the occurrence of a slow level with only one particle.
     if slow.n == 1:
         fast.append(slow)
-        slow = type(p)()
+        slow = slow[:0]
 
     if slow.n + fast.n != p.n:
         logger.error("slow.n + fast.n != p.n: %d, %d, %d.", slow.n, fast.n, p.n)
@@ -332,7 +332,7 @@ class SIA(Base):
 
         if self.reporter:
             self.reporter.report(self.time, p)
-        self.wl = type(p)()
+        self.wl = p[:0]
 
 
         if self.method == "sia.dkd21std":

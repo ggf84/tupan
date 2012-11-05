@@ -219,7 +219,7 @@ class Particles_(Particles__):
             self.n = sum(obj.n for obj in items.items())
 
 @decallmethods(timings)
-@make_properties
+#@make_properties
 class Particles___(Bodies):
     """
 

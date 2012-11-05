@@ -82,20 +82,20 @@ class vStar(vBody):
 
 
 @decallmethods(timings)
-@make_properties
+#@make_properties
 class Stars(Bodies):
     """
 
     """
-    basetype = vStar
-    dtype = Bodies.dtype + [
-                            ("sx", np.float64),
-                            ("sy", np.float64),
-                            ("sz", np.float64),
-                            ("radius", np.float64),
-                            ("age", np.float64),
-                            ("metallicity", np.float64),
-                           ]
+#    basetype = vStar
+#    dtype = Bodies.dtype + [
+#                            ("sx", np.float64),
+#                            ("sy", np.float64),
+#                            ("sz", np.float64),
+#                            ("radius", np.float64),
+#                            ("age", np.float64),
+#                            ("metallicity", np.float64),
+#                           ]
 
 
 ########## end of file ##########

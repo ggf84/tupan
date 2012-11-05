@@ -71,15 +71,15 @@ class vSph(vBody):
 
 
 @decallmethods(timings)
-@make_properties
+#@make_properties
 class Sphs(Bodies):
     """
 
     """
-    basetype = vSph
-    dtype = Bodies.dtype + [
-                            ('rho', np.float64),
-                           ]
+#    basetype = vSph
+#    dtype = Bodies.dtype + [
+#                            ('rho', np.float64),
+#                           ]
 
 
 ########## end of file ##########
