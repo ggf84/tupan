@@ -580,29 +580,13 @@ class Body(AbstractNbodyMethods):
 
 def make_properties(cls):
     def make_property(attr, dty):
-        get_attr = np.frompyfunc(getattr, 2, 1)
-        set_attr = np.frompyfunc(setattr, 3, 1) # set nout=1 because setattr returns None
-
-        @timings
+#        @timings
         def fget(self):
-#            return get_attr(self.objs, attr).astype(dty)
-            try:
-                return self.__dict__[attr]
-            except:
-                value = get_attr(self.objs, attr).astype(dty)
-                self.__dict__[attr] = value
-                return value
+            return self.__dict__[attr]
 
-
-        @timings
+#        @timings
         def fset(self, value):
-#            if attr not in self.__dict__:
-            set_attr(self.objs, attr, dty(value))
-
-            if not isinstance(value, np.ndarray):
-                value = dty([value] * self.n)
-            self.__dict__[attr] = value
-
+            self.__dict__[attr][:] = value
 
         return property(fget, fset, fdel=None, doc=None)
 
@@ -641,16 +625,15 @@ class Bodies(AbstractNbodyMethods):
 
     def __init__(self, n=0, items=None):
         if items is None:
-            self.objs = np.array([self.basetype() for i in xrange(n)], object)
-        else:
-            self.__dict__.update(items)
+            items = {key: np.zeros(n, dty) for key, dty in self.dtype}
+        self.__dict__.update(items)
 
 
     def __repr__(self):
-        return repr(self.objs)
+        return repr(dict(self.__dict__))
 
     def __len__(self):
-        return len(self.objs)
+        return len(self.id)
 
     def __getitem__(self, slc):
         if isinstance(slc, int): slc = [slc]
@@ -671,9 +654,9 @@ class Bodies(AbstractNbodyMethods):
 
     def append(self, obj):
         if obj.n:
-            items = {k: np.concatenate((v, getattr(obj, k))) for k, v in self.__dict__.items()}
+            items = {k: np.concatenate((getattr(self, k, []), v))
+                     for k, v in obj.__dict__.items() if hasattr(self, k)}
             self.__dict__.update(items)
-
 
     def get_state(self):
         array = np.zeros(self.n, dtype=self.dtype)
@@ -682,7 +665,7 @@ class Bodies(AbstractNbodyMethods):
         return array
 
     def set_state(self, array):
-        self.objs = type(self)(len(array)).objs
+        self.__dict__ = type(self)(len(array)).__dict__
         for attr, dty in self.dtype:
             if attr in array.dtype.names:
                 setattr(self, attr, array[attr])

@@ -25,23 +25,23 @@ class HDF5IO(object):
         self.fmode = fmode
 
 
-    def store_dset(self, group, name, data, dtype, cls):
+    def store_dset(self, group, key, obj):
         """
 
         """
-        olen = len(group[name]) if name in group else 0
-        nlen = olen + len(data)
-        dset = group.require_dataset(name,
+        olen = len(group[key]) if key in group else 0
+        nlen = olen + len(obj)
+        dset = group.require_dataset(key,
                                      (olen,),
-                                     dtype=dtype,
+                                     dtype=obj.dtype,
                                      maxshape=(None,),
                                      chunks=True,
                                      compression="gzip",
                                      shuffle=True,
                                     )
-        dset.attrs["Class"] = pickle.dumps(cls)
+        dset.attrs["Class"] = pickle.dumps(type(obj))
         dset.resize((nlen,))
-        dset[olen:] = data
+        dset[olen:] = obj.get_state()
 
 
     def snapshot_dumpper(self, fobj, p, snap_number):
@@ -57,9 +57,7 @@ class HDF5IO(object):
         group.attrs["Class"] = pickle.dumps(type(p))
         for (key, obj) in p.items():
             if obj.n:
-                name = key
-                data = obj.get_state()
-                self.store_dset(group, name, data, data.dtype, type(obj))
+                self.store_dset(group, key, obj)
 
 
     def dump_snapshot(self, p, snap_number=None):
@@ -105,9 +103,7 @@ class HDF5IO(object):
         group.attrs["Class"] = pickle.dumps(type(wl))
         for (key, obj) in wl.items():
             if obj.n:
-                name = key
-                data = obj.get_state()
-                self.store_dset(group, name, data, data.dtype, type(obj))
+                self.store_dset(group, key, obj)
 
 
     def dump_worldline(self, wl):

@@ -282,11 +282,17 @@ class CKernel(object):
 
 
     def set_input_buffer(self, i, arg):
-        self.dev_args[i] = self.env.dtype.type(arg)
+        if not hasattr(arg, "astype"):
+            self.dev_args[i] = self.env.dtype.type(arg)
+        else:
+            self.dev_args[i] = arg.astype(self.env.dtype.type)
 
 
     def set_output_buffer(self, i, arg):
-        self.dev_args[i] = self.env.dtype.type(arg)
+        if not hasattr(arg, "astype"):
+            self.dev_args[i] = self.env.dtype.type(arg)
+        else:
+            self.dev_args[i] = arg.astype(self.env.dtype.type)
         self.res_ids[i] = i
 
 

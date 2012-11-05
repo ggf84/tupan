@@ -26,26 +26,28 @@ ALL_PARTICLE_TYPES = ["sph", "star", "blackhole"]
 
 def make_common_attrs(cls):
     def make_property(attr, doc):
+        @timings
         def fget(self):
-            seq = [obj.data[attr] for obj in self.values() if obj.n]
+            seq = [getattr(obj, attr) for obj in self.values() if obj.n]
             if len(seq) == 1:
                 return seq[0]
             if len(seq) > 1:
                 return np.concatenate(seq)
             return np.concatenate([obj.data[attr] for obj in self.values()])
 
-#            seq = [v for obj in self.values() for v in obj.data[attr]]
+#            seq = [v for obj in self.values() for v in getattr(obj, attr)]
 #            return np.array(seq)
 
 
+        @timings
         def fset(self, value):
             for obj in self.values():
                 if obj.n:
                     try:
-                        obj.data[attr] = value[:obj.n]
+                        setattr(obj, attr, value[:obj.n])
                         value = value[obj.n:]
                     except:
-                        obj.data[attr] = value
+                        setattr(obj, attr, value)
 
 #            for obj in self.values():
 #                if obj.n:
@@ -188,19 +190,51 @@ from .star import vStar, Stars
 from .blackhole import vBlackhole, Blackholes
 from .body import vBody, Bodies, make_properties
 
+Particles = Bodies
+
+@decallmethods(timings)
+@make_common_attrs
+class Particles_(Particles__):
+    """
+    This class holds the particle types in the simulation.
+    """
+    def __init__(self, nstar=0, nbh=0, nsph=0, items=None):
+        """
+        Initializer
+        """
+        if items is None:
+            self.kind = {}
+            self.n = 0
+
+            self.kind["stars"] = Stars(nstar)
+            self.n += nstar
+
+            self.kind["blackholes"] = Blackholes(nbh)
+            self.n += nbh
+
+            self.kind["sphs"] = Sphs(nsph)
+            self.n += nsph
+        else:
+            self.kind = items
+            self.n = sum(obj.n for obj in items.items())
 
 @decallmethods(timings)
 @make_properties
-class Particles(Bodies):
+class Particles___(Bodies):
     """
 
     """
     def __init__(self, nstar=0, nbh=0, nsph=0, items=None):
+        self.kind = {}
+        self.kind["stars"] = Stars(nstar)
+        self.kind["blackholes"] = BlackHoles(nbh)
+        self.kind["sphs"] = Sphs(nsph)
+
         if items is None:
             self.objs = np.concatenate([
-                                        np.array([vSph() for i in xrange(nsph)], object),
-                                        np.array([vStar() for i in xrange(nstar)], object),
-                                        np.array([vBlackhole() for i in xrange(nbh)], object),
+                                        np.array([vSph() for i in range(nsph)], object),
+                                        np.array([vStar() for i in range(nstar)], object),
+                                        np.array([vBlackhole() for i in range(nbh)], object),
                                        ])
         else:
             self.__dict__.update(items)
@@ -217,37 +251,42 @@ class Particles(Bodies):
 #            else: self.objs = np.zeros(0, object)
 #        else: self.objs = np.zeros(0, object)
 
+    def append(self, obj):
+        if obj.n:
+            for (k, v) in obj.items():
+                if v.n:
+                    self.kind[k].append(v)
 
-    @property
-    def stars(self):
-        select = np.frompyfunc(isinstance, 2, 1)
-        slc = select(self.objs, Stars.basetype).astype(bool)
-        items = {k: v[slc] for k, v in self.__dict__.items()}
-        return Stars(items=items)
-
-    @property
-    def sphs(self):
-        select = np.frompyfunc(isinstance, 2, 1)
-        slc = select(self.objs, Sphs.basetype).astype(bool)
-        items = {k: v[slc] for k, v in self.__dict__.items()}
-        return Sphs(items=items)
-
-    @property
-    def blackholes(self):
-        select = np.frompyfunc(isinstance, 2, 1)
-        slc = select(self.objs, Blackholes.basetype).astype(bool)
-        items = {k: v[slc] for k, v in self.__dict__.items()}
-        return Blackholes(items=items)
-
-    @property
-    def kind(self):
-        sphs = self.sphs
-        stars = self.stars
-        blackholes = self.blackholes
-        return {type(sphs).__name__.lower(): sphs,
-                type(stars).__name__.lower(): stars,
-                type(blackholes).__name__.lower(): blackholes,
-               }
+#    @property
+#    def stars(self):
+#        select = np.frompyfunc(isinstance, 2, 1)
+#        slc = select(self.objs, Stars.basetype).astype(bool)
+#        items = {k: v[slc] for k, v in self.__dict__.items()}
+#        return Stars(items=items)
+#
+#    @property
+#    def sphs(self):
+#        select = np.frompyfunc(isinstance, 2, 1)
+#        slc = select(self.objs, Sphs.basetype).astype(bool)
+#        items = {k: v[slc] for k, v in self.__dict__.items()}
+#        return Sphs(items=items)
+#
+#    @property
+#    def blackholes(self):
+#        select = np.frompyfunc(isinstance, 2, 1)
+#        slc = select(self.objs, Blackholes.basetype).astype(bool)
+#        items = {k: v[slc] for k, v in self.__dict__.items()}
+#        return Blackholes(items=items)
+#
+#    @property
+#    def kind(self):
+#        sphs = self.sphs
+#        stars = self.stars
+#        blackholes = self.blackholes
+#        return {type(sphs).__name__.lower(): sphs,
+#                type(stars).__name__.lower(): stars,
+#                type(blackholes).__name__.lower(): blackholes,
+#               }
 
 
 ########## end of file ##########
