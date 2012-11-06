@@ -56,7 +56,7 @@ class NbodyUtils(object):
     def astype(self, cls):
         newobj = cls()
         for obj in self.values():
-            tmp = cls()
+            tmp = cls(obj.n)
             tmp.set_state(obj.get_state())
             newobj.append(tmp)
         return newobj
@@ -87,10 +87,10 @@ class NbodyMethods(NbodyUtils):
     data0 = np.zeros(0, dtype)
 
 
-#    @property
-#    def pos(self):
-#        return np.concatenate((self.x, self.y, self.z,)).reshape(3,-1).T
-#
+    @property
+    def pos(self):
+        return np.concatenate((self.x, self.y, self.z,)).reshape(3,-1).T
+
 #    @pos.setter
 #    def pos(self, value):
 #        try:
@@ -107,10 +107,10 @@ class NbodyMethods(NbodyUtils):
 #                self.y = value
 #                self.z = value
 
-#    @property
-#    def vel(self):
-#        return np.concatenate((self.vx, self.vy, self.vz,)).reshape(3,-1).T
-#
+    @property
+    def vel(self):
+        return np.concatenate((self.vx, self.vy, self.vz,)).reshape(3,-1).T
+
 #    @vel.setter
 #    def vel(self, value):
 #        try:
@@ -568,7 +568,6 @@ class Body(AbstractNbodyMethods):
 
 
     def set_state(self, array):
-        self.data = type(self)(len(array)).data
         self.data[:] = array
         self.n = len(self)
 
@@ -622,6 +621,7 @@ class Bodies(AbstractNbodyMethods):
     """
 #    basetype = vBody
 #    dtype = [(_[0], np.typeDict[_[1]]) for _ in AbstractNbodyMethods.attrs]
+    dtype = set([('id', np.dtype('u8')),])
 
     def __init__(self, n=0, items=None):
         if items is None:
@@ -640,7 +640,7 @@ class Bodies(AbstractNbodyMethods):
 
 
     def __repr__(self):
-        return repr(dict(self.__dict__))
+        return repr(self.__dict__)
 
     def __len__(self):
         return len(self.id)
@@ -651,7 +651,9 @@ class Bodies(AbstractNbodyMethods):
 
     def __setattr__(self, name, value):
         if not name in self.__dict__:
-            self.__dict__[name] = np.zeros(self.n, np.array(value).dtype)
+            dtype = np.array(value).dtype
+            self.__dict__[name] = np.zeros(self.n, dtype)
+            type(self).dtype.add((name, dtype))
         self.__dict__[name][:] = value
 
     def __getitem__(self, slc):
@@ -668,19 +670,29 @@ class Bodies(AbstractNbodyMethods):
         if obj.n:
 #            items = {k: np.concatenate((v, getattr(obj, k)))
 #                     for k, v in self.__dict__.items()}
-            items = {k: np.concatenate((getattr(self, k, []), v))
-                     for k, v in obj.__dict__.items()}
+
+#            items = {k: np.concatenate((getattr(self, k, []), v))
+#                     for k, v in obj.__dict__.items()}
+
+            items = {}
+            for k, v in obj.__dict__.items():
+                try:
+                    array = getattr(self, k)
+                except:
+                    array = []
+                items[k] = np.concatenate((array, v))
+
+
             self.__dict__.update(items)
 
 
     def get_state(self):
-        array = np.zeros(self.n, dtype=self.dtype)
-        for name in self.dtype.names:
+        array = np.zeros(self.n, dtype=list(self.dtype))
+        for name in dict(self.dtype).keys():
             array[name] = getattr(self, name)
         return array
 
     def set_state(self, array):
-        type(self).dtype = array.dtype
         for name in array.dtype.names:
             setattr(self, name, array[name])
 

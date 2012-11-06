@@ -193,8 +193,7 @@ from .body import vBody, Bodies, make_properties
 Particles = Bodies
 
 @decallmethods(timings)
-@make_common_attrs
-class Particles_(Particles__):
+class Particles__(object):    # XXX: rename -> System
     """
     This class holds the particle types in the simulation.
     """
@@ -202,21 +201,51 @@ class Particles_(Particles__):
         """
         Initializer
         """
-        if items is None:
-            self.kind = {}
-            self.n = 0
+        items = {cls.__name__.lower(): cls(n) for n, cls in [(nstar, Stars),
+                                                             (nbh, Blackholes),
+                                                             (nsph, Sphs)]}
+        self.__dict__.update(items)
 
-            self.kind["stars"] = Stars(nstar)
-            self.n += nstar
 
-            self.kind["blackholes"] = Blackholes(nbh)
-            self.n += nbh
+    def __repr__(self):
+        return str(self.__dict__)
 
-            self.kind["sphs"] = Sphs(nsph)
-            self.n += nsph
-        else:
-            self.kind = items
-            self.n = sum(obj.n for obj in items.items())
+    def append(self, obj):
+        if obj.n:
+            for (k, v) in obj.items():
+                if v.n:
+                    self.__dict__[k].append(v)
+
+#    def __getattr__(self, attr):
+#        try:
+#            return self.__dict__[attr]
+#        except:
+#            seq = [getattr(obj, attr) for obj in self.values() if obj.n]
+#            if len(seq) == 1:
+#                return seq[0]
+#            if len(seq) > 1:
+#                return np.concatenate(seq)
+#            return np.concatenate([obj.data[attr] for obj in self.values()])
+#
+#
+#    def __setattr__(self, attr, value):
+#        try:
+#            self.__dict__[attr] = value
+#        except:
+#            for obj in self.values():
+#                if obj.n:
+#                    try:
+#                        setattr(obj, attr, value[:obj.n])
+#                        value = value[obj.n:]
+#                    except:
+#                        setattr(obj, attr, value)
+
+
+
+
+
+
+
 
 @decallmethods(timings)
 #@make_properties

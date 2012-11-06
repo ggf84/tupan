@@ -30,7 +30,7 @@ class HDF5IO(object):
 
         """
         olen = len(group[key]) if key in group else 0
-        dtype = group[key].dtype if key in group else obj.dtype
+        dtype = group[key].dtype if key in group else list(obj.dtype)
         nlen = olen + len(obj)
         dset = group.require_dataset(key,
                                      (olen,),
