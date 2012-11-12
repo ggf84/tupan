@@ -19,11 +19,12 @@ __all__ = ["Body"]
 
 def make_attrs(cls):
     def make_property(attr, doc):
+        @timings
         def fget(self): return self.data[attr]
+        @timings
         def fset(self, value): self.data[attr] = value
-        def fdel(self): raise NotImplementedError()
-        return property(fget, fset, fdel, doc)
-    attrs = ((i[0], cls.__name__+"\'s "+i[2]) for i in cls.attrs)
+        return property(fget=fget, fset=fset, fdel=None, doc=doc)
+    attrs = ((i[0], cls.__name__+"\'s "+i[2]) for i in cls.attrs+cls.special_attrs)
     for (attr, doc) in attrs:
         setattr(cls, attr, make_property(attr, doc))
     return cls
@@ -46,6 +47,7 @@ class NbodyUtils(object):
 
     def values(self):
         return self.kind.values()
+    members = property(values)
 
     def items(self):
         return self.kind.items()
@@ -69,22 +71,29 @@ class NbodyMethods(NbodyUtils):
     This class holds common methods for particles in n-body systems.
     """
     attrs = [# name, dtype, doc
-             ("id", "u8", "index"),
-             ("mass", "f8", "mass"),
-             ("eps2", "f8", "squared softening"),
-             ("x", "f8", "x-position"),
-             ("y", "f8", "y-position"),
-             ("z", "f8", "z-position"),
-             ("vx", "f8", "x-velocity"),
-             ("vy", "f8", "y-velocity"),
-             ("vz", "f8", "z-velocity"),
-             ("time", "f8", "current time"),
-             ("tstep", "f8", "time step"),
-             ("nstep", "u8", "step number"),
+             ("id", np.uint64, "index"),
+             ("mass", np.float64, "mass"),
+             ("eps2", np.float64, "squared softening"),
+             ("x", np.float64, "x-position"),
+             ("y", np.float64, "y-position"),
+             ("z", np.float64, "z-position"),
+             ("vx", np.float64, "x-velocity"),
+             ("vy", np.float64, "y-velocity"),
+             ("vz", np.float64, "z-velocity"),
+             ("time", np.float64, "current time"),
+             ("tstep", np.float64, "time step"),
+             ("nstep", np.uint64, "step number"),
             ]
     names = [_[0] for _ in attrs]
     dtype = [(_[0], _[1]) for _ in attrs]
     data0 = np.zeros(0, dtype)
+
+    special_attrs = [# name, dtype, doc
+
+                    ]
+    special_names = [_[0] for _ in special_attrs]
+    special_dtype = [(_[0], _[1]) for _ in special_attrs]
+    special_data0 = np.zeros(0, special_dtype) if special_attrs else None
 
 
     @property
@@ -368,28 +377,23 @@ class PNbodyMethods(NbodyMethods):
     This class holds common methods for particles in n-body systems with post-Newtonian corrections.
     """
     special_attrs = [# name, dtype, doc
-                     ("pn_dvx", "f8", "post-Newtonian correction for the x-velocity"),
-                     ("pn_dvy", "f8", "post-Newtonian correction for the y-velocity"),
-                     ("pn_dvz", "f8", "post-Newtonian correction for the z-velocity"),
-                     ("pn_ke", "f8", "post-Newtonian correction for the kinetic energy"),
-                     ("pn_rcomx", "f8", "post-Newtonian correction for the center-of-mass x-position"),
-                     ("pn_rcomy", "f8", "post-Newtonian correction for the center-of-mass y-position"),
-                     ("pn_rcomz", "f8", "post-Newtonian correction for the center-of-mass z-position"),
-                     ("pn_lmx", "f8", "post-Newtonian correction for the x-linear momentum"),
-                     ("pn_lmy", "f8", "post-Newtonian correction for the y-linear momentum"),
-                     ("pn_lmz", "f8", "post-Newtonian correction for the z-linear momentum"),
-                     ("pn_amx", "f8", "post-Newtonian correction for the x-angular momentum"),
-                     ("pn_amy", "f8", "post-Newtonian correction for the y-angular momentum"),
-                     ("pn_amz", "f8", "post-Newtonian correction for the z-angular momentum"),
+                     ("pn_dvx", np.float64, "post-Newtonian correction for the x-velocity"),
+                     ("pn_dvy", np.float64, "post-Newtonian correction for the y-velocity"),
+                     ("pn_dvz", np.float64, "post-Newtonian correction for the z-velocity"),
+                     ("pn_ke", np.float64, "post-Newtonian correction for the kinetic energy"),
+                     ("pn_rcomx", np.float64, "post-Newtonian correction for the center-of-mass x-position"),
+                     ("pn_rcomy", np.float64, "post-Newtonian correction for the center-of-mass y-position"),
+                     ("pn_rcomz", np.float64, "post-Newtonian correction for the center-of-mass z-position"),
+                     ("pn_lmx", np.float64, "post-Newtonian correction for the x-linear momentum"),
+                     ("pn_lmy", np.float64, "post-Newtonian correction for the y-linear momentum"),
+                     ("pn_lmz", np.float64, "post-Newtonian correction for the z-linear momentum"),
+                     ("pn_amx", np.float64, "post-Newtonian correction for the x-angular momentum"),
+                     ("pn_amy", np.float64, "post-Newtonian correction for the y-angular momentum"),
+                     ("pn_amz", np.float64, "post-Newtonian correction for the z-angular momentum"),
                     ]
     special_names = [_[0] for _ in special_attrs]
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
     special_data0 = np.zeros(0, special_dtype) if special_attrs else None
-
-    attrs = NbodyMethods.attrs + special_attrs
-    names = NbodyMethods.names + special_names
-    dtype = [(_[0], _[1]) for _ in attrs]
-    data0 = np.zeros(0, dtype)
 
 
     ### PN stuff
@@ -473,6 +477,11 @@ class Body(AbstractNbodyMethods):
     """
     The most basic particle type.
     """
+    attrs = AbstractNbodyMethods.attrs + AbstractNbodyMethods.special_attrs
+    names = AbstractNbodyMethods.names + AbstractNbodyMethods.special_names
+    dtype = [(_[0], _[1]) for _ in attrs]
+    data0 = np.zeros(0, dtype)
+
     def __init__(self, n=0, data=None):
         """
         Initializer
@@ -577,55 +586,16 @@ class Body(AbstractNbodyMethods):
 ###############################################################################
 
 
-def make_properties(cls):
-    def make_property(attr, dty):
-#        @timings
-        def fget(self):
-            return self.__dict__[attr]
-
-#        @timings
-        def fset(self, value):
-            self.__dict__[attr][:] = value
-
-        return property(fget, fset, fdel=None, doc=None)
-
-    for (attr, dty) in cls.dtype:
-        setattr(cls, attr, make_property(attr, dty))
-
-    return cls
-
-
 @decallmethods(timings)
-class vBody(object):
-    """
-
-    """
-    dtype = [(_[0], np.typeDict[_[1]]) for _ in AbstractNbodyMethods.attrs]
-
-    def __init__(self):
-        for (attr, dty) in self.dtype:
-            setattr(self, attr, dty())
-        self.id = id(self)
-
-    def __repr__(self):
-        attrs = ", ".join([str(k)+'='+str(v) for k,v in sorted(self.__dict__.items())])
-        return "{0}({1})".format(type(self).__name__, attrs)
-
-
-
-@decallmethods(timings)
-#@make_properties
 class Bodies(AbstractNbodyMethods):
     """
 
     """
-#    basetype = vBody
-#    dtype = [(_[0], np.typeDict[_[1]]) for _ in AbstractNbodyMethods.attrs]
-    dtype = set([('id', np.dtype('u8')),])
-
     def __init__(self, n=0, items=None):
         if items is None:
-            self.__dict__['id'] = np.arange(n, dtype='u8')
+            self.__dict__['id'] = np.arange(n, dtype=np.uint64)
+            for name, dtype in self.dtype+self.special_dtype:
+                self.__dict__[name] = np.zeros(n, dtype=dtype)
         else:
             self.__dict__.update(items)
 
@@ -653,8 +623,8 @@ class Bodies(AbstractNbodyMethods):
         if not name in self.__dict__:
             dtype = np.array(value).dtype
             self.__dict__[name] = np.zeros(self.n, dtype)
-            type(self).dtype.add((name, dtype))
         self.__dict__[name][:] = value
+
 
     def __getitem__(self, slc):
         if isinstance(slc, int): slc = [slc]
@@ -687,8 +657,8 @@ class Bodies(AbstractNbodyMethods):
 
 
     def get_state(self):
-        array = np.zeros(self.n, dtype=list(self.dtype))
-        for name in dict(self.dtype).keys():
+        array = np.zeros(self.n, dtype=self.dtype)
+        for name in array.dtype.names:
             array[name] = getattr(self, name)
         return array
 

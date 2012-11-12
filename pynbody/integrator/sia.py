@@ -69,44 +69,46 @@ def join(slow, fast):
 # drift_n
 #
 @timings
-def drift_n(ip, tau):
+def drift_n(isys, tau):
     """
     Drift operator for Newtonian quantities.
     """
-    if ip.n:
-        ip.x += tau * ip.vx
-        ip.y += tau * ip.vy
-        ip.z += tau * ip.vz
-    return ip
+    if isys.n:
+        for iobj in isys.members:
+            iobj.x += tau * iobj.vx
+            iobj.y += tau * iobj.vy
+            iobj.z += tau * iobj.vz
+    return isys
 
 
 #
 # kick_n
 #
 @timings
-def kick_n(ip, jp, tau):
+def kick_n(isys, jsys, tau):
     """
     Kick operator for Newtonian quantities.
     """
-    if ip.n and jp.n:
-        (ax, ay, az) = ip.get_acc(jp)
-        ip.vx += tau * ax
-        ip.vy += tau * ay
-        ip.vz += tau * az
-    return ip
+    if isys.n and jsys.n:
+        for iobj in isys.members:
+            (iax, iay, iaz) = iobj.get_acc(jsys)
+            iobj.vx += tau * iax
+            iobj.vy += tau * iay
+            iobj.vz += tau * iaz
+    return isys
 
 
 #
 # drift_pn
 #
 @timings
-def drift_pn(ip, tau):
+def drift_pn(isys, tau):
     """
     Drift operator for post-Newtonian quantities.
     """
-    ip = drift_n(ip, tau)
-    if ip.n: ip.evolve_rcom_pn_shift(tau)
-    return ip
+    isys = drift_n(isys, tau)
+    if isys.n: isys.evolve_rcom_pn_shift(tau)
+    return isys
 
 
 #
@@ -150,54 +152,54 @@ def kick_pn(ip, jp, tau, pn_order, clight):
 # drift
 #
 @timings
-def drift(ip, tau):
+def drift(isys, tau):
     """
     Drift operator.
     """
     if pn_order > 0:
-        return drift_pn(ip, tau)
-    return drift_n(ip, tau)
+        return drift_pn(isys, tau)
+    return drift_n(isys, tau)
 
 
 #
 # kick
 #
 @timings
-def kick(ip, jp, tau, pn):
+def kick(isys, jsys, tau, pn):
     """
     Kick operator.
     """
     if pn and pn_order > 0:
-        return kick_pn(ip, jp, tau, pn_order, clight)
-    return kick_n(ip, jp, tau)
+        return kick_pn(isys, jsys, tau, pn_order, clight)
+    return kick_n(isys, jsys, tau)
 
 
 #
 # dkd
 #
 @timings
-def dkd(p, tau):
+def dkd(system, tau):
     """
     Drift-Kick-Drift operator.
     """
-    p = drift(p, tau / 2)
-    p = kick(p, p, tau, pn=True)
-    p = drift(p, tau / 2)
-    return p
+    system = drift(system, tau / 2)
+    system = kick(system, system, tau, pn=True)
+    system = drift(system, tau / 2)
+    return system
 
 
 #
 # kdk
 #
 @timings
-def kdk(p, tau):
+def kdk(system, tau):
     """
     Kick-Drift-Kick operator.
     """
-    p = kick(p, p, tau / 2, pn=True)
-    p = drift(p, tau)
-    p = kick(p, p, tau / 2, pn=True)
-    return p
+    system = kick(system, system, tau / 2, pn=True)
+    system = drift(system, tau)
+    system = kick(system, system, tau / 2, pn=True)
+    return system
 
 
 #
