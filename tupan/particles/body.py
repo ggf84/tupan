@@ -616,8 +616,8 @@ class Bodies(AbstractNbodyMethods):
         return len(self.id)
 
 
-    def __getattr__(self, name):
-        return self.__dict__[name]
+#    def __getattr__(self, name):
+#        return self.__dict__[name]
 
     def __setattr__(self, name, value):
         if not name in self.__dict__:

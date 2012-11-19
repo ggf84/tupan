@@ -6,7 +6,7 @@
 """
 
 
-from pynbody.simulation import main
+from tupan.simulation import main
 
 
 if __name__ == "__main__":

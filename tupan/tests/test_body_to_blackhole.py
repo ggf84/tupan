@@ -4,10 +4,10 @@
 from __future__ import print_function
 
 if __name__ == "__main__":
-    from pynbody.ics.imf import IMF
-    from pynbody.ics.plummer import Plummer
-    from pynbody.particles import Particles
-    from pynbody.io import IO
+    from tupan.ics.imf import IMF
+    from tupan.ics.plummer import Plummer
+    from tupan.particles import Particles
+    from tupan.io import IO
     import matplotlib.pyplot as plt
     import numpy as np
 
@@ -34,8 +34,8 @@ if __name__ == "__main__":
 
     p = main()
 
-    from pynbody.ics import *
-    from pynbody.particles.blackhole import Blackholes
+    from tupan.ics import *
+    from tupan.particles.blackhole import Blackholes
     bh = figure8.make_system().astype(Blackholes)
     p.append(bh)
 

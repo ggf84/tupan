@@ -30,7 +30,7 @@ FULLSCREEN = False
 RECORDSCREEN = False
 WINDOW_WIDTH = 768
 WINDOW_HEIGHT = 432
-WINDOW_TITLE_PREFIX = 'PyNbody Viewer'
+WINDOW_TITLE_PREFIX = 'Tupan Viewer'
 
 
 ROTINC = 0.0625
@@ -500,49 +500,52 @@ class GLviewer(object):
 
         Ntot = self.particle.n
 
-        blackholes = self.particle.blackhole
-        if blackholes.n:
-            points = blackholes.pos
-            colors = self.get_colors(blackholes.mass)
-            colors[:, 0].fill(0)
-            colors[:, 1].fill(1)
-            colors[:, 2].fill(0)
-            colors[:, 3].fill(1)
-            sizes = np.sqrt(blackholes.mass * Ntot)
+        if hasattr(self.particle, "blackholes"):
+            blackholes = self.particle.blackholes
+            if blackholes.n:
+                points = blackholes.pos
+                colors = self.get_colors(blackholes.mass)
+                colors[:, 0].fill(0)
+                colors[:, 1].fill(1)
+                colors[:, 2].fill(0)
+                colors[:, 3].fill(1)
+                sizes = np.sqrt(blackholes.mass * Ntot)
 
-#            gl.glAlphaFunc(gl.GL_EQUAL, 1)
-            gl.glDepthMask(gl.GL_TRUE)
-            gl.glEnable(gl.GL_BLEND)
-            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ZERO)
-            self.draw_points(points, colors, sizes, self.textures['blackhole'])
-            gl.glDisable(gl.GL_BLEND)
-            gl.glDepthMask(gl.GL_FALSE)
-#            gl.glAlphaFunc(gl.GL_GREATER, 0)
-
-
-        stars = self.particle.star
-        if stars.n:
-            points = stars.pos
-            colors = self.get_colors(stars.mass)
-            sizes = np.sqrt(stars.eps2 * Ntot)
-
-            gl.glEnable(gl.GL_BLEND)
-#            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
-            self.draw_points(points, colors, sizes, self.textures['star'])
-            gl.glDisable(gl.GL_BLEND)
+#                gl.glAlphaFunc(gl.GL_EQUAL, 1)
+                gl.glDepthMask(gl.GL_TRUE)
+                gl.glEnable(gl.GL_BLEND)
+                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ZERO)
+                self.draw_points(points, colors, sizes, self.textures['blackhole'])
+                gl.glDisable(gl.GL_BLEND)
+                gl.glDepthMask(gl.GL_FALSE)
+#                gl.glAlphaFunc(gl.GL_GREATER, 0)
 
 
-        sph = self.particle.sph
-        if sph.n:
-            points = sph.pos
-            colors = self.get_colors(sph.mass)
-            sizes = np.sqrt(sph.eps2 * Ntot)
+        if hasattr(self.particle, "stars"):
+            stars = self.particle.stars
+            if stars.n:
+                points = stars.pos
+                colors = self.get_colors(stars.mass)
+                sizes = np.sqrt(stars.eps2 * Ntot)
 
-            gl.glEnable(gl.GL_BLEND)
-            gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
-            self.draw_points(points, colors, sizes, self.textures['sph'])
-            gl.glDisable(gl.GL_BLEND)
+                gl.glEnable(gl.GL_BLEND)
+#                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+                self.draw_points(points, colors, sizes, self.textures['star'])
+                gl.glDisable(gl.GL_BLEND)
+
+
+        if hasattr(self.particle, "sphs"):
+            sph = self.particle.sphs
+            if sph.n:
+                points = sph.pos
+                colors = self.get_colors(sph.mass)
+                sizes = np.sqrt(sph.eps2 * Ntot)
+
+                gl.glEnable(gl.GL_BLEND)
+                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+                self.draw_points(points, colors, sizes, self.textures['sph'])
+                gl.glDisable(gl.GL_BLEND)
 
 
     def draw_points(self, points, colors, sizes, texture):

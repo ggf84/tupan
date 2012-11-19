@@ -10,9 +10,9 @@ from __future__ import print_function
 from pprint import pprint
 import unittest
 import numpy as np
-from pynbody.lib import gravity
-from pynbody.lib.extensions import libkernels
-from pynbody.lib.utils.timing import Timer
+from tupan.lib import gravity
+from tupan.lib.extensions import libkernels
+from tupan.lib.utils.timing import Timer
 
 
 def best_of(n, func, *args, **kwargs):
@@ -27,8 +27,8 @@ def best_of(n, func, *args, **kwargs):
 
 def set_particles(npart):
     if npart < 2: npart = 2
-    from pynbody.ics.imf import IMF
-    from pynbody.ics.plummer import Plummer
+    from tupan.ics.imf import IMF
+    from tupan.ics.plummer import Plummer
     imf = IMF.padoan2007(0.075, 120.0)
     p = Plummer(npart, imf, eps=0.0, seed=1)
     p.make_plummer()

@@ -5,10 +5,10 @@ from __future__ import print_function
 
 
 if __name__ == "__main__":
-    from pynbody.lib.utils.timing import timings
-    from pynbody.ics.imf import IMF
-    from pynbody.ics.plummer import Plummer
-    from pynbody.io import IO
+    from tupan.lib.utils.timing import timings
+    from tupan.ics.imf import IMF
+    from tupan.ics.plummer import Plummer
+    from tupan.io import IO
     import matplotlib.pyplot as plt
     import numpy as np
 
@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
         p.show()
 
-#        from pynbody.analysis import GLviewer
+#        from tupan.analysis import GLviewer
 #        viewer = GLviewer()
 #        viewer.initialize()
 #        viewer.set_particle(p.particles.copy())

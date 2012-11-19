@@ -259,13 +259,13 @@ def _main_restart(args):
 
 def parse_args():
     """
-    The PyNbody's main function.
+    The Tupan's main function.
 
     Here we process command line arguments and call specific functions to run a
     new N-body simulation or restart from a previous run.
 
     NOTE: You shouldn't be able to call this function from a ipython session.
-          Instead you must call pynbody's script directly from a unix shell.
+          Instead you must call tupan's script directly from a unix shell.
     """
 
     # create the parser

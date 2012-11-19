@@ -249,9 +249,9 @@ class CModule(object):
         logger.debug("Building %s precision C extension module.", prec)
 
         if prec is "double":
-            from pynbody.lib import libc64_gravity as program
+            from tupan.lib import libc64_gravity as program
         else:
-            from pynbody.lib import libc32_gravity as program
+            from tupan.lib import libc32_gravity as program
         self.program = program
 
         logger.debug("done.")

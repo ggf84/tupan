@@ -72,16 +72,16 @@ class Particles(AbstractNbodyMethods):
 
 
     @property
-    def star(self):
-        return self.kind["star"]
+    def stars(self):
+        return self.kind["stars"]
 
     @property
-    def blackhole(self):
-        return self.kind["blackhole"]
+    def blackholes(self):
+        return self.kind["blackholes"]
 
     @property
-    def sph(self):
-        return self.kind["sph"]
+    def sphs(self):
+        return self.kind["sphs"]
 
 
     #

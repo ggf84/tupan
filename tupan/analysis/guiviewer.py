@@ -183,7 +183,7 @@ class LowLevelGLArea(object):
 class GUIwindow(object):
     def __init__(self):
         self.window = Gtk.Window()
-        self.window.set_title("PyNbody Viewer")
+        self.window.set_title("Tupan Viewer")
 #        self.window.set_default_size(480, 400)
         self.window.set_size_request(480, 400)
         self.window.set_position(Gtk.WIN_POS_CENTER)

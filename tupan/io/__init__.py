@@ -124,7 +124,7 @@ class IO(object):
 
         #######################################################################
         import matplotlib.pyplot as plt
-        from pynbody.io import IO
+        from tupan.io import IO
         p0 = IO("snapshots0.hdf5").load()
         p1 = IO("snapshots1.hdf5").load()
         p = IO("snapshots.hdf5").load()

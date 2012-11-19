@@ -72,7 +72,7 @@ class Stream(yaml.YAMLObject):
         # default attributes
         attributes = {'id': data.id, 'm': data.m, 't': data.t_curr,
                       'r': data.r, 'v': data.v, 'a': data.a}
-        # PyNbody's specific attributes
+        # Tupan's specific attributes
         if hasattr(data, 'type'):
             attributes['type'] = data.type
         if hasattr(data, 'dt_prev'):
@@ -125,7 +125,7 @@ class Stream(yaml.YAMLObject):
                                float(obj.acc[2])]
                     if 't_curr' in attributes:
                         p.t_curr = float(obj.t_curr)
-                    # PyNbody's specific attributes
+                    # Tupan's specific attributes
                     p.type = key
                     if 'dt_prev' in attributes:
                         p.dt_prev = float(obj.dt_prev)
@@ -154,10 +154,10 @@ class Stream(yaml.YAMLObject):
 
     @classmethod
     def from_loader(cls, data):
-        from pynbody.particles import Particles
-        from pynbody.particles.sph import Sph
-        from pynbody.particles.body import Body
-        from pynbody.particles.blackhole import BlackHole
+        from tupan.particles import Particles
+        from tupan.particles.sph import Sph
+        from tupan.particles.body import Body
+        from tupan.particles.blackhole import BlackHole
 
         def set_attributes(obj, index, item):
             obj.id[index] = item['id']

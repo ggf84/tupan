@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-PyNbody
+Tupan
 
 A Python Toolkit for Astrophysical N-Body Simulations.
 """

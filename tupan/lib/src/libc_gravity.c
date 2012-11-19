@@ -103,7 +103,7 @@ static struct module_state _state;
 static struct PyModuleDef moduledef32 = {
         PyModuleDef_HEAD_INIT,
         "libc32_gravity",
-        "An extension module for PyNbody.",
+        "An extension module for Tupan.",
         sizeof(struct module_state),
         libc_gravity_meths,
         NULL,
@@ -124,7 +124,7 @@ initlibc32_gravity(void)
     PyObject *module = PyModule_Create(&moduledef32);
 #else
     PyObject *module = Py_InitModule3("libc32_gravity", libc_gravity_meths,
-                                      "An extension module for PyNbody.");
+                                      "An extension module for Tupan.");
 #endif
 
     import_array();
@@ -149,7 +149,7 @@ initlibc32_gravity(void)
 static struct PyModuleDef moduledef64 = {
         PyModuleDef_HEAD_INIT,
         "libc64_gravity",
-        "An extension module for PyNbody.",
+        "An extension module for Tupan.",
         sizeof(struct module_state),
         libc_gravity_meths,
         NULL,
@@ -170,7 +170,7 @@ initlibc64_gravity(void)
     PyObject *module = PyModule_Create(&moduledef64);
 #else
     PyObject *module = Py_InitModule3("libc64_gravity", libc_gravity_meths,
-                                      "An extension module for PyNbody.");
+                                      "An extension module for Tupan.");
 #endif
 
     import_array();
