@@ -45,6 +45,11 @@ def split(p, tau):
         fast.append(slow)
         slow = slow[:0]
 
+    # prevents the occurrence of a fast level with only one particle.
+    if fast.n == 1:
+        slow.append(fast)
+        fast = fast[:0]
+
     if slow.n + fast.n != p.n:
         logger.error("slow.n + fast.n != p.n: %d, %d, %d.", slow.n, fast.n, p.n)
 
@@ -235,6 +240,7 @@ class Base(object):
                             "light argument 'clight' when using 'pn_order' > 0.")
 
         self.reporter = kwargs.pop("reporter", None)
+        self.viewer = kwargs.pop("viewer", None)
         self.dumpper = kwargs.pop("dumpper", None)
         self.dump_freq = kwargs.pop("dump_freq", 1)
         if kwargs:

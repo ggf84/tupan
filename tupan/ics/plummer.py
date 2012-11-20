@@ -11,8 +11,7 @@ import sys
 import math
 import logging
 import numpy as np
-from ..particles import Particles
-from ..particles.allparticles import Stars
+from ..particles import System
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -39,7 +38,6 @@ def scale_to_virial(particles, ke, pe, te):
     ke = -0.5 * pe
     te = ke + pe
     scale_pos(particles, -te / 0.25)
-    particles.update_phi(particles)
     pe = particles.potential_energy
     scale_vel(particles, math.sqrt(0.5 * abs(pe / te)))
 
@@ -74,7 +72,7 @@ class Plummer(object):
         self.mfrac = mfrac
         self.eps2 = eps*eps
         self.eps_parametrization = eps_parametrization
-        self.particles = Stars(num)
+        self.particles = System(nstars=num)
         np.random.seed(seed)
 
     def set_eps2(self, mass):
@@ -162,10 +160,6 @@ class Plummer(object):
         self.particles.vx = vel[0]
         self.particles.vy = vel[1]
         self.particles.vz = vel[2]
-
-        p = Particles()
-        p.append(self.particles)
-        self.particles = p
 
 
     def make_plummer(self):

@@ -8,7 +8,7 @@ This package implements base classes for particle types in the simulation.
 """
 
 
-from .allparticles import Particles
+from .allparticles import System
 from . import allparticles
 from . import blackhole
 from . import star

@@ -6,7 +6,7 @@ from __future__ import print_function
 if __name__ == "__main__":
     from tupan.ics.imf import IMF
     from tupan.ics.plummer import Plummer
-    from tupan.particles import Particles
+    from tupan.particles import System
     from tupan.io import IO
     import matplotlib.pyplot as plt
     import numpy as np

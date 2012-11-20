@@ -40,7 +40,8 @@ p2p_tstep_kernel_core(REAL iomega,
     REAL dln_omega = -gamma * rv * inv_r2;                           // 2 FLOPs
     omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
 
-    iomega = (omega > iomega) ? (omega):(iomega);
+//    iomega = (omega > iomega) ? (omega):(iomega);
+    iomega += omega * omega;
     return iomega;
 }
 // Total flop count: 38
@@ -125,7 +126,8 @@ __kernel void p2p_tstep_kernel(const uint ni,
                                              nj, jdata,
                                              eta,
                                              sharedJData);
-    itstep[i] = 2 * eta / iomega;
+//    itstep[i] = 2 * eta / iomega;
+    itstep[i] = 2 * eta / sqrt(iomega);
 }
 
 #else
@@ -186,7 +188,8 @@ _p2p_tstep_kernel(PyObject *_args)
                          jdata_ptr[j8+6], jdata_ptr[j8+7]};
             iomega = p2p_tstep_kernel_core(iomega, rmi, vei, rmj, vej, eta);
         }
-        ret_ptr[i] = 2 * eta / iomega;
+//        ret_ptr[i] = 2 * eta / iomega;
+        ret_ptr[i] = 2 * eta / sqrt(iomega);
     }
 
     // Decrement the reference counts for i-objects

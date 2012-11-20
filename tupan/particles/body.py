@@ -140,7 +140,6 @@ class NbodyMethods(NbodyUtils):
     ### total mass and center-of-mass
 
     @property
-#    @cache
     def total_mass(self):
         """
         Total mass.
@@ -148,7 +147,6 @@ class NbodyMethods(NbodyUtils):
         return float(self.mass.sum())
 
     @property
-#    @cache
     def rcom(self):
         """
         Position of the center-of-mass.
@@ -160,7 +158,6 @@ class NbodyMethods(NbodyUtils):
         return (np.array([rcomx, rcomy, rcomz]) / mtot)
 
     @property
-#    @cache
     def vcom(self):
         """
         Velocity of the center-of-mass.
@@ -188,7 +185,6 @@ class NbodyMethods(NbodyUtils):
     ### linear momentum
 
     @property
-#    @cache
     def lm(self):
         """
         Individual linear momentum.
@@ -199,7 +195,6 @@ class NbodyMethods(NbodyUtils):
         return np.array([lmx, lmy, lmz]).T
 
     @property
-#    @cache
     def linear_momentum(self):
         """
         Total linear momentum.
@@ -210,7 +205,6 @@ class NbodyMethods(NbodyUtils):
     ### angular momentum
 
     @property
-#    @cache
     def am(self):
         """
         Individual angular momentum.
@@ -221,7 +215,6 @@ class NbodyMethods(NbodyUtils):
         return np.array([amx, amy, amz]).T
 
     @property
-#    @cache
     def angular_momentum(self):
         """
         Total angular momentum.
@@ -232,7 +225,6 @@ class NbodyMethods(NbodyUtils):
     ### kinetic energy
 
     @property
-#    @cache
     def ke(self):
         """
         Individual kinetic energy.
@@ -240,7 +232,6 @@ class NbodyMethods(NbodyUtils):
         return 0.5 * self.mass * (self.vx**2 + self.vy**2 + self.vz**2)
 
     @property
-#    @cache
     def kinetic_energy(self):
         """
         Total kinetic energy.
@@ -251,7 +242,6 @@ class NbodyMethods(NbodyUtils):
     ### potential energy
 
     @property
-#    @cache
     def pe(self):
         """
         Individual potential energy.
@@ -260,7 +250,6 @@ class NbodyMethods(NbodyUtils):
         return self.mass * phi
 
     @property
-#    @cache
     def potential_energy(self):
         """
         Total potential energy.
@@ -271,7 +260,6 @@ class NbodyMethods(NbodyUtils):
     ### virial energy
 
     @property
-#    @cache
     def ve(self):
         """
         Individual virial energy.
@@ -280,7 +268,6 @@ class NbodyMethods(NbodyUtils):
         return self.mass * (self.x * ax + self.y * ay + self.z * az)
 
     @property
-#    @cache
     def virial_energy(self):
         """
         Total virial energy.
@@ -291,7 +278,6 @@ class NbodyMethods(NbodyUtils):
 
     ### gravity
 
-#    @cache_arg(1)
     def get_tstep(self, objs, eta):
         """
         Get the individual time-steps due to other particles.
@@ -300,7 +286,6 @@ class NbodyMethods(NbodyUtils):
         gravity.tstep.run()
         return gravity.tstep.get_result()
 
-#    @cache_arg(1)
     def get_phi(self, objs):
         """
         Get the individual gravitational potential due to other particles.
@@ -309,7 +294,6 @@ class NbodyMethods(NbodyUtils):
         gravity.phi.run()
         return gravity.phi.get_result()
 
-#    @cache_arg(1)
     def get_acc(self, objs):
         """
         Get the individual gravitational acceleration due to other particles.
@@ -318,7 +302,6 @@ class NbodyMethods(NbodyUtils):
         gravity.acc.run()
         return gravity.acc.get_result()
 
-#    @cache_arg(1)
     def get_acc_jerk(self, objs):
         """
         Get the individual gravitational acceleration and jerk due to other particles.
@@ -355,14 +338,12 @@ class NbodyMethods(NbodyUtils):
 
     ### miscellaneous methods
 
-#    @cache
     def min_tstep(self):
         """
         Minimum absolute value of tstep.
         """
         return np.abs(self.tstep).min()
 
-#    @cache
     def max_tstep(self):
         """
         Maximum absolute value of tstep.

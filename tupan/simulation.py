@@ -170,6 +170,7 @@ class Simulation(object):
                                      pn_order=self.args.pn_order,
                                      clight=self.args.clight,
                                      reporter=self.dia,
+                                     viewer=self.viewer,
                                      dumpper=self.io,
                                      dump_freq=self.args.dump_freq,
                                     )
