@@ -7,58 +7,12 @@
 
 from __future__ import print_function
 import numpy as np
-from .body import Body, make_attrs
+from .body import Bodies
 from ..lib.utils.timing import decallmethods, timings
 
 
-__all__ = ["Star"]
+__all__ = ["Stars"]
 
-
-@decallmethods(timings)
-@make_attrs
-class Star(Body):
-    """
-    A base class for Stars.
-    """
-    attrs = Body.attrs + [# name, dtype, doc
-                          ("sx", "f8", "x-spin"),
-                          ("sy", "f8", "y-spin"),
-                          ("sz", "f8", "z-spin"),
-                          ("radius", "f8", "radius"),
-                          ("age", "f8", "age"),
-                          ("metallicity", "f8", "metallicity"),
-                         ]
-    names = Body.names + [_[0] for _ in attrs]
-    dtype = [(_[0], _[1]) for _ in attrs]
-    data0 = np.zeros(0, dtype)
-
-
-    #
-    # specific methods
-    #
-
-    ### ...
-
-
-    #
-    # auxiliary methods
-    #
-
-    ### ...
-
-
-    #
-    # overridden methods
-    #
-
-    ### ...
-
-
-
-
-###############################################################################
-
-from .body import Bodies
 
 @decallmethods(timings)
 class Stars(Bodies):

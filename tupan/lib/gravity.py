@@ -90,21 +90,51 @@ class Acc(object):
     def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
-        idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
-                                iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
-        jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
-                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
+#        idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
+#                                iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
+#        jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
+#                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         if ni > len(self.output):
             self.output = np.zeros((ni, 4), dtype=self.kernel.env.dtype)
 
+#        self.kernel.global_size = ni
+#        self.kernel.set_int(0, ni)
+#        self.kernel.set_input_buffer(1, idata)
+#        self.kernel.set_int(2, nj)
+#        self.kernel.set_input_buffer(3, jdata)
+#        self.kernel.set_output_buffer(4, self.output[:ni])
+#        self.kernel.set_local_memory(5, 8)
+
+
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
-        self.kernel.set_input_buffer(1, idata)
-        self.kernel.set_int(2, nj)
-        self.kernel.set_input_buffer(3, jdata)
-        self.kernel.set_output_buffer(4, self.output[:ni])
-        self.kernel.set_local_memory(5, 8)
+        self.kernel.set_input_buffer(1, iobj.x)
+        self.kernel.set_input_buffer(2, iobj.y)
+        self.kernel.set_input_buffer(3, iobj.z)
+        self.kernel.set_input_buffer(4, iobj.mass)
+        self.kernel.set_input_buffer(5, iobj.vx)
+        self.kernel.set_input_buffer(6, iobj.vy)
+        self.kernel.set_input_buffer(7, iobj.vz)
+        self.kernel.set_input_buffer(8, iobj.eps2)
+        self.kernel.set_int(9, nj)
+        self.kernel.set_input_buffer(10, jobj.x)
+        self.kernel.set_input_buffer(11, jobj.y)
+        self.kernel.set_input_buffer(12, jobj.z)
+        self.kernel.set_input_buffer(13, jobj.mass)
+        self.kernel.set_input_buffer(14, jobj.vx)
+        self.kernel.set_input_buffer(15, jobj.vy)
+        self.kernel.set_input_buffer(16, jobj.vz)
+        self.kernel.set_input_buffer(17, jobj.eps2)
+        self.kernel.set_output_buffer(18, self.output[:ni])
+        self.kernel.set_local_memory(19, 1)
+        self.kernel.set_local_memory(20, 1)
+        self.kernel.set_local_memory(21, 1)
+        self.kernel.set_local_memory(22, 1)
+        self.kernel.set_local_memory(23, 1)
+        self.kernel.set_local_memory(24, 1)
+        self.kernel.set_local_memory(25, 1)
+        self.kernel.set_local_memory(26, 1)
 
 
     def run(self):

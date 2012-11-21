@@ -14,20 +14,20 @@ from ..lib.utils.timing import decallmethods, timings
 from ..lib.utils.memoize import cache, cache_arg
 
 
-__all__ = ["Body"]
+__all__ = ["Bodies"]
 
 
-def make_attrs(cls):
-    def make_property(attr, doc):
-        @timings
-        def fget(self): return self.data[attr]
-        @timings
-        def fset(self, value): self.data[attr] = value
-        return property(fget=fget, fset=fset, fdel=None, doc=doc)
-    attrs = ((i[0], cls.__name__+"\'s "+i[2]) for i in cls.attrs+cls.special_attrs)
-    for (attr, doc) in attrs:
-        setattr(cls, attr, make_property(attr, doc))
-    return cls
+#def make_attrs(cls):
+#    def make_property(attr, doc):
+#        @timings
+#        def fget(self): return self.data[attr]
+#        @timings
+#        def fset(self, value): self.data[attr] = value
+#        return property(fget=fget, fset=fset, fdel=None, doc=doc)
+#    attrs = ((i[0], cls.__name__+"\'s "+i[2]) for i in cls.attrs+cls.special_attrs)
+#    for (attr, doc) in attrs:
+#        setattr(cls, attr, make_property(attr, doc))
+#    return cls
 
 
 
@@ -452,114 +452,114 @@ class PNbodyMethods(NbodyMethods):
 AbstractNbodyMethods = PNbodyMethods if "--pn_order" in sys.argv else NbodyMethods
 
 
-@decallmethods(timings)
-@make_attrs
-class Body(AbstractNbodyMethods):
-    """
-    The most basic particle type.
-    """
-    attrs = AbstractNbodyMethods.attrs + AbstractNbodyMethods.special_attrs
-    names = AbstractNbodyMethods.names + AbstractNbodyMethods.special_names
-    dtype = [(_[0], _[1]) for _ in attrs]
-    data0 = np.zeros(0, dtype)
-
-    def __init__(self, n=0, data=None):
-        """
-        Initializer
-        """
-        if data is None:
-            if n: data = np.zeros(n, self.dtype)
-            else: data = self.data0
-        self.data = data
-        self.n = len(self)
-
-    @property
-    def kind(self):
-        return {type(self).__name__.lower(): self}
-
-    #
-    # miscellaneous methods
-    #
-
-    def __str__(self):
-        fmt = type(self).__name__+"(["
-        if self.n:
-            fmt += "\n"
-            for obj in self:
-                fmt += "{\n"
-                for name in obj.data.dtype.names:
-                    fmt += " {0}: {1},\n".format(name, getattr(obj, name).tolist()[0])
-                fmt += "},\n"
-        fmt += "])"
-        return fmt
-
-
-    def __repr__(self):
-        fmt = type(self).__name__+"("
-        if self.n: fmt += str(self.data)
-        else: fmt += "[]"
-        fmt += ")"
-        return fmt
-
-
-    def __hash__(self):
-        return hash(buffer(self.data))
-
-
-    def __getitem__(self, slc):
-        if isinstance(slc, int):
-            data = self.data[[slc]]
-        if isinstance(slc, slice):
-            data = self.data[slc]
-        if isinstance(slc, list):
-            data = self.data[slc]
-        if isinstance(slc, np.ndarray):
-            if slc.all():
-                return self
-            data = None
-            if slc.any():
-                data = self.data[slc]
-
-        return type(self)(data=data)
-
-
-    def append(self, obj):
-        if obj.n:
-            self.data = np.concatenate((self.data, obj.data))
-            self.n = len(self)
-
-
-    def remove(self, id):
-        slc = np.where(self.id == id)
-        self.data = np.delete(self.data, slc, 0)
-        self.n = len(self)
-
-
-    def insert(self, id, obj):
-        index = np.where(self.id == id)[0]
-        v = obj.data
-        self.data = np.insert(self.data, index*np.ones(len(v)), v, 0)
-        self.n = len(self)
-
-
-    def pop(self, id=None):
-        if id is None:
-            index = -1
-            id = self.id[-1]
-        else:
-            index = np.where(self.id == id)[0]
-        obj = self[index]
-        self.remove(id)
-        return obj
-
-
-    def get_state(self):
-        return self.data
-
-
-    def set_state(self, array):
-        self.data[:] = array
-        self.n = len(self)
+#@decallmethods(timings)
+#@make_attrs
+#class Body(AbstractNbodyMethods):
+#    """
+#    The most basic particle type.
+#    """
+#    attrs = AbstractNbodyMethods.attrs + AbstractNbodyMethods.special_attrs
+#    names = AbstractNbodyMethods.names + AbstractNbodyMethods.special_names
+#    dtype = [(_[0], _[1]) for _ in attrs]
+#    data0 = np.zeros(0, dtype)
+#
+#    def __init__(self, n=0, data=None):
+#        """
+#        Initializer
+#        """
+#        if data is None:
+#            if n: data = np.zeros(n, self.dtype)
+#            else: data = self.data0
+#        self.data = data
+#        self.n = len(self)
+#
+#    @property
+#    def kind(self):
+#        return {type(self).__name__.lower(): self}
+#
+#    #
+#    # miscellaneous methods
+#    #
+#
+#    def __str__(self):
+#        fmt = type(self).__name__+"(["
+#        if self.n:
+#            fmt += "\n"
+#            for obj in self:
+#                fmt += "{\n"
+#                for name in obj.data.dtype.names:
+#                    fmt += " {0}: {1},\n".format(name, getattr(obj, name).tolist()[0])
+#                fmt += "},\n"
+#        fmt += "])"
+#        return fmt
+#
+#
+#    def __repr__(self):
+#        fmt = type(self).__name__+"("
+#        if self.n: fmt += str(self.data)
+#        else: fmt += "[]"
+#        fmt += ")"
+#        return fmt
+#
+#
+#    def __hash__(self):
+#        return hash(buffer(self.data))
+#
+#
+#    def __getitem__(self, slc):
+#        if isinstance(slc, int):
+#            data = self.data[[slc]]
+#        if isinstance(slc, slice):
+#            data = self.data[slc]
+#        if isinstance(slc, list):
+#            data = self.data[slc]
+#        if isinstance(slc, np.ndarray):
+#            if slc.all():
+#                return self
+#            data = None
+#            if slc.any():
+#                data = self.data[slc]
+#
+#        return type(self)(data=data)
+#
+#
+#    def append(self, obj):
+#        if obj.n:
+#            self.data = np.concatenate((self.data, obj.data))
+#            self.n = len(self)
+#
+#
+#    def remove(self, id):
+#        slc = np.where(self.id == id)
+#        self.data = np.delete(self.data, slc, 0)
+#        self.n = len(self)
+#
+#
+#    def insert(self, id, obj):
+#        index = np.where(self.id == id)[0]
+#        v = obj.data
+#        self.data = np.insert(self.data, index*np.ones(len(v)), v, 0)
+#        self.n = len(self)
+#
+#
+#    def pop(self, id=None):
+#        if id is None:
+#            index = -1
+#            id = self.id[-1]
+#        else:
+#            index = np.where(self.id == id)[0]
+#        obj = self[index]
+#        self.remove(id)
+#        return obj
+#
+#
+#    def get_state(self):
+#        return self.data
+#
+#
+#    def set_state(self, array):
+#        self.data[:] = array
+#        self.n = len(self)
 
 
 
@@ -597,9 +597,6 @@ class Bodies(AbstractNbodyMethods):
         return len(self.id)
 
 
-#    def __getattr__(self, name):
-#        return self.__dict__[name]
-
     def __setattr__(self, name, value):
         if not name in self.__dict__:
             dtype = np.array(value).dtype
@@ -619,21 +616,8 @@ class Bodies(AbstractNbodyMethods):
 
     def append(self, obj):
         if obj.n:
-#            items = {k: np.concatenate((v, getattr(obj, k)))
-#                     for k, v in self.__dict__.items()}
-
-#            items = {k: np.concatenate((getattr(self, k, []), v))
-#                     for k, v in obj.__dict__.items()}
-
-            items = {}
-            for k, v in obj.__dict__.items():
-                try:
-                    array = getattr(self, k)
-                except:
-                    array = []
-                items[k] = np.concatenate((array, v))
-
-
+            items = {k: np.concatenate((self.__dict__.get(k, []), v))
+                     for k, v in obj.__dict__.items()}
             self.__dict__.update(items)
 
 
