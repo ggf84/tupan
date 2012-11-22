@@ -9,6 +9,7 @@ from __future__ import print_function
 import numpy as np
 from .body import Bodies
 from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.dtype import *
 
 
 __all__ = ["Sphs"]
@@ -20,7 +21,7 @@ class Sphs(Bodies):
 
     """
     dtype = Bodies.dtype + [
-                            ('rho', np.float64),
+                            ('rho', REAL),
                            ]
 
 

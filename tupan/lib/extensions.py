@@ -14,6 +14,7 @@ from functools import reduce
 import numpy as np
 import pyopencl as cl
 from .utils.timing import decallmethods, timings
+from .utils.dtype import *
 
 
 __all__ = ["Extensions"]
@@ -27,8 +28,7 @@ logging.basicConfig(filename="spam.log", filemode='w',
 @decallmethods(timings)
 class CLEnv(object):
 
-    def __init__(self, dtype='d', fast_math=True):
-        self.dtype = np.dtype(dtype)
+    def __init__(self, fast_math=True):
         self.fast_math = fast_math
         self.ctx = cl.create_some_context()
         self.queue = cl.CommandQueue(self.ctx)
@@ -54,7 +54,7 @@ class CLModule(object):
 
 
     def build(self, junroll=8):
-        prec = "double" if self.env.dtype.char is 'd' else "single"
+        prec = "double" if REAL is np.float64 else "single"
         logger.debug("Building %s precision CL extension module.", prec)
 
         # setting options
@@ -118,59 +118,62 @@ class CLKernel(object):
 
     def set_local_memory(self, i, arg):
         def foo(x, y): return x * y
-        size = self.env.dtype.itemsize * reduce(foo, self.local_size)
+        size = np.dtype(REAL).itemsize * reduce(foo, self.local_size)
         arg = cl.LocalMemory(size * arg)
         self.kernel.set_arg(i, arg)
 
 
     def set_int(self, i, arg):
-        arg = np.uint32(arg)
+        arg = UINT(arg)
         self.kernel.set_arg(i, arg)
 
 
     def set_float(self, i, arg):
-        arg = self.env.dtype.type(arg)
+        arg = REAL(arg)
         self.kernel.set_arg(i, arg)
 
 
     def set_input_buffer(self, i, arr):
-        arr = arr.astype(self.env.dtype.type)
-        def allocate_buffer(arr):
-            memf = cl.mem_flags
-            mapf = cl.map_flags
-            dev_buf = cl.Buffer(self.env.ctx,
-                                memf.READ_ONLY,
-                                size=arr.nbytes)
-            pin_buf = cl.Buffer(self.env.ctx,
-                                memf.READ_ONLY | memf.ALLOC_HOST_PTR,
-                                size=arr.nbytes)
-            (in_buf, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buf,
-                                                 mapf.WRITE, 0, arr.shape,
-                                                 self.env.dtype, "C")
-#            return (dev_buf, in_buf)
-            return (pin_buf, in_buf)
+#        def allocate_buffer(arr):
+#            memf = cl.mem_flags
+#            mapf = cl.map_flags
+#            dev_buf = cl.Buffer(self.env.ctx,
+#                                memf.READ_ONLY,
+#                                size=arr.nbytes)
+#            pin_buf = cl.Buffer(self.env.ctx,
+#                                memf.READ_ONLY | memf.ALLOC_HOST_PTR,
+#                                size=arr.nbytes)
+#            (in_buf, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buf,
+#                                                 mapf.WRITE, 0, arr.shape,
+#                                                 REAL, "C")
+##            return (dev_buf, in_buf)
+#            return (pin_buf, in_buf)
+#
+#        if not i in self.dev_buff:
+#            (self.dev_buff[i], self.input_buffer[i]) = allocate_buffer(arr)
+#            logger.debug("%s: allocating buffer for input arg #%d - %s.",
+#                         self.kernel.function_name, i, self.dev_buff[i])
+#        if len(arr) > len(self.input_buffer[i]):
+#            (self.dev_buff[i], self.input_buffer[i]) = allocate_buffer(arr)
+#            logger.debug("%s: reallocating buffer for input arg #%d - %s.",
+#                         self.kernel.function_name, i, self.dev_buff[i])
 
-        if not i in self.dev_buff:
-            (self.dev_buff[i], self.input_buffer[i]) = allocate_buffer(arr)
-            logger.debug("%s: allocating buffer for input arg #%d - %s.",
-                         self.kernel.function_name, i, self.dev_buff[i])
-        if len(arr) > len(self.input_buffer[i]):
-            (self.dev_buff[i], self.input_buffer[i]) = allocate_buffer(arr)
-            logger.debug("%s: reallocating buffer for input arg #%d - %s.",
-                         self.kernel.function_name, i, self.dev_buff[i])
-
-        inbuff = self.input_buffer[i][:len(arr)]
-        inbuff[:] = arr
-        cl.enqueue_copy(self.env.queue, self.dev_buff[i], inbuff)
+#        inbuff = self.input_buffer[i][:len(arr)]
+#        inbuff[:] = arr
+#        cl.enqueue_copy(self.env.queue, self.dev_buff[i], inbuff)
 
 #        self.input_buffer[i][:len(arr)] = arr
 #        cl.enqueue_copy(self.env.queue, self.dev_buff[i], self.input_buffer[i][:len(arr)])
 
-#        cl.enqueue_copy(self.env.queue, self.dev_buff[i], np.ascontiguousarray(arr, dtype=self.env.dtype))
+#        cl.enqueue_copy(self.env.queue, self.dev_buff[i], np.ascontiguousarray(arr, dtype=REAL))
 
-#        memf = cl.mem_flags
-#        self.dev_buff[i] = cl.Buffer(self.env.ctx, memf.READ_ONLY | memf.COPY_HOST_PTR, hostbuf=np.ascontiguousarray(arr, dtype=self.env.dtype))
-#        self.dev_buff[i] = cl.Buffer(self.env.ctx, memf.READ_ONLY | memf.USE_HOST_PTR, hostbuf=np.ascontiguousarray(arr, dtype=self.env.dtype))
+        memf = cl.mem_flags
+        self.dev_buff[i] = cl.Buffer(self.env.ctx,
+                                     memf.READ_ONLY | memf.COPY_HOST_PTR,
+                                     hostbuf=np.array(arr, order='C'))
+#        self.dev_buff[i] = cl.Buffer(self.env.ctx,
+#                                     memf.READ_ONLY | memf.USE_HOST_PTR,
+#                                     hostbuf=np.array(arr, order='C'))
 
         arg = self.dev_buff[i]
         self.kernel.set_arg(i, arg)
@@ -188,7 +191,7 @@ class CLKernel(object):
                                 size=arr.nbytes)
             (out_buf, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buf,
                                                   mapf.READ, 0, arr.shape,
-                                                  self.env.dtype, "C")
+                                                  REAL, "C")
 #            return (dev_buf, out_buf)
             return (pin_buf, out_buf)
 
@@ -217,7 +220,7 @@ class CLKernel(object):
     def get_result(self):
 #        def getter(item):
 #            (i, shape) = item
-#            return self.dev_buff[i].get_host_array(shape, self.env.dtype)
+#            return self.dev_buff[i].get_host_array(shape, REAL)
 
         def getter(item):
             (i, shape) = item
@@ -231,8 +234,7 @@ class CLKernel(object):
 @decallmethods(timings)
 class CEnv(object):
 
-    def __init__(self, dtype='d', fast_math=True):
-        self.dtype = np.dtype(dtype)
+    def __init__(self, fast_math=True):
         self.fast_math = fast_math
 
 
@@ -245,7 +247,7 @@ class CModule(object):
 
 
     def build(self):
-        prec = "double" if self.env.dtype.char is 'd' else "single"
+        prec = "double" if REAL is np.float64 else "single"
         logger.debug("Building %s precision C extension module.", prec)
 
         if prec is "double":
@@ -274,19 +276,19 @@ class CKernel(object):
 
 
     def set_int(self, i, arg):
-        self.dev_args[i] = np.uint32(arg)
+        self.dev_args[i] = UINT(arg)
 
 
     def set_float(self, i, arg):
-        self.dev_args[i] = self.env.dtype.type(arg)
+        self.dev_args[i] = REAL(arg)
 
 
     def set_input_buffer(self, i, arg):
-        self.dev_args[i] = arg.astype(self.env.dtype.type)
+        self.dev_args[i] = arg
 
 
     def set_output_buffer(self, i, arg):
-        self.dev_args[i] = arg.astype(self.env.dtype.type)
+        self.dev_args[i] = arg
         self.res_ids[i] = i
 
 
@@ -304,35 +306,21 @@ class CKernel(object):
 
 
 
-
-libkernels = {"sp": {"c": None, "cl": None}, "dp": {"c": None, "cl": None}}
-libkernels["sp"]["c"] = CModule(CEnv(dtype='f', fast_math=True)).build()
-libkernels["sp"]["cl"] = CLModule(CLEnv(dtype='f', fast_math=True)).build(junroll=8)
-libkernels["dp"]["c"] = CModule(CEnv(dtype='d', fast_math=True)).build()
-libkernels["dp"]["cl"] = CLModule(CLEnv(dtype='d', fast_math=True)).build(junroll=8)
+libkernels = {}
+libkernels["c"] = CModule(CEnv(fast_math=True)).build()
+libkernels["cl"] = CLModule(CLEnv(fast_math=True)).build(junroll=8)
 
 
 def get_extension(use_sp=False, use_cl=False):
-    if use_sp:
-        prec = "single"
-        if use_cl:
-            logger.debug("Using %s precision CL extension module.", prec)
-            return libkernels["sp"]["cl"]
-        else:
-            logger.debug("Using %s precision C extension module.", prec)
-            return libkernels["sp"]["c"]
-    else:
-        prec = "double"
-        if use_cl:
-            logger.debug("Using %s precision CL extension module.", prec)
-            return libkernels["dp"]["cl"]
-        else:
-            logger.debug("Using %s precision C extension module.", prec)
-            return libkernels["dp"]["c"]
+    libname = "cl" if use_cl else "c"
+    prec = "single" if use_sp else "double"
+    logger.debug("Using %s precision %s extension module.", prec, libname.upper())
+    return libkernels[libname]
 
 
 use_cl = True if "--use_cl" in sys.argv else False
 use_sp = True if "--use_sp" in sys.argv else False
+
 
 kernels = get_extension(use_sp=use_sp, use_cl=use_cl)
 

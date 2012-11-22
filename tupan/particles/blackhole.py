@@ -9,6 +9,7 @@ from __future__ import print_function
 import numpy as np
 from .body import Bodies
 from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.dtype import *
 
 
 __all__ = ["Blackholes"]
@@ -20,10 +21,10 @@ class Blackholes(Bodies):
 
     """
     dtype = Bodies.dtype + [
-                            ("sx", np.float64),
-                            ("sy", np.float64),
-                            ("sz", np.float64),
-                            ("radius", np.float64),
+                            ("sx", REAL),
+                            ("sy", REAL),
+                            ("sz", REAL),
+                            ("radius", REAL),
                            ]
 
 

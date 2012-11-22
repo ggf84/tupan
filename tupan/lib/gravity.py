@@ -10,6 +10,7 @@ between particles in Newtonian and post-Newtonian approach.
 import numpy as np
 from .extensions import kernels
 from .utils.timing import decallmethods, timings
+from .utils.dtype import *
 
 
 __all__ = ["Phi", "phi",
@@ -44,7 +45,7 @@ class Phi(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_phi_kernel
         self.kernel.local_size = 384
-        self.output = np.zeros(0, dtype=self.kernel.env.dtype)
+        self.output = np.zeros(0, dtype=REAL)
 
 
     def set_args(self, iobj, jobj):
@@ -56,7 +57,7 @@ class Phi(object):
                                 jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         if ni > len(self.output):
-            self.output = np.zeros(ni, dtype=self.kernel.env.dtype)
+            self.output = np.zeros(ni, dtype=REAL)
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -84,7 +85,7 @@ class Acc(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_acc_kernel
         self.kernel.local_size = 384
-        self.output = np.zeros((0, 4), dtype=self.kernel.env.dtype)
+        self.output = np.zeros((0, 4), dtype=REAL)
 
 
     def set_args(self, iobj, jobj):
@@ -96,7 +97,7 @@ class Acc(object):
 #                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         if ni > len(self.output):
-            self.output = np.zeros((ni, 4), dtype=self.kernel.env.dtype)
+            self.output = np.zeros((ni, 4), dtype=REAL)
 
 #        self.kernel.global_size = ni
 #        self.kernel.set_int(0, ni)
@@ -155,7 +156,7 @@ class Tstep(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_tstep_kernel
         self.kernel.local_size = 384
-        self.output = np.zeros(0, dtype=self.kernel.env.dtype)
+        self.output = np.zeros(0, dtype=REAL)
 
 
     def set_args(self, iobj, jobj, eta):
@@ -167,7 +168,7 @@ class Tstep(object):
                                 jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         if ni > len(self.output):
-            self.output = np.zeros(ni, dtype=self.kernel.env.dtype)
+            self.output = np.zeros(ni, dtype=REAL)
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -196,7 +197,7 @@ class PNAcc(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_pnacc_kernel
         self.kernel.local_size = 384
-        self.output = np.zeros((0, 4), dtype=self.kernel.env.dtype)
+        self.output = np.zeros((0, 4), dtype=REAL)
 
 
     def set_args(self, iobj, jobj, pn_order, clight):
@@ -210,7 +211,7 @@ class PNAcc(object):
         clight = Clight(pn_order, clight)
 
         if ni > len(self.output):
-            self.output = np.zeros((ni, 4), dtype=self.kernel.env.dtype)
+            self.output = np.zeros((ni, 4), dtype=REAL)
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -247,7 +248,7 @@ class AccJerk(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_acc_jerk_kernel
         self.kernel.local_size = 384
-        self.output = np.zeros((0, 8), dtype=self.kernel.env.dtype)
+        self.output = np.zeros((0, 8), dtype=REAL)
 
 
     def set_args(self, iobj, jobj):
@@ -259,7 +260,7 @@ class AccJerk(object):
                                 jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         if ni > len(self.output):
-            self.output = np.zeros((ni, 8), dtype=self.kernel.env.dtype)
+            self.output = np.zeros((ni, 8), dtype=REAL)
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)

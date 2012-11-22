@@ -12,6 +12,7 @@ import math
 import numpy as np
 from ..lib.extensions import kernels
 from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.dtype import *
 
 
 __all__ = ["BIOS"]
@@ -52,7 +53,7 @@ class LLBIOS(object):
     def __init__(self):
         self.kernel = kernels.bios_kernel
         self.kernel.local_size = 384
-        self.output = np.zeros((0, 8), dtype=self.kernel.env.dtype)
+        self.output = np.zeros((0, 8), dtype=REAL)
 
 
     def set_args(self, iobj, jobj, dt):
@@ -64,7 +65,7 @@ class LLBIOS(object):
                                 jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         if ni > len(self.output):
-            self.output = np.zeros((ni, 8), dtype=self.kernel.env.dtype)
+            self.output = np.zeros((ni, 8), dtype=REAL)
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
