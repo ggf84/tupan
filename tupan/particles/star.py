@@ -20,14 +20,15 @@ class Stars(Bodies):
     """
 
     """
-    dtype = Bodies.dtype + [
-                            ("sx", REAL),
-                            ("sy", REAL),
-                            ("sz", REAL),
-                            ("radius", REAL),
-                            ("age", REAL),
-                            ("metallicity", REAL),
+    attrs = Bodies.attrs + [
+                            ("sx", REAL, "x-spin"),
+                            ("sy", REAL, "y-spin"),
+                            ("sz", REAL, "z-spin"),
+                            ("radius", REAL, "radius"),
+                            ("age", REAL, "age"),
+                            ("metallicity", REAL, "metallicity"),
                            ]
+    dtype = [(_[0], _[1]) for _ in attrs]
 
 
 ########## end of file ##########

@@ -85,16 +85,12 @@ class NbodyMethods(NbodyUtils):
              ("tstep", REAL, "time step"),
              ("nstep", UINT, "step number"),
             ]
-    names = [_[0] for _ in attrs]
     dtype = [(_[0], _[1]) for _ in attrs]
-    data0 = np.zeros(0, dtype)
 
     special_attrs = [# name, dtype, doc
 
                     ]
-    special_names = [_[0] for _ in special_attrs]
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
-    special_data0 = np.zeros(0, special_dtype) if special_attrs else None
 
 
     @property
@@ -373,9 +369,7 @@ class PNbodyMethods(NbodyMethods):
                      ("pn_amy", REAL, "post-Newtonian correction for the y-angular momentum"),
                      ("pn_amz", REAL, "post-Newtonian correction for the z-angular momentum"),
                     ]
-    special_names = [_[0] for _ in special_attrs]
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
-    special_data0 = np.zeros(0, special_dtype) if special_attrs else None
 
 
     ### PN stuff
@@ -630,7 +624,8 @@ class Bodies(AbstractNbodyMethods):
 
     def set_state(self, array):
         for name in array.dtype.names:
-            setattr(self, name, array[name])
+            if name in self.__dict__:
+                setattr(self, name, array[name])
 
 
 ########## end of file ##########

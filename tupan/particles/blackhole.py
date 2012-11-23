@@ -20,12 +20,13 @@ class Blackholes(Bodies):
     """
 
     """
-    dtype = Bodies.dtype + [
-                            ("sx", REAL),
-                            ("sy", REAL),
-                            ("sz", REAL),
-                            ("radius", REAL),
+    attrs = Bodies.attrs + [
+                            ("sx", REAL, "x-spin"),
+                            ("sy", REAL, "y-spin"),
+                            ("sz", REAL, "z-spin"),
+                            ("radius", REAL, "radius"),
                            ]
+    dtype = [(_[0], _[1]) for _ in attrs]
 
 
 ########## end of file ##########

@@ -20,9 +20,10 @@ class Sphs(Bodies):
     """
 
     """
-    dtype = Bodies.dtype + [
-                            ('rho', REAL),
+    attrs = Bodies.attrs + [
+                            ('rho', REAL, "density"),
                            ]
+    dtype = [(_[0], _[1]) for _ in attrs]
 
 
 ########## end of file ##########

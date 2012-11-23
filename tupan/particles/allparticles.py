@@ -21,32 +21,32 @@ from ..lib.utils.timing import decallmethods, timings
 __all__ = ["System"]
 
 
-def make_common_attrs(cls):
-    def make_property(attr, doc):
-        @timings
-        def fget(self):
-            return np.concatenate([getattr(obj, attr) for obj in self.values()])
-
-        @timings
-        def fset(self, value):
-            try:
-                for obj in self.values():
-                    setattr(obj, attr, value)
-            except:
-                for obj in self.values():
-                    setattr(obj, attr, value[:obj.n])
-                    value = value[obj.n:]
-
-        return property(fget=fget, fset=fset, fdel=None, doc=doc)
-    attrs = ((i[0], cls.__name__+"\'s "+i[2]) for i in cls.attrs+cls.special_attrs)
-    for (attr, doc) in attrs:
-        setattr(cls, attr, make_property(attr, doc))
-    return cls
+#def make_common_attrs(cls):
+#    def make_property(attr, doc):
+#        @timings
+#        def fget(self):
+#            return np.concatenate([getattr(obj, attr) for obj in self.values()])
+#
+#        @timings
+#        def fset(self, value):
+#            try:
+#                for obj in self.values():
+#                    setattr(obj, attr, value)
+#            except:
+#                for obj in self.values():
+#                    setattr(obj, attr, value[:obj.n])
+#                    value = value[obj.n:]
+#
+#        return property(fget=fget, fset=fset, fdel=None, doc=doc)
+#    attrs = ((i[0], cls.__name__+"\'s "+i[2]) for i in cls.attrs+cls.special_attrs)
+#    for (attr, doc) in attrs:
+#        setattr(cls, attr, make_property(attr, doc))
+#    return cls
 
 
 
 @decallmethods(timings)
-@make_common_attrs
+#@make_common_attrs
 class System(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
@@ -73,6 +73,19 @@ class System(AbstractNbodyMethods):
     @property
     def kind(self):
         return self.__dict__
+
+
+    def __getattr__(self, attr):
+        return np.concatenate([getattr(obj, attr) for obj in self.values()])
+
+    def __setattr__(self, attr, value):
+        try:
+            for obj in self.values():
+                setattr(obj, attr, value)
+        except:
+            for obj in self.values():
+                setattr(obj, attr, value[:obj.n])
+                value = value[obj.n:]
 
 
     def __str__(self):

@@ -35,6 +35,7 @@ class Hermite(object):
                             "light argument 'clight' when using 'pn_order' > 0.")
 
         self.reporter = kwargs.pop("reporter", None)
+        self.viewer = kwargs.pop("viewer", None)
         self.dumpper = kwargs.pop("dumpper", None)
         self.dump_freq = kwargs.pop("dump_freq", 1)
         if kwargs:
