@@ -440,7 +440,7 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp[:])
 
             p = join(slow, fast)
 
@@ -483,7 +483,7 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp[:])
 
             p = join(slow, fast)
 
@@ -537,7 +537,7 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp[:])
 
             p = join(slow, fast)
 
@@ -606,7 +606,7 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp[:])
 
             p = join(slow, fast)
 
@@ -684,7 +684,7 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp[:])
 
             p = join(slow, fast)
 
@@ -771,7 +771,7 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp[:])
 
             p = join(slow, fast)
 
@@ -869,7 +869,7 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp[:])
 
             p = join(slow, fast)
 
@@ -980,7 +980,7 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp[:])
 
             p = join(slow, fast)
 
@@ -1111,7 +1111,7 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.nstep % self.dump_freq == 0]
-                if wp.n: self.wl.append(wp)
+                if wp.n: self.wl.append(wp[:])
 
             p = join(slow, fast)
 

@@ -196,6 +196,9 @@ class Simulation(object):
         """
         if self.viewer:
             self.viewer.initialize()
+            particles = self.integrator.particles
+            self.viewer.show_event(particles)
+            self.viewer.show_event(particles)
 
         while (abs(self.integrator.time) < self.args.t_end):
             # evolve a single time-step
