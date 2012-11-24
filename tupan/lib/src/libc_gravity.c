@@ -73,76 +73,48 @@ static PyMethodDef libc_gravity_meths[] = {
 
 
 //
-// Module initialization and state
+// Module initialization
 // (http://docs.python.org/3/howto/cporting.html#module-initialization-and-state)
 ////////////////////////////////////////////////////////////////////////////////
-
-struct module_state {
-    PyObject *error;
-};
-
-#if PY_MAJOR_VERSION >= 3
-#define INITERROR return NULL
-#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
-static int myextension_traverse(PyObject *m, visitproc visit, void *arg) {
-    Py_VISIT(GETSTATE(m)->error);
-    return 0;
-}
-static int myextension_clear(PyObject *m) {
-    Py_CLEAR(GETSTATE(m)->error);
-    return 0;
-}
-#else
-#define INITERROR return
-#define GETSTATE(m) (&_state)
-static struct module_state _state;
-#endif
-
 
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef moduledef32 = {
         PyModuleDef_HEAD_INIT,
         "libc32_gravity",
         "An extension module for Tupan.",
-        sizeof(struct module_state),
+        -1,
         libc_gravity_meths,
         NULL,
-        myextension_traverse,
-        myextension_clear,
+        NULL,
+        NULL,
         NULL
 };
 
 PyObject *
 PyInit_libc32_gravity(void)
-#else
-PyMODINIT_FUNC
-initlibc32_gravity(void)
-#endif
 {
-
-#if PY_MAJOR_VERSION >= 3
     PyObject *module = PyModule_Create(&moduledef32);
-#else
-    PyObject *module = Py_InitModule3("libc32_gravity", libc_gravity_meths,
-                                      "An extension module for Tupan.");
-#endif
 
     import_array();
 
     if (module == NULL)
-        INITERROR;
-    struct module_state *st = GETSTATE(module);
+        return NULL;
 
-    st->error = PyErr_NewException("libc32_gravity.Error", NULL, NULL);
-    if (st->error == NULL) {
-        Py_DECREF(module);
-        INITERROR;
-    }
-
-#if PY_MAJOR_VERSION >= 3
     return module;
-#endif
 }
+
+#else
+PyMODINIT_FUNC
+initlibc32_gravity(void)
+{
+    PyObject *module = Py_InitModule3("libc32_gravity", libc_gravity_meths,
+                                      "An extension module for Tupan.");
+    import_array();
+
+    if (module == NULL)
+        return;
+}
+#endif
 
 
 #if PY_MAJOR_VERSION >= 3
@@ -150,43 +122,37 @@ static struct PyModuleDef moduledef64 = {
         PyModuleDef_HEAD_INIT,
         "libc64_gravity",
         "An extension module for Tupan.",
-        sizeof(struct module_state),
+        -1,
         libc_gravity_meths,
         NULL,
-        myextension_traverse,
-        myextension_clear,
+        NULL,
+        NULL,
         NULL
 };
 
 PyObject *
 PyInit_libc64_gravity(void)
-#else
-PyMODINIT_FUNC
-initlibc64_gravity(void)
-#endif
 {
-
-#if PY_MAJOR_VERSION >= 3
     PyObject *module = PyModule_Create(&moduledef64);
-#else
-    PyObject *module = Py_InitModule3("libc64_gravity", libc_gravity_meths,
-                                      "An extension module for Tupan.");
-#endif
 
     import_array();
 
     if (module == NULL)
-        INITERROR;
-    struct module_state *st = GETSTATE(module);
+        return NULL;
 
-    st->error = PyErr_NewException("libc64_gravity.Error", NULL, NULL);
-    if (st->error == NULL) {
-        Py_DECREF(module);
-        INITERROR;
-    }
-
-#if PY_MAJOR_VERSION >= 3
     return module;
-#endif
 }
+
+#else
+PyMODINIT_FUNC
+initlibc64_gravity(void)
+{
+    PyObject *module = Py_InitModule3("libc64_gravity", libc_gravity_meths,
+                                      "An extension module for Tupan.");
+    import_array();
+
+    if (module == NULL)
+        return;
+}
+#endif
 

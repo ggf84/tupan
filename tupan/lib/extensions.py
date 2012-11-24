@@ -227,7 +227,7 @@ class CLKernel(object):
             cl.enqueue_copy(self.env.queue, self.output_buffer[i], self.dev_buff[i])
             return self.output_buffer[i][:shape[0]]
 
-        return map(getter, self.output_shape.items())
+        return [getter(item) for item in self.output_shape.items()]
 
 
 
