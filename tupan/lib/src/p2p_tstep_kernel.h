@@ -33,9 +33,9 @@ p2p_tstep_kernel_core(REAL iomega,
 
     REAL alpha = v2 * inv_r2;                                        // 1 FLOPs
     REAL beta = 2 * r.w * inv_r3;                                    // 2 FLOPs
-    REAL omega2 = alpha + beta;                                      // 1 FLOPs
+    REAL omega2 = alpha + beta + 1;                                      // 1 FLOPs
     REAL omega = sqrt(omega2);                                       // 1 FLOPs
-    REAL gamma = 1 + beta / omega2;                                  // 2 FLOPs
+    REAL gamma = 1 + (beta-1) / omega2;                                  // 2 FLOPs
     gamma = (r2 > 0) ? (gamma):(0);
     REAL dln_omega = -gamma * rv * inv_r2;                           // 2 FLOPs
     omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
