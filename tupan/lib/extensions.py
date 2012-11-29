@@ -110,10 +110,21 @@ class CLKernel(object):
 
     @global_size.setter
     def global_size(self, ni):
-        lsize = self._lsize_max
-        lsize = min(lsize, ((ni-1)//8 + 1))
+#        gsize = 0
+#        ngroups = 1
+#        lsize_max = self._lsize_max
+#        while gsize < ni:
+#            lsize = min(lsize_max, ((ni-1)//ngroups + 1))
+#            gsize = lsize * ngroups
+#            ngroups *= 2
+
+        lsize_max = self._lsize_max
+        ngroups = ((ni-1)//lsize_max + 1)
+        lsize = ((ni-1)//ngroups + 1)
+        gsize = lsize * ngroups
+
         self._lsize = lsize
-        self._gsize = ((ni-1)//lsize + 1) * lsize
+        self._gsize = gsize
 
 
     def set_local_memory(self, i, arg):
@@ -214,7 +225,7 @@ class CLKernel(object):
         cl.enqueue_nd_range_kernel(self.env.queue,
                                    self.kernel,
                                    self.global_size,
-                                   None,#self.local_size,
+                                   self.local_size,
                                   ).wait()
 
 

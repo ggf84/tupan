@@ -146,7 +146,7 @@ class TestCase(unittest.TestCase):
     def test04(self):
         print('\ntest04: C(CPU) vs CL(device): performance of grav-phi:', end=' ')
 
-        n = 3   # no. of samples
+        n = 5   # no. of samples
         best = {'set_args': {'c': None, 'cl': None},
                 'run': {'c': None, 'cl': None},
                 'get_result': {'c': None, 'cl': None}}
@@ -182,7 +182,7 @@ class TestCase(unittest.TestCase):
     def test05(self):
         print('\ntest05: C(CPU) vs CL(device): performance of grav-acc:', end=' ')
 
-        n = 3   # no. of samples
+        n = 5   # no. of samples
         best = {'set_args': {'c': None, 'cl': None},
                 'run': {'c': None, 'cl': None},
                 'get_result': {'c': None, 'cl': None}}
@@ -218,7 +218,7 @@ class TestCase(unittest.TestCase):
     def test06(self):
         print('\ntest06: C(CPU) vs CL(device): performance of grav-pnacc:', end=' ')
 
-        n = 3   # no. of samples
+        n = 5   # no. of samples
         best = {'set_args': {'c': None, 'cl': None},
                 'run': {'c': None, 'cl': None},
                 'get_result': {'c': None, 'cl': None}}

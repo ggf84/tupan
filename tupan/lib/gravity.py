@@ -44,8 +44,10 @@ class Phi(object):
     """
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_phi_kernel
-        self.kernel.local_size = 384
+        self.kernel.local_size = 512
         self.output = np.zeros(0, dtype=REAL)
+
+        self.kernel.set_local_memory(5, 8)
 
 
     def set_args(self, iobj, jobj):
@@ -65,7 +67,6 @@ class Phi(object):
         self.kernel.set_int(2, nj)
         self.kernel.set_input_buffer(3, jdata)
         self.kernel.set_output_buffer(4, self.output[:ni])
-        self.kernel.set_local_memory(5, 8)
 
 
     def run(self):
@@ -84,7 +85,7 @@ class Acc(object):
     """
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_acc_kernel
-        self.kernel.local_size = 384
+        self.kernel.local_size = 512
         self.output = np.zeros((0, 4), dtype=REAL)
 
         self.kernel.set_local_memory(19, 1)
@@ -95,6 +96,7 @@ class Acc(object):
         self.kernel.set_local_memory(24, 1)
         self.kernel.set_local_memory(25, 1)
         self.kernel.set_local_memory(26, 1)
+
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -123,14 +125,6 @@ class Acc(object):
         self.kernel.set_input_buffer(16, jobj.vz)
         self.kernel.set_input_buffer(17, jobj.eps2)
         self.kernel.set_output_buffer(18, self.output[:ni])
-#        self.kernel.set_local_memory(19, 1)
-#        self.kernel.set_local_memory(20, 1)
-#        self.kernel.set_local_memory(21, 1)
-#        self.kernel.set_local_memory(22, 1)
-#        self.kernel.set_local_memory(23, 1)
-#        self.kernel.set_local_memory(24, 1)
-#        self.kernel.set_local_memory(25, 1)
-#        self.kernel.set_local_memory(26, 1)
 
 
     def run(self):
@@ -150,7 +144,7 @@ class Tstep(object):
     """
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_tstep_kernel
-        self.kernel.local_size = 384
+        self.kernel.local_size = 512
         self.output = np.zeros(0, dtype=REAL)
 
         self.kernel.set_local_memory(20, 1)
@@ -161,6 +155,7 @@ class Tstep(object):
         self.kernel.set_local_memory(25, 1)
         self.kernel.set_local_memory(26, 1)
         self.kernel.set_local_memory(27, 1)
+
 
     def set_args(self, iobj, jobj, eta):
         ni = iobj.n
@@ -190,14 +185,6 @@ class Tstep(object):
         self.kernel.set_input_buffer(17, jobj.eps2)
         self.kernel.set_float(18, eta)
         self.kernel.set_output_buffer(19, self.output[:ni])
-#        self.kernel.set_local_memory(20, 1)
-#        self.kernel.set_local_memory(21, 1)
-#        self.kernel.set_local_memory(22, 1)
-#        self.kernel.set_local_memory(23, 1)
-#        self.kernel.set_local_memory(24, 1)
-#        self.kernel.set_local_memory(25, 1)
-#        self.kernel.set_local_memory(26, 1)
-#        self.kernel.set_local_memory(27, 1)
 
 
     def run(self):
@@ -216,8 +203,10 @@ class PNAcc(object):
     """
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_pnacc_kernel
-        self.kernel.local_size = 384
+        self.kernel.local_size = 512
         self.output = np.zeros((0, 4), dtype=REAL)
+
+        self.kernel.set_local_memory(13, 8)
 
 
     def set_args(self, iobj, jobj, pn_order, clight):
@@ -247,7 +236,6 @@ class PNAcc(object):
         self.kernel.set_float(10, clight.inv6)
         self.kernel.set_float(11, clight.inv7)
         self.kernel.set_output_buffer(12, self.output[:ni])
-        self.kernel.set_local_memory(13, 8)
 
 
     def run(self):
@@ -267,8 +255,10 @@ class AccJerk(object):
     """
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_acc_jerk_kernel
-        self.kernel.local_size = 384
+        self.kernel.local_size = 512
         self.output = np.zeros((0, 8), dtype=REAL)
+
+        self.kernel.set_local_memory(5, 8)
 
 
     def set_args(self, iobj, jobj):
@@ -288,7 +278,6 @@ class AccJerk(object):
         self.kernel.set_int(2, nj)
         self.kernel.set_input_buffer(3, jdata)
         self.kernel.set_output_buffer(4, self.output[:ni])
-        self.kernel.set_local_memory(5, 8)
 
 
     def run(self):
