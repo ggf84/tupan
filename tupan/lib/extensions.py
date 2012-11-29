@@ -118,7 +118,8 @@ class CLKernel(object):
 
     def set_local_memory(self, i, arg):
         def foo(x, y): return x * y
-        size = np.dtype(REAL).itemsize * reduce(foo, self.local_size)
+#        size = np.dtype(REAL).itemsize * reduce(foo, self.local_size)
+        size = np.dtype(REAL).itemsize * reduce(foo, (self._lsize_max,))
         arg = cl.LocalMemory(size * arg)
         self.kernel.set_arg(i, arg)
 
@@ -213,7 +214,7 @@ class CLKernel(object):
         cl.enqueue_nd_range_kernel(self.env.queue,
                                    self.kernel,
                                    self.global_size,
-                                   self.local_size,
+                                   None,#self.local_size,
                                   ).wait()
 
 

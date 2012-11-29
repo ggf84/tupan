@@ -87,6 +87,14 @@ class Acc(object):
         self.kernel.local_size = 384
         self.output = np.zeros((0, 4), dtype=REAL)
 
+        self.kernel.set_local_memory(19, 1)
+        self.kernel.set_local_memory(20, 1)
+        self.kernel.set_local_memory(21, 1)
+        self.kernel.set_local_memory(22, 1)
+        self.kernel.set_local_memory(23, 1)
+        self.kernel.set_local_memory(24, 1)
+        self.kernel.set_local_memory(25, 1)
+        self.kernel.set_local_memory(26, 1)
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -115,14 +123,14 @@ class Acc(object):
         self.kernel.set_input_buffer(16, jobj.vz)
         self.kernel.set_input_buffer(17, jobj.eps2)
         self.kernel.set_output_buffer(18, self.output[:ni])
-        self.kernel.set_local_memory(19, 1)
-        self.kernel.set_local_memory(20, 1)
-        self.kernel.set_local_memory(21, 1)
-        self.kernel.set_local_memory(22, 1)
-        self.kernel.set_local_memory(23, 1)
-        self.kernel.set_local_memory(24, 1)
-        self.kernel.set_local_memory(25, 1)
-        self.kernel.set_local_memory(26, 1)
+#        self.kernel.set_local_memory(19, 1)
+#        self.kernel.set_local_memory(20, 1)
+#        self.kernel.set_local_memory(21, 1)
+#        self.kernel.set_local_memory(22, 1)
+#        self.kernel.set_local_memory(23, 1)
+#        self.kernel.set_local_memory(24, 1)
+#        self.kernel.set_local_memory(25, 1)
+#        self.kernel.set_local_memory(26, 1)
 
 
     def run(self):
@@ -145,6 +153,14 @@ class Tstep(object):
         self.kernel.local_size = 384
         self.output = np.zeros(0, dtype=REAL)
 
+        self.kernel.set_local_memory(20, 1)
+        self.kernel.set_local_memory(21, 1)
+        self.kernel.set_local_memory(22, 1)
+        self.kernel.set_local_memory(23, 1)
+        self.kernel.set_local_memory(24, 1)
+        self.kernel.set_local_memory(25, 1)
+        self.kernel.set_local_memory(26, 1)
+        self.kernel.set_local_memory(27, 1)
 
     def set_args(self, iobj, jobj, eta):
         ni = iobj.n
@@ -174,14 +190,14 @@ class Tstep(object):
         self.kernel.set_input_buffer(17, jobj.eps2)
         self.kernel.set_float(18, eta)
         self.kernel.set_output_buffer(19, self.output[:ni])
-        self.kernel.set_local_memory(20, 1)
-        self.kernel.set_local_memory(21, 1)
-        self.kernel.set_local_memory(22, 1)
-        self.kernel.set_local_memory(23, 1)
-        self.kernel.set_local_memory(24, 1)
-        self.kernel.set_local_memory(25, 1)
-        self.kernel.set_local_memory(26, 1)
-        self.kernel.set_local_memory(27, 1)
+#        self.kernel.set_local_memory(20, 1)
+#        self.kernel.set_local_memory(21, 1)
+#        self.kernel.set_local_memory(22, 1)
+#        self.kernel.set_local_memory(23, 1)
+#        self.kernel.set_local_memory(24, 1)
+#        self.kernel.set_local_memory(25, 1)
+#        self.kernel.set_local_memory(26, 1)
+#        self.kernel.set_local_memory(27, 1)
 
 
     def run(self):
