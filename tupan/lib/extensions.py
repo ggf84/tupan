@@ -119,7 +119,10 @@ class CLKernel(object):
 #            ngroups *= 2
 
         lsize_max = self._lsize_max
-        ngroups = ((ni-1)//lsize_max + 1)
+#        ngroups = ((ni-1)//lsize_max + 1)
+#        ngroups = ((ni-1) + lsize_max)//lsize_max
+#        ngroups = int((ni-1)**0.5 + 1)
+        ngroups = int(ni**0.5)
         lsize = ((ni-1)//ngroups + 1)
         gsize = lsize * ngroups
 
