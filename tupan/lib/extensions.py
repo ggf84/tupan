@@ -111,29 +111,37 @@ class CLKernel(object):
     @global_size.setter
     def global_size(self, ni):
 #        gsize = 0
+#        lsize = 0
 #        ngroups = 1
 #        lsize_max = self._lsize_max
-#        while gsize < ni:
-#            lsize = min(lsize_max, ((ni-1)//ngroups + 1))
+#        while gsize < ni and lsize < lsize_max:
+#            ngroups += 1
+##            lsize = ((ni-1)//ngroups + 1)
+#            lsize = ((ni-1)//ngroups + 1)
 #            gsize = lsize * ngroups
-#            ngroups *= 2
 
-        lsize_max = self._lsize_max
-#        ngroups = ((ni-1)//lsize_max + 1)
-#        ngroups = ((ni-1) + lsize_max)//lsize_max
-#        ngroups = int((ni-1)**0.5 + 1)
-        ngroups = int(ni**0.5)
-        lsize = ((ni-1)//ngroups + 1)
-        gsize = lsize * ngroups
+        gsize = ((ni-1)//8 + 1) * 8
 
-        self._lsize = lsize
+
+#        lsize_max = self._lsize_max
+##        ngroups = ((ni-1)//lsize_max + 1)
+##        ngroups = ((ni-1) + lsize_max)//lsize_max
+##        ngroups = int((ni-1)**0.5 + 1)
+##        ngroups = int(ni**0.5)
+##        lsize = ((ni-1)//ngroups + 1)
+#        lsize = min(lsize_max, (ni+1)//2)
+#        ngroups = (ni+1)//lsize
+#        gsize = lsize * ngroups
+
+#        self._lsize = lsize
         self._gsize = gsize
 
 
     def set_local_memory(self, i, arg):
         def foo(x, y): return x * y
 #        size = np.dtype(REAL).itemsize * reduce(foo, self.local_size)
-        size = np.dtype(REAL).itemsize * reduce(foo, (self._lsize_max,))
+#        size = np.dtype(REAL).itemsize * reduce(foo, (self._lsize_max,))
+        size = 8 * reduce(foo, (self._lsize_max,))
         arg = cl.LocalMemory(size * arg)
         self.kernel.set_arg(i, arg)
 
@@ -228,7 +236,7 @@ class CLKernel(object):
         cl.enqueue_nd_range_kernel(self.env.queue,
                                    self.kernel,
                                    self.global_size,
-                                   self.local_size,
+                                   None,#self.local_size,
                                   ).wait()
 
 
@@ -288,6 +296,9 @@ class CKernel(object):
         self.kernel = kernel
         self.dev_args = {}
         self.res_ids = {}
+        self._lsize = None
+        self._lsize_max = None
+        self._gsize = None
 
 
     def set_int(self, i, arg):
