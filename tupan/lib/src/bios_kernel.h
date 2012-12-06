@@ -70,68 +70,75 @@ leapfrog(const REAL dt,
 }
 
 
-inline REAL8
-TTL_core(const REAL dt,
+inline void
+TTL_core(const REAL h,
          const REAL u0,
          const REAL k0,
-         const REAL4 r0,
-         const REAL4 v0,
+         REAL4 *r0,
+         REAL4 *v0,
          REAL *t)
 {
-    REAL4 r = r0;
-    REAL4 v = v0;
+    REAL4 r = *r0;
+    REAL4 v = *v0;
 
-    REAL w0 = 2 * u0;
-    REAL tau0 = dt / w0;
-    *t += tau0;
-    r.x += v.x * tau0;
-    r.y += v.y * tau0;
-    r.z += v.z * tau0;
+    *t += h / (2*u0);
+    r.x += v.x * h / (2*u0);
+    r.y += v.y * h / (2*u0);
+    r.z += v.z * h / (2*u0);
 
-    REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;
-    REAL inv_r2 = 1 / (r2 + v.w);
-    inv_r2 = (r2 > 0) ? (inv_r2):(0);
+    REAL3 a12 = get_acc(r.w, r.x, r.y, r.z, v.w);
+    REAL u12 = get_phi(r.w, r.x, r.y, r.z, v.w);
 
-    v.x -= r.x * inv_r2 * dt;
-    v.y -= r.y * inv_r2 * dt;
-    v.z -= r.z * inv_r2 * dt;
+    v.x += a12.x * h / u12;
+    v.y += a12.y * h / u12;
+    v.z += a12.z * h / u12;
+
     REAL k1 = (v.x * v.x + v.y * v.y + v.z * v.z)/2;
-
     REAL u1 = u0 + (k1 - k0);
-    REAL w1 = 2 * u1;
-    REAL tau1 = dt / w1;
-    *t += tau1;
-    r.x += v.x * tau1;
-    r.y += v.y * tau1;
-    r.z += v.z * tau1;
-    return (REAL8){r.x, r.y, r.z, r.w, v.x, v.y, v.z, v.w};
+
+    *t += h / (2*u1);
+    r.x += v.x * h / (2*u1);
+    r.y += v.y * h / (2*u1);
+    r.z += v.z * h / (2*u1);
+
+    *r0 = r;
+    *v0 = v;
 }
 
 
-inline REAL8
+inline void
 TTL(const REAL dt,
     const REAL4 r0,
-    const REAL4 v0)
+    const REAL4 v0,
+    REAL4 *r1,
+    REAL4 *v1)
 {
+    REAL t = 0;
     REAL4 r = r0;
     REAL4 v = v0;
 
     REAL k0 = (v.x * v.x + v.y * v.y + v.z * v.z)/2;
     REAL u0 = get_phi(r.w, r.x, r.y, r.z, v.w);
+    REAL h = u0 * dt;
 
-    REAL tau = u0 * dt;
-    REAL t = 0;
-    REAL8 rv_new = TTL_core(tau, u0, k0, r, v, &t);
+    TTL_core(h, u0, k0, &r, &v, &t);
 
-    REAL tol = 5.9604644775390625E-8 * dt;
-    while (fabs(fabs(t) - dt) > tol) {
-//        tau *= sqrt(dt/fabs(t));
-        tau -=  0.25 * fabs(tau) * (fabs(t) - dt) / (fabs(t) + dt);
+//    printf("#0: %e, %e, %e\n", dt, t, fabs(t-dt));
+
+    REAL tol = 5.9604644775390625E-8;
+    while (fabs(fabs(t) - dt)/dt > tol) {
+//        h *= sqrt(dt/fabs(t));
+        h *= sqrt(2*dt/(fabs(t)+dt));
+//        h *= pow(2*dt/(fabs(t)+dt), 1.0/3);
         t = 0;
-        rv_new = TTL_core(tau, u0, k0, r, v, &t);
+        r = r0;
+        v = v0;
+        TTL_core(h, u0, k0, &r, &v, &t);
     }
+//    printf("#1: %e, %e, %e\n", dt, t, fabs(t-dt));
 
-    return rv_new;
+    *r1 = r;
+    *v1 = v;
 }
 
 
@@ -147,6 +154,7 @@ twobody_solver(const REAL dt,
 //    return leapfrog(dt, r0, v0);
 //    return TTL(dt, r0, v0);
 //    return universal_kepler_solver(dt, r0, v0, r1, v1);
+//    TTL(dt, r0, v0, r1, v1);
     universal_kepler_solver(dt, r0, v0, r1, v1);
 }
 
