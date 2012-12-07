@@ -96,9 +96,9 @@ def sakura(p, tau):
     llbios.run()
     (dx, dy, dz, dvx, dvy, dvz) = llbios.get_result()
 
-    p.x += dx + tau * p.vx
-    p.y += dy + tau * p.vy
-    p.z += dz + tau * p.vz
+    p.x += dx
+    p.y += dy
+    p.z += dz
     p.vx += dvx
     p.vy += dvy
     p.vz += dvz
