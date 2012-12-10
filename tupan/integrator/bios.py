@@ -60,6 +60,8 @@ class LLBIOS(object):
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
+        Mtot = jobj.total_mass
+
         idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
                                 iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
         jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
@@ -73,9 +75,10 @@ class LLBIOS(object):
         self.kernel.set_input_buffer(1, idata)
         self.kernel.set_int(2, nj)
         self.kernel.set_input_buffer(3, jdata)
-        self.kernel.set_float(4, dt)
-        self.kernel.set_output_buffer(5, self.output[:ni])
-        self.kernel.set_local_memory(6, 8)
+        self.kernel.set_float(4, Mtot)
+        self.kernel.set_float(5, dt)
+        self.kernel.set_output_buffer(6, self.output[:ni])
+        self.kernel.set_local_memory(7, 8)
 
 
     def run(self):

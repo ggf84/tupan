@@ -167,7 +167,7 @@ inline REAL8
 bios_kernel_core(REAL8 iposvel,
                  const REAL4 ri, const REAL4 vi,
                  const REAL4 rj, const REAL4 vj,
-                 const REAL dt)
+                 const REAL Mtot, const REAL dt)
 {
     REAL4 r0;
     r0.x = ri.x - rj.x;                                              // 1 FLOPs
@@ -180,19 +180,25 @@ bios_kernel_core(REAL8 iposvel,
     v0.z = vi.z - vj.z;                                              // 1 FLOPs
     v0.w = vi.w + vj.w;                                              // 1 FLOPs
 
-    if (r0.x == 0 && r0.y == 0 && r0.z == 0) {
+    REAL r2 = r0.x * r0.x + r0.y * r0.y + r0.z * r0.z;
+
+    if (r2 == 0) {
         return iposvel;
     }
 
     REAL4 r1, v1;
-    twobody_solver(dt, r0, v0, &r1, &v1);                            // ? FLOPS
+//    twobody_solver(dt, r0, v0, &r1, &v1);                            // ? FLOPS
+
+    if (r0.w < r2 * sqrt(r2)) {
+        leapfrog(dt, r0, v0, &r1, &v1);
+    } else {
+        universal_kepler_solver(dt, r0, v0, &r1, &v1);
+    }
 
     REAL mimj = (ri.w * rj.w);                                       // 1 FLOPs
     REAL mu = mimj / r0.w;                                           // 1 FLOPs
 
-    REAL M = 1;
-
-    REAL Mmij = -(r0.w - M) / M;                                     // 2 FLOPs
+    REAL Mmij = -(r0.w - Mtot) / Mtot;                               // 2 FLOPs
     REAL mdt = Mmij * dt;                                            // 1 FLOPs
 
     r0.x += v0.x * mdt;                                              // 2 FLOPs
@@ -222,6 +228,7 @@ bios_kernel_core(REAL8 iposvel,
 inline REAL8
 bios_kernel_accum(REAL8 myPosVel,
                   const REAL8 myData,
+                  const REAL Mtot,
                   const REAL dt,
                   uint j_begin,
                   uint j_end,
@@ -232,7 +239,7 @@ bios_kernel_accum(REAL8 myPosVel,
     for (j = j_begin; j < j_end; ++j) {
         myPosVel = bios_kernel_core(myPosVel, myData.lo, myData.hi,
                                     sharedJData[j].lo, sharedJData[j].hi,
-                                    dt);
+                                    Mtot, dt);
     }
     return myPosVel;
 }
@@ -242,6 +249,7 @@ inline REAL8
 bios_kernel_main_loop(const REAL8 myData,
                       const uint nj,
                       __global const REAL8 *jdata,
+                      const REAL Mtot,
                       const REAL dt,
                       __local REAL8 *sharedJData
                      )
@@ -263,11 +271,11 @@ bios_kernel_main_loop(const REAL8 myData,
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
             myPosVel = bios_kernel_accum(myPosVel, myData,
-                                         dt, j, j + JUNROLL,
+                                         Mtot, dt, j, j + JUNROLL,
                                          sharedJData);
         }
         myPosVel = bios_kernel_accum(myPosVel, myData,
-                                     dt, j, nb,
+                                     Mtot, dt, j, nb,
                                      sharedJData);
 
         barrier(CLK_LOCAL_MEM_FENCE);
@@ -290,6 +298,7 @@ __kernel void bios_kernel(const uint ni,
                           __global const REAL8 *idata,
                           const uint nj,
                           __global const REAL8 *jdata,
+                          const REAL Mtot,
                           const REAL dt,
                           __global REAL8 *iposvel,
                           __local REAL8 *sharedJData
@@ -299,7 +308,7 @@ __kernel void bios_kernel(const uint ni,
     uint i = (gid < ni) ? (gid) : (ni-1);
     iposvel[i] = bios_kernel_main_loop(idata[i],
                                        nj, jdata,
-                                       dt,
+                                       Mtot, dt,
                                        sharedJData);
 }
 
@@ -311,7 +320,7 @@ static PyObject *
 _bios_kernel(PyObject *_args)
 {
     unsigned int ni, nj;
-    REAL dt;
+    REAL Mtot, dt;
     PyObject *_idata = NULL;
     PyObject *_jdata = NULL;
     PyObject *_output = NULL;
@@ -319,15 +328,16 @@ _bios_kernel(PyObject *_args)
     int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "IOIOdO!";
+        fmt = "IOIOddO!";
         typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "IOIOfO!";
+        fmt = "IOIOffO!";
         typenum = NPY_FLOAT32;
     }
 
     if (!PyArg_ParseTuple(_args, fmt, &ni, &_idata,
                                       &nj, &_jdata,
+                                      &Mtot,
                                       &dt,
                                       &PyArray_Type, &_output))
         return NULL;
@@ -359,7 +369,7 @@ _bios_kernel(PyObject *_args)
                         jdata_ptr[j8+2], jdata_ptr[j8+3]};
             REAL4 vj = {jdata_ptr[j8+4], jdata_ptr[j8+5],
                         jdata_ptr[j8+6], jdata_ptr[j8+7]};
-            iposvel = bios_kernel_core(iposvel, ri, vi, rj, vj, dt);
+            iposvel = bios_kernel_core(iposvel, ri, vi, rj, vj, Mtot, dt);
         }
         ret_ptr[i8  ] = iposvel.s0 / ri.w;
         ret_ptr[i8+1] = iposvel.s1 / ri.w;
