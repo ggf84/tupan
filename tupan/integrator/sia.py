@@ -31,14 +31,12 @@ clight = None
 # split
 #
 @timings
-def split(p, tau):
-
-#    if tau < 2.0**-18 or p.n == 2:
-#    if p.n == 2:
-#        tau = 0.0
-
-    slow = p[abs(p.tstep) >= tau]
-    fast = p[abs(p.tstep) < tau]
+def split(isys, condition):
+    """
+    Splits the particle's system in slow/fast components.
+    """
+    slow = isys[condition]
+    fast = isys[~condition]
 
     # prevents the occurrence of a slow level with only one particle.
     if slow.n == 1:
@@ -50,8 +48,8 @@ def split(p, tau):
         slow.append(fast)
         fast = fast[:0]
 
-    if slow.n + fast.n != p.n:
-        logger.error("slow.n + fast.n != p.n: %d, %d, %d.", slow.n, fast.n, p.n)
+    if slow.n + fast.n != isys.n:
+        logger.error("slow.n + fast.n != isys.n: %d, %d, %d.", slow.n, fast.n, isys.n)
 
     return slow, fast
 
@@ -61,13 +59,16 @@ def split(p, tau):
 #
 @timings
 def join(slow, fast):
+    """
+    Joins the slow/fast components of a particle's system.
+    """
     if slow.n == 0:
         return fast
     if fast.n == 0:
         return slow
-    p = slow[:]
-    p.append(fast)
-    return p
+    isys = slow[:]
+    isys.append(fast)
+    return isys
 
 
 #
@@ -410,7 +411,7 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = split(p, abs(tau*flag))
+            slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
             #
             fast, slow = kick_sf(fast, slow, k0 * tau / 2)
@@ -452,12 +453,12 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = split(p, abs(tau*flag))
+            slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
             #
             slow = drift(slow, d0 * tau)
 
-            fast = self.dkd21(fast, d0 * tau, False)
+            fast = self.dkd21(fast, d0 * tau, True)
             fast, slow = kick_sf(fast, slow, k0 * tau / 2)
 
             slow = kick(slow, slow, k0 * tau, pn=True)
@@ -496,12 +497,12 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = split(p, abs(tau*flag))
+            slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
             #
             slow = drift(slow, d0 * tau)
 
-            fast = self.dkd22(fast, d0 * tau, False)
+            fast = self.dkd22(fast, d0 * tau, True)
             fast, slow = kick_sf(fast, slow, k0 * tau / 2)
 
             slow = kick(slow, slow, k0 * tau, pn=True)
@@ -551,12 +552,12 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = split(p, abs(tau*flag))
+            slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
             #
             slow = drift(slow, d0 * tau)
 
-            fast = self.dkd43(fast, d0 * tau / 3, False)
+            fast = self.dkd43(fast, d0 * tau / 3, True)
             fast = self.dkd43(fast, d0 * tau / 3, True)
             fast = self.dkd43(fast, d0 * tau / 3, True)
             fast, slow = kick_sf(fast, slow, k0 * tau / 2)
@@ -621,12 +622,12 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = split(p, abs(tau*flag))
+            slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
             #
             slow = drift(slow, d0 * tau)
 
-            fast = self.dkd44(fast, d0 * tau, False)
+            fast = self.dkd44(fast, d0 * tau, True)
             fast, slow = kick_sf(fast, slow, k0 * tau / 2)
 
             slow = kick(slow, slow, k0 * tau, pn=True)
@@ -700,12 +701,12 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = split(p, abs(tau*flag))
+            slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
             #
             slow = drift(slow, d0 * tau)
 
-            fast = self.dkd45(fast, d0 * tau, False)
+            fast = self.dkd45(fast, d0 * tau, True)
             fast, slow = kick_sf(fast, slow, k0 * tau / 2)
 
             slow = kick(slow, slow, k0 * tau, pn=True)
@@ -788,12 +789,12 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = split(p, abs(tau*flag))
+            slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
             #
             slow = drift(slow, d0 * tau)
 
-            fast = self.dkd46(fast, d0 * tau, False)
+            fast = self.dkd46(fast, d0 * tau, True)
             fast, slow = kick_sf(fast, slow, k0 * tau / 2)
 
             slow = kick(slow, slow, k0 * tau, pn=True)
@@ -887,12 +888,12 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = split(p, abs(tau*flag))
+            slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
             #
             slow = drift(slow, d0 * tau)
 
-            fast = self.dkd67(fast, d0 * tau / 2, False)
+            fast = self.dkd67(fast, d0 * tau / 2, True)
             fast = self.dkd67(fast, d0 * tau / 2, True)
             fast, slow = kick_sf(fast, slow, k0 * tau / 2)
 
@@ -1000,12 +1001,12 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
-            slow, fast = split(p, abs(tau*flag))
+            slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
             #
             slow = drift(slow, d0 * tau)
 
-            fast = self.dkd69(fast, d0 * tau, False)
+            fast = self.dkd69(fast, d0 * tau, True)
             fast, slow = kick_sf(fast, slow, k0 * tau / 2)
 
             slow = kick(slow, slow, k0 * tau, pn=True)

@@ -31,14 +31,15 @@ p2p_tstep_kernel_core(REAL iomega,
     REAL inv_r2 = ret.x;
     REAL inv_r3 = ret.y;
 
-    REAL a = 1;
-    REAL b = 1;
-    REAL c = 2;
+    REAL a = 0;
+    REAL b = 0;
+    REAL c = 1;
     REAL d = 1 / (a + b + c);                                        // 3 FLOPs
     REAL e = (b + c / 2);                                            // 2 FLOPs
 
     REAL f1 = v2 * inv_r2;                                           // 1 FLOPs
-    REAL f2 = r.w * inv_r3;                                          // 1 FLOPs
+//    REAL f2 = r.w * inv_r3;                                          // 1 FLOPs
+    REAL f2 = inv_r3;
     REAL omega2 = d * (a + b * f1 + c * f2);                         // 5 FLOPs
     REAL omega = sqrt(omega2);                                       // 1 FLOPs
     REAL gamma = 1 + d * (e * f2 - a) / omega2;                      // 5 FLOPs
@@ -216,7 +217,7 @@ __kernel void p2p_tstep_kernel(const uint ni,
                                              sharedJObj_vz,
                                              sharedJObj_eps2);
 //    itstep[i] = 2 * eta / iomega;
-    itstep[i] = 2 * eta / sqrt(iomega);
+    itstep[i] = 2 * eta / sqrt(iomega/nj);
 }
 
 #else
@@ -338,7 +339,7 @@ _p2p_tstep_kernel(PyObject *_args)
             iomega = p2p_tstep_kernel_core(iomega, rmi, vei, rmj, vej, eta);
         }
 //        ret_ptr[i] = 2 * eta / iomega;
-        ret_ptr[i] = 2 * eta / sqrt(iomega);
+        ret_ptr[i] = 2 * eta / sqrt(iomega/nj);
     }
 
     // Decrement the reference counts for i-objects

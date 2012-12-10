@@ -44,10 +44,12 @@ get_acc(const REAL m,
 }
 
 
-inline REAL8
+inline void
 leapfrog(const REAL dt,
          const REAL4 r0,
-         const REAL4 v0)
+         const REAL4 v0,
+         REAL4 *r1,
+         REAL4 *v1)
 {
     REAL4 r = r0;
     REAL4 v = v0;
@@ -66,7 +68,8 @@ leapfrog(const REAL dt,
     r.y += v.y * dt/2;
     r.z += v.z * dt/2;
 
-    return (REAL8){r.x, r.y, r.z, r.w, v.x, v.y, v.z, v.w};
+    *r1 = r;
+    *v1 = v;
 }
 
 
@@ -151,9 +154,7 @@ twobody_solver(const REAL dt,
                REAL4 *v1)
 {
 
-//    return leapfrog(dt, r0, v0);
-//    return TTL(dt, r0, v0);
-//    return universal_kepler_solver(dt, r0, v0, r1, v1);
+//    leapfrog(dt, r0, v0, r1, v1);
 //    TTL(dt, r0, v0, r1, v1);
     universal_kepler_solver(dt, r0, v0, r1, v1);
 }
@@ -173,7 +174,6 @@ bios_kernel_core(REAL8 iposvel,
     r0.y = ri.y - rj.y;                                              // 1 FLOPs
     r0.z = ri.z - rj.z;                                              // 1 FLOPs
     r0.w = ri.w + rj.w;                                              // 1 FLOPs
-//    r0.w = 1;
     REAL4 v0;
     v0.x = vi.x - vj.x;                                              // 1 FLOPs
     v0.y = vi.y - vj.y;                                              // 1 FLOPs
@@ -190,7 +190,9 @@ bios_kernel_core(REAL8 iposvel,
     REAL mimj = (ri.w * rj.w);                                       // 1 FLOPs
     REAL mu = mimj / r0.w;                                           // 1 FLOPs
 
-    REAL Mmij = 1 - r0.w;                                            // 1 FLOPs
+    REAL M = 1;
+
+    REAL Mmij = -(r0.w - M) / M;                                     // 2 FLOPs
     REAL mdt = Mmij * dt;                                            // 1 FLOPs
 
     r0.x += v0.x * mdt;                                              // 2 FLOPs
