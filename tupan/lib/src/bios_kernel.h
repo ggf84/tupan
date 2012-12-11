@@ -53,10 +53,11 @@ leapfrog(const REAL dt,
 {
     REAL4 r = r0;
     REAL4 v = v0;
+    REAL dt_2 = dt / 2;
 
-    r.x += v.x * dt/2;
-    r.y += v.y * dt/2;
-    r.z += v.z * dt/2;
+    r.x += v.x * dt_2;
+    r.y += v.y * dt_2;
+    r.z += v.z * dt_2;
 
     REAL3 a = get_acc(r.w, r.x, r.y, r.z, v.w);
 
@@ -64,9 +65,9 @@ leapfrog(const REAL dt,
     v.y += a.y * dt;
     v.z += a.z * dt;
 
-    r.x += v.x * dt/2;
-    r.y += v.y * dt/2;
-    r.z += v.z * dt/2;
+    r.x += v.x * dt_2;
+    r.y += v.y * dt_2;
+    r.z += v.z * dt_2;
 
     *r1 = r;
     *v1 = v;
@@ -189,7 +190,7 @@ bios_kernel_core(REAL8 iposvel,
     REAL4 r1, v1;
 //    twobody_solver(dt, r0, v0, &r1, &v1);                            // ? FLOPS
 
-    if (r0.w < r2 * sqrt(r2)) {
+    if (4 * r0.w < r2 * sqrt(r2)) {
         leapfrog(dt, r0, v0, &r1, &v1);
     } else {
         universal_kepler_solver(dt, r0, v0, &r1, &v1);

@@ -5,11 +5,11 @@
 
 
 #ifdef DOUBLE
-    #define TOLERANCE  1.0536712127723509e-8    // sqrt(2^-53)
+    #define TOLERANCE 2.3283064365386962891E-10     // sqrt(2^-64)
 #else
-    #define TOLERANCE  2.44140625E-4            // sqrt(2^-24)
+    #define TOLERANCE 1.52587890625E-5              // sqrt(2^-32)
 #endif
-#define MAXITER 128
+#define MAXITER 64
 #define SIGN(x) (((x) > 0) ? (+1):(-1))
 
 
@@ -351,14 +351,9 @@ universal_kepler_solver(const REAL dt0,
             arg[3] = mu;
             arg[4] = alpha;
 
-            err = -1;
-            REAL a = mu / fabs(alpha);
-            REAL P = TWOPI * a * sqrt(a / mu);
-            if (dt < P) {
-                err = laguerre(s0, &s, arg);
-//                err = halley(s0, &s, arg);
-//                err = newton(s0, &s, arg);
-            }
+            err = laguerre(s0, &s, arg);
+//            err = halley(s0, &s, arg);
+//            err = newton(s0, &s, arg);
 
             if (err == 0) {
                 set_new_pos_vel(dt, s, r0, mu, alpha, &pos, &vel);

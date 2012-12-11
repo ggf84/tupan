@@ -24,28 +24,27 @@ p2p_tstep_kernel_core(REAL iomega,
     v.z = vei.z - vej.z;                                             // 1 FLOPs
     v.w = vei.w + vej.w;                                             // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
-    REAL v2 = v.x * v.x + v.y * v.y + v.z * v.z;                     // 5 FLOPs
     REAL rv = r.x * v.x + r.y * v.y + r.z * v.z;                     // 5 FLOPs
+    REAL v2 = v.x * v.x + v.y * v.y + v.z * v.z;                     // 5 FLOPs
 
     REAL2 ret = smoothed_inv_r2r3(r2, v.w);                          // 4 FLOPs
     REAL inv_r2 = ret.x;
     REAL inv_r3 = ret.y;
 
     REAL a = 0;
-    REAL b = 0;
-    REAL c = 1;
+    REAL b = 1;
+    REAL c = 2;
     REAL d = 1 / (a + b + c);                                        // 3 FLOPs
     REAL e = (b + c / 2);                                            // 2 FLOPs
 
     REAL f1 = v2 * inv_r2;                                           // 1 FLOPs
-//    REAL f2 = r.w * inv_r3;                                          // 1 FLOPs
-    REAL f2 = inv_r3;
+    REAL f2 = r.w * inv_r3;                                          // 1 FLOPs
     REAL omega2 = d * (a + b * f1 + c * f2);                         // 5 FLOPs
-    REAL omega = sqrt(omega2);                                       // 1 FLOPs
     REAL gamma = 1 + d * (e * f2 - a) / omega2;                      // 5 FLOPs
-    gamma = (r2 > 0) ? (gamma):(0);
     REAL dln_omega = -gamma * rv * inv_r2;                           // 2 FLOPs
+    REAL omega = sqrt(omega2);                                       // 1 FLOPs
     omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
+    omega = (r2 > 0) ? (omega):(0);
 
 //    iomega = (omega > iomega) ? (omega):(iomega);
     iomega += omega * omega;                                         // 2 FLOPs
@@ -217,7 +216,7 @@ __kernel void p2p_tstep_kernel(const uint ni,
                                              sharedJObj_vz,
                                              sharedJObj_eps2);
 //    itstep[i] = 2 * eta / iomega;
-    itstep[i] = 2 * eta / sqrt(iomega/nj);
+    itstep[i] = 2 * eta / sqrt(iomega);
 }
 
 #else
@@ -339,7 +338,7 @@ _p2p_tstep_kernel(PyObject *_args)
             iomega = p2p_tstep_kernel_core(iomega, rmi, vei, rmj, vej, eta);
         }
 //        ret_ptr[i] = 2 * eta / iomega;
-        ret_ptr[i] = 2 * eta / sqrt(iomega/nj);
+        ret_ptr[i] = 2 * eta / sqrt(iomega);
     }
 
     // Decrement the reference counts for i-objects
