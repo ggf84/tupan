@@ -411,16 +411,19 @@ class SIA(Base):
                 if shared_tstep: tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
+            if p.n == 2:
+                flag = 0
+
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
             #
             fast, slow = kick_sf(fast, slow, k0 * tau / 2)
             fast = self.dkd21(fast, d0 * tau, True)
 
-#            slow = sakura(slow, k0 * tau)
+            if slow.n: slow = sakura(slow, k0 * tau, True)
 #            slow = dkd(slow, k0 * tau)
-            if slow.n == 2: slow = sakura(slow, k0 * tau)
-            else: slow = dkd(slow, k0 * tau)
+#            if slow.n == 2: slow = sakura(slow, k0 * tau, True)
+#            else: slow = dkd(slow, k0 * tau)
 
             fast = self.dkd21(fast, d0 * tau, True)
             slow, fast = kick_sf(slow, fast, k0 * tau / 2)

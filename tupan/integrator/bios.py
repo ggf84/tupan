@@ -94,10 +94,16 @@ class LLBIOS(object):
 llbios = LLBIOS()
 
 
-def sakura(p, tau):
+def sakura(p, tau, update_com=False):
     llbios.set_args(p, p, tau)
     llbios.run()
     (dx, dy, dz, dvx, dvy, dvz) = llbios.get_result()
+
+    if update_com:
+        vcom = p.vcom
+        p.x += vcom[0] * tau / 2
+        p.y += vcom[1] * tau / 2
+        p.z += vcom[2] * tau / 2
 
     p.x += dx
     p.y += dy
@@ -105,6 +111,12 @@ def sakura(p, tau):
     p.vx += dvx
     p.vy += dvy
     p.vz += dvz
+
+    if update_com:
+        vcom = p.vcom
+        p.x += vcom[0] * tau / 2
+        p.y += vcom[1] * tau / 2
+        p.z += vcom[2] * tau / 2
 
     return p
 
