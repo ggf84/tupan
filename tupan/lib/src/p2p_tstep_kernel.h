@@ -42,12 +42,12 @@ p2p_tstep_kernel_core(REAL iomega,
     REAL omega2 = d * (a + b * f1 + c * f2);                         // 5 FLOPs
     REAL gamma = 1 + d * (e * f2 - a) / omega2;                      // 5 FLOPs
     REAL dln_omega = -gamma * rv * inv_r2;                           // 2 FLOPs
-    REAL omega = sqrt(omega2);                                       // 1 FLOPs
-    omega += eta * dln_omega;   // factor 1/2 included in 'eta'      // 2 FLOPs
-    omega = (r2 > 0) ? (omega):(0);
+    omega2 = sqrt(omega2);                                           // 1 FLOPs
+    omega2 += eta * dln_omega;   // factor 1/2 included in 'eta'     // 2 FLOPs
+    omega2 *= omega2;                                                // 1 FLOPs
 
-//    iomega = (omega > iomega) ? (omega):(iomega);
-    iomega += omega * omega;                                         // 2 FLOPs
+//    iomega = (omega2 > iomega) ? (omega2):(iomega);
+    iomega += (r2 > 0) ? (omega2):(0);                               // 1 FLOPs
     return iomega;
 }
 // Total flop count: 51

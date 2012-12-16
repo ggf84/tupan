@@ -101,9 +101,9 @@ def sakura(p, tau, update_com=False):
 
     if update_com:
         vcom = p.vcom
-        p.x += vcom[0] * tau / 2
-        p.y += vcom[1] * tau / 2
-        p.z += vcom[2] * tau / 2
+        dx += vcom[0] * tau
+        dy += vcom[1] * tau
+        dz += vcom[2] * tau
 
     p.x += dx
     p.y += dy
@@ -111,12 +111,6 @@ def sakura(p, tau, update_com=False):
     p.vx += dvx
     p.vy += dvy
     p.vz += dvz
-
-    if update_com:
-        vcom = p.vcom
-        p.x += vcom[0] * tau / 2
-        p.y += vcom[1] * tau / 2
-        p.z += vcom[2] * tau / 2
 
     return p
 

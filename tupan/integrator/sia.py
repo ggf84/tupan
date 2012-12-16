@@ -181,31 +181,83 @@ def kick(isys, jsys, tau, pn):
 
 
 #
-# dkd
+# dkd21
 #
+dkd21_coefs = ([ 1.0],
+               [ 0.5])
 @timings
-def dkd(system, tau):
+def base_dkd21(isys, tau):
     """
-    Drift-Kick-Drift operator.
+    Standard dkd21 operator.
     """
-    system = drift(system, tau / 2)
-    system = kick(system, system, tau, pn=True)
-    system = drift(system, tau / 2)
-    return system
+    k, d = dkd21_coefs
+
+    isys = drift(isys, d[0] * tau)
+    isys = kick(isys, isys, k[0] * tau, pn=True)
+    isys = drift(isys, d[0] * tau)
+
+    return isys
+
+
+#
+# dkd22
+#
+dkd22_coefs = ([ 0.5],
+               [ 0.1931833275037836,
+                 0.6136333449924328])
+@timings
+def base_dkd22(isys, tau):
+    """
+    Standard dkd22 operator.
+    """
+    k, d = dkd22_coefs
+
+    isys = drift(isys, d[0] * tau)
+    isys = kick(isys, isys, k[0] * tau, pn=True)
+    isys = drift(isys, d[1] * tau)
+    isys = kick(isys, isys, k[0] * tau, pn=True)
+    isys = drift(isys, d[0] * tau)
+
+    return isys
+
+
+#
+# dkd43
+#
+dkd43_coefs = ([ 1.3512071919596575,
+                -1.7024143839193150],
+               [ 0.6756035959798288,
+                -0.17560359597982877])
+@timings
+def base_dkd43(isys, tau):
+    """
+    Standard dkd43 operator.
+    """
+    k, d = dkd43_coefs
+
+    isys = drift(isys, d[0] * tau)
+    isys = kick(isys, isys, k[0] * tau, pn=True)
+    isys = drift(isys, d[1] * tau)
+    isys = kick(isys, isys, k[1] * tau, pn=True)
+    isys = drift(isys, d[1] * tau)
+    isys = kick(isys, isys, k[0] * tau, pn=True)
+    isys = drift(isys, d[0] * tau)
+
+    return isys
 
 
 #
 # kdk
 #
 @timings
-def kdk(system, tau):
+def kdk(isys, tau):
     """
     Kick-Drift-Kick operator.
     """
-    system = kick(system, system, tau / 2, pn=True)
-    system = drift(system, tau)
-    system = kick(system, system, tau / 2, pn=True)
-    return system
+    isys = kick(isys, isys, tau / 2, pn=True)
+    isys = drift(isys, tau)
+    isys = kick(isys, isys, tau / 2, pn=True)
+    return isys
 
 
 #
@@ -219,7 +271,6 @@ def kick_sf(slow, fast, tau):
     slow = kick(slow, fast, tau, pn=True)
     fast = kick(fast, slow, tau, pn=True)
     return slow, fast
-
 
 
 class Base(object):
@@ -445,10 +496,7 @@ class SIA(Base):
     # dkd21[std,shr,hcc] method -- D.K.D
     #
 
-    def dkd21(self, p, tau, update_tstep,
-                    shared_tstep=False,
-                    k0=1.0,
-                    d0=0.5):
+    def dkd21(self, p, tau, update_tstep, shared_tstep=False):
         if p.n:
 
             if update_tstep:
@@ -458,18 +506,18 @@ class SIA(Base):
 
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
+            k, d = dkd21_coefs
             #
-            slow = drift(slow, d0 * tau)
+            if fast.n:
+                fast, slow = kick_sf(fast, slow, d[0] * tau)
 
-            fast = self.dkd21(fast, d0 * tau, True)
-            fast, slow = kick_sf(fast, slow, k0 * tau / 2)
+                fast = self.dkd21(fast, k[0] * tau / 2, True)
+                slow = base_dkd21(slow, k[0] * tau)
+                fast = self.dkd21(fast, k[0] * tau / 2, True)
 
-            slow = kick(slow, slow, k0 * tau, pn=True)
-
-            slow, fast = kick_sf(slow, fast, k0 * tau / 2)
-            fast = self.dkd21(fast, d0 * tau, True)
-
-            slow = drift(slow, d0 * tau)
+                slow, fast = kick_sf(slow, fast, d[0] * tau)
+            else:
+                slow = base_dkd21(slow, tau)
             #
 
             if slow.n:
@@ -488,11 +536,7 @@ class SIA(Base):
     # dkd22[std,shr,hcc] method -- D.K.D.K.D
     #
 
-    def dkd22(self, p, tau, update_tstep,
-                    shared_tstep=False,
-                    k0=0.5,
-                    d0=0.1931833275037836,
-                    d1=0.6136333449924328):
+    def dkd22(self, p, tau, update_tstep, shared_tstep=False):
         if p.n:
 
             if update_tstep:
@@ -502,28 +546,24 @@ class SIA(Base):
 
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
+            k, d = dkd22_coefs
             #
-            slow = drift(slow, d0 * tau)
+            if fast.n:
+                fast, slow = kick_sf(fast, slow, d[0] * tau)
 
-            fast = self.dkd22(fast, d0 * tau, True)
-            fast, slow = kick_sf(fast, slow, k0 * tau / 2)
+                fast = self.dkd22(fast, k[0] * tau / 2, True)
+                slow = base_dkd22(slow, k[0] * tau)
+                fast = self.dkd22(fast, k[0] * tau / 2, True)
 
-            slow = kick(slow, slow, k0 * tau, pn=True)
+                slow, fast = kick_sf(slow, fast, d[1] * tau)
 
-            slow, fast = kick_sf(slow, fast, k0 * tau / 2)
-            fast = self.dkd22(fast, d1 * tau / 2, True)
+                fast = self.dkd22(fast, k[0] * tau / 2, True)
+                slow = base_dkd22(slow, k[0] * tau)
+                fast = self.dkd22(fast, k[0] * tau / 2, True)
 
-            slow = drift(slow, d1 * tau)
-
-            fast = self.dkd22(fast, d1 * tau / 2, True)
-            fast, slow = kick_sf(fast, slow, k0 * tau / 2)
-
-            slow = kick(slow, slow, k0 * tau, pn=True)
-
-            slow, fast = kick_sf(slow, fast, k0 * tau / 2)
-            fast = self.dkd22(fast, d0 * tau, True)
-
-            slow = drift(slow, d0 * tau)
+                fast, slow = kick_sf(fast, slow, d[0] * tau)
+            else:
+                slow = base_dkd22(slow, tau)
             #
 
             if slow.n:
@@ -542,12 +582,7 @@ class SIA(Base):
     # dkd43[std,shr,hcc] method -- D.K.D.K.D.K.D
     #
 
-    def dkd43(self, p, tau, update_tstep,
-                    shared_tstep=False,
-                    k0=1.3512071919596575,
-                    k1=-1.7024143839193150,
-                    d0=0.6756035959798288,
-                    d1=-0.17560359597982877):
+    def dkd43(self, p, tau, update_tstep, shared_tstep=False):
         if p.n:
 
             if update_tstep:
@@ -557,43 +592,70 @@ class SIA(Base):
 
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
+            k, d = dkd43_coefs
             #
-            slow = drift(slow, d0 * tau)
+            slow = drift(slow, d[0] * tau)
 
-            fast = self.dkd43(fast, d0 * tau / 3, True)
-            fast = self.dkd43(fast, d0 * tau / 3, True)
-            fast = self.dkd43(fast, d0 * tau / 3, True)
-            fast, slow = kick_sf(fast, slow, k0 * tau / 2)
+            fast = self.dkd43(fast, d[0] * tau / 3, True)
+            fast = self.dkd43(fast, d[0] * tau / 3, True)
+            fast = self.dkd43(fast, d[0] * tau / 3, True)
+            fast, slow = kick_sf(fast, slow, k[0] * tau / 2)
 
-            slow = kick(slow, slow, k0 * tau, pn=True)
+            slow = kick(slow, slow, k[0] * tau, pn=True)
 
-            slow, fast = kick_sf(slow, fast, k0 * tau / 2)
-            fast = self.dkd43(fast, d1 * tau / 2, True)
+            slow, fast = kick_sf(slow, fast, k[0] * tau / 2)
+            fast = self.dkd43(fast, d[1] * tau / 2, True)
 
-            slow = drift(slow, d1 * tau)
+            slow = drift(slow, d[1] * tau)
 
-            fast = self.dkd43(fast, d1 * tau / 2, True)
-            fast, slow = kick_sf(fast, slow, k1 * tau / 2)
+            fast = self.dkd43(fast, d[1] * tau / 2, True)
+            fast, slow = kick_sf(fast, slow, k[1] * tau / 2)
 
-            slow = kick(slow, slow, k1 * tau, pn=True)
+            slow = kick(slow, slow, k[1] * tau, pn=True)
 
-            slow, fast = kick_sf(slow, fast, k1 * tau / 2)
-            fast = self.dkd43(fast, d1 * tau / 2, True)
+            slow, fast = kick_sf(slow, fast, k[1] * tau / 2)
+            fast = self.dkd43(fast, d[1] * tau / 2, True)
 
-            slow = drift(slow, d1 * tau)
+            slow = drift(slow, d[1] * tau)
 
-            fast = self.dkd43(fast, d1 * tau / 2, True)
-            fast, slow = kick_sf(fast, slow, k0 * tau / 2)
+            fast = self.dkd43(fast, d[1] * tau / 2, True)
+            fast, slow = kick_sf(fast, slow, k[0] * tau / 2)
 
-            slow = kick(slow, slow, k0 * tau, pn=True)
+            slow = kick(slow, slow, k[0] * tau, pn=True)
 
-            slow, fast = kick_sf(slow, fast, k0 * tau / 2)
-            fast = self.dkd43(fast, d0 * tau / 3, True)
-            fast = self.dkd43(fast, d0 * tau / 3, True)
-            fast = self.dkd43(fast, d0 * tau / 3, True)
+            slow, fast = kick_sf(slow, fast, k[0] * tau / 2)
+            fast = self.dkd43(fast, d[0] * tau / 3, True)
+            fast = self.dkd43(fast, d[0] * tau / 3, True)
+            fast = self.dkd43(fast, d[0] * tau / 3, True)
 
-            slow = drift(slow, d0 * tau)
+            slow = drift(slow, d[0] * tau)
             #
+
+#            k, d = dkd43_coefs
+#            #
+#            if fast.n:
+#                fast, slow = kick_sf(fast, slow, d[0] * tau)
+#
+#                fast = self.dkd43(fast, k[0] * tau / 2, True)
+#                slow = base_dkd43(slow, k[0] * tau)
+#                fast = self.dkd43(fast, k[0] * tau / 2, True)
+#
+#                slow, fast = kick_sf(slow, fast, d[1] * tau)
+#
+#                fast = self.dkd43(fast, k[1] * tau / 2, True)
+#                slow = base_dkd43(slow, k[1] * tau)
+#                fast = self.dkd43(fast, k[1] * tau / 2, True)
+#
+#                fast, slow = kick_sf(fast, slow, d[1] * tau)
+#
+#                fast = self.dkd43(fast, k[0] * tau / 2, True)
+#                slow = base_dkd43(slow, k[0] * tau)
+#                fast = self.dkd43(fast, k[0] * tau / 2, True)
+#
+#                slow, fast = kick_sf(slow, fast, d[0] * tau)
+#            else:
+#                slow = base_dkd43(slow, tau)
+#            #
 
             if slow.n:
                 slow.tstep = tau
