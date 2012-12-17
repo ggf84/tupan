@@ -190,7 +190,11 @@ bios_kernel_core(REAL8 iposvel,
     REAL4 r1, v1;
 //    twobody_solver(dt, r0, v0, &r1, &v1);                            // ? FLOPS
 
-    if (4 * r0.w < r2 * sqrt(r2)) {
+    REAL inv_r3 = smoothed_inv_r3(r2, v0.w);                           // 4 FLOPs
+    REAL gamma = dt * dt * r0.w * inv_r3;
+
+//    if (4 * r0.w < r2 * sqrt(r2)) {
+    if (4096 * gamma < 1) {
         leapfrog(dt, r0, v0, &r1, &v1);
     } else {
         universal_kepler_solver(dt, r0, v0, &r1, &v1);

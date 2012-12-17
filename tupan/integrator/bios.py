@@ -6,7 +6,7 @@
 """
 
 
-from __future__ import print_function
+from __future__ import print_function, division
 import logging
 import math
 import numpy as np
@@ -122,13 +122,34 @@ class BIOS(Base):
     """
     def __init__(self, eta, time, particles, **kwargs):
         super(BIOS, self).__init__(eta, time, particles, **kwargs)
+        self.e0 = None
 
 
     def do_step(self, p, tau):
         """
 
         """
-        p = sakura(p, tau)
+        p0 = p.copy()
+        if self.e0 is None:
+            self.e0 = p0.kinetic_energy + p0.potential_energy
+        de = [1]
+        tol = tau**2
+        nsteps = 1
+
+        while abs(de[0]) > tol:
+            dt = tau / nsteps
+            for i in range(nsteps):
+                p = sakura(p, dt)
+                e1 = p.kinetic_energy + p.potential_energy
+                de[0] = e1/self.e0 - 1
+                if abs(de[0]) > tol:
+                    p = p0.copy()
+                    nsteps += (nsteps+3)//4
+                    print(nsteps, de)
+                    break
+
+
+#        p = sakura(p, tau)
 
         p.tstep = tau
         p.time += tau
