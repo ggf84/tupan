@@ -324,15 +324,16 @@ universal_kepler_solver(const REAL dt0,
                         REAL4 *pos1,
                         REAL4 *vel1)
 {
+    int i;
+    int err = 0;
+    int nsteps = 1;
     REAL4 pos = pos0;
     REAL4 vel = vel0;
-    int err = -1;
-    int counter = 1;
 
-    while (err != 0) {
-        REAL dt = dt0 / counter;
-        int i;
-        for (i = 0; i < counter; ++i) {
+    do {
+        err = 0;
+        REAL dt = dt0 / nsteps;
+        for (i = 0; i < nsteps; ++i) {
 
             REAL mu = pos.w;
             REAL r0sqr = pos.x * pos.x + pos.y * pos.y + pos.z * pos.z;
@@ -362,11 +363,11 @@ universal_kepler_solver(const REAL dt0,
 //                       err, count, s, s0, arg[0], arg[1], arg[2], arg[3], arg[4]);
                 pos = pos0;
                 vel = vel0;
-                counter *= 2;
-                i = counter;    // break
+                nsteps += (nsteps+1)/2;
+                i = nsteps;    // break
             }
         }
-    }
+    } while (err != 0);
 
     *pos1 = pos;
     *vel1 = vel;

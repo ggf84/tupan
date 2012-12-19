@@ -144,8 +144,8 @@ class BIOS(Base):
                 de[0] = e1/self.e0 - 1
                 if abs(de[0]) > tol:
                     p = p0.copy()
-                    nsteps += (nsteps+3)//4
-                    print(nsteps, de)
+                    nsteps += (nsteps+1)//2
+#                    print(nsteps, de)
                     break
 
 

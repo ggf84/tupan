@@ -85,68 +85,100 @@ TTL_core(const REAL h,
     REAL4 r = *r0;
     REAL4 v = *v0;
 
-    *t += h / (2*u0);
-    r.x += v.x * h / (2*u0);
-    r.y += v.y * h / (2*u0);
-    r.z += v.z * h / (2*u0);
+    REAL dt0 = h / (2*u0);
+    *t += dt0;
+    r.x += v.x * dt0;
+    r.y += v.y * dt0;
+    r.z += v.z * dt0;
 
     REAL3 a12 = get_acc(r.w, r.x, r.y, r.z, v.w);
     REAL u12 = get_phi(r.w, r.x, r.y, r.z, v.w);
+    REAL dt12 = h / u12;
 
-    v.x += a12.x * h / u12;
-    v.y += a12.y * h / u12;
-    v.z += a12.z * h / u12;
+    v.x += a12.x * dt12;
+    v.y += a12.y * dt12;
+    v.z += a12.z * dt12;
 
     REAL k1 = (v.x * v.x + v.y * v.y + v.z * v.z)/2;
     REAL u1 = u0 + (k1 - k0);
 
-    *t += h / (2*u1);
-    r.x += v.x * h / (2*u1);
-    r.y += v.y * h / (2*u1);
-    r.z += v.z * h / (2*u1);
+    REAL dt1 = h / (2*u1);
+    *t += dt1;
+    r.x += v.x * dt1;
+    r.y += v.y * dt1;
+    r.z += v.z * dt1;
 
     *r0 = r;
     *v0 = v;
 }
 
-
+#ifdef DOUBLE
+    #define TOLERANCE 2.3283064365386962891E-10     // sqrt(2^-64)
+#else
+    #define TOLERANCE 1.52587890625E-5              // sqrt(2^-32)
+#endif
 inline void
-TTL(const REAL dt,
+TTL(const REAL dt0,
     const REAL4 r0,
     const REAL4 v0,
     REAL4 *r1,
     REAL4 *v1)
 {
+    int i;
+    int err = 0;
+    int nsteps = 1;
     REAL t = 0;
     REAL4 r = r0;
     REAL4 v = v0;
 
-    REAL k0 = (v.x * v.x + v.y * v.y + v.z * v.z)/2;
-    REAL u0 = get_phi(r.w, r.x, r.y, r.z, v.w);
-    REAL h = u0 * dt;
+    do {
+        err = 0;
+        REAL dt = dt0 / nsteps;
+        for (i = 0; i < nsteps; ++i) {
 
-    TTL_core(h, u0, k0, &r, &v, &t);
+            REAL mij = r.w;
+            REAL r2 = (r.x * r.x + r.y * r.y + r.z * r.z);
+            REAL rv = (r.x * v.x + r.y * v.y + r.z * v.z);
+            REAL v2 = (v.x * v.x + v.y * v.y + v.z * v.z);
 
-//    printf("#0: %e, %e, %e\n", dt, t, fabs(t-dt));
+            REAL3 ret = smoothed_inv_r1r2r3(r2, v.w);
+            REAL inv_r = ret.x;
+            REAL inv_r2 = ret.y;
+            REAL inv_r3 = ret.z;
 
-    REAL tol = 5.9604644775390625E-8;
-    while (fabs(fabs(t) - dt)/dt > tol) {
-//        h *= sqrt(dt/fabs(t));
-        h *= sqrt(2*dt/(fabs(t)+dt));
-//        h *= pow(2*dt/(fabs(t)+dt), 1.0/3);
-        t = 0;
-        r = r0;
-        v = v0;
-        TTL_core(h, u0, k0, &r, &v, &t);
-    }
-//    printf("#1: %e, %e, %e\n", dt, t, fabs(t-dt));
+            REAL3 a;
+            REAL mij_r3 = -mij * inv_r3;
+            a.x = mij_r3 * r.x;
+            a.y = mij_r3 * r.y;
+            a.z = mij_r3 * r.z;
+            REAL a2 = (a.x * a.x + a.y * a.y + a.z * a.z);
+
+            REAL k0 = v2/2;
+            REAL u0 = mij * inv_r;
+            REAL u0dot = (v.x * a.x + v.y * a.y + v.z * a.z);
+            REAL u0ddot = a2 - mij * inv_r3 * (v2 + - 3 * (rv * rv) * inv_r2);
+
+            REAL h = (((((0) + u0ddot) * dt / 3) + u0dot) * dt / 2 + u0) * dt;
+
+            TTL_core(h, u0, k0, &r, &v, &t);
+
+            REAL dts = (i+1) * dt;
+            if (fabs(fabs(t) - dts)/dts > TOLERANCE) {
+                err = -1;
+                t = 0;
+                r = r0;
+                v = v0;
+                nsteps += (nsteps+1)/2;
+                i = nsteps;
+            }
+        }
+    } while (err != 0);
 
     *r1 = r;
     *v1 = v;
 }
 
 
-//inline REAL8
 inline void
 twobody_solver(const REAL dt,
                const REAL4 r0,
