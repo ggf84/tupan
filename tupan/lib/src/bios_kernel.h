@@ -146,19 +146,16 @@ TTL(const REAL dt0,
             REAL inv_r2 = ret.y;
             REAL inv_r3 = ret.z;
 
-            REAL3 a;
+            REAL mij_r = mij * inv_r;
             REAL mij_r3 = -mij * inv_r3;
-            a.x = mij_r3 * r.x;
-            a.y = mij_r3 * r.y;
-            a.z = mij_r3 * r.z;
-            REAL a2 = (a.x * a.x + a.y * a.y + a.z * a.z);
 
             REAL k0 = v2/2;
-            REAL u0 = mij * inv_r;
-            REAL u0dot = (v.x * a.x + v.y * a.y + v.z * a.z);
-            REAL u0ddot = a2 - mij * inv_r3 * (v2 + - 3 * (rv * rv) * inv_r2);
 
-            REAL h = (((((0) + u0ddot) * dt / 3) + u0dot) * dt / 2 + u0) * dt;
+            REAL u0 = mij_r;
+            REAL u0dot = mij_r3 * rv;
+            REAL u0ddot = mij_r3 * (mij_r3 * r2 + (v2 - 3 * rv * rv * inv_r2));
+
+            REAL h = (((((u0ddot) * dt / 3) + u0dot) * dt / 2) + u0) * dt;
 
             TTL_core(h, u0, k0, &r, &v, &t);
 
