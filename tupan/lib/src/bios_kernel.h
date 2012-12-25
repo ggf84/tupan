@@ -168,6 +168,11 @@ TTL(const REAL dt0,
                 nsteps += (nsteps+1)/2;
                 i = nsteps;
             }
+            if (r2 == 0) {
+                err = 0;
+                r = r0;
+                v = v0;
+            }
         }
     } while (err != 0);
 
@@ -210,24 +215,19 @@ bios_kernel_core(REAL8 iposvel,
     v0.z = vi.z - vj.z;                                              // 1 FLOPs
     v0.w = vi.w + vj.w;                                              // 1 FLOPs
 
-    REAL r2 = r0.x * r0.x + r0.y * r0.y + r0.z * r0.z;
-
-    if (r2 == 0) {
-        return iposvel;
-    }
-
     REAL4 r1, v1;
 //    twobody_solver(dt, r0, v0, &r1, &v1);                            // ? FLOPS
 
+
+    REAL r2 = r0.x * r0.x + r0.y * r0.y + r0.z * r0.z;
     REAL inv_r3 = smoothed_inv_r3(r2, v0.w);                           // 4 FLOPs
     REAL gamma = dt * dt * r0.w * inv_r3;
-
-//    if (4 * r0.w < r2 * sqrt(r2)) {
     if (4096 * gamma < 1) {
         leapfrog(dt, r0, v0, &r1, &v1);
     } else {
         universal_kepler_solver(dt, r0, v0, &r1, &v1);
     }
+
 
     REAL mimj = (ri.w * rj.w);                                       // 1 FLOPs
     REAL mu = mimj / r0.w;                                           // 1 FLOPs

@@ -359,12 +359,11 @@ universal_kepler_solver(const REAL dt0,
             if (err == 0) {
                 set_new_pos_vel(dt, s, r0, mu, alpha, &pos, &vel);
             } else {
-//                printf("ERROR: %d %d\ns: %.17g s0: %.17g\narg: %.17g %.17g %.17g %.17g %.17g\n",
-//                       err, count, s, s0, arg[0], arg[1], arg[2], arg[3], arg[4]);
                 pos = pos0;
                 vel = vel0;
                 nsteps += (nsteps+1)/2;
                 i = nsteps;    // break
+                if (r0 == 0) err = 0;
             }
         }
     } while (err != 0);
