@@ -17,12 +17,12 @@ with open(os.path.join('tupan', 'version.py'), 'r') as fobj:
 
 extension_modules = []
 path = os.path.join('tupan', 'lib', 'src')
-extension_modules.append(Extension('tupan.lib.libc32_gravity',
+extension_modules.append(Extension('tupan.lib.libTupanSP',
                              define_macros = [],
                              include_dirs = [os.sep+path],
                              libraries = ['m'],
                              sources=[os.path.join(path, 'libc_gravity.c')]))
-extension_modules.append(Extension('tupan.lib.libc64_gravity',
+extension_modules.append(Extension('tupan.lib.libTupanDP',
                              define_macros = [("DOUBLE", None)],
                              include_dirs = [os.sep+path],
                              libraries = ['m'],

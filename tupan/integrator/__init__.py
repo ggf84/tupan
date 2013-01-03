@@ -8,6 +8,7 @@
 
 from . import sia
 from . import bios
+from . import nreg
 from . import hermite
 
 
@@ -15,7 +16,7 @@ class Integrator(object):
     """
 
     """
-    PROVIDED_METHODS = ["bios", "hermite", "adapthermite"]
+    PROVIDED_METHODS = ["bios", "nreg", "hermite", "adapthermite"]
     PROVIDED_METHODS.extend(sia.SIA.PROVIDED_METHODS)
 
     def __init__(self, eta, time, particles, **kwargs):
@@ -37,6 +38,9 @@ class Integrator(object):
         elif method == "bios":
             logger.info("Using 'bios' integrator.")
             self.integrator = bios.BIOS(eta, time, particles, **kwargs)
+        elif method == "nreg":
+            logger.info("Using 'nreg' integrator.")
+            self.integrator = nreg.NREG(eta, time, particles, **kwargs)
         else:
             logger.critical("Unexpected integrator method: '%s'. Provided methods: %s",
                             method, str(self.PROVIDED_METHODS))

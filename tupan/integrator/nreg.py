@@ -1,0 +1,391 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+
+"""
+
+
+from __future__ import print_function, division
+import logging
+import math
+import numpy as np
+from ..lib.extensions import kernels
+from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.dtype import *
+
+
+__all__ = ["NREG"]
+
+logger = logging.getLogger(__name__)
+
+
+class Base(object):
+    """
+
+    """
+    def __init__(self, eta, time, particles, **kwargs):
+        self.eta = eta
+        self.time = time
+        self.particles = particles
+        self.is_initialized = False
+
+        self.pn_order = kwargs.pop("pn_order", 0)
+        self.clight = kwargs.pop("clight", None)
+        if self.pn_order > 0 and self.clight is None:
+            raise TypeError("'clight' is not defined. Please set the speed of "
+                            "light argument 'clight' when using 'pn_order' > 0.")
+
+        self.reporter = kwargs.pop("reporter", None)
+        self.viewer = kwargs.pop("viewer", None)
+        self.dumpper = kwargs.pop("dumpper", None)
+        self.dump_freq = kwargs.pop("dump_freq", 1)
+        if kwargs:
+            msg = "{0}.__init__ received unexpected keyword arguments: {1}."
+            raise TypeError(msg.format(type(self).__name__,", ".join(kwargs.keys())))
+
+
+
+@decallmethods(timings)
+class LLNREG_X(object):
+    """
+
+    """
+    def __init__(self, libnreg):
+        self.kernel = libnreg.nreg_Xkernel
+        self.kernel.local_size = 512
+        self.rx = np.zeros(0, dtype=REAL)
+        self.ry = np.zeros(0, dtype=REAL)
+        self.rz = np.zeros(0, dtype=REAL)
+        self.ax = np.zeros(0, dtype=REAL)
+        self.ay = np.zeros(0, dtype=REAL)
+        self.az = np.zeros(0, dtype=REAL)
+        self.u = np.zeros(0, dtype=REAL)
+        self.max_output_size = 0
+
+#        self.kernel.set_local_memory(26, 1)
+#        self.kernel.set_local_memory(27, 1)
+#        self.kernel.set_local_memory(28, 1)
+#        self.kernel.set_local_memory(29, 1)
+#        self.kernel.set_local_memory(30, 1)
+#        self.kernel.set_local_memory(31, 1)
+#        self.kernel.set_local_memory(32, 1)
+#        self.kernel.set_local_memory(33, 1)
+
+
+    def set_args(self, iobj, jobj, dt):
+        ni = iobj.n
+        nj = jobj.n
+
+        if ni > self.max_output_size:
+            self.rx = np.zeros(ni, dtype=REAL)
+            self.ry = np.zeros(ni, dtype=REAL)
+            self.rz = np.zeros(ni, dtype=REAL)
+            self.ax = np.zeros(ni, dtype=REAL)
+            self.ay = np.zeros(ni, dtype=REAL)
+            self.az = np.zeros(ni, dtype=REAL)
+            self.u = np.zeros(ni, dtype=REAL)
+            self.max_output_size = ni
+
+        self.kernel.global_size = ni
+        self.kernel.set_int(0, ni)
+        self.kernel.set_input_buffer(1, iobj.x)
+        self.kernel.set_input_buffer(2, iobj.y)
+        self.kernel.set_input_buffer(3, iobj.z)
+        self.kernel.set_input_buffer(4, iobj.mass)
+        self.kernel.set_input_buffer(5, iobj.vx)
+        self.kernel.set_input_buffer(6, iobj.vy)
+        self.kernel.set_input_buffer(7, iobj.vz)
+        self.kernel.set_input_buffer(8, iobj.eps2)
+        self.kernel.set_int(9, nj)
+        self.kernel.set_input_buffer(10, jobj.x)
+        self.kernel.set_input_buffer(11, jobj.y)
+        self.kernel.set_input_buffer(12, jobj.z)
+        self.kernel.set_input_buffer(13, jobj.mass)
+        self.kernel.set_input_buffer(14, jobj.vx)
+        self.kernel.set_input_buffer(15, jobj.vy)
+        self.kernel.set_input_buffer(16, jobj.vz)
+        self.kernel.set_input_buffer(17, jobj.eps2)
+        self.kernel.set_float(18, dt)
+        self.kernel.set_output_buffer(19, self.rx[:ni])
+        self.kernel.set_output_buffer(20, self.ry[:ni])
+        self.kernel.set_output_buffer(21, self.rz[:ni])
+        self.kernel.set_output_buffer(22, self.ax[:ni])
+        self.kernel.set_output_buffer(23, self.ay[:ni])
+        self.kernel.set_output_buffer(24, self.az[:ni])
+        self.kernel.set_output_buffer(25, self.u[:ni])
+
+
+    def run(self):
+        self.kernel.run()
+
+
+    def get_result(self):
+        (rx, ry, rz, ax, ay, az, u) = self.kernel.get_result()
+        U = 0.5 * u.sum()
+        return (rx, ry, rz, ax, ay, az, U)
+
+
+@decallmethods(timings)
+class LLNREG_V(object):
+    """
+
+    """
+    def __init__(self, libnreg):
+        self.kernel = libnreg.nreg_Vkernel
+        self.kernel.local_size = 512
+        self.vx = np.zeros(0, dtype=REAL)
+        self.vy = np.zeros(0, dtype=REAL)
+        self.vz = np.zeros(0, dtype=REAL)
+        self.k = np.zeros(0, dtype=REAL)
+        self.max_output_size = 0
+
+#        self.kernel.set_local_memory(21, 1)
+#        self.kernel.set_local_memory(22, 1)
+#        self.kernel.set_local_memory(23, 1)
+#        self.kernel.set_local_memory(24, 1)
+#        self.kernel.set_local_memory(25, 1)
+#        self.kernel.set_local_memory(26, 1)
+#        self.kernel.set_local_memory(27, 1)
+
+
+    def set_args(self, iobj, jobj, dt):
+        ni = iobj.n
+        nj = jobj.n
+
+        if ni > self.max_output_size:
+            self.vx = np.zeros(ni, dtype=REAL)
+            self.vy = np.zeros(ni, dtype=REAL)
+            self.vz = np.zeros(ni, dtype=REAL)
+            self.k = np.zeros(ni, dtype=REAL)
+            self.max_output_size = ni
+
+        self.kernel.global_size = ni
+        self.kernel.set_int(0, ni)
+        self.kernel.set_input_buffer(1, iobj.vx)
+        self.kernel.set_input_buffer(2, iobj.vy)
+        self.kernel.set_input_buffer(3, iobj.vz)
+        self.kernel.set_input_buffer(4, iobj.mass)
+        self.kernel.set_input_buffer(5, iobj.ax)
+        self.kernel.set_input_buffer(6, iobj.ay)
+        self.kernel.set_input_buffer(7, iobj.az)
+        self.kernel.set_int(8, nj)
+        self.kernel.set_input_buffer(9, jobj.vx)
+        self.kernel.set_input_buffer(10, jobj.vy)
+        self.kernel.set_input_buffer(11, jobj.vz)
+        self.kernel.set_input_buffer(12, jobj.mass)
+        self.kernel.set_input_buffer(13, jobj.ax)
+        self.kernel.set_input_buffer(14, jobj.ay)
+        self.kernel.set_input_buffer(15, jobj.az)
+        self.kernel.set_float(16, dt)
+        self.kernel.set_output_buffer(17, self.vx[:ni])
+        self.kernel.set_output_buffer(18, self.vy[:ni])
+        self.kernel.set_output_buffer(19, self.vz[:ni])
+        self.kernel.set_output_buffer(20, self.k[:ni])
+
+
+    def run(self):
+        self.kernel.run()
+
+
+    def get_result(self):
+        (vx, vy, vz, k) = self.kernel.get_result()
+        K = 0.5 * k.sum()
+        return (vx, vy, vz, K)
+
+
+llnreg_x = LLNREG_X(kernels)
+llnreg_v = LLNREG_V(kernels)
+
+
+def nreg_x(p, dt):
+    llnreg_x.set_args(p, p, dt)
+    llnreg_x.run()
+    (rx, ry, rz, ax, ay, az, U) = llnreg_x.get_result()
+
+    mtot = p.total_mass
+
+    p.x = rx / mtot
+    p.y = ry / mtot
+    p.z = rz / mtot
+
+    p.ax = ax.copy()
+    p.ay = ay.copy()
+    p.az = az.copy()
+
+
+#    p.x += dt * p.vx
+#    p.y += dt * p.vy
+#    p.z += dt * p.vz
+#    (ax, ay, az) = p.get_acc(p)
+#    U = -p.potential_energy
+
+
+    return U
+
+
+def nreg_v(p, dt):
+    llnreg_v.set_args(p, p, dt)
+    llnreg_v.run()
+    (vx, vy, vz, K) = llnreg_v.get_result()
+
+    mtot = p.total_mass
+
+    p.vx = vx / mtot
+    p.vy = vy / mtot
+    p.vz = vz / mtot
+
+    return K / mtot
+
+
+#    p.vx += dt * p.ax
+#    p.vy += dt * p.ay
+#    p.vz += dt * p.az
+#    K = p.kinetic_energy
+#
+#    return K
+
+
+def nreg_step(p, h, W):
+    delta_t = 0.0
+
+    dt = 0.5 * h / W
+    delta_t += dt
+    U = nreg_x(p, dt)
+
+    W += 0.5 * h * (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
+
+    K = nreg_v(p, h/U)
+
+    W += 0.5 * h * (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
+
+    dt = 0.5 * h / W
+    U = nreg_x(p, dt)
+    delta_t += dt
+
+    return delta_t, W
+
+
+
+
+@decallmethods(timings)
+class NREG(Base):
+    """
+
+    """
+    def __init__(self, eta, time, particles, **kwargs):
+        super(NREG, self).__init__(eta, time, particles, **kwargs)
+        self.W = None
+
+
+    def do_step(self, p, tau):
+        """
+
+        """
+        def try_do_step(p, tau, W, nsteps):
+
+            u0 = W
+            u0dot = (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum()
+            h = abs((u0dot) * tau / 2 + u0) * tau
+            h /= nsteps
+
+            t = 0.0
+            while t < tau:
+                tt, W = nreg_step(p, h, W)
+                t += tt
+
+#            t, W = nreg_step(p, tau, W)
+
+            p.tstep = t
+            p.time += t
+            p.nstep += 1
+            return p, t, W
+
+
+        tol = (2.0**(-14))**0.5
+        p0 = p.copy()
+
+        W = self.W
+
+        i = 0
+        while True:
+            i += 1
+            t = 0.0
+            p0 = p.copy()
+            W = self.W
+            p0, t, W = try_do_step(p0, tau, W, 32*i)
+            if abs(t-tau)/tau < tol:
+                break
+
+#        p0, t, W = try_do_step(p0, tau, W)
+
+        self.W = W
+
+        p = p0.copy()
+
+        return p, t
+
+
+    def get_base_tstep(self, t_end):
+        self.tstep = self.eta
+        if abs(self.time + self.tstep) > t_end:
+            self.tstep = math.copysign(t_end - abs(self.time), self.eta)
+        return self.tstep
+
+
+    def initialize(self, t_end):
+        logger.info("Initializing '%s' integrator.", type(self).__name__.lower())
+
+        p = self.particles
+        U = nreg_x(p, 0.0)
+        K = nreg_v(p, 0.0)
+        self.W = U
+
+
+#        if self.dumpper:
+#            self.snap_number = 0
+#            self.dumpper.dump_snapshot(p, self.snap_number)
+
+        self.is_initialized = True
+
+
+    def finalize(self, t_end):
+        logger.info("Finalizing '%s' integrator.", type(self).__name__.lower())
+
+        p = self.particles
+#        tau = self.get_base_tstep(t_end)
+#        p.tstep = tau
+
+        if self.reporter:
+            self.reporter.report(self.time, p)
+
+
+    def evolve_step(self, t_end):
+        """
+
+        """
+        if not self.is_initialized:
+            self.initialize(t_end)
+
+        p = self.particles
+#        tau = self.get_base_tstep(t_end)
+
+#        p.tstep = tau
+
+        if self.reporter:
+            self.reporter.report(self.time, p)
+
+        tau = self.eta
+        p, dt = self.do_step(p, tau)
+        self.time += dt
+
+#        if self.dumpper:
+#            pp = p[p.nstep % self.dump_freq == 0]
+#            if pp.n:
+#                self.snap_number += 1
+#                self.dumpper.dump_snapshot(pp, self.snap_number)
+
+        self.particles = p
+
+
+########## end of file ##########

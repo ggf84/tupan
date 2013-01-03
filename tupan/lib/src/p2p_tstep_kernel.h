@@ -9,25 +9,25 @@
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL
 p2p_tstep_kernel_core(REAL iomega,
-                      const REAL4 rmi, const REAL4 vei,
-                      const REAL4 rmj, const REAL4 vej,
+                      const REAL4 irm, const REAL4 ive,
+                      const REAL4 jrm, const REAL4 jve,
                       const REAL eta)
 {
     REAL4 r;
-    r.x = rmi.x - rmj.x;                                             // 1 FLOPs
-    r.y = rmi.y - rmj.y;                                             // 1 FLOPs
-    r.z = rmi.z - rmj.z;                                             // 1 FLOPs
-    r.w = rmi.w + rmj.w;                                             // 1 FLOPs
+    r.x = irm.x - jrm.x;                                             // 1 FLOPs
+    r.y = irm.y - jrm.y;                                             // 1 FLOPs
+    r.z = irm.z - jrm.z;                                             // 1 FLOPs
+    r.w = irm.w + jrm.w;                                             // 1 FLOPs
     REAL4 v;
-    v.x = vei.x - vej.x;                                             // 1 FLOPs
-    v.y = vei.y - vej.y;                                             // 1 FLOPs
-    v.z = vei.z - vej.z;                                             // 1 FLOPs
-    v.w = vei.w + vej.w;                                             // 1 FLOPs
+    v.x = ive.x - jve.x;                                             // 1 FLOPs
+    v.y = ive.y - jve.y;                                             // 1 FLOPs
+    v.z = ive.z - jve.z;                                             // 1 FLOPs
+    v.w = ive.w + jve.w;                                             // 1 FLOPs
     REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
     REAL rv = r.x * v.x + r.y * v.y + r.z * v.z;                     // 5 FLOPs
     REAL v2 = v.x * v.x + v.y * v.y + v.z * v.z;                     // 5 FLOPs
 
-    REAL2 ret = smoothed_inv_r2r3(r2, v.w);                          // 4 FLOPs
+    REAL2 ret = smoothed_inv_r2r3(r2, v.w);                          // 5 FLOPs
     REAL inv_r2 = ret.x;
     REAL inv_r3 = ret.y;
 
@@ -50,7 +50,7 @@ p2p_tstep_kernel_core(REAL iomega,
     iomega += (r2 > 0) ? (omega2):(0);                               // 1 FLOPs
     return iomega;
 }
-// Total flop count: 51
+// Total flop count: 52
 
 
 #ifdef __OPENCL_VERSION__
@@ -58,65 +58,59 @@ p2p_tstep_kernel_core(REAL iomega,
 // OpenCL implementation
 ////////////////////////////////////////////////////////////////////////////////
 inline REAL
-p2p_accum_tstep(REAL iOmega,
-                const REAL8 iData,
+p2p_accum_tstep(REAL iomega,
+                const REAL8 idata,
                 const REAL eta,
                 uint j_begin,
                 uint j_end,
-                __local REAL *sharedJObj_x,
-                __local REAL *sharedJObj_y,
-                __local REAL *sharedJObj_z,
-                __local REAL *sharedJObj_mass,
-                __local REAL *sharedJObj_vx,
-                __local REAL *sharedJObj_vy,
-                __local REAL *sharedJObj_vz,
-                __local REAL *sharedJObj_eps2
+                __local REAL *shr_jrx,
+                __local REAL *shr_jry,
+                __local REAL *shr_jrz,
+                __local REAL *shr_jmass,
+                __local REAL *shr_jvx,
+                __local REAL *shr_jvy,
+                __local REAL *shr_jvz,
+                __local REAL *shr_jeps2
                )
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-        REAL8 jData = (REAL8){sharedJObj_x[j],
-                              sharedJObj_y[j],
-                              sharedJObj_z[j],
-                              sharedJObj_mass[j],
-                              sharedJObj_vx[j],
-                              sharedJObj_vy[j],
-                              sharedJObj_vz[j],
-                              sharedJObj_eps2[j]};
-        iOmega = p2p_tstep_kernel_core(iOmega,
-                                       iData.lo, iData.hi,
-                                       jData.lo, jData.hi,
+        REAL8 jdata = (REAL8){shr_jrx[j], shr_jry[j], shr_jrz[j], shr_jmass[j],
+                              shr_jvx[j], shr_jvy[j], shr_jvz[j], shr_jeps2[j]};
+        iomega = p2p_tstep_kernel_core(iomega,
+                                       idata.lo, idata.hi,
+                                       jdata.lo, jdata.hi,
                                        eta);
     }
-    return iOmega;
+    return iomega;
 }
 
 
 inline REAL
-p2p_tstep_kernel_main_loop(const REAL8 iData,
+p2p_tstep_kernel_main_loop(const REAL8 idata,
                            const uint nj,
-                           __global const REAL *jobj_x,
-                           __global const REAL *jobj_y,
-                           __global const REAL *jobj_z,
-                           __global const REAL *jobj_mass,
-                           __global const REAL *jobj_vx,
-                           __global const REAL *jobj_vy,
-                           __global const REAL *jobj_vz,
-                           __global const REAL *jobj_eps2,
+                           __global const REAL *inp_jrx,
+                           __global const REAL *inp_jry,
+                           __global const REAL *inp_jrz,
+                           __global const REAL *inp_jmass,
+                           __global const REAL *inp_jvx,
+                           __global const REAL *inp_jvy,
+                           __global const REAL *inp_jvz,
+                           __global const REAL *inp_jeps2,
                            const REAL eta,
-                           __local REAL *sharedJObj_x,
-                           __local REAL *sharedJObj_y,
-                           __local REAL *sharedJObj_z,
-                           __local REAL *sharedJObj_mass,
-                           __local REAL *sharedJObj_vx,
-                           __local REAL *sharedJObj_vy,
-                           __local REAL *sharedJObj_vz,
-                           __local REAL *sharedJObj_eps2
+                           __local REAL *shr_jrx,
+                           __local REAL *shr_jry,
+                           __local REAL *shr_jrz,
+                           __local REAL *shr_jmass,
+                           __local REAL *shr_jvx,
+                           __local REAL *shr_jvy,
+                           __local REAL *shr_jvz,
+                           __local REAL *shr_jeps2
                           )
 {
     uint lsize = get_local_size(0);
 
-    REAL iOmega = (REAL)0;
+    REAL iomega = (REAL)0;
 
     uint tile;
     uint numTiles = (nj - 1)/lsize + 1;
@@ -124,99 +118,82 @@ p2p_tstep_kernel_main_loop(const REAL8 iData,
         uint nb = min(lsize, (nj - (tile * lsize)));
 
         event_t e[8];
-        e[0] = async_work_group_copy(sharedJObj_x, jobj_x + tile * lsize, nb, 0);
-        e[1] = async_work_group_copy(sharedJObj_y, jobj_y + tile * lsize, nb, 0);
-        e[2] = async_work_group_copy(sharedJObj_z, jobj_z + tile * lsize, nb, 0);
-        e[3] = async_work_group_copy(sharedJObj_mass, jobj_mass + tile * lsize, nb, 0);
-        e[4] = async_work_group_copy(sharedJObj_vx, jobj_vx + tile * lsize, nb, 0);
-        e[5] = async_work_group_copy(sharedJObj_vy, jobj_vy + tile * lsize, nb, 0);
-        e[6] = async_work_group_copy(sharedJObj_vz, jobj_vz + tile * lsize, nb, 0);
-        e[7] = async_work_group_copy(sharedJObj_eps2, jobj_eps2 + tile * lsize, nb, 0);
+        e[0] = async_work_group_copy(shr_jrx, inp_jrx + tile * lsize, nb, 0);
+        e[1] = async_work_group_copy(shr_jry, inp_jry + tile * lsize, nb, 0);
+        e[2] = async_work_group_copy(shr_jrz, inp_jrz + tile * lsize, nb, 0);
+        e[3] = async_work_group_copy(shr_jmass, inp_jmass + tile * lsize, nb, 0);
+        e[4] = async_work_group_copy(shr_jvx, inp_jvx + tile * lsize, nb, 0);
+        e[5] = async_work_group_copy(shr_jvy, inp_jvy + tile * lsize, nb, 0);
+        e[6] = async_work_group_copy(shr_jvz, inp_jvz + tile * lsize, nb, 0);
+        e[7] = async_work_group_copy(shr_jeps2, inp_jeps2 + tile * lsize, nb, 0);
         wait_group_events(8, e);
 
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            iOmega = p2p_accum_tstep(iOmega, iData,
+            iomega = p2p_accum_tstep(iomega, idata,
                                      eta, j, j + JUNROLL,
-                                     sharedJObj_x, sharedJObj_y, sharedJObj_z, sharedJObj_mass,
-                                     sharedJObj_vx, sharedJObj_vy, sharedJObj_vz, sharedJObj_eps2);
+                                     shr_jrx, shr_jry, shr_jrz, shr_jmass,
+                                     shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
         }
-        iOmega = p2p_accum_tstep(iOmega, iData,
+        iomega = p2p_accum_tstep(iomega, idata,
                                  eta, j, nb,
-                                 sharedJObj_x, sharedJObj_y, sharedJObj_z, sharedJObj_mass,
-                                 sharedJObj_vx, sharedJObj_vy, sharedJObj_vz, sharedJObj_eps2);
+                                 shr_jrx, shr_jry, shr_jrz, shr_jmass,
+                                 shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
-    return iOmega;
+    return iomega;
 }
 
 
 __kernel void p2p_tstep_kernel(const uint ni,
-                               __global const REAL *iobj_x,
-                               __global const REAL *iobj_y,
-                               __global const REAL *iobj_z,
-                               __global const REAL *iobj_mass,
-                               __global const REAL *iobj_vx,
-                               __global const REAL *iobj_vy,
-                               __global const REAL *iobj_vz,
-                               __global const REAL *iobj_eps2,
+                               __global const REAL *inp_irx,
+                               __global const REAL *inp_iry,
+                               __global const REAL *inp_irz,
+                               __global const REAL *inp_imass,
+                               __global const REAL *inp_ivx,
+                               __global const REAL *inp_ivy,
+                               __global const REAL *inp_ivz,
+                               __global const REAL *inp_ieps2,
                                const uint nj,
-                               __global const REAL *jobj_x,
-                               __global const REAL *jobj_y,
-                               __global const REAL *jobj_z,
-                               __global const REAL *jobj_mass,
-                               __global const REAL *jobj_vx,
-                               __global const REAL *jobj_vy,
-                               __global const REAL *jobj_vz,
-                               __global const REAL *jobj_eps2,
+                               __global const REAL *inp_jrx,
+                               __global const REAL *inp_jry,
+                               __global const REAL *inp_jrz,
+                               __global const REAL *inp_jmass,
+                               __global const REAL *inp_jvx,
+                               __global const REAL *inp_jvy,
+                               __global const REAL *inp_jvz,
+                               __global const REAL *inp_jeps2,
                                const REAL eta,
-                               __global REAL *itstep,
-                               __local REAL *sharedJObj_x,
-                               __local REAL *sharedJObj_y,
-                               __local REAL *sharedJObj_z,
-                               __local REAL *sharedJObj_mass,
-                               __local REAL *sharedJObj_vx,
-                               __local REAL *sharedJObj_vy,
-                               __local REAL *sharedJObj_vz,
-                               __local REAL *sharedJObj_eps2
+                               __global REAL *out_idt,
+                               __local REAL *shr_jrx,
+                               __local REAL *shr_jry,
+                               __local REAL *shr_jrz,
+                               __local REAL *shr_jmass,
+                               __local REAL *shr_jvx,
+                               __local REAL *shr_jvy,
+                               __local REAL *shr_jvz,
+                               __local REAL *shr_jeps2
                               )
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);
 
-    const REAL8 iData = (REAL8){iobj_x[i],
-                                iobj_y[i],
-                                iobj_z[i],
-                                iobj_mass[i],
-                                iobj_vx[i],
-                                iobj_vy[i],
-                                iobj_vz[i],
-                                iobj_eps2[i]};
+    REAL8 idata = (REAL8){inp_irx[i], inp_iry[i], inp_irz[i], inp_imass[i],
+                          inp_ivx[i], inp_ivy[i], inp_ivz[i], inp_ieps2[i]};
 
-    REAL iomega = p2p_tstep_kernel_main_loop(iData,
+    REAL iomega = p2p_tstep_kernel_main_loop(idata,
                                              nj,
-                                             jobj_x,
-                                             jobj_y,
-                                             jobj_z,
-                                             jobj_mass,
-                                             jobj_vx,
-                                             jobj_vy,
-                                             jobj_vz,
-                                             jobj_eps2,
+                                             inp_jrx, inp_jry, inp_jrz, inp_jmass,
+                                             inp_jvx, inp_jvy, inp_jvz, inp_jeps2,
                                              eta,
-                                             sharedJObj_x,
-                                             sharedJObj_y,
-                                             sharedJObj_z,
-                                             sharedJObj_mass,
-                                             sharedJObj_vx,
-                                             sharedJObj_vy,
-                                             sharedJObj_vz,
-                                             sharedJObj_eps2);
-//    itstep[i] = 2 * eta / iomega;
-    itstep[i] = 2 * eta / sqrt(iomega);
+                                             shr_jrx, shr_jry, shr_jrz, shr_jmass,
+                                             shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
+
+//    out_idt[i] = 2 * eta / iomega;
+    out_idt[i] = 2 * eta / sqrt(iomega);
 }
 
 #else
@@ -224,29 +201,30 @@ __kernel void p2p_tstep_kernel(const uint ni,
 // C implementation
 ////////////////////////////////////////////////////////////////////////////////
 static PyObject *
-_p2p_tstep_kernel(PyObject *_args)
+p2p_tstep_kernel(PyObject *_self, PyObject *_args)
 {
     unsigned int ni, nj;
     REAL eta;
     // i-objs
-    PyObject *iobj_x = NULL;
-    PyObject *iobj_y = NULL;
-    PyObject *iobj_z = NULL;
-    PyObject *iobj_mass = NULL;
-    PyObject *iobj_vx = NULL;
-    PyObject *iobj_vy = NULL;
-    PyObject *iobj_vz = NULL;
-    PyObject *iobj_eps2 = NULL;
+    PyObject *inp_irx = NULL;
+    PyObject *inp_iry = NULL;
+    PyObject *inp_irz = NULL;
+    PyObject *inp_imass = NULL;
+    PyObject *inp_ivx = NULL;
+    PyObject *inp_ivy = NULL;
+    PyObject *inp_ivz = NULL;
+    PyObject *inp_ieps2 = NULL;
     // j-objs
-    PyObject *jobj_x = NULL;
-    PyObject *jobj_y = NULL;
-    PyObject *jobj_z = NULL;
-    PyObject *jobj_mass = NULL;
-    PyObject *jobj_vx = NULL;
-    PyObject *jobj_vy = NULL;
-    PyObject *jobj_vz = NULL;
-    PyObject *jobj_eps2 = NULL;
-    PyObject *_output = NULL;
+    PyObject *inp_jrx = NULL;
+    PyObject *inp_jry = NULL;
+    PyObject *inp_jrz = NULL;
+    PyObject *inp_jmass = NULL;
+    PyObject *inp_jvx = NULL;
+    PyObject *inp_jvy = NULL;
+    PyObject *inp_jvz = NULL;
+    PyObject *inp_jeps2 = NULL;
+    // out-objs
+    PyObject *out_idt = NULL;
 
     int typenum;
     char *fmt = NULL;
@@ -259,111 +237,112 @@ _p2p_tstep_kernel(PyObject *_args)
     }
 
     if (!PyArg_ParseTuple(_args, fmt, &ni,
-                                      &iobj_x, &iobj_y, &iobj_z, &iobj_mass,
-                                      &iobj_vx, &iobj_vy, &iobj_vz, &iobj_eps2,
+                                      &inp_irx, &inp_iry, &inp_irz, &inp_imass,
+                                      &inp_ivx, &inp_ivy, &inp_ivz, &inp_ieps2,
                                       &nj,
-                                      &jobj_x, &jobj_y, &jobj_z, &jobj_mass,
-                                      &jobj_vx, &jobj_vy, &jobj_vz, &jobj_eps2,
+                                      &inp_jrx, &inp_jry, &inp_jrz, &inp_jmass,
+                                      &inp_jvx, &inp_jvy, &inp_jvz, &inp_jeps2,
                                       &eta,
-                                      &PyArray_Type, &_output))
+                                      &PyArray_Type, &out_idt))
         return NULL;
 
-    // i-data
-    PyObject *iobj_x_arr = PyArray_FROM_OTF(iobj_x, typenum, NPY_IN_ARRAY);
-    REAL *iobj_x_ptr = (REAL *)PyArray_DATA(iobj_x_arr);
+    // i-objs
+    PyObject *irx = PyArray_FROM_OTF(inp_irx, typenum, NPY_IN_ARRAY);
+    REAL *irx_ptr = (REAL *)PyArray_DATA(irx);
 
-    PyObject *iobj_y_arr = PyArray_FROM_OTF(iobj_y, typenum, NPY_IN_ARRAY);
-    REAL *iobj_y_ptr = (REAL *)PyArray_DATA(iobj_y_arr);
+    PyObject *iry = PyArray_FROM_OTF(inp_iry, typenum, NPY_IN_ARRAY);
+    REAL *iry_ptr = (REAL *)PyArray_DATA(iry);
 
-    PyObject *iobj_z_arr = PyArray_FROM_OTF(iobj_z, typenum, NPY_IN_ARRAY);
-    REAL *iobj_z_ptr = (REAL *)PyArray_DATA(iobj_z_arr);
+    PyObject *irz = PyArray_FROM_OTF(inp_irz, typenum, NPY_IN_ARRAY);
+    REAL *irz_ptr = (REAL *)PyArray_DATA(irz);
 
-    PyObject *iobj_mass_arr = PyArray_FROM_OTF(iobj_mass, typenum, NPY_IN_ARRAY);
-    REAL *iobj_mass_ptr = (REAL *)PyArray_DATA(iobj_mass_arr);
+    PyObject *imass = PyArray_FROM_OTF(inp_imass, typenum, NPY_IN_ARRAY);
+    REAL *imass_ptr = (REAL *)PyArray_DATA(imass);
 
-    PyObject *iobj_vx_arr = PyArray_FROM_OTF(iobj_vx, typenum, NPY_IN_ARRAY);
-    REAL *iobj_vx_ptr = (REAL *)PyArray_DATA(iobj_vx_arr);
+    PyObject *ivx = PyArray_FROM_OTF(inp_ivx, typenum, NPY_IN_ARRAY);
+    REAL *ivx_ptr = (REAL *)PyArray_DATA(ivx);
 
-    PyObject *iobj_vy_arr = PyArray_FROM_OTF(iobj_vy, typenum, NPY_IN_ARRAY);
-    REAL *iobj_vy_ptr = (REAL *)PyArray_DATA(iobj_vy_arr);
+    PyObject *ivy = PyArray_FROM_OTF(inp_ivy, typenum, NPY_IN_ARRAY);
+    REAL *ivy_ptr = (REAL *)PyArray_DATA(ivy);
 
-    PyObject *iobj_vz_arr = PyArray_FROM_OTF(iobj_vz, typenum, NPY_IN_ARRAY);
-    REAL *iobj_vz_ptr = (REAL *)PyArray_DATA(iobj_vz_arr);
+    PyObject *ivz = PyArray_FROM_OTF(inp_ivz, typenum, NPY_IN_ARRAY);
+    REAL *ivz_ptr = (REAL *)PyArray_DATA(ivz);
 
-    PyObject *iobj_eps2_arr = PyArray_FROM_OTF(iobj_eps2, typenum, NPY_IN_ARRAY);
-    REAL *iobj_eps2_ptr = (REAL *)PyArray_DATA(iobj_eps2_arr);
+    PyObject *ieps2 = PyArray_FROM_OTF(inp_ieps2, typenum, NPY_IN_ARRAY);
+    REAL *ieps2_ptr = (REAL *)PyArray_DATA(ieps2);
 
-    // j-data
-    PyObject *jobj_x_arr = PyArray_FROM_OTF(jobj_x, typenum, NPY_IN_ARRAY);
-    REAL *jobj_x_ptr = (REAL *)PyArray_DATA(jobj_x_arr);
+    // j-objs
+    PyObject *jrx = PyArray_FROM_OTF(inp_jrx, typenum, NPY_IN_ARRAY);
+    REAL *jrx_ptr = (REAL *)PyArray_DATA(jrx);
 
-    PyObject *jobj_y_arr = PyArray_FROM_OTF(jobj_y, typenum, NPY_IN_ARRAY);
-    REAL *jobj_y_ptr = (REAL *)PyArray_DATA(jobj_y_arr);
+    PyObject *jry = PyArray_FROM_OTF(inp_jry, typenum, NPY_IN_ARRAY);
+    REAL *jry_ptr = (REAL *)PyArray_DATA(jry);
 
-    PyObject *jobj_z_arr = PyArray_FROM_OTF(jobj_z, typenum, NPY_IN_ARRAY);
-    REAL *jobj_z_ptr = (REAL *)PyArray_DATA(jobj_z_arr);
+    PyObject *jrz = PyArray_FROM_OTF(inp_jrz, typenum, NPY_IN_ARRAY);
+    REAL *jrz_ptr = (REAL *)PyArray_DATA(jrz);
 
-    PyObject *jobj_mass_arr = PyArray_FROM_OTF(jobj_mass, typenum, NPY_IN_ARRAY);
-    REAL *jobj_mass_ptr = (REAL *)PyArray_DATA(jobj_mass_arr);
+    PyObject *jmass = PyArray_FROM_OTF(inp_jmass, typenum, NPY_IN_ARRAY);
+    REAL *jmass_ptr = (REAL *)PyArray_DATA(jmass);
 
-    PyObject *jobj_vx_arr = PyArray_FROM_OTF(jobj_vx, typenum, NPY_IN_ARRAY);
-    REAL *jobj_vx_ptr = (REAL *)PyArray_DATA(jobj_vx_arr);
+    PyObject *jvx = PyArray_FROM_OTF(inp_jvx, typenum, NPY_IN_ARRAY);
+    REAL *jvx_ptr = (REAL *)PyArray_DATA(jvx);
 
-    PyObject *jobj_vy_arr = PyArray_FROM_OTF(jobj_vy, typenum, NPY_IN_ARRAY);
-    REAL *jobj_vy_ptr = (REAL *)PyArray_DATA(jobj_vy_arr);
+    PyObject *jvy = PyArray_FROM_OTF(inp_jvy, typenum, NPY_IN_ARRAY);
+    REAL *jvy_ptr = (REAL *)PyArray_DATA(jvy);
 
-    PyObject *jobj_vz_arr = PyArray_FROM_OTF(jobj_vz, typenum, NPY_IN_ARRAY);
-    REAL *jobj_vz_ptr = (REAL *)PyArray_DATA(jobj_vz_arr);
+    PyObject *jvz = PyArray_FROM_OTF(inp_jvz, typenum, NPY_IN_ARRAY);
+    REAL *jvz_ptr = (REAL *)PyArray_DATA(jvz);
 
-    PyObject *jobj_eps2_arr = PyArray_FROM_OTF(jobj_eps2, typenum, NPY_IN_ARRAY);
-    REAL *jobj_eps2_ptr = (REAL *)PyArray_DATA(jobj_eps2_arr);
+    PyObject *jeps2 = PyArray_FROM_OTF(inp_jeps2, typenum, NPY_IN_ARRAY);
+    REAL *jeps2_ptr = (REAL *)PyArray_DATA(jeps2);
 
-    // output-array
-    PyObject *ret = PyArray_FROM_OTF(_output, typenum, NPY_INOUT_ARRAY);
-    REAL *ret_ptr = (REAL *)PyArray_DATA(ret);
+    // out-objs
+    PyObject *idt = PyArray_FROM_OTF(out_idt, typenum, NPY_INOUT_ARRAY);
+    REAL *idt_ptr = (REAL *)PyArray_DATA(idt);
 
     // main calculation
     unsigned int i, j;
     for (i = 0; i < ni; ++i) {
-        REAL4 rmi = {iobj_x_ptr[i], iobj_y_ptr[i],
-                     iobj_z_ptr[i], iobj_mass_ptr[i]};
-        REAL4 vei = {iobj_vx_ptr[i], iobj_vy_ptr[i],
-                     iobj_vz_ptr[i], iobj_eps2_ptr[i]};
+        REAL4 irm = {irx_ptr[i], iry_ptr[i],
+                     irz_ptr[i], imass_ptr[i]};
+        REAL4 ive = {ivx_ptr[i], ivy_ptr[i],
+                     ivz_ptr[i], ieps2_ptr[i]};
         REAL iomega = (REAL)0;
         for (j = 0; j < nj; ++j) {
-            REAL4 rmj = {jobj_x_ptr[j], jobj_y_ptr[j],
-                         jobj_z_ptr[j], jobj_mass_ptr[j]};
-            REAL4 vej = {jobj_vx_ptr[j], jobj_vy_ptr[j],
-                         jobj_vz_ptr[j], jobj_eps2_ptr[j]};
-            iomega = p2p_tstep_kernel_core(iomega, rmi, vei, rmj, vej, eta);
+            REAL4 jrm = {jrx_ptr[j], jry_ptr[j],
+                         jrz_ptr[j], jmass_ptr[j]};
+            REAL4 jve = {jvx_ptr[j], jvy_ptr[j],
+                         jvz_ptr[j], jeps2_ptr[j]};
+            iomega = p2p_tstep_kernel_core(iomega, irm, ive, jrm, jve, eta);
         }
-//        ret_ptr[i] = 2 * eta / iomega;
-        ret_ptr[i] = 2 * eta / sqrt(iomega);
+//        idt_ptr[i] = 2 * eta / iomega;
+        idt_ptr[i] = 2 * eta / sqrt(iomega);
     }
 
-    // Decrement the reference counts for i-objects
-    Py_DECREF(iobj_x_arr);
-    Py_DECREF(iobj_y_arr);
-    Py_DECREF(iobj_z_arr);
-    Py_DECREF(iobj_mass_arr);
-    Py_DECREF(iobj_vx_arr);
-    Py_DECREF(iobj_vy_arr);
-    Py_DECREF(iobj_vz_arr);
-    Py_DECREF(iobj_eps2_arr);
+    // Decrement the reference counts for auxiliary i-objs
+    Py_DECREF(irx);
+    Py_DECREF(iry);
+    Py_DECREF(irz);
+    Py_DECREF(imass);
+    Py_DECREF(ivx);
+    Py_DECREF(ivy);
+    Py_DECREF(ivz);
+    Py_DECREF(ieps2);
 
-    // Decrement the reference counts for j-objects
-    Py_DECREF(jobj_x_arr);
-    Py_DECREF(jobj_y_arr);
-    Py_DECREF(jobj_z_arr);
-    Py_DECREF(jobj_mass_arr);
-    Py_DECREF(jobj_vx_arr);
-    Py_DECREF(jobj_vy_arr);
-    Py_DECREF(jobj_vz_arr);
-    Py_DECREF(jobj_eps2_arr);
+    // Decrement the reference counts for auxiliary j-objs
+    Py_DECREF(jrx);
+    Py_DECREF(jry);
+    Py_DECREF(jrz);
+    Py_DECREF(jmass);
+    Py_DECREF(jvx);
+    Py_DECREF(jvy);
+    Py_DECREF(jvz);
+    Py_DECREF(jeps2);
 
-    // Decrement the reference counts for ret-objects
-    Py_DECREF(ret);
+    // Decrement the reference counts for auxiliary out-objs
+    Py_DECREF(idt);
 
+    // Returns None
     Py_INCREF(Py_None);
     return Py_None;
 }

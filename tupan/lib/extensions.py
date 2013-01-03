@@ -274,9 +274,9 @@ class CModule(object):
         logger.debug("Building %s precision C extension module.", prec)
 
         if prec is "double":
-            from tupan.lib import libc64_gravity as program
+            from tupan.lib import libTupanDP as program
         else:
-            from tupan.lib import libc32_gravity as program
+            from tupan.lib import libTupanSP as program
         self.program = program
 
         logger.debug("done.")
@@ -324,10 +324,10 @@ class CKernel(object):
 
     def run(self):
         args = self.dev_args.values()
-        self.dev_result = self.kernel(*args)    # self.dev_result == None
+        self.kernel(*args)
 
 
-    def get_result(self):       # XXX: FIXME
+    def get_result(self):
         return [self.dev_args[i] for i in self.res_ids.values()]
 
 

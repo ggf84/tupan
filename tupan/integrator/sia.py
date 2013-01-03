@@ -472,9 +472,9 @@ class SIA(Base):
             fast = self.dkd21(fast, d0 * tau, True)
 
             if slow.n: slow = sakura(slow, k0 * tau, True)
-#            slow = dkd(slow, k0 * tau)
+#            slow = base_dkd21(slow, k0 * tau)
 #            if slow.n == 2: slow = sakura(slow, k0 * tau, True)
-#            else: slow = dkd(slow, k0 * tau)
+#            else: slow = base_dkd21(slow, k0 * tau)
 
             fast = self.dkd21(fast, d0 * tau, True)
             slow, fast = kick_sf(slow, fast, k0 * tau / 2)

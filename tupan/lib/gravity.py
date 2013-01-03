@@ -45,48 +45,8 @@ class Phi(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_phi_kernel
         self.kernel.local_size = 512
-        self.output = np.zeros(0, dtype=REAL)
-
-        self.kernel.set_local_memory(5, 8)
-
-
-    def set_args(self, iobj, jobj):
-        ni = iobj.n
-        nj = jobj.n
-        idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
-                                iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
-        jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
-                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
-
-        if ni > len(self.output):
-            self.output = np.zeros(ni, dtype=REAL)
-
-        self.kernel.global_size = ni
-        self.kernel.set_int(0, ni)
-        self.kernel.set_input_buffer(1, idata)
-        self.kernel.set_int(2, nj)
-        self.kernel.set_input_buffer(3, jdata)
-        self.kernel.set_output_buffer(4, self.output[:ni])
-
-
-    def run(self):
-        self.kernel.run()
-
-
-    def get_result(self):
-        return self.kernel.get_result()[0]
-
-
-
-@decallmethods(timings)
-class Acc(object):
-    """
-
-    """
-    def __init__(self, libgrav):
-        self.kernel = libgrav.p2p_acc_kernel
-        self.kernel.local_size = 512
-        self.output = np.zeros((0, 4), dtype=REAL)
+        self.phi = np.zeros(0, dtype=REAL)
+        self.max_output_size = 0
 
         self.kernel.set_local_memory(19, 1)
         self.kernel.set_local_memory(20, 1)
@@ -102,8 +62,9 @@ class Acc(object):
         ni = iobj.n
         nj = jobj.n
 
-        if ni > len(self.output):
-            self.output = np.zeros((ni, 4), dtype=REAL)
+        if ni > self.max_output_size:
+            self.phi = np.zeros(ni, dtype=REAL)
+            self.max_output_size = ni
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -124,7 +85,7 @@ class Acc(object):
         self.kernel.set_input_buffer(15, jobj.vy)
         self.kernel.set_input_buffer(16, jobj.vz)
         self.kernel.set_input_buffer(17, jobj.eps2)
-        self.kernel.set_output_buffer(18, self.output[:ni])
+        self.kernel.set_output_buffer(18, self.phi[:ni])
 
 
     def run(self):
@@ -132,8 +93,148 @@ class Acc(object):
 
 
     def get_result(self):
-        ret = self.kernel.get_result()[0]
-        return (ret[:,0], ret[:,1], ret[:,2])
+        return self.kernel.get_result()[0]
+
+
+
+@decallmethods(timings)
+class Acc(object):
+    """
+
+    """
+    def __init__(self, libgrav):
+        self.kernel = libgrav.p2p_acc_kernel
+        self.kernel.local_size = 512
+        self.ax = np.zeros(0, dtype=REAL)
+        self.ay = np.zeros(0, dtype=REAL)
+        self.az = np.zeros(0, dtype=REAL)
+        self.max_output_size = 0
+
+        self.kernel.set_local_memory(21, 1)
+        self.kernel.set_local_memory(22, 1)
+        self.kernel.set_local_memory(23, 1)
+        self.kernel.set_local_memory(24, 1)
+        self.kernel.set_local_memory(25, 1)
+        self.kernel.set_local_memory(26, 1)
+        self.kernel.set_local_memory(27, 1)
+        self.kernel.set_local_memory(28, 1)
+
+
+    def set_args(self, iobj, jobj):
+        ni = iobj.n
+        nj = jobj.n
+
+        if ni > self.max_output_size:
+            self.ax = np.zeros(ni, dtype=REAL)
+            self.ay = np.zeros(ni, dtype=REAL)
+            self.az = np.zeros(ni, dtype=REAL)
+            self.max_output_size = ni
+
+        self.kernel.global_size = ni
+        self.kernel.set_int(0, ni)
+        self.kernel.set_input_buffer(1, iobj.x)
+        self.kernel.set_input_buffer(2, iobj.y)
+        self.kernel.set_input_buffer(3, iobj.z)
+        self.kernel.set_input_buffer(4, iobj.mass)
+        self.kernel.set_input_buffer(5, iobj.vx)
+        self.kernel.set_input_buffer(6, iobj.vy)
+        self.kernel.set_input_buffer(7, iobj.vz)
+        self.kernel.set_input_buffer(8, iobj.eps2)
+        self.kernel.set_int(9, nj)
+        self.kernel.set_input_buffer(10, jobj.x)
+        self.kernel.set_input_buffer(11, jobj.y)
+        self.kernel.set_input_buffer(12, jobj.z)
+        self.kernel.set_input_buffer(13, jobj.mass)
+        self.kernel.set_input_buffer(14, jobj.vx)
+        self.kernel.set_input_buffer(15, jobj.vy)
+        self.kernel.set_input_buffer(16, jobj.vz)
+        self.kernel.set_input_buffer(17, jobj.eps2)
+        self.kernel.set_output_buffer(18, self.ax[:ni])
+        self.kernel.set_output_buffer(19, self.ay[:ni])
+        self.kernel.set_output_buffer(20, self.az[:ni])
+
+
+    def run(self):
+        self.kernel.run()
+
+
+    def get_result(self):
+        return self.kernel.get_result()
+
+
+
+@decallmethods(timings)
+class AccJerk(object):
+    """
+
+    """
+    def __init__(self, libgrav):
+        self.kernel = libgrav.p2p_acc_jerk_kernel
+        self.kernel.local_size = 512
+        self.ax = np.zeros(0, dtype=REAL)
+        self.ay = np.zeros(0, dtype=REAL)
+        self.az = np.zeros(0, dtype=REAL)
+        self.jx = np.zeros(0, dtype=REAL)
+        self.jy = np.zeros(0, dtype=REAL)
+        self.jz = np.zeros(0, dtype=REAL)
+        self.max_output_size = 0
+
+        self.kernel.set_local_memory(24, 1)
+        self.kernel.set_local_memory(25, 1)
+        self.kernel.set_local_memory(26, 1)
+        self.kernel.set_local_memory(27, 1)
+        self.kernel.set_local_memory(28, 1)
+        self.kernel.set_local_memory(29, 1)
+        self.kernel.set_local_memory(30, 1)
+        self.kernel.set_local_memory(31, 1)
+
+
+    def set_args(self, iobj, jobj):
+        ni = iobj.n
+        nj = jobj.n
+
+        if ni > self.max_output_size:
+            self.ax = np.zeros(ni, dtype=REAL)
+            self.ay = np.zeros(ni, dtype=REAL)
+            self.az = np.zeros(ni, dtype=REAL)
+            self.jx = np.zeros(ni, dtype=REAL)
+            self.jy = np.zeros(ni, dtype=REAL)
+            self.jz = np.zeros(ni, dtype=REAL)
+            self.max_output_size = ni
+
+        self.kernel.global_size = ni
+        self.kernel.set_int(0, ni)
+        self.kernel.set_input_buffer(1, iobj.x)
+        self.kernel.set_input_buffer(2, iobj.y)
+        self.kernel.set_input_buffer(3, iobj.z)
+        self.kernel.set_input_buffer(4, iobj.mass)
+        self.kernel.set_input_buffer(5, iobj.vx)
+        self.kernel.set_input_buffer(6, iobj.vy)
+        self.kernel.set_input_buffer(7, iobj.vz)
+        self.kernel.set_input_buffer(8, iobj.eps2)
+        self.kernel.set_int(9, nj)
+        self.kernel.set_input_buffer(10, jobj.x)
+        self.kernel.set_input_buffer(11, jobj.y)
+        self.kernel.set_input_buffer(12, jobj.z)
+        self.kernel.set_input_buffer(13, jobj.mass)
+        self.kernel.set_input_buffer(14, jobj.vx)
+        self.kernel.set_input_buffer(15, jobj.vy)
+        self.kernel.set_input_buffer(16, jobj.vz)
+        self.kernel.set_input_buffer(17, jobj.eps2)
+        self.kernel.set_output_buffer(18, self.ax[:ni])
+        self.kernel.set_output_buffer(19, self.ay[:ni])
+        self.kernel.set_output_buffer(20, self.az[:ni])
+        self.kernel.set_output_buffer(21, self.jx[:ni])
+        self.kernel.set_output_buffer(22, self.jy[:ni])
+        self.kernel.set_output_buffer(23, self.jz[:ni])
+
+
+    def run(self):
+        self.kernel.run()
+
+
+    def get_result(self):
+        return self.kernel.get_result()
 
 
 
@@ -145,7 +246,8 @@ class Tstep(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_tstep_kernel
         self.kernel.local_size = 512
-        self.output = np.zeros(0, dtype=REAL)
+        self.tstep = np.zeros(0, dtype=REAL)
+        self.max_output_size = 0
 
         self.kernel.set_local_memory(20, 1)
         self.kernel.set_local_memory(21, 1)
@@ -161,8 +263,9 @@ class Tstep(object):
         ni = iobj.n
         nj = jobj.n
 
-        if ni > len(self.output):
-            self.output = np.zeros(ni, dtype=REAL)
+        if ni > self.max_output_size:
+            self.tstep = np.zeros(ni, dtype=REAL)
+            self.max_output_size = ni
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -184,7 +287,7 @@ class Tstep(object):
         self.kernel.set_input_buffer(16, jobj.vz)
         self.kernel.set_input_buffer(17, jobj.eps2)
         self.kernel.set_float(18, eta)
-        self.kernel.set_output_buffer(19, self.output[:ni])
+        self.kernel.set_output_buffer(19, self.tstep[:ni])
 
 
     def run(self):
@@ -204,38 +307,63 @@ class PNAcc(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_pnacc_kernel
         self.kernel.local_size = 512
-        self.output = np.zeros((0, 4), dtype=REAL)
+        self.pnax = np.zeros(0, dtype=REAL)
+        self.pnay = np.zeros(0, dtype=REAL)
+        self.pnaz = np.zeros(0, dtype=REAL)
+        self.max_output_size = 0
 
-        self.kernel.set_local_memory(13, 8)
+        self.kernel.set_local_memory(29, 1)
+        self.kernel.set_local_memory(30, 1)
+        self.kernel.set_local_memory(31, 1)
+        self.kernel.set_local_memory(32, 1)
+        self.kernel.set_local_memory(33, 1)
+        self.kernel.set_local_memory(34, 1)
+        self.kernel.set_local_memory(35, 1)
+        self.kernel.set_local_memory(36, 1)
 
 
     def set_args(self, iobj, jobj, pn_order, clight):
         ni = iobj.n
         nj = jobj.n
-        idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
-                                iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
-        jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
-                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
 
         clight = Clight(pn_order, clight)
 
-        if ni > len(self.output):
-            self.output = np.zeros((ni, 4), dtype=REAL)
+        if ni > self.max_output_size:
+            self.pnax = np.zeros(ni, dtype=REAL)
+            self.pnay = np.zeros(ni, dtype=REAL)
+            self.pnaz = np.zeros(ni, dtype=REAL)
+            self.max_output_size = ni
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
-        self.kernel.set_input_buffer(1, idata)
-        self.kernel.set_int(2, nj)
-        self.kernel.set_input_buffer(3, jdata)
-        self.kernel.set_int(4, clight.pn_order)
-        self.kernel.set_float(5, clight.inv1)
-        self.kernel.set_float(6, clight.inv2)
-        self.kernel.set_float(7, clight.inv3)
-        self.kernel.set_float(8, clight.inv4)
-        self.kernel.set_float(9, clight.inv5)
-        self.kernel.set_float(10, clight.inv6)
-        self.kernel.set_float(11, clight.inv7)
-        self.kernel.set_output_buffer(12, self.output[:ni])
+        self.kernel.set_input_buffer(1, iobj.x)
+        self.kernel.set_input_buffer(2, iobj.y)
+        self.kernel.set_input_buffer(3, iobj.z)
+        self.kernel.set_input_buffer(4, iobj.mass)
+        self.kernel.set_input_buffer(5, iobj.vx)
+        self.kernel.set_input_buffer(6, iobj.vy)
+        self.kernel.set_input_buffer(7, iobj.vz)
+        self.kernel.set_input_buffer(8, iobj.eps2)
+        self.kernel.set_int(9, nj)
+        self.kernel.set_input_buffer(10, jobj.x)
+        self.kernel.set_input_buffer(11, jobj.y)
+        self.kernel.set_input_buffer(12, jobj.z)
+        self.kernel.set_input_buffer(13, jobj.mass)
+        self.kernel.set_input_buffer(14, jobj.vx)
+        self.kernel.set_input_buffer(15, jobj.vy)
+        self.kernel.set_input_buffer(16, jobj.vz)
+        self.kernel.set_input_buffer(17, jobj.eps2)
+        self.kernel.set_int(18, clight.pn_order)
+        self.kernel.set_float(19, clight.inv1)
+        self.kernel.set_float(20, clight.inv2)
+        self.kernel.set_float(21, clight.inv3)
+        self.kernel.set_float(22, clight.inv4)
+        self.kernel.set_float(23, clight.inv5)
+        self.kernel.set_float(24, clight.inv6)
+        self.kernel.set_float(25, clight.inv7)
+        self.kernel.set_output_buffer(26, self.pnax[:ni])
+        self.kernel.set_output_buffer(27, self.pnay[:ni])
+        self.kernel.set_output_buffer(28, self.pnaz[:ni])
 
 
     def run(self):
@@ -243,58 +371,15 @@ class PNAcc(object):
 
 
     def get_result(self):
-        ret = self.kernel.get_result()[0]
-        return (ret[:,0], ret[:,1], ret[:,2])
-
-
-
-@decallmethods(timings)
-class AccJerk(object):
-    """
-
-    """
-    def __init__(self, libgrav):
-        self.kernel = libgrav.p2p_acc_jerk_kernel
-        self.kernel.local_size = 512
-        self.output = np.zeros((0, 8), dtype=REAL)
-
-        self.kernel.set_local_memory(5, 8)
-
-
-    def set_args(self, iobj, jobj):
-        ni = iobj.n
-        nj = jobj.n
-        idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
-                                iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
-        jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
-                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
-
-        if ni > len(self.output):
-            self.output = np.zeros((ni, 8), dtype=REAL)
-
-        self.kernel.global_size = ni
-        self.kernel.set_int(0, ni)
-        self.kernel.set_input_buffer(1, idata)
-        self.kernel.set_int(2, nj)
-        self.kernel.set_input_buffer(3, jdata)
-        self.kernel.set_output_buffer(4, self.output[:ni])
-
-
-    def run(self):
-        self.kernel.run()
-
-
-    def get_result(self):
-        ret = self.kernel.get_result()[0]
-        return (ret[:,0], ret[:,1], ret[:,2], ret[:,4], ret[:,5], ret[:,6])
+        return self.kernel.get_result()
 
 
 
 phi = Phi(kernels)
 acc = Acc(kernels)
+acc_jerk = AccJerk(kernels)
 tstep = Tstep(kernels)
 pnacc = PNAcc(kernels)
-acc_jerk = AccJerk(kernels)
 
 
 ########## end of file ##########

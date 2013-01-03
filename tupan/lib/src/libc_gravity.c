@@ -8,53 +8,12 @@
 #include"p2p_tstep_kernel.h"
 #include"p2p_pnacc_kernel.h"
 #include"bios_kernel.h"
+#include"nreg_kernels.h"
 
 //
-// Python methods' interface
+// Python Method Defs
 ////////////////////////////////////////////////////////////////////////////////
-static PyObject *
-p2p_phi_kernel(PyObject *_self, PyObject *_args)
-{
-    return _p2p_phi_kernel(_args);
-}
-
-
-static PyObject *
-p2p_acc_kernel(PyObject *_self, PyObject *_args)
-{
-    return _p2p_acc_kernel(_args);
-}
-
-
-static PyObject *
-p2p_acc_jerk_kernel(PyObject *_self, PyObject *_args)
-{
-    return _p2p_acc_jerk_kernel(_args);
-}
-
-
-static PyObject *
-p2p_tstep_kernel(PyObject *_self, PyObject *_args)
-{
-    return _p2p_tstep_kernel(_args);
-}
-
-
-static PyObject *
-p2p_pnacc_kernel(PyObject *_self, PyObject *_args)
-{
-    return _p2p_pnacc_kernel(_args);
-}
-
-
-static PyObject *
-bios_kernel(PyObject *_self, PyObject *_args)
-{
-    return _bios_kernel(_args);
-}
-
-
-static PyMethodDef libc_gravity_meths[] = {
+static PyMethodDef libTupan_meths[] = {
     {"p2p_phi_kernel", (PyCFunction)p2p_phi_kernel, METH_VARARGS,
                 "returns the Newtonian gravitational potential."},
     {"p2p_acc_kernel", (PyCFunction)p2p_acc_kernel, METH_VARARGS,
@@ -68,6 +27,10 @@ static PyMethodDef libc_gravity_meths[] = {
     {"bios_kernel", (PyCFunction)bios_kernel, METH_VARARGS,
                 "returns updated positions and velocities after application"
                 " of the BIOS integrator."},
+    {"nreg_Xkernel", (PyCFunction)nreg_Xkernel, METH_VARARGS,
+                "nreg_Xkernel for NREG integrator."},
+    {"nreg_Vkernel", (PyCFunction)nreg_Vkernel, METH_VARARGS,
+                "nreg_Vkernel for NREG integrator."},
     {NULL, NULL, 0, NULL},
 };
 
@@ -80,10 +43,10 @@ static PyMethodDef libc_gravity_meths[] = {
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef moduledef32 = {
         PyModuleDef_HEAD_INIT,
-        "libc32_gravity",
+        "libTupanSP",
         "An extension module for Tupan.",
         -1,
-        libc_gravity_meths,
+        libTupan_meths,
         NULL,
         NULL,
         NULL,
@@ -91,7 +54,7 @@ static struct PyModuleDef moduledef32 = {
 };
 
 PyObject *
-PyInit_libc32_gravity(void)
+PyInit_libTupanSP(void)
 {
     PyObject *module = PyModule_Create(&moduledef32);
 
@@ -105,9 +68,9 @@ PyInit_libc32_gravity(void)
 
 #else
 PyMODINIT_FUNC
-initlibc32_gravity(void)
+initlibTupanSP(void)
 {
-    PyObject *module = Py_InitModule3("libc32_gravity", libc_gravity_meths,
+    PyObject *module = Py_InitModule3("libTupanSP", libTupan_meths,
                                       "An extension module for Tupan.");
     import_array();
 
@@ -120,10 +83,10 @@ initlibc32_gravity(void)
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef moduledef64 = {
         PyModuleDef_HEAD_INIT,
-        "libc64_gravity",
+        "libTupanDP",
         "An extension module for Tupan.",
         -1,
-        libc_gravity_meths,
+        libTupan_meths,
         NULL,
         NULL,
         NULL,
@@ -131,7 +94,7 @@ static struct PyModuleDef moduledef64 = {
 };
 
 PyObject *
-PyInit_libc64_gravity(void)
+PyInit_libTupanDP(void)
 {
     PyObject *module = PyModule_Create(&moduledef64);
 
@@ -145,9 +108,9 @@ PyInit_libc64_gravity(void)
 
 #else
 PyMODINIT_FUNC
-initlibc64_gravity(void)
+initlibTupanDP(void)
 {
-    PyObject *module = Py_InitModule3("libc64_gravity", libc_gravity_meths,
+    PyObject *module = Py_InitModule3("libTupanDP", libTupan_meths,
                                       "An extension module for Tupan.");
     import_array();
 

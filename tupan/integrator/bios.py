@@ -53,8 +53,23 @@ class LLBIOS(object):
     """
     def __init__(self):
         self.kernel = kernels.bios_kernel
-        self.kernel.local_size = 384
-        self.output = np.zeros((0, 8), dtype=REAL)
+        self.kernel.local_size = 512
+        self.drx = np.zeros(0, dtype=REAL)
+        self.dry = np.zeros(0, dtype=REAL)
+        self.drz = np.zeros(0, dtype=REAL)
+        self.dvx = np.zeros(0, dtype=REAL)
+        self.dvy = np.zeros(0, dtype=REAL)
+        self.dvz = np.zeros(0, dtype=REAL)
+        self.max_output_size = 0
+
+        self.kernel.set_local_memory(26, 1)
+        self.kernel.set_local_memory(27, 1)
+        self.kernel.set_local_memory(28, 1)
+        self.kernel.set_local_memory(29, 1)
+        self.kernel.set_local_memory(30, 1)
+        self.kernel.set_local_memory(31, 1)
+        self.kernel.set_local_memory(32, 1)
+        self.kernel.set_local_memory(33, 1)
 
 
     def set_args(self, iobj, jobj, dt):
@@ -62,23 +77,42 @@ class LLBIOS(object):
         nj = jobj.n
         Mtot = jobj.total_mass
 
-        idata = np.concatenate((iobj.x, iobj.y, iobj.z, iobj.mass,
-                                iobj.vx, iobj.vy, iobj.vz, iobj.eps2)).reshape(8,-1).T
-        jdata = np.concatenate((jobj.x, jobj.y, jobj.z, jobj.mass,
-                                jobj.vx, jobj.vy, jobj.vz, jobj.eps2)).reshape(8,-1).T
-
-        if ni > len(self.output):
-            self.output = np.zeros((ni, 8), dtype=REAL)
+        if ni > self.max_output_size:
+            self.drx = np.zeros(ni, dtype=REAL)
+            self.dry = np.zeros(ni, dtype=REAL)
+            self.drz = np.zeros(ni, dtype=REAL)
+            self.dvx = np.zeros(ni, dtype=REAL)
+            self.dvy = np.zeros(ni, dtype=REAL)
+            self.dvz = np.zeros(ni, dtype=REAL)
+            self.max_output_size = ni
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
-        self.kernel.set_input_buffer(1, idata)
-        self.kernel.set_int(2, nj)
-        self.kernel.set_input_buffer(3, jdata)
-        self.kernel.set_float(4, Mtot)
-        self.kernel.set_float(5, dt)
-        self.kernel.set_output_buffer(6, self.output[:ni])
-        self.kernel.set_local_memory(7, 8)
+        self.kernel.set_input_buffer(1, iobj.x)
+        self.kernel.set_input_buffer(2, iobj.y)
+        self.kernel.set_input_buffer(3, iobj.z)
+        self.kernel.set_input_buffer(4, iobj.mass)
+        self.kernel.set_input_buffer(5, iobj.vx)
+        self.kernel.set_input_buffer(6, iobj.vy)
+        self.kernel.set_input_buffer(7, iobj.vz)
+        self.kernel.set_input_buffer(8, iobj.eps2)
+        self.kernel.set_int(9, nj)
+        self.kernel.set_input_buffer(10, jobj.x)
+        self.kernel.set_input_buffer(11, jobj.y)
+        self.kernel.set_input_buffer(12, jobj.z)
+        self.kernel.set_input_buffer(13, jobj.mass)
+        self.kernel.set_input_buffer(14, jobj.vx)
+        self.kernel.set_input_buffer(15, jobj.vy)
+        self.kernel.set_input_buffer(16, jobj.vz)
+        self.kernel.set_input_buffer(17, jobj.eps2)
+        self.kernel.set_float(18, Mtot)
+        self.kernel.set_float(19, dt)
+        self.kernel.set_output_buffer(20, self.drx[:ni])
+        self.kernel.set_output_buffer(21, self.dry[:ni])
+        self.kernel.set_output_buffer(22, self.drz[:ni])
+        self.kernel.set_output_buffer(23, self.dvx[:ni])
+        self.kernel.set_output_buffer(24, self.dvy[:ni])
+        self.kernel.set_output_buffer(25, self.dvz[:ni])
 
 
     def run(self):
@@ -86,8 +120,7 @@ class LLBIOS(object):
 
 
     def get_result(self):
-        ret = self.kernel.get_result()[0]
-        return (ret[:,0], ret[:,1], ret[:,2], ret[:,4], ret[:,5], ret[:,6])
+        return self.kernel.get_result()
 
 
 
@@ -129,27 +162,28 @@ class BIOS(Base):
         """
 
         """
-        p0 = p.copy()
-        if self.e0 is None:
-            self.e0 = p0.kinetic_energy + p0.potential_energy
-        de = [1]
-        tol = tau**2
-        nsteps = 1
+#        p0 = p.copy()
+#        if self.e0 is None:
+#            self.e0 = p0.kinetic_energy + p0.potential_energy
+#        de = [1]
+#        tol = tau**2
+#        nsteps = 1
+#
+#        while abs(de[0]) > tol:
+#            p = p0.copy()
+#            dt = tau / nsteps
+#            for i in range(nsteps):
+#                p = sakura(p, dt)
+#                e1 = p.kinetic_energy + p.potential_energy
+#                de[0] = e1/self.e0 - 1
+#                if abs(de[0]) > tol:
+##                    nsteps += (nsteps+1)//2
+#                    nsteps *= 2
+##                    print(nsteps, de, tol)
+#                    break
 
-        while abs(de[0]) > tol:
-            dt = tau / nsteps
-            for i in range(nsteps):
-                p = sakura(p, dt)
-                e1 = p.kinetic_energy + p.potential_energy
-                de[0] = e1/self.e0 - 1
-                if abs(de[0]) > tol:
-                    p = p0.copy()
-                    nsteps += (nsteps+1)//2
-#                    print(nsteps, de)
-                    break
 
-
-#        p = sakura(p, tau)
+        p = sakura(p, tau)
 
         p.tstep = tau
         p.time += tau
