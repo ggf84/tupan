@@ -361,7 +361,7 @@ universal_kepler_solver(const REAL dt0,
             } else {
                 pos = pos0;
                 vel = vel0;
-                nsteps += (nsteps+1)/2;
+                nsteps *= 2;
                 i = nsteps;    // break
                 if (r0 == 0) err = 0;
             }

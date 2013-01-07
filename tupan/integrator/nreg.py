@@ -247,10 +247,10 @@ def nreg_v(p, dt):
 
 
 def nreg_step(p, h, W):
-    delta_t = 0.0
+    t = 0.0
 
     dt = 0.5 * h / W
-    delta_t += dt
+    t += dt
     U = nreg_x(p, dt)
 
     W += 0.5 * h * (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
@@ -261,9 +261,9 @@ def nreg_step(p, h, W):
 
     dt = 0.5 * h / W
     U = nreg_x(p, dt)
-    delta_t += dt
+    t += dt
 
-    return delta_t, W
+    return t, W
 
 
 
@@ -282,47 +282,38 @@ class NREG(Base):
         """
 
         """
-        def try_do_step(p, tau, W, nsteps):
-
-            u0 = W
-            u0dot = (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum()
-            h = abs((u0dot) * tau / 2 + u0) * tau
-            h /= nsteps
-
+        def do_nsteps(p, tau, W, nsteps):
             t = 0.0
-            while t < tau:
-                tt, W = nreg_step(p, h, W)
+            dtau = tau / nsteps
+            for i in range(nsteps):
+                S = W + 0.5 * dtau * (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum()
+                tt, W = nreg_step(p, S*dtau, W)
                 t += tt
-
-#            t, W = nreg_step(p, tau, W)
-
-            p.tstep = t
-            p.time += t
-            p.nstep += 1
             return p, t, W
 
 
-        tol = (2.0**(-14))**0.5
-        p0 = p.copy()
+#        i = 1
+#        tol = max(min(2.0**(-12), tau**2), 2.0**(-32))
+#        while True:
+#            W = self.W
+#            p0 = p.copy()
+#            p0, t, W = do_nsteps(p0, tau, W, i)
+#            i *= 2
+#            if abs(t-tau)/tau < tol:
+#                break
+#
+#        self.W = W
+#        p = p0.copy()
+
 
         W = self.W
-
-        i = 0
-        while True:
-            i += 1
-            t = 0.0
-            p0 = p.copy()
-            W = self.W
-            p0, t, W = try_do_step(p0, tau, W, 32*i)
-            if abs(t-tau)/tau < tol:
-                break
-
-#        p0, t, W = try_do_step(p0, tau, W)
-
+        p, t, W = do_nsteps(p, tau, W, 1)
         self.W = W
 
-        p = p0.copy()
 
+        p.tstep = t
+        p.time += t
+        p.nstep += 1
         return p, t
 
 

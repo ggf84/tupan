@@ -141,10 +141,9 @@ TTL(const REAL dt0,
             REAL rv = (r.x * v.x + r.y * v.y + r.z * v.z);
             REAL v2 = (v.x * v.x + v.y * v.y + v.z * v.z);
 
-            REAL3 ret = smoothed_inv_r1r2r3(r2, v.w);
+            REAL2 ret = smoothed_inv_r1r3(r2, v.w);
             REAL inv_r = ret.x;
-            REAL inv_r2 = ret.y;
-            REAL inv_r3 = ret.z;
+            REAL inv_r3 = ret.y;
 
             REAL mij_r = mij * inv_r;
             REAL mij_r3 = -mij * inv_r3;
@@ -153,9 +152,8 @@ TTL(const REAL dt0,
 
             REAL u0 = mij_r;
             REAL u0dot = mij_r3 * rv;
-            REAL u0ddot = mij_r3 * (mij_r3 * r2 + (v2 - 3 * rv * rv * inv_r2));
 
-            REAL h = (((((u0ddot) * dt / 3) + u0dot) * dt / 2) + u0) * dt;
+            REAL h = dt * (u0 + (dt / 2) * (u0dot));
 
             TTL_core(h, u0, k0, &r, &v, &t);
 
@@ -165,7 +163,7 @@ TTL(const REAL dt0,
                 t = 0;
                 r = r0;
                 v = v0;
-                nsteps += (nsteps+1)/2;
+                nsteps *= 2;
                 i = nsteps;
             }
             if (r2 == 0) {
@@ -221,7 +219,7 @@ bios_kernel_core(REAL8 idrdv,
     REAL r2 = r0.x * r0.x + r0.y * r0.y + r0.z * r0.z;
     REAL v2 = v0.x * v0.x + v0.y * v0.y + v0.z * v0.z;
     REAL gamma = sqrt(r2 / (v2 + 2 * r0.w / sqrt(r2)));
-    if (16 * dt < gamma) {
+    if (64 * dt < gamma) {
         leapfrog(dt, r0, v0, &r1, &v1);
     } else {
         universal_kepler_solver(dt, r0, v0, &r1, &v1);
