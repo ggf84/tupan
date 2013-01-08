@@ -246,7 +246,7 @@ def nreg_v(p, dt):
 #    return K
 
 
-def nreg_step(p, h, W):
+def nreg_step(p, h, W, U):
     t = 0.0
 
     dt = 0.5 * h / W
@@ -263,7 +263,7 @@ def nreg_step(p, h, W):
     U = nreg_x(p, dt)
     t += dt
 
-    return t, W
+    return t, W, U
 
 
 
@@ -275,6 +275,7 @@ class NREG(Base):
     """
     def __init__(self, eta, time, particles, **kwargs):
         super(NREG, self).__init__(eta, time, particles, **kwargs)
+        self.U = None
         self.W = None
 
 
@@ -282,34 +283,41 @@ class NREG(Base):
         """
 
         """
-        def do_nsteps(p, tau, W, nsteps):
+        def do_nsteps(p, tau, W, U, nsteps):
             t = 0.0
             dtau = tau / nsteps
             for i in range(nsteps):
                 S = W + 0.5 * dtau * (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum()
-                tt, W = nreg_step(p, S*dtau, W)
+                tt, W, U = nreg_step(p, S*dtau, W, U)
                 t += tt
-            return p, t, W
+            return p, t, W, U
 
 
 #        i = 1
 #        tol = max(min(2.0**(-12), tau**2), 2.0**(-32))
 #        while True:
+#            U = self.U
 #            W = self.W
 #            p0 = p.copy()
-#            p0, t, W = do_nsteps(p0, tau, W, i)
+#            p0, t, W, U = do_nsteps(p0, tau, W, U, i)
 #            i *= 2
-#            if abs(t-tau)/tau < tol:
-#                break
+#            if abs(W-U)/U < tol:
+#                if abs(t-tau)/tau < tol:
+#                    break
 #
 #        self.W = W
+#        self.U = U
 #        p = p0.copy()
 
 
-        W = self.W
-        p, t, W = do_nsteps(p, tau, W, 1)
-        self.W = W
 
+        U = self.U
+        W = self.W
+        p, t, W, U = do_nsteps(p, tau, W, U, 1)
+        self.W = W
+        self.U = U
+
+#        print(self.W, self.U, abs(self.W-self.U))
 
         p.tstep = t
         p.time += t
@@ -330,6 +338,7 @@ class NREG(Base):
         p = self.particles
         U = nreg_x(p, 0.0)
         K = nreg_v(p, 0.0)
+        self.U = U
         self.W = U
 
 
