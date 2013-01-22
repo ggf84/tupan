@@ -62,6 +62,7 @@ class LLBIOS(object):
         self.dvz = np.zeros(0, dtype=REAL)
         self.max_output_size = 0
 
+        self.kernel.set_local_memory(25, 1)
         self.kernel.set_local_memory(26, 1)
         self.kernel.set_local_memory(27, 1)
         self.kernel.set_local_memory(28, 1)
@@ -69,13 +70,11 @@ class LLBIOS(object):
         self.kernel.set_local_memory(30, 1)
         self.kernel.set_local_memory(31, 1)
         self.kernel.set_local_memory(32, 1)
-        self.kernel.set_local_memory(33, 1)
 
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
-        Mtot = jobj.total_mass
 
         if ni > self.max_output_size:
             self.drx = np.zeros(ni, dtype=REAL)
@@ -105,14 +104,13 @@ class LLBIOS(object):
         self.kernel.set_input_buffer(15, jobj.vy)
         self.kernel.set_input_buffer(16, jobj.vz)
         self.kernel.set_input_buffer(17, jobj.eps2)
-        self.kernel.set_float(18, Mtot)
-        self.kernel.set_float(19, dt)
-        self.kernel.set_output_buffer(20, self.drx[:ni])
-        self.kernel.set_output_buffer(21, self.dry[:ni])
-        self.kernel.set_output_buffer(22, self.drz[:ni])
-        self.kernel.set_output_buffer(23, self.dvx[:ni])
-        self.kernel.set_output_buffer(24, self.dvy[:ni])
-        self.kernel.set_output_buffer(25, self.dvz[:ni])
+        self.kernel.set_float(18, dt)
+        self.kernel.set_output_buffer(19, self.drx[:ni])
+        self.kernel.set_output_buffer(20, self.dry[:ni])
+        self.kernel.set_output_buffer(21, self.drz[:ni])
+        self.kernel.set_output_buffer(22, self.dvx[:ni])
+        self.kernel.set_output_buffer(23, self.dvy[:ni])
+        self.kernel.set_output_buffer(24, self.dvz[:ni])
 
 
     def run(self):
@@ -132,11 +130,9 @@ def sakura(p, tau, update_com=False):
     llbios.run()
     (dx, dy, dz, dvx, dvy, dvz) = llbios.get_result()
 
-    if update_com:
-        vcom = p.vcom
-        dx += vcom[0] * tau
-        dy += vcom[1] * tau
-        dz += vcom[2] * tau
+    p.x += p.vx * tau / 2
+    p.y += p.vy * tau / 2
+    p.z += p.vz * tau / 2
 
     p.x += dx
     p.y += dy
@@ -144,6 +140,10 @@ def sakura(p, tau, update_com=False):
     p.vx += dvx
     p.vy += dvy
     p.vz += dvz
+
+    p.x += p.vx * tau / 2
+    p.y += p.vy * tau / 2
+    p.z += p.vz * tau / 2
 
     return p
 

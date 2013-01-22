@@ -199,7 +199,7 @@ inline REAL8
 bios_kernel_core(REAL8 idrdv,
                  const REAL4 irm, const REAL4 ive,
                  const REAL4 jrm, const REAL4 jve,
-                 const REAL Mtot, const REAL dt)
+                 const REAL dt)
 {
     REAL4 r0;
     r0.x = irm.x - jrm.x;                                            // 1 FLOPs
@@ -227,13 +227,14 @@ bios_kernel_core(REAL8 idrdv,
 
 
     REAL muj = jrm.w / r0.w;                                         // 1 FLOPs
+    REAL dt_2 = dt / 2;                                              // 1 FLOPs
 
-    REAL Mmij = -(r0.w - Mtot) / Mtot;                               // 2 FLOPs
-    REAL mdt = Mmij * dt;                                            // 1 FLOPs
-
-    r0.x += v0.x * mdt;                                              // 2 FLOPs
-    r0.y += v0.y * mdt;                                              // 2 FLOPs
-    r0.z += v0.z * mdt;                                              // 2 FLOPs
+    r0.x += v0.x * dt_2;                                             // 2 FLOPs
+    r0.y += v0.y * dt_2;                                             // 2 FLOPs
+    r0.z += v0.z * dt_2;                                             // 2 FLOPs
+    r1.x -= v1.x * dt_2;                                             // 2 FLOPs
+    r1.y -= v1.y * dt_2;                                             // 2 FLOPs
+    r1.z -= v1.z * dt_2;                                             // 2 FLOPs
 
     idrdv.s0 += muj * (r1.x - r0.x);                                 // 3 FLOPs
     idrdv.s1 += muj * (r1.y - r0.y);                                 // 3 FLOPs
@@ -258,7 +259,6 @@ bios_kernel_core(REAL8 idrdv,
 inline REAL8
 bios_kernel_accum(REAL8 idrdv,
                   const REAL8 idata,
-                  const REAL Mtot,
                   const REAL dt,
                   uint j_begin,
                   uint j_end,
@@ -279,7 +279,7 @@ bios_kernel_accum(REAL8 idrdv,
         idrdv = bios_kernel_core(idrdv,
                                  idata.lo, idata.hi,
                                  jdata.lo, jdata.hi,
-                                 Mtot, dt);
+                                 dt);
     }
     return idrdv;
 }
@@ -296,7 +296,6 @@ bios_kernel_main_loop(const REAL8 idata,
                       __global const REAL *inp_jvy,
                       __global const REAL *inp_jvz,
                       __global const REAL *inp_jeps2,
-                      const REAL Mtot,
                       const REAL dt,
                       __local REAL *shr_jrx,
                       __local REAL *shr_jry,
@@ -332,12 +331,12 @@ bios_kernel_main_loop(const REAL8 idata,
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
             idrdv = bios_kernel_accum(idrdv, idata,
-                                      Mtot, dt, j, j + JUNROLL,
+                                      dt, j, j + JUNROLL,
                                       shr_jrx, shr_jry, shr_jrz, shr_jmass,
                                       shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
         }
         idrdv = bios_kernel_accum(idrdv, idata,
-                                  Mtot, dt, j, nb,
+                                  dt, j, nb,
                                   shr_jrx, shr_jry, shr_jrz, shr_jmass,
                                   shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
 
@@ -366,7 +365,6 @@ __kernel void bios_kernel(const uint ni,
                           __global const REAL *inp_jvy,
                           __global const REAL *inp_jvz,
                           __global const REAL *inp_jeps2,
-                          const REAL Mtot,
                           const REAL dt,
                           __global REAL *out_idrx,
                           __global REAL *out_idry,
@@ -394,7 +392,7 @@ __kernel void bios_kernel(const uint ni,
                                         nj,
                                         inp_jrx, inp_jry, inp_jrz, inp_jmass,
                                         inp_jvx, inp_jvy, inp_jvz, inp_jeps2,
-                                        Mtot, dt,
+                                        dt,
                                         shr_jrx, shr_jry, shr_jrz, shr_jmass,
                                         shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
     out_idrx[i] = idrdv.s0;
@@ -413,7 +411,7 @@ static PyObject *
 bios_kernel(PyObject *_self, PyObject *_args)
 {
     unsigned int ni, nj;
-    REAL Mtot, dt;
+    REAL dt;
     // i-objs
     PyObject *inp_irx = NULL;
     PyObject *inp_iry = NULL;
@@ -443,10 +441,10 @@ bios_kernel(PyObject *_self, PyObject *_args)
     int typenum;
     char *fmt = NULL;
     if (sizeof(REAL) == sizeof(double)) {
-        fmt = "IOOOOOOOOIOOOOOOOOddO!O!O!O!O!O!";
+        fmt = "IOOOOOOOOIOOOOOOOOdO!O!O!O!O!O!";
         typenum = NPY_FLOAT64;
     } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "IOOOOOOOOIOOOOOOOOffO!O!O!O!O!O!";
+        fmt = "IOOOOOOOOIOOOOOOOOfO!O!O!O!O!O!";
         typenum = NPY_FLOAT32;
     }
 
@@ -456,7 +454,6 @@ bios_kernel(PyObject *_self, PyObject *_args)
                                       &nj,
                                       &inp_jrx, &inp_jry, &inp_jrz, &inp_jmass,
                                       &inp_jvx, &inp_jvy, &inp_jvz, &inp_jeps2,
-                                      &Mtot,
                                       &dt,
                                       &PyArray_Type, &out_idrx,
                                       &PyArray_Type, &out_idry,
@@ -548,7 +545,7 @@ bios_kernel(PyObject *_self, PyObject *_args)
                          jrz_ptr[j], jmass_ptr[j]};
             REAL4 jve = {jvx_ptr[j], jvy_ptr[j],
                          jvz_ptr[j], jeps2_ptr[j]};
-            idrdv = bios_kernel_core(idrdv, irm, ive, jrm, jve, Mtot, dt);
+            idrdv = bios_kernel_core(idrdv, irm, ive, jrm, jve, dt);
         }
         idrx_ptr[i] = idrdv.s0;
         idry_ptr[i] = idrdv.s1;
