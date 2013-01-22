@@ -27,6 +27,16 @@ extension_modules.append(Extension('tupan.lib.libTupanDP',
                              include_dirs = [os.sep+path],
                              libraries = ['m'],
                              sources=[os.path.join(path, 'libc_gravity.c')]))
+extension_modules.append(Extension('tupan.lib.libtupan_sp',
+                             define_macros = [("__USE_CTYPES__", None)],
+                             include_dirs = [os.sep+path],
+                             libraries = ['m'],
+                             sources=[os.path.join(path, 'libtupan.c')]))
+extension_modules.append(Extension('tupan.lib.libtupan_dp',
+                             define_macros = [("DOUBLE", None), ("__USE_CTYPES__", None)],
+                             include_dirs = [os.sep+path],
+                             libraries = ['m'],
+                             sources=[os.path.join(path, 'libtupan.c')]))
 
 
 package_data = {}

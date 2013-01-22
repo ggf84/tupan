@@ -375,6 +375,108 @@ class PNAcc(object):
 
 
 
+
+
+
+
+
+
+
+
+
+
+@decallmethods(timings)
+class Acc2(object):
+    """
+
+    """
+    def __init__(self):
+        import os
+        import ctypes
+
+        dirname = os.path.dirname(__file__)
+        path = os.path.abspath(dirname)
+        self.get_acc = np.ctypeslib.load_library("libtupan_dp", path).main_p2p_acc_kernel
+
+        self.get_acc.restype = None
+        self.get_acc.argtypes = [ctypes.c_uint,
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 ctypes.c_uint,
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 #
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                 np.ctypeslib.ndpointer(),
+                                ]
+
+        self.args = None
+
+        self.ax = np.zeros(0, dtype=REAL)
+        self.ay = np.zeros(0, dtype=REAL)
+        self.az = np.zeros(0, dtype=REAL)
+        self.max_output_size = 0
+
+
+    def set_args(self, iobj, jobj):
+        ni = iobj.n
+        nj = jobj.n
+
+        if ni > self.max_output_size:
+            self.ax = np.zeros(ni, dtype=REAL)
+            self.ay = np.zeros(ni, dtype=REAL)
+            self.az = np.zeros(ni, dtype=REAL)
+            self.max_output_size = ni
+
+        self.args = (ni,
+                     iobj.x, iobj.y, iobj.z, iobj.mass,
+                     iobj.vx, iobj.vy, iobj.vz, iobj.eps2,
+                     nj,
+                     jobj.x, jobj.y, jobj.z, jobj.mass,
+                     jobj.vx, jobj.vy, jobj.vz, jobj.eps2,
+                     self.ax, self.ay, self.az,
+                    )
+
+    def run(self):
+        args = self.args
+        self.get_acc(*args)
+
+
+    def get_result(self):
+        ni = self.args[0]
+        return [self.ax[:ni], self.ay[:ni], self.az[:ni]]
+
+
+
+
+
+
+
+#acc = Acc2()
+
+
+
+
+
+
+
+
+
+
+
 phi = Phi(kernels)
 acc = Acc(kernels)
 acc_jerk = AccJerk(kernels)

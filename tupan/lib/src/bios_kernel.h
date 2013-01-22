@@ -407,6 +407,39 @@ __kernel void bios_kernel(const uint ni,
 //
 // C implementation
 ////////////////////////////////////////////////////////////////////////////////
+
+inline void
+main_bios_kernel(const unsigned int ni,
+                 const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
+                 const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+                 const unsigned int nj,
+                 const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
+                 const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
+                 const REAL dt,
+                 REAL *idrx, REAL *idry, REAL *idrz,
+                 REAL *idvx, REAL *idvy, REAL *idvz)
+{
+    unsigned int i, j;
+    for (i = 0; i < ni; ++i) {
+        REAL4 irm = {irx[i], iry[i], irz[i], imass[i]};
+        REAL4 ive = {ivx[i], ivy[i], ivz[i], ieps2[i]};
+        REAL8 idrdv = (REAL8){0, 0, 0, 0, 0, 0, 0, 0};
+        for (j = 0; j < nj; ++j) {
+            REAL4 jrm = {jrx[j], jry[j], jrz[j], jmass[j]};
+            REAL4 jve = {jvx[j], jvy[j], jvz[j], jeps2[j]};
+            idrdv = bios_kernel_core(idrdv, irm, ive, jrm, jve, dt);
+        }
+        idrx[i] = idrdv.s0;
+        idry[i] = idrdv.s1;
+        idrz[i] = idrdv.s2;
+        idvx[i] = idrdv.s4;
+        idvy[i] = idrdv.s5;
+        idvz[i] = idrdv.s6;
+    }
+}
+
+
+#ifndef __USE_CTYPES__
 static PyObject *
 bios_kernel(PyObject *_self, PyObject *_args)
 {
@@ -533,27 +566,15 @@ bios_kernel(PyObject *_self, PyObject *_args)
     REAL *idvz_ptr = (REAL *)PyArray_DATA(idvz);
 
     // main calculation
-    unsigned int i, j;
-    for (i = 0; i < ni; ++i) {
-        REAL4 irm = {irx_ptr[i], iry_ptr[i],
-                     irz_ptr[i], imass_ptr[i]};
-        REAL4 ive = {ivx_ptr[i], ivy_ptr[i],
-                     ivz_ptr[i], ieps2_ptr[i]};
-        REAL8 idrdv = (REAL8){0, 0, 0, 0, 0, 0, 0, 0};
-        for (j = 0; j < nj; ++j) {
-            REAL4 jrm = {jrx_ptr[j], jry_ptr[j],
-                         jrz_ptr[j], jmass_ptr[j]};
-            REAL4 jve = {jvx_ptr[j], jvy_ptr[j],
-                         jvz_ptr[j], jeps2_ptr[j]};
-            idrdv = bios_kernel_core(idrdv, irm, ive, jrm, jve, dt);
-        }
-        idrx_ptr[i] = idrdv.s0;
-        idry_ptr[i] = idrdv.s1;
-        idrz_ptr[i] = idrdv.s2;
-        idvx_ptr[i] = idrdv.s4;
-        idvy_ptr[i] = idrdv.s5;
-        idvz_ptr[i] = idrdv.s6;
-    }
+    main_bios_kernel(ni,
+                     irx_ptr, iry_ptr, irz_ptr, imass_ptr,
+                     ivx_ptr, ivy_ptr, ivz_ptr, ieps2_ptr,
+                     nj,
+                     jrx_ptr, jry_ptr, jrz_ptr, jmass_ptr,
+                     jvx_ptr, jvy_ptr, jvz_ptr, jeps2_ptr,
+                     dt,
+                     idrx_ptr, idry_ptr, idrz_ptr,
+                     idvx_ptr, idvy_ptr, idvz_ptr);
 
     // Decrement the reference counts for auxiliary i-objs
     Py_DECREF(irx);
@@ -587,6 +608,7 @@ bios_kernel(PyObject *_self, PyObject *_args)
     Py_INCREF(Py_None);
     return Py_None;
 }
+#endif  // __USE_CTYPES__
 
 #endif  // __OPENCL_VERSION__
 

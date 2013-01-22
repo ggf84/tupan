@@ -451,10 +451,7 @@ class SIA(Base):
     # dkd21[std,shr,hcc] method -- D.K.D
     #
 
-    def dkd21__(self, p, tau, update_tstep,
-                    shared_tstep=False,
-                    k0=1.0,
-                    d0=0.5):
+    def dkd21__(self, p, tau, update_tstep, shared_tstep=False):
         if p.n:
 
             if update_tstep:
@@ -467,17 +464,16 @@ class SIA(Base):
 
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
 
+            k, d = dkd21_coefs
             #
-            fast, slow = kick_sf(fast, slow, k0 * tau / 2)
-            fast = self.dkd21(fast, d0 * tau, True)
-
-            if slow.n: slow = sakura(slow, k0 * tau, True)
-#            slow = base_dkd21(slow, k0 * tau)
-#            if slow.n == 2: slow = sakura(slow, k0 * tau, True)
-#            else: slow = base_dkd21(slow, k0 * tau)
-
-            fast = self.dkd21(fast, d0 * tau, True)
-            slow, fast = kick_sf(slow, fast, k0 * tau / 2)
+            if fast.n:
+                fast = self.dkd21(fast, d[0] * tau, True)
+                if slow.n: slow = sakura(slow, d[0] * tau)
+                fast, slow = kick_sf(fast, slow, k[0] * tau)
+                if slow.n: slow = sakura(slow, d[0] * tau)
+                fast = self.dkd21(fast, d[0] * tau, True)
+            else:
+                if slow.n: slow = sakura(slow, tau)
             #
 
             if slow.n:
@@ -509,13 +505,14 @@ class SIA(Base):
             k, d = dkd21_coefs
             #
             if fast.n:
-                fast, slow = kick_sf(fast, slow, d[0] * tau)
+                fast = self.dkd21(fast, d[0] * tau / 2, True)
+                slow = base_dkd21(slow, d[0] * tau)
+                fast = self.dkd21(fast, d[0] * tau / 2, True)
+                slow, fast = kick_sf(slow, fast, k[0] * tau)
+                fast = self.dkd21(fast, d[0] * tau / 2, True)
+                slow = base_dkd21(slow, d[0] * tau)
+                fast = self.dkd21(fast, d[0] * tau / 2, True)
 
-                fast = self.dkd21(fast, k[0] * tau / 2, True)
-                slow = base_dkd21(slow, k[0] * tau)
-                fast = self.dkd21(fast, k[0] * tau / 2, True)
-
-                slow, fast = kick_sf(slow, fast, d[0] * tau)
             else:
                 slow = base_dkd21(slow, tau)
             #

@@ -125,7 +125,7 @@ class LLBIOS(object):
 llbios = LLBIOS()
 
 
-def sakura(p, tau, update_com=False):
+def sakura(p, tau):
     llbios.set_args(p, p, tau)
     llbios.run()
     (dx, dy, dz, dvx, dvy, dvz) = llbios.get_result()

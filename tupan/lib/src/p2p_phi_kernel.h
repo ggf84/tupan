@@ -164,6 +164,32 @@ __kernel void p2p_phi_kernel(const uint ni,
 //
 // C implementation
 ////////////////////////////////////////////////////////////////////////////////
+
+inline void
+main_p2p_phi_kernel(const unsigned int ni,
+                    const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
+                    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+                    const unsigned int nj,
+                    const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
+                    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
+                    REAL *iphi)
+{
+    unsigned int i, j;
+    for (i = 0; i < ni; ++i) {
+        REAL4 irm = {irx[i], iry[i], irz[i], imass[i]};
+        REAL4 ive = {ivx[i], ivy[i], ivz[i], ieps2[i]};
+        REAL ip = (REAL)0;
+        for (j = 0; j < nj; ++j) {
+            REAL4 jrm = {jrx[j], jry[j], jrz[j], jmass[j]};
+            REAL4 jve = {jvx[j], jvy[j], jvz[j], jeps2[j]};
+            ip = p2p_phi_kernel_core(ip, irm, ive, jrm, jve);
+        }
+        iphi[i] = ip;
+    }
+}
+
+
+#ifndef __USE_CTYPES__
 static PyObject *
 p2p_phi_kernel(PyObject *_self, PyObject *_args)
 {
@@ -263,22 +289,13 @@ p2p_phi_kernel(PyObject *_self, PyObject *_args)
     REAL *iphi_ptr = (REAL *)PyArray_DATA(iphi);
 
     // main calculation
-    unsigned int i, j;
-    for (i = 0; i < ni; ++i) {
-        REAL4 irm = {irx_ptr[i], iry_ptr[i],
-                     irz_ptr[i], imass_ptr[i]};
-        REAL4 ive = {ivx_ptr[i], ivy_ptr[i],
-                     ivz_ptr[i], ieps2_ptr[i]};
-        REAL iphi = (REAL)0;
-        for (j = 0; j < nj; ++j) {
-            REAL4 jrm = {jrx_ptr[j], jry_ptr[j],
-                         jrz_ptr[j], jmass_ptr[j]};
-            REAL4 jve = {jvx_ptr[j], jvy_ptr[j],
-                         jvz_ptr[j], jeps2_ptr[j]};
-            iphi = p2p_phi_kernel_core(iphi, irm, ive, jrm, jve);
-        }
-        iphi_ptr[i] = iphi;
-    }
+    main_p2p_phi_kernel(ni,
+                        irx_ptr, iry_ptr, irz_ptr, imass_ptr,
+                        ivx_ptr, ivy_ptr, ivz_ptr, ieps2_ptr,
+                        nj,
+                        jrx_ptr, jry_ptr, jrz_ptr, jmass_ptr,
+                        jvx_ptr, jvy_ptr, jvz_ptr, jeps2_ptr,
+                        iphi_ptr);
 
     // Decrement the reference counts for auxiliary i-objs
     Py_DECREF(irx);
@@ -307,6 +324,7 @@ p2p_phi_kernel(PyObject *_self, PyObject *_args)
     Py_INCREF(Py_None);
     return Py_None;
 }
+#endif  // __USE_CTYPES__
 
 #endif  // __OPENCL_VERSION__
 
