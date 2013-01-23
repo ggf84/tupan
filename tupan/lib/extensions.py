@@ -89,7 +89,6 @@ class CLKernel(object):
         self.dev_buff = {}
         self.input_buffer = {}
         self.output_buffer = {}
-        self.output_shape = {}
 
 
     @property
@@ -156,78 +155,23 @@ class CLKernel(object):
         self.kernel.set_arg(i, arg)
 
 
-    def set_input_buffer(self, i, arr):
-#        def allocate_buffer(arr):
-#            memf = cl.mem_flags
-#            mapf = cl.map_flags
-#            dev_buf = cl.Buffer(self.env.ctx,
-#                                memf.READ_ONLY,
-#                                size=arr.nbytes)
-#            pin_buf = cl.Buffer(self.env.ctx,
-#                                memf.READ_ONLY | memf.ALLOC_HOST_PTR,
-#                                size=arr.nbytes)
-#            (in_buf, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buf,
-#                                                 mapf.WRITE, 0, arr.shape,
-#                                                 REAL, "C")
-##            return (dev_buf, in_buf)
-#            return (pin_buf, in_buf)
-#
-#        if not i in self.dev_buff:
-#            (self.dev_buff[i], self.input_buffer[i]) = allocate_buffer(arr)
-#            logger.debug("%s: allocating buffer for input arg #%d - %s.",
-#                         self.kernel.function_name, i, self.dev_buff[i])
-#        if len(arr) > len(self.input_buffer[i]):
-#            (self.dev_buff[i], self.input_buffer[i]) = allocate_buffer(arr)
-#            logger.debug("%s: reallocating buffer for input arg #%d - %s.",
-#                         self.kernel.function_name, i, self.dev_buff[i])
-
-#        inbuff = self.input_buffer[i][:len(arr)]
-#        inbuff[:] = arr
-#        cl.enqueue_copy(self.env.queue, self.dev_buff[i], inbuff)
-
-#        self.input_buffer[i][:len(arr)] = arr
-#        cl.enqueue_copy(self.env.queue, self.dev_buff[i], self.input_buffer[i][:len(arr)])
-
-#        cl.enqueue_copy(self.env.queue, self.dev_buff[i], np.ascontiguousarray(arr, dtype=REAL))
-
+    def set_array(self, i, arr):
         memf = cl.mem_flags
         self.dev_buff[i] = cl.Buffer(self.env.ctx,
-                                     memf.READ_ONLY | memf.COPY_HOST_PTR,
-                                     hostbuf=np.array(arr, order='C'))
-#        self.dev_buff[i] = cl.Buffer(self.env.ctx,
-#                                     memf.READ_ONLY | memf.USE_HOST_PTR,
-#                                     hostbuf=np.array(arr, order='C'))
+                                     memf.READ_WRITE | memf.COPY_HOST_PTR,
+                                     hostbuf=arr)
 
         arg = self.dev_buff[i]
         self.kernel.set_arg(i, arg)
 
 
     def set_output_buffer(self, i, arr):
-        def allocate_buffer(arr):
-            memf = cl.mem_flags
-            mapf = cl.map_flags
-            dev_buf = cl.Buffer(self.env.ctx,
-                                memf.WRITE_ONLY,
-                                size=arr.nbytes)
-            pin_buf = cl.Buffer(self.env.ctx,
-                                memf.WRITE_ONLY | memf.ALLOC_HOST_PTR,
-                                size=arr.nbytes)
-            (out_buf, ev) = cl.enqueue_map_buffer(self.env.queue, pin_buf,
-                                                  mapf.READ, 0, arr.shape,
-                                                  REAL, "C")
-#            return (dev_buf, out_buf)
-            return (pin_buf, out_buf)
+        memf = cl.mem_flags
+        self.dev_buff[i] = cl.Buffer(self.env.ctx,
+                                     memf.READ_WRITE | memf.COPY_HOST_PTR,
+                                     hostbuf=arr)
+        self.output_buffer[i] = arr
 
-        if not i in self.dev_buff:
-            (self.dev_buff[i], self.output_buffer[i]) = allocate_buffer(arr)
-            logger.debug("%s: allocating buffer for output arg #%d - %s.",
-                         self.kernel.function_name, i, self.dev_buff[i])
-        if arr.shape > self.output_buffer[i].shape:
-            (self.dev_buff[i], self.output_buffer[i]) = allocate_buffer(arr)
-            logger.debug("%s: reallocating buffer for output arg #%d - %s.",
-                         self.kernel.function_name, i, self.dev_buff[i])
-
-        self.output_shape[i] = arr.shape
         arg = self.dev_buff[i]
         self.kernel.set_arg(i, arg)
 
@@ -241,16 +185,11 @@ class CLKernel(object):
 
 
     def get_result(self):
-#        def getter(item):
-#            (i, shape) = item
-#            return self.dev_buff[i].get_host_array(shape, REAL)
+        def getter(i, arr):
+            cl.enqueue_copy(self.env.queue, arr, self.dev_buff[i])
+            return arr
 
-        def getter(item):
-            (i, shape) = item
-            cl.enqueue_copy(self.env.queue, self.output_buffer[i], self.dev_buff[i])
-            return self.output_buffer[i][:shape[0]]
-
-        return [getter(item) for item in self.output_shape.items()]
+        return [getter(i, arr) for i, arr in self.output_buffer.items()]
 
 
 
@@ -309,7 +248,7 @@ class CKernel(object):
         self.dev_args[i] = REAL(arg)
 
 
-    def set_input_buffer(self, i, arg):
+    def set_array(self, i, arg):
         self.dev_args[i] = arg
 
 
