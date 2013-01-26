@@ -76,6 +76,7 @@ class LLBIOS(object):
         ni = iobj.n
         nj = jobj.n
 
+        self.osize = ni
         if ni > self.max_output_size:
             self.drx = np.zeros(ni, dtype=REAL)
             self.dry = np.zeros(ni, dtype=REAL)
@@ -105,12 +106,12 @@ class LLBIOS(object):
         self.kernel.set_array(16, jobj.vz)
         self.kernel.set_array(17, jobj.eps2)
         self.kernel.set_float(18, dt)
-        self.kernel.set_output_buffer(19, self.drx[:ni])
-        self.kernel.set_output_buffer(20, self.dry[:ni])
-        self.kernel.set_output_buffer(21, self.drz[:ni])
-        self.kernel.set_output_buffer(22, self.dvx[:ni])
-        self.kernel.set_output_buffer(23, self.dvy[:ni])
-        self.kernel.set_output_buffer(24, self.dvz[:ni])
+        self.kernel.set_output_buffer(19, self.drx)
+        self.kernel.set_output_buffer(20, self.dry)
+        self.kernel.set_output_buffer(21, self.drz)
+        self.kernel.set_output_buffer(22, self.dvx)
+        self.kernel.set_output_buffer(23, self.dvy)
+        self.kernel.set_output_buffer(24, self.dvz)
 
 
     def run(self):
@@ -118,7 +119,9 @@ class LLBIOS(object):
 
 
     def get_result(self):
-        return self.kernel.get_result()
+        ni = self.osize
+        return [self.drx[:ni], self.dry[:ni], self.drz[:ni],
+                self.dvx[:ni], self.dvy[:ni], self.dvz[:ni]]
 
 
 

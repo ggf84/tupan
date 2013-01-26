@@ -62,6 +62,7 @@ class Phi(object):
         ni = iobj.n
         nj = jobj.n
 
+        self.osize = ni
         if ni > self.max_output_size:
             self.phi = np.zeros(ni, dtype=REAL)
             self.max_output_size = ni
@@ -85,7 +86,7 @@ class Phi(object):
         self.kernel.set_array(15, jobj.vy)
         self.kernel.set_array(16, jobj.vz)
         self.kernel.set_array(17, jobj.eps2)
-        self.kernel.set_output_buffer(18, self.phi[:ni])
+        self.kernel.set_output_buffer(18, self.phi)
 
 
     def run(self):
@@ -93,7 +94,8 @@ class Phi(object):
 
 
     def get_result(self):
-        return self.kernel.get_result()[0]
+        ni = self.osize
+        return self.phi[:ni]
 
 
 
@@ -124,6 +126,7 @@ class Acc(object):
         ni = iobj.n
         nj = jobj.n
 
+        self.osize = ni
         if ni > self.max_output_size:
             self.ax = np.zeros(ni, dtype=REAL)
             self.ay = np.zeros(ni, dtype=REAL)
@@ -149,9 +152,9 @@ class Acc(object):
         self.kernel.set_array(15, jobj.vy)
         self.kernel.set_array(16, jobj.vz)
         self.kernel.set_array(17, jobj.eps2)
-        self.kernel.set_output_buffer(18, self.ax[:ni])
-        self.kernel.set_output_buffer(19, self.ay[:ni])
-        self.kernel.set_output_buffer(20, self.az[:ni])
+        self.kernel.set_output_buffer(18, self.ax)
+        self.kernel.set_output_buffer(19, self.ay)
+        self.kernel.set_output_buffer(20, self.az)
 
 
     def run(self):
@@ -159,7 +162,8 @@ class Acc(object):
 
 
     def get_result(self):
-        return self.kernel.get_result()
+        ni = self.osize
+        return [self.ax[:ni], self.ay[:ni], self.az[:ni]]
 
 
 
@@ -193,6 +197,7 @@ class AccJerk(object):
         ni = iobj.n
         nj = jobj.n
 
+        self.osize = ni
         if ni > self.max_output_size:
             self.ax = np.zeros(ni, dtype=REAL)
             self.ay = np.zeros(ni, dtype=REAL)
@@ -221,12 +226,12 @@ class AccJerk(object):
         self.kernel.set_array(15, jobj.vy)
         self.kernel.set_array(16, jobj.vz)
         self.kernel.set_array(17, jobj.eps2)
-        self.kernel.set_output_buffer(18, self.ax[:ni])
-        self.kernel.set_output_buffer(19, self.ay[:ni])
-        self.kernel.set_output_buffer(20, self.az[:ni])
-        self.kernel.set_output_buffer(21, self.jx[:ni])
-        self.kernel.set_output_buffer(22, self.jy[:ni])
-        self.kernel.set_output_buffer(23, self.jz[:ni])
+        self.kernel.set_output_buffer(18, self.ax)
+        self.kernel.set_output_buffer(19, self.ay)
+        self.kernel.set_output_buffer(20, self.az)
+        self.kernel.set_output_buffer(21, self.jx)
+        self.kernel.set_output_buffer(22, self.jy)
+        self.kernel.set_output_buffer(23, self.jz)
 
 
     def run(self):
@@ -234,7 +239,9 @@ class AccJerk(object):
 
 
     def get_result(self):
-        return self.kernel.get_result()
+        ni = self.osize
+        return [self.ax[:ni], self.ay[:ni], self.az[:ni],
+                self.jx[:ni], self.jy[:ni], self.jz[:ni]]
 
 
 
@@ -263,6 +270,7 @@ class Tstep(object):
         ni = iobj.n
         nj = jobj.n
 
+        self.osize = ni
         if ni > self.max_output_size:
             self.tstep = np.zeros(ni, dtype=REAL)
             self.max_output_size = ni
@@ -287,7 +295,7 @@ class Tstep(object):
         self.kernel.set_array(16, jobj.vz)
         self.kernel.set_array(17, jobj.eps2)
         self.kernel.set_float(18, eta)
-        self.kernel.set_output_buffer(19, self.tstep[:ni])
+        self.kernel.set_output_buffer(19, self.tstep)
 
 
     def run(self):
@@ -295,7 +303,8 @@ class Tstep(object):
 
 
     def get_result(self):
-        return self.kernel.get_result()[0]
+        ni = self.osize
+        return self.tstep[:ni]
 
 
 
@@ -328,6 +337,7 @@ class PNAcc(object):
 
         clight = Clight(pn_order, clight)
 
+        self.osize = ni
         if ni > self.max_output_size:
             self.pnax = np.zeros(ni, dtype=REAL)
             self.pnay = np.zeros(ni, dtype=REAL)
@@ -361,9 +371,9 @@ class PNAcc(object):
         self.kernel.set_float(23, clight.inv5)
         self.kernel.set_float(24, clight.inv6)
         self.kernel.set_float(25, clight.inv7)
-        self.kernel.set_output_buffer(26, self.pnax[:ni])
-        self.kernel.set_output_buffer(27, self.pnay[:ni])
-        self.kernel.set_output_buffer(28, self.pnaz[:ni])
+        self.kernel.set_output_buffer(26, self.pnax)
+        self.kernel.set_output_buffer(27, self.pnay)
+        self.kernel.set_output_buffer(28, self.pnaz)
 
 
     def run(self):
@@ -371,7 +381,8 @@ class PNAcc(object):
 
 
     def get_result(self):
-        return self.kernel.get_result()
+        ni = self.osize
+        return [self.pnax[:ni], self.pnay[:ni], self.pnaz[:ni]]
 
 
 
@@ -423,8 +434,6 @@ class Acc2(object):
                                  np.ctypeslib.ndpointer(),
                                 ]
 
-        self.args = None
-
         self.ax = np.zeros(0, dtype=REAL)
         self.ay = np.zeros(0, dtype=REAL)
         self.az = np.zeros(0, dtype=REAL)
@@ -435,6 +444,7 @@ class Acc2(object):
         ni = iobj.n
         nj = jobj.n
 
+        self.osize = ni
         if ni > self.max_output_size:
             self.ax = np.zeros(ni, dtype=REAL)
             self.ay = np.zeros(ni, dtype=REAL)
@@ -456,7 +466,7 @@ class Acc2(object):
 
 
     def get_result(self):
-        ni = self.args[0]
+        ni = self.osize
         return [self.ax[:ni], self.ay[:ni], self.az[:ni]]
 
 

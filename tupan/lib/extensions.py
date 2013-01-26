@@ -11,6 +11,7 @@ import os
 import sys
 import logging
 from functools import reduce
+from collections import OrderedDict
 import numpy as np
 import pyopencl as cl
 from .utils.timing import decallmethods, timings
@@ -83,12 +84,10 @@ class CLKernel(object):
     def __init__(self, env, kernel):
         self.env = env
         self.kernel = kernel
+        self.dev_buff = {}
         self._lsize = None
         self._lsize_max = None
         self._gsize = None
-        self.dev_buff = {}
-        self.input_buffer = {}
-        self.output_buffer = {}
 
 
     @property
@@ -168,9 +167,8 @@ class CLKernel(object):
     def set_output_buffer(self, i, arr):
         memf = cl.mem_flags
         self.dev_buff[i] = cl.Buffer(self.env.ctx,
-                                     memf.READ_WRITE | memf.COPY_HOST_PTR,
+                                     memf.READ_WRITE | memf.USE_HOST_PTR,
                                      hostbuf=arr)
-        self.output_buffer[i] = arr
 
         arg = self.dev_buff[i]
         self.kernel.set_arg(i, arg)
@@ -182,14 +180,6 @@ class CLKernel(object):
                                    self.global_size,
                                    None,#self.local_size,
                                   ).wait()
-
-
-    def get_result(self):
-        def getter(i, arr):
-            cl.enqueue_copy(self.env.queue, arr, self.dev_buff[i])
-            return arr
-
-        return [getter(i, arr) for i, arr in self.output_buffer.items()]
 
 
 
@@ -233,11 +223,7 @@ class CKernel(object):
     def __init__(self, env, kernel):
         self.env = env
         self.kernel = kernel
-        self.dev_args = {}
-        self.res_ids = {}
-        self._lsize = None
-        self._lsize_max = None
-        self._gsize = None
+        self.dev_args = OrderedDict()
 
 
     def set_int(self, i, arg):
@@ -254,7 +240,6 @@ class CKernel(object):
 
     def set_output_buffer(self, i, arg):
         self.dev_args[i] = arg
-        self.res_ids[i] = i
 
 
     def set_local_memory(self, i, arg):
@@ -264,10 +249,6 @@ class CKernel(object):
     def run(self):
         args = self.dev_args.values()
         self.kernel(*args)
-
-
-    def get_result(self):
-        return [self.dev_args[i] for i in self.res_ids.values()]
 
 
 

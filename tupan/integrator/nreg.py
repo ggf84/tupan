@@ -77,6 +77,7 @@ class LLNREG_X(object):
         ni = iobj.n
         nj = jobj.n
 
+        self.osize = ni
         if ni > self.max_output_size:
             self.rx = np.zeros(ni, dtype=REAL)
             self.ry = np.zeros(ni, dtype=REAL)
@@ -107,13 +108,13 @@ class LLNREG_X(object):
         self.kernel.set_array(16, jobj.vz)
         self.kernel.set_array(17, jobj.eps2)
         self.kernel.set_float(18, dt)
-        self.kernel.set_output_buffer(19, self.rx[:ni])
-        self.kernel.set_output_buffer(20, self.ry[:ni])
-        self.kernel.set_output_buffer(21, self.rz[:ni])
-        self.kernel.set_output_buffer(22, self.ax[:ni])
-        self.kernel.set_output_buffer(23, self.ay[:ni])
-        self.kernel.set_output_buffer(24, self.az[:ni])
-        self.kernel.set_output_buffer(25, self.u[:ni])
+        self.kernel.set_output_buffer(19, self.rx)
+        self.kernel.set_output_buffer(20, self.ry)
+        self.kernel.set_output_buffer(21, self.rz)
+        self.kernel.set_output_buffer(22, self.ax)
+        self.kernel.set_output_buffer(23, self.ay)
+        self.kernel.set_output_buffer(24, self.az)
+        self.kernel.set_output_buffer(25, self.u)
 
 
     def run(self):
@@ -121,9 +122,10 @@ class LLNREG_X(object):
 
 
     def get_result(self):
-        (rx, ry, rz, ax, ay, az, u) = self.kernel.get_result()
-        U = 0.5 * u.sum()
-        return (rx, ry, rz, ax, ay, az, U)
+        ni = self.osize
+        return [self.rx[:ni], self.ry[:ni], self.rz[:ni],
+                self.ax[:ni], self.ay[:ni], self.az[:ni],
+                0.5 * self.u[:ni].sum()]
 
 
 @decallmethods(timings)
@@ -153,6 +155,7 @@ class LLNREG_V(object):
         ni = iobj.n
         nj = jobj.n
 
+        self.osize = ni
         if ni > self.max_output_size:
             self.vx = np.zeros(ni, dtype=REAL)
             self.vy = np.zeros(ni, dtype=REAL)
@@ -178,10 +181,10 @@ class LLNREG_V(object):
         self.kernel.set_array(14, jobj.ay)
         self.kernel.set_array(15, jobj.az)
         self.kernel.set_float(16, dt)
-        self.kernel.set_output_buffer(17, self.vx[:ni])
-        self.kernel.set_output_buffer(18, self.vy[:ni])
-        self.kernel.set_output_buffer(19, self.vz[:ni])
-        self.kernel.set_output_buffer(20, self.k[:ni])
+        self.kernel.set_output_buffer(17, self.vx)
+        self.kernel.set_output_buffer(18, self.vy)
+        self.kernel.set_output_buffer(19, self.vz)
+        self.kernel.set_output_buffer(20, self.k)
 
 
     def run(self):
@@ -189,9 +192,9 @@ class LLNREG_V(object):
 
 
     def get_result(self):
-        (vx, vy, vz, k) = self.kernel.get_result()
-        K = 0.5 * k.sum()
-        return (vx, vy, vz, K)
+        ni = self.osize
+        return [self.vx[:ni], self.vy[:ni], self.vz[:ni],
+                0.5 * self.k[:ni].sum()]
 
 
 llnreg_x = LLNREG_X(kernels)
