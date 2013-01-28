@@ -280,34 +280,38 @@ class NREG(Base):
         super(NREG, self).__init__(eta, time, particles, **kwargs)
         self.U = None
         self.W = None
+        self.S = None
 
 
     def do_step(self, p, tau):
         """
 
         """
-        def do_nsteps(p, tau, W, U, nsteps):
+        def do_nsteps(p, tau, W, U, S, nsteps, gamma=0.5):
             t = 0.0
-            dtau = tau / nsteps
+            h = tau / nsteps
             for i in range(nsteps):
-                S = W + 0.5 * dtau * (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum()
-                tt, W, U = nreg_step(p, S*dtau, W, U)
+                S += 0.5 * (h/(abs(W)**gamma)) * (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
+                tt, W, U = nreg_step(p, h/(abs(S)**gamma), W, U)
+                S += 0.5 * (h/(abs(W)**gamma)) * (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
                 t += tt
-            return p, t, W, U
+            return p, t, W, U, S
 
 
 #        i = 1
-#        tol = max(min(2.0**(-12), tau**2), 2.0**(-32))
+#        tol = 1.0e-2#max(min(2.0**(-12), tau**2), 2.0**(-32))
 #        while True:
 #            U = self.U
 #            W = self.W
+#            S = self.S
 #            p0 = p.copy()
-#            p0, t, W, U = do_nsteps(p0, tau, W, U, i)
+#            p0, t, W, U, S = do_nsteps(p0, tau, W, U, S, i)
 #            i *= 2
 #            if abs(W-U)/U < tol:
-#                if abs(t-tau)/tau < tol:
-#                    break
+##                if abs(t-tau)/tau < tol:
+#                break
 #
+#        self.S = S
 #        self.W = W
 #        self.U = U
 #        p = p0.copy()
@@ -316,11 +320,13 @@ class NREG(Base):
 
         U = self.U
         W = self.W
-        p, t, W, U = do_nsteps(p, tau, W, U, 1)
+        S = self.S
+        p, t, W, U, S = do_nsteps(p, tau, W, U, S, 64)
+        self.S = S
         self.W = W
         self.U = U
 
-#        print(self.W, self.U, abs(self.W-self.U))
+#        print(self.W, self.U, self.S, abs(self.W-self.U))
 
         p.tstep = t
         p.time += t
@@ -343,6 +349,7 @@ class NREG(Base):
         K = nreg_v(p, 0.0)
         self.U = U
         self.W = U
+        self.S = U
 
 
 #        if self.dumpper:
