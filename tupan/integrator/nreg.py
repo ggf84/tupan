@@ -54,13 +54,6 @@ class LLNREG_X(object):
     def __init__(self, libnreg):
         self.kernel = libnreg.nreg_Xkernel
         self.kernel.local_size = 512
-        self.rx = np.zeros(0, dtype=REAL)
-        self.ry = np.zeros(0, dtype=REAL)
-        self.rz = np.zeros(0, dtype=REAL)
-        self.ax = np.zeros(0, dtype=REAL)
-        self.ay = np.zeros(0, dtype=REAL)
-        self.az = np.zeros(0, dtype=REAL)
-        self.u = np.zeros(0, dtype=REAL)
         self.max_output_size = 0
 
 #        self.kernel.set_local_memory(26, 1)
@@ -76,17 +69,6 @@ class LLNREG_X(object):
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
-
-        self.osize = ni
-        if ni > self.max_output_size:
-            self.rx = np.zeros(ni, dtype=REAL)
-            self.ry = np.zeros(ni, dtype=REAL)
-            self.rz = np.zeros(ni, dtype=REAL)
-            self.ax = np.zeros(ni, dtype=REAL)
-            self.ay = np.zeros(ni, dtype=REAL)
-            self.az = np.zeros(ni, dtype=REAL)
-            self.u = np.zeros(ni, dtype=REAL)
-            self.max_output_size = ni
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -108,13 +90,17 @@ class LLNREG_X(object):
         self.kernel.set_array(16, jobj.vz)
         self.kernel.set_array(17, jobj.eps2)
         self.kernel.set_float(18, dt)
-        self.kernel.set_output_buffer(19, self.rx)
-        self.kernel.set_output_buffer(20, self.ry)
-        self.kernel.set_output_buffer(21, self.rz)
-        self.kernel.set_output_buffer(22, self.ax)
-        self.kernel.set_output_buffer(23, self.ay)
-        self.kernel.set_output_buffer(24, self.az)
-        self.kernel.set_output_buffer(25, self.u)
+
+        self.osize = ni
+        if ni > self.max_output_size:
+            self.rx = self.kernel.allocate_buffer(19, ni)
+            self.ry = self.kernel.allocate_buffer(20, ni)
+            self.rz = self.kernel.allocate_buffer(21, ni)
+            self.ax = self.kernel.allocate_buffer(22, ni)
+            self.ay = self.kernel.allocate_buffer(23, ni)
+            self.az = self.kernel.allocate_buffer(24, ni)
+            self.u = self.kernel.allocate_buffer(25, ni)
+            self.max_output_size = ni
 
 
     def run(self):
@@ -123,6 +109,13 @@ class LLNREG_X(object):
 
     def get_result(self):
         ni = self.osize
+        self.kernel.map_buffer(19, self.rx)
+        self.kernel.map_buffer(20, self.ry)
+        self.kernel.map_buffer(21, self.rz)
+        self.kernel.map_buffer(22, self.ax)
+        self.kernel.map_buffer(23, self.ay)
+        self.kernel.map_buffer(24, self.az)
+        self.kernel.map_buffer(25, self.u)
         return [self.rx[:ni], self.ry[:ni], self.rz[:ni],
                 self.ax[:ni], self.ay[:ni], self.az[:ni],
                 0.5 * self.u[:ni].sum()]
@@ -136,10 +129,6 @@ class LLNREG_V(object):
     def __init__(self, libnreg):
         self.kernel = libnreg.nreg_Vkernel
         self.kernel.local_size = 512
-        self.vx = np.zeros(0, dtype=REAL)
-        self.vy = np.zeros(0, dtype=REAL)
-        self.vz = np.zeros(0, dtype=REAL)
-        self.k = np.zeros(0, dtype=REAL)
         self.max_output_size = 0
 
 #        self.kernel.set_local_memory(21, 1)
@@ -154,14 +143,6 @@ class LLNREG_V(object):
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
-
-        self.osize = ni
-        if ni > self.max_output_size:
-            self.vx = np.zeros(ni, dtype=REAL)
-            self.vy = np.zeros(ni, dtype=REAL)
-            self.vz = np.zeros(ni, dtype=REAL)
-            self.k = np.zeros(ni, dtype=REAL)
-            self.max_output_size = ni
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -181,10 +162,14 @@ class LLNREG_V(object):
         self.kernel.set_array(14, jobj.ay)
         self.kernel.set_array(15, jobj.az)
         self.kernel.set_float(16, dt)
-        self.kernel.set_output_buffer(17, self.vx)
-        self.kernel.set_output_buffer(18, self.vy)
-        self.kernel.set_output_buffer(19, self.vz)
-        self.kernel.set_output_buffer(20, self.k)
+
+        self.osize = ni
+        if ni > self.max_output_size:
+            self.vx = self.kernel.allocate_buffer(17, ni)
+            self.vy = self.kernel.allocate_buffer(18, ni)
+            self.vz = self.kernel.allocate_buffer(19, ni)
+            self.k = self.kernel.allocate_buffer(20, ni)
+            self.max_output_size = ni
 
 
     def run(self):
@@ -193,6 +178,10 @@ class LLNREG_V(object):
 
     def get_result(self):
         ni = self.osize
+        self.kernel.map_buffer(17, self.vx)
+        self.kernel.map_buffer(18, self.vy)
+        self.kernel.map_buffer(19, self.vz)
+        self.kernel.map_buffer(20, self.k)
         return [self.vx[:ni], self.vy[:ni], self.vz[:ni],
                 0.5 * self.k[:ni].sum()]
 

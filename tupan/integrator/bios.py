@@ -54,12 +54,6 @@ class LLBIOS(object):
     def __init__(self):
         self.kernel = kernels.bios_kernel
         self.kernel.local_size = 512
-        self.drx = np.zeros(0, dtype=REAL)
-        self.dry = np.zeros(0, dtype=REAL)
-        self.drz = np.zeros(0, dtype=REAL)
-        self.dvx = np.zeros(0, dtype=REAL)
-        self.dvy = np.zeros(0, dtype=REAL)
-        self.dvz = np.zeros(0, dtype=REAL)
         self.max_output_size = 0
 
         self.kernel.set_local_memory(25, 1)
@@ -75,16 +69,6 @@ class LLBIOS(object):
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
-
-        self.osize = ni
-        if ni > self.max_output_size:
-            self.drx = np.zeros(ni, dtype=REAL)
-            self.dry = np.zeros(ni, dtype=REAL)
-            self.drz = np.zeros(ni, dtype=REAL)
-            self.dvx = np.zeros(ni, dtype=REAL)
-            self.dvy = np.zeros(ni, dtype=REAL)
-            self.dvz = np.zeros(ni, dtype=REAL)
-            self.max_output_size = ni
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -106,12 +90,16 @@ class LLBIOS(object):
         self.kernel.set_array(16, jobj.vz)
         self.kernel.set_array(17, jobj.eps2)
         self.kernel.set_float(18, dt)
-        self.kernel.set_output_buffer(19, self.drx)
-        self.kernel.set_output_buffer(20, self.dry)
-        self.kernel.set_output_buffer(21, self.drz)
-        self.kernel.set_output_buffer(22, self.dvx)
-        self.kernel.set_output_buffer(23, self.dvy)
-        self.kernel.set_output_buffer(24, self.dvz)
+
+        self.osize = ni
+        if ni > self.max_output_size:
+            self.drx = self.kernel.allocate_buffer(19, ni)
+            self.dry = self.kernel.allocate_buffer(20, ni)
+            self.drz = self.kernel.allocate_buffer(21, ni)
+            self.dvx = self.kernel.allocate_buffer(22, ni)
+            self.dvy = self.kernel.allocate_buffer(23, ni)
+            self.dvz = self.kernel.allocate_buffer(24, ni)
+            self.max_output_size = ni
 
 
     def run(self):
@@ -120,6 +108,12 @@ class LLBIOS(object):
 
     def get_result(self):
         ni = self.osize
+        self.kernel.map_buffer(19, self.drx)
+        self.kernel.map_buffer(20, self.dry)
+        self.kernel.map_buffer(21, self.drz)
+        self.kernel.map_buffer(22, self.dvx)
+        self.kernel.map_buffer(23, self.dvy)
+        self.kernel.map_buffer(24, self.dvz)
         return [self.drx[:ni], self.dry[:ni], self.drz[:ni],
                 self.dvx[:ni], self.dvy[:ni], self.dvz[:ni]]
 

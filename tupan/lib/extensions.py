@@ -164,14 +164,27 @@ class CLKernel(object):
         self.kernel.set_arg(i, arg)
 
 
-    def set_output_buffer(self, i, arr):
+    def allocate_buffer(self, i, shape):
         memf = cl.mem_flags
+        arr = np.zeros(shape, dtype=REAL)
         self.dev_buff[i] = cl.Buffer(self.env.ctx,
                                      memf.READ_WRITE | memf.USE_HOST_PTR,
                                      hostbuf=arr)
-
+#                                     memf.READ_WRITE | memf.ALLOC_HOST_PTR,
+#                                     size=arr.nbytes)
         arg = self.dev_buff[i]
         self.kernel.set_arg(i, arg)
+        return arr
+
+
+    def map_buffer(self, i, arr):
+        mapf = cl.map_flags
+        (pointer, ev) = cl.enqueue_map_buffer(self.env.queue, self.dev_buff[i],
+                                              mapf.READ, 0, arr.shape,
+                                              arr.dtype, "C")
+        ev.wait()
+
+#        cl.enqueue_copy(self.env.queue, arr, self.dev_buff[i])
 
 
     def run(self):
@@ -226,6 +239,10 @@ class CKernel(object):
         self.dev_args = OrderedDict()
 
 
+    def set_local_memory(self, i, arg):
+        pass
+
+
     def set_int(self, i, arg):
         self.dev_args[i] = UINT(arg)
 
@@ -238,11 +255,13 @@ class CKernel(object):
         self.dev_args[i] = arg
 
 
-    def set_output_buffer(self, i, arg):
+    def allocate_buffer(self, i, shape):
+        arg = np.zeros(shape, dtype=REAL)
         self.dev_args[i] = arg
+        return arg
 
 
-    def set_local_memory(self, i, arg):
+    def map_buffer(self, i, arr):
         pass
 
 

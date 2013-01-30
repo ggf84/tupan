@@ -45,7 +45,6 @@ class Phi(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_phi_kernel
         self.kernel.local_size = 512
-        self.phi = np.zeros(0, dtype=REAL)
         self.max_output_size = 0
 
         self.kernel.set_local_memory(19, 1)
@@ -62,11 +61,6 @@ class Phi(object):
         ni = iobj.n
         nj = jobj.n
 
-        self.osize = ni
-        if ni > self.max_output_size:
-            self.phi = np.zeros(ni, dtype=REAL)
-            self.max_output_size = ni
-
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
         self.kernel.set_array(1, iobj.x)
@@ -86,7 +80,11 @@ class Phi(object):
         self.kernel.set_array(15, jobj.vy)
         self.kernel.set_array(16, jobj.vz)
         self.kernel.set_array(17, jobj.eps2)
-        self.kernel.set_output_buffer(18, self.phi)
+
+        self.osize = ni
+        if ni > self.max_output_size:
+            self.phi = self.kernel.allocate_buffer(18, ni)
+            self.max_output_size = ni
 
 
     def run(self):
@@ -95,6 +93,7 @@ class Phi(object):
 
     def get_result(self):
         ni = self.osize
+        self.kernel.map_buffer(18, self.phi)
         return self.phi[:ni]
 
 
@@ -107,9 +106,6 @@ class Acc(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_acc_kernel
         self.kernel.local_size = 512
-        self.ax = np.zeros(0, dtype=REAL)
-        self.ay = np.zeros(0, dtype=REAL)
-        self.az = np.zeros(0, dtype=REAL)
         self.max_output_size = 0
 
         self.kernel.set_local_memory(21, 1)
@@ -126,13 +122,6 @@ class Acc(object):
         ni = iobj.n
         nj = jobj.n
 
-        self.osize = ni
-        if ni > self.max_output_size:
-            self.ax = np.zeros(ni, dtype=REAL)
-            self.ay = np.zeros(ni, dtype=REAL)
-            self.az = np.zeros(ni, dtype=REAL)
-            self.max_output_size = ni
-
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
         self.kernel.set_array(1, iobj.x)
@@ -152,9 +141,13 @@ class Acc(object):
         self.kernel.set_array(15, jobj.vy)
         self.kernel.set_array(16, jobj.vz)
         self.kernel.set_array(17, jobj.eps2)
-        self.kernel.set_output_buffer(18, self.ax)
-        self.kernel.set_output_buffer(19, self.ay)
-        self.kernel.set_output_buffer(20, self.az)
+
+        self.osize = ni
+        if ni > self.max_output_size:
+            self.ax = self.kernel.allocate_buffer(18, ni)
+            self.ay = self.kernel.allocate_buffer(19, ni)
+            self.az = self.kernel.allocate_buffer(20, ni)
+            self.max_output_size = ni
 
 
     def run(self):
@@ -163,6 +156,9 @@ class Acc(object):
 
     def get_result(self):
         ni = self.osize
+        self.kernel.map_buffer(18, self.ax)
+        self.kernel.map_buffer(19, self.ay)
+        self.kernel.map_buffer(20, self.az)
         return [self.ax[:ni], self.ay[:ni], self.az[:ni]]
 
 
@@ -175,12 +171,6 @@ class AccJerk(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_acc_jerk_kernel
         self.kernel.local_size = 512
-        self.ax = np.zeros(0, dtype=REAL)
-        self.ay = np.zeros(0, dtype=REAL)
-        self.az = np.zeros(0, dtype=REAL)
-        self.jx = np.zeros(0, dtype=REAL)
-        self.jy = np.zeros(0, dtype=REAL)
-        self.jz = np.zeros(0, dtype=REAL)
         self.max_output_size = 0
 
         self.kernel.set_local_memory(24, 1)
@@ -197,16 +187,6 @@ class AccJerk(object):
         ni = iobj.n
         nj = jobj.n
 
-        self.osize = ni
-        if ni > self.max_output_size:
-            self.ax = np.zeros(ni, dtype=REAL)
-            self.ay = np.zeros(ni, dtype=REAL)
-            self.az = np.zeros(ni, dtype=REAL)
-            self.jx = np.zeros(ni, dtype=REAL)
-            self.jy = np.zeros(ni, dtype=REAL)
-            self.jz = np.zeros(ni, dtype=REAL)
-            self.max_output_size = ni
-
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
         self.kernel.set_array(1, iobj.x)
@@ -226,12 +206,16 @@ class AccJerk(object):
         self.kernel.set_array(15, jobj.vy)
         self.kernel.set_array(16, jobj.vz)
         self.kernel.set_array(17, jobj.eps2)
-        self.kernel.set_output_buffer(18, self.ax)
-        self.kernel.set_output_buffer(19, self.ay)
-        self.kernel.set_output_buffer(20, self.az)
-        self.kernel.set_output_buffer(21, self.jx)
-        self.kernel.set_output_buffer(22, self.jy)
-        self.kernel.set_output_buffer(23, self.jz)
+
+        self.osize = ni
+        if ni > self.max_output_size:
+            self.ax = self.kernel.allocate_buffer(18, ni)
+            self.ay = self.kernel.allocate_buffer(19, ni)
+            self.az = self.kernel.allocate_buffer(20, ni)
+            self.jx = self.kernel.allocate_buffer(21, ni)
+            self.jy = self.kernel.allocate_buffer(22, ni)
+            self.jz = self.kernel.allocate_buffer(23, ni)
+            self.max_output_size = ni
 
 
     def run(self):
@@ -240,6 +224,12 @@ class AccJerk(object):
 
     def get_result(self):
         ni = self.osize
+        self.kernel.map_buffer(18, self.ax)
+        self.kernel.map_buffer(19, self.ay)
+        self.kernel.map_buffer(20, self.az)
+        self.kernel.map_buffer(21, self.jx)
+        self.kernel.map_buffer(22, self.jy)
+        self.kernel.map_buffer(23, self.jz)
         return [self.ax[:ni], self.ay[:ni], self.az[:ni],
                 self.jx[:ni], self.jy[:ni], self.jz[:ni]]
 
@@ -253,7 +243,6 @@ class Tstep(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_tstep_kernel
         self.kernel.local_size = 512
-        self.tstep = np.zeros(0, dtype=REAL)
         self.max_output_size = 0
 
         self.kernel.set_local_memory(20, 1)
@@ -269,11 +258,6 @@ class Tstep(object):
     def set_args(self, iobj, jobj, eta):
         ni = iobj.n
         nj = jobj.n
-
-        self.osize = ni
-        if ni > self.max_output_size:
-            self.tstep = np.zeros(ni, dtype=REAL)
-            self.max_output_size = ni
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -295,7 +279,11 @@ class Tstep(object):
         self.kernel.set_array(16, jobj.vz)
         self.kernel.set_array(17, jobj.eps2)
         self.kernel.set_float(18, eta)
-        self.kernel.set_output_buffer(19, self.tstep)
+
+        self.osize = ni
+        if ni > self.max_output_size:
+            self.tstep = self.kernel.allocate_buffer(19, ni)
+            self.max_output_size = ni
 
 
     def run(self):
@@ -304,6 +292,7 @@ class Tstep(object):
 
     def get_result(self):
         ni = self.osize
+        self.kernel.map_buffer(19, self.tstep)
         return self.tstep[:ni]
 
 
@@ -316,9 +305,6 @@ class PNAcc(object):
     def __init__(self, libgrav):
         self.kernel = libgrav.p2p_pnacc_kernel
         self.kernel.local_size = 512
-        self.pnax = np.zeros(0, dtype=REAL)
-        self.pnay = np.zeros(0, dtype=REAL)
-        self.pnaz = np.zeros(0, dtype=REAL)
         self.max_output_size = 0
 
         self.kernel.set_local_memory(29, 1)
@@ -336,13 +322,6 @@ class PNAcc(object):
         nj = jobj.n
 
         clight = Clight(pn_order, clight)
-
-        self.osize = ni
-        if ni > self.max_output_size:
-            self.pnax = np.zeros(ni, dtype=REAL)
-            self.pnay = np.zeros(ni, dtype=REAL)
-            self.pnaz = np.zeros(ni, dtype=REAL)
-            self.max_output_size = ni
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -371,9 +350,13 @@ class PNAcc(object):
         self.kernel.set_float(23, clight.inv5)
         self.kernel.set_float(24, clight.inv6)
         self.kernel.set_float(25, clight.inv7)
-        self.kernel.set_output_buffer(26, self.pnax)
-        self.kernel.set_output_buffer(27, self.pnay)
-        self.kernel.set_output_buffer(28, self.pnaz)
+
+        self.osize = ni
+        if ni > self.max_output_size:
+            self.pnax = self.kernel.allocate_buffer(26, ni)
+            self.pnay = self.kernel.allocate_buffer(27, ni)
+            self.pnaz = self.kernel.allocate_buffer(28, ni)
+            self.max_output_size = ni
 
 
     def run(self):
@@ -382,6 +365,9 @@ class PNAcc(object):
 
     def get_result(self):
         ni = self.osize
+        self.kernel.map_buffer(26, self.pnax)
+        self.kernel.map_buffer(27, self.pnay)
+        self.kernel.map_buffer(28, self.pnaz)
         return [self.pnax[:ni], self.pnay[:ni], self.pnaz[:ni]]
 
 
