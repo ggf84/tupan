@@ -227,7 +227,7 @@ main_p2p_tstep_kernel(const unsigned int ni,
 }
 
 
-#ifndef __USE_CTYPES__
+#ifndef USE_CTYPES
 static PyObject *
 p2p_tstep_kernel(PyObject *_self, PyObject *_args)
 {
@@ -365,7 +365,7 @@ p2p_tstep_kernel(PyObject *_self, PyObject *_args)
     Py_INCREF(Py_None);
     return Py_None;
 }
-#endif  // __USE_CTYPES__
+#endif  // USE_CTYPES
 
 #endif  // __OPENCL_VERSION__
 

@@ -46,7 +46,7 @@ class CLModule(object):
         dirname = os.path.dirname(__file__)
         abspath = os.path.abspath(dirname)
         path = os.path.join(abspath, "src")
-        src_file = "libcl_gravity.cl"
+        src_file = "libtupan.cl"
         fname = os.path.join(path, src_file)
         with open(fname, 'r') as fobj:
             src = fobj.read()
@@ -54,7 +54,7 @@ class CLModule(object):
         self.path = path
 
 
-    def build(self, junroll=8):
+    def build(self, junroll=2):
         prec = "double" if REAL is np.float64 else "single"
         logger.debug("Building %s precision CL extension module.", prec)
 
@@ -108,31 +108,7 @@ class CLKernel(object):
 
     @global_size.setter
     def global_size(self, ni):
-#        gsize = 0
-#        lsize = 0
-#        ngroups = 1
-#        lsize_max = self._lsize_max
-#        while gsize < ni and lsize < lsize_max:
-#            ngroups += 1
-##            lsize = ((ni-1)//ngroups + 1)
-#            lsize = ((ni-1)//ngroups + 1)
-#            gsize = lsize * ngroups
-
-        gsize = ((ni-1)//8 + 1) * 8
-
-
-#        lsize_max = self._lsize_max
-##        ngroups = ((ni-1)//lsize_max + 1)
-##        ngroups = ((ni-1) + lsize_max)//lsize_max
-##        ngroups = int((ni-1)**0.5 + 1)
-##        ngroups = int(ni**0.5)
-##        lsize = ((ni-1)//ngroups + 1)
-#        lsize = min(lsize_max, (ni+1)//2)
-#        ngroups = (ni+1)//lsize
-#        gsize = lsize * ngroups
-
-#        self._lsize = lsize
-        self._gsize = gsize
+        self._gsize = ((ni-1)//2 + 1) * 2
 
 
     def set_local_memory(self, i, arg):
@@ -216,9 +192,9 @@ class CModule(object):
         logger.debug("Building %s precision C extension module.", prec)
 
         if prec is "double":
-            from tupan.lib import libTupanDP as program
+            from tupan.lib import libcpyTupanDP as program
         else:
-            from tupan.lib import libTupanSP as program
+            from tupan.lib import libcpyTupanSP as program
         self.program = program
 
         logger.debug("done.")
@@ -273,7 +249,7 @@ class CKernel(object):
 
 libkernels = {}
 libkernels["c"] = CModule(CEnv(fast_math=True)).build()
-libkernels["cl"] = CLModule(CLEnv(fast_math=True)).build(junroll=8)
+libkernels["cl"] = CLModule(CLEnv(fast_math=True)).build(junroll=2)
 
 
 def get_extension(use_sp=False, use_cl=False):

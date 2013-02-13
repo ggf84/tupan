@@ -17,23 +17,23 @@ with open(os.path.join('tupan', 'version.py'), 'r') as fobj:
 
 extension_modules = []
 path = os.path.join('tupan', 'lib', 'src')
-extension_modules.append(Extension('tupan.lib.libTupanSP',
+extension_modules.append(Extension('tupan.lib.libcpyTupanSP',
                              define_macros = [],
                              include_dirs = [os.sep+path],
                              libraries = ['m'],
-                             sources=[os.path.join(path, 'libc_gravity.c')]))
-extension_modules.append(Extension('tupan.lib.libTupanDP',
+                             sources=[os.path.join(path, 'libtupan.c')]))
+extension_modules.append(Extension('tupan.lib.libcpyTupanDP',
                              define_macros = [("DOUBLE", None)],
                              include_dirs = [os.sep+path],
                              libraries = ['m'],
-                             sources=[os.path.join(path, 'libc_gravity.c')]))
-extension_modules.append(Extension('tupan.lib.libtupan_sp',
-                             define_macros = [("__USE_CTYPES__", None)],
+                             sources=[os.path.join(path, 'libtupan.c')]))
+extension_modules.append(Extension('tupan.lib.libcTupanSP',
+                             define_macros = [("USE_CTYPES", None)],
                              include_dirs = [os.sep+path],
                              libraries = ['m'],
                              sources=[os.path.join(path, 'libtupan.c')]))
-extension_modules.append(Extension('tupan.lib.libtupan_dp',
-                             define_macros = [("DOUBLE", None), ("__USE_CTYPES__", None)],
+extension_modules.append(Extension('tupan.lib.libcTupanDP',
+                             define_macros = [("DOUBLE", None), ("USE_CTYPES", None)],
                              include_dirs = [os.sep+path],
                              libraries = ['m'],
                              sources=[os.path.join(path, 'libtupan.c')]))

@@ -328,6 +328,9 @@ __kernel void nreg_Vkernel(const uint ni,
 //
 // nreg_Xkernel
 ////////////////////////////////////////////////////////////////////////////////
+
+
+#ifndef USE_CTYPES
 static PyObject *
 nreg_Xkernel(PyObject *_self, PyObject *_args)
 {
@@ -515,10 +518,14 @@ nreg_Xkernel(PyObject *_self, PyObject *_args)
     Py_INCREF(Py_None);
     return Py_None;
 }
+#endif  // USE_CTYPES
 
 //
 // nreg_Vkernel
 ////////////////////////////////////////////////////////////////////////////////
+
+
+#ifndef USE_CTYPES
 static PyObject *
 nreg_Vkernel(PyObject *_self, PyObject *_args)
 {
@@ -675,6 +682,7 @@ nreg_Vkernel(PyObject *_self, PyObject *_args)
     Py_INCREF(Py_None);
     return Py_None;
 }
+#endif  // USE_CTYPES
 
 #endif  // __OPENCL_VERSION__
 

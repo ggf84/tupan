@@ -216,6 +216,9 @@ __kernel void p2p_pnacc_kernel(const uint ni,
 //
 // C implementation
 ////////////////////////////////////////////////////////////////////////////////
+
+
+#ifndef USE_CTYPES
 static PyObject *
 p2p_pnacc_kernel(PyObject *_self, PyObject *_args)
 {
@@ -378,6 +381,7 @@ p2p_pnacc_kernel(PyObject *_self, PyObject *_args)
     Py_INCREF(Py_None);
     return Py_None;
 }
+#endif  // USE_CTYPES
 
 #endif  // __OPENCL_VERSION__
 

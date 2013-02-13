@@ -393,7 +393,7 @@ class Acc2(object):
 
         dirname = os.path.dirname(__file__)
         path = os.path.abspath(dirname)
-        self.get_acc = np.ctypeslib.load_library("libtupan_dp", path).main_p2p_acc_kernel
+        self.get_acc = np.ctypeslib.load_library("libcTupanDP", path).main_p2p_acc_kernel
 
         self.get_acc.restype = None
         self.get_acc.argtypes = [ctypes.c_uint,
