@@ -47,6 +47,8 @@ try:
     ffi_dp, clib_dp = wrap_lib("double")
 except Exception as exc:
     print(str(exc), file=sys.stderr)
+    ffi_sp, clib_sp = None, None
+    ffi_dp, clib_dp = None, None
 
 
 def get_extensions():
