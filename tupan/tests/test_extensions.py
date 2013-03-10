@@ -39,8 +39,10 @@ def set_particles(npart):
 
 class TestCase(unittest.TestCase):
 
-    small_system = set_particles(16)
-    large_system = set_particles(1024)
+    @classmethod
+    def setUpClass(cls):
+        cls.small_system = set_particles(16)
+        cls.large_system = set_particles(1024)
 
 
     def test01(self):
