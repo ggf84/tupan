@@ -328,364 +328,69 @@ __kernel void nreg_Vkernel(const uint ni,
 //
 // nreg_Xkernel
 ////////////////////////////////////////////////////////////////////////////////
-
-
-#ifndef USE_CTYPES
-static PyObject *
-nreg_Xkernel(PyObject *_self, PyObject *_args)
+inline void
+nreg_Xkernel(const unsigned int ni,
+             const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
+             const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+             const unsigned int nj,
+             const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
+             const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
+             const REAL dt,
+             REAL *new_irx, REAL *new_iry, REAL *new_irz,
+             REAL *iax, REAL *iay, REAL *iaz,
+             REAL *iu)
 {
-    unsigned int ni, nj;
-    REAL dt;
-    // i-objs
-    PyObject *inp_irx = NULL;
-    PyObject *inp_iry = NULL;
-    PyObject *inp_irz = NULL;
-    PyObject *inp_imass = NULL;
-    PyObject *inp_ivx = NULL;
-    PyObject *inp_ivy = NULL;
-    PyObject *inp_ivz = NULL;
-    PyObject *inp_ieps2 = NULL;
-    // j-objs
-    PyObject *inp_jrx = NULL;
-    PyObject *inp_jry = NULL;
-    PyObject *inp_jrz = NULL;
-    PyObject *inp_jmass = NULL;
-    PyObject *inp_jvx = NULL;
-    PyObject *inp_jvy = NULL;
-    PyObject *inp_jvz = NULL;
-    PyObject *inp_jeps2 = NULL;
-    // out-objs
-    PyObject *out_irx = NULL;
-    PyObject *out_iry = NULL;
-    PyObject *out_irz = NULL;
-    PyObject *out_iax = NULL;
-    PyObject *out_iay = NULL;
-    PyObject *out_iaz = NULL;
-    PyObject *out_iu = NULL;
-
-    int typenum;
-    char *fmt = NULL;
-    if (sizeof(REAL) == sizeof(double)) {
-        fmt = "IOOOOOOOOIOOOOOOOOdO!O!O!O!O!O!O!";
-        typenum = NPY_FLOAT64;
-    } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "IOOOOOOOOIOOOOOOOOfO!O!O!O!O!O!O!";
-        typenum = NPY_FLOAT32;
-    }
-
-    if (!PyArg_ParseTuple(_args, fmt, &ni,
-                                      &inp_irx, &inp_iry, &inp_irz, &inp_imass,
-                                      &inp_ivx, &inp_ivy, &inp_ivz, &inp_ieps2,
-                                      &nj,
-                                      &inp_jrx, &inp_jry, &inp_jrz, &inp_jmass,
-                                      &inp_jvx, &inp_jvy, &inp_jvz, &inp_jeps2,
-                                      &dt,
-                                      &PyArray_Type, &out_irx,
-                                      &PyArray_Type, &out_iry,
-                                      &PyArray_Type, &out_irz,
-                                      &PyArray_Type, &out_iax,
-                                      &PyArray_Type, &out_iay,
-                                      &PyArray_Type, &out_iaz,
-                                      &PyArray_Type, &out_iu))
-        return NULL;
-
-    // i-objs
-    PyObject *irx = PyArray_FROM_OTF(inp_irx, typenum, NPY_IN_ARRAY);
-    REAL *irx_ptr = (REAL *)PyArray_DATA(irx);
-
-    PyObject *iry = PyArray_FROM_OTF(inp_iry, typenum, NPY_IN_ARRAY);
-    REAL *iry_ptr = (REAL *)PyArray_DATA(iry);
-
-    PyObject *irz = PyArray_FROM_OTF(inp_irz, typenum, NPY_IN_ARRAY);
-    REAL *irz_ptr = (REAL *)PyArray_DATA(irz);
-
-    PyObject *imass = PyArray_FROM_OTF(inp_imass, typenum, NPY_IN_ARRAY);
-    REAL *imass_ptr = (REAL *)PyArray_DATA(imass);
-
-    PyObject *ivx = PyArray_FROM_OTF(inp_ivx, typenum, NPY_IN_ARRAY);
-    REAL *ivx_ptr = (REAL *)PyArray_DATA(ivx);
-
-    PyObject *ivy = PyArray_FROM_OTF(inp_ivy, typenum, NPY_IN_ARRAY);
-    REAL *ivy_ptr = (REAL *)PyArray_DATA(ivy);
-
-    PyObject *ivz = PyArray_FROM_OTF(inp_ivz, typenum, NPY_IN_ARRAY);
-    REAL *ivz_ptr = (REAL *)PyArray_DATA(ivz);
-
-    PyObject *ieps2 = PyArray_FROM_OTF(inp_ieps2, typenum, NPY_IN_ARRAY);
-    REAL *ieps2_ptr = (REAL *)PyArray_DATA(ieps2);
-
-    // j-objs
-    PyObject *jrx = PyArray_FROM_OTF(inp_jrx, typenum, NPY_IN_ARRAY);
-    REAL *jrx_ptr = (REAL *)PyArray_DATA(jrx);
-
-    PyObject *jry = PyArray_FROM_OTF(inp_jry, typenum, NPY_IN_ARRAY);
-    REAL *jry_ptr = (REAL *)PyArray_DATA(jry);
-
-    PyObject *jrz = PyArray_FROM_OTF(inp_jrz, typenum, NPY_IN_ARRAY);
-    REAL *jrz_ptr = (REAL *)PyArray_DATA(jrz);
-
-    PyObject *jmass = PyArray_FROM_OTF(inp_jmass, typenum, NPY_IN_ARRAY);
-    REAL *jmass_ptr = (REAL *)PyArray_DATA(jmass);
-
-    PyObject *jvx = PyArray_FROM_OTF(inp_jvx, typenum, NPY_IN_ARRAY);
-    REAL *jvx_ptr = (REAL *)PyArray_DATA(jvx);
-
-    PyObject *jvy = PyArray_FROM_OTF(inp_jvy, typenum, NPY_IN_ARRAY);
-    REAL *jvy_ptr = (REAL *)PyArray_DATA(jvy);
-
-    PyObject *jvz = PyArray_FROM_OTF(inp_jvz, typenum, NPY_IN_ARRAY);
-    REAL *jvz_ptr = (REAL *)PyArray_DATA(jvz);
-
-    PyObject *jeps2 = PyArray_FROM_OTF(inp_jeps2, typenum, NPY_IN_ARRAY);
-    REAL *jeps2_ptr = (REAL *)PyArray_DATA(jeps2);
-
-    // out-objs
-    PyObject *new_irx = PyArray_FROM_OTF(out_irx, typenum, NPY_INOUT_ARRAY);
-    REAL *new_irx_ptr = (REAL *)PyArray_DATA(new_irx);
-
-    PyObject *new_iry = PyArray_FROM_OTF(out_iry, typenum, NPY_INOUT_ARRAY);
-    REAL *new_iry_ptr = (REAL *)PyArray_DATA(new_iry);
-
-    PyObject *new_irz = PyArray_FROM_OTF(out_irz, typenum, NPY_INOUT_ARRAY);
-    REAL *new_irz_ptr = (REAL *)PyArray_DATA(new_irz);
-
-    PyObject *iax = PyArray_FROM_OTF(out_iax, typenum, NPY_INOUT_ARRAY);
-    REAL *iax_ptr = (REAL *)PyArray_DATA(iax);
-
-    PyObject *iay = PyArray_FROM_OTF(out_iay, typenum, NPY_INOUT_ARRAY);
-    REAL *iay_ptr = (REAL *)PyArray_DATA(iay);
-
-    PyObject *iaz = PyArray_FROM_OTF(out_iaz, typenum, NPY_INOUT_ARRAY);
-    REAL *iaz_ptr = (REAL *)PyArray_DATA(iaz);
-
-    PyObject *iu = PyArray_FROM_OTF(out_iu, typenum, NPY_INOUT_ARRAY);
-    REAL *iu_ptr = (REAL *)PyArray_DATA(iu);
-
-    // main calculation
     unsigned int i, j;
     for (i = 0; i < ni; ++i) {
-        REAL4 irm = {irx_ptr[i], iry_ptr[i],
-                     irz_ptr[i], imass_ptr[i]};
-        REAL4 ive = {ivx_ptr[i], ivy_ptr[i],
-                     ivz_ptr[i], ieps2_ptr[i]};
+        REAL4 irm = {irx[i], iry[i], irz[i], imass[i]};
+        REAL4 ive = {ivx[i], ivy[i], ivz[i], ieps2[i]};
         REAL8 ira = (REAL8){0, 0, 0, 0, 0, 0, 0, 0};
         for (j = 0; j < nj; ++j) {
-            REAL4 jrm = {jrx_ptr[j], jry_ptr[j],
-                         jrz_ptr[j], jmass_ptr[j]};
-            REAL4 jve = {jvx_ptr[j], jvy_ptr[j],
-                         jvz_ptr[j], jeps2_ptr[j]};
+            REAL4 jrm = {jrx[j], jry[j], jrz[j], jmass[j]};
+            REAL4 jve = {jvx[j], jvy[j], jvz[j], jeps2[j]};
             ira = nreg_Xkernel_core(ira, irm, ive, jrm, jve, dt);
         }
-        new_irx_ptr[i] = ira.s0;
-        new_iry_ptr[i] = ira.s1;
-        new_irz_ptr[i] = ira.s2;
-        iax_ptr[i] = ira.s4;
-        iay_ptr[i] = ira.s5;
-        iaz_ptr[i] = ira.s6;
-        iu_ptr[i] = ira.s7 * irm.w;
+        new_irx[i] = ira.s0;
+        new_iry[i] = ira.s1;
+        new_irz[i] = ira.s2;
+        iax[i] = ira.s4;
+        iay[i] = ira.s5;
+        iaz[i] = ira.s6;
+        iu[i] = ira.s7 * irm.w;
     }
-
-    // Decrement the reference counts for auxiliary i-objs
-    Py_DECREF(irx);
-    Py_DECREF(iry);
-    Py_DECREF(irz);
-    Py_DECREF(imass);
-    Py_DECREF(ivx);
-    Py_DECREF(ivy);
-    Py_DECREF(ivz);
-    Py_DECREF(ieps2);
-
-    // Decrement the reference counts for auxiliary j-objs
-    Py_DECREF(jrx);
-    Py_DECREF(jry);
-    Py_DECREF(jrz);
-    Py_DECREF(jmass);
-    Py_DECREF(jvx);
-    Py_DECREF(jvy);
-    Py_DECREF(jvz);
-    Py_DECREF(jeps2);
-
-    // Decrement the reference counts for auxiliary out-objs
-    Py_DECREF(new_irx);
-    Py_DECREF(new_iry);
-    Py_DECREF(new_irz);
-    Py_DECREF(iax);
-    Py_DECREF(iay);
-    Py_DECREF(iaz);
-    Py_DECREF(iu);
-
-    // Returns None
-    Py_INCREF(Py_None);
-    return Py_None;
 }
-#endif  // USE_CTYPES
 
 //
 // nreg_Vkernel
 ////////////////////////////////////////////////////////////////////////////////
-
-
-#ifndef USE_CTYPES
-static PyObject *
-nreg_Vkernel(PyObject *_self, PyObject *_args)
+inline void
+nreg_Vkernel(const unsigned int ni,
+             const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *imass,
+             const REAL *iax, const REAL *iay, const REAL *iaz,
+             const unsigned int nj,
+             const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jmass,
+             const REAL *jax, const REAL *jay, const REAL *jaz,
+             const REAL dt,
+             REAL *new_ivx, REAL *new_ivy, REAL *new_ivz,
+             REAL *ik)
 {
-    unsigned int ni, nj;
-    REAL dt;
-    // i-objs
-    PyObject *inp_ivx = NULL;
-    PyObject *inp_ivy = NULL;
-    PyObject *inp_ivz = NULL;
-    PyObject *inp_imass = NULL;
-    PyObject *inp_iax = NULL;
-    PyObject *inp_iay = NULL;
-    PyObject *inp_iaz = NULL;
-    // j-objs
-    PyObject *inp_jvx = NULL;
-    PyObject *inp_jvy = NULL;
-    PyObject *inp_jvz = NULL;
-    PyObject *inp_jmass = NULL;
-    PyObject *inp_jax = NULL;
-    PyObject *inp_jay = NULL;
-    PyObject *inp_jaz = NULL;
-    // out-objs
-    PyObject *out_ivx = NULL;
-    PyObject *out_ivy = NULL;
-    PyObject *out_ivz = NULL;
-    PyObject *out_ik = NULL;
-
-    int typenum;
-    char *fmt = NULL;
-    if (sizeof(REAL) == sizeof(double)) {
-        fmt = "IOOOOOOOIOOOOOOOdO!O!O!O!";
-        typenum = NPY_FLOAT64;
-    } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "IOOOOOOOIOOOOOOOfO!O!O!O!";
-        typenum = NPY_FLOAT32;
-    }
-
-    if (!PyArg_ParseTuple(_args, fmt, &ni,
-                                      &inp_ivx, &inp_ivy, &inp_ivz, &inp_imass,
-                                      &inp_iax, &inp_iay, &inp_iaz,
-                                      &nj,
-                                      &inp_jvx, &inp_jvy, &inp_jvz, &inp_jmass,
-                                      &inp_jax, &inp_jay, &inp_jaz,
-                                      &dt,
-                                      &PyArray_Type, &out_ivx,
-                                      &PyArray_Type, &out_ivy,
-                                      &PyArray_Type, &out_ivz,
-                                      &PyArray_Type, &out_ik))
-        return NULL;
-
-    // i-objs
-    PyObject *ivx = PyArray_FROM_OTF(inp_ivx, typenum, NPY_IN_ARRAY);
-    REAL *ivx_ptr = (REAL *)PyArray_DATA(ivx);
-
-    PyObject *ivy = PyArray_FROM_OTF(inp_ivy, typenum, NPY_IN_ARRAY);
-    REAL *ivy_ptr = (REAL *)PyArray_DATA(ivy);
-
-    PyObject *ivz = PyArray_FROM_OTF(inp_ivz, typenum, NPY_IN_ARRAY);
-    REAL *ivz_ptr = (REAL *)PyArray_DATA(ivz);
-
-    PyObject *imass = PyArray_FROM_OTF(inp_imass, typenum, NPY_IN_ARRAY);
-    REAL *imass_ptr = (REAL *)PyArray_DATA(imass);
-
-    PyObject *iax = PyArray_FROM_OTF(inp_iax, typenum, NPY_IN_ARRAY);
-    REAL *iax_ptr = (REAL *)PyArray_DATA(iax);
-
-    PyObject *iay = PyArray_FROM_OTF(inp_iay, typenum, NPY_IN_ARRAY);
-    REAL *iay_ptr = (REAL *)PyArray_DATA(iay);
-
-    PyObject *iaz = PyArray_FROM_OTF(inp_iaz, typenum, NPY_IN_ARRAY);
-    REAL *iaz_ptr = (REAL *)PyArray_DATA(iaz);
-
-    // j-objs
-    PyObject *jvx = PyArray_FROM_OTF(inp_jvx, typenum, NPY_IN_ARRAY);
-    REAL *jvx_ptr = (REAL *)PyArray_DATA(jvx);
-
-    PyObject *jvy = PyArray_FROM_OTF(inp_jvy, typenum, NPY_IN_ARRAY);
-    REAL *jvy_ptr = (REAL *)PyArray_DATA(jvy);
-
-    PyObject *jvz = PyArray_FROM_OTF(inp_jvz, typenum, NPY_IN_ARRAY);
-    REAL *jvz_ptr = (REAL *)PyArray_DATA(jvz);
-
-    PyObject *jmass = PyArray_FROM_OTF(inp_jmass, typenum, NPY_IN_ARRAY);
-    REAL *jmass_ptr = (REAL *)PyArray_DATA(jmass);
-
-    PyObject *jax = PyArray_FROM_OTF(inp_jax, typenum, NPY_IN_ARRAY);
-    REAL *jax_ptr = (REAL *)PyArray_DATA(jax);
-
-    PyObject *jay = PyArray_FROM_OTF(inp_jay, typenum, NPY_IN_ARRAY);
-    REAL *jay_ptr = (REAL *)PyArray_DATA(jay);
-
-    PyObject *jaz = PyArray_FROM_OTF(inp_jaz, typenum, NPY_IN_ARRAY);
-    REAL *jaz_ptr = (REAL *)PyArray_DATA(jaz);
-
-    // out-objs
-    PyObject *new_ivx = PyArray_FROM_OTF(out_ivx, typenum, NPY_INOUT_ARRAY);
-    REAL *new_ivx_ptr = (REAL *)PyArray_DATA(new_ivx);
-
-    PyObject *new_ivy = PyArray_FROM_OTF(out_ivy, typenum, NPY_INOUT_ARRAY);
-    REAL *new_ivy_ptr = (REAL *)PyArray_DATA(new_ivy);
-
-    PyObject *new_ivz = PyArray_FROM_OTF(out_ivz, typenum, NPY_INOUT_ARRAY);
-    REAL *new_ivz_ptr = (REAL *)PyArray_DATA(new_ivz);
-
-    PyObject *ik = PyArray_FROM_OTF(out_ik, typenum, NPY_INOUT_ARRAY);
-    REAL *ik_ptr = (REAL *)PyArray_DATA(ik);
-
-    // main calculation
     unsigned int i, j;
     for (i = 0; i < ni; ++i) {
-        REAL4 ivm = {ivx_ptr[i], ivy_ptr[i],
-                     ivz_ptr[i], imass_ptr[i]};
-        REAL3 ia = {iax_ptr[i], iay_ptr[i],
-                    iaz_ptr[i]};
+        REAL4 ivm = {ivx[i], ivy[i], ivz[i], imass[i]};
+        REAL3 ia = {iax[i], iay[i], iaz[i]};
         REAL4 ivk = (REAL4){0, 0, 0, 0};
         for (j = 0; j < nj; ++j) {
-            REAL4 jvm = {jvx_ptr[j], jvy_ptr[j],
-                         jvz_ptr[j], jmass_ptr[j]};
-            REAL3 ja = {jax_ptr[j], jay_ptr[j],
-                        jaz_ptr[j]};
+            REAL4 jvm = {jvx[j], jvy[j], jvz[j], jmass[j]};
+            REAL3 ja = {jax[j], jay[j], jaz[j]};
             ivk = nreg_Vkernel_core(ivk, ivm, ia, jvm, ja, dt);
         }
-        new_ivx_ptr[i] = ivk.x;
-        new_ivy_ptr[i] = ivk.y;
-        new_ivz_ptr[i] = ivk.z;
-        ik_ptr[i] = ivm.w * ivk.w / 2;
+        new_ivx[i] = ivk.x;
+        new_ivy[i] = ivk.y;
+        new_ivz[i] = ivk.z;
+        ik[i] = ivm.w * ivk.w / 2;
     }
-
-    // Decrement the reference counts for auxiliary i-objs
-    Py_DECREF(ivx);
-    Py_DECREF(ivy);
-    Py_DECREF(ivz);
-    Py_DECREF(imass);
-    Py_DECREF(iax);
-    Py_DECREF(iay);
-    Py_DECREF(iaz);
-
-    // Decrement the reference counts for auxiliary j-objs
-    Py_DECREF(jvx);
-    Py_DECREF(jvy);
-    Py_DECREF(jvz);
-    Py_DECREF(jmass);
-    Py_DECREF(jax);
-    Py_DECREF(jay);
-    Py_DECREF(jaz);
-
-    // Decrement the reference counts for auxiliary out-objs
-    Py_DECREF(new_ivx);
-    Py_DECREF(new_ivy);
-    Py_DECREF(new_ivz);
-    Py_DECREF(ik);
-
-    // Returns None
-    Py_INCREF(Py_None);
-    return Py_None;
 }
-#endif  // USE_CTYPES
 
 #endif  // __OPENCL_VERSION__
-
-
 #endif  // NREG_KERNELS_H
 

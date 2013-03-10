@@ -20,11 +20,9 @@
 #else
     #include<math.h>
     #ifdef DOUBLE
-        typedef double REAL;
-        #define rsqrt(x) (1.0/sqrt(x))
+        typedef double REAL, *pREAL;
     #else
-        typedef float REAL;
-        #define rsqrt(x) (1.0f/sqrtf(x))
+        typedef float REAL, *pREAL;
     #endif
     #define min(a, b) ({ __typeof__ (a) _a = (a); \
                          __typeof__ (b) _b = (b); \

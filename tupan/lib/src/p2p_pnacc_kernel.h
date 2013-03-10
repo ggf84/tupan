@@ -216,175 +216,39 @@ __kernel void p2p_pnacc_kernel(const uint ni,
 //
 // C implementation
 ////////////////////////////////////////////////////////////////////////////////
-
-
-#ifndef USE_CTYPES
-static PyObject *
-p2p_pnacc_kernel(PyObject *_self, PyObject *_args)
+inline void
+p2p_pnacc_kernel(const unsigned int ni,
+                 const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
+                 const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+                 const unsigned int nj,
+                 const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
+                 const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
+                 unsigned int order, const REAL inv1,
+                 const REAL inv2, const REAL inv3,
+                 const REAL inv4, const REAL inv5,
+                 const REAL inv6, const REAL inv7,
+                 REAL *ipnax, REAL *ipnay, REAL *ipnaz)
 {
-    unsigned int ni, nj;
-    CLIGHT clight;
-    // i-objs
-    PyObject *inp_irx = NULL;
-    PyObject *inp_iry = NULL;
-    PyObject *inp_irz = NULL;
-    PyObject *inp_imass = NULL;
-    PyObject *inp_ivx = NULL;
-    PyObject *inp_ivy = NULL;
-    PyObject *inp_ivz = NULL;
-    PyObject *inp_ieps2 = NULL;
-    // j-objs
-    PyObject *inp_jrx = NULL;
-    PyObject *inp_jry = NULL;
-    PyObject *inp_jrz = NULL;
-    PyObject *inp_jmass = NULL;
-    PyObject *inp_jvx = NULL;
-    PyObject *inp_jvy = NULL;
-    PyObject *inp_jvz = NULL;
-    PyObject *inp_jeps2 = NULL;
-    // out-objs
-    PyObject *out_ipnax = NULL;
-    PyObject *out_ipnay = NULL;
-    PyObject *out_ipnaz = NULL;
-
-    int typenum;
-    char *fmt = NULL;
-    if (sizeof(REAL) == sizeof(double)) {
-        fmt = "IOOOOOOOOIOOOOOOOOIdddddddO!O!O!";
-        typenum = NPY_FLOAT64;
-    } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "IOOOOOOOOIOOOOOOOOIfffffffO!O!O!";
-        typenum = NPY_FLOAT32;
-    }
-
-    if (!PyArg_ParseTuple(_args, fmt, &ni,
-                                      &inp_irx, &inp_iry, &inp_irz, &inp_imass,
-                                      &inp_ivx, &inp_ivy, &inp_ivz, &inp_ieps2,
-                                      &nj,
-                                      &inp_jrx, &inp_jry, &inp_jrz, &inp_jmass,
-                                      &inp_jvx, &inp_jvy, &inp_jvz, &inp_jeps2,
-                                      &clight.order, &clight.inv1,
-                                      &clight.inv2, &clight.inv3,
-                                      &clight.inv4, &clight.inv5,
-                                      &clight.inv6, &clight.inv7,
-                                      &PyArray_Type, &out_ipnax,
-                                      &PyArray_Type, &out_ipnay,
-                                      &PyArray_Type, &out_ipnaz))
-        return NULL;
-
-    // i-objs
-    PyObject *irx = PyArray_FROM_OTF(inp_irx, typenum, NPY_IN_ARRAY);
-    REAL *irx_ptr = (REAL *)PyArray_DATA(irx);
-
-    PyObject *iry = PyArray_FROM_OTF(inp_iry, typenum, NPY_IN_ARRAY);
-    REAL *iry_ptr = (REAL *)PyArray_DATA(iry);
-
-    PyObject *irz = PyArray_FROM_OTF(inp_irz, typenum, NPY_IN_ARRAY);
-    REAL *irz_ptr = (REAL *)PyArray_DATA(irz);
-
-    PyObject *imass = PyArray_FROM_OTF(inp_imass, typenum, NPY_IN_ARRAY);
-    REAL *imass_ptr = (REAL *)PyArray_DATA(imass);
-
-    PyObject *ivx = PyArray_FROM_OTF(inp_ivx, typenum, NPY_IN_ARRAY);
-    REAL *ivx_ptr = (REAL *)PyArray_DATA(ivx);
-
-    PyObject *ivy = PyArray_FROM_OTF(inp_ivy, typenum, NPY_IN_ARRAY);
-    REAL *ivy_ptr = (REAL *)PyArray_DATA(ivy);
-
-    PyObject *ivz = PyArray_FROM_OTF(inp_ivz, typenum, NPY_IN_ARRAY);
-    REAL *ivz_ptr = (REAL *)PyArray_DATA(ivz);
-
-    PyObject *ieps2 = PyArray_FROM_OTF(inp_ieps2, typenum, NPY_IN_ARRAY);
-    REAL *ieps2_ptr = (REAL *)PyArray_DATA(ieps2);
-
-    // j-objs
-    PyObject *jrx = PyArray_FROM_OTF(inp_jrx, typenum, NPY_IN_ARRAY);
-    REAL *jrx_ptr = (REAL *)PyArray_DATA(jrx);
-
-    PyObject *jry = PyArray_FROM_OTF(inp_jry, typenum, NPY_IN_ARRAY);
-    REAL *jry_ptr = (REAL *)PyArray_DATA(jry);
-
-    PyObject *jrz = PyArray_FROM_OTF(inp_jrz, typenum, NPY_IN_ARRAY);
-    REAL *jrz_ptr = (REAL *)PyArray_DATA(jrz);
-
-    PyObject *jmass = PyArray_FROM_OTF(inp_jmass, typenum, NPY_IN_ARRAY);
-    REAL *jmass_ptr = (REAL *)PyArray_DATA(jmass);
-
-    PyObject *jvx = PyArray_FROM_OTF(inp_jvx, typenum, NPY_IN_ARRAY);
-    REAL *jvx_ptr = (REAL *)PyArray_DATA(jvx);
-
-    PyObject *jvy = PyArray_FROM_OTF(inp_jvy, typenum, NPY_IN_ARRAY);
-    REAL *jvy_ptr = (REAL *)PyArray_DATA(jvy);
-
-    PyObject *jvz = PyArray_FROM_OTF(inp_jvz, typenum, NPY_IN_ARRAY);
-    REAL *jvz_ptr = (REAL *)PyArray_DATA(jvz);
-
-    PyObject *jeps2 = PyArray_FROM_OTF(inp_jeps2, typenum, NPY_IN_ARRAY);
-    REAL *jeps2_ptr = (REAL *)PyArray_DATA(jeps2);
-
-    // out-objs
-    PyObject *ipnax = PyArray_FROM_OTF(out_ipnax, typenum, NPY_INOUT_ARRAY);
-    REAL *ipnax_ptr = (REAL *)PyArray_DATA(ipnax);
-
-    PyObject *ipnay = PyArray_FROM_OTF(out_ipnay, typenum, NPY_INOUT_ARRAY);
-    REAL *ipnay_ptr = (REAL *)PyArray_DATA(ipnay);
-
-    PyObject *ipnaz = PyArray_FROM_OTF(out_ipnaz, typenum, NPY_INOUT_ARRAY);
-    REAL *ipnaz_ptr = (REAL *)PyArray_DATA(ipnaz);
-
-    // main calculation
+    CLIGHT clight = {.order=order, .inv1=inv1,
+                     .inv2=inv2, .inv3=inv3,
+                     .inv4=inv4, .inv5=inv5,
+                     .inv6=inv6, .inv7=inv7};
     unsigned int i, j;
     for (i = 0; i < ni; ++i) {
-        REAL4 irm = {irx_ptr[i], iry_ptr[i],
-                     irz_ptr[i], imass_ptr[i]};
-        REAL4 ive = {ivx_ptr[i], ivy_ptr[i],
-                     ivz_ptr[i], ieps2_ptr[i]};
+        REAL4 irm = {irx[i], iry[i], irz[i], imass[i]};
+        REAL4 ive = {ivx[i], ivy[i], ivz[i], ieps2[i]};
         REAL3 ipna = (REAL3){0, 0, 0};
         for (j = 0; j < nj; ++j) {
-            REAL4 jrm = {jrx_ptr[j], jry_ptr[j],
-                         jrz_ptr[j], jmass_ptr[j]};
-            REAL4 jve = {jvx_ptr[j], jvy_ptr[j],
-                         jvz_ptr[j], jeps2_ptr[j]};
+            REAL4 jrm = {jrx[j], jry[j], jrz[j], jmass[j]};
+            REAL4 jve = {jvx[j], jvy[j], jvz[j], jeps2[j]};
             ipna = p2p_pnacc_kernel_core(ipna, irm, ive, jrm, jve, clight);
         }
-        ipnax_ptr[i] = ipna.x;
-        ipnay_ptr[i] = ipna.y;
-        ipnaz_ptr[i] = ipna.z;
+        ipnax[i] = ipna.x;
+        ipnay[i] = ipna.y;
+        ipnaz[i] = ipna.z;
     }
-
-    // Decrement the reference counts for auxiliary i-objs
-    Py_DECREF(irx);
-    Py_DECREF(iry);
-    Py_DECREF(irz);
-    Py_DECREF(imass);
-    Py_DECREF(ivx);
-    Py_DECREF(ivy);
-    Py_DECREF(ivz);
-    Py_DECREF(ieps2);
-
-    // Decrement the reference counts for auxiliary j-objs
-    Py_DECREF(jrx);
-    Py_DECREF(jry);
-    Py_DECREF(jrz);
-    Py_DECREF(jmass);
-    Py_DECREF(jvx);
-    Py_DECREF(jvy);
-    Py_DECREF(jvz);
-    Py_DECREF(jeps2);
-
-    // Decrement the reference counts for auxiliary out-objs
-    Py_DECREF(ipnax);
-    Py_DECREF(ipnay);
-    Py_DECREF(ipnaz);
-
-    // Returns None
-    Py_INCREF(Py_None);
-    return Py_None;
 }
-#endif  // USE_CTYPES
 
 #endif  // __OPENCL_VERSION__
-
-
 #endif  // P2P_PNACC_KERNEL_H
 

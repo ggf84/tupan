@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-
+TODO.
 """
 
 
@@ -50,8 +50,7 @@ class IO(object):
             try:
                 return loader(fname, fmode).load_snapshot(*args, **kwargs)
             except Exception as exc:
-                pass
-        logger.exception(str(exc))
+                logger.exception(str(exc))
         raise ValueError("File not in a supported format.")
 
 
@@ -84,8 +83,7 @@ class IO(object):
             try:
                 return loader(fname, fmode).load_worldline(*args, **kwargs)
             except Exception as exc:
-                pass
-        logger.exception(str(exc))
+                logger.exception(str(exc))
         raise ValueError("File not in a supported format.")
 
 

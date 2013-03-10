@@ -2,11 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-
+TODO.
 """
-
-
-from . import glviewer
 
 
 ########## end of file ##########

@@ -193,16 +193,15 @@ __kernel void p2p_acc_jerk_kernel(const uint ni,
 //
 // C implementation
 ////////////////////////////////////////////////////////////////////////////////
-
 inline void
-main_p2p_acc_jerk_kernel(const unsigned int ni,
-                         const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
-                         const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
-                         const unsigned int nj,
-                         const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
-                         const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
-                         REAL *iax, REAL *iay, REAL *iaz,
-                         REAL *ijx, REAL *ijy, REAL *ijz)
+p2p_acc_jerk_kernel(const unsigned int ni,
+                    const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
+                    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+                    const unsigned int nj,
+                    const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
+                    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
+                    REAL *iax, REAL *iay, REAL *iaz,
+                    REAL *ijx, REAL *ijy, REAL *ijz)
 {
     unsigned int i, j;
     for (i = 0; i < ni; ++i) {
@@ -223,177 +222,6 @@ main_p2p_acc_jerk_kernel(const unsigned int ni,
     }
 }
 
-
-#ifndef USE_CTYPES
-static PyObject *
-p2p_acc_jerk_kernel(PyObject *_self, PyObject *_args)
-{
-    unsigned int ni, nj;
-    // i-objs
-    PyObject *inp_irx = NULL;
-    PyObject *inp_iry = NULL;
-    PyObject *inp_irz = NULL;
-    PyObject *inp_imass = NULL;
-    PyObject *inp_ivx = NULL;
-    PyObject *inp_ivy = NULL;
-    PyObject *inp_ivz = NULL;
-    PyObject *inp_ieps2 = NULL;
-    // j-objs
-    PyObject *inp_jrx = NULL;
-    PyObject *inp_jry = NULL;
-    PyObject *inp_jrz = NULL;
-    PyObject *inp_jmass = NULL;
-    PyObject *inp_jvx = NULL;
-    PyObject *inp_jvy = NULL;
-    PyObject *inp_jvz = NULL;
-    PyObject *inp_jeps2 = NULL;
-    // out-objs
-    PyObject *out_iax = NULL;
-    PyObject *out_iay = NULL;
-    PyObject *out_iaz = NULL;
-    PyObject *out_ijx = NULL;
-    PyObject *out_ijy = NULL;
-    PyObject *out_ijz = NULL;
-
-    int typenum;
-    char *fmt = NULL;
-    if (sizeof(REAL) == sizeof(double)) {
-        fmt = "IOOOOOOOOIOOOOOOOOO!O!O!O!O!O!";
-        typenum = NPY_FLOAT64;
-    } else if (sizeof(REAL) == sizeof(float)) {
-        fmt = "IOOOOOOOOIOOOOOOOOO!O!O!O!O!O!";
-        typenum = NPY_FLOAT32;
-    }
-
-    if (!PyArg_ParseTuple(_args, fmt, &ni,
-                                      &inp_irx, &inp_iry, &inp_irz, &inp_imass,
-                                      &inp_ivx, &inp_ivy, &inp_ivz, &inp_ieps2,
-                                      &nj,
-                                      &inp_jrx, &inp_jry, &inp_jrz, &inp_jmass,
-                                      &inp_jvx, &inp_jvy, &inp_jvz, &inp_jeps2,
-                                      &PyArray_Type, &out_iax,
-                                      &PyArray_Type, &out_iay,
-                                      &PyArray_Type, &out_iaz,
-                                      &PyArray_Type, &out_ijx,
-                                      &PyArray_Type, &out_ijy,
-                                      &PyArray_Type, &out_ijz))
-        return NULL;
-
-    // i-objs
-    PyObject *irx = PyArray_FROM_OTF(inp_irx, typenum, NPY_IN_ARRAY);
-    REAL *irx_ptr = (REAL *)PyArray_DATA(irx);
-
-    PyObject *iry = PyArray_FROM_OTF(inp_iry, typenum, NPY_IN_ARRAY);
-    REAL *iry_ptr = (REAL *)PyArray_DATA(iry);
-
-    PyObject *irz = PyArray_FROM_OTF(inp_irz, typenum, NPY_IN_ARRAY);
-    REAL *irz_ptr = (REAL *)PyArray_DATA(irz);
-
-    PyObject *imass = PyArray_FROM_OTF(inp_imass, typenum, NPY_IN_ARRAY);
-    REAL *imass_ptr = (REAL *)PyArray_DATA(imass);
-
-    PyObject *ivx = PyArray_FROM_OTF(inp_ivx, typenum, NPY_IN_ARRAY);
-    REAL *ivx_ptr = (REAL *)PyArray_DATA(ivx);
-
-    PyObject *ivy = PyArray_FROM_OTF(inp_ivy, typenum, NPY_IN_ARRAY);
-    REAL *ivy_ptr = (REAL *)PyArray_DATA(ivy);
-
-    PyObject *ivz = PyArray_FROM_OTF(inp_ivz, typenum, NPY_IN_ARRAY);
-    REAL *ivz_ptr = (REAL *)PyArray_DATA(ivz);
-
-    PyObject *ieps2 = PyArray_FROM_OTF(inp_ieps2, typenum, NPY_IN_ARRAY);
-    REAL *ieps2_ptr = (REAL *)PyArray_DATA(ieps2);
-
-    // j-objs
-    PyObject *jrx = PyArray_FROM_OTF(inp_jrx, typenum, NPY_IN_ARRAY);
-    REAL *jrx_ptr = (REAL *)PyArray_DATA(jrx);
-
-    PyObject *jry = PyArray_FROM_OTF(inp_jry, typenum, NPY_IN_ARRAY);
-    REAL *jry_ptr = (REAL *)PyArray_DATA(jry);
-
-    PyObject *jrz = PyArray_FROM_OTF(inp_jrz, typenum, NPY_IN_ARRAY);
-    REAL *jrz_ptr = (REAL *)PyArray_DATA(jrz);
-
-    PyObject *jmass = PyArray_FROM_OTF(inp_jmass, typenum, NPY_IN_ARRAY);
-    REAL *jmass_ptr = (REAL *)PyArray_DATA(jmass);
-
-    PyObject *jvx = PyArray_FROM_OTF(inp_jvx, typenum, NPY_IN_ARRAY);
-    REAL *jvx_ptr = (REAL *)PyArray_DATA(jvx);
-
-    PyObject *jvy = PyArray_FROM_OTF(inp_jvy, typenum, NPY_IN_ARRAY);
-    REAL *jvy_ptr = (REAL *)PyArray_DATA(jvy);
-
-    PyObject *jvz = PyArray_FROM_OTF(inp_jvz, typenum, NPY_IN_ARRAY);
-    REAL *jvz_ptr = (REAL *)PyArray_DATA(jvz);
-
-    PyObject *jeps2 = PyArray_FROM_OTF(inp_jeps2, typenum, NPY_IN_ARRAY);
-    REAL *jeps2_ptr = (REAL *)PyArray_DATA(jeps2);
-
-    // out-objs
-    PyObject *iax = PyArray_FROM_OTF(out_iax, typenum, NPY_INOUT_ARRAY);
-    REAL *iax_ptr = (REAL *)PyArray_DATA(iax);
-
-    PyObject *iay = PyArray_FROM_OTF(out_iay, typenum, NPY_INOUT_ARRAY);
-    REAL *iay_ptr = (REAL *)PyArray_DATA(iay);
-
-    PyObject *iaz = PyArray_FROM_OTF(out_iaz, typenum, NPY_INOUT_ARRAY);
-    REAL *iaz_ptr = (REAL *)PyArray_DATA(iaz);
-
-    PyObject *ijx = PyArray_FROM_OTF(out_ijx, typenum, NPY_INOUT_ARRAY);
-    REAL *ijx_ptr = (REAL *)PyArray_DATA(ijx);
-
-    PyObject *ijy = PyArray_FROM_OTF(out_ijy, typenum, NPY_INOUT_ARRAY);
-    REAL *ijy_ptr = (REAL *)PyArray_DATA(ijy);
-
-    PyObject *ijz = PyArray_FROM_OTF(out_ijz, typenum, NPY_INOUT_ARRAY);
-    REAL *ijz_ptr = (REAL *)PyArray_DATA(ijz);
-
-    // main calculation
-    main_p2p_acc_jerk_kernel(ni,
-                             irx_ptr, iry_ptr, irz_ptr, imass_ptr,
-                             ivx_ptr, ivy_ptr, ivz_ptr, ieps2_ptr,
-                             nj,
-                             jrx_ptr, jry_ptr, jrz_ptr, jmass_ptr,
-                             jvx_ptr, jvy_ptr, jvz_ptr, jeps2_ptr,
-                             iax_ptr, iay_ptr, iaz_ptr,
-                             ijx_ptr, ijy_ptr, ijz_ptr);
-
-    // Decrement the reference counts for auxiliary i-objs
-    Py_DECREF(irx);
-    Py_DECREF(iry);
-    Py_DECREF(irz);
-    Py_DECREF(imass);
-    Py_DECREF(ivx);
-    Py_DECREF(ivy);
-    Py_DECREF(ivz);
-    Py_DECREF(ieps2);
-
-    // Decrement the reference counts for auxiliary j-objs
-    Py_DECREF(jrx);
-    Py_DECREF(jry);
-    Py_DECREF(jrz);
-    Py_DECREF(jmass);
-    Py_DECREF(jvx);
-    Py_DECREF(jvy);
-    Py_DECREF(jvz);
-    Py_DECREF(jeps2);
-
-    // Decrement the reference counts for auxiliary out-objs
-    Py_DECREF(iax);
-    Py_DECREF(iay);
-    Py_DECREF(iaz);
-    Py_DECREF(ijx);
-    Py_DECREF(ijy);
-    Py_DECREF(ijz);
-
-    // Returns None
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-#endif  // USE_CTYPES
-
 #endif  // __OPENCL_VERSION__
-
-
 #endif  // P2P_ACC_JERK_KERNEL_H
 

@@ -6,6 +6,7 @@
 """
 
 from __future__ import print_function
+import sys
 import pickle
 import h5py
 import numpy as np
@@ -14,6 +15,8 @@ from ..lib.utils.timing import decallmethods, timings
 
 __all__ = ["HDF5IO"]
 
+IS_PY3K = True if sys.version_info.major > 2 else False
+PICKLE_PROTOCOL = 0 # ensures backward compatibility with Python 2.x
 
 @decallmethods(timings)
 class HDF5IO(object):
@@ -40,7 +43,8 @@ class HDF5IO(object):
                                      compression="gzip",
                                      shuffle=True,
                                     )
-        dset.attrs["Class"] = pickle.dumps(type(obj))
+        cls = pickle.dumps(type(obj), protocol=PICKLE_PROTOCOL)
+        dset.attrs["Class"] = cls.decode('utf-8') if IS_PY3K else cls
         dset.resize((nlen,))
         dset[olen:] = obj.get_state()
 
@@ -55,7 +59,8 @@ class HDF5IO(object):
         base_group = fobj.require_group(base_name)
         group_name = type(p).__name__.lower()
         group = base_group.require_group(group_name)
-        group.attrs["Class"] = pickle.dumps(type(p))
+        cls = pickle.dumps(type(p), protocol=PICKLE_PROTOCOL)
+        group.attrs["Class"] = cls.decode('utf-8') if IS_PY3K else cls
         for (key, obj) in p.items():
             if obj.n:
                 self.store_dset(group, key, obj)
@@ -76,7 +81,7 @@ class HDF5IO(object):
         base_name = "Snapshot"
         if isinstance(snap_number, int):
             base_name += "_"+str(snap_number).zfill(6)
-        group = fobj[base_name].values()[0]
+        group = list(fobj[base_name].values())[0]
         p = pickle.loads(group.attrs["Class"])()
         for (k, v) in group.items():
             obj = pickle.loads(v.attrs["Class"])(len(v))
@@ -101,7 +106,8 @@ class HDF5IO(object):
         base_group = fobj.require_group("Worldline")
         group_name = type(wl).__name__.lower()
         group = base_group.require_group(group_name)
-        group.attrs["Class"] = pickle.dumps(type(wl))
+        cls = pickle.dumps(type(wl), protocol=PICKLE_PROTOCOL)
+        group.attrs["Class"] = cls.decode('utf-8') if IS_PY3K else cls
         for (key, obj) in wl.items():
             if obj.n:
                 self.store_dset(group, key, obj)

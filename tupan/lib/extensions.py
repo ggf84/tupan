@@ -18,8 +18,6 @@ from .utils.timing import decallmethods, timings
 from .utils.dtype import *
 
 
-__all__ = ["Extensions"]
-
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename="spam.log", filemode='w',
                     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -192,26 +190,31 @@ class CModule(object):
         logger.debug("Building %s precision C extension module.", prec)
 
         if prec is "double":
-            from tupan.lib import libcpyTupanDP as program
+            from .cffi_wrap import clib_dp as program
+            from .cffi_wrap import ffi_dp as ffi
         else:
-            from tupan.lib import libcpyTupanSP as program
+            from .cffi_wrap import clib_sp as program
+            from .cffi_wrap import ffi_sp as ffi
         self.program = program
+        self.ffi = ffi
 
         logger.debug("done.")
         return self
 
 
     def __getattr__(self, name):
-        return CKernel(self.env, getattr(self.program, name))
+        return CKernel(self.env, self.ffi, getattr(self.program, name))
 
 
 
 @decallmethods(timings)
 class CKernel(object):
 
-    def __init__(self, env, kernel):
+    def __init__(self, env, ffi, kernel):
         self.env = env
+        self.ffi = ffi
         self.kernel = kernel
+        self.keep_ref = dict()
         self.dev_args = OrderedDict()
 
 
@@ -220,20 +223,21 @@ class CKernel(object):
 
 
     def set_int(self, i, arg):
-        self.dev_args[i] = UINT(arg)
+        self.dev_args[i] = arg
 
 
     def set_float(self, i, arg):
-        self.dev_args[i] = REAL(arg)
+        self.dev_args[i] = arg
 
 
     def set_array(self, i, arg):
-        self.dev_args[i] = arg
+        self.keep_ref[i] = arg
+        self.dev_args[i] = self.ffi.cast("REAL *", arg.__array_interface__['data'][0])
 
 
     def allocate_buffer(self, i, shape):
         arg = np.zeros(shape, dtype=REAL)
-        self.dev_args[i] = arg
+        self.dev_args[i] = self.ffi.cast("REAL *", arg.__array_interface__['data'][0])
         return arg
 
 

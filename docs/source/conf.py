@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# PyNbody documentation build configuration file, created by
+# Tupan documentation build configuration file, created by
 # sphinx-quickstart on Wed Dec 14 04:53:07 2011.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -26,6 +26,10 @@ import sys, os, time
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.autosummary',
+              'sphinx.ext.doctest',
+              'sphinx.ext.graphviz',
+              'sphinx.ext.inheritance_diagram',
               'sphinx.ext.pngmath',
               'sphinx.ext.todo',
               'sphinx.ext.viewcode',
@@ -46,7 +50,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'PyNbody'
+project = 'Tupan'
 copyright = '2011-%s, Guilherme G. Ferrari' % time.strftime('%Y')
 
 # The version info for the project you're documenting, acts as replacement for
@@ -54,7 +58,7 @@ copyright = '2011-%s, Guilherme G. Ferrari' % time.strftime('%Y')
 # built documents.
 #
 ver_dict = {}
-execfile("../../pynbody/version.py", ver_dict)
+execfile("../../tupan/version.py", ver_dict)
 # The short X.Y version.
 version = ver_dict["VERSION_SHORT"]
 # The full version, including alpha/beta/rc tags.
@@ -132,7 +136,7 @@ html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
-#html_last_updated_fmt = '%b %d, %Y'
+html_last_updated_fmt = '%b %d, %Y'
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
@@ -172,7 +176,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'PyNbodydoc'
+htmlhelp_basename = 'Tupandoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -186,7 +190,7 @@ htmlhelp_basename = 'PyNbodydoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'PyNbody.tex', u'PyNbody Documentation',
+  ('index', 'Tupan.tex', u'Tupan Documentation',
    u'Guilherme G. Ferrari', 'manual'),
 ]
 
@@ -219,6 +223,6 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'pynbody', u'PyNbody Documentation',
+    ('index', 'tupan', u'Tupan Documentation',
      [u'Guilherme G. Ferrari'], 1)
 ]

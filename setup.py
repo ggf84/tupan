@@ -10,33 +10,14 @@ import os
 from distutils.core import setup
 from distutils.core import Extension
 
+from tupan import version
+from tupan.lib import cffi_wrap
 
-with open(os.path.join('tupan', 'version.py'), 'r') as fobj:
-    exec(fobj.read())
-
-
-extension_modules = []
-path = os.path.join('tupan', 'lib', 'src')
-extension_modules.append(Extension('tupan.lib.libcpyTupanSP',
-                             define_macros = [],
-                             include_dirs = [os.sep+path],
-                             libraries = ['m'],
-                             sources=[os.path.join(path, 'libtupan.c')]))
-extension_modules.append(Extension('tupan.lib.libcpyTupanDP',
-                             define_macros = [("DOUBLE", None)],
-                             include_dirs = [os.sep+path],
-                             libraries = ['m'],
-                             sources=[os.path.join(path, 'libtupan.c')]))
-extension_modules.append(Extension('tupan.lib.libcTupanSP',
-                             define_macros = [("USE_CTYPES", None)],
-                             include_dirs = [os.sep+path],
-                             libraries = ['m'],
-                             sources=[os.path.join(path, 'libtupan.c')]))
-extension_modules.append(Extension('tupan.lib.libcTupanDP',
-                             define_macros = [("DOUBLE", None), ("USE_CTYPES", None)],
-                             include_dirs = [os.sep+path],
-                             libraries = ['m'],
-                             sources=[os.path.join(path, 'libtupan.c')]))
+try:
+    from sphinx.setup_command import BuildDoc
+    cmdclass = {'build_sphinx': BuildDoc}
+except:
+    cmdclass = {}
 
 
 package_data = {}
@@ -44,6 +25,9 @@ package_data['tupan.analysis'] = [os.path.join('textures', '*.png')]
 package_data['tupan.lib'] = [os.path.join('src', '*.c'),
                                os.path.join('src', '*.h'),
                                os.path.join('src', '*.cl')]
+
+
+long_description = open(os.path.join(os.path.dirname(__file__), 'README.txt')).read()
 
 
 classifiers = """
@@ -58,7 +42,7 @@ Topic :: Scientific/Engineering
 
 setup(
     name='Tupan',
-    version=VERSION,
+    version=version.VERSION,
     author='Guilherme G. Ferrari',
     author_email='gg.ferrari@gmail.com',
     description="A Python Toolkit for Astrophysical N-Body Simulations.",
@@ -72,12 +56,13 @@ setup(
               'tupan.particles',
               'tupan.tests',
              ],
-    ext_modules=extension_modules,
+    ext_modules=cffi_wrap.get_extensions(),
     package_data=package_data,
     scripts=['bin/tupan'],
-    url='http://github.com/GuilhermeFerrari/PyNbody',
+    url='http://github.com/GuilhermeFerrari/Tupan',
+    cmdclass=cmdclass,
     license='MIT License',
-    long_description=open('README.txt').read(),
+    long_description=long_description,
     classifiers=[c for c in classifiers.split('\n') if c],
 )
 

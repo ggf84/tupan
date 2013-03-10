@@ -10,9 +10,23 @@ import sys
 import math
 import pickle
 import argparse
+import logging
 from pprint import pprint
 from .io import IO
-from .analysis.glviewer import GLviewer
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename="spam.log", filemode='w',
+                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                    level=logging.DEBUG)
+try:
+    from .analysis.glviewer import GLviewer
+except Exception as exc:
+    GLviewer = lambda: None
+    logger.exception(str(exc))
+    print("#"*40, file=sys.stderr)
+    print("Tupan viewer is not available. See 'spam.log' for a traceback.", file=sys.stderr)
+    print("#"*40, file=sys.stderr)
+
 from .integrator import Integrator
 from .lib.utils.timing import decallmethods, timings, Timer
 

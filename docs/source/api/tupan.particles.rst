@@ -4,54 +4,48 @@ particles Package
 :mod:`particles` Package
 ------------------------
 
-.. automodule:: pynbody.particles
+.. automodule:: tupan.particles
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
 :mod:`allparticles` Module
 --------------------------
 
-.. automodule:: pynbody.particles.allparticles
+.. automodule:: tupan.particles.allparticles
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
 :mod:`blackhole` Module
 -----------------------
 
-.. automodule:: pynbody.particles.blackhole
+.. automodule:: tupan.particles.blackhole
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
 :mod:`body` Module
 ------------------
 
-.. automodule:: pynbody.particles.body
+.. automodule:: tupan.particles.body
     :members:
     :undoc-members:
-    :inherited-members:
-    :show-inheritance:
-
-:mod:`pbase` Module
--------------------
-
-.. automodule:: pynbody.particles.pbase
-    :members:
-    :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
 :mod:`sph` Module
 -----------------
 
-.. automodule:: pynbody.particles.sph
+.. automodule:: tupan.particles.sph
     :members:
     :undoc-members:
-    :inherited-members:
+    :show-inheritance:
+
+:mod:`star` Module
+------------------
+
+.. automodule:: tupan.particles.star
+    :members:
+    :undoc-members:
     :show-inheritance:
 

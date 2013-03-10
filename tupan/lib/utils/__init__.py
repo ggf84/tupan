@@ -2,12 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-
+TODO.
 """
-
-
-from . import timing
-from . import memoize
 
 
 ########## end of file ##########

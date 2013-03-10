@@ -11,7 +11,10 @@ import sys
 import pygtk
 pygtk.require("2.0")
 import gtk as Gtk
-import gtk.gtkgl
+try:
+    import gtk.gtkgl
+except Exception as exc:
+    print(str(exc))
 from OpenGL import GL
 
 
