@@ -17,7 +17,34 @@ import sys, os, time
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../..'))
-print(sys.path)
+
+# -- mock out the imports of third-party modules (snippet from FAQ on readthedocs)
+class Mock(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __call__(self, *args, **kwargs):
+        return Mock()
+
+    @classmethod
+    def __getattr__(cls, name):
+        if name in ('__file__', '__path__'):
+            return '/dev/null'
+        elif name[0] == name[0].upper():
+            mockType = type(name, (), {})
+            mockType.__module__ = __name__
+            return mockType
+        else:
+            return Mock()
+
+with open(os.path.join(os.path.abspath('../..'), 'requirements.txt')) as fobj:
+    reqs = fobj.readlines()
+MOCK_MODULES = [mod.strip("\n") for mod in reqs]
+for mod_name in MOCK_MODULES:
+    try:
+        __import__(mod_name)
+    except:
+        sys.modules[mod_name] = Mock()
 
 # -- General configuration -----------------------------------------------------
 
