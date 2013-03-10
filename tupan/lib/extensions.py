@@ -255,8 +255,12 @@ class CKernel(object):
 
 
 libkernels = {}
-libkernels["c"] = CModule(CEnv(fast_math=True)).build()
-libkernels["cl"] = CLModule(CLEnv(fast_math=True)).build(junroll=2)
+try:
+    libkernels["c"] = CModule(CEnv(fast_math=True)).build()
+    libkernels["cl"] = CLModule(CLEnv(fast_math=True)).build(junroll=2)
+except Exception as exc:
+    print(str(exc), file=sys.stderr)
+
 
 
 def get_extension(use_sp=False, use_cl=False):

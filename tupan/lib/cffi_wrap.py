@@ -41,9 +41,11 @@ def wrap_lib(fptype):
                      )
     return ffi, clib
 
-
-ffi_sp, clib_sp = wrap_lib("float")
-ffi_dp, clib_dp = wrap_lib("double")
+try:
+    ffi_sp, clib_sp = wrap_lib("float")
+    ffi_dp, clib_dp = wrap_lib("double")
+except Exception as exc:
+    print(str(exc), file=sys.stderr)
 
 
 def get_extensions():

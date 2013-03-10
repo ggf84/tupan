@@ -37,7 +37,8 @@ class Mock(object):
         else:
             return Mock()
 
-MOCK_MODULES = ["cffi", "h5py", "matplotlib", "numpy", "pyopencl", "OpenGL", "yaml", "scipy"]
+MOCK_MODULES = ["cffi", "h5py", "matplotlib", "numpy", "pyopencl",
+                "OpenGL.GL", "OpenGL.GLU", "OpenGL.GLUT", "yaml", "scipy"]
 for mod_name in MOCK_MODULES:
     try:
         __import__(mod_name)
