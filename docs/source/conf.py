@@ -20,11 +20,14 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- mock out the imports of third-party modules (snippet from FAQ on readthedocs)
 class Mock(object):
-  def __init__(self, *args, **kwargs):
-    pass
+    def __init__(self, *args, **kwargs):
+        pass
 
-  def __getattr__(self, name):
-    return Mock()
+    def __call__(self, *args, **kwargs):
+        return Mock()
+
+    def __getattr__(self, name):
+        return Mock()
 
 
 MOCK_MODULES = ["cffi", "cffi.FFI", "cffi.FFI.cdef", "h5py", "matplotlib", "numpy", "pyopencl",
