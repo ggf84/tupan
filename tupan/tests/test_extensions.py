@@ -34,17 +34,19 @@ def set_particles(npart):
     p.make_plummer()
     return p.particles
 
-small_system = set_particles(16)
-large_system = set_particles(1024)
 
 
 
 class TestCase(unittest.TestCase):
 
+    small_system = set_particles(16)
+    large_system = set_particles(1024)
+
+
     def test01(self):
         print('\ntest01: C(CPU) vs CL(device): max deviation of grav-phi among all combinations of i- and j-particles:', end=' ')
 
-        npart = small_system.n
+        npart = self.small_system.n
         deviations = []
 
         for i in range(1, npart+1):
@@ -52,8 +54,8 @@ class TestCase(unittest.TestCase):
                 res = {'c': None, 'cl': None}
 
                 # setup data
-                iobj = small_system[:i]
-                jobj = small_system[:j]
+                iobj = self.small_system[:i]
+                jobj = self.small_system[:j]
 
                 # calculating on CPU
                 kernel = gravity.Phi(libkernels['c'])
@@ -78,7 +80,7 @@ class TestCase(unittest.TestCase):
     def test02(self):
         print('\ntest02: C(CPU) vs CL(device): max deviation of grav-acc among all combinations of i- and j-particles:', end=' ')
 
-        npart = small_system.n
+        npart = self.small_system.n
         deviations = []
 
         for i in range(1, npart+1):
@@ -86,8 +88,8 @@ class TestCase(unittest.TestCase):
                 res = {'c': None, 'cl': None}
 
                 # setup data
-                iobj = small_system[:i]
-                jobj = small_system[:j]
+                iobj = self.small_system[:i]
+                jobj = self.small_system[:j]
 
                 # calculating on CPU
                 kernel = gravity.Acc(libkernels['c'])
@@ -112,7 +114,7 @@ class TestCase(unittest.TestCase):
     def test03(self):
         print('\ntest03: C(CPU) vs CL(device): max deviation of grav-pnacc among all combinations of i- and j-particles:', end=' ')
 
-        npart = small_system.n
+        npart = self.small_system.n
         deviations = []
 
         for i in range(1, npart+1):
@@ -120,8 +122,8 @@ class TestCase(unittest.TestCase):
                 res = {'c': None, 'cl': None}
 
                 # setup data
-                iobj = small_system[:i]
-                jobj = small_system[:j]
+                iobj = self.small_system[:i]
+                jobj = self.small_system[:j]
 
                 # calculating on CPU
                 kernel = gravity.PNAcc(libkernels['c'])
@@ -152,8 +154,8 @@ class TestCase(unittest.TestCase):
                 'get_result': {'c': None, 'cl': None}}
 
         # setup data
-        iobj = large_system
-        jobj = large_system
+        iobj = self.large_system
+        jobj = self.large_system
 
         # calculating using SP on CPU
         kernel = gravity.Phi(libkernels['c'])
@@ -188,8 +190,8 @@ class TestCase(unittest.TestCase):
                 'get_result': {'c': None, 'cl': None}}
 
         # setup data
-        iobj = large_system
-        jobj = large_system
+        iobj = self.large_system
+        jobj = self.large_system
 
         # calculating using SP on CPU
         kernel = gravity.Acc(libkernels['c'])
@@ -224,8 +226,8 @@ class TestCase(unittest.TestCase):
                 'get_result': {'c': None, 'cl': None}}
 
         # setup data
-        iobj = large_system
-        jobj = large_system
+        iobj = self.large_system
+        jobj = self.large_system
 
         # calculating using SP on CPU
         kernel = gravity.PNAcc(libkernels['c'])
