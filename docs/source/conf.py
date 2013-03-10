@@ -37,9 +37,7 @@ class Mock(object):
         else:
             return Mock()
 
-with open(os.path.join(os.path.abspath('../..'), 'requirements.txt')) as fobj:
-    reqs = fobj.readlines()
-MOCK_MODULES = [mod.strip("\n") for mod in reqs]
+MOCK_MODULES = ["cffi", "h5py", "matplotlib", "numpy", "pyopencl", "OpenGL", "yaml", "scipy"]
 for mod_name in MOCK_MODULES:
     try:
         __import__(mod_name)

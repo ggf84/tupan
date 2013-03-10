@@ -189,14 +189,17 @@ class CModule(object):
         prec = "double" if REAL is np.float64 else "single"
         logger.debug("Building %s precision C extension module.", prec)
 
-        if prec is "double":
-            from .cffi_wrap import clib_dp as program
-            from .cffi_wrap import ffi_dp as ffi
-        else:
-            from .cffi_wrap import clib_sp as program
-            from .cffi_wrap import ffi_sp as ffi
-        self.program = program
-        self.ffi = ffi
+        try:
+            if prec is "double":
+                from .cffi_wrap import clib_dp as program
+                from .cffi_wrap import ffi_dp as ffi
+            else:
+                from .cffi_wrap import clib_sp as program
+                from .cffi_wrap import ffi_sp as ffi
+            self.program = program
+            self.ffi = ffi
+        except Exception as exc:
+            print(str(exc), file=sys.stderr)
 
         logger.debug("done.")
         return self
