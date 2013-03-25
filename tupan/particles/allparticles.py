@@ -7,14 +7,11 @@
 
 
 from __future__ import print_function
-import sys
-import copy
 import numpy as np
 from .sph import Sphs
 from .star import Stars
 from .blackhole import Blackholes
 from .body import AbstractNbodyMethods
-from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
 
 

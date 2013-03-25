@@ -7,7 +7,6 @@
 
 from __future__ import (print_function, division)
 import OpenGL.GL as gl
-import OpenGL.GLU as glu
 import OpenGL.GLUT as glut
 import numpy as np
 import os

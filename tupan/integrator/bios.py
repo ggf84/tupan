@@ -9,7 +9,6 @@
 from __future__ import print_function, division
 import logging
 import math
-import numpy as np
 from ..lib.extensions import kernels
 from ..lib.utils.timing import decallmethods, timings
 from ..lib.utils.dtype import *

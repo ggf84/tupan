@@ -11,7 +11,6 @@ import heapq
 import math
 import numpy as np
 from .bios import sakura
-from ..lib.utils.memoize import cache, cache_arg
 from ..lib.utils.timing import decallmethods, timings
 
 

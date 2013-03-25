@@ -8,16 +8,9 @@ Setup Script
 
 import os
 from distutils.core import setup
-from distutils.core import Extension
 
 from tupan import version
 from tupan.lib import cffi_wrap
-
-try:
-    from sphinx.setup_command import BuildDoc
-    cmdclass = {'build_sphinx': BuildDoc}
-except:
-    cmdclass = {}
 
 
 package_data = {}
@@ -60,7 +53,6 @@ setup(
     package_data=package_data,
     scripts=['bin/tupan'],
     url='http://github.com/GuilhermeFerrari/Tupan',
-    cmdclass=cmdclass,
     license='MIT License',
     long_description=long_description,
     classifiers=[c for c in classifiers.split('\n') if c],

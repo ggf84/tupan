@@ -6,10 +6,7 @@ from __future__ import print_function
 if __name__ == "__main__":
     from tupan.ics.imf import IMF
     from tupan.ics.plummer import Plummer
-    from tupan.particles import System
     from tupan.io import IO
-    import matplotlib.pyplot as plt
-    import numpy as np
 
     numBodies = 256
 
@@ -29,12 +26,12 @@ if __name__ == "__main__":
 
 #        p.show()
 
-        return p.particles.copy()
+        return p.particles
 
 
     p = main()
 
-    from tupan.ics import *
+    from tupan.ics import figure8
     from tupan.particles.blackhole import Blackholes
     bh = figure8.make_system().astype(Blackholes)
     p.append(bh)

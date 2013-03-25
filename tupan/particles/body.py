@@ -10,7 +10,6 @@ import sys
 import copy
 import numpy as np
 from ..lib import gravity
-from ..lib.utils.memoize import cache, cache_arg
 from ..lib.utils.timing import decallmethods, timings
 from ..lib.utils.dtype import *
 

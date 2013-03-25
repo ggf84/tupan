@@ -5,12 +5,9 @@ from __future__ import print_function
 
 
 if __name__ == "__main__":
-    from tupan.lib.utils.timing import timings
     from tupan.ics.imf import IMF
     from tupan.ics.plummer import Plummer
     from tupan.io import IO
-    import matplotlib.pyplot as plt
-    import numpy as np
 
     def main():
         numBodies = 256
@@ -29,6 +26,8 @@ if __name__ == "__main__":
 
         p.show()
 
+#        import numpy as np
+#        import matplotlib.pyplot as plt
 #        from tupan.analysis import GLviewer
 #        viewer = GLviewer()
 #        viewer.initialize()

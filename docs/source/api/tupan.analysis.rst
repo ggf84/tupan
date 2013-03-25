@@ -17,11 +17,3 @@ analysis Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`guiviewer` Module
------------------------
-
-.. automodule:: tupan.analysis.guiviewer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-

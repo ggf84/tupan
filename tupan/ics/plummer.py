@@ -7,11 +7,10 @@
 
 
 from __future__ import (print_function, division)
-import sys
 import math
 import logging
 import numpy as np
-from ..particles import System
+from ..particles.allparticles import System
 from ..lib.utils.timing import decallmethods, timings
 
 

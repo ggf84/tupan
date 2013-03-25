@@ -9,7 +9,6 @@ from __future__ import print_function
 import sys
 import pickle
 import h5py
-import numpy as np
 from ..lib.utils.timing import decallmethods, timings
 
 

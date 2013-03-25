@@ -1,8 +1,10 @@
+PIL
+PyOpenGL
+PyYAML
+Sphinx
 cffi
 h5py
 matplotlib
 numpy
 pyopencl
-pyopengl
-pyyaml
 scipy
