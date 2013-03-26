@@ -1,8 +1,8 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
-
+TODO.
 """
 
 
@@ -22,15 +22,18 @@ logger = logging.getLogger(__name__)
 def scale_mass(p, m_scale):
     p.mass *= m_scale
 
+
 def scale_pos(p, r_scale):
     p.x *= r_scale
     p.y *= r_scale
     p.z *= r_scale
 
+
 def scale_vel(p, v_scale):
     p.vx *= v_scale
     p.vy *= v_scale
     p.vz *= v_scale
+
 
 def scale_to_virial(particles, ke, pe, te):
     scale_vel(particles, math.sqrt(-0.5*pe/ke))
@@ -60,12 +63,12 @@ def scale_to_nbody_units(particles):
     print(ke, pe, te, ve)
 
 
-
 @decallmethods(timings)
 class Plummer(object):
     """  """
 
-    def __init__(self, num, imf, mfrac=0.999, eps=0.0, eps_parametrization=0, seed=None):
+    def __init__(self, num, imf, mfrac=0.999, eps=0.0,
+                 eps_parametrization=0, seed=None):
         self.num = num
         self.imf = imf
         self.mfrac = mfrac
@@ -87,15 +90,16 @@ class Plummer(object):
         elif self.eps_parametrization == 4:     # eps2 ~ (1/(m*n^2))^2 ~ 1/n^2 if m ~ 1/n
             eps2 = (1.0 / (mass * n**2))**2
         else:
-            logger.critical("Unexpected value for eps_parametrization: %d.", self.eps_parametrization)
-            raise ValueError("Unexpected value for eps_parametrization: {}.".format(self.eps_parametrization))
+            logger.critical(
+                "Unexpected value for eps_parametrization: %d.", self.eps_parametrization)
+            raise ValueError("Unexpected value for eps_parametrization: {}.".format(
+                self.eps_parametrization))
 
         # normalizes by the provided scale of eps2
         eps2 *= self.eps2 / np.mean(eps2)
 
         # return half of real value in order to avoid to do this in force loop.
         return eps2/2
-
 
     def set_pos(self, irand):
         n = self.num
@@ -108,7 +112,6 @@ class Plummer(object):
         ry = radius * np.sin(theta) * np.sin(phi)
         rz = radius * np.cos(theta)
         return (rx, ry, rz)
-
 
     def set_vel(self, pot):
         count = 0
@@ -127,7 +130,6 @@ class Plummer(object):
         vy = velocity * np.sin(theta) * np.sin(phi)
         vz = velocity * np.cos(theta)
         return (vx, vy, vz)
-
 
     def set_bodies(self):
         """  """
@@ -160,17 +162,10 @@ class Plummer(object):
         self.particles.vy = vel[1]
         self.particles.vz = vel[2]
 
-
     def make_plummer(self):
         self.set_bodies()
         self.particles.move_to_center()
         scale_to_nbody_units(self.particles)
-
-
-
-
-
-
 
     def show(self, nbins=32):
         from scipy import optimize
@@ -186,7 +181,8 @@ class Plummer(object):
         where_gt_zero = np.where(hist > 0)
 
         fitfunc = lambda k, m: k * self.imf.func(m)
-        errfunc = lambda k, m, y: fitfunc(k, m)[where_gt_zero] - y[where_gt_zero]
+        errfunc = lambda k, m, y: fitfunc(
+            k, m)[where_gt_zero] - y[where_gt_zero]
         k0 = 1.0
         k1, success = optimize.leastsq(errfunc, k0, args=(linbins[:-1], hist))
         x = np.logspace(np.log10(self.imf.min_mlow),
@@ -198,7 +194,7 @@ class Plummer(object):
         # IMF plot
 
         fig = plt.figure(figsize=(13.5, 6))
-        ax1 = fig.add_subplot(1,2,1)
+        ax1 = fig.add_subplot(1, 2, 1)
         ax1.plot(bins[where_gt_zero], np.log10(hist[where_gt_zero]),
                  'bo', label='IMF sample')
         ax1.plot(np.log10(x), np.log10(y), 'r--',
@@ -221,12 +217,12 @@ class Plummer(object):
         ###################################
         # Scatter plot
 
-        ax2 = fig.add_subplot(1,2,2)
+        ax2 = fig.add_subplot(1, 2, 2)
 #        ax.set_axis_bgcolor('0.75')
         ax2.scatter(x, y, c=color, s=radius, cmap='gist_rainbow',
                     alpha=0.75, label=r'$Stars$')
         circle = Circle((0, 0), 1, facecolor='none',
-                        edgecolor=(1,0.25,0), linewidth=1.5, label=r'$R_{Vir}$')
+                        edgecolor=(1, 0.25, 0), linewidth=1.5, label=r'$R_{Vir}$')
         ax2.add_patch(circle)
 
         ax2.set_xlim(-4, +4)

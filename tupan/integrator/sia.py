@@ -48,7 +48,8 @@ def split(isys, condition):
         fast = fast[:0]
 
     if slow.n + fast.n != isys.n:
-        logger.error("slow.n + fast.n != isys.n: %d, %d, %d.", slow.n, fast.n, isys.n)
+        logger.error(
+            "slow.n + fast.n != isys.n: %d, %d, %d.", slow.n, fast.n, isys.n)
 
     return slow, fast
 
@@ -112,7 +113,8 @@ def drift_pn(isys, tau):
     Drift operator for post-Newtonian quantities.
     """
     isys = drift_n(isys, tau)
-    if isys.n: isys.evolve_rcom_pn_shift(tau)
+    if isys.n:
+        isys.evolve_rcom_pn_shift(tau)
     return isys
 
 
@@ -182,8 +184,10 @@ def kick(isys, jsys, tau, pn):
 #
 # dkd21
 #
-dkd21_coefs = ([ 1.0],
-               [ 0.5])
+dkd21_coefs = ([1.0],
+               [0.5])
+
+
 @timings
 def base_dkd21(isys, tau):
     """
@@ -201,9 +205,11 @@ def base_dkd21(isys, tau):
 #
 # dkd22
 #
-dkd22_coefs = ([ 0.5],
-               [ 0.1931833275037836,
-                 0.6136333449924328])
+dkd22_coefs = ([0.5],
+               [0.1931833275037836,
+                0.6136333449924328])
+
+
 @timings
 def base_dkd22(isys, tau):
     """
@@ -223,10 +229,12 @@ def base_dkd22(isys, tau):
 #
 # dkd43
 #
-dkd43_coefs = ([ 1.3512071919596575,
+dkd43_coefs = ([1.3512071919596575,
                 -1.7024143839193150],
-               [ 0.6756035959798288,
+               [0.6756035959798288,
                 -0.17560359597982877])
+
+
 @timings
 def base_dkd43(isys, tau):
     """
@@ -296,10 +304,8 @@ class Base(object):
         self.dump_freq = kwargs.pop("dump_freq", 1)
         if kwargs:
             msg = "{0}.__init__ received unexpected keyword arguments: {1}."
-            raise TypeError(msg.format(type(self).__name__,", ".join(kwargs.keys())))
-
-
-
+            raise TypeError(msg.format(type(
+                self).__name__, ", ".join(kwargs.keys())))
 
 
 @decallmethods(timings)
@@ -315,19 +321,17 @@ class SIA(Base):
                         'sia.dkd46std', 'sia.dkd46shr', 'sia.dkd46hcc',
                         'sia.dkd67std', 'sia.dkd67shr', 'sia.dkd67hcc',
                         'sia.dkd69std', 'sia.dkd69shr', 'sia.dkd69hcc',
-                       ]
+                        ]
 
     def __init__(self, eta, time, particles, method, **kwargs):
         super(SIA, self).__init__(eta, time, particles, **kwargs)
         self.method = method
-
 
     def get_base_tstep(self, t_end):
         self.tstep = self.eta
         if abs(self.time + self.tstep) > t_end:
             self.tstep = math.copysign(t_end - abs(self.time), self.eta)
         return self.tstep
-
 
     def initialize(self, t_end):
         logger.info("Initializing '%s' integrator.", self.method)
@@ -339,7 +343,6 @@ class SIA(Base):
 
         self.is_initialized = True
 
-
     def finalize(self, t_end):
         logger.info("Finalizing '%s' integrator.", self.method)
 
@@ -347,7 +350,6 @@ class SIA(Base):
 
         if self.reporter:
             self.reporter.report(self.time, p)
-
 
     def get_min_block_tstep(self, p, tau):
         min_tstep = p.min_tstep()
@@ -366,9 +368,7 @@ class SIA(Base):
         self.tstep = math.copysign(self.tstep, self.eta)
         return self.tstep
 
-
     ### evolve_step
-
     def evolve_step(self, t_end):
         """
 
@@ -382,7 +382,6 @@ class SIA(Base):
         if self.reporter:
             self.reporter.report(self.time, p)
         self.wl = p[:0]
-
 
         if self.method == "sia.dkd21std":
             p = self.dkd21(p, tau, False, True)
@@ -438,24 +437,22 @@ class SIA(Base):
         else:
             raise ValueError("Unexpected method: {0}".format(self.method))
 
-
         if self.dumpper:
             self.dumpper.dump_worldline(self.wl)
 
         self.time += self.tstep
         self.particles = p
 
-
     #
     # dkd21[std,shr,hcc] method -- D.K.D
     #
-
     def dkd21__(self, p, tau, update_tstep, shared_tstep=False):
         if p.n:
 
             if update_tstep:
                 p.update_tstep(p, self.eta)
-                if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+                if shared_tstep:
+                    tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
             if p.n == 2:
@@ -467,12 +464,15 @@ class SIA(Base):
             #
             if fast.n:
                 fast = self.dkd21(fast, d[0] * tau, True)
-                if slow.n: slow = sakura(slow, d[0] * tau)
+                if slow.n:
+                    slow = sakura(slow, d[0] * tau)
                 fast, slow = kick_sf(fast, slow, k[0] * tau)
-                if slow.n: slow = sakura(slow, d[0] * tau)
+                if slow.n:
+                    slow = sakura(slow, d[0] * tau)
                 fast = self.dkd21(fast, d[0] * tau, True)
             else:
-                if slow.n: slow = sakura(slow, tau)
+                if slow.n:
+                    slow = sakura(slow, tau)
             #
 
             if slow.n:
@@ -480,23 +480,23 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.time % (self.dump_freq * tau) == 0]
-                if wp.n: self.wl.append(wp[:])
+                if wp.n:
+                    self.wl.append(wp[:])
 
             p = join(slow, fast)
 
         return p
 
-
     #
     # dkd21[std,shr,hcc] method -- D.K.D
     #
-
     def dkd21(self, p, tau, update_tstep, shared_tstep=False):
         if p.n:
 
             if update_tstep:
                 p.update_tstep(p, self.eta)
-                if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+                if shared_tstep:
+                    tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
@@ -521,23 +521,23 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.time % (self.dump_freq * tau) == 0]
-                if wp.n: self.wl.append(wp[:])
+                if wp.n:
+                    self.wl.append(wp[:])
 
             p = join(slow, fast)
 
         return p
 
-
     #
     # dkd22[std,shr,hcc] method -- D.K.D.K.D
     #
-
     def dkd22(self, p, tau, update_tstep, shared_tstep=False):
         if p.n:
 
             if update_tstep:
                 p.update_tstep(p, self.eta)
-                if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+                if shared_tstep:
+                    tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
@@ -567,23 +567,23 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.time % (self.dump_freq * tau) == 0]
-                if wp.n: self.wl.append(wp[:])
+                if wp.n:
+                    self.wl.append(wp[:])
 
             p = join(slow, fast)
 
         return p
 
-
     #
     # dkd43[std,shr,hcc] method -- D.K.D.K.D.K.D
     #
-
     def dkd43(self, p, tau, update_tstep, shared_tstep=False):
         if p.n:
 
             if update_tstep:
                 p.update_tstep(p, self.eta)
-                if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+                if shared_tstep:
+                    tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
@@ -658,29 +658,29 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.time % (self.dump_freq * tau) == 0]
-                if wp.n: self.wl.append(wp[:])
+                if wp.n:
+                    self.wl.append(wp[:])
 
             p = join(slow, fast)
 
         return p
 
-
     #
     # dkd44[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D
     #
-
     def dkd44(self, p, tau, update_tstep,
-                    shared_tstep=False,
-                    k0=0.7123418310626056,
-                    k1=-0.21234183106260562,
-                    d0=0.1786178958448091,
-                    d1=-0.06626458266981843,
-                    d2=0.7752933736500186):
+              shared_tstep=False,
+              k0=0.7123418310626056,
+              k1=-0.21234183106260562,
+              d0=0.1786178958448091,
+              d1=-0.06626458266981843,
+              d2=0.7752933736500186):
         if p.n:
 
             if update_tstep:
                 p.update_tstep(p, self.eta)
-                if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+                if shared_tstep:
+                    tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
@@ -736,30 +736,30 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.time % (self.dump_freq * tau) == 0]
-                if wp.n: self.wl.append(wp[:])
+                if wp.n:
+                    self.wl.append(wp[:])
 
             p = join(slow, fast)
 
         return p
 
-
     #
     # dkd45[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D
     #
-
     def dkd45(self, p, tau, update_tstep,
-                    shared_tstep=False,
-                    k0=-0.0844296195070715,
-                    k1=0.354900057157426,
-                    k2=0.459059124699291,
-                    d0=0.2750081212332419,
-                    d1=-0.1347950099106792,
-                    d2=0.35978688867743724):
+              shared_tstep=False,
+              k0=-0.0844296195070715,
+              k1=0.354900057157426,
+              k2=0.459059124699291,
+              d0=0.2750081212332419,
+              d1=-0.1347950099106792,
+              d2=0.35978688867743724):
         if p.n:
 
             if update_tstep:
                 p.update_tstep(p, self.eta)
-                if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+                if shared_tstep:
+                    tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
@@ -823,31 +823,31 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.time % (self.dump_freq * tau) == 0]
-                if wp.n: self.wl.append(wp[:])
+                if wp.n:
+                    self.wl.append(wp[:])
 
             p = join(slow, fast)
 
         return p
 
-
     #
     # dkd46[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D
     #
-
     def dkd46(self, p, tau, update_tstep,
-                    shared_tstep=False,
-                    k0=0.209515106613362,
-                    k1=-0.143851773179818,
-                    k2=0.434336666566456,
-                    d0=0.0792036964311957,
-                    d1=0.353172906049774,
-                    d2=-0.0420650803577195,
-                    d3=0.21937695575349958):
+              shared_tstep=False,
+              k0=0.209515106613362,
+              k1=-0.143851773179818,
+              k2=0.434336666566456,
+              d0=0.0792036964311957,
+              d1=0.353172906049774,
+              d2=-0.0420650803577195,
+              d3=0.21937695575349958):
         if p.n:
 
             if update_tstep:
                 p.update_tstep(p, self.eta)
-                if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+                if shared_tstep:
+                    tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
@@ -921,32 +921,32 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.time % (self.dump_freq * tau) == 0]
-                if wp.n: self.wl.append(wp[:])
+                if wp.n:
+                    self.wl.append(wp[:])
 
             p = join(slow, fast)
 
         return p
 
-
     #
     # dkd67[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
-
     def dkd67(self, p, tau, update_tstep,
-                    shared_tstep=False,
-                    k0=0.7845136104775573,
-                    k1=0.23557321335935813,
-                    k2=-1.177679984178871,
-                    k3=1.3151863206839112,
-                    d0=0.39225680523877865,
-                    d1=0.5100434119184577,
-                    d2=-0.47105338540975644,
-                    d3=0.06875316825252015):
+              shared_tstep=False,
+              k0=0.7845136104775573,
+              k1=0.23557321335935813,
+              k2=-1.177679984178871,
+              k3=1.3151863206839112,
+              d0=0.39225680523877865,
+              d1=0.5100434119184577,
+              d2=-0.47105338540975644,
+              d3=0.06875316825252015):
         if p.n:
 
             if update_tstep:
                 p.update_tstep(p, self.eta)
-                if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+                if shared_tstep:
+                    tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
@@ -1032,34 +1032,34 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.time % (self.dump_freq * tau) == 0]
-                if wp.n: self.wl.append(wp[:])
+                if wp.n:
+                    self.wl.append(wp[:])
 
             p = join(slow, fast)
 
         return p
 
-
     #
     # dkd69[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
-
     def dkd69(self, p, tau, update_tstep,
-                    shared_tstep=False,
-                    k0=0.39103020330868477,
-                    k1=0.334037289611136,
-                    k2=-0.7062272811875614,
-                    k3=0.08187754964805945,
-                    k4=0.7985644772393624,
-                    d0=0.19551510165434238,
-                    d1=0.3625337464599104,
-                    d2=-0.1860949957882127,
-                    d3=-0.31217486576975095,
-                    d4=0.44022101344371095):
+              shared_tstep=False,
+              k0=0.39103020330868477,
+              k1=0.334037289611136,
+              k2=-0.7062272811875614,
+              k3=0.08187754964805945,
+              k4=0.7985644772393624,
+              d0=0.19551510165434238,
+              d1=0.3625337464599104,
+              d2=-0.1860949957882127,
+              d3=-0.31217486576975095,
+              d4=0.44022101344371095):
         if p.n:
 
             if update_tstep:
                 p.update_tstep(p, self.eta)
-                if shared_tstep: tau = self.get_min_block_tstep(p, tau)
+                if shared_tstep:
+                    tau = self.get_min_block_tstep(p, tau)
             flag = 0 if shared_tstep and not update_tstep else 1
 
             slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
@@ -1163,21 +1163,17 @@ class SIA(Base):
                 slow.time += tau
                 slow.nstep += 1
                 wp = slow[slow.time % (self.dump_freq * tau) == 0]
-                if wp.n: self.wl.append(wp[:])
+                if wp.n:
+                    self.wl.append(wp[:])
 
             p = join(slow, fast)
 
         return p
 
-
-
     #
     # the following methods are for experimental purposes only.
     #
-
-
     ### heapq0
-
     def heapq0(self, p, tau, update_tstep):
 
         dt = tau
@@ -1199,8 +1195,10 @@ class SIA(Base):
                 self.time = t
 
             self.merge(p, slow, fast, indexing)
-            if update_tstep: p.update_tstep(p, self.eta)      # True/False
-            if update_tstep: p.update_phi(p)      # True/False
+            if update_tstep:
+                p.update_tstep(p, self.eta)      # True/False
+            if update_tstep:
+                p.update_phi(p)      # True/False
             slow, fast, indexing = split(dt/2, p)
 
             if fast.n > 0:

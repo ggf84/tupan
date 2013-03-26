@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
 This module implements a minimal class for gravitational interactions
@@ -35,7 +35,6 @@ class Clight(object):
         self.inv7 = self.inv1**7
 
 
-
 @decallmethods(timings)
 class Phi(object):
     """
@@ -54,7 +53,6 @@ class Phi(object):
         self.kernel.set_local_memory(24, 1)
         self.kernel.set_local_memory(25, 1)
         self.kernel.set_local_memory(26, 1)
-
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -85,16 +83,13 @@ class Phi(object):
             self.phi = self.kernel.allocate_buffer(18, ni)
             self.max_output_size = ni
 
-
     def run(self):
         self.kernel.run()
-
 
     def get_result(self):
         ni = self.osize
         self.kernel.map_buffer(18, self.phi)
         return self.phi[:ni]
-
 
 
 @decallmethods(timings)
@@ -115,7 +110,6 @@ class Acc(object):
         self.kernel.set_local_memory(26, 1)
         self.kernel.set_local_memory(27, 1)
         self.kernel.set_local_memory(28, 1)
-
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -148,10 +142,8 @@ class Acc(object):
             self.az = self.kernel.allocate_buffer(20, ni)
             self.max_output_size = ni
 
-
     def run(self):
         self.kernel.run()
-
 
     def get_result(self):
         ni = self.osize
@@ -159,7 +151,6 @@ class Acc(object):
         self.kernel.map_buffer(19, self.ay)
         self.kernel.map_buffer(20, self.az)
         return [self.ax[:ni], self.ay[:ni], self.az[:ni]]
-
 
 
 @decallmethods(timings)
@@ -180,7 +171,6 @@ class AccJerk(object):
         self.kernel.set_local_memory(29, 1)
         self.kernel.set_local_memory(30, 1)
         self.kernel.set_local_memory(31, 1)
-
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -216,10 +206,8 @@ class AccJerk(object):
             self.jz = self.kernel.allocate_buffer(23, ni)
             self.max_output_size = ni
 
-
     def run(self):
         self.kernel.run()
-
 
     def get_result(self):
         ni = self.osize
@@ -231,7 +219,6 @@ class AccJerk(object):
         self.kernel.map_buffer(23, self.jz)
         return [self.ax[:ni], self.ay[:ni], self.az[:ni],
                 self.jx[:ni], self.jy[:ni], self.jz[:ni]]
-
 
 
 @decallmethods(timings)
@@ -252,7 +239,6 @@ class Tstep(object):
         self.kernel.set_local_memory(25, 1)
         self.kernel.set_local_memory(26, 1)
         self.kernel.set_local_memory(27, 1)
-
 
     def set_args(self, iobj, jobj, eta):
         ni = iobj.n
@@ -284,16 +270,13 @@ class Tstep(object):
             self.tstep = self.kernel.allocate_buffer(19, ni)
             self.max_output_size = ni
 
-
     def run(self):
         self.kernel.run()
-
 
     def get_result(self):
         ni = self.osize
         self.kernel.map_buffer(19, self.tstep)
         return self.tstep[:ni]
-
 
 
 @decallmethods(timings)
@@ -314,7 +297,6 @@ class PNAcc(object):
         self.kernel.set_local_memory(34, 1)
         self.kernel.set_local_memory(35, 1)
         self.kernel.set_local_memory(36, 1)
-
 
     def set_args(self, iobj, jobj, pn_order, clight):
         ni = iobj.n
@@ -357,10 +339,8 @@ class PNAcc(object):
             self.pnaz = self.kernel.allocate_buffer(28, ni)
             self.max_output_size = ni
 
-
     def run(self):
         self.kernel.run()
-
 
     def get_result(self):
         ni = self.osize
@@ -368,7 +348,6 @@ class PNAcc(object):
         self.kernel.map_buffer(27, self.pnay)
         self.kernel.map_buffer(28, self.pnaz)
         return [self.pnax[:ni], self.pnay[:ni], self.pnaz[:ni]]
-
 
 
 phi = Phi(kernels)

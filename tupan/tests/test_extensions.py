@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
 Test suite for extensions module.
@@ -26,15 +26,14 @@ def best_of(n, func, *args, **kwargs):
 
 
 def set_particles(npart):
-    if npart < 2: npart = 2
+    if npart < 2:
+        npart = 2
     from tupan.ics.imf import IMF
     from tupan.ics.plummer import Plummer
     imf = IMF.padoan2007(0.075, 120.0)
     p = Plummer(npart, imf, eps=0.0, seed=1)
     p.make_plummer()
     return p.particles
-
-
 
 
 class TestCase(unittest.TestCase):
@@ -44,9 +43,9 @@ class TestCase(unittest.TestCase):
         cls.small_system = set_particles(16)
         cls.large_system = set_particles(1024)
 
-
     def test01(self):
-        print('\ntest01: C(CPU) vs CL(device): max deviation of grav-phi among all combinations of i- and j-particles:', end=' ')
+        print(
+            '\ntest01: C(CPU) vs CL(device): max deviation of grav-phi among all combinations of i- and j-particles:', end=' ')
 
         npart = self.small_system.n
         deviations = []
@@ -78,9 +77,9 @@ class TestCase(unittest.TestCase):
         deviations = np.array(deviations)
         print(deviations.max())
 
-
     def test02(self):
-        print('\ntest02: C(CPU) vs CL(device): max deviation of grav-acc among all combinations of i- and j-particles:', end=' ')
+        print(
+            '\ntest02: C(CPU) vs CL(device): max deviation of grav-acc among all combinations of i- and j-particles:', end=' ')
 
         npart = self.small_system.n
         deviations = []
@@ -106,15 +105,16 @@ class TestCase(unittest.TestCase):
                 res['cl'] = kernel.get_result()
 
                 # calculating deviation of result
-                deviation = np.sqrt(sum((a_c-a_cl)**2 for a_c, a_cl in zip(res['c'], res['cl'])))
+                deviation = np.sqrt(sum((
+                    a_c-a_cl)**2 for a_c, a_cl in zip(res['c'], res['cl'])))
                 deviations.append(deviation.max())
 
         deviations = np.array(deviations)
         print(deviations.max())
 
-
     def test03(self):
-        print('\ntest03: C(CPU) vs CL(device): max deviation of grav-pnacc among all combinations of i- and j-particles:', end=' ')
+        print(
+            '\ntest03: C(CPU) vs CL(device): max deviation of grav-pnacc among all combinations of i- and j-particles:', end=' ')
 
         npart = self.small_system.n
         deviations = []
@@ -140,15 +140,16 @@ class TestCase(unittest.TestCase):
                 res['cl'] = kernel.get_result()
 
                 # calculating deviation of result
-                deviation = np.sqrt(sum((a_c-a_cl)**2 for a_c, a_cl in zip(res['c'], res['cl'])))
+                deviation = np.sqrt(sum((
+                    a_c-a_cl)**2 for a_c, a_cl in zip(res['c'], res['cl'])))
                 deviations.append(deviation.max())
 
         deviations = np.array(deviations)
         print(deviations.max())
 
-
     def test04(self):
-        print('\ntest04: C(CPU) vs CL(device): performance of grav-phi:', end=' ')
+        print(
+            '\ntest04: C(CPU) vs CL(device): performance of grav-phi:', end=' ')
 
         n = 5   # no. of samples
         best = {'set_args': {'c': None, 'cl': None},
@@ -182,9 +183,9 @@ class TestCase(unittest.TestCase):
         print('percentage:')
         pprint(best, width=40)
 
-
     def test05(self):
-        print('\ntest05: C(CPU) vs CL(device): performance of grav-acc:', end=' ')
+        print(
+            '\ntest05: C(CPU) vs CL(device): performance of grav-acc:', end=' ')
 
         n = 5   # no. of samples
         best = {'set_args': {'c': None, 'cl': None},
@@ -218,9 +219,9 @@ class TestCase(unittest.TestCase):
         print('percentage:')
         pprint(best, width=40)
 
-
     def test06(self):
-        print('\ntest06: C(CPU) vs CL(device): performance of grav-pnacc:', end=' ')
+        print(
+            '\ntest06: C(CPU) vs CL(device): performance of grav-pnacc:', end=' ')
 
         n = 5   # no. of samples
         best = {'set_args': {'c': None, 'cl': None},
@@ -239,7 +240,8 @@ class TestCase(unittest.TestCase):
 
         # calculating using DP on CPU
         kernel = gravity.PNAcc(libkernels['cl'])
-        best['set_args']['cl'] = best_of(n, kernel.set_args, iobj, jobj, 7, 128)
+        best['set_args']['cl'] = best_of(
+            n, kernel.set_args, iobj, jobj, 7, 128)
         best['run']['cl'] = best_of(n, kernel.run)
         best['get_result']['cl'] = best_of(n, kernel.get_result)
 
@@ -255,10 +257,10 @@ class TestCase(unittest.TestCase):
         pprint(best, width=40)
 
 
-
 if __name__ == "__main__":
     import sys
-    if "--use_sp" in sys.argv: sys.argv.remove("--use_sp")
+    if "--use_sp" in sys.argv:
+        sys.argv.remove("--use_sp")
     unittest.main()
 
 

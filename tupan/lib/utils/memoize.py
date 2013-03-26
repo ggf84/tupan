@@ -1,8 +1,8 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
-
+TODO.
 """
 
 import functools
@@ -17,12 +17,14 @@ def cache(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         key = args
-        if kwargs: key += (kwmark,) + tuple(sorted(kwargs.items()))
+        if kwargs:
+            key += (kwmark,) + tuple(sorted(kwargs.items()))
         key = hash(key)
         try:
             result = cache[key]
         except:
-            if len(cache) > 100: cache.clear()
+            if len(cache) > 100:
+                cache.clear()
             result = func(*args, **kwargs)
             cache[key] = result
         return result
@@ -39,12 +41,14 @@ def cache_arg(index):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             key = args[index]
-            if kwargs: key += (kwmark,) + tuple(sorted(kwargs.items()))
+            if kwargs:
+                key += (kwmark,) + tuple(sorted(kwargs.items()))
             key = hash(key)
             try:
                 result = cache[key]
             except:
-                if len(cache) > 100: cache.clear()
+                if len(cache) > 100:
+                    cache.clear()
                 result = func(*args, **kwargs)
                 cache[key] = result
             return result
@@ -52,7 +56,7 @@ def cache_arg(index):
         return wrapper
     return cache
 
-#cache = cache_arg(slice(None, None, None))
+# cache = cache_arg(slice(None, None, None))
 
 
 ########## end of file ##########

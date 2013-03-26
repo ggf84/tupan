@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
 
@@ -15,7 +15,8 @@ from ..lib.utils.timing import decallmethods, timings
 __all__ = ["HDF5IO"]
 
 IS_PY3K = True if sys.version_info.major > 2 else False
-PICKLE_PROTOCOL = 0 # ensures backward compatibility with Python 2.x
+PICKLE_PROTOCOL = 0  # ensures backward compatibility with Python 2.x
+
 
 @decallmethods(timings)
 class HDF5IO(object):
@@ -25,7 +26,6 @@ class HDF5IO(object):
     def __init__(self, fname, fmode):
         self.fname = fname
         self.fmode = fmode
-
 
     def store_dset(self, group, key, obj):
         """
@@ -41,12 +41,11 @@ class HDF5IO(object):
                                      chunks=True,
                                      compression="gzip",
                                      shuffle=True,
-                                    )
+                                     )
         cls = pickle.dumps(type(obj), protocol=PICKLE_PROTOCOL)
         dset.attrs["Class"] = cls.decode('utf-8') if IS_PY3K else cls
         dset.resize((nlen,))
         dset[olen:] = obj.get_state()
-
 
     def snapshot_dumpper(self, fobj, p, snap_number):
         """
@@ -64,14 +63,12 @@ class HDF5IO(object):
             if obj.n:
                 self.store_dset(group, key, obj)
 
-
     def dump_snapshot(self, p, snap_number=None):
         """
 
         """
         with h5py.File(self.fname, self.fmode) as fobj:
             self.snapshot_dumpper(fobj, p, snap_number)
-
 
     def snapshot_loader(self, fobj, snap_number=None):
         """
@@ -88,7 +85,6 @@ class HDF5IO(object):
             p.append(obj)
         return p
 
-
     def load_snapshot(self, snap_number=None):
         """
 
@@ -96,7 +92,6 @@ class HDF5IO(object):
         with h5py.File(self.fname, self.fmode) as fobj:
             p = self.snapshot_loader(fobj, snap_number)
         return p
-
 
     def worldline_dumpper(self, fobj, wl):
         """
@@ -111,7 +106,6 @@ class HDF5IO(object):
             if obj.n:
                 self.store_dset(group, key, obj)
 
-
     def dump_worldline(self, wl):
         """
 
@@ -119,13 +113,11 @@ class HDF5IO(object):
         with h5py.File(self.fname, self.fmode) as fobj:
             self.worldline_dumpper(fobj, wl)
 
-
     def worldline_loader(self, fobj, wl_number=None):
         """
 
         """
         raise NotImplementedError()
-
 
     def load_worldline(self, wl_number=None):
         """
@@ -134,7 +126,6 @@ class HDF5IO(object):
         with h5py.File(self.fname, self.fmode) as fobj:
             wl = self.worldline_loader(fobj, wl_number)
         return wl
-
 
     def to_psdf(self):
         """

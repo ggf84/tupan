@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+#
+
+"""
+TODO.
+"""
+
 
 from __future__ import print_function
 import os
@@ -37,9 +44,10 @@ def wrap_lib(fptype):
                       include_dirs=[PATH],
                       libraries=['m'],
                       sources=[os.path.join(PATH, 'libtupan.c')],
-                      force_generic_engine=hasattr(sys, '_force_generic_engine_'),
+                      force_generic_engine=hasattr(
+                          sys, '_force_generic_engine_'),
                       modulename=modulename,
-                     )
+                      )
     return ffi, clib
 
 
@@ -49,4 +57,3 @@ ffi_dp, clib_dp = wrap_lib("double")
 
 def get_extensions():
     return [ffi_sp.verifier.get_extension(), ffi_dp.verifier.get_extension()]
-

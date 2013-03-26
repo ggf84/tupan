@@ -1,5 +1,10 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+
+"""
+TODO.
+"""
+
 
 from __future__ import print_function
 
@@ -17,7 +22,8 @@ if __name__ == "__main__":
 #        imf = IMF.parravano2011(0.075, 120.0)
         imf = IMF.padoan2007(0.075, 120.0)
 
-        p = Plummer(numBodies, imf, eps=4.0/numBodies, eps_parametrization=0, seed=1)
+        p = Plummer(numBodies, imf, eps=4.0/numBodies,
+                    eps_parametrization=0, seed=1)
         p.make_plummer()
 
         fname = "plummer"+str(numBodies).zfill(4)+".hdf5"
@@ -27,7 +33,6 @@ if __name__ == "__main__":
 #        p.show()
 
         return p.particles
-
 
     p = main()
 

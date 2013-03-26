@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
 
@@ -21,7 +21,6 @@ class PSDFIO(object):
     def __init__(self, fname):
         self.fname = fname
 
-
     def dump(self, particles, fmode='a'):
         """
         Serialize particle objects into a YAML stream.
@@ -33,7 +32,6 @@ class PSDFIO(object):
                           default_flow_style=False,
                           explicit_start=True)
 
-
     def load(self):
         """
         Load a YAML stream into particle objects.
@@ -42,7 +40,6 @@ class PSDFIO(object):
             data = [i for i in yaml.load_all(fobj)]
         particles = Stream.from_loader(data)
         return particles
-
 
     def to_hdf5(self):
         """
@@ -55,14 +52,12 @@ class PSDFIO(object):
         stream.dump(p, fmode='w')
 
 
-
 #@decallmethods(timings)
 class Stream(yaml.YAMLObject):
     """
 
     """
     yaml_tag = '!Particle'
-
 
     @classmethod
     def to_yaml(cls, dumper, data):
@@ -96,7 +91,6 @@ class Stream(yaml.YAMLObject):
 #            return dumper.represent_mapping(data.yaml_tag + '/Sph', attributes)
 #        else:
 #            return dumper.represent_mapping(data.yaml_tag, attributes)
-
 
     @classmethod
     def to_dumper(cls, particles):
@@ -143,14 +137,12 @@ class Stream(yaml.YAMLObject):
                     data.append(p)
         return data
 
-
     @classmethod
     def from_yaml(cls, loader, node):
         """
         Convert a representation node to a Python object.
         """
         return loader.construct_mapping(node, deep=True)
-
 
     @classmethod
     def from_loader(cls, data):
@@ -212,7 +204,8 @@ class Stream(yaml.YAMLObject):
                         p['sph'] = Sph(1)
                         set_attributes(p['sph'], 0, item)
             else:
-                print("Unspecified particle type! Using by default the 'body' type.")
+                print(
+                    "Unspecified particle type! Using by default the 'body' type.")
                 if p['body']:
                     olen = len(p['body'])
                     p['body'].append(Body(1))

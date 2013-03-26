@@ -16,11 +16,12 @@ from tupan.lib import cffi_wrap
 package_data = {}
 package_data['tupan.analysis'] = [os.path.join('textures', '*.png')]
 package_data['tupan.lib'] = [os.path.join('src', '*.c'),
-                               os.path.join('src', '*.h'),
-                               os.path.join('src', '*.cl')]
+                             os.path.join('src', '*.h'),
+                             os.path.join('src', '*.cl')]
 
 
-long_description = open(os.path.join(os.path.dirname(__file__), 'README.txt')).read()
+long_description = open(os.path.join(
+    os.path.dirname(__file__), 'README.txt')).read()
 
 
 classifiers = """
@@ -48,7 +49,7 @@ setup(
               'tupan.lib.utils',
               'tupan.particles',
               'tupan.tests',
-             ],
+              ],
     ext_modules=cffi_wrap.get_extensions(),
     package_data=package_data,
     scripts=['bin/tupan'],

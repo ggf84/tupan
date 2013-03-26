@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
 TODO.
@@ -20,7 +20,6 @@ class IO(object):
         self.fname = fname
         self.fmode = fmode
 
-
     def dump_snapshot(self, *args, **kwargs):
         fname = self.fname
         fmode = self.fmode
@@ -31,8 +30,7 @@ class IO(object):
         else:
             raise NotImplementedError("Unknown format: '{}'. "
                                       "Choose from: {}".format(fname.rpartition('.')[-1],
-                                       self.PROVIDED_FORMATS))
-
+                                                               self.PROVIDED_FORMATS))
 
     def load_snapshot(self, *args, **kwargs):
         import os
@@ -53,7 +51,6 @@ class IO(object):
                 logger.exception(str(exc))
         raise ValueError("File not in a supported format.")
 
-
     def dump_worldline(self, *args, **kwargs):
         fname = self.fname
         fmode = self.fmode
@@ -64,8 +61,7 @@ class IO(object):
         else:
             raise NotImplementedError("Unknown format: '{}'. "
                                       "Choose from: {}".format(fname.rpartition('.')[-1],
-                                       self.PROVIDED_FORMATS))
-
+                                                               self.PROVIDED_FORMATS))
 
     def load_worldline(self, *args, **kwargs):
         import os
@@ -86,7 +82,6 @@ class IO(object):
                 logger.exception(str(exc))
         raise ValueError("File not in a supported format.")
 
-
     def to_psdf(self):
         fname = self.fname
         fmode = self.fmode
@@ -97,7 +92,6 @@ class IO(object):
             except Exception:
                 pass
         raise ValueError("This file is already in 'psdf' format!")
-
 
     def to_hdf5(self):
         fname = self.fname
@@ -110,19 +104,13 @@ class IO(object):
                 pass
         raise ValueError("This file is already in 'hdf5' format!")
 
-
-
-
-
     def take_time_slices(self, times):
         import numpy as np
         from scipy import interpolate
         from collections import OrderedDict
 
-
         #######################################################################
         import matplotlib.pyplot as plt
-        from tupan.io import IO
         p0 = IO("snapshots0.hdf5").load()
         p1 = IO("snapshots1.hdf5").load()
         p = IO("snapshots.hdf5").load()
@@ -132,25 +120,24 @@ class IO(object):
         a1 = p1[p1.id == index]
         a = p[p.id == index]
 
-        plt.plot(a0.pos[:,0], a0.pos[:,1], label="PBaSS: l=1")
-        plt.plot(a1.pos[:,0], a1.pos[:,1], label="PBaSS: l=8")
-        plt.plot(a.pos[:,0], a.pos[:,1], label="PBaSS: l=64")
+        plt.plot(a0.pos[:, 0], a0.pos[:, 1], label="PBaSS: l=1")
+        plt.plot(a1.pos[:, 0], a1.pos[:, 1], label="PBaSS: l=8")
+        plt.plot(a.pos[:, 0], a.pos[:, 1], label="PBaSS: l=64")
         plt.legend(loc="best", shadow=True,
                    fancybox=True, borderaxespad=0.75)
         plt.show()
 
         axis = 0
-        x = np.linspace(0,25,1000000)
-        f = interpolate.UnivariateSpline(a1.time, a1.pos[:,axis], s=0, k=2)
-        plt.plot(a0.time, a0.pos[:,axis], label="PBaSS: l=1")
-        plt.plot(a1.time, a1.pos[:,axis], label="PBaSS: l=8")
-        plt.plot(a.time, a.pos[:,axis], label="PBass: l=64")
+        x = np.linspace(0, 25, 1000000)
+        f = interpolate.UnivariateSpline(a1.time, a1.pos[:, axis], s=0, k=2)
+        plt.plot(a0.time, a0.pos[:, axis], label="PBaSS: l=1")
+        plt.plot(a1.time, a1.pos[:, axis], label="PBaSS: l=8")
+        plt.plot(a.time, a.pos[:, axis], label="PBass: l=64")
         plt.plot(x, f(x), label="interp. function")
         plt.legend(loc="best", shadow=True,
                    fancybox=True, borderaxespad=0.75)
         plt.show()
         #######################################################################
-
 
         p = self.load()
 
@@ -173,11 +160,14 @@ class IO(object):
                         attr = getattr(stream, name)
                         if attr.ndim > 1:
                             for k in xrange(attr.shape[1]):
-                                f = interpolate.UnivariateSpline(time, attr[:,k], s=0, k=2)
+                                f = interpolate.UnivariateSpline(
+                                    time, attr[:, k], s=0, k=2)
                                 for t in times:
-                                    getattr(getattr(snaps[t], key), name)[i,k] = f(t)
+                                    getattr(getattr(snaps[
+                                            t], key), name)[i, k] = f(t)
                         else:
-                            f = interpolate.UnivariateSpline(time, attr[:], s=0, k=2)
+                            f = interpolate.UnivariateSpline(
+                                time, attr[:], s=0, k=2)
                             for t in times:
                                 getattr(getattr(snaps[t], key), name)[i] = f(t)
 

@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
 
@@ -41,8 +41,8 @@ class Base(object):
         self.dump_freq = kwargs.pop("dump_freq", 1)
         if kwargs:
             msg = "{0}.__init__ received unexpected keyword arguments: {1}."
-            raise TypeError(msg.format(type(self).__name__,", ".join(kwargs.keys())))
-
+            raise TypeError(msg.format(type(
+                self).__name__, ", ".join(kwargs.keys())))
 
 
 @decallmethods(timings)
@@ -63,7 +63,6 @@ class LLBIOS(object):
         self.kernel.set_local_memory(30, 1)
         self.kernel.set_local_memory(31, 1)
         self.kernel.set_local_memory(32, 1)
-
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
@@ -100,10 +99,8 @@ class LLBIOS(object):
             self.dvz = self.kernel.allocate_buffer(24, ni)
             self.max_output_size = ni
 
-
     def run(self):
         self.kernel.run()
-
 
     def get_result(self):
         ni = self.osize
@@ -115,7 +112,6 @@ class LLBIOS(object):
         self.kernel.map_buffer(24, self.dvz)
         return [self.drx[:ni], self.dry[:ni], self.drz[:ni],
                 self.dvx[:ni], self.dvy[:ni], self.dvz[:ni]]
-
 
 
 llbios = LLBIOS()
@@ -153,7 +149,6 @@ class BIOS(Base):
         super(BIOS, self).__init__(eta, time, particles, **kwargs)
         self.e0 = None
 
-
     def do_step(self, p, tau):
         """
 
@@ -178,7 +173,6 @@ class BIOS(Base):
 ##                    print(nsteps, de, tol)
 #                    break
 
-
         p = sakura(p, tau)
 
         p.tstep = tau
@@ -186,16 +180,15 @@ class BIOS(Base):
         p.nstep += 1
         return p
 
-
     def get_base_tstep(self, t_end):
         self.tstep = self.eta
         if abs(self.time + self.tstep) > t_end:
             self.tstep = math.copysign(t_end - abs(self.time), self.eta)
         return self.tstep
 
-
     def initialize(self, t_end):
-        logger.info("Initializing '%s' integrator.", type(self).__name__.lower())
+        logger.info("Initializing '%s' integrator.", type(
+            self).__name__.lower())
 
         p = self.particles
 
@@ -204,7 +197,6 @@ class BIOS(Base):
             self.dumpper.dump_snapshot(p, self.snap_number)
 
         self.is_initialized = True
-
 
     def finalize(self, t_end):
         logger.info("Finalizing '%s' integrator.", type(self).__name__.lower())
@@ -215,7 +207,6 @@ class BIOS(Base):
 
         if self.reporter:
             self.reporter.report(self.time, p)
-
 
     def evolve_step(self, t_end):
         """

@@ -41,8 +41,8 @@ class Base(object):
         self.dump_freq = kwargs.pop("dump_freq", 1)
         if kwargs:
             msg = "{0}.__init__ received unexpected keyword arguments: {1}."
-            raise TypeError(msg.format(type(self).__name__,", ".join(kwargs.keys())))
-
+            raise TypeError(msg.format(type(
+                self).__name__, ", ".join(kwargs.keys())))
 
 
 @decallmethods(timings)
@@ -63,7 +63,6 @@ class LLNREG_X(object):
 #        self.kernel.set_local_memory(31, 1)
 #        self.kernel.set_local_memory(32, 1)
 #        self.kernel.set_local_memory(33, 1)
-
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
@@ -101,10 +100,8 @@ class LLNREG_X(object):
             self.u = self.kernel.allocate_buffer(25, ni)
             self.max_output_size = ni
 
-
     def run(self):
         self.kernel.run()
-
 
     def get_result(self):
         ni = self.osize
@@ -138,7 +135,6 @@ class LLNREG_V(object):
 #        self.kernel.set_local_memory(26, 1)
 #        self.kernel.set_local_memory(27, 1)
 
-
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
@@ -170,10 +166,8 @@ class LLNREG_V(object):
             self.k = self.kernel.allocate_buffer(20, ni)
             self.max_output_size = ni
 
-
     def run(self):
         self.kernel.run()
-
 
     def get_result(self):
         ni = self.osize
@@ -204,14 +198,11 @@ def nreg_x(p, dt):
     p.ay = ay.copy()
     p.az = az.copy()
 
-
 #    p.x += dt * p.vx
 #    p.y += dt * p.vy
 #    p.z += dt * p.vz
 #    (ax, ay, az) = p.get_acc(p)
 #    U = -p.potential_energy
-
-
     return U
 
 
@@ -244,19 +235,19 @@ def nreg_step(p, h, W, U):
     t += dt
     U = nreg_x(p, dt)
 
-    W += 0.5 * h * (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
+    W += 0.5 * h * (p.mass * (
+        p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
 
     K = nreg_v(p, h/U)
 
-    W += 0.5 * h * (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
+    W += 0.5 * h * (p.mass * (
+        p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
 
     dt = 0.5 * h / W
     U = nreg_x(p, dt)
     t += dt
 
     return t, W, U
-
-
 
 
 @decallmethods(timings)
@@ -270,7 +261,6 @@ class NREG(Base):
         self.W = None
         self.S = None
 
-
     def do_step(self, p, tau):
         """
 
@@ -279,12 +269,13 @@ class NREG(Base):
             t = 0.0
             h = tau / nsteps
             for i in range(nsteps):
-                S += 0.5 * (h/(abs(W)**gamma)) * (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
+                S += 0.5 * (h/(abs(W)**gamma)) * (p.mass * (
+                    p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
                 tt, W, U = nreg_step(p, h/(abs(S)**gamma), W, U)
-                S += 0.5 * (h/(abs(W)**gamma)) * (p.mass * (p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
+                S += 0.5 * (h/(abs(W)**gamma)) * (p.mass * (
+                    p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
                 t += tt
             return p, t, W, U, S
-
 
 #        i = 1
 #        tol = 1.0e-2#max(min(2.0**(-12), tau**2), 2.0**(-32))
@@ -303,9 +294,6 @@ class NREG(Base):
 #        self.W = W
 #        self.U = U
 #        p = p0.copy()
-
-
-
         U = self.U
         W = self.W
         S = self.S
@@ -321,16 +309,15 @@ class NREG(Base):
         p.nstep += 1
         return p, t
 
-
     def get_base_tstep(self, t_end):
         self.tstep = self.eta
         if abs(self.time + self.tstep) > t_end:
             self.tstep = math.copysign(t_end - abs(self.time), self.eta)
         return self.tstep
 
-
     def initialize(self, t_end):
-        logger.info("Initializing '%s' integrator.", type(self).__name__.lower())
+        logger.info("Initializing '%s' integrator.", type(
+            self).__name__.lower())
 
         p = self.particles
         U = nreg_x(p, 0.0)
@@ -339,13 +326,10 @@ class NREG(Base):
         self.W = U
         self.S = U
 
-
 #        if self.dumpper:
 #            self.snap_number = 0
 #            self.dumpper.dump_snapshot(p, self.snap_number)
-
         self.is_initialized = True
-
 
     def finalize(self, t_end):
         logger.info("Finalizing '%s' integrator.", type(self).__name__.lower())
@@ -356,7 +340,6 @@ class NREG(Base):
 
         if self.reporter:
             self.reporter.report(self.time, p)
-
 
     def evolve_step(self, t_end):
         """

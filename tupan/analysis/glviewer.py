@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
 
@@ -99,15 +99,12 @@ class GLviewer(object):
 #                                         stdout=open(os.devnull, 'w'),
 #                                         stderr=subprocess.STDOUT)
 
-
     def set_particle(self, particle):
         self.particle = particle.copy()
-
 
     def enter_main_loop(self):
         if not self.exitgl:
             glut.glutMainLoop()
-
 
     def show_event(self, particles):
         if not self.exitgl:
@@ -116,15 +113,12 @@ class GLviewer(object):
             glut.glutSetWindow(self.window_handle)
             glut.glutPostRedisplay()
 
-
     def initialize(self):
         self.init_window()
         self.init_gl()
 
-
     def idle(self):
         glut.glutPostRedisplay()
-
 
     def resize_func(self, width, height):
         if height == 0:
@@ -132,7 +126,6 @@ class GLviewer(object):
         self.window_width = width
         self.window_height = height
         gl.glViewport(0, 0, width, height)
-
 
     def show_fps(self, secs=0.0):
         elapsed_time = self.timer.elapsed()
@@ -148,7 +141,6 @@ class GLviewer(object):
             self.frame_count = 0
             self.timer.start()
 
-
     def adjust_zoom(self):
         ratio = self.window_width / self.window_height
 
@@ -163,7 +155,6 @@ class GLviewer(object):
         gl.glLoadIdentity()
         gl.glOrtho(left, right, bottom, top, near, far)
         gl.glMatrixMode(gl.GL_MODELVIEW)
-
 
     def adjust_rotation(self, sign=1):
         self.rot['x'] += self.rotate['x'] * ROTINC
@@ -189,7 +180,6 @@ class GLviewer(object):
             gl.glRotatef(-self.rot['z'], 0.0, 0.0, 1.0)
             gl.glRotatef(-self.rot['y'], 0.0, 1.0, 0.0)
             gl.glRotatef(-self.rot['x'], 1.0, 0.0, 0.0)
-
 
     def keyboard(self, key, x, y):
         global ALPHA
@@ -285,7 +275,6 @@ class GLviewer(object):
         glut.glutSetWindow(self.window_handle)
         glut.glutPostRedisplay()
 
-
     def keyboard_s(self, key, x, y):
         mkey = glut.glutGetModifiers()
         if mkey == glut.GLUT_ACTIVE_CTRL:
@@ -304,7 +293,6 @@ class GLviewer(object):
         glut.glutSetWindow(self.window_handle)
         glut.glutPostRedisplay()
 
-
     def mouse(self, button, state, x, y):
         global ZOOM_FACTOR
         glut.glutSetWindow(self.window_handle)
@@ -320,7 +308,6 @@ class GLviewer(object):
         if button == 4:
             ZOOM_FACTOR *= 1.03125
             glut.glutPostRedisplay()
-
 
     def mouse_motion(self, x, y):
         glut.glutSetWindow(self.window_handle)
@@ -358,7 +345,6 @@ class GLviewer(object):
         self.mouse_x = x
         self.mouse_y = y
 
-
     def init_window(self):
         glut.glutInit(sys.argv)
         glut.glutInitDisplayMode(
@@ -378,7 +364,6 @@ class GLviewer(object):
         glut.glutSpecialFunc(self.keyboard_s)
 #        glut.glutIdleFunc(self.idle)
 
-
     def init_gl(self):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_ALPHA_TEST)
@@ -386,14 +371,13 @@ class GLviewer(object):
         gl.glColorMask(gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE)
 
         self.textures['star'] = self.load_texture(
-                                    os.path.join(texture_path, 'star.png'))
+            os.path.join(texture_path, 'star.png'))
         self.textures['sph'] = self.load_texture(
-                                   os.path.join(texture_path, 'sph.png'))
+            os.path.join(texture_path, 'sph.png'))
         self.textures['blackhole'] = self.load_texture(
-                                         os.path.join(texture_path, 'blackhole.png'))
+            os.path.join(texture_path, 'blackhole.png'))
 
         self.adjust_zoom()
-
 
     def record_screen(self):
         gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 8)
@@ -404,7 +388,6 @@ class GLviewer(object):
         im = im.transpose(Image.FLIP_TOP_BOTTOM)
         im.save(self.ffmpeg.stdin, format='ppm')
 #        self.mencoder.stdin.write(im.tostring())
-
 
     def render_func(self):
         if not TRACEORBITS:
@@ -419,7 +402,6 @@ class GLviewer(object):
             gl.glColorMask(gl.GL_FALSE, gl.GL_FALSE, gl.GL_TRUE, gl.GL_TRUE)
         else:
             gl.glColorMask(gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE)
-
 
         gl.glAlphaFunc(gl.GL_GREATER, 0)
 
@@ -446,7 +428,6 @@ class GLviewer(object):
 
         if self.rotate['x'] != 0 or self.rotate['y'] != 0 or self.rotate['z'] != 0:
             glut.glutPostRedisplay()
-
 
     def get_colors(self, qty):
 
@@ -476,7 +457,6 @@ class GLviewer(object):
             rgba = cm.spectral(qty, alpha=ALPHA)
 
         return rgba
-
 
     def draw_system(self):
 
@@ -514,11 +494,11 @@ class GLviewer(object):
                 gl.glDepthMask(gl.GL_TRUE)
                 gl.glEnable(gl.GL_BLEND)
                 gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ZERO)
-                self.draw_points(points, colors, sizes, self.textures['blackhole'])
+                self.draw_points(
+                    points, colors, sizes, self.textures['blackhole'])
                 gl.glDisable(gl.GL_BLEND)
                 gl.glDepthMask(gl.GL_FALSE)
 #                gl.glAlphaFunc(gl.GL_GREATER, 0)
-
 
         if hasattr(self.particle, "stars"):
             stars = self.particle.stars
@@ -533,7 +513,6 @@ class GLviewer(object):
                 self.draw_points(points, colors, sizes, self.textures['star'])
                 gl.glDisable(gl.GL_BLEND)
 
-
         if hasattr(self.particle, "sphs"):
             sph = self.particle.sphs
             if sph.n:
@@ -545,7 +524,6 @@ class GLviewer(object):
                 gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
                 self.draw_points(points, colors, sizes, self.textures['sph'])
                 gl.glDisable(gl.GL_BLEND)
-
 
     def draw_points(self, points, colors, sizes, texture):
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
@@ -578,7 +556,6 @@ class GLviewer(object):
         gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
         gl.glDisableClientState(gl.GL_COLOR_ARRAY)
 
-
     def draw_arrays(self, points, colors, sizes, individual_sizes):
         if not individual_sizes:
             gl.glDrawArrays(gl.GL_POINTS, 0, len(points))
@@ -595,7 +572,6 @@ class GLviewer(object):
                 gl.glColor4d(color[0], color[1], color[2], color[3])
                 gl.glVertex3d(point[0], point[1], point[2])
                 gl.glEnd()
-
 
     def load_texture(self, name):
         try:

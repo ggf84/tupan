@@ -1,8 +1,8 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
-
+TODO.
 """
 
 from __future__ import print_function
@@ -47,7 +47,6 @@ class Timing(object):
         self.timings = {}
         self.is_enabled = is_enabled
 
-
     def collector(self, module, name, elapsed):
         if module in self.timings:
             if name in self.timings[module]:
@@ -67,13 +66,13 @@ class Timing(object):
                 self.timings[module][name]["count"] = 1
                 self.timings[module][name]["total"] = elapsed
 
-
     def __call__(self, func):
         if not self.is_enabled:
             return func
         if func.func_code.co_name == "wrapper":
             return func
         timer = Timer()
+
         @functools.wraps(func)
         def wrapper(that, *args, **kwargs):
             timer.start()
@@ -94,13 +93,13 @@ class Timing(object):
                                     # from Python v3.2+.
         return wrapper
 
-
     def __str__(self):
         mcount = 0
         mark = "+-"
         indent = " "
         mfmt = mark + "{0:s}:"
-        nfmt = mark + "{0:s}: [count: {1} | total: {2:.4e} s | average: {3:.4e} s]"
+        nfmt = mark + \
+            "{0:s}: [count: {1} | total: {2:.4e} s | average: {3:.4e} s]"
         _str = ""
         for mkey in sorted(self.timings.keys()):
             mcount += 1

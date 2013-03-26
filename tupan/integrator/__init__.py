@@ -34,7 +34,8 @@ class Integrator(object):
             self.integrator = hermite.Hermite(eta, time, particles, **kwargs)
         elif method == "adapthermite":
             logger.info("Using 'adapthermite' integrator.")
-            self.integrator = hermite.AdaptHermite(eta, time, particles, **kwargs)
+            self.integrator = hermite.AdaptHermite(
+                eta, time, particles, **kwargs)
         elif method == "bios":
             logger.info("Using 'bios' integrator.")
             self.integrator = bios.BIOS(eta, time, particles, **kwargs)
@@ -42,9 +43,9 @@ class Integrator(object):
             logger.info("Using 'nreg' integrator.")
             self.integrator = nreg.NREG(eta, time, particles, **kwargs)
         else:
-            logger.critical("Unexpected integrator method: '%s'. Provided methods: %s",
-                            method, str(self.PROVIDED_METHODS))
-
+            logger.critical(
+                "Unexpected integrator method: '%s'. Provided methods: %s",
+                method, str(self.PROVIDED_METHODS))
 
     def initialize(self, t_end):
         self.integrator.initialize(t_end)

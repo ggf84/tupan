@@ -1,9 +1,10 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
-
+TODO.
 """
+
 
 from __future__ import print_function
 import numpy as np
@@ -21,7 +22,6 @@ class IMFSample(object):
     """
     def __new__(cls, *args):
         return object.__new__(cls)
-
 
     def __init__(self, imf_func, min_mlow, max_mhigh, mlow, mhigh):
         """
@@ -49,7 +49,6 @@ class IMFSample(object):
         self._sample = None
         self._mtot = None
 
-
     def sample(self, n):
         size = n
         ran_mass = []
@@ -64,14 +63,12 @@ class IMFSample(object):
         return self._sample
 
 
-
 class IMF(object):
     """
 
     """
     def __new__(cls):
         return object.__new__(cls)
-
 
     @classmethod
     def equal(self):
@@ -83,7 +80,6 @@ class IMF(object):
         imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
         return imf
 
-
     @classmethod
     def salpeter1955(self, mlow, mhigh):
         imf_func = lambda m: m**(-1.35)
@@ -92,23 +88,23 @@ class IMF(object):
         imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
         return imf
 
-
     @classmethod
     def padoan2007(self, mlow, mhigh):
         from scipy.special import erf
         Gamma = 1.4
         m_ch = 1.0
         sigma = 1.8
-        imf_func = lambda m: ((m**(-Gamma)) * (1.0 + erf((4.0 * np.log(m/m_ch) + sigma**2) / (np.sqrt(8.0) * sigma))))
+        imf_func = lambda m: ((m**(-Gamma)) * (1.0 + erf((
+            4.0 * np.log(m/m_ch) + sigma**2) / (np.sqrt(8.0) * sigma))))
         min_mlow = 0.004
         max_mhigh = 120.0
         imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
         return imf
 
-
     @classmethod
     def parravano2011(self, mlow, mhigh):
-        imf_func = lambda m: (m**(-1.35))*(1.0 - np.exp(-(m/0.35)**(0.51+1.35)))
+        imf_func = lambda m: (m**(-1.35))*(
+            1.0 - np.exp(-(m/0.35)**(0.51+1.35)))
         min_mlow = 0.004
         max_mhigh = 120.0
         imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)

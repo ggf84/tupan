@@ -1,9 +1,10 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
-
+TODO.
 """
+
 
 from __future__ import print_function
 from .body import Bodies
@@ -20,8 +21,8 @@ class Sphs(Bodies):
 
     """
     attrs = Bodies.attrs + [
-                            ('rho', REAL, "density"),
-                           ]
+        ('rho', REAL, "density"),
+    ]
     dtype = [(_[0], _[1]) for _ in attrs]
 
 

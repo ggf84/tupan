@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
 
@@ -40,8 +40,8 @@ class Hermite(object):
         self.dump_freq = kwargs.pop("dump_freq", 1)
         if kwargs:
             msg = "{0}.__init__ received unexpected keyword arguments: {1}."
-            raise TypeError(msg.format(type(self).__name__,", ".join(kwargs.keys())))
-
+            raise TypeError(msg.format(type(
+                self).__name__, ", ".join(kwargs.keys())))
 
     def predict(self, ip, tau):
         """
@@ -68,7 +68,6 @@ class Hermite(object):
         ip.vy += tau * (ay + (tau/2) * jy)
         ip.vz += tau * (az + (tau/2) * jz)
 
-
     def ecorrect(self, ip, tau):
         (ax, ay, az, jx, jy, jz) = ip.get_acc_jerk(ip)
         ip.vx = (ip.prev_vx + tau * ((ip.prev_ax + ax)/2
@@ -84,7 +83,6 @@ class Hermite(object):
         ip.z = (ip.prev_z + tau * ((ip.prev_vz + ip.vz)/2
                           + tau * (ip.prev_az - az)/12))
 
-
     def pec(self, n, p, tau):
         """
 
@@ -98,16 +96,15 @@ class Hermite(object):
         p.nstep += 1
         return p
 
-
     def get_base_tstep(self, t_end):
         self.tstep = self.eta
         if abs(self.time + self.tstep) > t_end:
             self.tstep = math.copysign(t_end - abs(self.time), self.eta)
         return self.tstep
 
-
     def initialize(self, t_end):
-        logger.info("Initializing '%s' integrator.", type(self).__name__.lower())
+        logger.info("Initializing '%s' integrator.", type(
+            self).__name__.lower())
 
         p = self.particles
 
@@ -116,7 +113,6 @@ class Hermite(object):
             self.dumpper.dump_snapshot(p, self.snap_number)
 
         self.is_initialized = True
-
 
     def finalize(self, t_end):
         logger.info("Finalizing '%s' integrator.", type(self).__name__.lower())
@@ -127,7 +123,6 @@ class Hermite(object):
 
         if self.reporter:
             self.reporter.report(self.time, p)
-
 
     def evolve_step(self, t_end):
         """
@@ -155,7 +150,6 @@ class Hermite(object):
         self.particles = p
 
 
-
 @decallmethods(timings)
 class AdaptHermite(Hermite):
     """
@@ -163,7 +157,6 @@ class AdaptHermite(Hermite):
     """
     def __init__(self, eta, time, particles, **kwargs):
         super(AdaptHermite, self).__init__(eta, time, particles, **kwargs)
-
 
     def get_min_block_tstep(self, p):
         min_tstep = p.min_tstep()
@@ -176,7 +169,6 @@ class AdaptHermite(Hermite):
             min_block_tstep /= 2
 
         return math.copysign(min_block_tstep, self.eta)
-
 
     def get_base_tstep(self, t_end):
         p = self.particles

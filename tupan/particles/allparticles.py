@@ -1,8 +1,8 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
-
+TODO.
 """
 
 
@@ -18,7 +18,7 @@ from ..lib.utils.timing import decallmethods, timings
 __all__ = ["System"]
 
 
-#def make_common_attrs(cls):
+# def make_common_attrs(cls):
 #    def make_property(attr, doc):
 #        @timings
 #        def fget(self):
@@ -41,7 +41,6 @@ __all__ = ["System"]
 #    return cls
 
 
-
 @decallmethods(timings)
 #@make_common_attrs
 class System(AbstractNbodyMethods):
@@ -58,11 +57,9 @@ class System(AbstractNbodyMethods):
                                 (nsphs, Sphs)] if n}
         self.__dict__.update(items)
 
-
     #
     # miscellaneous methods
     #
-
     @property
     def n(self):
         return sum(obj.n for obj in self.values())
@@ -70,7 +67,6 @@ class System(AbstractNbodyMethods):
     @property
     def kind(self):
         return self.__dict__
-
 
     def __getattr__(self, attr):
         return np.concatenate([getattr(obj, attr) for obj in self.values()])
@@ -84,7 +80,6 @@ class System(AbstractNbodyMethods):
                 setattr(obj, attr, value[:obj.n])
                 value = value[obj.n:]
 
-
     def __str__(self):
         fmt = type(self).__name__+"([\n"
         for (key, obj) in self.items():
@@ -92,14 +87,11 @@ class System(AbstractNbodyMethods):
         fmt += "])"
         return fmt
 
-
     def __repr__(self):
         return str(self.__dict__)
 
-
     def __hash__(self):
         return hash(tuple(self.values()))
-
 
     def __getitem__(self, slc):
         if isinstance(slc, list):
@@ -117,9 +109,11 @@ class System(AbstractNbodyMethods):
             return subset
 
         if isinstance(slc, int):
-            if slc < 0: slc = self.n + slc
+            if slc < 0:
+                slc = self.n + slc
             if abs(slc) > self.n-1:
-                raise IndexError("index {0} out of bounds 0<=index<{1}".format(slc, self.n))
+                raise IndexError(
+                    "index {0} out of bounds 0<=index<{1}".format(slc, self.n))
             subset = type(self)()
             n = 0
             for (key, obj) in self.items():
@@ -133,10 +127,14 @@ class System(AbstractNbodyMethods):
             subset = type(self)()
             start = slc.start
             stop = slc.stop
-            if start is None: start = 0
-            if stop is None: stop = self.n
-            if start < 0: start = self.n + start
-            if stop < 0: stop = self.n + stop
+            if start is None:
+                start = 0
+            if stop is None:
+                stop = self.n
+            if start < 0:
+                start = self.n + start
+            if stop < 0:
+                stop = self.n + stop
             for (key, obj) in self.items():
                 if obj.n:
                     if stop >= 0:
@@ -146,7 +144,6 @@ class System(AbstractNbodyMethods):
                     stop -= obj.n
 
             return subset
-
 
     def append(self, obj):
         if obj.n:

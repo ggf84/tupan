@@ -1,9 +1,10 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
-
+TODO.
 """
+
 
 from __future__ import print_function
 import sys
@@ -17,7 +18,7 @@ from ..lib.utils.dtype import *
 __all__ = ["Bodies"]
 
 
-#def make_attrs(cls):
+# def make_attrs(cls):
 #    def make_property(attr, doc):
 #        @timings
 #        def fget(self): return self.data[attr]
@@ -30,7 +31,6 @@ __all__ = ["Bodies"]
 #    return cls
 
 
-
 class NbodyUtils(object):
     """
 
@@ -40,7 +40,6 @@ class NbodyUtils(object):
 
     def __contains__(self, id):
         return id in self.id
-
 
     def keys(self):
         return self.kind.keys()
@@ -64,37 +63,34 @@ class NbodyUtils(object):
         return newobj
 
 
-
-
 class NbodyMethods(NbodyUtils):
     """
     This class holds common methods for particles in n-body systems.
     """
-    attrs = [# name, dtype, doc
-             ("id", UINT, "index"),
-             ("mass", REAL, "mass"),
-             ("eps2", REAL, "squared softening"),
-             ("x", REAL, "x-position"),
-             ("y", REAL, "y-position"),
-             ("z", REAL, "z-position"),
-             ("vx", REAL, "x-velocity"),
-             ("vy", REAL, "y-velocity"),
-             ("vz", REAL, "z-velocity"),
-             ("time", REAL, "current time"),
-             ("tstep", REAL, "time step"),
-             ("nstep", UINT, "step number"),
-            ]
+    attrs = [  # name, dtype, doc
+        ("id", UINT, "index"),
+        ("mass", REAL, "mass"),
+        ("eps2", REAL, "squared softening"),
+        ("x", REAL, "x-position"),
+        ("y", REAL, "y-position"),
+        ("z", REAL, "z-position"),
+        ("vx", REAL, "x-velocity"),
+        ("vy", REAL, "y-velocity"),
+        ("vz", REAL, "z-velocity"),
+        ("time", REAL, "current time"),
+        ("tstep", REAL, "time step"),
+        ("nstep", UINT, "step number"),
+    ]
     dtype = [(_[0], _[1]) for _ in attrs]
 
-    special_attrs = [# name, dtype, doc
+    special_attrs = [  # name, dtype, doc
 
-                    ]
+    ]
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
-
 
     @property
     def pos(self):
-        return np.concatenate((self.x, self.y, self.z,)).reshape(3,-1).T
+        return np.concatenate((self.x, self.y, self.z,)).reshape(3, -1).T
 
 #    @pos.setter
 #    def pos(self, value):
@@ -114,7 +110,7 @@ class NbodyMethods(NbodyUtils):
 
     @property
     def vel(self):
-        return np.concatenate((self.vx, self.vy, self.vz,)).reshape(3,-1).T
+        return np.concatenate((self.vx, self.vy, self.vz,)).reshape(3, -1).T
 
 #    @vel.setter
 #    def vel(self, value):
@@ -132,9 +128,7 @@ class NbodyMethods(NbodyUtils):
 #                self.vy = value
 #                self.vz = value
 
-
     ### total mass and center-of-mass
-
     @property
     def total_mass(self):
         """
@@ -177,9 +171,7 @@ class NbodyMethods(NbodyUtils):
         self.vy -= vcom[1]
         self.vz -= vcom[2]
 
-
     ### linear momentum
-
     @property
     def lm(self):
         """
@@ -197,9 +189,7 @@ class NbodyMethods(NbodyUtils):
         """
         return self.lm.sum(0)
 
-
     ### angular momentum
-
     @property
     def am(self):
         """
@@ -217,9 +207,7 @@ class NbodyMethods(NbodyUtils):
         """
         return self.am.sum(0)
 
-
     ### kinetic energy
-
     @property
     def ke(self):
         """
@@ -234,9 +222,7 @@ class NbodyMethods(NbodyUtils):
         """
         return float(self.ke.sum())
 
-
     ### potential energy
-
     @property
     def pe(self):
         """
@@ -252,9 +238,7 @@ class NbodyMethods(NbodyUtils):
         """
         return 0.5 * float(self.pe.sum())
 
-
     ### virial energy
-
     @property
     def ve(self):
         """
@@ -270,10 +254,7 @@ class NbodyMethods(NbodyUtils):
         """
         return float(self.ve.sum())
 
-
-
     ### gravity
-
     def get_tstep(self, objs, eta):
         """
         Get the individual time-steps due to other particles.
@@ -306,7 +287,6 @@ class NbodyMethods(NbodyUtils):
         gravity.acc_jerk.run()
         return gravity.acc_jerk.get_result()
 
-
     def update_tstep(self, objs, eta):
         """
         Update the individual time-steps due to other particles.
@@ -331,9 +311,7 @@ class NbodyMethods(NbodyUtils):
         """
         (self.acc, self.jerk) = self.get_acc_jerk(objs)
 
-
     ### miscellaneous methods
-
     def min_tstep(self):
         """
         Minimum absolute value of tstep.
@@ -347,32 +325,41 @@ class NbodyMethods(NbodyUtils):
         return np.abs(self.tstep).max()
 
 
-
-
 class PNbodyMethods(NbodyMethods):
     """
     This class holds common methods for particles in n-body systems with post-Newtonian corrections.
     """
-    special_attrs = [# name, dtype, doc
-                     ("pn_dvx", REAL, "post-Newtonian correction for the x-velocity"),
-                     ("pn_dvy", REAL, "post-Newtonian correction for the y-velocity"),
-                     ("pn_dvz", REAL, "post-Newtonian correction for the z-velocity"),
-                     ("pn_ke", REAL, "post-Newtonian correction for the kinetic energy"),
-                     ("pn_rcomx", REAL, "post-Newtonian correction for the center-of-mass x-position"),
-                     ("pn_rcomy", REAL, "post-Newtonian correction for the center-of-mass y-position"),
-                     ("pn_rcomz", REAL, "post-Newtonian correction for the center-of-mass z-position"),
-                     ("pn_lmx", REAL, "post-Newtonian correction for the x-linear momentum"),
-                     ("pn_lmy", REAL, "post-Newtonian correction for the y-linear momentum"),
-                     ("pn_lmz", REAL, "post-Newtonian correction for the z-linear momentum"),
-                     ("pn_amx", REAL, "post-Newtonian correction for the x-angular momentum"),
-                     ("pn_amy", REAL, "post-Newtonian correction for the y-angular momentum"),
-                     ("pn_amz", REAL, "post-Newtonian correction for the z-angular momentum"),
-                    ]
+    special_attrs = [  # name, dtype, doc
+        ("pn_dvx", REAL,
+         "post-Newtonian correction for the x-velocity"),
+        ("pn_dvy", REAL,
+         "post-Newtonian correction for the y-velocity"),
+        ("pn_dvz", REAL,
+         "post-Newtonian correction for the z-velocity"),
+        ("pn_ke", REAL,
+         "post-Newtonian correction for the kinetic energy"),
+        ("pn_rcomx", REAL,
+         "post-Newtonian correction for the center-of-mass x-position"),
+        ("pn_rcomy", REAL,
+         "post-Newtonian correction for the center-of-mass y-position"),
+        ("pn_rcomz", REAL,
+         "post-Newtonian correction for the center-of-mass z-position"),
+        ("pn_lmx", REAL,
+         "post-Newtonian correction for the x-linear momentum"),
+        ("pn_lmy", REAL,
+         "post-Newtonian correction for the y-linear momentum"),
+        ("pn_lmz", REAL,
+         "post-Newtonian correction for the z-linear momentum"),
+        ("pn_amx", REAL,
+         "post-Newtonian correction for the x-angular momentum"),
+        ("pn_amy", REAL,
+         "post-Newtonian correction for the y-angular momentum"),
+        ("pn_amz", REAL,
+         "post-Newtonian correction for the z-angular momentum"),
+    ]
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
 
-
     ### PN stuff
-
     def get_pnacc(self, objs, pn_order, clight):
         """
         Get the individual post-newtonian gravitational acceleration due to other particles.
@@ -381,18 +368,16 @@ class PNbodyMethods(NbodyMethods):
         gravity.pnacc.run()
         return gravity.pnacc.get_result()
 
-
     def evolve_ke_pn_shift(self, tstep):
         """
         Evolves kinetic energy shift in time due to post-newtonian terms.
         """
-        self.pn_ke -= self.mass * (  self.vx * self.pn_dvx
+        self.pn_ke -= self.mass * (self.vx * self.pn_dvx
                                    + self.vy * self.pn_dvy
                                    + self.vz * self.pn_dvz)
 
     def get_ke_pn_shift(self):
         return float(self.pn_ke.sum())
-
 
     def evolve_rcom_pn_shift(self, tstep):
         """
@@ -407,7 +392,6 @@ class PNbodyMethods(NbodyMethods):
         rcomy = self.pn_rcomy.sum()
         rcomz = self.pn_rcomz.sum()
         return np.array([rcomx, rcomy, rcomz]) / self.total_mass
-
 
     def evolve_lmom_pn_shift(self, tstep):
         """
@@ -426,14 +410,16 @@ class PNbodyMethods(NbodyMethods):
     def get_vcom_pn_shift(self):
         return self.get_lmom_pn_shift() / self.total_mass
 
-
     def evolve_amom_pn_shift(self, tstep):
         """
         Evolves angular momentum shift in time due to post-newtonian terms.
         """
-        self.pn_amx -= self.mass * ((self.y * self.pn_dvz) - (self.z * self.pn_dvy))
-        self.pn_amy -= self.mass * ((self.z * self.pn_dvx) - (self.x * self.pn_dvz))
-        self.pn_amz -= self.mass * ((self.x * self.pn_dvy) - (self.y * self.pn_dvx))
+        self.pn_amx -= self.mass * ((
+            self.y * self.pn_dvz) - (self.z * self.pn_dvy))
+        self.pn_amy -= self.mass * ((
+            self.z * self.pn_dvx) - (self.x * self.pn_dvz))
+        self.pn_amz -= self.mass * ((
+            self.x * self.pn_dvy) - (self.y * self.pn_dvx))
 
     def get_amom_pn_shift(self):
         amx = self.pn_amx.sum()
@@ -442,13 +428,12 @@ class PNbodyMethods(NbodyMethods):
         return np.array([amx, amy, amz])
 
 
-
 AbstractNbodyMethods = PNbodyMethods if "--pn_order" in sys.argv else NbodyMethods
 
 
 #@decallmethods(timings)
 #@make_attrs
-#class Body(AbstractNbodyMethods):
+# class Body(AbstractNbodyMethods):
 #    """
 #    The most basic particle type.
 #    """
@@ -556,11 +541,7 @@ AbstractNbodyMethods = PNbodyMethods if "--pn_order" in sys.argv else NbodyMetho
 #        self.n = len(self)
 
 
-
-
 ###############################################################################
-
-
 @decallmethods(timings)
 class Bodies(AbstractNbodyMethods):
     """
@@ -574,7 +555,6 @@ class Bodies(AbstractNbodyMethods):
         else:
             self.__dict__.update(items)
 
-
     @property
     def n(self):
         return len(self)
@@ -583,13 +563,11 @@ class Bodies(AbstractNbodyMethods):
     def kind(self):
         return {type(self).__name__.lower(): self}
 
-
     def __repr__(self):
         return repr(self.__dict__)
 
     def __len__(self):
         return len(self.id)
-
 
     def __setattr__(self, name, value):
         if not name in self.__dict__:
@@ -597,13 +575,11 @@ class Bodies(AbstractNbodyMethods):
             self.__dict__[name] = np.zeros(self.n, dtype)
         self.__dict__[name][:] = value
 
-
     def __getitem__(self, slc):
-        if isinstance(slc, int): slc = [slc]
+        if isinstance(slc, int):
+            slc = [slc]
         items = {k: v[slc] for k, v in self.__dict__.items()}
         return type(self)(items=items)
-
-
 
     def copy(self):
         return copy.deepcopy(self)
@@ -613,7 +589,6 @@ class Bodies(AbstractNbodyMethods):
             items = {k: np.concatenate((self.__dict__.get(k, []), v))
                      for k, v in obj.__dict__.items()}
             self.__dict__.update(items)
-
 
     def get_state(self):
         array = np.zeros(self.n, dtype=self.dtype)

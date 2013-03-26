@@ -1,8 +1,8 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
-
+TODO.
 """
 
 
@@ -33,7 +33,6 @@ class CLEnv(object):
         self.queue = cl.CommandQueue(self.ctx)
 
 
-
 @decallmethods(timings)
 class CLModule(object):
 
@@ -51,7 +50,6 @@ class CLModule(object):
         self.src = src
         self.path = path
 
-
     def build(self, junroll=2):
         prec = "double" if REAL is np.float64 else "single"
         logger.debug("Building %s precision CL extension module.", prec)
@@ -65,15 +63,14 @@ class CLModule(object):
             options += " -cl-fast-relaxed-math"
 
         # building program
-        self.program = cl.Program(self.env.ctx, self.src).build(options=options)
+        self.program = cl.Program(
+            self.env.ctx, self.src).build(options=options)
 
         logger.debug("done.")
         return self
 
-
     def __getattr__(self, name):
         return CLKernel(self.env, getattr(self.program, name))
-
 
 
 @decallmethods(timings)
@@ -87,7 +84,6 @@ class CLKernel(object):
         self._lsize_max = None
         self._gsize = None
 
-
     @property
     def local_size(self):
         lsize = self._lsize
@@ -98,7 +94,6 @@ class CLKernel(object):
         self._lsize = lsize
         self._lsize_max = lsize
 
-
     @property
     def global_size(self):
         gsize = self._gsize
@@ -108,25 +103,22 @@ class CLKernel(object):
     def global_size(self, ni):
         self._gsize = ((ni-1)//2 + 1) * 2
 
-
     def set_local_memory(self, i, arg):
-        def foo(x, y): return x * y
+        def foo(x, y):
+            return x * y
 #        size = np.dtype(REAL).itemsize * reduce(foo, self.local_size)
 #        size = np.dtype(REAL).itemsize * reduce(foo, (self._lsize_max,))
         size = 8 * reduce(foo, (self._lsize_max,))
         arg = cl.LocalMemory(size * arg)
         self.kernel.set_arg(i, arg)
 
-
     def set_int(self, i, arg):
         arg = UINT(arg)
         self.kernel.set_arg(i, arg)
 
-
     def set_float(self, i, arg):
         arg = REAL(arg)
         self.kernel.set_arg(i, arg)
-
 
     def set_array(self, i, arr):
         memf = cl.mem_flags
@@ -136,7 +128,6 @@ class CLKernel(object):
 
         arg = self.dev_buff[i]
         self.kernel.set_arg(i, arg)
-
 
     def allocate_buffer(self, i, shape):
         memf = cl.mem_flags
@@ -150,7 +141,6 @@ class CLKernel(object):
         self.kernel.set_arg(i, arg)
         return arr
 
-
     def map_buffer(self, i, arr):
         mapf = cl.map_flags
         (pointer, ev) = cl.enqueue_map_buffer(self.env.queue, self.dev_buff[i],
@@ -160,14 +150,12 @@ class CLKernel(object):
 
 #        cl.enqueue_copy(self.env.queue, arr, self.dev_buff[i])
 
-
     def run(self):
         cl.enqueue_nd_range_kernel(self.env.queue,
                                    self.kernel,
                                    self.global_size,
-                                   None,#self.local_size,
-                                  ).wait()
-
+                                   None,  # self.local_size,
+                                   ).wait()
 
 
 @decallmethods(timings)
@@ -177,13 +165,11 @@ class CEnv(object):
         self.fast_math = fast_math
 
 
-
 @decallmethods(timings)
 class CModule(object):
 
     def __init__(self, env):
         self.env = env
-
 
     def build(self):
         prec = "double" if REAL is np.float64 else "single"
@@ -201,10 +187,8 @@ class CModule(object):
         logger.debug("done.")
         return self
 
-
     def __getattr__(self, name):
         return CKernel(self.env, self.ffi, getattr(self.program, name))
-
 
 
 @decallmethods(timings)
@@ -217,38 +201,32 @@ class CKernel(object):
         self.keep_ref = dict()
         self.dev_args = OrderedDict()
 
-
     def set_local_memory(self, i, arg):
         pass
-
 
     def set_int(self, i, arg):
         self.dev_args[i] = arg
 
-
     def set_float(self, i, arg):
         self.dev_args[i] = arg
 
-
     def set_array(self, i, arg):
         self.keep_ref[i] = arg
-        self.dev_args[i] = self.ffi.cast("REAL *", arg.__array_interface__['data'][0])
-
+        self.dev_args[i] = self.ffi.cast(
+            "REAL *", arg.__array_interface__['data'][0])
 
     def allocate_buffer(self, i, shape):
         arg = np.zeros(shape, dtype=REAL)
-        self.dev_args[i] = self.ffi.cast("REAL *", arg.__array_interface__['data'][0])
+        self.dev_args[i] = self.ffi.cast(
+            "REAL *", arg.__array_interface__['data'][0])
         return arg
-
 
     def map_buffer(self, i, arr):
         pass
 
-
     def run(self):
         args = self.dev_args.values()
         self.kernel(*args)
-
 
 
 libkernels = {}
@@ -259,7 +237,8 @@ libkernels["cl"] = CLModule(CLEnv(fast_math=True)).build(junroll=2)
 def get_extension(use_sp=False, use_cl=False):
     libname = "cl" if use_cl else "c"
     prec = "single" if use_sp else "double"
-    logger.debug("Using %s precision %s extension module.", prec, libname.upper())
+    logger.debug(
+        "Using %s precision %s extension module.", prec, libname.upper())
     return libkernels[libname]
 
 
