@@ -2,7 +2,7 @@
 #
 
 """
-
+TODO.
 """
 
 from __future__ import (print_function, division)
@@ -348,12 +348,17 @@ class GLviewer(object):
     def init_window(self):
         glut.glutInit(sys.argv)
         glut.glutInitDisplayMode(
-            glut.GLUT_DOUBLE | glut.GLUT_RGBA | glut.GLUT_ALPHA | glut.GLUT_DEPTH)
+            glut.GLUT_DOUBLE | glut.GLUT_RGBA |
+            glut.GLUT_ALPHA | glut.GLUT_DEPTH
+        )
         glut.glutInitWindowPosition(
             (glut.glutGet(glut.GLUT_SCREEN_WIDTH) - self.window_width) // 2,
-            (glut.glutGet(glut.GLUT_SCREEN_HEIGHT) - self.window_height) // 2)
-        glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE,
-                           glut.GLUT_ACTION_CONTINUE_EXECUTION)
+            (glut.glutGet(glut.GLUT_SCREEN_HEIGHT) - self.window_height) // 2
+        )
+        glut.glutSetOption(
+            glut.GLUT_ACTION_ON_WINDOW_CLOSE,
+            glut.GLUT_ACTION_CONTINUE_EXECUTION
+        )
         glut.glutInitWindowSize(self.window_width, self.window_height)
         self.window_handle = glut.glutCreateWindow(WINDOW_TITLE_PREFIX)
         glut.glutDisplayFunc(self.render_func)
@@ -426,7 +431,9 @@ class GLviewer(object):
 
         glut.glutSwapBuffers()
 
-        if self.rotate['x'] != 0 or self.rotate['y'] != 0 or self.rotate['z'] != 0:
+        if (self.rotate['x'] != 0
+                or self.rotate['y'] != 0
+                or self.rotate['z'] != 0):
             glut.glutPostRedisplay()
 
     def get_colors(self, qty):

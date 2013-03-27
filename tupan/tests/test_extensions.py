@@ -45,7 +45,10 @@ class TestCase(unittest.TestCase):
 
     def test01(self):
         print(
-            '\ntest01: C(CPU) vs CL(device): max deviation of grav-phi among all combinations of i- and j-particles:', end=' ')
+            "\ntest01: C(CPU) vs CL(device): max deviation of grav-phi "
+            "among all combinations of i- and j-particles:",
+            end=" "
+        )
 
         npart = self.small_system.n
         deviations = []
@@ -79,7 +82,10 @@ class TestCase(unittest.TestCase):
 
     def test02(self):
         print(
-            '\ntest02: C(CPU) vs CL(device): max deviation of grav-acc among all combinations of i- and j-particles:', end=' ')
+            "\ntest02: C(CPU) vs CL(device): max deviation of grav-acc "
+            "among all combinations of i- and j-particles:",
+            end=" "
+        )
 
         npart = self.small_system.n
         deviations = []
@@ -114,7 +120,10 @@ class TestCase(unittest.TestCase):
 
     def test03(self):
         print(
-            '\ntest03: C(CPU) vs CL(device): max deviation of grav-pnacc among all combinations of i- and j-particles:', end=' ')
+            "\ntest03: C(CPU) vs CL(device): max deviation of grav-pnacc "
+            "among all combinations of i- and j-particles:",
+            end=" "
+        )
 
         npart = self.small_system.n
         deviations = []
@@ -149,7 +158,9 @@ class TestCase(unittest.TestCase):
 
     def test04(self):
         print(
-            '\ntest04: C(CPU) vs CL(device): performance of grav-phi:', end=' ')
+            "\ntest04: C(CPU) vs CL(device): performance of grav-phi:",
+            end=" "
+        )
 
         n = 5   # no. of samples
         best = {'set_args': {'c': None, 'cl': None},
@@ -185,7 +196,9 @@ class TestCase(unittest.TestCase):
 
     def test05(self):
         print(
-            '\ntest05: C(CPU) vs CL(device): performance of grav-acc:', end=' ')
+            "\ntest05: C(CPU) vs CL(device): performance of grav-acc:",
+            end=" "
+        )
 
         n = 5   # no. of samples
         best = {'set_args': {'c': None, 'cl': None},
@@ -221,7 +234,9 @@ class TestCase(unittest.TestCase):
 
     def test06(self):
         print(
-            '\ntest06: C(CPU) vs CL(device): performance of grav-pnacc:', end=' ')
+            "\ntest06: C(CPU) vs CL(device): performance of grav-pnacc:",
+            end=" "
+        )
 
         n = 5   # no. of samples
         best = {'set_args': {'c': None, 'cl': None},

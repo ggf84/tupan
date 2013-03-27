@@ -2,7 +2,7 @@
 #
 
 """
-
+TODO.
 """
 
 
@@ -32,8 +32,10 @@ class Base(object):
         self.pn_order = kwargs.pop("pn_order", 0)
         self.clight = kwargs.pop("clight", None)
         if self.pn_order > 0 and self.clight is None:
-            raise TypeError("'clight' is not defined. Please set the speed of "
-                            "light argument 'clight' when using 'pn_order' > 0.")
+            raise TypeError(
+                "'clight' is not defined. Please set the speed of light "
+                "argument 'clight' when using 'pn_order' > 0."
+            )
 
         self.reporter = kwargs.pop("reporter", None)
         self.viewer = kwargs.pop("viewer", None)

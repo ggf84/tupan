@@ -2,8 +2,9 @@
 #
 
 """
-
+TODO.
 """
+
 
 from __future__ import print_function
 import yaml
@@ -205,7 +206,9 @@ class Stream(yaml.YAMLObject):
                         set_attributes(p['sph'], 0, item)
             else:
                 print(
-                    "Unspecified particle type! Using by default the 'body' type.")
+                    "Unspecified particle type! "
+                    "Using by default the 'body' type."
+                )
                 if p['body']:
                     olen = len(p['body'])
                     p['body'].append(Body(1))

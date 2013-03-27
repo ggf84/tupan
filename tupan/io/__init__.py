@@ -28,9 +28,11 @@ class IO(object):
         elif fname.endswith(".hdf5"):
             hdf5io.HDF5IO(fname, fmode).dump_snapshot(*args, **kwargs)
         else:
-            raise NotImplementedError("Unknown format: '{}'. "
-                                      "Choose from: {}".format(fname.rpartition('.')[-1],
-                                                               self.PROVIDED_FORMATS))
+            raise NotImplementedError(
+                "Unknown format: '{}'. Choose from: {}".format(
+                    fname.rpartition('.')[-1], self.PROVIDED_FORMATS
+                )
+            )
 
     def load_snapshot(self, *args, **kwargs):
         import os
@@ -59,9 +61,11 @@ class IO(object):
         elif fname.endswith(".hdf5"):
             hdf5io.HDF5IO(fname, fmode).dump_worldline(*args, **kwargs)
         else:
-            raise NotImplementedError("Unknown format: '{}'. "
-                                      "Choose from: {}".format(fname.rpartition('.')[-1],
-                                                               self.PROVIDED_FORMATS))
+            raise NotImplementedError(
+                "Unknown format: '{}'. Choose from: {}".format(
+                    fname.rpartition('.')[-1], self.PROVIDED_FORMATS
+                )
+            )
 
     def load_worldline(self, *args, **kwargs):
         import os

@@ -281,7 +281,8 @@ class NbodyMethods(NbodyUtils):
 
     def get_acc_jerk(self, objs):
         """
-        Get the individual gravitational acceleration and jerk due to other particles.
+        Get the individual gravitational acceleration and jerk due to other
+        particles.
         """
         gravity.acc_jerk.set_args(self, objs)
         gravity.acc_jerk.run()
@@ -301,13 +302,15 @@ class NbodyMethods(NbodyUtils):
 
     def update_acc(self, objs):
         """
-        Update the individual gravitational acceleration due to other particles.
+        Update the individual gravitational acceleration due to other
+        particles.
         """
         self.acc = self.get_acc(objs)
 
     def update_acc_jerk(self, objs):
         """
-        Update the individual gravitational acceleration and jerk due to other particles.
+        Update the individual gravitational acceleration and jerk due to
+        other particles.
         """
         (self.acc, self.jerk) = self.get_acc_jerk(objs)
 
@@ -327,7 +330,8 @@ class NbodyMethods(NbodyUtils):
 
 class PNbodyMethods(NbodyMethods):
     """
-    This class holds common methods for particles in n-body systems with post-Newtonian corrections.
+    This class holds common methods for particles in n-body systems with
+    post-Newtonian corrections.
     """
     special_attrs = [  # name, dtype, doc
         ("pn_dvx", REAL,
@@ -362,7 +366,8 @@ class PNbodyMethods(NbodyMethods):
     ### PN stuff
     def get_pnacc(self, objs, pn_order, clight):
         """
-        Get the individual post-newtonian gravitational acceleration due to other particles.
+        Get the individual post-newtonian gravitational acceleration due to
+        other particles.
         """
         gravity.pnacc.set_args(self, objs, pn_order, clight)
         gravity.pnacc.run()
@@ -381,7 +386,8 @@ class PNbodyMethods(NbodyMethods):
 
     def evolve_rcom_pn_shift(self, tstep):
         """
-        Evolves center of mass position shift in time due to post-newtonian terms.
+        Evolves center of mass position shift in time due to post-newtonian
+        terms.
         """
         self.pn_rcomx += tstep * self.pn_lmx
         self.pn_rcomy += tstep * self.pn_lmy
@@ -428,7 +434,9 @@ class PNbodyMethods(NbodyMethods):
         return np.array([amx, amy, amz])
 
 
-AbstractNbodyMethods = PNbodyMethods if "--pn_order" in sys.argv else NbodyMethods
+AbstractNbodyMethods = NbodyMethods
+if "--pn_order" in sys.argv:
+    AbstractNbodyMethods = PNbodyMethods
 
 
 #@decallmethods(timings)

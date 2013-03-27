@@ -1,9 +1,10 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
-
+TODO.
 """
+
 
 from __future__ import print_function
 import logging
@@ -295,8 +296,10 @@ class Base(object):
         pn_order = kwargs.pop("pn_order", 0)
         clight = kwargs.pop("clight", None)
         if pn_order > 0 and clight is None:
-            raise TypeError("'clight' is not defined. Please set the speed of "
-                            "light argument 'clight' when using 'pn_order' > 0.")
+            raise TypeError(
+                "'clight' is not defined. Please set the speed of light "
+                "argument 'clight' when using 'pn_order' > 0."
+            )
 
         self.reporter = kwargs.pop("reporter", None)
         self.viewer = kwargs.pop("viewer", None)

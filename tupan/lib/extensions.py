@@ -19,9 +19,9 @@ from .utils.dtype import *
 
 
 logger = logging.getLogger(__name__)
+format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(filename="spam.log", filemode='w',
-                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    level=logging.DEBUG)
+                    format=format, level=logging.DEBUG)
 
 
 @decallmethods(timings)

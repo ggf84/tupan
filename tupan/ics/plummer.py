@@ -91,9 +91,13 @@ class Plummer(object):
             eps2 = (1.0 / (mass * n**2))**2
         else:
             logger.critical(
-                "Unexpected value for eps_parametrization: %d.", self.eps_parametrization)
-            raise ValueError("Unexpected value for eps_parametrization: {}.".format(
-                self.eps_parametrization))
+                "Unexpected value for eps_parametrization: %d.",
+                self.eps_parametrization
+            )
+            raise ValueError(
+                "Unexpected value for eps_parametrization: {}.".format(
+                self.eps_parametrization)
+            )
 
         # normalizes by the provided scale of eps2
         eps2 *= self.eps2 / np.mean(eps2)
@@ -221,8 +225,13 @@ class Plummer(object):
 #        ax.set_axis_bgcolor('0.75')
         ax2.scatter(x, y, c=color, s=radius, cmap='gist_rainbow',
                     alpha=0.75, label=r'$Stars$')
-        circle = Circle((0, 0), 1, facecolor='none',
-                        edgecolor=(1, 0.25, 0), linewidth=1.5, label=r'$R_{Vir}$')
+        circle = Circle(
+            (0, 0), 1,
+            facecolor='none',
+            edgecolor=(1, 0.25, 0),
+            linewidth=1.5,
+            label=r'$R_{Vir}$'
+        )
         ax2.add_patch(circle)
 
         ax2.set_xlim(-4, +4)
