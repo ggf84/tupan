@@ -14,20 +14,18 @@ from functools import reduce
 from collections import OrderedDict
 import numpy as np
 import pyopencl as cl
+from .utils import ctype
 from .utils.timing import decallmethods, timings
-from .utils.dtype import *
 
 
 logger = logging.getLogger(__name__)
-format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-logging.basicConfig(filename="spam.log", filemode='w',
-                    format=format, level=logging.DEBUG)
 
 
 @decallmethods(timings)
 class CLEnv(object):
 
-    def __init__(self, fast_math=True):
+    def __init__(self, prec="double", fast_math=True):
+        self.prec = prec
         self.fast_math = fast_math
         self.ctx = cl.create_some_context()
         self.queue = cl.CommandQueue(self.ctx)
@@ -51,13 +49,13 @@ class CLModule(object):
         self.path = path
 
     def build(self, junroll=2):
-        prec = "double" if REAL is np.float64 else "single"
-        logger.debug("Building %s precision CL extension module.", prec)
+        logger.debug("Building %s precision CL extension module.",
+                     self.env.prec)
 
         # setting options
         options = " -I {path}".format(path=self.path)
         options += " -D JUNROLL={junroll}".format(junroll=junroll)
-        if prec is "double":
+        if self.env.prec is "double":
             options += " -D DOUBLE"
         if self.env.fast_math:
             options += " -cl-fast-relaxed-math"
@@ -106,18 +104,18 @@ class CLKernel(object):
     def set_local_memory(self, i, arg):
         def foo(x, y):
             return x * y
-#        size = np.dtype(REAL).itemsize * reduce(foo, self.local_size)
-#        size = np.dtype(REAL).itemsize * reduce(foo, (self._lsize_max,))
+#        size = np.dtype(ctype.REAL).itemsize * reduce(foo, self.local_size)
+#        size = np.dtype(ctype.REAL).itemsize * reduce(foo, (self._lsize_max,))
         size = 8 * reduce(foo, (self._lsize_max,))
         arg = cl.LocalMemory(size * arg)
         self.kernel.set_arg(i, arg)
 
     def set_int(self, i, arg):
-        arg = UINT(arg)
+        arg = ctype.UINT(arg)
         self.kernel.set_arg(i, arg)
 
     def set_float(self, i, arg):
-        arg = REAL(arg)
+        arg = ctype.REAL(arg)
         self.kernel.set_arg(i, arg)
 
     def set_array(self, i, arr):
@@ -131,7 +129,7 @@ class CLKernel(object):
 
     def allocate_buffer(self, i, shape):
         memf = cl.mem_flags
-        arr = np.zeros(shape, dtype=REAL)
+        arr = np.zeros(shape, dtype=ctype.REAL)
         self.dev_buff[i] = cl.Buffer(self.env.ctx,
                                      memf.READ_WRITE | memf.USE_HOST_PTR,
                                      hostbuf=arr)
@@ -143,9 +141,13 @@ class CLKernel(object):
 
     def map_buffer(self, i, arr):
         mapf = cl.map_flags
-        (pointer, ev) = cl.enqueue_map_buffer(self.env.queue, self.dev_buff[i],
-                                              mapf.READ, 0, arr.shape,
-                                              arr.dtype, "C")
+        (pointer, ev) = cl.enqueue_map_buffer(self.env.queue,
+                                              self.dev_buff[i],
+                                              mapf.READ,
+                                              0,
+                                              arr.shape,
+                                              arr.dtype,
+                                              "C")
         ev.wait()
 
 #        cl.enqueue_copy(self.env.queue, arr, self.dev_buff[i])
@@ -161,7 +163,8 @@ class CLKernel(object):
 @decallmethods(timings)
 class CEnv(object):
 
-    def __init__(self, fast_math=True):
+    def __init__(self, prec="double", fast_math=True):
+        self.prec = prec
         self.fast_math = fast_math
 
 
@@ -172,10 +175,10 @@ class CModule(object):
         self.env = env
 
     def build(self):
-        prec = "double" if REAL is np.float64 else "single"
-        logger.debug("Building %s precision C extension module.", prec)
+        logger.debug("Building %s precision C extension module.",
+                     self.env.prec)
 
-        if prec is "double":
+        if self.env.prec is "double":
             from .cffi_wrap import clib_dp as program
             from .cffi_wrap import ffi_dp as ffi
         else:
@@ -213,12 +216,14 @@ class CKernel(object):
     def set_array(self, i, arg):
         self.keep_ref[i] = arg
         self.dev_args[i] = self.ffi.cast(
-            "REAL *", arg.__array_interface__['data'][0])
+            "REAL *", arg.__array_interface__['data'][0]
+        )
 
     def allocate_buffer(self, i, shape):
-        arg = np.zeros(shape, dtype=REAL)
+        arg = np.zeros(shape, dtype=ctype.REAL)
         self.dev_args[i] = self.ffi.cast(
-            "REAL *", arg.__array_interface__['data'][0])
+            "REAL *", arg.__array_interface__['data'][0]
+        )
         return arg
 
     def map_buffer(self, i, arr):
@@ -229,24 +234,44 @@ class CKernel(object):
         self.kernel(*args)
 
 
-libkernels = {}
-libkernels["c"] = CModule(CEnv(fast_math=True)).build()
-libkernels["cl"] = CLModule(CLEnv(fast_math=True)).build(junroll=2)
-
-
-def get_extension(use_sp=False, use_cl=False):
-    libname = "cl" if use_cl else "c"
-    prec = "single" if use_sp else "double"
-    logger.debug(
-        "Using %s precision %s extension module.", prec, libname.upper())
-    return libkernels[libname]
+allkernels = {}
+allkernels.setdefault(
+    "c",
+    {
+        "single": CModule(
+            CEnv(prec="single", fast_math=True)
+        ).build(),
+        "double": CModule(
+            CEnv(prec="double", fast_math=True)
+        ).build(),
+    }
+)
+allkernels.setdefault(
+    "cl",
+    {
+        "single": CLModule(
+            CLEnv(prec="single", fast_math=True)
+        ).build(junroll=2),
+        "double": CLModule(
+            CLEnv(prec="double", fast_math=True)
+        ).build(junroll=2),
+    }
+)
 
 
 use_cl = True if "--use_cl" in sys.argv else False
-use_sp = True if "--use_sp" in sys.argv else False
 
 
-kernels = get_extension(use_sp=use_sp, use_cl=use_cl)
+def get_extension(use_cl=False):
+    libname = "cl" if use_cl else "c"
+    logger.debug(
+        "Using %s precision %s extension module.",
+        ctype.prec, libname.upper()
+    )
+    return allkernels[libname][ctype.prec]
+
+
+kernels = get_extension(use_cl=use_cl)
 
 
 ########## end of file ##########

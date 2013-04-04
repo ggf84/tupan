@@ -11,7 +11,6 @@ import logging
 import math
 from ..lib.extensions import kernels
 from ..lib.utils.timing import decallmethods, timings
-from ..lib.utils.dtype import *
 
 
 __all__ = ["NREG"]
@@ -318,8 +317,10 @@ class NREG(Base):
         return self.tstep
 
     def initialize(self, t_end):
-        logger.info("Initializing '%s' integrator.", type(
-            self).__name__.lower())
+        logger.info(
+            "Initializing '%s' integrator.",
+            type(self).__name__.lower()
+        )
 
         p = self.particles
         U = nreg_x(p, 0.0)
@@ -334,7 +335,10 @@ class NREG(Base):
         self.is_initialized = True
 
     def finalize(self, t_end):
-        logger.info("Finalizing '%s' integrator.", type(self).__name__.lower())
+        logger.info(
+            "Finalizing '%s' integrator.",
+            type(self).__name__.lower()
+        )
 
         p = self.particles
 #        tau = self.get_base_tstep(t_end)

@@ -8,7 +8,8 @@ TODO.
 
 from __future__ import print_function
 import numpy as np
-from scipy import (integrate, optimize)
+from scipy.integrate import quad
+from scipy.optimize import fminbound
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -32,11 +33,11 @@ class IMFSample(object):
                              ' [{0}:{1}].'.format(min_mlow, max_mhigh))
 
         intarg = lambda m: imf_func(m)/m
-        (norm, err) = integrate.quad(intarg, min_mlow, max_mhigh)
+        (norm, err) = quad(intarg, min_mlow, max_mhigh)
         imf_func_normed = lambda m: imf_func(m)/norm
-        mpeak = optimize.fminbound(lambda m: -imf_func_normed(m),
-                                   min_mlow, max_mhigh,
-                                   xtol=1.0e-8).item()
+        mpeak = float(fminbound(lambda m: -imf_func_normed(m),
+                                min_mlow, max_mhigh,
+                                xtol=1.0e-8))
         peak = imf_func_normed(mpeak)
 
         self.func = imf_func_normed

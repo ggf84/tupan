@@ -9,7 +9,7 @@ TODO.
 from __future__ import print_function
 from .body import Bodies
 from ..lib.utils.timing import decallmethods, timings
-from ..lib.utils.dtype import *
+from ..lib.utils import ctype
 
 
 __all__ = ["Stars"]
@@ -21,12 +21,12 @@ class Stars(Bodies):
 
     """
     attrs = Bodies.attrs + [
-        ("sx", REAL, "x-spin"),
-        ("sy", REAL, "y-spin"),
-        ("sz", REAL, "z-spin"),
-        ("radius", REAL, "radius"),
-        ("age", REAL, "age"),
-        ("metallicity", REAL, "metallicity"),
+        ("sx", ctype.REAL, "x-spin"),
+        ("sy", ctype.REAL, "y-spin"),
+        ("sz", ctype.REAL, "z-spin"),
+        ("radius", ctype.REAL, "radius"),
+        ("age", ctype.REAL, "age"),
+        ("metallicity", ctype.REAL, "metallicity"),
     ]
     dtype = [(_[0], _[1]) for _ in attrs]
 

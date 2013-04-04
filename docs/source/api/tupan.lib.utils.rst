@@ -9,10 +9,10 @@ utils Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`dtype` Module
+:mod:`ctype` Module
 -------------------
 
-.. automodule:: tupan.lib.utils.dtype
+.. automodule:: tupan.lib.utils.ctype
     :members:
     :undoc-members:
     :show-inheritance:

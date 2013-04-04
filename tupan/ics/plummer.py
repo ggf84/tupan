@@ -36,7 +36,7 @@ def scale_vel(p, v_scale):
 
 
 def scale_to_virial(particles, ke, pe, te):
-    scale_vel(particles, math.sqrt(-0.5*pe/ke))
+    scale_vel(particles, math.sqrt(-0.5 * pe / ke))
     ke = -0.5 * pe
     te = ke + pe
     scale_pos(particles, -te / 0.25)
@@ -79,15 +79,20 @@ class Plummer(object):
 
     def set_eps2(self, mass):
         n = self.num
-        if self.eps_parametrization == 0:       # eps2 ~ cte
+        if self.eps_parametrization == 0:
+            # eps2 ~ cte
             eps2 = np.ones(n)
-        elif self.eps_parametrization == 1:     # eps2 ~ m^2 ~ 1/n^2 if m ~ 1/n
+        elif self.eps_parametrization == 1:
+            # eps2 ~ m^2 ~ 1/n^2 if m ~ 1/n
             eps2 = mass**2
-        elif self.eps_parametrization == 2:     # eps2 ~ m/n ~ 1/n^2 if m ~ 1/n
+        elif self.eps_parametrization == 2:
+            # eps2 ~ m/n ~ 1/n^2 if m ~ 1/n
             eps2 = mass / n
-        elif self.eps_parametrization == 3:     # eps2 ~ (m/n^2)^(2/3) ~ 1/n^2 if m ~ 1/n
+        elif self.eps_parametrization == 3:
+            # eps2 ~ (m/n^2)^(2/3) ~ 1/n^2 if m ~ 1/n
             eps2 = (mass / n**2)**(2.0/3)
-        elif self.eps_parametrization == 4:     # eps2 ~ (1/(m*n^2))^2 ~ 1/n^2 if m ~ 1/n
+        elif self.eps_parametrization == 4:
+            # eps2 ~ (1/(m*n^2))^2 ~ 1/n^2 if m ~ 1/n
             eps2 = (1.0 / (mass * n**2))**2
         else:
             logger.critical(
@@ -103,13 +108,13 @@ class Plummer(object):
         eps2 *= self.eps2 / np.mean(eps2)
 
         # return half of real value in order to avoid to do this in force loop.
-        return eps2/2
+        return eps2 / 2
 
     def set_pos(self, irand):
         n = self.num
         mfrac = self.mfrac
         mrand = (irand + np.random.random(n)) * mfrac / n
-        radius = 1.0 / np.sqrt(np.power(mrand, -2.0/3.0) - 1.0)
+        radius = 1.0 / np.sqrt(np.power(mrand, -2.0 / 3.0) - 1.0)
         theta = np.arccos(np.random.uniform(-1.0, 1.0, size=n))
         phi = np.random.uniform(0.0, 2.0 * np.pi, size=n)
         rx = radius * np.sin(theta) * np.cos(phi)
@@ -182,11 +187,10 @@ class Plummer(object):
 
         (hist, bins) = np.histogram(np.log10(mass), bins=nbins)
         linbins = np.power(10.0, bins)
-        where_gt_zero = np.where(hist > 0)
+        selection = np.where(hist > 0)
 
         fitfunc = lambda k, m: k * self.imf.func(m)
-        errfunc = lambda k, m, y: fitfunc(
-            k, m)[where_gt_zero] - y[where_gt_zero]
+        errfunc = lambda k, m, y: fitfunc(k, m)[selection] - y[selection]
         k0 = 1.0
         k1, success = optimize.leastsq(errfunc, k0, args=(linbins[:-1], hist))
         x = np.logspace(np.log10(self.imf.min_mlow),
@@ -199,7 +203,7 @@ class Plummer(object):
 
         fig = plt.figure(figsize=(13.5, 6))
         ax1 = fig.add_subplot(1, 2, 1)
-        ax1.plot(bins[where_gt_zero], np.log10(hist[where_gt_zero]),
+        ax1.plot(bins[selection], np.log10(hist[selection]),
                  'bo', label='IMF sample')
         ax1.plot(np.log10(x), np.log10(y), 'r--',
                  label='IMF distribution', linewidth=1.5)

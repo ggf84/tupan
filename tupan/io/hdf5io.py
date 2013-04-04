@@ -134,9 +134,13 @@ class HDF5IO(object):
         """
         from . import psdfio
         fname = self.fname.replace(".hdf5", ".psdf")
-        stream = psdfio.PSDFIO(fname)
-        p = self.load()
-        stream.dump(p, fmode='w')
+        stream = psdfio.PSDFIO(fname, fmode='w')
+        try:
+            p = self.load_snapshot()
+            stream.dump_snapshot(p)
+        except:
+            p = self.load_worldline()
+            stream.dump_worldline(p)
 
 
 ########## end of file ##########

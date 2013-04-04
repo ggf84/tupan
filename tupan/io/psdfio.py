@@ -48,9 +48,13 @@ class PSDFIO(object):
         """
         from . import hdf5io
         fname = self.fname.replace('.psdf', '.hdf5')
-        stream = hdf5io.HDF5IO(fname)
-        p = self.load()
-        stream.dump(p, fmode='w')
+        stream = hdf5io.HDF5IO(fname, fmode='w')
+        try:
+            p = self.load_snapshot()
+            stream.dump_snapshot(p)
+        except:
+            p = self.load_worldline()
+            stream.dump_worldline(p)
 
 
 #@decallmethods(timings)
@@ -83,15 +87,6 @@ class Stream(yaml.YAMLObject):
             attributes['s'] = data.s
         # construct a representation node and return
         return dumper.represent_mapping(data.yaml_tag, attributes)
-
-#        if data.type == 'body':
-#            return dumper.represent_mapping(data.yaml_tag + '/Body', attributes)
-#        elif data.type == 'blackhole':
-#            return dumper.represent_mapping(data.yaml_tag + '/BlackHole', attributes)
-#        elif data.type == 'sph':
-#            return dumper.represent_mapping(data.yaml_tag + '/Sph', attributes)
-#        else:
-#            return dumper.represent_mapping(data.yaml_tag, attributes)
 
     @classmethod
     def to_dumper(cls, particles):
@@ -147,10 +142,10 @@ class Stream(yaml.YAMLObject):
 
     @classmethod
     def from_loader(cls, data):
-        from tupan.particles import Particles
-        from tupan.particles.sph import Sph
-        from tupan.particles.body import Body
-        from tupan.particles.blackhole import BlackHole
+        from tupan.particles.allparticles import System
+        from tupan.particles.sph import Sphs
+        from tupan.particles.star import Stars
+        from tupan.particles.blackhole import Blackholes
 
         def set_attributes(obj, index, item):
             obj.id[index] = item['id']
@@ -173,7 +168,7 @@ class Stream(yaml.YAMLObject):
             if 's' in item:
                 obj.spin[index] = item['s']
 
-        p = Particles()
+        p = System()
 
         for item in data:
             if 'type' in item:
@@ -181,28 +176,28 @@ class Stream(yaml.YAMLObject):
                 if item['type'] == 'body':
                     if p['body']:
                         olen = len(p['body'])
-                        p['body'].append(Body(1))
+                        p['body'].append(Stars(1))
                         set_attributes(p['body'], olen, item)
                     else:
-                        p['body'] = Body(1)
+                        p['body'] = Stars(1)
                         set_attributes(p['body'], 0, item)
                 # set BlackHole
                 elif item['type'] == 'blackhole':
                     if p['blackhole']:
                         olen = len(p['blackhole'])
-                        p['blackhole'].append(BlackHole(1))
+                        p['blackhole'].append(Blackholes(1))
                         set_attributes(p['blackhole'], olen, item)
                     else:
-                        p['blackhole'] = BlackHole(1)
+                        p['blackhole'] = Blackholes(1)
                         set_attributes(p['blackhole'], 0, item)
                 # set Sph
                 elif item['type'] == 'sph':
                     if p['sph']:
                         olen = len(p['sph'])
-                        p['sph'].append(Sph(1))
+                        p['sph'].append(Sphs(1))
                         set_attributes(p['sph'], olen, item)
                     else:
-                        p['sph'] = Sph(1)
+                        p['sph'] = Sphs(1)
                         set_attributes(p['sph'], 0, item)
             else:
                 print(
@@ -211,10 +206,10 @@ class Stream(yaml.YAMLObject):
                 )
                 if p['body']:
                     olen = len(p['body'])
-                    p['body'].append(Body(1))
+                    p['body'].append(Stars(1))
                     set_attributes(p['body'], olen, item)
                 else:
-                    p['body'] = Body(1)
+                    p['body'] = Stars(1)
                     set_attributes(p['body'], 0, item)
 
         return p

@@ -7,9 +7,8 @@ TODO.
 
 
 from __future__ import print_function
-import logging
-import heapq
 import math
+import logging
 import numpy as np
 from .bios import sakura
 from ..lib.utils.timing import decallmethods, timings
@@ -50,7 +49,9 @@ def split(isys, condition):
 
     if slow.n + fast.n != isys.n:
         logger.error(
-            "slow.n + fast.n != isys.n: %d, %d, %d.", slow.n, fast.n, isys.n)
+            "slow.n + fast.n != isys.n: %d, %d, %d.",
+            slow.n, fast.n, isys.n
+        )
 
     return slow, fast
 
@@ -337,7 +338,10 @@ class SIA(Base):
         return self.tstep
 
     def initialize(self, t_end):
-        logger.info("Initializing '%s' integrator.", self.method)
+        logger.info(
+            "Initializing '%s' integrator.",
+            self.method
+        )
 
         p = self.particles
 
@@ -347,7 +351,10 @@ class SIA(Base):
         self.is_initialized = True
 
     def finalize(self, t_end):
-        logger.info("Finalizing '%s' integrator.", self.method)
+        logger.info(
+            "Finalizing '%s' integrator.",
+            self.method
+        )
 
         p = self.particles
 
@@ -1172,67 +1179,6 @@ class SIA(Base):
             p = join(slow, fast)
 
         return p
-
-    #
-    # the following methods are for experimental purposes only.
-    #
-    ### heapq0
-    def heapq0(self, p, tau, update_tstep):
-
-        dt = tau
-        t = self.time
-        ph = []
-        while p.n > 0:
-            slow, fast, indexing = split(dt, p)
-            ph.append((t+dt, dt, p, slow, fast, indexing))
-            dt /= 2
-            p = fast
-        heapq.heapify(ph)
-
-        tstop = self.time+tau
-        while ph[0][0] < tstop:
-            (t, dt, p, slow, fast, indexing) = heapq.heappop(ph)
-            if fast.n > 0:
-                self.sf_dkd(slow, fast, dt)
-                t += dt
-                self.time = t
-
-            self.merge(p, slow, fast, indexing)
-            if update_tstep:
-                p.update_tstep(p, self.eta)      # True/False
-            if update_tstep:
-                p.update_phi(p)      # True/False
-            slow, fast, indexing = split(dt/2, p)
-
-            if fast.n > 0:
-                heapq.heappush(ph, (t+dt/2, dt/2, p, slow, fast, indexing))
-
-            print(len(ph), p.n, p['body'].t_curr[0], self.time, t, dt)
-
-        return p
-
-
-#        tstop = tau
-#        while pheap[0][0] < tstop:
-#            tnext, tau, p, slow, fast, indexing = heapq.heappop(pheap)
-#
-#            if fast.n == 0: self.time += tau / 2
-#            if slow.n > 0: self.sf_dkd(slow, fast, tau)
-#            if fast.n == 0: self.time += tau / 2
-#
-#            self.merge(p, slow, fast, indexing)
-#
-#            if update_tstep: p.update_tstep(p, self.eta)      # True/False
-#
-#            slow, fast, indexing = split(tau/2, p)
-#
-#            if fast.n > 0:
-#                tnext += tau/2
-#                heapq.heappush(p, (tnext, tau/2, p, slow, fast, indexing))
-#            else:
-#                tnext += tau
-#                heapq.heappush(p, (tnext, tau, p, slow, fast, indexing))
-
 
 
 ########## end of file ##########

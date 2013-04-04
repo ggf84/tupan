@@ -115,9 +115,9 @@ class IO(object):
 
         #######################################################################
         import matplotlib.pyplot as plt
-        p0 = IO("snapshots0.hdf5").load()
-        p1 = IO("snapshots1.hdf5").load()
-        p = IO("snapshots.hdf5").load()
+        p0 = IO("snapshots0.hdf5").load_worldline()
+        p1 = IO("snapshots1.hdf5").load_worldline()
+        p = IO("snapshots.hdf5").load_worldline()
 
         index = p[p.nstep == p.nstep.max()].id[0]
         a0 = p0[p0.id == index]
@@ -143,7 +143,7 @@ class IO(object):
         plt.show()
         #######################################################################
 
-        p = self.load()
+        p = self.load_worldline()
 
         snaps = OrderedDict()
         for t in times:

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
 Setup Script
@@ -17,7 +18,8 @@ package_data = {}
 package_data['tupan.analysis'] = [os.path.join('textures', '*.png')]
 package_data['tupan.lib'] = [os.path.join('src', '*.c'),
                              os.path.join('src', '*.h'),
-                             os.path.join('src', '*.cl')]
+                             os.path.join('src', '*.cl'),
+                             ]
 
 
 long_description = open(os.path.join(

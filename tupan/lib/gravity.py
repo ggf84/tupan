@@ -9,7 +9,6 @@ between particles in Newtonian and post-Newtonian approach.
 
 from .extensions import kernels
 from .utils.timing import decallmethods, timings
-from .utils.dtype import *
 
 
 __all__ = ["Phi", "phi",
@@ -40,8 +39,8 @@ class Phi(object):
     """
 
     """
-    def __init__(self, libgrav):
-        self.kernel = libgrav.p2p_phi_kernel
+    def __init__(self, lib=kernels):
+        self.kernel = lib.p2p_phi_kernel
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -97,8 +96,8 @@ class Acc(object):
     """
 
     """
-    def __init__(self, libgrav):
-        self.kernel = libgrav.p2p_acc_kernel
+    def __init__(self, lib=kernels):
+        self.kernel = lib.p2p_acc_kernel
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -158,8 +157,8 @@ class AccJerk(object):
     """
 
     """
-    def __init__(self, libgrav):
-        self.kernel = libgrav.p2p_acc_jerk_kernel
+    def __init__(self, lib=kernels):
+        self.kernel = lib.p2p_acc_jerk_kernel
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -226,8 +225,8 @@ class Tstep(object):
     """
 
     """
-    def __init__(self, libgrav):
-        self.kernel = libgrav.p2p_tstep_kernel
+    def __init__(self, lib=kernels):
+        self.kernel = lib.p2p_tstep_kernel
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -284,8 +283,8 @@ class PNAcc(object):
     """
 
     """
-    def __init__(self, libgrav):
-        self.kernel = libgrav.p2p_pnacc_kernel
+    def __init__(self, lib=kernels):
+        self.kernel = lib.p2p_pnacc_kernel
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -350,11 +349,11 @@ class PNAcc(object):
         return [self.pnax[:ni], self.pnay[:ni], self.pnaz[:ni]]
 
 
-phi = Phi(kernels)
-acc = Acc(kernels)
-acc_jerk = AccJerk(kernels)
-tstep = Tstep(kernels)
-pnacc = PNAcc(kernels)
+phi = Phi()
+acc = Acc()
+acc_jerk = AccJerk()
+tstep = Tstep()
+pnacc = PNAcc()
 
 
 ########## end of file ##########

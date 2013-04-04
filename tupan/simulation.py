@@ -16,16 +16,15 @@ from pprint import pprint
 from .io import IO
 
 logger = logging.getLogger(__name__)
-format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-logging.basicConfig(filename="spam.log", filemode='w',
-                    format=format, level=logging.DEBUG)
+
 try:
     from .analysis.glviewer import GLviewer
 except Exception as exc:
     GLviewer = lambda: None
     logger.exception(str(exc))
     print("#" * 40, file=sys.stderr)
-    print("Tupan viewer is not available. See 'spam.log' for a traceback.",
+    print("Tupan viewer is not available. "
+          "See '/tmp/tupan.log' for a traceback.",
           file=sys.stderr)
     print("#" * 40, file=sys.stderr)
 
@@ -274,14 +273,8 @@ def _main_restart(args):
 
 
 def parse_args():
-    """
-    The Tupan's main function.
-
-    Here we process command line arguments and call specific functions to run a
-    new N-body simulation or restart from a previous run.
-
-    NOTE: You shouldn't be able to call this function from a ipython session.
-          Instead you must call tupan's script directly from a unix shell.
+    """Here we process the command line arguments to run a new N-body
+    simulation or restart from a previous run.
     """
 
     # create the parser
@@ -472,6 +465,12 @@ def parse_args():
 
 
 def main():
+    """The top-level main function of Tupan.
+
+    .. note:: You shouldn't be able to call this function from a ipython
+        session. Instead you must call tupan's script directly from a unix
+        shell.
+    """
     args = parse_args()
     args.func(args)
 

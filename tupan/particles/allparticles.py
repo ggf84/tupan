@@ -22,7 +22,8 @@ __all__ = ["System"]
 #    def make_property(attr, doc):
 #        @timings
 #        def fget(self):
-#            return np.concatenate([getattr(obj, attr) for obj in self.values()])
+#            return np.concatenate([getattr(obj, attr)
+#                                   for obj in self.values()])
 #
 #        @timings
 #        def fset(self, value):
@@ -35,7 +36,8 @@ __all__ = ["System"]
 #                    value = value[obj.n:]
 #
 #        return property(fget=fget, fset=fset, fdel=None, doc=doc)
-#    attrs = ((i[0], cls.__name__+"\'s "+i[2]) for i in cls.attrs+cls.special_attrs)
+#    attrs = ((i[0], cls.__name__+"\'s "+i[2])
+#             for i in cls.attrs+cls.special_attrs)
 #    for (attr, doc) in attrs:
 #        setattr(cls, attr, make_property(attr, doc))
 #    return cls

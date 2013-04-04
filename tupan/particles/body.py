@@ -12,7 +12,7 @@ import copy
 import numpy as np
 from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
-from ..lib.utils.dtype import *
+from ..lib.utils import ctype
 
 
 __all__ = ["Bodies"]
@@ -25,7 +25,8 @@ __all__ = ["Bodies"]
 #        @timings
 #        def fset(self, value): self.data[attr] = value
 #        return property(fget=fget, fset=fset, fdel=None, doc=doc)
-#    attrs = ((i[0], cls.__name__+"\'s "+i[2]) for i in cls.attrs+cls.special_attrs)
+#    attrs = ((i[0], cls.__name__+"\'s "+i[2])
+#             for i in cls.attrs+cls.special_attrs)
 #    for (attr, doc) in attrs:
 #        setattr(cls, attr, make_property(attr, doc))
 #    return cls
@@ -68,18 +69,18 @@ class NbodyMethods(NbodyUtils):
     This class holds common methods for particles in n-body systems.
     """
     attrs = [  # name, dtype, doc
-        ("id", UINT, "index"),
-        ("mass", REAL, "mass"),
-        ("eps2", REAL, "squared softening"),
-        ("x", REAL, "x-position"),
-        ("y", REAL, "y-position"),
-        ("z", REAL, "z-position"),
-        ("vx", REAL, "x-velocity"),
-        ("vy", REAL, "y-velocity"),
-        ("vz", REAL, "z-velocity"),
-        ("time", REAL, "current time"),
-        ("tstep", REAL, "time step"),
-        ("nstep", UINT, "step number"),
+        ("id", ctype.UINT, "index"),
+        ("mass", ctype.REAL, "mass"),
+        ("eps2", ctype.REAL, "squared softening"),
+        ("x", ctype.REAL, "x-position"),
+        ("y", ctype.REAL, "y-position"),
+        ("z", ctype.REAL, "z-position"),
+        ("vx", ctype.REAL, "x-velocity"),
+        ("vy", ctype.REAL, "y-velocity"),
+        ("vz", ctype.REAL, "z-velocity"),
+        ("time", ctype.REAL, "current time"),
+        ("tstep", ctype.REAL, "time step"),
+        ("nstep", ctype.UINT, "step number"),
     ]
     dtype = [(_[0], _[1]) for _ in attrs]
 
@@ -334,31 +335,31 @@ class PNbodyMethods(NbodyMethods):
     post-Newtonian corrections.
     """
     special_attrs = [  # name, dtype, doc
-        ("pn_dvx", REAL,
+        ("pn_dvx", ctype.REAL,
          "post-Newtonian correction for the x-velocity"),
-        ("pn_dvy", REAL,
+        ("pn_dvy", ctype.REAL,
          "post-Newtonian correction for the y-velocity"),
-        ("pn_dvz", REAL,
+        ("pn_dvz", ctype.REAL,
          "post-Newtonian correction for the z-velocity"),
-        ("pn_ke", REAL,
+        ("pn_ke", ctype.REAL,
          "post-Newtonian correction for the kinetic energy"),
-        ("pn_rcomx", REAL,
+        ("pn_rcomx", ctype.REAL,
          "post-Newtonian correction for the center-of-mass x-position"),
-        ("pn_rcomy", REAL,
+        ("pn_rcomy", ctype.REAL,
          "post-Newtonian correction for the center-of-mass y-position"),
-        ("pn_rcomz", REAL,
+        ("pn_rcomz", ctype.REAL,
          "post-Newtonian correction for the center-of-mass z-position"),
-        ("pn_lmx", REAL,
+        ("pn_lmx", ctype.REAL,
          "post-Newtonian correction for the x-linear momentum"),
-        ("pn_lmy", REAL,
+        ("pn_lmy", ctype.REAL,
          "post-Newtonian correction for the y-linear momentum"),
-        ("pn_lmz", REAL,
+        ("pn_lmz", ctype.REAL,
          "post-Newtonian correction for the z-linear momentum"),
-        ("pn_amx", REAL,
+        ("pn_amx", ctype.REAL,
          "post-Newtonian correction for the x-angular momentum"),
-        ("pn_amy", REAL,
+        ("pn_amy", ctype.REAL,
          "post-Newtonian correction for the y-angular momentum"),
-        ("pn_amz", REAL,
+        ("pn_amz", ctype.REAL,
          "post-Newtonian correction for the z-angular momentum"),
     ]
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
@@ -475,7 +476,8 @@ if "--pn_order" in sys.argv:
 #            for obj in self:
 #                fmt += "{\n"
 #                for name in obj.data.dtype.names:
-#                    fmt += " {0}: {1},\n".format(name, getattr(obj, name).tolist()[0])
+#                    arr = getattr(obj, name)
+#                    fmt += " {0}: {1},\n".format(name, arr.tolist()[0])
 #                fmt += "},\n"
 #        fmt += "])"
 #        return fmt
@@ -557,7 +559,7 @@ class Bodies(AbstractNbodyMethods):
     """
     def __init__(self, n=0, items=None):
         if items is None:
-            self.__dict__['id'] = np.arange(n, dtype=UINT)
+            self.__dict__['id'] = np.arange(n, dtype=ctype.UINT)
             for name, dtype in self.dtype+self.special_dtype:
                 self.__dict__[name] = np.zeros(n, dtype=dtype)
         else:
