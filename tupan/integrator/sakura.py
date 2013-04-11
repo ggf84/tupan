@@ -13,7 +13,7 @@ from ..lib.extensions import kernels
 from ..lib.utils.timing import decallmethods, timings
 
 
-__all__ = ["BIOS"]
+__all__ = ["SAKURA"]
 
 logger = logging.getLogger(__name__)
 
@@ -47,12 +47,12 @@ class Base(object):
 
 
 @decallmethods(timings)
-class LLBIOS(object):
+class LLSAKURA(object):
     """
 
     """
     def __init__(self):
-        self.kernel = kernels.bios_kernel
+        self.kernel = kernels.sakura_kernel
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -115,21 +115,20 @@ class LLBIOS(object):
                 self.dvx[:ni], self.dvy[:ni], self.dvz[:ni]]
 
 
-llbios = LLBIOS()
+llsakura = LLSAKURA()
 
 
 def sakura(p, tau):
-    llbios.set_args(p, p, tau)
-    llbios.run()
-    (dx, dy, dz, dvx, dvy, dvz) = llbios.get_result()
-
     p.x += p.vx * tau / 2
     p.y += p.vy * tau / 2
     p.z += p.vz * tau / 2
 
-    p.x += dx
-    p.y += dy
-    p.z += dz
+    llsakura.set_args(p, p, tau)
+    llsakura.run()
+    (drx, dry, drz, dvx, dvy, dvz) = llsakura.get_result()
+    p.x += drx
+    p.y += dry
+    p.z += drz
     p.vx += dvx
     p.vy += dvy
     p.vz += dvz
@@ -142,12 +141,12 @@ def sakura(p, tau):
 
 
 @decallmethods(timings)
-class BIOS(Base):
+class SAKURA(Base):
     """
 
     """
     def __init__(self, eta, time, particles, **kwargs):
-        super(BIOS, self).__init__(eta, time, particles, **kwargs)
+        super(SAKURA, self).__init__(eta, time, particles, **kwargs)
         self.e0 = None
 
     def do_step(self, p, tau):

@@ -10,6 +10,6 @@
 #include"p2p_acc_jerk_kernel.h"
 #include"p2p_tstep_kernel.h"
 #include"p2p_pnacc_kernel.h"
-#include"bios_kernel.h"
 #include"nreg_kernels.h"
+#include"sakura_kernel.h"
 

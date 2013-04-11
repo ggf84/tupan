@@ -9,14 +9,11 @@ TODO.
 from __future__ import print_function
 import os
 import sys
-import tempfile
 import cffi
 
 
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, "src")
-
-TMPDIR = os.path.join(tempfile.gettempdir(), "__pycache__")
 
 
 def wrap_lib(fptype):
@@ -39,7 +36,6 @@ def wrap_lib(fptype):
     #include<common.h>
     #include<libtupan.h>
     """,
-                      tmpdir=TMPDIR,
                       define_macros=define_macros,
                       include_dirs=[PATH],
                       libraries=['m'],

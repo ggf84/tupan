@@ -9,10 +9,10 @@ integrator Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`bios` Module
-------------------
+:mod:`sakura` Module
+--------------------
 
-.. automodule:: tupan.integrator.bios
+.. automodule:: tupan.integrator.sakura
     :members:
     :undoc-members:
     :show-inheritance:

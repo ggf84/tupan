@@ -10,7 +10,7 @@ from __future__ import print_function
 import math
 import logging
 import numpy as np
-from .bios import sakura
+from .sakura import sakura
 from ..lib.utils.timing import decallmethods, timings
 
 

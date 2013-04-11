@@ -51,17 +51,6 @@ p2p_pnacc_kernel(const unsigned int ni,
                  REAL *ipnax, REAL *ipnay, REAL *ipnaz);
 
 inline void
-bios_kernel(const unsigned int ni,
-            const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
-            const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
-            const unsigned int nj,
-            const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
-            const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
-            const REAL dt,
-            REAL *idrx, REAL *idry, REAL *idrz,
-            REAL *idvx, REAL *idvy, REAL *idvz);
-
-inline void
 nreg_Xkernel(const unsigned int ni,
              const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
              const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
@@ -83,4 +72,15 @@ nreg_Vkernel(const unsigned int ni,
              const REAL dt,
              REAL *new_ivx, REAL *new_ivy, REAL *new_ivz,
              REAL *ik);
+
+inline void
+sakura_kernel(const unsigned int ni,
+              const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
+              const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+              const unsigned int nj,
+              const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
+              const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
+              const REAL dt,
+              REAL *idrx, REAL *idry, REAL *idrz,
+              REAL *idvx, REAL *idvy, REAL *idvz);
 
