@@ -365,12 +365,12 @@ class PNbodyMethods(NbodyMethods):
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
 
     ### PN stuff
-    def get_pnacc(self, objs, pn_order, clight):
+    def get_pnacc(self, objs):
         """
         Get the individual post-newtonian gravitational acceleration due to
         other particles.
         """
-        gravity.pnacc.set_args(self, objs, pn_order, clight)
+        gravity.pnacc.set_args(self, objs)
         gravity.pnacc.run()
         return gravity.pnacc.get_result()
 

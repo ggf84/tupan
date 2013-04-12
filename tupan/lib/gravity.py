@@ -13,19 +13,38 @@ from .utils.timing import decallmethods, timings
 
 __all__ = ["Phi", "phi",
            "Acc", "acc",
+           "AccJerk", "acc_jerk",
            "Tstep", "tstep",
            "PNAcc", "pnacc",
-           "AccJerk", "acc_jerk"]
+           "Sakura", "sakura",
+           ]
 
 
 @decallmethods(timings)
 class Clight(object):
+    """This class holds the values of the PN-order, the speed of light and
+    some of its inverse powers.
     """
-    This class holds the PN-order and some inverse powers of clight.
-    """
-    def __init__(self, pn_order, clight):
-        self.pn_order = int(pn_order)
-        self.inv1 = 1.0/float(clight)
+    def __init__(self):
+        self._pn_order = 0
+        self._clight = None
+
+    @property
+    def pn_order(self):
+        return self._pn_order
+
+    @pn_order.setter
+    def pn_order(self, value):
+        self._pn_order = int(value)
+
+    @property
+    def clight(self):
+        return self._clight
+
+    @clight.setter
+    def clight(self, value):
+        self._clight = float(value)
+        self.inv1 = 1.0/self._clight
         self.inv2 = self.inv1**2
         self.inv3 = self.inv1**3
         self.inv4 = self.inv1**4
@@ -297,11 +316,9 @@ class PNAcc(object):
         self.kernel.set_local_memory(35, 1)
         self.kernel.set_local_memory(36, 1)
 
-    def set_args(self, iobj, jobj, pn_order, clight):
+    def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
-
-        clight = Clight(pn_order, clight)
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
@@ -349,11 +366,82 @@ class PNAcc(object):
         return [self.pnax[:ni], self.pnay[:ni], self.pnaz[:ni]]
 
 
+@decallmethods(timings)
+class Sakura(object):
+    """
+
+    """
+    def __init__(self):
+        self.kernel = kernels.sakura_kernel
+        self.kernel.local_size = 512
+        self.max_output_size = 0
+
+        self.kernel.set_local_memory(25, 1)
+        self.kernel.set_local_memory(26, 1)
+        self.kernel.set_local_memory(27, 1)
+        self.kernel.set_local_memory(28, 1)
+        self.kernel.set_local_memory(29, 1)
+        self.kernel.set_local_memory(30, 1)
+        self.kernel.set_local_memory(31, 1)
+        self.kernel.set_local_memory(32, 1)
+
+    def set_args(self, iobj, jobj, dt):
+        ni = iobj.n
+        nj = jobj.n
+
+        self.kernel.global_size = ni
+        self.kernel.set_int(0, ni)
+        self.kernel.set_array(1, iobj.x)
+        self.kernel.set_array(2, iobj.y)
+        self.kernel.set_array(3, iobj.z)
+        self.kernel.set_array(4, iobj.mass)
+        self.kernel.set_array(5, iobj.vx)
+        self.kernel.set_array(6, iobj.vy)
+        self.kernel.set_array(7, iobj.vz)
+        self.kernel.set_array(8, iobj.eps2)
+        self.kernel.set_int(9, nj)
+        self.kernel.set_array(10, jobj.x)
+        self.kernel.set_array(11, jobj.y)
+        self.kernel.set_array(12, jobj.z)
+        self.kernel.set_array(13, jobj.mass)
+        self.kernel.set_array(14, jobj.vx)
+        self.kernel.set_array(15, jobj.vy)
+        self.kernel.set_array(16, jobj.vz)
+        self.kernel.set_array(17, jobj.eps2)
+        self.kernel.set_float(18, dt)
+
+        self.osize = ni
+        if ni > self.max_output_size:
+            self.drx = self.kernel.allocate_buffer(19, ni)
+            self.dry = self.kernel.allocate_buffer(20, ni)
+            self.drz = self.kernel.allocate_buffer(21, ni)
+            self.dvx = self.kernel.allocate_buffer(22, ni)
+            self.dvy = self.kernel.allocate_buffer(23, ni)
+            self.dvz = self.kernel.allocate_buffer(24, ni)
+            self.max_output_size = ni
+
+    def run(self):
+        self.kernel.run()
+
+    def get_result(self):
+        ni = self.osize
+        self.kernel.map_buffer(19, self.drx)
+        self.kernel.map_buffer(20, self.dry)
+        self.kernel.map_buffer(21, self.drz)
+        self.kernel.map_buffer(22, self.dvx)
+        self.kernel.map_buffer(23, self.dvy)
+        self.kernel.map_buffer(24, self.dvz)
+        return [self.drx[:ni], self.dry[:ni], self.drz[:ni],
+                self.dvx[:ni], self.dvy[:ni], self.dvz[:ni]]
+
+
+clight = Clight()
 phi = Phi()
 acc = Acc()
 acc_jerk = AccJerk()
 tstep = Tstep()
 pnacc = PNAcc()
+sakura = Sakura()
 
 
 ########## end of file ##########

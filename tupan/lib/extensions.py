@@ -13,12 +13,27 @@ import logging
 from functools import reduce
 from collections import OrderedDict
 import numpy as np
-import pyopencl as cl
 from .utils import ctype
 from .utils.timing import decallmethods, timings
 
 
 logger = logging.getLogger(__name__)
+
+
+try:
+    import pyopencl as cl
+    HAS_CL = True
+except Exception as exc:
+    cl = None
+    HAS_CL = False
+    logger.exception(str(exc))
+    import warnings
+    warnings.warn(
+        "An Exception occurred when trying to import pyopencl. "
+        "See 'tupan.log' for more details. "
+        "Continuing with C extension...",
+        stacklevel=1
+    )
 
 
 @decallmethods(timings)
@@ -246,17 +261,20 @@ allkernels.setdefault(
         ).build(),
     }
 )
-allkernels.setdefault(
-    "cl",
-    {
-        "single": CLModule(
-            CLEnv(prec="single", fast_math=True)
-        ).build(junroll=2),
-        "double": CLModule(
-            CLEnv(prec="double", fast_math=True)
-        ).build(junroll=2),
-    }
-)
+if HAS_CL:
+    allkernels.setdefault(
+        "cl",
+        {
+            "single": CLModule(
+                CLEnv(prec="single", fast_math=True)
+            ).build(junroll=2),
+            "double": CLModule(
+                CLEnv(prec="double", fast_math=True)
+            ).build(junroll=2),
+        }
+    )
+else:
+    allkernels["cl"] = allkernels["c"]
 
 
 use_cl = True if "--use_cl" in sys.argv else False

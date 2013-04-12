@@ -10,7 +10,9 @@ from __future__ import print_function
 import math
 import logging
 import numpy as np
-from .sakura import sakura
+from ..integrator import Base
+from ..lib import gravity
+from .sakura import sakura_step
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -18,12 +20,10 @@ __all__ = ["SIA"]
 
 logger = logging.getLogger(__name__)
 
-
 #
-# global constants
+# global variables
 #
-pn_order = 0
-clight = None
+INCLUDE_PN_CORRECTIONS = False
 
 
 #
@@ -124,7 +124,7 @@ def drift_pn(isys, tau):
 # kick_pn
 #
 @timings
-def kick_pn(ip, jp, tau, pn_order, clight):
+def kick_pn(ip, jp, tau):
     """
     Kick operator for post-Newtonian quantities.
     """
@@ -139,7 +139,7 @@ def kick_pn(ip, jp, tau, pn_order, clight):
         ip.evolve_lmom_pn_shift(tau / 2)
         ip.evolve_amom_pn_shift(tau / 2)
 
-        (pnax, pnay, pnaz) = ip.get_pnacc(jp, pn_order, clight)
+        (pnax, pnay, pnaz) = ip.get_pnacc(jp)
         g = 2 * tau * 0
         ip.pn_dvx = (tau * pnax - (1 - g) * ip.pn_dvx) / (1 + g)
         ip.pn_dvy = (tau * pnay - (1 - g) * ip.pn_dvy) / (1 + g)
@@ -165,7 +165,7 @@ def drift(isys, tau):
     """
     Drift operator.
     """
-    if pn_order > 0:
+    if INCLUDE_PN_CORRECTIONS:
         return drift_pn(isys, tau)
     return drift_n(isys, tau)
 
@@ -178,8 +178,8 @@ def kick(isys, jsys, tau, pn):
     """
     Kick operator.
     """
-    if pn and pn_order > 0:
-        return kick_pn(isys, jsys, tau, pn_order, clight)
+    if pn and INCLUDE_PN_CORRECTIONS:
+        return kick_pn(isys, jsys, tau)
     return kick_n(isys, jsys, tau)
 
 
@@ -282,36 +282,6 @@ def kick_sf(slow, fast, tau):
     return slow, fast
 
 
-class Base(object):
-    """
-    A base class for the Symplectic Integration Algorithms (SIAs).
-    """
-    def __init__(self, eta, time, particles, **kwargs):
-        self.eta = eta
-        self.time = time
-        self.particles = particles
-        self.is_initialized = False
-
-        global pn_order
-        global clight
-        pn_order = kwargs.pop("pn_order", 0)
-        clight = kwargs.pop("clight", None)
-        if pn_order > 0 and clight is None:
-            raise TypeError(
-                "'clight' is not defined. Please set the speed of light "
-                "argument 'clight' when using 'pn_order' > 0."
-            )
-
-        self.reporter = kwargs.pop("reporter", None)
-        self.viewer = kwargs.pop("viewer", None)
-        self.dumpper = kwargs.pop("dumpper", None)
-        self.dump_freq = kwargs.pop("dump_freq", 1)
-        if kwargs:
-            msg = "{0}.__init__ received unexpected keyword arguments: {1}."
-            raise TypeError(msg.format(type(
-                self).__name__, ", ".join(kwargs.keys())))
-
-
 @decallmethods(timings)
 class SIA(Base):
     """
@@ -330,6 +300,8 @@ class SIA(Base):
     def __init__(self, eta, time, particles, method, **kwargs):
         super(SIA, self).__init__(eta, time, particles, **kwargs)
         self.method = method
+        global INCLUDE_PN_CORRECTIONS
+        INCLUDE_PN_CORRECTIONS = True if gravity.clight.pn_order > 0 else False
 
     def get_base_tstep(self, t_end):
         self.tstep = self.eta
@@ -475,14 +447,14 @@ class SIA(Base):
             if fast.n:
                 fast = self.dkd21(fast, d[0] * tau, True)
                 if slow.n:
-                    slow = sakura(slow, d[0] * tau)
+                    slow = sakura_step(slow, d[0] * tau)
                 fast, slow = kick_sf(fast, slow, k[0] * tau)
                 if slow.n:
-                    slow = sakura(slow, d[0] * tau)
+                    slow = sakura_step(slow, d[0] * tau)
                 fast = self.dkd21(fast, d[0] * tau, True)
             else:
                 if slow.n:
-                    slow = sakura(slow, tau)
+                    slow = sakura_step(slow, tau)
             #
 
             if slow.n:

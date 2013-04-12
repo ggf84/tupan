@@ -47,7 +47,7 @@ p2p_tstep_kernel_core(REAL iomega,
     omega2 *= omega2;                                                // 1 FLOPs
 
 //    iomega = (omega2 > iomega) ? (omega2):(iomega);
-    iomega += (r2 > 0) ? (omega2):(0);                               // 1 FLOPs
+    iomega += (r2 > 0) ? (omega2):(1); // It should be (1), not (0). // 1 FLOPs
     return iomega;
 }
 // Total flop count: 52

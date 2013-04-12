@@ -6,6 +6,39 @@ TODO.
 """
 
 
+class Base(object):
+    """
+
+    """
+    def __init__(self, eta, time, particles, **kwargs):
+        self.eta = eta
+        self.time = time
+        self.particles = particles
+        self.is_initialized = False
+
+        pn_order = kwargs.pop("pn_order", 0)
+        clight = kwargs.pop("clight", None)
+        if pn_order > 0:
+            if clight is None:
+                raise TypeError(
+                    "'clight' is not defined. Please set the speed of light "
+                    "argument 'clight' when using 'pn_order' > 0."
+                )
+            else:
+                from ..lib import gravity
+                gravity.clight.pn_order = pn_order
+                gravity.clight.clight = clight
+
+        self.reporter = kwargs.pop("reporter", None)
+        self.viewer = kwargs.pop("viewer", None)
+        self.dumpper = kwargs.pop("dumpper", None)
+        self.dump_freq = kwargs.pop("dump_freq", 1)
+        if kwargs:
+            msg = "{0}.__init__ received unexpected keyword arguments: {1}."
+            raise TypeError(msg.format(type(
+                self).__name__, ", ".join(kwargs.keys())))
+
+
 from . import sia
 from . import nreg
 from . import sakura

@@ -9,6 +9,7 @@ TODO.
 from __future__ import print_function, division
 import logging
 import math
+from ..integrator import Base
 from ..lib.extensions import kernels
 from ..lib.utils.timing import decallmethods, timings
 
@@ -16,34 +17,6 @@ from ..lib.utils.timing import decallmethods, timings
 __all__ = ["NREG"]
 
 logger = logging.getLogger(__name__)
-
-
-class Base(object):
-    """
-
-    """
-    def __init__(self, eta, time, particles, **kwargs):
-        self.eta = eta
-        self.time = time
-        self.particles = particles
-        self.is_initialized = False
-
-        self.pn_order = kwargs.pop("pn_order", 0)
-        self.clight = kwargs.pop("clight", None)
-        if self.pn_order > 0 and self.clight is None:
-            raise TypeError(
-                "'clight' is not defined. Please set the speed of light "
-                "argument 'clight' when using 'pn_order' > 0."
-            )
-
-        self.reporter = kwargs.pop("reporter", None)
-        self.viewer = kwargs.pop("viewer", None)
-        self.dumpper = kwargs.pop("dumpper", None)
-        self.dump_freq = kwargs.pop("dump_freq", 1)
-        if kwargs:
-            msg = "{0}.__init__ received unexpected keyword arguments: {1}."
-            raise TypeError(msg.format(type(
-                self).__name__, ", ".join(kwargs.keys())))
 
 
 @decallmethods(timings)
