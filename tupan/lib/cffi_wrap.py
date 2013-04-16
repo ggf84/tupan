@@ -17,6 +17,7 @@ PATH = os.path.join(DIRNAME, "src")
 
 
 def wrap_lib(fptype):
+    sources = ("libtupan.c", "smoothing.c")
 
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
         src = fobj.read()
@@ -33,13 +34,14 @@ def wrap_lib(fptype):
         modulename = modulename.replace("SP", "DP")
 
     clib = ffi.verify("""
-    #include<common.h>
-    #include<libtupan.h>
+    #include"common.h"
+    #include"smoothing.h"
+    #include"libtupan.h"
     """,
                       define_macros=define_macros,
                       include_dirs=[PATH],
                       libraries=['m'],
-                      sources=[os.path.join(PATH, 'libtupan.c')],
+                      sources=[os.path.join(PATH, src) for src in sources],
                       force_generic_engine=hasattr(
                           sys, '_force_generic_engine_'),
                       modulename=modulename,

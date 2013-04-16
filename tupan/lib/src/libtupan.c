@@ -1,10 +1,9 @@
 
-#include"common.h"
-#include"p2p_phi_kernel.h"
-#include"p2p_acc_kernel.h"
-#include"p2p_acc_jerk_kernel.h"
-#include"p2p_tstep_kernel.h"
-#include"p2p_pnacc_kernel.h"
-#include"nreg_kernels.h"
-#include"sakura_kernel.h"
+#include"phi_kernel.c"
+#include"acc_kernel.c"
+#include"acc_jerk_kernel.c"
+#include"tstep_kernel.c"
+#include"pnacc_kernel.c"
+#include"nreg_kernels.c"
+#include"sakura_kernel.c"
 
