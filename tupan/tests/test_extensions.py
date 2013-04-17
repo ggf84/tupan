@@ -11,7 +11,6 @@ import unittest
 import numpy as np
 from pprint import pprint
 from tupan.lib import gravity
-from tupan.lib.extensions import allkernels
 from tupan.lib.utils import ctype
 from tupan.lib.utils.timing import Timer
 
@@ -63,13 +62,13 @@ class TestCase(unittest.TestCase):
                 jobj = self.small_system[:j]
 
                 # calculating on CPU
-                kernel = gravity.Phi(allkernels['c'][ctype.prec])
+                kernel = gravity.Phi("c", ctype.prec)
                 kernel.set_args(iobj, jobj)
                 kernel.run()
                 res['c'] = kernel.get_result()
 
                 # calculating on GPU
-                kernel = gravity.Phi(allkernels['cl'][ctype.prec])
+                kernel = gravity.Phi("cl", ctype.prec)
                 kernel.set_args(iobj, jobj)
                 kernel.run()
                 res['cl'] = kernel.get_result()
@@ -100,13 +99,13 @@ class TestCase(unittest.TestCase):
                 jobj = self.small_system[:j]
 
                 # calculating on CPU
-                kernel = gravity.Acc(allkernels['c'][ctype.prec])
+                kernel = gravity.Acc("c", ctype.prec)
                 kernel.set_args(iobj, jobj)
                 kernel.run()
                 res['c'] = kernel.get_result()
 
                 # calculating on GPU
-                kernel = gravity.Acc(allkernels['cl'][ctype.prec])
+                kernel = gravity.Acc("cl", ctype.prec)
                 kernel.set_args(iobj, jobj)
                 kernel.run()
                 res['cl'] = kernel.get_result()
@@ -141,13 +140,13 @@ class TestCase(unittest.TestCase):
                 jobj = self.small_system[:j]
 
                 # calculating on CPU
-                kernel = gravity.AccJerk(allkernels['c'][ctype.prec])
+                kernel = gravity.AccJerk("c", ctype.prec)
                 kernel.set_args(iobj, jobj)
                 kernel.run()
                 res['c'] = kernel.get_result()
 
                 # calculating on GPU
-                kernel = gravity.AccJerk(allkernels['cl'][ctype.prec])
+                kernel = gravity.AccJerk("cl", ctype.prec)
                 kernel.set_args(iobj, jobj)
                 kernel.run()
                 res['cl'] = kernel.get_result()
@@ -183,13 +182,13 @@ class TestCase(unittest.TestCase):
                 jobj = self.small_system[:j]
 
                 # calculating on CPU
-                kernel = gravity.Tstep(allkernels['c'][ctype.prec])
+                kernel = gravity.Tstep("c", ctype.prec)
                 kernel.set_args(iobj, jobj, eta)
                 kernel.run()
                 res['c'] = kernel.get_result()
 
                 # calculating on GPU
-                kernel = gravity.Tstep(allkernels['cl'][ctype.prec])
+                kernel = gravity.Tstep("cl", ctype.prec)
                 kernel.set_args(iobj, jobj, eta)
                 kernel.run()
                 res['cl'] = kernel.get_result()
@@ -223,13 +222,13 @@ class TestCase(unittest.TestCase):
                 jobj = self.small_system[:j]
 
                 # calculating on CPU
-                kernel = gravity.PNAcc(allkernels['c'][ctype.prec])
+                kernel = gravity.PNAcc("c", ctype.prec)
                 kernel.set_args(iobj, jobj)
                 kernel.run()
                 res['c'] = kernel.get_result()
 
                 # calculating on GPU
-                kernel = gravity.PNAcc(allkernels['cl'][ctype.prec])
+                kernel = gravity.PNAcc("cl", ctype.prec)
                 kernel.set_args(iobj, jobj)
                 kernel.run()
                 res['cl'] = kernel.get_result()
@@ -258,13 +257,13 @@ class TestCase(unittest.TestCase):
         jobj = self.large_system
 
         # calculating using SP on CPU
-        kernel = gravity.Phi(allkernels['c'][ctype.prec])
+        kernel = gravity.Phi("c", ctype.prec)
         best['set_args']['c'] = best_of(n, kernel.set_args, iobj, jobj)
         best['run']['c'] = best_of(n, kernel.run)
         best['get_result']['c'] = best_of(n, kernel.get_result)
 
         # calculating using DP on CPU
-        kernel = gravity.Phi(allkernels['cl'][ctype.prec])
+        kernel = gravity.Phi("cl", ctype.prec)
         best['set_args']['cl'] = best_of(n, kernel.set_args, iobj, jobj)
         best['run']['cl'] = best_of(n, kernel.run)
         best['get_result']['cl'] = best_of(n, kernel.get_result)
@@ -296,13 +295,13 @@ class TestCase(unittest.TestCase):
         jobj = self.large_system
 
         # calculating using SP on CPU
-        kernel = gravity.Acc(allkernels['c'][ctype.prec])
+        kernel = gravity.Acc("c", ctype.prec)
         best['set_args']['c'] = best_of(n, kernel.set_args, iobj, jobj)
         best['run']['c'] = best_of(n, kernel.run)
         best['get_result']['c'] = best_of(n, kernel.get_result)
 
         # calculating using DP on CPU
-        kernel = gravity.Acc(allkernels['cl'][ctype.prec])
+        kernel = gravity.Acc("cl", ctype.prec)
         best['set_args']['cl'] = best_of(n, kernel.set_args, iobj, jobj)
         best['run']['cl'] = best_of(n, kernel.run)
         best['get_result']['cl'] = best_of(n, kernel.get_result)
@@ -337,13 +336,13 @@ class TestCase(unittest.TestCase):
         gravity.clight.clight = 128
 
         # calculating using SP on CPU
-        kernel = gravity.PNAcc(allkernels['c'][ctype.prec])
+        kernel = gravity.PNAcc("c", ctype.prec)
         best['set_args']['c'] = best_of(n, kernel.set_args, iobj, jobj)
         best['run']['c'] = best_of(n, kernel.run)
         best['get_result']['c'] = best_of(n, kernel.get_result)
 
         # calculating using DP on CPU
-        kernel = gravity.PNAcc(allkernels['cl'][ctype.prec])
+        kernel = gravity.PNAcc("cl", ctype.prec)
         best['set_args']['cl'] = best_of(n, kernel.set_args, iobj, jobj)
         best['run']['cl'] = best_of(n, kernel.run)
         best['get_result']['cl'] = best_of(n, kernel.get_result)

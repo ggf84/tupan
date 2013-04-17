@@ -6,10 +6,12 @@
 
 
 inline REAL
-p2p_tstep_kernel_core(REAL iomega,
-                      const REAL4 irm, const REAL4 ive,
-                      const REAL4 jrm, const REAL4 jve,
-                      const REAL eta)
+tstep_kernel_core(
+    REAL iomega,
+    const REAL4 irm, const REAL4 ive,
+    const REAL4 jrm, const REAL4 jve,
+    const REAL eta
+    )
 {
     REAL4 r;
     r.x = irm.x - jrm.x;                                             // 1 FLOPs

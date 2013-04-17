@@ -6,10 +6,12 @@
 
 
 inline REAL8
-nreg_Xkernel_core(REAL8 ira,
-                  const REAL4 irm, const REAL4 ive,
-                  const REAL4 jrm, const REAL4 jve,
-                  const REAL dt)
+nreg_Xkernel_core(
+    REAL8 ira,
+    const REAL4 irm, const REAL4 ive,
+    const REAL4 jrm, const REAL4 jve,
+    const REAL dt
+    )
 {
     REAL3 r;
     r.x = irm.x - jrm.x;                                             // 1 FLOPs
@@ -49,10 +51,12 @@ nreg_Xkernel_core(REAL8 ira,
 
 
 inline REAL4
-nreg_Vkernel_core(REAL4 ivk,
-                  const REAL4 ivm, const REAL3 ia,
-                  const REAL4 jvm, const REAL3 ja,
-                  const REAL dt)
+nreg_Vkernel_core(
+    REAL4 ivk,
+    const REAL4 ivm, const REAL3 ia,
+    const REAL4 jvm, const REAL3 ja,
+    const REAL dt
+    )
 {
     REAL3 a;
     a.x = ia.x - ja.x;                                               // 1 FLOPs

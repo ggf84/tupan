@@ -7,11 +7,13 @@
 
 
 static inline REAL
-get_phi(const REAL m,
-        const REAL x,
-        const REAL y,
-        const REAL z,
-        const REAL eps2)
+get_phi(
+    const REAL m,
+    const REAL x,
+    const REAL y,
+    const REAL z,
+    const REAL eps2
+    )
 {
     REAL r2 = x * x + y * y + z * z;                                 // 5 FLOPs
     REAL inv_r = smoothed_inv_r1(r2, eps2);                          // 3 FLOPs
@@ -20,11 +22,13 @@ get_phi(const REAL m,
 
 
 static inline REAL3
-get_acc(const REAL m,
-        const REAL x,
-        const REAL y,
-        const REAL z,
-        const REAL eps2)
+get_acc(
+    const REAL m,
+    const REAL x,
+    const REAL y,
+    const REAL z,
+    const REAL eps2
+    )
 {
     REAL r2 = x * x + y * y + z * z;                                 // 5 FLOPs
     REAL inv_r3 = smoothed_inv_r3(r2, eps2);                         // 4 FLOPs
@@ -38,11 +42,13 @@ get_acc(const REAL m,
 
 
 static inline void
-leapfrog(const REAL dt,
-         const REAL4 r0,
-         const REAL4 v0,
-         REAL4 *r1,
-         REAL4 *v1)
+leapfrog(
+    const REAL dt,
+    const REAL4 r0,
+    const REAL4 v0,
+    REAL4 *r1,
+    REAL4 *v1
+    )
 {
     REAL4 r = r0;
     REAL4 v = v0;
@@ -68,11 +74,13 @@ leapfrog(const REAL dt,
 
 
 static inline void
-twobody_solver(const REAL dt,
-               const REAL4 r0,
-               const REAL4 v0,
-               REAL4 *r1,
-               REAL4 *v1)
+twobody_solver(
+    const REAL dt,
+    const REAL4 r0,
+    const REAL4 v0,
+    REAL4 *r1,
+    REAL4 *v1
+    )
 {
 //    leapfrog(dt, r0, v0, r1, v1);
     universal_kepler_solver(dt, r0, v0, r1, v1);
@@ -80,10 +88,12 @@ twobody_solver(const REAL dt,
 
 
 inline REAL8
-sakura_kernel_core(REAL8 idrdv,
-                   const REAL4 irm, const REAL4 ive,
-                   const REAL4 jrm, const REAL4 jve,
-                   const REAL dt)
+sakura_kernel_core(
+    REAL8 idrdv,
+    const REAL4 irm, const REAL4 ive,
+    const REAL4 jrm, const REAL4 jve,
+    const REAL dt
+    )
 {
     REAL4 r0;
     r0.x = irm.x - jrm.x;                                            // 1 FLOPs

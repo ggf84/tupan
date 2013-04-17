@@ -2,20 +2,21 @@
 
 
 inline REAL8
-sakura_kernel_accum(REAL8 idrdv,
-                    const REAL8 idata,
-                    const REAL dt,
-                    uint j_begin,
-                    uint j_end,
-                    __local REAL *shr_jrx,
-                    __local REAL *shr_jry,
-                    __local REAL *shr_jrz,
-                    __local REAL *shr_jmass,
-                    __local REAL *shr_jvx,
-                    __local REAL *shr_jvy,
-                    __local REAL *shr_jvz,
-                    __local REAL *shr_jeps2
-                   )
+sakura_kernel_accum(
+    REAL8 idrdv,
+    const REAL8 idata,
+    const REAL dt,
+    uint j_begin,
+    uint j_end,
+    __local REAL *shr_jrx,
+    __local REAL *shr_jry,
+    __local REAL *shr_jrz,
+    __local REAL *shr_jmass,
+    __local REAL *shr_jvx,
+    __local REAL *shr_jvy,
+    __local REAL *shr_jvz,
+    __local REAL *shr_jeps2
+    )
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
@@ -31,26 +32,27 @@ sakura_kernel_accum(REAL8 idrdv,
 
 
 inline REAL8
-sakura_kernel_main_loop(const REAL8 idata,
-                        const uint nj,
-                        __global const REAL *inp_jrx,
-                        __global const REAL *inp_jry,
-                        __global const REAL *inp_jrz,
-                        __global const REAL *inp_jmass,
-                        __global const REAL *inp_jvx,
-                        __global const REAL *inp_jvy,
-                        __global const REAL *inp_jvz,
-                        __global const REAL *inp_jeps2,
-                        const REAL dt,
-                        __local REAL *shr_jrx,
-                        __local REAL *shr_jry,
-                        __local REAL *shr_jrz,
-                        __local REAL *shr_jmass,
-                        __local REAL *shr_jvx,
-                        __local REAL *shr_jvy,
-                        __local REAL *shr_jvz,
-                        __local REAL *shr_jeps2
-                       )
+sakura_kernel_main_loop(
+    const REAL8 idata,
+    const uint nj,
+    __global const REAL *inp_jrx,
+    __global const REAL *inp_jry,
+    __global const REAL *inp_jrz,
+    __global const REAL *inp_jmass,
+    __global const REAL *inp_jvx,
+    __global const REAL *inp_jvy,
+    __global const REAL *inp_jvz,
+    __global const REAL *inp_jeps2,
+    const REAL dt,
+    __local REAL *shr_jrx,
+    __local REAL *shr_jry,
+    __local REAL *shr_jrz,
+    __local REAL *shr_jmass,
+    __local REAL *shr_jvx,
+    __local REAL *shr_jvy,
+    __local REAL *shr_jvz,
+    __local REAL *shr_jeps2
+    )
 {
     uint lsize = get_local_size(0);
 
@@ -92,40 +94,42 @@ sakura_kernel_main_loop(const REAL8 idata,
 }
 
 
-__kernel void sakura_kernel(const uint ni,
-                            __global const REAL *inp_irx,
-                            __global const REAL *inp_iry,
-                            __global const REAL *inp_irz,
-                            __global const REAL *inp_imass,
-                            __global const REAL *inp_ivx,
-                            __global const REAL *inp_ivy,
-                            __global const REAL *inp_ivz,
-                            __global const REAL *inp_ieps2,
-                            const uint nj,
-                            __global const REAL *inp_jrx,
-                            __global const REAL *inp_jry,
-                            __global const REAL *inp_jrz,
-                            __global const REAL *inp_jmass,
-                            __global const REAL *inp_jvx,
-                            __global const REAL *inp_jvy,
-                            __global const REAL *inp_jvz,
-                            __global const REAL *inp_jeps2,
-                            const REAL dt,
-                            __global REAL *out_idrx,
-                            __global REAL *out_idry,
-                            __global REAL *out_idrz,
-                            __global REAL *out_idvx,
-                            __global REAL *out_idvy,
-                            __global REAL *out_idvz,
-                            __local REAL *shr_jrx,
-                            __local REAL *shr_jry,
-                            __local REAL *shr_jrz,
-                            __local REAL *shr_jmass,
-                            __local REAL *shr_jvx,
-                            __local REAL *shr_jvy,
-                            __local REAL *shr_jvz,
-                            __local REAL *shr_jeps2
-                           )
+__kernel void
+sakura_kernel(
+    const uint ni,
+    __global const REAL *inp_irx,
+    __global const REAL *inp_iry,
+    __global const REAL *inp_irz,
+    __global const REAL *inp_imass,
+    __global const REAL *inp_ivx,
+    __global const REAL *inp_ivy,
+    __global const REAL *inp_ivz,
+    __global const REAL *inp_ieps2,
+    const uint nj,
+    __global const REAL *inp_jrx,
+    __global const REAL *inp_jry,
+    __global const REAL *inp_jrz,
+    __global const REAL *inp_jmass,
+    __global const REAL *inp_jvx,
+    __global const REAL *inp_jvy,
+    __global const REAL *inp_jvz,
+    __global const REAL *inp_jeps2,
+    const REAL dt,
+    __global REAL *out_idrx,
+    __global REAL *out_idry,
+    __global REAL *out_idrz,
+    __global REAL *out_idvx,
+    __global REAL *out_idvy,
+    __global REAL *out_idvz,
+    __local REAL *shr_jrx,
+    __local REAL *shr_jry,
+    __local REAL *shr_jrz,
+    __local REAL *shr_jmass,
+    __local REAL *shr_jvx,
+    __local REAL *shr_jvy,
+    __local REAL *shr_jvz,
+    __local REAL *shr_jeps2
+    )
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);

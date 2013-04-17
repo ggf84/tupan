@@ -6,9 +6,11 @@
 
 
 inline REAL8
-p2p_acc_jerk_kernel_core(REAL8 iaj,
-                         const REAL4 irm, const REAL4 ive,
-                         const REAL4 jrm, const REAL4 jve)
+acc_jerk_kernel_core(
+    REAL8 iaj,
+    const REAL4 irm, const REAL4 ive,
+    const REAL4 jrm, const REAL4 jve
+    )
 {
     REAL3 r;
     r.x = irm.x - jrm.x;                                             // 1 FLOPs

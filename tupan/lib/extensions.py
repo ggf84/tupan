@@ -47,46 +47,6 @@ class CLEnv(object):
 
 
 @decallmethods(timings)
-class CLModule(object):
-
-    def __init__(self, env):
-        self.env = env
-
-        # read the kernel source code
-        dirname = os.path.dirname(__file__)
-        abspath = os.path.abspath(dirname)
-        path = os.path.join(abspath, "src")
-        src_file = "libtupan.cl"
-        fname = os.path.join(path, src_file)
-        with open(fname, 'r') as fobj:
-            src = fobj.read()
-        self.src = src
-        self.path = path
-
-    def build(self, junroll=2):
-        logger.debug("Building %s precision CL extension module.",
-                     self.env.prec)
-
-        # setting options
-        options = " -I {path}".format(path=self.path)
-        options += " -D JUNROLL={junroll}".format(junroll=junroll)
-        if self.env.prec is "double":
-            options += " -D DOUBLE"
-        if self.env.fast_math:
-            options += " -cl-fast-relaxed-math"
-
-        # building program
-        self.program = cl.Program(
-            self.env.ctx, self.src).build(options=options)
-
-        logger.debug("done.")
-        return self
-
-    def __getattr__(self, name):
-        return CLKernel(self.env, getattr(self.program, name))
-
-
-@decallmethods(timings)
 class CLKernel(object):
 
     def __init__(self, env, kernel):
@@ -176,37 +136,51 @@ class CLKernel(object):
 
 
 @decallmethods(timings)
-class CEnv(object):
-
-    def __init__(self, prec="double", fast_math=True):
-        self.prec = prec
-        self.fast_math = fast_math
-
-
-@decallmethods(timings)
-class CModule(object):
+class CLModule(object):
 
     def __init__(self, env):
         self.env = env
 
-    def build(self):
-        logger.debug("Building %s precision C extension module.",
+        # read the kernel source code
+        dirname = os.path.dirname(__file__)
+        abspath = os.path.abspath(dirname)
+        path = os.path.join(abspath, "src")
+        src_file = "libtupan.cl"
+        fname = os.path.join(path, src_file)
+        with open(fname, 'r') as fobj:
+            src = fobj.read()
+        self.src = src
+        self.path = path
+
+    def build(self, junroll=2):
+        logger.debug("Building %s precision CL extension module.",
                      self.env.prec)
 
+        # setting options
+        options = " -I {path}".format(path=self.path)
+        options += " -D JUNROLL={junroll}".format(junroll=junroll)
         if self.env.prec is "double":
-            from .cffi_wrap import clib_dp as program
-            from .cffi_wrap import ffi_dp as ffi
-        else:
-            from .cffi_wrap import clib_sp as program
-            from .cffi_wrap import ffi_sp as ffi
-        self.program = program
-        self.ffi = ffi
+            options += " -D DOUBLE"
+        if self.env.fast_math:
+            options += " -cl-fast-relaxed-math"
+
+        # building program
+        self.program = cl.Program(
+            self.env.ctx, self.src).build(options=options)
 
         logger.debug("done.")
         return self
 
     def __getattr__(self, name):
-        return CKernel(self.env, self.ffi, getattr(self.program, name))
+        return CLKernel(self.env, getattr(self.program, name))
+
+
+@decallmethods(timings)
+class CEnv(object):
+
+    def __init__(self, prec="double", fast_math=True):
+        self.prec = prec
+        self.fast_math = fast_math
 
 
 @decallmethods(timings)
@@ -249,47 +223,53 @@ class CKernel(object):
         self.kernel(*args)
 
 
-allkernels = {}
-allkernels.setdefault(
-    "c",
-    {
-        "single": CModule(
-            CEnv(prec="single", fast_math=True)
-        ).build(),
-        "double": CModule(
-            CEnv(prec="double", fast_math=True)
-        ).build(),
-    }
-)
-if HAS_CL:
-    allkernels.setdefault(
-        "cl",
-        {
-            "single": CLModule(
-                CLEnv(prec="single", fast_math=True)
-            ).build(junroll=2),
-            "double": CLModule(
-                CLEnv(prec="double", fast_math=True)
-            ).build(junroll=2),
-        }
-    )
-else:
-    allkernels["cl"] = allkernels["c"]
+@decallmethods(timings)
+class CModule(object):
+
+    def __init__(self, env):
+        self.env = env
+
+    def build(self):
+        logger.debug("Building %s precision C extension module.",
+                     self.env.prec)
+
+        if self.env.prec is "double":
+            from .cffi_wrap import clib_dp as program
+            from .cffi_wrap import ffi_dp as ffi
+        else:
+            from .cffi_wrap import clib_sp as program
+            from .cffi_wrap import ffi_sp as ffi
+        self.program = program
+        self.ffi = ffi
+
+        logger.debug("done.")
+        return self
+
+    def __getattr__(self, name):
+        return CKernel(self.env, self.ffi, getattr(self.program, name))
 
 
-use_cl = True if "--use_cl" in sys.argv else False
-
-
-def get_extension(use_cl=False):
-    libname = "cl" if use_cl else "c"
+def get_kernel(name, exttype, prec):
+    if not HAS_CL and exttype == "cl":
+        exttype = "c"
     logger.debug(
-        "Using %s precision %s extension module.",
-        ctype.prec, libname.upper()
+        "Using '%s' from %s precision %s extension module.",
+        name, ctype.prec, exttype.upper()
     )
-    return allkernels[libname][ctype.prec]
-
-
-kernels = get_extension(use_cl=use_cl)
+    if exttype == "c":
+        return getattr(
+            CModule(CEnv(prec=prec, fast_math=True)).build(),
+            name
+        )
+    elif exttype == "cl":
+        return getattr(
+            CLModule(CLEnv(prec=prec, fast_math=True)).build(junroll=2),
+            name
+        )
+    else:
+        raise ValueError(
+            "Inappropriate 'exttype' value. Supported values: ['c', 'cl']"
+        )
 
 
 ########## end of file ##########

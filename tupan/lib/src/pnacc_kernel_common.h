@@ -7,10 +7,12 @@
 
 
 inline REAL3
-p2p_pnacc_kernel_core(REAL3 ipna,
-                      const REAL4 irm, const REAL4 ive,
-                      const REAL4 jrm, const REAL4 jve,
-                      const CLIGHT clight)
+pnacc_kernel_core(
+    REAL3 ipna,
+    const REAL4 irm, const REAL4 ive,
+    const REAL4 jrm, const REAL4 jve,
+    const CLIGHT clight
+    )
 {
     REAL3 r;
     r.x = irm.x - jrm.x;                                             // 1 FLOPs

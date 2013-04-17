@@ -7,10 +7,12 @@ TODO.
 
 
 from __future__ import print_function, division
-import logging
+import sys
 import math
+import logging
 from ..integrator import Base
-from ..lib.extensions import kernels
+from ..lib.utils import ctype
+from ..lib.extensions import get_kernel
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -24,8 +26,8 @@ class LLNREG_X(object):
     """
 
     """
-    def __init__(self, libnreg):
-        self.kernel = libnreg.nreg_Xkernel
+    def __init__(self, exttype, prec):
+        self.kernel = get_kernel("nreg_Xkernel", exttype, prec)
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -96,8 +98,8 @@ class LLNREG_V(object):
     """
 
     """
-    def __init__(self, libnreg):
-        self.kernel = libnreg.nreg_Vkernel
+    def __init__(self, exttype, prec):
+        self.kernel = get_kernel("nreg_Vkernel", exttype, prec)
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -153,8 +155,10 @@ class LLNREG_V(object):
                 0.5 * self.k[:ni].sum()]
 
 
-llnreg_x = LLNREG_X(kernels)
-llnreg_v = LLNREG_V(kernels)
+exttype = "cl" if "--use_cl" in sys.argv else "c"
+
+llnreg_x = LLNREG_X(exttype, ctype.prec)
+llnreg_v = LLNREG_V(exttype, ctype.prec)
 
 
 def nreg_x(p, dt):

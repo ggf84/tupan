@@ -7,7 +7,9 @@ between particles in Newtonian and post-Newtonian approach.
 """
 
 
-from .extensions import kernels
+import sys
+from .utils import ctype
+from .extensions import get_kernel
 from .utils.timing import decallmethods, timings
 
 
@@ -58,8 +60,8 @@ class Phi(object):
     """
 
     """
-    def __init__(self, lib=kernels):
-        self.kernel = lib.p2p_phi_kernel
+    def __init__(self, exttype, prec):
+        self.kernel = get_kernel("phi_kernel", exttype, prec)
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -115,8 +117,8 @@ class Acc(object):
     """
 
     """
-    def __init__(self, lib=kernels):
-        self.kernel = lib.p2p_acc_kernel
+    def __init__(self, exttype, prec):
+        self.kernel = get_kernel("acc_kernel", exttype, prec)
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -176,8 +178,8 @@ class AccJerk(object):
     """
 
     """
-    def __init__(self, lib=kernels):
-        self.kernel = lib.p2p_acc_jerk_kernel
+    def __init__(self, exttype, prec):
+        self.kernel = get_kernel("acc_jerk_kernel", exttype, prec)
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -244,8 +246,8 @@ class Tstep(object):
     """
 
     """
-    def __init__(self, lib=kernels):
-        self.kernel = lib.p2p_tstep_kernel
+    def __init__(self, exttype, prec):
+        self.kernel = get_kernel("tstep_kernel", exttype, prec)
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -302,8 +304,8 @@ class PNAcc(object):
     """
 
     """
-    def __init__(self, lib=kernels):
-        self.kernel = lib.p2p_pnacc_kernel
+    def __init__(self, exttype, prec):
+        self.kernel = get_kernel("pnacc_kernel", exttype, prec)
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -371,8 +373,8 @@ class Sakura(object):
     """
 
     """
-    def __init__(self):
-        self.kernel = kernels.sakura_kernel
+    def __init__(self, exttype, prec):
+        self.kernel = get_kernel("sakura_kernel", exttype, prec)
         self.kernel.local_size = 512
         self.max_output_size = 0
 
@@ -435,13 +437,15 @@ class Sakura(object):
                 self.dvx[:ni], self.dvy[:ni], self.dvz[:ni]]
 
 
+exttype = "cl" if "--use_cl" in sys.argv else "c"
+
 clight = Clight()
-phi = Phi()
-acc = Acc()
-acc_jerk = AccJerk()
-tstep = Tstep()
-pnacc = PNAcc()
-sakura = Sakura()
+phi = Phi(exttype, ctype.prec)
+acc = Acc(exttype, ctype.prec)
+acc_jerk = AccJerk(exttype, ctype.prec)
+tstep = Tstep(exttype, ctype.prec)
+pnacc = PNAcc(exttype, ctype.prec)
+sakura = Sakura(exttype, ctype.prec)
 
 
 ########## end of file ##########

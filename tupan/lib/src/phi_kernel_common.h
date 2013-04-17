@@ -6,9 +6,11 @@
 
 
 inline REAL
-p2p_phi_kernel_core(REAL iphi,
-                    const REAL4 irm, const REAL4 ive,
-                    const REAL4 jrm, const REAL4 jve)
+phi_kernel_core(
+    REAL iphi,
+    const REAL4 irm, const REAL4 ive,
+    const REAL4 jrm, const REAL4 jve
+    )
 {
     REAL3 r;
     r.x = irm.x - jrm.x;                                             // 1 FLOPs
