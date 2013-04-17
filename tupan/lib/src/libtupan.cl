@@ -4,12 +4,14 @@
     #endif
 #endif
 
-#include"common.h"
-#include"p2p_phi_kernel.h"
-#include"p2p_acc_kernel.h"
-#include"p2p_acc_jerk_kernel.h"
-#include"p2p_tstep_kernel.h"
-#include"p2p_pnacc_kernel.h"
-#include"nreg_kernels.h"
-#include"sakura_kernel.h"
+#include "smoothing.c"
+#include "universal_kepler_solver.c"
+
+#include "phi_kernel.cl"
+#include "acc_kernel.cl"
+#include "acc_jerk_kernel.cl"
+#include "tstep_kernel.cl"
+#include "pnacc_kernel.cl"
+#include "nreg_kernels.cl"
+#include "sakura_kernel.cl"
 

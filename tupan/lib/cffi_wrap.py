@@ -17,11 +17,20 @@ PATH = os.path.join(DIRNAME, "src")
 
 
 def wrap_lib(fptype):
-    sources = ("libtupan.c", "smoothing.c")
+    sources = ("smoothing.c",
+               "universal_kepler_solver.c",
+               #
+               "phi_kernel.c",
+               "acc_kernel.c",
+               "acc_jerk_kernel.c",
+               "tstep_kernel.c",
+               "pnacc_kernel.c",
+               "nreg_kernels.c",
+               "sakura_kernel.c",
+               )
 
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
-        src = fobj.read()
-        source = "typedef {} REAL, *pREAL;".format(fptype) + src
+        source = "typedef {} REAL, *pREAL;".format(fptype) + fobj.read()
 
     ffi = cffi.FFI()
 
@@ -34,9 +43,8 @@ def wrap_lib(fptype):
         modulename = modulename.replace("SP", "DP")
 
     clib = ffi.verify("""
-    #include"common.h"
-    #include"smoothing.h"
-    #include"libtupan.h"
+    #include "common.h"
+    #include "libtupan.h"
     """,
                       define_macros=define_macros,
                       include_dirs=[PATH],

@@ -1,10 +1,10 @@
 #ifndef PN_TERMS_H
 #define PN_TERMS_H
 
-#include"common.h"
+#include "common.h"
 
 
-inline REAL2
+static inline REAL2
 p2p_pn2(REAL mi, REAL mj, REAL inv_r,
         REAL vi2, REAL vj2, REAL vivj,
         REAL nvi, REAL nvj, REAL nvj2,
@@ -30,7 +30,7 @@ p2p_pn2(REAL mi, REAL mj, REAL inv_r,
 }   // 11+3+2 == 16 FLOPs
 
 
-inline REAL2
+static inline REAL2
 p2p_pn4(REAL mi, REAL mj, REAL mi2, REAL mj2, REAL mimj, REAL inv_r, REAL inv_r2,
         REAL vi2, REAL vj2, REAL vj4, REAL vivj, REAL vivjvivj,
         REAL nv, REAL nvi, REAL nvj, REAL nvi2, REAL nvj2, REAL nvinvj,
@@ -79,7 +79,7 @@ p2p_pn4(REAL mi, REAL mj, REAL mi2, REAL mj2, REAL mimj, REAL inv_r, REAL inv_r2
 }   // 46+24+2 == 72 FLOPs
 
 
-inline REAL2
+static inline REAL2
 p2p_pn5(REAL mi, REAL mj, REAL inv_r, REAL v2, REAL nv, CLIGHT clight)
 {
     // Include ~1/c^5 terms (3+3 == 6 terms)
@@ -101,7 +101,7 @@ p2p_pn5(REAL mi, REAL mj, REAL inv_r, REAL v2, REAL nv, CLIGHT clight)
 }   // 7+5+4 == 16 FLOPs
 
 
-inline REAL2
+static inline REAL2
 p2p_pn6(REAL mi, REAL mj, REAL mi2, REAL mj2, REAL mimj, REAL inv_r, REAL inv_r2,
         REAL v2, REAL vi2, REAL vj2, REAL vj4, REAL vivj, REAL vivjvivj,
         REAL nv, REAL nvnv, REAL nvi, REAL nvj, REAL nvi2, REAL nvj2, REAL nvinvj,
@@ -222,7 +222,7 @@ p2p_pn6(REAL mi, REAL mj, REAL mi2, REAL mj2, REAL mimj, REAL inv_r, REAL inv_r2
 }   // ??+??+?? == ??? FLOPs
 
 
-inline REAL2
+static inline REAL2
 p2p_pn7(REAL mi, REAL mj, REAL mi2, REAL mj2, REAL mimj, REAL inv_r, REAL inv_r2,
         REAL v2, REAL vi2, REAL vj2, REAL vi4, REAL vj4, REAL vivj,
         REAL nv, REAL nvnv, REAL nvi, REAL nvj, REAL nvi2, REAL nvj2, REAL nvinvj,
