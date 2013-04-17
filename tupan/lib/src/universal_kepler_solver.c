@@ -2,9 +2,9 @@
 
 
 #ifdef DOUBLE
-    #define TOLERANCE 2.3283064365386962891E-10     // sqrt(2^-64)
+    #define TOLERANCE ((REAL)2.3283064365386962891e-10)     // sqrt(2^-64)
 #else
-    #define TOLERANCE 1.52587890625E-5              // sqrt(2^-32)
+    #define TOLERANCE ((REAL)1.52587890625e-5)              // sqrt(2^-32)
 #endif
 #define MAXITER 64
 #define SIGN(x) (((x) > 0) ? (+1):(-1))
@@ -331,36 +331,33 @@ universal_kepler_solver(const REAL dt0,
         err = 0;
         REAL dt = dt0 / nsteps;
         for (i = 0; i < nsteps; ++i) {
-
-            REAL mu = pos.w;
             REAL r0sqr = pos.x * pos.x + pos.y * pos.y + pos.z * pos.z;
-            REAL v0sqr = vel.x * vel.x + vel.y * vel.y + vel.z * vel.z;
-            REAL rv0 = pos.x * vel.x + pos.y * vel.y + pos.z * vel.z;
-            REAL r0 = sqrt(r0sqr);
+            if (r0sqr > 0) {
+                REAL mu = pos.w;
+                REAL v0sqr = vel.x * vel.x + vel.y * vel.y + vel.z * vel.z;
+                REAL rv0 = pos.x * vel.x + pos.y * vel.y + pos.z * vel.z;
+                REAL r0 = sqrt(r0sqr);
+                REAL alpha = 2 * mu / r0 - v0sqr;
+                REAL s0, s, arg[5];
 
-            REAL alpha = 2 * mu / r0 - v0sqr;
+                s0 = dt / r0;
+                arg[0] = dt;
+                arg[1] = r0;
+                arg[2] = rv0;
+                arg[3] = mu;
+                arg[4] = alpha;
 
-            REAL s0, s, arg[5];
-
-            s0 = dt / r0;
-            arg[0] = dt;
-            arg[1] = r0;
-            arg[2] = rv0;
-            arg[3] = mu;
-            arg[4] = alpha;
-
-            err = laguerre(s0, &s, arg);
-//            err = halley(s0, &s, arg);
-//            err = newton(s0, &s, arg);
-
-            if (err == 0) {
-                set_new_pos_vel(dt, s, r0, mu, alpha, &pos, &vel);
-            } else {
-                pos = pos0;
-                vel = vel0;
-                nsteps *= 2;
-                i = nsteps;    // break
-                if (r0 == 0) err = 0;
+//                err = newton(s0, &s, arg);
+//                err = halley(s0, &s, arg);
+                err = laguerre(s0, &s, arg);
+                if (err == 0) {
+                    set_new_pos_vel(dt, s, r0, mu, alpha, &pos, &vel);
+                } else {
+                    pos = pos0;
+                    vel = vel0;
+                    nsteps *= 2;
+                    i = nsteps;    // break
+                }
             }
         }
     } while (err != 0);

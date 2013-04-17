@@ -8,7 +8,6 @@ TODO.
 
 from __future__ import print_function
 import os
-import sys
 import logging
 from functools import reduce
 from collections import OrderedDict
@@ -39,7 +38,7 @@ except Exception as exc:
 @decallmethods(timings)
 class CLEnv(object):
 
-    def __init__(self, prec="double", fast_math=True):
+    def __init__(self, prec, fast_math):
         self.prec = prec
         self.fast_math = fast_math
         self.ctx = cl.create_some_context()
@@ -163,6 +162,7 @@ class CLModule(object):
             options += " -D DOUBLE"
         if self.env.fast_math:
             options += " -cl-fast-relaxed-math"
+#            options += " -cl-opt-disable"
 
         # building program
         self.program = cl.Program(
@@ -178,7 +178,7 @@ class CLModule(object):
 @decallmethods(timings)
 class CEnv(object):
 
-    def __init__(self, prec="double", fast_math=True):
+    def __init__(self, prec, fast_math):
         self.prec = prec
         self.fast_math = fast_math
 

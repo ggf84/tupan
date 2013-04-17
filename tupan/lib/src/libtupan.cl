@@ -4,6 +4,7 @@
     #endif
 #endif
 
+#include "common.h"
 #include "smoothing.c"
 #include "universal_kepler_solver.c"
 

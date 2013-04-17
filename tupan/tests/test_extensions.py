@@ -113,8 +113,7 @@ class TestCase(unittest.TestCase):
                 # calculating deviation of result
                 deviation = np.sqrt(
                     sum((a_c-a_cl)**2
-                        for a_c, a_cl in zip(res['c'], res['cl'])
-                    )
+                        for a_c, a_cl in zip(res['c'], res['cl']))
                 )
                 deviations.append(deviation.max())
 
@@ -154,8 +153,7 @@ class TestCase(unittest.TestCase):
                 # calculating deviation of result
                 deviation = np.sqrt(
                     sum((aj_c-aj_cl)**2
-                        for aj_c, aj_cl in zip(res['c'], res['cl'])
-                    )
+                        for aj_c, aj_cl in zip(res['c'], res['cl']))
                 )
                 deviations.append(deviation.max())
 
