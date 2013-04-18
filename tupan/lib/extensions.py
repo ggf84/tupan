@@ -28,9 +28,11 @@ except Exception as exc:
     logger.exception(str(exc))
     import warnings
     warnings.warn(
-        "An Exception occurred when trying to import pyopencl. "
-        "See 'tupan.log' for more details. "
-        "Continuing with C extension...",
+        """
+        An Exception occurred when trying to import pyopencl module.
+        See 'tupan.log' for more details.
+        Continuing with C extension...
+        """,
         stacklevel=1
     )
 
@@ -101,9 +103,9 @@ class CLKernel(object):
         arg = self.dev_buff[i]
         self.kernel.set_arg(i, arg)
 
-    def allocate_buffer(self, i, shape):
+    def allocate_buffer(self, i, shape, dtype):
         memf = cl.mem_flags
-        arr = np.zeros(shape, dtype=ctype.REAL)
+        arr = np.zeros(shape, dtype=dtype)
         self.dev_buff[i] = cl.Buffer(self.env.ctx,
                                      memf.READ_WRITE | memf.USE_HOST_PTR,
                                      hostbuf=arr)
@@ -208,8 +210,8 @@ class CKernel(object):
             "REAL *", arg.__array_interface__['data'][0]
         )
 
-    def allocate_buffer(self, i, shape):
-        arg = np.zeros(shape, dtype=ctype.REAL)
+    def allocate_buffer(self, i, shape, dtype):
+        arg = np.zeros(shape, dtype=dtype)
         self.dev_args[i] = self.ffi.cast(
             "REAL *", arg.__array_interface__['data'][0]
         )

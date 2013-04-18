@@ -1,13 +1,15 @@
 #include "sakura_kernel_common.h"
 
 
-inline REAL8
+static inline void
 sakura_kernel_accum(
     REAL8 idrdv,
     const REAL8 idata,
     const REAL dt,
     uint j_begin,
     uint j_end,
+    REAL3 *idr,
+    REAL3 *idv,
     __local REAL *shr_jrx,
     __local REAL *shr_jry,
     __local REAL *shr_jrz,
@@ -22,16 +24,15 @@ sakura_kernel_accum(
     for (j = j_begin; j < j_end; ++j) {
         REAL8 jdata = (REAL8){shr_jrx[j], shr_jry[j], shr_jrz[j], shr_jmass[j],
                               shr_jvx[j], shr_jvy[j], shr_jvz[j], shr_jeps2[j]};
-        idrdv = sakura_kernel_core(idrdv,
-                                   idata.lo, idata.hi,
-                                   jdata.lo, jdata.hi,
-                                   dt);
+        sakura_kernel_core(dt,
+                           idata.lo, idata.hi,
+                           jdata.lo, jdata.hi,
+                           idr, idv);
     }
-    return idrdv;
 }
 
 
-inline REAL8
+static inline void
 sakura_kernel_main_loop(
     const REAL8 idata,
     const uint nj,
@@ -44,6 +45,8 @@ sakura_kernel_main_loop(
     __global const REAL *inp_jvz,
     __global const REAL *inp_jeps2,
     const REAL dt,
+    REAL3 *idr,
+    REAL3 *idv,
     __local REAL *shr_jrx,
     __local REAL *shr_jry,
     __local REAL *shr_jrz,
@@ -55,8 +58,6 @@ sakura_kernel_main_loop(
     )
 {
     uint lsize = get_local_size(0);
-
-    REAL8 idrdv = (REAL8){0, 0, 0, 0, 0, 0, 0, 0};
 
     uint tile;
     uint numTiles = (nj - 1)/lsize + 1;
@@ -77,20 +78,20 @@ sakura_kernel_main_loop(
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            idrdv = sakura_kernel_accum(idrdv, idata,
-                                        dt, j, j + JUNROLL,
-                                        shr_jrx, shr_jry, shr_jrz, shr_jmass,
-                                        shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
+            sakura_kernel_accum(idata,
+                                dt, j, j + JUNROLL,
+                                idr, idv,
+                                shr_jrx, shr_jry, shr_jrz, shr_jmass,
+                                shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
         }
-        idrdv = sakura_kernel_accum(idrdv, idata,
-                                    dt, j, nb,
-                                    shr_jrx, shr_jry, shr_jrz, shr_jmass,
-                                    shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
+        sakura_kernel_accum(idata,
+                            dt, j, nb,
+                            idr, idv,
+                            shr_jrx, shr_jry, shr_jrz, shr_jmass,
+                            shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-
-    return idrdv;
 }
 
 
@@ -137,18 +138,23 @@ sakura_kernel(
     REAL8 idata = (REAL8){inp_irx[i], inp_iry[i], inp_irz[i], inp_imass[i],
                           inp_ivx[i], inp_ivy[i], inp_ivz[i], inp_ieps2[i]};
 
-    REAL8 idrdv = sakura_kernel_main_loop(idata,
-                                          nj,
-                                          inp_jrx, inp_jry, inp_jrz, inp_jmass,
-                                          inp_jvx, inp_jvy, inp_jvz, inp_jeps2,
-                                          dt,
-                                          shr_jrx, shr_jry, shr_jrz, shr_jmass,
-                                          shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
-    out_idrx[i] = idrdv.s0;
-    out_idry[i] = idrdv.s1;
-    out_idrz[i] = idrdv.s2;
-    out_idvx[i] = idrdv.s4;
-    out_idvy[i] = idrdv.s5;
-    out_idvz[i] = idrdv.s6;
+    REAL3 idr = (REAL3){0, 0, 0};
+    REAL3 idv = (REAL3){0, 0, 0};
+
+    sakura_kernel_main_loop(idata,
+                            nj,
+                            inp_jrx, inp_jry, inp_jrz, inp_jmass,
+                            inp_jvx, inp_jvy, inp_jvz, inp_jeps2,
+                            dt,
+                            &idr, &idv,
+                            shr_jrx, shr_jry, shr_jrz, shr_jmass,
+                            shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
+
+    out_idrx[i] = idr.x;
+    out_idry[i] = idr.y;
+    out_idrz[i] = idr.z;
+    out_idvx[i] = idv.x;
+    out_idvy[i] = idv.y;
+    out_idvz[i] = idv.z;
 }
 

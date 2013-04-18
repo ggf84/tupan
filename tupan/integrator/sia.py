@@ -445,13 +445,15 @@ class SIA(Base):
             k, d = dkd21_coefs
             #
             if fast.n:
-                fast = self.dkd21(fast, d[0] * tau, True)
+                fast = self.dkd21(fast, d[0] * tau / 2, True)
                 if slow.n:
                     slow = sakura_step(slow, d[0] * tau)
+                fast = self.dkd21(fast, d[0] * tau / 2, True)
                 fast, slow = kick_sf(fast, slow, k[0] * tau)
+                fast = self.dkd21(fast, d[0] * tau / 2, True)
                 if slow.n:
                     slow = sakura_step(slow, d[0] * tau)
-                fast = self.dkd21(fast, d[0] * tau, True)
+                fast = self.dkd21(fast, d[0] * tau / 2, True)
             else:
                 if slow.n:
                     slow = sakura_step(slow, tau)

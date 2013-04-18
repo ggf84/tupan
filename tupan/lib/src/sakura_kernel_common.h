@@ -87,12 +87,41 @@ twobody_solver(
 }
 
 
-inline REAL8
+static inline void
+evolve_twobody(
+    const REAL dt,
+    const REAL4 r0,
+    const REAL4 v0,
+    REAL4 *r1,
+    REAL4 *v1
+    )
+{
+    REAL4 r = r0;
+    REAL4 v = v0;
+    REAL dt_2 = dt / 2;                                              // 1 FLOPs
+
+    r.x -= v.x * dt_2;                                               // 2 FLOPs
+    r.y -= v.y * dt_2;                                               // 2 FLOPs
+    r.z -= v.z * dt_2;                                               // 2 FLOPs
+
+    twobody_solver(dt, r, v, &r, &v);                                // ? FLOPS
+
+    r.x -= v.x * dt_2;                                               // 2 FLOPs
+    r.y -= v.y * dt_2;                                               // 2 FLOPs
+    r.z -= v.z * dt_2;                                               // 2 FLOPs
+
+    *r1 = r;
+    *v1 = v;
+}
+
+
+inline void
 sakura_kernel_core(
-    REAL8 idrdv,
+    const REAL dt,
     const REAL4 irm, const REAL4 ive,
     const REAL4 jrm, const REAL4 jve,
-    const REAL dt
+    REAL3 *idr,
+    REAL3 *idv
     )
 {
     REAL4 r0;
@@ -106,35 +135,17 @@ sakura_kernel_core(
     v0.z = ive.z - jve.z;                                            // 1 FLOPs
     v0.w = ive.w + jve.w;                                            // 1 FLOPs
 
-    REAL dt_2 = dt / 2;                                              // 1 FLOPs
-
-    REAL4 rr0 = r0;
-    rr0.x -= v0.x * dt_2;                                            // 2 FLOPs
-    rr0.y -= v0.y * dt_2;                                            // 2 FLOPs
-    rr0.z -= v0.z * dt_2;                                            // 2 FLOPs
-    REAL4 vv0 = v0;
-
-    REAL4 rr1, vv1;
-    twobody_solver(dt, rr0, vv0, &rr1, &vv1);                        // ? FLOPS
-
-    REAL4 r1 = rr1;
-    r1.x -= vv1.x * dt_2;                                            // 2 FLOPs
-    r1.y -= vv1.y * dt_2;                                            // 2 FLOPs
-    r1.z -= vv1.z * dt_2;                                            // 2 FLOPs
-    REAL4 v1 = vv1;
+    REAL4 r1, v1;
+    evolve_twobody(dt, r0, v0, &r1, &v1);                            // ? FLOPs
 
     REAL muj = jrm.w / r0.w;                                         // 1 FLOPs
 
-    idrdv.s0 += muj * (r1.x - r0.x);                                 // 3 FLOPs
-    idrdv.s1 += muj * (r1.y - r0.y);                                 // 3 FLOPs
-    idrdv.s2 += muj * (r1.z - r0.z);                                 // 3 FLOPs
-    idrdv.s3  = 0;
-    idrdv.s4 += muj * (v1.x - v0.x);                                 // 3 FLOPs
-    idrdv.s5 += muj * (v1.y - v0.y);                                 // 3 FLOPs
-    idrdv.s6 += muj * (v1.z - v0.z);                                 // 3 FLOPs
-    idrdv.s7  = 0;
-
-    return idrdv;
+    idr->x += muj * (r1.x - r0.x);                                    // 3 FLOPs
+    idr->y += muj * (r1.y - r0.y);                                    // 3 FLOPs
+    idr->z += muj * (r1.z - r0.z);                                    // 3 FLOPs
+    idv->x += muj * (v1.x - v0.x);                                    // 3 FLOPs
+    idv->y += muj * (v1.y - v0.y);                                    // 3 FLOPs
+    idv->z += muj * (v1.z - v0.z);                                    // 3 FLOPs
 }
 // Total flop count: 36 + ?
 

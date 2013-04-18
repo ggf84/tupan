@@ -18,18 +18,19 @@ sakura_kernel(
     for (i = 0; i < ni; ++i) {
         REAL4 irm = {irx[i], iry[i], irz[i], imass[i]};
         REAL4 ive = {ivx[i], ivy[i], ivz[i], ieps2[i]};
-        REAL8 idrdv = (REAL8){0, 0, 0, 0, 0, 0, 0, 0};
+        REAL3 idr = (REAL3){0, 0, 0};
+        REAL3 idv = (REAL3){0, 0, 0};
         for (j = 0; j < nj; ++j) {
             REAL4 jrm = {jrx[j], jry[j], jrz[j], jmass[j]};
             REAL4 jve = {jvx[j], jvy[j], jvz[j], jeps2[j]};
-            idrdv = sakura_kernel_core(idrdv, irm, ive, jrm, jve, dt);
+            sakura_kernel_core(dt, irm, ive, jrm, jve, &idr, &idv);
         }
-        idrx[i] = idrdv.s0;
-        idry[i] = idrdv.s1;
-        idrz[i] = idrdv.s2;
-        idvx[i] = idrdv.s4;
-        idvy[i] = idrdv.s5;
-        idvz[i] = idrdv.s6;
+        idrx[i] = idr.x;
+        idry[i] = idr.y;
+        idrz[i] = idr.z;
+        idvx[i] = idv.x;
+        idvy[i] = idv.y;
+        idvz[i] = idv.z;
     }
 }
 

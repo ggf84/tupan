@@ -6,15 +6,35 @@ TODO.
 """
 
 from __future__ import (print_function, division)
-import OpenGL.GL as gl
-import OpenGL.GLUT as glut
 import numpy as np
 import os
 import sys
+import logging
 import Image
 import subprocess
 from matplotlib import cm
 from ..lib.utils.timing import Timer, decallmethods, timings
+
+
+logger = logging.getLogger(__name__)
+
+
+try:
+    from OpenGL import GL as gl
+    from OpenGL import GLUT as glut
+    HAS_GL = True
+except Exception as exc:
+    HAS_GL = False
+    logger.exception(str(exc))
+    import warnings
+    warnings.warn(
+        """
+        An Exception occurred when trying to import OpenGL module.
+        See 'tupan.log' for more details.
+        Continuing without GLviewer...
+        """,
+        stacklevel=1
+    )
 
 
 __all__ = ['GLviewer']
@@ -47,6 +67,11 @@ class GLviewer(object):
     """
 
     """
+    def __new__(cls, *args, **kwargs):
+        if not HAS_GL:
+            return None
+        return cls
+
     def __init__(self):
         self.window_width = WINDOW_WIDTH
         self.window_height = WINDOW_HEIGHT

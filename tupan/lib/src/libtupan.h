@@ -42,7 +42,8 @@ tstep_kernel(
     const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
     const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
     const REAL eta,
-    REAL *idt
+    REAL *idt,
+    REAL *ijdtmin
     );
 
 inline void

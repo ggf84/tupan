@@ -14,22 +14,12 @@ import argparse
 import logging
 from pprint import pprint
 from .io import IO
+from .integrator import Integrator
+from .analysis.glviewer import GLviewer
+from .lib.utils.timing import decallmethods, timings, Timer
+
 
 logger = logging.getLogger(__name__)
-
-try:
-    from .analysis.glviewer import GLviewer
-except Exception as exc:
-    GLviewer = lambda: None
-    logger.exception(str(exc))
-    print("#" * 40, file=sys.stderr)
-    print("Tupan viewer is not available. "
-          "See '/tmp/tupan.log' for a traceback.",
-          file=sys.stderr)
-    print("#" * 40, file=sys.stderr)
-
-from .integrator import Integrator
-from .lib.utils.timing import decallmethods, timings, Timer
 
 
 __all__ = ['Simulation']

@@ -7,6 +7,7 @@ between particles in Newtonian and post-Newtonian approach.
 """
 
 
+from __future__ import print_function, division
 import sys
 from .utils import ctype
 from .extensions import get_kernel
@@ -100,7 +101,7 @@ class Phi(object):
 
         self.osize = ni
         if ni > self.max_output_size:
-            self.phi = self.kernel.allocate_buffer(18, ni)
+            self.phi = self.kernel.allocate_buffer(18, ni, ctype.REAL)
             self.max_output_size = ni
 
     def run(self):
@@ -157,9 +158,9 @@ class Acc(object):
 
         self.osize = ni
         if ni > self.max_output_size:
-            self.ax = self.kernel.allocate_buffer(18, ni)
-            self.ay = self.kernel.allocate_buffer(19, ni)
-            self.az = self.kernel.allocate_buffer(20, ni)
+            self.ax = self.kernel.allocate_buffer(18, ni, ctype.REAL)
+            self.ay = self.kernel.allocate_buffer(19, ni, ctype.REAL)
+            self.az = self.kernel.allocate_buffer(20, ni, ctype.REAL)
             self.max_output_size = ni
 
     def run(self):
@@ -218,12 +219,12 @@ class AccJerk(object):
 
         self.osize = ni
         if ni > self.max_output_size:
-            self.ax = self.kernel.allocate_buffer(18, ni)
-            self.ay = self.kernel.allocate_buffer(19, ni)
-            self.az = self.kernel.allocate_buffer(20, ni)
-            self.jx = self.kernel.allocate_buffer(21, ni)
-            self.jy = self.kernel.allocate_buffer(22, ni)
-            self.jz = self.kernel.allocate_buffer(23, ni)
+            self.ax = self.kernel.allocate_buffer(18, ni, ctype.REAL)
+            self.ay = self.kernel.allocate_buffer(19, ni, ctype.REAL)
+            self.az = self.kernel.allocate_buffer(20, ni, ctype.REAL)
+            self.jx = self.kernel.allocate_buffer(21, ni, ctype.REAL)
+            self.jy = self.kernel.allocate_buffer(22, ni, ctype.REAL)
+            self.jz = self.kernel.allocate_buffer(23, ni, ctype.REAL)
             self.max_output_size = ni
 
     def run(self):
@@ -250,6 +251,7 @@ class Tstep(object):
         self.kernel = get_kernel("tstep_kernel", exttype, prec)
         self.kernel.local_size = 512
         self.max_output_size = 0
+#        self._count = 0
 
         self.kernel.set_local_memory(20, 1)
         self.kernel.set_local_memory(21, 1)
@@ -287,7 +289,8 @@ class Tstep(object):
 
         self.osize = ni
         if ni > self.max_output_size:
-            self.tstep = self.kernel.allocate_buffer(19, ni)
+            self.tstep = self.kernel.allocate_buffer(19, ni, ctype.REAL)
+            self.ijtstepmin = self.kernel.allocate_buffer(20, 3, ctype.REAL)
             self.max_output_size = ni
 
     def run(self):
@@ -296,7 +299,26 @@ class Tstep(object):
     def get_result(self):
         ni = self.osize
         self.kernel.map_buffer(19, self.tstep)
+        self.kernel.map_buffer(20, self.ijtstepmin)
+
+#        i = int(self.ijtstepmin[0])
+#        j = int(self.ijtstepmin[1])
+#        ijstepmin = self.ijtstepmin[2]
+#
+#        iw2 = 1/self.tstep[:ni]**2
+#        ijw2max = 1/ijstepmin**2
+#        w2_sakura = iw2[i] + iw2[j] - 2*ijw2max
+#
+#        with open("dts0.dat", "a") as fobj:
+#            print(self._count, i, j,
+#                1/ijw2max**0.5,
+#                1/w2_sakura**0.5,
+#                (1/(iw2**0.5)).min(),
+#                file=fobj)
+#            self._count += 1
+
         return self.tstep[:ni]
+#        return (i, j, ijstepmin, self.tstep[:ni])
 
 
 @decallmethods(timings)
@@ -352,9 +374,9 @@ class PNAcc(object):
 
         self.osize = ni
         if ni > self.max_output_size:
-            self.pnax = self.kernel.allocate_buffer(26, ni)
-            self.pnay = self.kernel.allocate_buffer(27, ni)
-            self.pnaz = self.kernel.allocate_buffer(28, ni)
+            self.pnax = self.kernel.allocate_buffer(26, ni, ctype.REAL)
+            self.pnay = self.kernel.allocate_buffer(27, ni, ctype.REAL)
+            self.pnaz = self.kernel.allocate_buffer(28, ni, ctype.REAL)
             self.max_output_size = ni
 
     def run(self):
@@ -414,12 +436,12 @@ class Sakura(object):
 
         self.osize = ni
         if ni > self.max_output_size:
-            self.drx = self.kernel.allocate_buffer(19, ni)
-            self.dry = self.kernel.allocate_buffer(20, ni)
-            self.drz = self.kernel.allocate_buffer(21, ni)
-            self.dvx = self.kernel.allocate_buffer(22, ni)
-            self.dvy = self.kernel.allocate_buffer(23, ni)
-            self.dvz = self.kernel.allocate_buffer(24, ni)
+            self.drx = self.kernel.allocate_buffer(19, ni, ctype.REAL)
+            self.dry = self.kernel.allocate_buffer(20, ni, ctype.REAL)
+            self.drz = self.kernel.allocate_buffer(21, ni, ctype.REAL)
+            self.dvx = self.kernel.allocate_buffer(22, ni, ctype.REAL)
+            self.dvy = self.kernel.allocate_buffer(23, ni, ctype.REAL)
+            self.dvz = self.kernel.allocate_buffer(24, ni, ctype.REAL)
             self.max_output_size = ni
 
     def run(self):
