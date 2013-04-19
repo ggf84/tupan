@@ -251,7 +251,6 @@ class Tstep(object):
         self.kernel = get_kernel("tstep_kernel", exttype, prec)
         self.kernel.local_size = 512
         self.max_output_size = 0
-#        self._count = 0
 
         self.kernel.set_local_memory(20, 1)
         self.kernel.set_local_memory(21, 1)
@@ -301,24 +300,11 @@ class Tstep(object):
         self.kernel.map_buffer(19, self.tstep)
         self.kernel.map_buffer(20, self.ijtstepmin)
 
-#        i = int(self.ijtstepmin[0])
-#        j = int(self.ijtstepmin[1])
-#        ijstepmin = self.ijtstepmin[2]
-#
-#        iw2 = 1/self.tstep[:ni]**2
-#        ijw2max = 1/ijstepmin**2
-#        w2_sakura = iw2[i] + iw2[j] - 2*ijw2max
-#
-#        with open("dts0.dat", "a") as fobj:
-#            print(self._count, i, j,
-#                1/ijw2max**0.5,
-#                1/w2_sakura**0.5,
-#                (1/(iw2**0.5)).min(),
-#                file=fobj)
-#            self._count += 1
+        i = int(self.ijtstepmin[0])
+        j = int(self.ijtstepmin[1])
+        ijstepmin = self.ijtstepmin[2]
 
-        return self.tstep[:ni]
-#        return (i, j, ijstepmin, self.tstep[:ni])
+        return (i, j, ijstepmin, self.tstep[:ni])
 
 
 @decallmethods(timings)

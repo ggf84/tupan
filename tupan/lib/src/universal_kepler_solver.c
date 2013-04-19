@@ -104,8 +104,9 @@ lagrange_g(const REAL dt,
            const REAL alpha)
 {
     REAL s2 = s * s;
+    REAL s3 = s * s2;
     REAL zeta = alpha * s2;
-    return dt - mu * s * s2 * stumpff_c3(zeta);
+    return dt - mu * s3 * stumpff_c3(zeta);
 }
 
 
@@ -125,42 +126,43 @@ lagrange_dgds(const REAL s,
 static inline REAL
 universal_kepler(const REAL s,
                  const REAL r0,
-                 const REAL rv0,
+                 const REAL r0v0,
                  const REAL mu,
                  const REAL alpha)
 {
 
     REAL s2 = s * s;
+    REAL s3 = s * s2;
     REAL zeta = alpha * s2;
-    return r0 * s * stumpff_c1(zeta) + rv0 * s2 * stumpff_c2(zeta) + mu * s * s2 * stumpff_c3(zeta);
+    return r0 * s * stumpff_c1(zeta) + r0v0 * s2 * stumpff_c2(zeta) + mu * s3 * stumpff_c3(zeta);
 }
 
 
 static inline REAL
 universal_kepler_ds(const REAL s,
                     const REAL r0,
-                    const REAL rv0,
+                    const REAL r0v0,
                     const REAL mu,
                     const REAL alpha)
 {
 
     REAL s2 = s * s;
     REAL zeta = alpha * s2;
-    return r0 * stumpff_c0(zeta) + rv0 * s * stumpff_c1(zeta) + mu * s2 * stumpff_c2(zeta);
+    return r0 * stumpff_c0(zeta) + r0v0 * s * stumpff_c1(zeta) + mu * s2 * stumpff_c2(zeta);
 }
 
 
 static inline REAL
 universal_kepler_dsds(const REAL s,
                       const REAL r0,
-                      const REAL rv0,
+                      const REAL r0v0,
                       const REAL mu,
                       const REAL alpha)
 {
 
     REAL s2 = s * s;
     REAL zeta = alpha * s2;
-    return (mu - alpha * r0) * s * stumpff_c1(zeta) + rv0 * stumpff_c0(zeta);
+    return (mu - alpha * r0) * s * stumpff_c1(zeta) + r0v0 * stumpff_c0(zeta);
 }
 
 
@@ -334,16 +336,16 @@ universal_kepler_solver(const REAL dt0,
             REAL r0sqr = pos.x * pos.x + pos.y * pos.y + pos.z * pos.z;
             if (r0sqr > 0) {
                 REAL mu = pos.w;
-                REAL v0sqr = vel.x * vel.x + vel.y * vel.y + vel.z * vel.z;
-                REAL rv0 = pos.x * vel.x + pos.y * vel.y + pos.z * vel.z;
                 REAL r0 = sqrt(r0sqr);
+                REAL r0v0 = pos.x * vel.x + pos.y * vel.y + pos.z * vel.z;
+                REAL v0sqr = vel.x * vel.x + vel.y * vel.y + vel.z * vel.z;
                 REAL alpha = 2 * mu / r0 - v0sqr;
                 REAL s0, s, arg[5];
 
                 s0 = dt / r0;
                 arg[0] = dt;
                 arg[1] = r0;
-                arg[2] = rv0;
+                arg[2] = r0v0;
                 arg[3] = mu;
                 arg[4] = alpha;
 

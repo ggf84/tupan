@@ -50,6 +50,16 @@ class SAKURA(Base):
         super(SAKURA, self).__init__(eta, time, particles, **kwargs)
         self.e0 = None
 
+    def get_sakura_tstep(self, isys, jsys, eta):
+        (i, j, ijstepmin) = isys.update_tstep(jsys, eta)
+
+        iw2 = 1/isys.tstep**2
+        ijw2max = 1/ijstepmin**2
+        w2_sakura = (iw2.max() - ijw2max)
+        sakura_tstep = 1/w2_sakura**0.5
+
+        return sakura_tstep
+
     def do_step(self, p, tau):
         """
 
@@ -82,7 +92,9 @@ class SAKURA(Base):
         return p
 
     def get_base_tstep(self, t_end):
-        self.tstep = self.eta
+        p = self.particles
+        self.tstep = self.get_sakura_tstep(p, p, self.eta)
+#        self.tstep = self.eta
         if abs(self.time + self.tstep) > t_end:
             self.tstep = math.copysign(t_end - abs(self.time), self.eta)
         return self.tstep
