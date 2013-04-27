@@ -1,37 +1,36 @@
-#ifndef SAKURA_KERNEL_COMMON_H
-#define SAKURA_KERNEL_COMMON_H
+#ifndef __SAKURA_KERNEL_COMMON_H__
+#define __SAKURA_KERNEL_COMMON_H__
 
 #include "common.h"
 #include "smoothing.h"
 #include "universal_kepler_solver.h"
 
-
-static inline REAL
+inline REAL
 get_phi(
     const REAL m,
     const REAL x,
     const REAL y,
     const REAL z,
-    const REAL eps2
-    )
+    const REAL eps2)
 {
     REAL r2 = x * x + y * y + z * z;                                 // 5 FLOPs
-    REAL inv_r = smoothed_inv_r1(r2, eps2);                          // 3 FLOPs
-    return m * inv_r;                                                // 1 FLOPs
+    REAL inv_r1;
+    smoothed_inv_r1(r2, eps2, &inv_r1);                              // 3 FLOPs
+    return m * inv_r1;                                               // 1 FLOPs
 }
 
 
-static inline REAL3
+inline REAL3
 get_acc(
     const REAL m,
     const REAL x,
     const REAL y,
     const REAL z,
-    const REAL eps2
-    )
+    const REAL eps2)
 {
     REAL r2 = x * x + y * y + z * z;                                 // 5 FLOPs
-    REAL inv_r3 = smoothed_inv_r3(r2, eps2);                         // 4 FLOPs
+    REAL inv_r3;
+    smoothed_inv_r3(r2, eps2, &inv_r3);                              // 4 FLOPs
     REAL m_r3 = m * inv_r3;                                          // 1 FLOPs
     REAL3 a;
     a.x = -m_r3 * x;                                                 // 1 FLOPs
@@ -41,14 +40,13 @@ get_acc(
 }
 
 
-static inline void
+inline void
 leapfrog(
     const REAL dt,
     const REAL4 r0,
     const REAL4 v0,
     REAL4 *r1,
-    REAL4 *v1
-    )
+    REAL4 *v1)
 {
     REAL4 r = r0;
     REAL4 v = v0;
@@ -73,80 +71,137 @@ leapfrog(
 }
 
 
-static inline void
+inline void
 twobody_solver(
     const REAL dt,
-    const REAL4 r0,
-    const REAL4 v0,
-    REAL4 *r1,
-    REAL4 *v1
-    )
+    const REAL m,
+    const REAL r0x,
+    const REAL r0y,
+    const REAL r0z,
+    const REAL v0x,
+    const REAL v0y,
+    const REAL v0z,
+    REAL *r1x,
+    REAL *r1y,
+    REAL *r1z,
+    REAL *v1x,
+    REAL *v1y,
+    REAL *v1z)
 {
-//    leapfrog(dt, r0, v0, r1, v1);
-    universal_kepler_solver(dt, r0, v0, r1, v1);
+    REAL4 r0 = (REAL4){r0x, r0y, r0z, m};
+    REAL4 v0 = (REAL4){v0x, v0y, v0z, 0};
+
+    REAL4 r1 = r0;
+    REAL4 v1 = v0;
+
+//    leapfrog(dt, r0, v0, &r1, &v1);
+    universal_kepler_solver(dt, r0, v0, &r1, &v1);
+
+    *r1x = r1.x;
+    *r1y = r1.y;
+    *r1z = r1.z;
+    *v1x = v1.x;
+    *v1y = v1.y;
+    *v1z = v1.z;
 }
 
 
-static inline void
+inline void
 evolve_twobody(
     const REAL dt,
-    const REAL4 r0,
-    const REAL4 v0,
-    REAL4 *r1,
-    REAL4 *v1
-    )
+    const REAL m,
+    const REAL r0x,
+    const REAL r0y,
+    const REAL r0z,
+    const REAL v0x,
+    const REAL v0y,
+    const REAL v0z,
+    REAL *r1x,
+    REAL *r1y,
+    REAL *r1z,
+    REAL *v1x,
+    REAL *v1y,
+    REAL *v1z)
 {
-    REAL4 r = r0;
-    REAL4 v = v0;
+    REAL rx = r0x;
+    REAL ry = r0y;
+    REAL rz = r0z;
+    REAL vx = v0x;
+    REAL vy = v0y;
+    REAL vz = v0z;
     REAL dt_2 = dt / 2;                                              // 1 FLOPs
 
-    r.x -= v.x * dt_2;                                               // 2 FLOPs
-    r.y -= v.y * dt_2;                                               // 2 FLOPs
-    r.z -= v.z * dt_2;                                               // 2 FLOPs
+    rx -= vx * dt_2;                                                 // 2 FLOPs
+    ry -= vy * dt_2;                                                 // 2 FLOPs
+    rz -= vz * dt_2;                                                 // 2 FLOPs
 
-    twobody_solver(dt, r, v, &r, &v);                                // ? FLOPS
+    twobody_solver(dt, m, rx, ry, rz, vx, vy, vz,
+                   &rx, &ry, &rz, &vx, &vy, &vz);                    // ? FLOPS
 
-    r.x -= v.x * dt_2;                                               // 2 FLOPs
-    r.y -= v.y * dt_2;                                               // 2 FLOPs
-    r.z -= v.z * dt_2;                                               // 2 FLOPs
+    rx -= vx * dt_2;                                                 // 2 FLOPs
+    ry -= vy * dt_2;                                                 // 2 FLOPs
+    rz -= vz * dt_2;                                                 // 2 FLOPs
 
-    *r1 = r;
-    *v1 = v;
+    *r1x = rx;
+    *r1y = ry;
+    *r1z = rz;
+    *v1x = vx;
+    *v1y = vy;
+    *v1z = vz;
 }
 
 
 inline void
 sakura_kernel_core(
     const REAL dt,
-    const REAL4 irm, const REAL4 ive,
-    const REAL4 jrm, const REAL4 jve,
-    REAL3 *idr,
-    REAL3 *idv
-    )
+    const REAL im,
+    const REAL irx,
+    const REAL iry,
+    const REAL irz,
+    const REAL ie2,
+    const REAL ivx,
+    const REAL ivy,
+    const REAL ivz,
+    const REAL jm,
+    const REAL jrx,
+    const REAL jry,
+    const REAL jrz,
+    const REAL je2,
+    const REAL jvx,
+    const REAL jvy,
+    const REAL jvz,
+    REAL *idrx,
+    REAL *idry,
+    REAL *idrz,
+    REAL *idvx,
+    REAL *idvy,
+    REAL *idvz)
 {
-    REAL4 r0;
-    r0.x = irm.x - jrm.x;                                            // 1 FLOPs
-    r0.y = irm.y - jrm.y;                                            // 1 FLOPs
-    r0.z = irm.z - jrm.z;                                            // 1 FLOPs
-    r0.w = irm.w + jrm.w;                                            // 1 FLOPs
-    REAL4 v0;
-    v0.x = ive.x - jve.x;                                            // 1 FLOPs
-    v0.y = ive.y - jve.y;                                            // 1 FLOPs
-    v0.z = ive.z - jve.z;                                            // 1 FLOPs
-    v0.w = ive.w + jve.w;                                            // 1 FLOPs
+    REAL r0x, r0y, r0z;
+    r0x = irx - jrx;                                                 // 1 FLOPs
+    r0y = iry - jry;                                                 // 1 FLOPs
+    r0z = irz - jrz;                                                 // 1 FLOPs
+    REAL v0x, v0y, v0z;
+    v0x = ivx - jvx;                                                 // 1 FLOPs
+    v0y = ivy - jvy;                                                 // 1 FLOPs
+    v0z = ivz - jvz;                                                 // 1 FLOPs
 
-    REAL4 r1, v1;
-    evolve_twobody(dt, r0, v0, &r1, &v1);                            // ? FLOPs
+    REAL m = im + jm;
 
-    REAL muj = jrm.w / r0.w;                                         // 1 FLOPs
+    REAL r1x, r1y, r1z;
+    REAL v1x, v1y, v1z;
+    evolve_twobody(dt, m, r0x, r0y, r0z, v0x, v0y, v0z,
+                   &r1x, &r1y, &r1z, &v1x, &v1y, &v1z);              // ? FLOPs
 
-    idr->x += muj * (r1.x - r0.x);                                    // 3 FLOPs
-    idr->y += muj * (r1.y - r0.y);                                    // 3 FLOPs
-    idr->z += muj * (r1.z - r0.z);                                    // 3 FLOPs
-    idv->x += muj * (v1.x - v0.x);                                    // 3 FLOPs
-    idv->y += muj * (v1.y - v0.y);                                    // 3 FLOPs
-    idv->z += muj * (v1.z - v0.z);                                    // 3 FLOPs
+    REAL jmu = jm / m;                                               // 1 FLOPs
+
+    *idrx += jmu * (r1x - r0x);                                      // 3 FLOPs
+    *idry += jmu * (r1y - r0y);                                      // 3 FLOPs
+    *idrz += jmu * (r1z - r0z);                                      // 3 FLOPs
+    *idvx += jmu * (v1x - v0x);                                      // 3 FLOPs
+    *idvy += jmu * (v1y - v0y);                                      // 3 FLOPs
+    *idvz += jmu * (v1z - v0z);                                      // 3 FLOPs
 }
 // Total flop count: 36 + ?
 
-#endif  // SAKURA_KERNEL_COMMON_H
+#endif  // __SAKURA_KERNEL_COMMON_H__

@@ -192,11 +192,12 @@ class TestCase(unittest.TestCase):
                 res['cl'] = kernel.get_result()
 
                 # calculating deviation of result
-                deviation = np.abs(res['c'] - res['cl'])
-                deviations.append(deviation.max())
+                deviation0 = np.abs(res['c'][0] - res['cl'][0])
+                deviation1 = np.abs(res['c'][1] - res['cl'][1])
+                deviations.append([deviation0.max(), deviation1.max()])
 
         deviations = np.array(deviations)
-        print(deviations.max())
+        print(deviations[:, 0].max(), deviations[:, 1].max())
 
     def test05(self):
         print(

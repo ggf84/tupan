@@ -1,103 +1,211 @@
 
-inline void
+void
 phi_kernel(
     const unsigned int ni,
-    const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
-    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+    const REAL *_im,
+    const REAL *_irx,
+    const REAL *_iry,
+    const REAL *_irz,
+    const REAL *_ie2,
+    const REAL *_ivx,
+    const REAL *_ivy,
+    const REAL *_ivz,
     const unsigned int nj,
-    const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
-    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
-    REAL *iphi
-    );
+    const REAL *_jm,
+    const REAL *_jrx,
+    const REAL *_jry,
+    const REAL *_jrz,
+    const REAL *_je2,
+    const REAL *_jvx,
+    const REAL *_jvy,
+    const REAL *_jvz,
+    REAL *_iphi);
 
-inline void
+void
 acc_kernel(
     const unsigned int ni,
-    const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
-    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+    const REAL *_im,
+    const REAL *_irx,
+    const REAL *_iry,
+    const REAL *_irz,
+    const REAL *_ie2,
+    const REAL *_ivx,
+    const REAL *_ivy,
+    const REAL *_ivz,
     const unsigned int nj,
-    const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
-    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
-    REAL *iax, REAL *iay, REAL *iaz
-    );
+    const REAL *_jm,
+    const REAL *_jrx,
+    const REAL *_jry,
+    const REAL *_jrz,
+    const REAL *_je2,
+    const REAL *_jvx,
+    const REAL *_jvy,
+    const REAL *_jvz,
+    REAL *_iax,
+    REAL *_iay,
+    REAL *_iaz);
 
-inline void
+void
 acc_jerk_kernel(
     const unsigned int ni,
-    const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
-    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+    const REAL *_im,
+    const REAL *_irx,
+    const REAL *_iry,
+    const REAL *_irz,
+    const REAL *_ie2,
+    const REAL *_ivx,
+    const REAL *_ivy,
+    const REAL *_ivz,
     const unsigned int nj,
-    const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
-    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
-    REAL *iax, REAL *iay, REAL *iaz,
-    REAL *ijx, REAL *ijy, REAL *ijz
-    );
+    const REAL *_jm,
+    const REAL *_jrx,
+    const REAL *_jry,
+    const REAL *_jrz,
+    const REAL *_je2,
+    const REAL *_jvx,
+    const REAL *_jvy,
+    const REAL *_jvz,
+    REAL *_iax,
+    REAL *_iay,
+    REAL *_iaz,
+    REAL *_ijx,
+    REAL *_ijy,
+    REAL *_ijz);
 
-inline void
+void
 tstep_kernel(
     const unsigned int ni,
-    const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
-    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+    const REAL *_im,
+    const REAL *_irx,
+    const REAL *_iry,
+    const REAL *_irz,
+    const REAL *_ie2,
+    const REAL *_ivx,
+    const REAL *_ivy,
+    const REAL *_ivz,
     const unsigned int nj,
-    const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
-    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
+    const REAL *_jm,
+    const REAL *_jrx,
+    const REAL *_jry,
+    const REAL *_jrz,
+    const REAL *_je2,
+    const REAL *_jvx,
+    const REAL *_jvy,
+    const REAL *_jvz,
     const REAL eta,
-    REAL *idt,
-    REAL *ijdtmin
-    );
+    REAL *_idt_a,
+    REAL *_idt_b);
 
-inline void
+void
 pnacc_kernel(
     const unsigned int ni,
-    const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
-    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+    const REAL *_im,
+    const REAL *_irx,
+    const REAL *_iry,
+    const REAL *_irz,
+    const REAL *_ie2,
+    const REAL *_ivx,
+    const REAL *_ivy,
+    const REAL *_ivz,
     const unsigned int nj,
-    const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
-    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
-    unsigned int order, const REAL inv1,
-    const REAL inv2, const REAL inv3,
-    const REAL inv4, const REAL inv5,
-    const REAL inv6, const REAL inv7,
-    REAL *ipnax, REAL *ipnay, REAL *ipnaz
-    );
+    const REAL *_jm,
+    const REAL *_jrx,
+    const REAL *_jry,
+    const REAL *_jrz,
+    const REAL *_je2,
+    const REAL *_jvx,
+    const REAL *_jvy,
+    const REAL *_jvz,
+    unsigned int order,
+    const REAL inv1,
+    const REAL inv2,
+    const REAL inv3,
+    const REAL inv4,
+    const REAL inv5,
+    const REAL inv6,
+    const REAL inv7,
+    REAL *_ipnax,
+    REAL *_ipnay,
+    REAL *_ipnaz);
 
-inline void
+void
 nreg_Xkernel(
     const unsigned int ni,
-    const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
-    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+    const REAL *_im,
+    const REAL *_irx,
+    const REAL *_iry,
+    const REAL *_irz,
+    const REAL *_ie2,
+    const REAL *_ivx,
+    const REAL *_ivy,
+    const REAL *_ivz,
     const unsigned int nj,
-    const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
-    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
+    const REAL *_jm,
+    const REAL *_jrx,
+    const REAL *_jry,
+    const REAL *_jrz,
+    const REAL *_je2,
+    const REAL *_jvx,
+    const REAL *_jvy,
+    const REAL *_jvz,
     const REAL dt,
-    REAL *new_irx, REAL *new_iry, REAL *new_irz,
-    REAL *iax, REAL *iay, REAL *iaz,
-    REAL *iu
-    );
+    REAL *_idrx,
+    REAL *_idry,
+    REAL *_idrz,
+    REAL *_iax,
+    REAL *_iay,
+    REAL *_iaz,
+    REAL *_iu);
 
-inline void
+void
 nreg_Vkernel(
     const unsigned int ni,
-    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *imass,
-    const REAL *iax, const REAL *iay, const REAL *iaz,
+    const REAL *_im,
+    const REAL *_ivx,
+    const REAL *_ivy,
+    const REAL *_ivz,
+    const REAL *_iax,
+    const REAL *_iay,
+    const REAL *_iaz,
     const unsigned int nj,
-    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jmass,
-    const REAL *jax, const REAL *jay, const REAL *jaz,
+    const REAL *_jm,
+    const REAL *_jvx,
+    const REAL *_jvy,
+    const REAL *_jvz,
+    const REAL *_jax,
+    const REAL *_jay,
+    const REAL *_jaz,
     const REAL dt,
-    REAL *new_ivx, REAL *new_ivy, REAL *new_ivz,
-    REAL *ik
-    );
+    REAL *_idvx,
+    REAL *_idvy,
+    REAL *_idvz,
+    REAL *_ik);
 
-inline void
+void
 sakura_kernel(
     const unsigned int ni,
-    const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
-    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+    const REAL *_im,
+    const REAL *_irx,
+    const REAL *_iry,
+    const REAL *_irz,
+    const REAL *_ie2,
+    const REAL *_ivx,
+    const REAL *_ivy,
+    const REAL *_ivz,
     const unsigned int nj,
-    const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
-    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
+    const REAL *_jm,
+    const REAL *_jrx,
+    const REAL *_jry,
+    const REAL *_jrz,
+    const REAL *_je2,
+    const REAL *_jvx,
+    const REAL *_jvy,
+    const REAL *_jvz,
     const REAL dt,
-    REAL *idrx, REAL *idry, REAL *idrz,
-    REAL *idvx, REAL *idvy, REAL *idvz
-    );
+    REAL *_idrx,
+    REAL *_idry,
+    REAL *_idrz,
+    REAL *_idvx,
+    REAL *_idvy,
+    REAL *_idvz);
 

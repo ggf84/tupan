@@ -293,8 +293,9 @@ class NbodyMethods(NbodyUtils):
         """
         Update the individual time-steps due to other particles.
         """
-        (i, j, ijstepmin, self.tstep) = self.get_tstep(objs, eta)
-        return (i, j, ijstepmin)
+        (tstep_a, tstep_b) = self.get_tstep(objs, eta)
+        self.tstep = tstep_a
+        return tstep_b
 
     def update_phi(self, objs):
         """

@@ -1,45 +1,54 @@
-#ifndef ACC_JERK_KERNEL_COMMON_H
-#define ACC_JERK_KERNEL_COMMON_H
+#ifndef __ACC_JERK_KERNEL_COMMON_H__
+#define __ACC_JERK_KERNEL_COMMON_H__
 
 #include "common.h"
 #include "smoothing.h"
 
-
-inline REAL8
+inline void
 acc_jerk_kernel_core(
-    REAL8 iaj,
-    const REAL4 irm, const REAL4 ive,
-    const REAL4 jrm, const REAL4 jve
-    )
+    const REAL im,
+    const REAL irx,
+    const REAL iry,
+    const REAL irz,
+    const REAL ie2,
+    const REAL ivx,
+    const REAL ivy,
+    const REAL ivz,
+    const REAL jm,
+    const REAL jrx,
+    const REAL jry,
+    const REAL jrz,
+    const REAL je2,
+    const REAL jvx,
+    const REAL jvy,
+    const REAL jvz,
+    REAL *iax, REAL *iay, REAL *iaz,
+    REAL *ijx, REAL *ijy, REAL *ijz)
 {
-    REAL3 r;
-    r.x = irm.x - jrm.x;                                             // 1 FLOPs
-    r.y = irm.y - jrm.y;                                             // 1 FLOPs
-    r.z = irm.z - jrm.z;                                             // 1 FLOPs
-    REAL4 v;
-    v.x = ive.x - jve.x;                                             // 1 FLOPs
-    v.y = ive.y - jve.y;                                             // 1 FLOPs
-    v.z = ive.z - jve.z;                                             // 1 FLOPs
-    v.w = ive.w + jve.w;                                             // 1 FLOPs
-    REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
-    REAL rv = r.x * v.x + r.y * v.y + r.z * v.z;                     // 5 FLOPs
-    REAL2 ret = smoothed_inv_r2r3(r2, v.w);                          // 5 FLOPs
-    REAL inv_r2 = ret.x;
-    REAL inv_r3 = ret.y;
+    REAL rx, ry, rz;
+    rx = irx - jrx;                                                  // 1 FLOPs
+    ry = iry - jry;                                                  // 1 FLOPs
+    rz = irz - jrz;                                                  // 1 FLOPs
+    REAL vx, vy, vz;
+    vx = ivx - jvx;                                                  // 1 FLOPs
+    vy = ivy - jvy;                                                  // 1 FLOPs
+    vz = ivz - jvz;                                                  // 1 FLOPs
+    REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
+    REAL rv = rx * vx + ry * vy + rz * vz;                           // 5 FLOPs
 
-    inv_r3 *= jrm.w;                                                 // 1 FLOPs
+    REAL inv_r2, inv_r3;
+    smoothed_inv_r2r3(r2, ie2 + je2, &inv_r2, &inv_r3);              // 5+1 FLOPs
+
+    inv_r3 *= jm;                                                    // 1 FLOPs
     rv *= 3 * inv_r2;                                                // 2 FLOPs
 
-    iaj.s0 -= inv_r3 * r.x;                                          // 2 FLOPs
-    iaj.s1 -= inv_r3 * r.y;                                          // 2 FLOPs
-    iaj.s2 -= inv_r3 * r.z;                                          // 2 FLOPs
-    iaj.s3  = 0;
-    iaj.s4 -= inv_r3 * (v.x - rv * r.x);                             // 4 FLOPs
-    iaj.s5 -= inv_r3 * (v.y - rv * r.y);                             // 4 FLOPs
-    iaj.s6 -= inv_r3 * (v.z - rv * r.z);                             // 4 FLOPs
-    iaj.s7  = 0;
-    return iaj;
+    *iax -= inv_r3 * rx;                                             // 2 FLOPs
+    *iay -= inv_r3 * ry;                                             // 2 FLOPs
+    *iaz -= inv_r3 * rz;                                             // 2 FLOPs
+    *ijx -= inv_r3 * (vx - rv * rx);                                 // 4 FLOPs
+    *ijy -= inv_r3 * (vy - rv * ry);                                 // 4 FLOPs
+    *ijz -= inv_r3 * (vz - rv * rz);                                 // 4 FLOPs
 }
 // Total flop count: 43
 
-#endif  // !ACC_JERK_KERNEL_COMMON_H
+#endif  // __ACC_JERK_KERNEL_COMMON_H__

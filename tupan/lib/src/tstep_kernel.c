@@ -4,33 +4,55 @@
 inline void
 tstep_kernel(
     const unsigned int ni,
-    const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
-    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+    const REAL *_im,
+    const REAL *_irx,
+    const REAL *_iry,
+    const REAL *_irz,
+    const REAL *_ie2,
+    const REAL *_ivx,
+    const REAL *_ivy,
+    const REAL *_ivz,
     const unsigned int nj,
-    const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
-    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
+    const REAL *_jm,
+    const REAL *_jrx,
+    const REAL *_jry,
+    const REAL *_jrz,
+    const REAL *_je2,
+    const REAL *_jvx,
+    const REAL *_jvy,
+    const REAL *_jvz,
     const REAL eta,
-    REAL *idt,
-    REAL *ijdtmin
-    )
+    REAL *_idt_a,
+    REAL *_idt_b)
 {
     unsigned int i, j;
-    int iid = -1;
-    int jid = -1;
-    REAL ijw2max = (REAL)0;
     for (i = 0; i < ni; ++i) {
-        REAL4 irm = {irx[i], iry[i], irz[i], imass[i]};
-        REAL4 ive = {ivx[i], ivy[i], ivz[i], ieps2[i]};
-        REAL iw2 = (REAL)0;
+        REAL im = _im[i];
+        REAL irx = _irx[i];
+        REAL iry = _iry[i];
+        REAL irz = _irz[i];
+        REAL ie2 = _ie2[i];
+        REAL ivx = _ivx[i];
+        REAL ivy = _ivy[i];
+        REAL ivz = _ivz[i];
+        REAL iw2_a = 0;
+        REAL iw2_b = 0;
         for (j = 0; j < nj; ++j) {
-            REAL4 jrm = {jrx[j], jry[j], jrz[j], jmass[j]};
-            REAL4 jve = {jvx[j], jvy[j], jvz[j], jeps2[j]};
-            tstep_kernel_core(i, j, eta, irm, ive, jrm, jve, &iw2, &ijw2max, &iid, &jid);
+            REAL jm = _jm[j];
+            REAL jrx = _jrx[j];
+            REAL jry = _jry[j];
+            REAL jrz = _jrz[j];
+            REAL je2 = _je2[j];
+            REAL jvx = _jvx[j];
+            REAL jvy = _jvy[j];
+            REAL jvz = _jvz[j];
+            tstep_kernel_core(eta,
+                              im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                              jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                              &iw2_a, &iw2_b);
         }
-        idt[i] = 2 * eta / sqrt(iw2);
+        _idt_a[i] = 2 * eta / sqrt(iw2_a);
+        _idt_b[i] = 2 * eta / sqrt(iw2_b);
     }
-    ijdtmin[0] = iid;
-    ijdtmin[1] = jid;
-    ijdtmin[2] = 2 * eta / sqrt(ijw2max);
 }
 

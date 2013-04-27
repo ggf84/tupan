@@ -70,7 +70,7 @@ class GLviewer(object):
     def __new__(cls, *args, **kwargs):
         if not HAS_GL:
             return None
-        return cls
+        return super(GLviewer, cls).__new__(cls, *args, **kwargs)
 
     def __init__(self):
         self.window_width = WINDOW_WIDTH

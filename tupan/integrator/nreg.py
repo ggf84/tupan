@@ -7,158 +7,18 @@ TODO.
 
 
 from __future__ import print_function, division
-import sys
 import math
 import logging
 from ..integrator import Base
-from ..lib.utils import ctype
-from ..lib.extensions import get_kernel
+from ..lib.gravity import nreg_x as llnreg_x
+from ..lib.gravity import nreg_v as llnreg_v
 from ..lib.utils.timing import decallmethods, timings
 
 
 __all__ = ["NREG"]
 
+
 logger = logging.getLogger(__name__)
-
-
-@decallmethods(timings)
-class LLNREG_X(object):
-    """
-
-    """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("nreg_Xkernel", exttype, prec)
-        self.kernel.local_size = 512
-        self.max_output_size = 0
-
-#        self.kernel.set_local_memory(26, 1)
-#        self.kernel.set_local_memory(27, 1)
-#        self.kernel.set_local_memory(28, 1)
-#        self.kernel.set_local_memory(29, 1)
-#        self.kernel.set_local_memory(30, 1)
-#        self.kernel.set_local_memory(31, 1)
-#        self.kernel.set_local_memory(32, 1)
-#        self.kernel.set_local_memory(33, 1)
-
-    def set_args(self, iobj, jobj, dt):
-        ni = iobj.n
-        nj = jobj.n
-
-        self.kernel.global_size = ni
-        self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.x)
-        self.kernel.set_array(2, iobj.y)
-        self.kernel.set_array(3, iobj.z)
-        self.kernel.set_array(4, iobj.mass)
-        self.kernel.set_array(5, iobj.vx)
-        self.kernel.set_array(6, iobj.vy)
-        self.kernel.set_array(7, iobj.vz)
-        self.kernel.set_array(8, iobj.eps2)
-        self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.x)
-        self.kernel.set_array(11, jobj.y)
-        self.kernel.set_array(12, jobj.z)
-        self.kernel.set_array(13, jobj.mass)
-        self.kernel.set_array(14, jobj.vx)
-        self.kernel.set_array(15, jobj.vy)
-        self.kernel.set_array(16, jobj.vz)
-        self.kernel.set_array(17, jobj.eps2)
-        self.kernel.set_float(18, dt)
-
-        self.osize = ni
-        if ni > self.max_output_size:
-            self.rx = self.kernel.allocate_buffer(19, ni, ctype.REAL)
-            self.ry = self.kernel.allocate_buffer(20, ni, ctype.REAL)
-            self.rz = self.kernel.allocate_buffer(21, ni, ctype.REAL)
-            self.ax = self.kernel.allocate_buffer(22, ni, ctype.REAL)
-            self.ay = self.kernel.allocate_buffer(23, ni, ctype.REAL)
-            self.az = self.kernel.allocate_buffer(24, ni, ctype.REAL)
-            self.u = self.kernel.allocate_buffer(25, ni, ctype.REAL)
-            self.max_output_size = ni
-
-    def run(self):
-        self.kernel.run()
-
-    def get_result(self):
-        ni = self.osize
-        self.kernel.map_buffer(19, self.rx)
-        self.kernel.map_buffer(20, self.ry)
-        self.kernel.map_buffer(21, self.rz)
-        self.kernel.map_buffer(22, self.ax)
-        self.kernel.map_buffer(23, self.ay)
-        self.kernel.map_buffer(24, self.az)
-        self.kernel.map_buffer(25, self.u)
-        return [self.rx[:ni], self.ry[:ni], self.rz[:ni],
-                self.ax[:ni], self.ay[:ni], self.az[:ni],
-                0.5 * self.u[:ni].sum()]
-
-
-@decallmethods(timings)
-class LLNREG_V(object):
-    """
-
-    """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("nreg_Vkernel", exttype, prec)
-        self.kernel.local_size = 512
-        self.max_output_size = 0
-
-#        self.kernel.set_local_memory(21, 1)
-#        self.kernel.set_local_memory(22, 1)
-#        self.kernel.set_local_memory(23, 1)
-#        self.kernel.set_local_memory(24, 1)
-#        self.kernel.set_local_memory(25, 1)
-#        self.kernel.set_local_memory(26, 1)
-#        self.kernel.set_local_memory(27, 1)
-
-    def set_args(self, iobj, jobj, dt):
-        ni = iobj.n
-        nj = jobj.n
-
-        self.kernel.global_size = ni
-        self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.vx)
-        self.kernel.set_array(2, iobj.vy)
-        self.kernel.set_array(3, iobj.vz)
-        self.kernel.set_array(4, iobj.mass)
-        self.kernel.set_array(5, iobj.ax)
-        self.kernel.set_array(6, iobj.ay)
-        self.kernel.set_array(7, iobj.az)
-        self.kernel.set_int(8, nj)
-        self.kernel.set_array(9, jobj.vx)
-        self.kernel.set_array(10, jobj.vy)
-        self.kernel.set_array(11, jobj.vz)
-        self.kernel.set_array(12, jobj.mass)
-        self.kernel.set_array(13, jobj.ax)
-        self.kernel.set_array(14, jobj.ay)
-        self.kernel.set_array(15, jobj.az)
-        self.kernel.set_float(16, dt)
-
-        self.osize = ni
-        if ni > self.max_output_size:
-            self.vx = self.kernel.allocate_buffer(17, ni, ctype.REAL)
-            self.vy = self.kernel.allocate_buffer(18, ni, ctype.REAL)
-            self.vz = self.kernel.allocate_buffer(19, ni, ctype.REAL)
-            self.k = self.kernel.allocate_buffer(20, ni, ctype.REAL)
-            self.max_output_size = ni
-
-    def run(self):
-        self.kernel.run()
-
-    def get_result(self):
-        ni = self.osize
-        self.kernel.map_buffer(17, self.vx)
-        self.kernel.map_buffer(18, self.vy)
-        self.kernel.map_buffer(19, self.vz)
-        self.kernel.map_buffer(20, self.k)
-        return [self.vx[:ni], self.vy[:ni], self.vz[:ni],
-                0.5 * self.k[:ni].sum()]
-
-
-exttype = "cl" if "--use_cl" in sys.argv else "c"
-
-llnreg_x = LLNREG_X(exttype, ctype.prec)
-llnreg_v = LLNREG_V(exttype, ctype.prec)
 
 
 def nreg_x(p, dt):

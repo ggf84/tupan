@@ -4,34 +4,71 @@
 inline void
 nreg_Xkernel(
     const unsigned int ni,
-    const REAL *irx, const REAL *iry, const REAL *irz, const REAL *imass,
-    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *ieps2,
+    const REAL *_im,
+    const REAL *_irx,
+    const REAL *_iry,
+    const REAL *_irz,
+    const REAL *_ie2,
+    const REAL *_ivx,
+    const REAL *_ivy,
+    const REAL *_ivz,
     const unsigned int nj,
-    const REAL *jrx, const REAL *jry, const REAL *jrz, const REAL *jmass,
-    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jeps2,
+    const REAL *_jm,
+    const REAL *_jrx,
+    const REAL *_jry,
+    const REAL *_jrz,
+    const REAL *_je2,
+    const REAL *_jvx,
+    const REAL *_jvy,
+    const REAL *_jvz,
     const REAL dt,
-    REAL *new_irx, REAL *new_iry, REAL *new_irz,
-    REAL *iax, REAL *iay, REAL *iaz,
-    REAL *iu
-    )
+    REAL *_idrx,
+    REAL *_idry,
+    REAL *_idrz,
+    REAL *_iax,
+    REAL *_iay,
+    REAL *_iaz,
+    REAL *_iu)
 {
     unsigned int i, j;
     for (i = 0; i < ni; ++i) {
-        REAL4 irm = {irx[i], iry[i], irz[i], imass[i]};
-        REAL4 ive = {ivx[i], ivy[i], ivz[i], ieps2[i]};
-        REAL8 ira = (REAL8){0, 0, 0, 0, 0, 0, 0, 0};
+        REAL im = _im[i];
+        REAL irx = _irx[i];
+        REAL iry = _iry[i];
+        REAL irz = _irz[i];
+        REAL ie2 = _ie2[i];
+        REAL ivx = _ivx[i];
+        REAL ivy = _ivy[i];
+        REAL ivz = _ivz[i];
+        REAL idrx = 0;
+        REAL idry = 0;
+        REAL idrz = 0;
+        REAL iax = 0;
+        REAL iay = 0;
+        REAL iaz = 0;
+        REAL iu = 0;
         for (j = 0; j < nj; ++j) {
-            REAL4 jrm = {jrx[j], jry[j], jrz[j], jmass[j]};
-            REAL4 jve = {jvx[j], jvy[j], jvz[j], jeps2[j]};
-            ira = nreg_Xkernel_core(ira, irm, ive, jrm, jve, dt);
+            REAL jm = _jm[j];
+            REAL jrx = _jrx[j];
+            REAL jry = _jry[j];
+            REAL jrz = _jrz[j];
+            REAL je2 = _je2[j];
+            REAL jvx = _jvx[j];
+            REAL jvy = _jvy[j];
+            REAL jvz = _jvz[j];
+            nreg_Xkernel_core(dt,
+                              im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                              jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                              &idrx, &idry, &idrz,
+                              &iax, &iay, &iaz, &iu);
         }
-        new_irx[i] = ira.s0;
-        new_iry[i] = ira.s1;
-        new_irz[i] = ira.s2;
-        iax[i] = ira.s4;
-        iay[i] = ira.s5;
-        iaz[i] = ira.s6;
-        iu[i] = ira.s7 * irm.w;
+        _idrx[i] = idrx;
+        _idry[i] = idry;
+        _idrz[i] = idrz;
+        _iax[i] = iax;
+        _iay[i] = iay;
+        _iaz[i] = iaz;
+        _iu[i] = iu;
     }
 }
 
@@ -39,30 +76,57 @@ nreg_Xkernel(
 inline void
 nreg_Vkernel(
     const unsigned int ni,
-    const REAL *ivx, const REAL *ivy, const REAL *ivz, const REAL *imass,
-    const REAL *iax, const REAL *iay, const REAL *iaz,
+    const REAL *_im,
+    const REAL *_ivx,
+    const REAL *_ivy,
+    const REAL *_ivz,
+    const REAL *_iax,
+    const REAL *_iay,
+    const REAL *_iaz,
     const unsigned int nj,
-    const REAL *jvx, const REAL *jvy, const REAL *jvz, const REAL *jmass,
-    const REAL *jax, const REAL *jay, const REAL *jaz,
+    const REAL *_jm,
+    const REAL *_jvx,
+    const REAL *_jvy,
+    const REAL *_jvz,
+    const REAL *_jax,
+    const REAL *_jay,
+    const REAL *_jaz,
     const REAL dt,
-    REAL *new_ivx, REAL *new_ivy, REAL *new_ivz,
-    REAL *ik
-    )
+    REAL *_idvx,
+    REAL *_idvy,
+    REAL *_idvz,
+    REAL *_ik)
 {
     unsigned int i, j;
     for (i = 0; i < ni; ++i) {
-        REAL4 ivm = {ivx[i], ivy[i], ivz[i], imass[i]};
-        REAL3 ia = {iax[i], iay[i], iaz[i]};
-        REAL4 ivk = (REAL4){0, 0, 0, 0};
+        REAL im = _im[i];
+        REAL ivx = _ivx[i];
+        REAL ivy = _ivy[i];
+        REAL ivz = _ivz[i];
+        REAL iax = _iax[i];
+        REAL iay = _iay[i];
+        REAL iaz = _iaz[i];
+        REAL idvx = 0;
+        REAL idvy = 0;
+        REAL idvz = 0;
+        REAL ik = 0;
         for (j = 0; j < nj; ++j) {
-            REAL4 jvm = {jvx[j], jvy[j], jvz[j], jmass[j]};
-            REAL3 ja = {jax[j], jay[j], jaz[j]};
-            ivk = nreg_Vkernel_core(ivk, ivm, ia, jvm, ja, dt);
+            REAL jm = _jm[j];
+            REAL jvx = _jvx[j];
+            REAL jvy = _jvy[j];
+            REAL jvz = _jvz[j];
+            REAL jax = _jax[j];
+            REAL jay = _jay[j];
+            REAL jaz = _jaz[j];
+            nreg_Vkernel_core(dt,
+                              im, ivx, ivy, ivz, iax, iay, iaz,
+                              jm, jvx, jvy, jvz, jax, jay, jaz,
+                              &idvx, &idvy, &idvz, &ik);
         }
-        new_ivx[i] = ivk.x;
-        new_ivy[i] = ivk.y;
-        new_ivz[i] = ivk.z;
-        ik[i] = ivm.w * ivk.w / 2;
+        _idvx[i] = idvx;
+        _idvy[i] = idvy;
+        _idvz[i] = idvz;
+        _ik[i] = ik / 2;
     }
 }
 

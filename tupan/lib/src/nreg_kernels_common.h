@@ -1,89 +1,118 @@
-#ifndef NREG_KERNELS_COMMON_H
-#define NREG_KERNELS_COMMON_H
+#ifndef __NREG_KERNELS_COMMON_H__
+#define __NREG_KERNELS_COMMON_H__
 
 #include "common.h"
 #include "smoothing.h"
 
-
-inline REAL8
+inline void
 nreg_Xkernel_core(
-    REAL8 ira,
-    const REAL4 irm, const REAL4 ive,
-    const REAL4 jrm, const REAL4 jve,
-    const REAL dt
-    )
+    const REAL dt,
+    const REAL im,
+    const REAL irx,
+    const REAL iry,
+    const REAL irz,
+    const REAL ie2,
+    const REAL ivx,
+    const REAL ivy,
+    const REAL ivz,
+    const REAL jm,
+    const REAL jrx,
+    const REAL jry,
+    const REAL jrz,
+    const REAL je2,
+    const REAL jvx,
+    const REAL jvy,
+    const REAL jvz,
+    REAL *idrx,
+    REAL *idry,
+    REAL *idrz,
+    REAL *iax,
+    REAL *iay,
+    REAL *iaz,
+    REAL *iu)
 {
-    REAL3 r;
-    r.x = irm.x - jrm.x;                                             // 1 FLOPs
-    r.y = irm.y - jrm.y;                                             // 1 FLOPs
-    r.z = irm.z - jrm.z;                                             // 1 FLOPs
-    REAL4 v;
-    v.x = ive.x - jve.x;                                             // 1 FLOPs
-    v.y = ive.y - jve.y;                                             // 1 FLOPs
-    v.z = ive.z - jve.z;                                             // 1 FLOPs
-    v.w = ive.w + jve.w;                                             // 1 FLOPs
+    REAL rx, ry, rz;
+    rx = irx - jrx;                                                  // 1 FLOPs
+    ry = iry - jry;                                                  // 1 FLOPs
+    rz = irz - jrz;                                                  // 1 FLOPs
+    REAL vx, vy, vz;
+    vx = ivx - jvx;                                                  // 1 FLOPs
+    vy = ivy - jvy;                                                  // 1 FLOPs
+    vz = ivz - jvz;                                                  // 1 FLOPs
 
-    r.x += dt * v.x;                                                 // 2 FLOPs
-    r.y += dt * v.y;                                                 // 2 FLOPs
-    r.z += dt * v.z;                                                 // 2 FLOPs
+    REAL mij = im * jm;                                              // 1 FLOPs
 
-    REAL r2 = r.x * r.x + r.y * r.y + r.z * r.z;                     // 5 FLOPs
+    rx += vx * dt;                                                   // 2 FLOPs
+    ry += vy * dt;                                                   // 2 FLOPs
+    rz += vz * dt;                                                   // 2 FLOPs
 
-    REAL2 ret = smoothed_inv_r1r3(r2, v.w);                          // 5 FLOPs
-    REAL inv_r1 = ret.x;
-    REAL inv_r3 = ret.y;
+    REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
 
-    r.x *= jrm.w;                                                    // 1 FLOPs
-    r.y *= jrm.w;                                                    // 1 FLOPs
-    r.z *= jrm.w;                                                    // 1 FLOPs
+    REAL inv_r1, inv_r3;
+    smoothed_inv_r1r3(r2, ie2 + je2, &inv_r1, &inv_r3);              // 5+1 FLOPs
 
-    ira.s0 += r.x;                                                   // 1 FLOPs
-    ira.s1 += r.y;                                                   // 1 FLOPs
-    ira.s2 += r.z;                                                   // 1 FLOPs
-    ira.s3  = 0;
-    ira.s4 -= inv_r3 * r.x;                                          // 2 FLOPs
-    ira.s5 -= inv_r3 * r.y;                                          // 2 FLOPs
-    ira.s6 -= inv_r3 * r.z;                                          // 2 FLOPs
-    ira.s7 += inv_r1 * jrm.w;                                        // 2 FLOPs
-    return ira;
+    rx *= jm;                                                        // 1 FLOPs
+    ry *= jm;                                                        // 1 FLOPs
+    rz *= jm;                                                        // 1 FLOPs
+
+    *idrx += rx;                                                     // 1 FLOPs
+    *idry += ry;                                                     // 1 FLOPs
+    *idrz += rz;                                                     // 1 FLOPs
+    *iax -= inv_r3 * rx;                                             // 2 FLOPs
+    *iay -= inv_r3 * ry;                                             // 2 FLOPs
+    *iaz -= inv_r3 * rz;                                             // 2 FLOPs
+    *iu += mij * inv_r1;                                             // 2 FLOPs
 }
-// Total flop count: 37
+// Total flop count: 38
 
-
-inline REAL4
+inline void
 nreg_Vkernel_core(
-    REAL4 ivk,
-    const REAL4 ivm, const REAL3 ia,
-    const REAL4 jvm, const REAL3 ja,
-    const REAL dt
-    )
+    const REAL dt,
+    const REAL im,
+    const REAL ivx,
+    const REAL ivy,
+    const REAL ivz,
+    const REAL iax,
+    const REAL iay,
+    const REAL iaz,
+    const REAL jm,
+    const REAL jvx,
+    const REAL jvy,
+    const REAL jvz,
+    const REAL jax,
+    const REAL jay,
+    const REAL jaz,
+    REAL *idvx,
+    REAL *idvy,
+    REAL *idvz,
+    REAL *ik)
 {
-    REAL3 a;
-    a.x = ia.x - ja.x;                                               // 1 FLOPs
-    a.y = ia.y - ja.y;                                               // 1 FLOPs
-    a.z = ia.z - ja.z;                                               // 1 FLOPs
-    REAL3 v;
-    v.x = ivm.x - jvm.x;                                             // 1 FLOPs
-    v.y = ivm.y - jvm.y;                                             // 1 FLOPs
-    v.z = ivm.z - jvm.z;                                             // 1 FLOPs
+    REAL vx, vy, vz;
+    vx = ivx - jvx;                                                  // 1 FLOPs
+    vy = ivy - jvy;                                                  // 1 FLOPs
+    vz = ivz - jvz;                                                  // 1 FLOPs
+    REAL ax, ay, az;
+    ax = iax - jax;                                                  // 1 FLOPs
+    ay = iay - jay;                                                  // 1 FLOPs
+    az = iaz - jaz;                                                  // 1 FLOPs
 
-    v.x += dt * a.x;                                                 // 2 FLOPs
-    v.y += dt * a.y;                                                 // 2 FLOPs
-    v.z += dt * a.z;                                                 // 2 FLOPs
+    REAL mij = im * jm;                                              // 1 FLOPs
 
-    REAL v2 = v.x * v.x + v.y * v.y + v.z * v.z;                     // 5 FLOPs
+    vx += ax * dt;                                                   // 2 FLOPs
+    vy += ay * dt;                                                   // 2 FLOPs
+    vz += az * dt;                                                   // 2 FLOPs
 
-    v.x *= jvm.w;                                                    // 1 FLOPs
-    v.y *= jvm.w;                                                    // 1 FLOPs
-    v.z *= jvm.w;                                                    // 1 FLOPs
-    v2 *= jvm.w;                                                     // 1 FLOPs
+    REAL v2 = vx * vx + vy * vy + vz * vz;                           // 5 FLOPs
 
-    ivk.x += v.x;                                                    // 1 FLOPs
-    ivk.y += v.y;                                                    // 1 FLOPs
-    ivk.z += v.z;                                                    // 1 FLOPs
-    ivk.w += v2;                                                     // 1 FLOPs
-    return ivk;
+    vx *= jm;                                                        // 1 FLOPs
+    vy *= jm;                                                        // 1 FLOPs
+    vz *= jm;                                                        // 1 FLOPs
+
+    *idvx += vx;                                                     // 1 FLOPs
+    *idvy += vy;                                                     // 1 FLOPs
+    *idvz += vz;                                                     // 1 FLOPs
+    *ik += mij * v2;                                                 // 2 FLOPs
 }
-// Total flop count: 25
+// Total flop count: 26
 
-#endif  // !NREG_KERNELS_COMMON_H
+#endif  // __NREG_KERNELS_COMMON_H__

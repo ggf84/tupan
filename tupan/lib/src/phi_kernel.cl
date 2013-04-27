@@ -1,59 +1,75 @@
 #include "phi_kernel_common.h"
 
 
-inline REAL
+inline void
 accum_phi(
-    REAL iphi,
-    const REAL8 idata,
     uint j_begin,
     uint j_end,
-    __local REAL *shr_jrx,
-    __local REAL *shr_jry,
-    __local REAL *shr_jrz,
-    __local REAL *shr_jmass,
-    __local REAL *shr_jvx,
-    __local REAL *shr_jvy,
-    __local REAL *shr_jvz,
-    __local REAL *shr_jeps2
-    )
+    const REAL im,
+    const REAL irx,
+    const REAL iry,
+    const REAL irz,
+    const REAL ie2,
+    const REAL ivx,
+    const REAL ivy,
+    const REAL ivz,
+    __local REAL *__jm,
+    __local REAL *__jrx,
+    __local REAL *__jry,
+    __local REAL *__jrz,
+    __local REAL *__je2,
+    __local REAL *__jvx,
+    __local REAL *__jvy,
+    __local REAL *__jvz,
+    REAL *iphi)
 {
     uint j;
     for (j = j_begin; j < j_end; ++j) {
-        REAL8 jdata = (REAL8){shr_jrx[j], shr_jry[j], shr_jrz[j], shr_jmass[j],
-                              shr_jvx[j], shr_jvy[j], shr_jvz[j], shr_jeps2[j]};
-        iphi = phi_kernel_core(iphi,
-                               idata.lo, idata.hi,
-                               jdata.lo, jdata.hi);
+        REAL jm = __jm[j];
+        REAL jrx = __jrx[j];
+        REAL jry = __jry[j];
+        REAL jrz = __jrz[j];
+        REAL je2 = __je2[j];
+        REAL jvx = __jvx[j];
+        REAL jvy = __jvy[j];
+        REAL jvz = __jvz[j];
+        phi_kernel_core(im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                        jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                        &(*iphi));
     }
-    return iphi;
 }
 
 
-inline REAL
+inline void
 phi_kernel_main_loop(
-    const REAL8 idata,
+    const REAL im,
+    const REAL irx,
+    const REAL iry,
+    const REAL irz,
+    const REAL ie2,
+    const REAL ivx,
+    const REAL ivy,
+    const REAL ivz,
     const uint nj,
-    __global const REAL *inp_jrx,
-    __global const REAL *inp_jry,
-    __global const REAL *inp_jrz,
-    __global const REAL *inp_jmass,
-    __global const REAL *inp_jvx,
-    __global const REAL *inp_jvy,
-    __global const REAL *inp_jvz,
-    __global const REAL *inp_jeps2,
-    __local REAL *shr_jrx,
-    __local REAL *shr_jry,
-    __local REAL *shr_jrz,
-    __local REAL *shr_jmass,
-    __local REAL *shr_jvx,
-    __local REAL *shr_jvy,
-    __local REAL *shr_jvz,
-    __local REAL *shr_jeps2
-    )
+    __global const REAL *_jm,
+    __global const REAL *_jrx,
+    __global const REAL *_jry,
+    __global const REAL *_jrz,
+    __global const REAL *_je2,
+    __global const REAL *_jvx,
+    __global const REAL *_jvy,
+    __global const REAL *_jvz,
+    __local REAL *__jm,
+    __local REAL *__jrx,
+    __local REAL *__jry,
+    __local REAL *__jrz,
+    __local REAL *__je2,
+    __local REAL *__jvx,
+    __local REAL *__jvy,
+    __local REAL *__jvz,
+    REAL *iphi)
 {
     uint lsize = get_local_size(0);
-
-    REAL iphi = (REAL)0;
 
     uint tile;
     uint numTiles = (nj - 1)/lsize + 1;
@@ -61,79 +77,85 @@ phi_kernel_main_loop(
         uint nb = min(lsize, (nj - (tile * lsize)));
 
         event_t e[8];
-        e[0] = async_work_group_copy(shr_jrx, inp_jrx + tile * lsize, nb, 0);
-        e[1] = async_work_group_copy(shr_jry, inp_jry + tile * lsize, nb, 0);
-        e[2] = async_work_group_copy(shr_jrz, inp_jrz + tile * lsize, nb, 0);
-        e[3] = async_work_group_copy(shr_jmass, inp_jmass + tile * lsize, nb, 0);
-        e[4] = async_work_group_copy(shr_jvx, inp_jvx + tile * lsize, nb, 0);
-        e[5] = async_work_group_copy(shr_jvy, inp_jvy + tile * lsize, nb, 0);
-        e[6] = async_work_group_copy(shr_jvz, inp_jvz + tile * lsize, nb, 0);
-        e[7] = async_work_group_copy(shr_jeps2, inp_jeps2 + tile * lsize, nb, 0);
+        e[0] = async_work_group_copy(__jm,  _jm  + tile * lsize, nb, 0);
+        e[1] = async_work_group_copy(__jrx, _jrx + tile * lsize, nb, 0);
+        e[2] = async_work_group_copy(__jry, _jry + tile * lsize, nb, 0);
+        e[3] = async_work_group_copy(__jrz, _jrz + tile * lsize, nb, 0);
+        e[4] = async_work_group_copy(__je2, _je2 + tile * lsize, nb, 0);
+        e[5] = async_work_group_copy(__jvx, _jvx + tile * lsize, nb, 0);
+        e[6] = async_work_group_copy(__jvy, _jvy + tile * lsize, nb, 0);
+        e[7] = async_work_group_copy(__jvz, _jvz + tile * lsize, nb, 0);
         wait_group_events(8, e);
 
         uint j = 0;
         uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
         for (; j < j_max; j += JUNROLL) {
-            iphi = accum_phi(iphi, idata,
-                             j, j + JUNROLL,
-                             shr_jrx, shr_jry, shr_jrz, shr_jmass,
-                             shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
+            accum_phi(j, j + JUNROLL,
+                      im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                      __jm, __jrx, __jry, __jrz, __je2, __jvx, __jvy, __jvz,
+                      &(*iphi));
         }
-        iphi = accum_phi(iphi, idata,
-                         j, nb,
-                         shr_jrx, shr_jry, shr_jrz, shr_jmass,
-                         shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
+        accum_phi(j, nb,
+                  im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                  __jm, __jrx, __jry, __jrz, __je2, __jvx, __jvy, __jvz,
+                  &(*iphi));
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
-
-    return iphi;
 }
 
 
 __kernel void
 phi_kernel(
     const uint ni,
-    __global const REAL *inp_irx,
-    __global const REAL *inp_iry,
-    __global const REAL *inp_irz,
-    __global const REAL *inp_imass,
-    __global const REAL *inp_ivx,
-    __global const REAL *inp_ivy,
-    __global const REAL *inp_ivz,
-    __global const REAL *inp_ieps2,
+    __global const REAL *_im,
+    __global const REAL *_irx,
+    __global const REAL *_iry,
+    __global const REAL *_irz,
+    __global const REAL *_ie2,
+    __global const REAL *_ivx,
+    __global const REAL *_ivy,
+    __global const REAL *_ivz,
     const uint nj,
-    __global const REAL *inp_jrx,
-    __global const REAL *inp_jry,
-    __global const REAL *inp_jrz,
-    __global const REAL *inp_jmass,
-    __global const REAL *inp_jvx,
-    __global const REAL *inp_jvy,
-    __global const REAL *inp_jvz,
-    __global const REAL *inp_jeps2,
-    __global REAL *out_iphi,
-    __local REAL *shr_jrx,
-    __local REAL *shr_jry,
-    __local REAL *shr_jrz,
-    __local REAL *shr_jmass,
-    __local REAL *shr_jvx,
-    __local REAL *shr_jvy,
-    __local REAL *shr_jvz,
-    __local REAL *shr_jeps2
-    )
+    __global const REAL *_jm,
+    __global const REAL *_jrx,
+    __global const REAL *_jry,
+    __global const REAL *_jrz,
+    __global const REAL *_je2,
+    __global const REAL *_jvx,
+    __global const REAL *_jvy,
+    __global const REAL *_jvz,
+    __local REAL *__jm,
+    __local REAL *__jrx,
+    __local REAL *__jry,
+    __local REAL *__jrz,
+    __local REAL *__je2,
+    __local REAL *__jvx,
+    __local REAL *__jvy,
+    __local REAL *__jvz,
+    __global REAL *_iphi)
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);
 
-    REAL8 idata = (REAL8){inp_irx[i], inp_iry[i], inp_irz[i], inp_imass[i],
-                          inp_ivx[i], inp_ivy[i], inp_ivz[i], inp_ieps2[i]};
+    REAL im = _im[i];
+    REAL irx = _irx[i];
+    REAL iry = _iry[i];
+    REAL irz = _irz[i];
+    REAL ie2 = _ie2[i];
+    REAL ivx = _ivx[i];
+    REAL ivy = _ivy[i];
+    REAL ivz = _ivz[i];
 
-    REAL iphi = phi_kernel_main_loop(idata,
-                                     nj,
-                                     inp_jrx, inp_jry, inp_jrz, inp_jmass,
-                                     inp_jvx, inp_jvy, inp_jvz, inp_jeps2,
-                                     shr_jrx, shr_jry, shr_jrz, shr_jmass,
-                                     shr_jvx, shr_jvy, shr_jvz, shr_jeps2);
-    out_iphi[i] = iphi;
+    REAL iphi = 0;
+
+    phi_kernel_main_loop(
+        im, irx, iry, irz, ie2, ivx, ivy, ivz,
+        nj,
+        _jm, _jrx, _jry, _jrz, _je2, _jvx, _jvy, _jvz,
+        __jm, __jrx, __jry, __jrz, __je2, __jvx, __jvy, __jvz,
+        &iphi);
+
+    _iphi[i] = iphi;
 }
 

@@ -16,6 +16,7 @@ from ..lib.utils.timing import decallmethods, timings
 
 __all__ = ["SAKURA"]
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -51,12 +52,19 @@ class SAKURA(Base):
         self.e0 = None
 
     def get_sakura_tstep(self, isys, jsys, eta):
-        (i, j, ijstepmin) = isys.update_tstep(jsys, eta)
+        (tstep_a, tstep_b) = isys.get_tstep(jsys, eta)
 
-        iw2 = 1/isys.tstep**2
-        ijw2max = 1/ijstepmin**2
-        w2_sakura = (iw2.max() - ijw2max)
-        sakura_tstep = 1/w2_sakura**0.5
+        iw2_a = 1/tstep_a**2
+        iw2_b = 1/tstep_b**2
+
+#        diw2 = (iw2_a - iw2_b)
+        diw2 = (iw2_a - iw2_b) / iw2_b
+
+#        w2_sakura = diw2.max()
+        w2_sakura = diw2.max()**2
+
+#        sakura_tstep = 1/w2_sakura**0.5
+        sakura_tstep = eta/w2_sakura**0.5
 
         return sakura_tstep
 

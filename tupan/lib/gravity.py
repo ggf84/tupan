@@ -66,6 +66,7 @@ class Phi(object):
         self.kernel.local_size = 512
         self.max_output_size = 0
 
+        self.kernel.set_local_memory(18, 1)
         self.kernel.set_local_memory(19, 1)
         self.kernel.set_local_memory(20, 1)
         self.kernel.set_local_memory(21, 1)
@@ -73,7 +74,6 @@ class Phi(object):
         self.kernel.set_local_memory(23, 1)
         self.kernel.set_local_memory(24, 1)
         self.kernel.set_local_memory(25, 1)
-        self.kernel.set_local_memory(26, 1)
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -81,27 +81,27 @@ class Phi(object):
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.x)
-        self.kernel.set_array(2, iobj.y)
-        self.kernel.set_array(3, iobj.z)
-        self.kernel.set_array(4, iobj.mass)
-        self.kernel.set_array(5, iobj.vx)
-        self.kernel.set_array(6, iobj.vy)
-        self.kernel.set_array(7, iobj.vz)
-        self.kernel.set_array(8, iobj.eps2)
+        self.kernel.set_array(1, iobj.mass)
+        self.kernel.set_array(2, iobj.x)
+        self.kernel.set_array(3, iobj.y)
+        self.kernel.set_array(4, iobj.z)
+        self.kernel.set_array(5, iobj.eps2)
+        self.kernel.set_array(6, iobj.vx)
+        self.kernel.set_array(7, iobj.vy)
+        self.kernel.set_array(8, iobj.vz)
         self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.x)
-        self.kernel.set_array(11, jobj.y)
-        self.kernel.set_array(12, jobj.z)
-        self.kernel.set_array(13, jobj.mass)
-        self.kernel.set_array(14, jobj.vx)
-        self.kernel.set_array(15, jobj.vy)
-        self.kernel.set_array(16, jobj.vz)
-        self.kernel.set_array(17, jobj.eps2)
+        self.kernel.set_array(10, jobj.mass)
+        self.kernel.set_array(11, jobj.x)
+        self.kernel.set_array(12, jobj.y)
+        self.kernel.set_array(13, jobj.z)
+        self.kernel.set_array(14, jobj.eps2)
+        self.kernel.set_array(15, jobj.vx)
+        self.kernel.set_array(16, jobj.vy)
+        self.kernel.set_array(17, jobj.vz)
 
         self.osize = ni
         if ni > self.max_output_size:
-            self.phi = self.kernel.allocate_buffer(18, ni, ctype.REAL)
+            self.phi = self.kernel.allocate_buffer(26, ni, ctype.REAL)
             self.max_output_size = ni
 
     def run(self):
@@ -109,7 +109,7 @@ class Phi(object):
 
     def get_result(self):
         ni = self.osize
-        self.kernel.map_buffer(18, self.phi)
+        self.kernel.map_buffer(26, self.phi)
         return self.phi[:ni]
 
 
@@ -123,14 +123,14 @@ class Acc(object):
         self.kernel.local_size = 512
         self.max_output_size = 0
 
+        self.kernel.set_local_memory(18, 1)
+        self.kernel.set_local_memory(19, 1)
+        self.kernel.set_local_memory(20, 1)
         self.kernel.set_local_memory(21, 1)
         self.kernel.set_local_memory(22, 1)
         self.kernel.set_local_memory(23, 1)
         self.kernel.set_local_memory(24, 1)
         self.kernel.set_local_memory(25, 1)
-        self.kernel.set_local_memory(26, 1)
-        self.kernel.set_local_memory(27, 1)
-        self.kernel.set_local_memory(28, 1)
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -138,29 +138,29 @@ class Acc(object):
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.x)
-        self.kernel.set_array(2, iobj.y)
-        self.kernel.set_array(3, iobj.z)
-        self.kernel.set_array(4, iobj.mass)
-        self.kernel.set_array(5, iobj.vx)
-        self.kernel.set_array(6, iobj.vy)
-        self.kernel.set_array(7, iobj.vz)
-        self.kernel.set_array(8, iobj.eps2)
+        self.kernel.set_array(1, iobj.mass)
+        self.kernel.set_array(2, iobj.x)
+        self.kernel.set_array(3, iobj.y)
+        self.kernel.set_array(4, iobj.z)
+        self.kernel.set_array(5, iobj.eps2)
+        self.kernel.set_array(6, iobj.vx)
+        self.kernel.set_array(7, iobj.vy)
+        self.kernel.set_array(8, iobj.vz)
         self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.x)
-        self.kernel.set_array(11, jobj.y)
-        self.kernel.set_array(12, jobj.z)
-        self.kernel.set_array(13, jobj.mass)
-        self.kernel.set_array(14, jobj.vx)
-        self.kernel.set_array(15, jobj.vy)
-        self.kernel.set_array(16, jobj.vz)
-        self.kernel.set_array(17, jobj.eps2)
+        self.kernel.set_array(10, jobj.mass)
+        self.kernel.set_array(11, jobj.x)
+        self.kernel.set_array(12, jobj.y)
+        self.kernel.set_array(13, jobj.z)
+        self.kernel.set_array(14, jobj.eps2)
+        self.kernel.set_array(15, jobj.vx)
+        self.kernel.set_array(16, jobj.vy)
+        self.kernel.set_array(17, jobj.vz)
 
         self.osize = ni
         if ni > self.max_output_size:
-            self.ax = self.kernel.allocate_buffer(18, ni, ctype.REAL)
-            self.ay = self.kernel.allocate_buffer(19, ni, ctype.REAL)
-            self.az = self.kernel.allocate_buffer(20, ni, ctype.REAL)
+            self.ax = self.kernel.allocate_buffer(26, ni, ctype.REAL)
+            self.ay = self.kernel.allocate_buffer(27, ni, ctype.REAL)
+            self.az = self.kernel.allocate_buffer(28, ni, ctype.REAL)
             self.max_output_size = ni
 
     def run(self):
@@ -168,9 +168,9 @@ class Acc(object):
 
     def get_result(self):
         ni = self.osize
-        self.kernel.map_buffer(18, self.ax)
-        self.kernel.map_buffer(19, self.ay)
-        self.kernel.map_buffer(20, self.az)
+        self.kernel.map_buffer(26, self.ax)
+        self.kernel.map_buffer(27, self.ay)
+        self.kernel.map_buffer(28, self.az)
         return [self.ax[:ni], self.ay[:ni], self.az[:ni]]
 
 
@@ -184,14 +184,14 @@ class AccJerk(object):
         self.kernel.local_size = 512
         self.max_output_size = 0
 
+        self.kernel.set_local_memory(18, 1)
+        self.kernel.set_local_memory(19, 1)
+        self.kernel.set_local_memory(20, 1)
+        self.kernel.set_local_memory(21, 1)
+        self.kernel.set_local_memory(22, 1)
+        self.kernel.set_local_memory(23, 1)
         self.kernel.set_local_memory(24, 1)
         self.kernel.set_local_memory(25, 1)
-        self.kernel.set_local_memory(26, 1)
-        self.kernel.set_local_memory(27, 1)
-        self.kernel.set_local_memory(28, 1)
-        self.kernel.set_local_memory(29, 1)
-        self.kernel.set_local_memory(30, 1)
-        self.kernel.set_local_memory(31, 1)
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -199,32 +199,32 @@ class AccJerk(object):
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.x)
-        self.kernel.set_array(2, iobj.y)
-        self.kernel.set_array(3, iobj.z)
-        self.kernel.set_array(4, iobj.mass)
-        self.kernel.set_array(5, iobj.vx)
-        self.kernel.set_array(6, iobj.vy)
-        self.kernel.set_array(7, iobj.vz)
-        self.kernel.set_array(8, iobj.eps2)
+        self.kernel.set_array(1, iobj.mass)
+        self.kernel.set_array(2, iobj.x)
+        self.kernel.set_array(3, iobj.y)
+        self.kernel.set_array(4, iobj.z)
+        self.kernel.set_array(5, iobj.eps2)
+        self.kernel.set_array(6, iobj.vx)
+        self.kernel.set_array(7, iobj.vy)
+        self.kernel.set_array(8, iobj.vz)
         self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.x)
-        self.kernel.set_array(11, jobj.y)
-        self.kernel.set_array(12, jobj.z)
-        self.kernel.set_array(13, jobj.mass)
-        self.kernel.set_array(14, jobj.vx)
-        self.kernel.set_array(15, jobj.vy)
-        self.kernel.set_array(16, jobj.vz)
-        self.kernel.set_array(17, jobj.eps2)
+        self.kernel.set_array(10, jobj.mass)
+        self.kernel.set_array(11, jobj.x)
+        self.kernel.set_array(12, jobj.y)
+        self.kernel.set_array(13, jobj.z)
+        self.kernel.set_array(14, jobj.eps2)
+        self.kernel.set_array(15, jobj.vx)
+        self.kernel.set_array(16, jobj.vy)
+        self.kernel.set_array(17, jobj.vz)
 
         self.osize = ni
         if ni > self.max_output_size:
-            self.ax = self.kernel.allocate_buffer(18, ni, ctype.REAL)
-            self.ay = self.kernel.allocate_buffer(19, ni, ctype.REAL)
-            self.az = self.kernel.allocate_buffer(20, ni, ctype.REAL)
-            self.jx = self.kernel.allocate_buffer(21, ni, ctype.REAL)
-            self.jy = self.kernel.allocate_buffer(22, ni, ctype.REAL)
-            self.jz = self.kernel.allocate_buffer(23, ni, ctype.REAL)
+            self.ax = self.kernel.allocate_buffer(26, ni, ctype.REAL)
+            self.ay = self.kernel.allocate_buffer(27, ni, ctype.REAL)
+            self.az = self.kernel.allocate_buffer(28, ni, ctype.REAL)
+            self.jx = self.kernel.allocate_buffer(29, ni, ctype.REAL)
+            self.jy = self.kernel.allocate_buffer(30, ni, ctype.REAL)
+            self.jz = self.kernel.allocate_buffer(31, ni, ctype.REAL)
             self.max_output_size = ni
 
     def run(self):
@@ -232,12 +232,12 @@ class AccJerk(object):
 
     def get_result(self):
         ni = self.osize
-        self.kernel.map_buffer(18, self.ax)
-        self.kernel.map_buffer(19, self.ay)
-        self.kernel.map_buffer(20, self.az)
-        self.kernel.map_buffer(21, self.jx)
-        self.kernel.map_buffer(22, self.jy)
-        self.kernel.map_buffer(23, self.jz)
+        self.kernel.map_buffer(26, self.ax)
+        self.kernel.map_buffer(27, self.ay)
+        self.kernel.map_buffer(28, self.az)
+        self.kernel.map_buffer(29, self.jx)
+        self.kernel.map_buffer(30, self.jy)
+        self.kernel.map_buffer(31, self.jz)
         return [self.ax[:ni], self.ay[:ni], self.az[:ni],
                 self.jx[:ni], self.jy[:ni], self.jz[:ni]]
 
@@ -252,6 +252,7 @@ class Tstep(object):
         self.kernel.local_size = 512
         self.max_output_size = 0
 
+        self.kernel.set_local_memory(19, 1)
         self.kernel.set_local_memory(20, 1)
         self.kernel.set_local_memory(21, 1)
         self.kernel.set_local_memory(22, 1)
@@ -259,7 +260,6 @@ class Tstep(object):
         self.kernel.set_local_memory(24, 1)
         self.kernel.set_local_memory(25, 1)
         self.kernel.set_local_memory(26, 1)
-        self.kernel.set_local_memory(27, 1)
 
     def set_args(self, iobj, jobj, eta):
         ni = iobj.n
@@ -267,29 +267,29 @@ class Tstep(object):
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.x)
-        self.kernel.set_array(2, iobj.y)
-        self.kernel.set_array(3, iobj.z)
-        self.kernel.set_array(4, iobj.mass)
-        self.kernel.set_array(5, iobj.vx)
-        self.kernel.set_array(6, iobj.vy)
-        self.kernel.set_array(7, iobj.vz)
-        self.kernel.set_array(8, iobj.eps2)
+        self.kernel.set_array(1, iobj.mass)
+        self.kernel.set_array(2, iobj.x)
+        self.kernel.set_array(3, iobj.y)
+        self.kernel.set_array(4, iobj.z)
+        self.kernel.set_array(5, iobj.eps2)
+        self.kernel.set_array(6, iobj.vx)
+        self.kernel.set_array(7, iobj.vy)
+        self.kernel.set_array(8, iobj.vz)
         self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.x)
-        self.kernel.set_array(11, jobj.y)
-        self.kernel.set_array(12, jobj.z)
-        self.kernel.set_array(13, jobj.mass)
-        self.kernel.set_array(14, jobj.vx)
-        self.kernel.set_array(15, jobj.vy)
-        self.kernel.set_array(16, jobj.vz)
-        self.kernel.set_array(17, jobj.eps2)
+        self.kernel.set_array(10, jobj.mass)
+        self.kernel.set_array(11, jobj.x)
+        self.kernel.set_array(12, jobj.y)
+        self.kernel.set_array(13, jobj.z)
+        self.kernel.set_array(14, jobj.eps2)
+        self.kernel.set_array(15, jobj.vx)
+        self.kernel.set_array(16, jobj.vy)
+        self.kernel.set_array(17, jobj.vz)
         self.kernel.set_float(18, eta)
 
         self.osize = ni
         if ni > self.max_output_size:
-            self.tstep = self.kernel.allocate_buffer(19, ni, ctype.REAL)
-            self.ijtstepmin = self.kernel.allocate_buffer(20, 3, ctype.REAL)
+            self.tstep_a = self.kernel.allocate_buffer(27, ni, ctype.REAL)
+            self.tstep_b = self.kernel.allocate_buffer(28, ni, ctype.REAL)
             self.max_output_size = ni
 
     def run(self):
@@ -297,14 +297,10 @@ class Tstep(object):
 
     def get_result(self):
         ni = self.osize
-        self.kernel.map_buffer(19, self.tstep)
-        self.kernel.map_buffer(20, self.ijtstepmin)
+        self.kernel.map_buffer(27, self.tstep_a)
+        self.kernel.map_buffer(28, self.tstep_b)
 
-        i = int(self.ijtstepmin[0])
-        j = int(self.ijtstepmin[1])
-        ijstepmin = self.ijtstepmin[2]
-
-        return (i, j, ijstepmin, self.tstep[:ni])
+        return (self.tstep_a[:ni], self.tstep_b[:ni])
 
 
 @decallmethods(timings)
@@ -317,14 +313,14 @@ class PNAcc(object):
         self.kernel.local_size = 512
         self.max_output_size = 0
 
+        self.kernel.set_local_memory(26, 1)
+        self.kernel.set_local_memory(27, 1)
+        self.kernel.set_local_memory(28, 1)
         self.kernel.set_local_memory(29, 1)
         self.kernel.set_local_memory(30, 1)
         self.kernel.set_local_memory(31, 1)
         self.kernel.set_local_memory(32, 1)
         self.kernel.set_local_memory(33, 1)
-        self.kernel.set_local_memory(34, 1)
-        self.kernel.set_local_memory(35, 1)
-        self.kernel.set_local_memory(36, 1)
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -332,23 +328,23 @@ class PNAcc(object):
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.x)
-        self.kernel.set_array(2, iobj.y)
-        self.kernel.set_array(3, iobj.z)
-        self.kernel.set_array(4, iobj.mass)
-        self.kernel.set_array(5, iobj.vx)
-        self.kernel.set_array(6, iobj.vy)
-        self.kernel.set_array(7, iobj.vz)
-        self.kernel.set_array(8, iobj.eps2)
+        self.kernel.set_array(1, iobj.mass)
+        self.kernel.set_array(2, iobj.x)
+        self.kernel.set_array(3, iobj.y)
+        self.kernel.set_array(4, iobj.z)
+        self.kernel.set_array(5, iobj.eps2)
+        self.kernel.set_array(6, iobj.vx)
+        self.kernel.set_array(7, iobj.vy)
+        self.kernel.set_array(8, iobj.vz)
         self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.x)
-        self.kernel.set_array(11, jobj.y)
-        self.kernel.set_array(12, jobj.z)
-        self.kernel.set_array(13, jobj.mass)
-        self.kernel.set_array(14, jobj.vx)
-        self.kernel.set_array(15, jobj.vy)
-        self.kernel.set_array(16, jobj.vz)
-        self.kernel.set_array(17, jobj.eps2)
+        self.kernel.set_array(10, jobj.mass)
+        self.kernel.set_array(11, jobj.x)
+        self.kernel.set_array(12, jobj.y)
+        self.kernel.set_array(13, jobj.z)
+        self.kernel.set_array(14, jobj.eps2)
+        self.kernel.set_array(15, jobj.vx)
+        self.kernel.set_array(16, jobj.vy)
+        self.kernel.set_array(17, jobj.vz)
         self.kernel.set_int(18, clight.pn_order)
         self.kernel.set_float(19, clight.inv1)
         self.kernel.set_float(20, clight.inv2)
@@ -360,9 +356,9 @@ class PNAcc(object):
 
         self.osize = ni
         if ni > self.max_output_size:
-            self.pnax = self.kernel.allocate_buffer(26, ni, ctype.REAL)
-            self.pnay = self.kernel.allocate_buffer(27, ni, ctype.REAL)
-            self.pnaz = self.kernel.allocate_buffer(28, ni, ctype.REAL)
+            self.pnax = self.kernel.allocate_buffer(34, ni, ctype.REAL)
+            self.pnay = self.kernel.allocate_buffer(35, ni, ctype.REAL)
+            self.pnaz = self.kernel.allocate_buffer(36, ni, ctype.REAL)
             self.max_output_size = ni
 
     def run(self):
@@ -370,9 +366,9 @@ class PNAcc(object):
 
     def get_result(self):
         ni = self.osize
-        self.kernel.map_buffer(26, self.pnax)
-        self.kernel.map_buffer(27, self.pnay)
-        self.kernel.map_buffer(28, self.pnaz)
+        self.kernel.map_buffer(34, self.pnax)
+        self.kernel.map_buffer(35, self.pnay)
+        self.kernel.map_buffer(36, self.pnaz)
         return [self.pnax[:ni], self.pnay[:ni], self.pnaz[:ni]]
 
 
@@ -386,14 +382,14 @@ class Sakura(object):
         self.kernel.local_size = 512
         self.max_output_size = 0
 
+        self.kernel.set_local_memory(19, 1)
+        self.kernel.set_local_memory(20, 1)
+        self.kernel.set_local_memory(21, 1)
+        self.kernel.set_local_memory(22, 1)
+        self.kernel.set_local_memory(23, 1)
+        self.kernel.set_local_memory(24, 1)
         self.kernel.set_local_memory(25, 1)
         self.kernel.set_local_memory(26, 1)
-        self.kernel.set_local_memory(27, 1)
-        self.kernel.set_local_memory(28, 1)
-        self.kernel.set_local_memory(29, 1)
-        self.kernel.set_local_memory(30, 1)
-        self.kernel.set_local_memory(31, 1)
-        self.kernel.set_local_memory(32, 1)
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
@@ -401,33 +397,33 @@ class Sakura(object):
 
         self.kernel.global_size = ni
         self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.x)
-        self.kernel.set_array(2, iobj.y)
-        self.kernel.set_array(3, iobj.z)
-        self.kernel.set_array(4, iobj.mass)
-        self.kernel.set_array(5, iobj.vx)
-        self.kernel.set_array(6, iobj.vy)
-        self.kernel.set_array(7, iobj.vz)
-        self.kernel.set_array(8, iobj.eps2)
+        self.kernel.set_array(1, iobj.mass)
+        self.kernel.set_array(2, iobj.x)
+        self.kernel.set_array(3, iobj.y)
+        self.kernel.set_array(4, iobj.z)
+        self.kernel.set_array(5, iobj.eps2)
+        self.kernel.set_array(6, iobj.vx)
+        self.kernel.set_array(7, iobj.vy)
+        self.kernel.set_array(8, iobj.vz)
         self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.x)
-        self.kernel.set_array(11, jobj.y)
-        self.kernel.set_array(12, jobj.z)
-        self.kernel.set_array(13, jobj.mass)
-        self.kernel.set_array(14, jobj.vx)
-        self.kernel.set_array(15, jobj.vy)
-        self.kernel.set_array(16, jobj.vz)
-        self.kernel.set_array(17, jobj.eps2)
+        self.kernel.set_array(10, jobj.mass)
+        self.kernel.set_array(11, jobj.x)
+        self.kernel.set_array(12, jobj.y)
+        self.kernel.set_array(13, jobj.z)
+        self.kernel.set_array(14, jobj.eps2)
+        self.kernel.set_array(15, jobj.vx)
+        self.kernel.set_array(16, jobj.vy)
+        self.kernel.set_array(17, jobj.vz)
         self.kernel.set_float(18, dt)
 
         self.osize = ni
         if ni > self.max_output_size:
-            self.drx = self.kernel.allocate_buffer(19, ni, ctype.REAL)
-            self.dry = self.kernel.allocate_buffer(20, ni, ctype.REAL)
-            self.drz = self.kernel.allocate_buffer(21, ni, ctype.REAL)
-            self.dvx = self.kernel.allocate_buffer(22, ni, ctype.REAL)
-            self.dvy = self.kernel.allocate_buffer(23, ni, ctype.REAL)
-            self.dvz = self.kernel.allocate_buffer(24, ni, ctype.REAL)
+            self.drx = self.kernel.allocate_buffer(27, ni, ctype.REAL)
+            self.dry = self.kernel.allocate_buffer(28, ni, ctype.REAL)
+            self.drz = self.kernel.allocate_buffer(29, ni, ctype.REAL)
+            self.dvx = self.kernel.allocate_buffer(30, ni, ctype.REAL)
+            self.dvy = self.kernel.allocate_buffer(31, ni, ctype.REAL)
+            self.dvz = self.kernel.allocate_buffer(32, ni, ctype.REAL)
             self.max_output_size = ni
 
     def run(self):
@@ -435,14 +431,148 @@ class Sakura(object):
 
     def get_result(self):
         ni = self.osize
-        self.kernel.map_buffer(19, self.drx)
-        self.kernel.map_buffer(20, self.dry)
-        self.kernel.map_buffer(21, self.drz)
-        self.kernel.map_buffer(22, self.dvx)
-        self.kernel.map_buffer(23, self.dvy)
-        self.kernel.map_buffer(24, self.dvz)
+        self.kernel.map_buffer(27, self.drx)
+        self.kernel.map_buffer(28, self.dry)
+        self.kernel.map_buffer(29, self.drz)
+        self.kernel.map_buffer(30, self.dvx)
+        self.kernel.map_buffer(31, self.dvy)
+        self.kernel.map_buffer(32, self.dvz)
         return [self.drx[:ni], self.dry[:ni], self.drz[:ni],
                 self.dvx[:ni], self.dvy[:ni], self.dvz[:ni]]
+
+
+@decallmethods(timings)
+class NREG_X(object):
+    """
+
+    """
+    def __init__(self, exttype, prec):
+        self.kernel = get_kernel("nreg_Xkernel", exttype, prec)
+        self.kernel.local_size = 512
+        self.max_output_size = 0
+
+        self.kernel.set_local_memory(19, 1)
+        self.kernel.set_local_memory(20, 1)
+        self.kernel.set_local_memory(21, 1)
+        self.kernel.set_local_memory(22, 1)
+        self.kernel.set_local_memory(23, 1)
+        self.kernel.set_local_memory(24, 1)
+        self.kernel.set_local_memory(25, 1)
+        self.kernel.set_local_memory(26, 1)
+
+    def set_args(self, iobj, jobj, dt):
+        ni = iobj.n
+        nj = jobj.n
+
+        self.kernel.global_size = ni
+        self.kernel.set_int(0, ni)
+        self.kernel.set_array(1, iobj.mass)
+        self.kernel.set_array(2, iobj.x)
+        self.kernel.set_array(3, iobj.y)
+        self.kernel.set_array(4, iobj.z)
+        self.kernel.set_array(5, iobj.eps2)
+        self.kernel.set_array(6, iobj.vx)
+        self.kernel.set_array(7, iobj.vy)
+        self.kernel.set_array(8, iobj.vz)
+        self.kernel.set_int(9, nj)
+        self.kernel.set_array(10, jobj.mass)
+        self.kernel.set_array(11, jobj.x)
+        self.kernel.set_array(12, jobj.y)
+        self.kernel.set_array(13, jobj.z)
+        self.kernel.set_array(14, jobj.eps2)
+        self.kernel.set_array(15, jobj.vx)
+        self.kernel.set_array(16, jobj.vy)
+        self.kernel.set_array(17, jobj.vz)
+        self.kernel.set_float(18, dt)
+
+        self.osize = ni
+        if ni > self.max_output_size:
+            self.rx = self.kernel.allocate_buffer(27, ni, ctype.REAL)
+            self.ry = self.kernel.allocate_buffer(28, ni, ctype.REAL)
+            self.rz = self.kernel.allocate_buffer(29, ni, ctype.REAL)
+            self.ax = self.kernel.allocate_buffer(30, ni, ctype.REAL)
+            self.ay = self.kernel.allocate_buffer(31, ni, ctype.REAL)
+            self.az = self.kernel.allocate_buffer(32, ni, ctype.REAL)
+            self.u = self.kernel.allocate_buffer(33, ni, ctype.REAL)
+            self.max_output_size = ni
+
+    def run(self):
+        self.kernel.run()
+
+    def get_result(self):
+        ni = self.osize
+        self.kernel.map_buffer(27, self.rx)
+        self.kernel.map_buffer(28, self.ry)
+        self.kernel.map_buffer(29, self.rz)
+        self.kernel.map_buffer(30, self.ax)
+        self.kernel.map_buffer(31, self.ay)
+        self.kernel.map_buffer(32, self.az)
+        self.kernel.map_buffer(33, self.u)
+        return [self.rx[:ni], self.ry[:ni], self.rz[:ni],
+                self.ax[:ni], self.ay[:ni], self.az[:ni],
+                0.5 * self.u[:ni].sum()]
+
+
+@decallmethods(timings)
+class NREG_V(object):
+    """
+
+    """
+    def __init__(self, exttype, prec):
+        self.kernel = get_kernel("nreg_Vkernel", exttype, prec)
+        self.kernel.local_size = 512
+        self.max_output_size = 0
+
+        self.kernel.set_local_memory(17, 1)
+        self.kernel.set_local_memory(18, 1)
+        self.kernel.set_local_memory(19, 1)
+        self.kernel.set_local_memory(20, 1)
+        self.kernel.set_local_memory(21, 1)
+        self.kernel.set_local_memory(22, 1)
+        self.kernel.set_local_memory(23, 1)
+
+    def set_args(self, iobj, jobj, dt):
+        ni = iobj.n
+        nj = jobj.n
+
+        self.kernel.global_size = ni
+        self.kernel.set_int(0, ni)
+        self.kernel.set_array(1, iobj.mass)
+        self.kernel.set_array(2, iobj.vx)
+        self.kernel.set_array(3, iobj.vy)
+        self.kernel.set_array(4, iobj.vz)
+        self.kernel.set_array(5, iobj.ax)
+        self.kernel.set_array(6, iobj.ay)
+        self.kernel.set_array(7, iobj.az)
+        self.kernel.set_int(8, nj)
+        self.kernel.set_array(9, jobj.mass)
+        self.kernel.set_array(10, jobj.vx)
+        self.kernel.set_array(11, jobj.vy)
+        self.kernel.set_array(12, jobj.vz)
+        self.kernel.set_array(13, jobj.ax)
+        self.kernel.set_array(14, jobj.ay)
+        self.kernel.set_array(15, jobj.az)
+        self.kernel.set_float(16, dt)
+
+        self.osize = ni
+        if ni > self.max_output_size:
+            self.vx = self.kernel.allocate_buffer(24, ni, ctype.REAL)
+            self.vy = self.kernel.allocate_buffer(25, ni, ctype.REAL)
+            self.vz = self.kernel.allocate_buffer(26, ni, ctype.REAL)
+            self.k = self.kernel.allocate_buffer(27, ni, ctype.REAL)
+            self.max_output_size = ni
+
+    def run(self):
+        self.kernel.run()
+
+    def get_result(self):
+        ni = self.osize
+        self.kernel.map_buffer(24, self.vx)
+        self.kernel.map_buffer(25, self.vy)
+        self.kernel.map_buffer(26, self.vz)
+        self.kernel.map_buffer(27, self.k)
+        return [self.vx[:ni], self.vy[:ni], self.vz[:ni],
+                0.5 * self.k[:ni].sum()]
 
 
 exttype = "cl" if "--use_cl" in sys.argv else "c"
@@ -454,6 +584,8 @@ acc_jerk = AccJerk(exttype, ctype.prec)
 tstep = Tstep(exttype, ctype.prec)
 pnacc = PNAcc(exttype, ctype.prec)
 sakura = Sakura(exttype, ctype.prec)
+nreg_x = NREG_X(exttype, ctype.prec)
+nreg_v = NREG_V(exttype, ctype.prec)
 
 
 ########## end of file ##########

@@ -30,7 +30,7 @@ def wrap_lib(fptype):
                )
 
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
-        source = "typedef {} REAL, *pREAL;".format(fptype) + fobj.read()
+        source = "typedef {} REAL;".format(fptype) + fobj.read()
 
     ffi = cffi.FFI()
 
@@ -42,18 +42,20 @@ def wrap_lib(fptype):
         define_macros.append(("DOUBLE", 1))
         modulename = modulename.replace("SP", "DP")
 
-    clib = ffi.verify("""
-    #include "common.h"
-    #include "libtupan.h"
-    """,
-                      define_macros=define_macros,
-                      include_dirs=[PATH],
-                      libraries=['m'],
-                      sources=[os.path.join(PATH, src) for src in sources],
-                      force_generic_engine=hasattr(
-                          sys, '_force_generic_engine_'),
-                      modulename=modulename,
-                      )
+    clib = ffi.verify(
+        """
+        #include "common.h"
+        #include "libtupan.h"
+        """,
+        define_macros=define_macros,
+        include_dirs=[PATH],
+        libraries=['m'],
+        extra_compile_args=[],
+        sources=[os.path.join(PATH, src) for src in sources],
+        force_generic_engine=hasattr(
+            sys, '_force_generic_engine_'),
+        modulename=modulename,
+    )
     return ffi, clib
 
 

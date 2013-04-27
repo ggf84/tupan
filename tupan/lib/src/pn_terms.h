@@ -1,175 +1,221 @@
-#ifndef PN_TERMS_H
-#define PN_TERMS_H
+#ifndef __PN_TERMS_H__
+#define __PN_TERMS_H__
 
 #include "common.h"
 
-
-static inline REAL2
-p2p_pn2(REAL mi, REAL mj, REAL inv_r,
-        REAL vi2, REAL vj2, REAL vivj,
-        REAL nvi, REAL nvj, REAL nvj2,
-        CLIGHT clight)
+inline PN
+p2p_pn2(
+    REAL mi,
+    REAL mj,
+    REAL inv_r,
+    REAL iv2,
+    REAL jv2,
+    REAL ivjv,
+    REAL niv,
+    REAL njv,
+    REAL njv2,
+    CLIGHT clight)
 {
     // Include ~1/c^2 terms (6+2 == 8 terms)
-    REAL2 pn2;
+    PN pn2;
 
-    pn2.x = - vi2
-            - 2.0 * vj2
-            + 4.0 * vivj
-            + 1.5 * nvj2
+    pn2.a = - iv2
+            - 2.0 * jv2
+            + 4.0 * ivjv
+            + 1.5 * njv2
             + inv_r * ( + 5.0 * mi
                         + 4.0 * mj );
 
-    pn2.y = + 4.0 * nvi
-            - 3.0 * nvj;
+    pn2.b = + 4.0 * niv
+            - 3.0 * njv;
 
-    pn2.x *=  clight.inv2;
-    pn2.y *=  clight.inv2;
+    pn2.a *=  clight.inv2;
+    pn2.b *=  clight.inv2;
 
     return pn2;
 }   // 11+3+2 == 16 FLOPs
 
 
-static inline REAL2
-p2p_pn4(REAL mi, REAL mj, REAL mi2, REAL mj2, REAL mimj, REAL inv_r, REAL inv_r2,
-        REAL vi2, REAL vj2, REAL vj4, REAL vivj, REAL vivjvivj,
-        REAL nv, REAL nvi, REAL nvj, REAL nvi2, REAL nvj2, REAL nvinvj,
-        CLIGHT clight)
+inline PN
+p2p_pn4(
+    REAL mi,
+    REAL mj,
+    REAL mi2,
+    REAL mj2,
+    REAL mimj,
+    REAL inv_r,
+    REAL inv_r2,
+    REAL iv2,
+    REAL jv2,
+    REAL jv4,
+    REAL ivjv,
+    REAL ivjvivjv,
+    REAL nv,
+    REAL niv,
+    REAL njv,
+    REAL niv2,
+    REAL njv2,
+    REAL nivnjv,
+    CLIGHT clight)
 {
     // Include ~1/c^4 terms (21+10 == 31 terms)
-    REAL2 pn4;
+    PN pn4;
 
-    pn4.x = - 2.0 * ( + vj4
-                      + vivjvivj )
-            + 4.0 * vj2 * vivj
-            + nvj2 * ( + 1.5 * vi2
-                       + 4.5 * vj2
-                       - 6.0 * vivj
-                       - 1.875 * nvj2 )
+    pn4.a = - 2.0 * ( + jv4
+                      + ivjvivjv )
+            + 4.0 * jv2 * ivjv
+            + njv2 * ( + 1.5 * iv2
+                       + 4.5 * jv2
+                       - 6.0 * ivjv
+                       - 1.875 * njv2 )
             - inv_r2 * ( + 14.25 * mi2
                          + 9.0 * mj2
                          + 34.5 * mimj )
-            + inv_r * ( + mi * ( - 3.75 * vi2
-                                 + 1.25 * vj2
-                                 - 2.5 * vivj
-                                 + 19.5 * nvi2
-                                 - 39.0 * nvinvj
-                                 + 8.5 * nvj2 )
-                        + mj * ( + 4.0 * vj2
-                                 - 8.0 * vivj
-                                 + 2.0 * nvi2
-                                 - 4.0 * nvinvj
-                                 - 6.0 * nvj2 ) );
+            + inv_r * ( + mi * ( - 3.75 * iv2
+                                 + 1.25 * jv2
+                                 - 2.5 * ivjv
+                                 + 19.5 * niv2
+                                 - 39.0 * nivnjv
+                                 + 8.5 * njv2 )
+                        + mj * ( + 4.0 * jv2
+                                 - 8.0 * ivjv
+                                 + 2.0 * niv2
+                                 - 4.0 * nivnjv
+                                 - 6.0 * njv2 ) );
 
-    pn4.y = + inv_r * ( + mi * ( - 15.75 * nvi
-                                 + 13.75 * nvj )
-                        - mj * 2.0 * ( + nvi
-                                       + nvj ) )
-            + vi2 * nvj
-            - vivj * nv * 4.0
-            + vj2 * ( + 4.0 * nvi
-                      - 5.0 * nvj )
-            + nvj2 * ( - 6.0 * nvi
-                       + 4.5 * nvj );
+    pn4.b = + inv_r * ( + mi * ( - 15.75 * niv
+                                 + 13.75 * njv )
+                        - mj * 2.0 * ( + niv
+                                       + njv ) )
+            + iv2 * njv
+            - ivjv * nv * 4.0
+            + jv2 * ( + 4.0 * niv
+                      - 5.0 * njv )
+            + njv2 * ( - 6.0 * niv
+                       + 4.5 * njv );
 
-    pn4.x *=  clight.inv4;
-    pn4.y *=  clight.inv4;
+    pn4.a *=  clight.inv4;
+    pn4.b *=  clight.inv4;
 
     return pn4;
 }   // 46+24+2 == 72 FLOPs
 
 
-static inline REAL2
-p2p_pn5(REAL mi, REAL mj, REAL inv_r, REAL v2, REAL nv, CLIGHT clight)
+inline PN
+p2p_pn5(
+    REAL mi,
+    REAL mj,
+    REAL inv_r,
+    REAL v2,
+    REAL nv,
+    CLIGHT clight)
 {
     // Include ~1/c^5 terms (3+3 == 6 terms)
-    REAL2 pn5;
+    PN pn5;
 
-    pn5.x = + nv * ( + inv_r * ( - 4.8 * mi
+    pn5.a = + nv * ( + inv_r * ( - 4.8 * mi
                                  + 1.3866666666666667e+1 * mj )          // +208/15
                      + 2.4 * v2 );
 
-	pn5.y = - v2
+    pn5.b = - v2
             + inv_r * ( + 1.6 * mi
                         - 6.4 * mj );
 
     REAL m_c5r = (mi * inv_r) * clight.inv5;
-    pn5.x *= m_c5r;
-    pn5.y *= m_c5r;
+    pn5.a *= m_c5r;
+    pn5.b *= m_c5r;
 
     return pn5;
 }   // 7+5+4 == 16 FLOPs
 
 
-static inline REAL2
-p2p_pn6(REAL mi, REAL mj, REAL mi2, REAL mj2, REAL mimj, REAL inv_r, REAL inv_r2,
-        REAL v2, REAL vi2, REAL vj2, REAL vj4, REAL vivj, REAL vivjvivj,
-        REAL nv, REAL nvnv, REAL nvi, REAL nvj, REAL nvi2, REAL nvj2, REAL nvinvj,
-        CLIGHT clight)
+inline PN
+p2p_pn6(
+    REAL mi,
+    REAL mj,
+    REAL mi2,
+    REAL mj2,
+    REAL mimj,
+    REAL inv_r,
+    REAL inv_r2,
+    REAL v2,
+    REAL iv2,
+    REAL jv2,
+    REAL jv4,
+    REAL ivjv,
+    REAL ivjvivjv,
+    REAL nv,
+    REAL nvnv,
+    REAL niv,
+    REAL njv,
+    REAL niv2,
+    REAL njv2,
+    REAL nivnjv,
+    CLIGHT clight)
 {
     // Include ~1/c^6 terms (66+37 == 103 terms)
-    REAL2 pn6;
+    PN pn6;
 
-    pn6.x = + nvj2 * ( + 3.0 * vivjvivj
-                       + 1.5 * vi2 * vj2
-                       - 12.0 * vivj * vj2
-                       + 7.5 * vj4
-                       + nvj2 * ( + 7.5 * ( + vivj
-                                            - vj2
-                                            - 0.25 * vi2 )
-                                  + 2.1875 * nvj2 ) )
-           + 2.0 * vj2 * ( - vivjvivj
-                           + vj2 * ( + 2.0 * vivj
-                                     - vj2 ) )
-           + mi * inv_r * ( + nvi * ( + nvj * ( + 244.0 * vivj
-                                                - 102.5 * vi2
-                                                - 141.5 * vj2
-                                                + 191.5 * nvj2 )
-                                      + nvi * ( + 57.25 * ( + vi2
-                                                            + vj2
-                                                            - 2.0 * vivj )
-                                                - 180.75 * nvj2
-                                                + nvi * ( + 85.5 * ( + nvj
-                                                                     - 0.25 * nvi ) ) ) )
-                            + nvj2 * ( + 47.75 * vi2
-                                       + 64.75 * vj2
-                                       - 112.5 * vivj
-                                       - 56.875 * nvj2 )
-                            + vivj * ( + 45.5 * vi2
-                                       + 43.0 * vj2
-                                       - 44.25 * vivj )
-                            - 11.375 * vi2 * ( + vi2
-                                               + 2.0 * vj2 )
-                            - 10.125 * vj4 )
-           + mj * inv_r * 4.0 * ( + vj4
-                                  + nvj * ( + nvi * ( + vivj
-                                                      - vj2 )
-                                            + nvj * ( + 3.0 * ( + vivj
-                                                                - vj2 )
-                                                      - 1.5 * nvi2
-                                                      + nvj * ( + 3.0 * nvi
-                                                                + 1.5 * nvj ) ) )
-                                  + vivj * ( + vivj
-                                             - 2.0 * vj2 ) )
-           + mj2 * inv_r2 * ( - nvi2
-                              + 2.0 * nvinvj
-                              + 21.5 * nvj2
-                              + 18.0 * vivj
-                              - 9.0 * vj2 )
-           + mimj * inv_r2 * ( + 51.875 * nvi2
-                               - 93.75 * nvinvj
-                               + 139.125 * nvj2
-                               + 18.0 * vi2
+    pn6.a = + njv2 * ( + 3.0 * ivjvivjv
+                       + 1.5 * iv2 * jv2
+                       - 12.0 * ivjv * jv2
+                       + 7.5 * jv4
+                       + njv2 * ( + 7.5 * ( + ivjv
+                                            - jv2
+                                            - 0.25 * iv2 )
+                                  + 2.1875 * njv2 ) )
+           + 2.0 * jv2 * ( - ivjvivjv
+                           + jv2 * ( + 2.0 * ivjv
+                                     - jv2 ) )
+           + mi * inv_r * ( + niv * ( + njv * ( + 244.0 * ivjv
+                                                - 102.5 * iv2
+                                                - 141.5 * jv2
+                                                + 191.5 * njv2 )
+                                      + niv * ( + 57.25 * ( + iv2
+                                                            + jv2
+                                                            - 2.0 * ivjv )
+                                                - 180.75 * njv2
+                                                + niv * ( + 85.5 * ( + njv
+                                                                     - 0.25 * niv ) ) ) )
+                            + njv2 * ( + 47.75 * iv2
+                                       + 64.75 * jv2
+                                       - 112.5 * ivjv
+                                       - 56.875 * njv2 )
+                            + ivjv * ( + 45.5 * iv2
+                                       + 43.0 * jv2
+                                       - 44.25 * ivjv )
+                            - 11.375 * iv2 * ( + iv2
+                                               + 2.0 * jv2 )
+                            - 10.125 * jv4 )
+           + mj * inv_r * 4.0 * ( + jv4
+                                  + njv * ( + niv * ( + ivjv
+                                                      - jv2 )
+                                            + njv * ( + 3.0 * ( + ivjv
+                                                                - jv2 )
+                                                      - 1.5 * niv2
+                                                      + njv * ( + 3.0 * niv
+                                                                + 1.5 * njv ) ) )
+                                  + ivjv * ( + ivjv
+                                             - 2.0 * jv2 ) )
+           + mj2 * inv_r2 * ( - niv2
+                              + 2.0 * nivnjv
+                              + 21.5 * njv2
+                              + 18.0 * ivjv
+                              - 9.0 * jv2 )
+           + mimj * inv_r2 * ( + 51.875 * niv2
+                               - 93.75 * nivnjv
+                               + 139.125 * njv2
+                               + 18.0 * iv2
                                + PI2 * ( + 1.921875 * v2
                                          - 9.609375 * nvnv )
-                               + 33.0 * ( + vivj
-                                          - 0.5 * vj2 ) )
-           + mi2 * inv_r2 * ( - 258.625 * nvi2
-                              + 543.0 * nvinvj
-                              - 234.75 * nvj2
-                              + 58.875 * vi2
-                              + 44.625 * ( + vj2
-                                           - 2.0 * vivj ) )
+                               + 33.0 * ( + ivjv
+                                          - 0.5 * jv2 ) )
+           + mi2 * inv_r2 * ( - 258.625 * niv2
+                              + 543.0 * nivnjv
+                              - 234.75 * njv2
+                              + 58.875 * iv2
+                              + 44.625 * ( + jv2
+                                           - 2.0 * ivjv ) )
            + inv_r * inv_r2 * ( + 16.0 * mj * mj2
                                 + mi2 * mj * ( + 1.8233333333333333e+2   // +547/3
                                                - 2.5625 * PI2 )
@@ -177,167 +223,200 @@ p2p_pn6(REAL mi, REAL mj, REAL mi2, REAL mj2, REAL mimj, REAL inv_r, REAL inv_r2
                                 + mi * mj2 * ( + 1.8166666666666667e+2   // +545/3
                                                - 2.5625 * PI2 ) );
 
-	pn6.y = + nvj * ( + vj2 * ( + vi2
-                                + 8.0 * vivj
-                                - 7.0 * vj2 )
-                      - 2.0 * vivjvivj
-                      + nvj * ( + 6.0 * nvi * ( + vivj
-                                                - 2.0 * vj2 )
-                                + nvj * ( + 6.0 * ( + 2.0 * vj2
-                                                    - vivj
-                                                    - 0.25 * vi2 )
-                                          + nvj * ( + 7.5 * ( + nvi
-                                                              - 0.75 * nvj ) ) ) ) )
-           + 4.0 * nvi * ( + vj4
-                           - vivj * vj2 )
-           + mj * inv_r * ( + nvj * ( + 4.0 * ( + vivj
-                                                - vj2
-                                                - 0.5 * nvi2 )
-                                      + nvj * ( + 2.0 * ( + 4.0 * nvi
-                                                          + nvj ) ) )
-                            + 2.0 * nvi * ( + vivj
-                                            - vj2 ) )
-           + mi * inv_r * ( + nvi * ( + 25.875 * vi2
-                                      + 10.125 * vj2
-                                      - 36.0 * vivj
-                                      - 67.25 * nvj2
-                                      + nvi * ( + 141.25 * nvj
-                                                - 60.75 * nvi ) )
-                            + nvj * ( + 10.375 * vj2
-                                      + 6.75 * vivj
-                                      - 17.125 * vi2
-                                      - 7.916666666666667 * nvj2 ) )     // -95/12
-           + inv_r2 * ( + mj2 * ( + 4.0 * nvi
-                                  + 5.0 * nvj )
-                        + mi2 * ( + 77.75 * nvi
-                                  - 89.25 * nvj )
-                        + mimj * ( + 59.875 * nvj
-                                   - 38.375 * nvi
+	pn6.b = + njv * ( + jv2 * ( + iv2
+                                + 8.0 * ivjv
+                                - 7.0 * jv2 )
+                      - 2.0 * ivjvivjv
+                      + njv * ( + 6.0 * niv * ( + ivjv
+                                                - 2.0 * jv2 )
+                                + njv * ( + 6.0 * ( + 2.0 * jv2
+                                                    - ivjv
+                                                    - 0.25 * iv2 )
+                                          + njv * ( + 7.5 * ( + niv
+                                                              - 0.75 * njv ) ) ) ) )
+           + 4.0 * niv * ( + jv4
+                           - ivjv * jv2 )
+           + mj * inv_r * ( + njv * ( + 4.0 * ( + ivjv
+                                                - jv2
+                                                - 0.5 * niv2 )
+                                      + njv * ( + 2.0 * ( + 4.0 * niv
+                                                          + njv ) ) )
+                            + 2.0 * niv * ( + ivjv
+                                            - jv2 ) )
+           + mi * inv_r * ( + niv * ( + 25.875 * iv2
+                                      + 10.125 * jv2
+                                      - 36.0 * ivjv
+                                      - 67.25 * njv2
+                                      + niv * ( + 141.25 * njv
+                                                - 60.75 * niv ) )
+                            + njv * ( + 10.375 * jv2
+                                      + 6.75 * ivjv
+                                      - 17.125 * iv2
+                                      - 7.916666666666667 * njv2 ) )     // -95/12
+           + inv_r2 * ( + mj2 * ( + 4.0 * niv
+                                  + 5.0 * njv )
+                        + mi2 * ( + 77.75 * niv
+                                  - 89.25 * njv )
+                        + mimj * ( + 59.875 * njv
+                                   - 38.375 * niv
                                    + 3.84375 * PI2 * nv ) );
 
-    pn6.x *= clight.inv6;
-    pn6.y *= clight.inv6;
+    pn6.a *= clight.inv6;
+    pn6.b *= clight.inv6;
 
     return pn6;
 }   // ??+??+?? == ??? FLOPs
 
 
-static inline REAL2
-p2p_pn7(REAL mi, REAL mj, REAL mi2, REAL mj2, REAL mimj, REAL inv_r, REAL inv_r2,
-        REAL v2, REAL vi2, REAL vj2, REAL vi4, REAL vj4, REAL vivj,
-        REAL nv, REAL nvnv, REAL nvi, REAL nvj, REAL nvi2, REAL nvj2, REAL nvinvj,
-        CLIGHT clight)
+inline PN
+p2p_pn7(
+    REAL mi,
+    REAL mj,
+    REAL mi2,
+    REAL mj2,
+    REAL mimj,
+    REAL inv_r,
+    REAL inv_r2,
+    REAL v2,
+    REAL iv2,
+    REAL jv2,
+    REAL iv4,
+    REAL jv4,
+    REAL ivjv,
+    REAL nv,
+    REAL nvnv,
+    REAL niv,
+    REAL njv,
+    REAL niv2,
+    REAL njv2,
+    REAL nivnjv,
+    CLIGHT clight)
 {
     // Include ~1/c^7 terms (40+25 == 65 terms)
-    REAL2 pn7;
+    PN pn7;
 
-    pn7.x = + mi2 * inv_r2 * ( + 3.801904761904762e+1 * nvi              // +3992/105
-                               - 4.121904761904762e+1 * nvj )            // -4328/105
-            + mimj * inv_r * inv_r2 * ( - 1.2929523809523809e+2 * nvi    // -13576/105
-                                        + 1.3676190476190475e+2 * nvj )  // +2872/21
+    pn7.a = + mi2 * inv_r2 * ( + 3.801904761904762e+1 * niv              // +3992/105
+                               - 4.121904761904762e+1 * njv )            // -4328/105
+            + mimj * inv_r * inv_r2 * ( - 1.2929523809523809e+2 * niv    // -13576/105
+                                        + 1.3676190476190475e+2 * njv )  // +2872/21
             + mj2 * inv_r * inv_r2 * ( - 1.5104761904761905e+2 * nv )    // -3172/21
-            + mi * inv_r * ( + nvi * ( + 4.8e+1 * nvi2                   // +48
-                                       - 4.655238095238095e+1 * vi2      // -4888/105
-                                       + 9.79047619047619e+1 * vivj      // +2056/21
-                                       - 4.895238095238095e+1 * vj2 )    // -1028/21
-                             + nvinvj * ( - 1.392e+2 * nvi               // -696/5
-                                          + 1.488e+2 * nvj )             // +744/5
-                             + nvj * ( - 5.76e+1 * nvj2                  // -288/5
-                                       + 4.8152380952380955e+1 * vi2     // +5056/105
-                                       - 1.059047619047619e+2 * vivj     // -2224/21
-                                       + 5.535238095238095e+1 * vj2 ) )  // +5812/105
-            + mj * inv_r * ( + nvi * ( - 1.164e+2 * nvi2                 // -582/5
-                                       - 8.182857142857141e+1 * vivj     // -2864/35
-                                       + 4.091428571428571e+1 * vj2 )    // +1432/35
-                             + nvinvj * ( + 3.492e+2 * nvi               // +1746/5
-                                          - 3.908e+2 * nvj )             // -1954/5
-                             + 3.3980952380952383e+1 * nv * vi2          // +3568/105
-                             + nvj * ( + 1.58e+2 * nvj2                  // +158
-                                       - 5.478095238095238e+1 * vj2      // -5752/105
-                                       + 9.569523809523808e+1 * vivj ) ) // +10048/105
+            + mi * inv_r * ( + niv * ( + 4.8e+1 * niv2                   // +48
+                                       - 4.655238095238095e+1 * iv2      // -4888/105
+                                       + 9.79047619047619e+1 * ivjv      // +2056/21
+                                       - 4.895238095238095e+1 * jv2 )    // -1028/21
+                             + nivnjv * ( - 1.392e+2 * niv               // -696/5
+                                          + 1.488e+2 * njv )             // +744/5
+                             + njv * ( - 5.76e+1 * njv2                  // -288/5
+                                       + 4.8152380952380955e+1 * iv2     // +5056/105
+                                       - 1.059047619047619e+2 * ivjv     // -2224/21
+                                       + 5.535238095238095e+1 * jv2 ) )  // +5812/105
+            + mj * inv_r * ( + niv * ( - 1.164e+2 * niv2                 // -582/5
+                                       - 8.182857142857141e+1 * ivjv     // -2864/35
+                                       + 4.091428571428571e+1 * jv2 )    // +1432/35
+                             + nivnjv * ( + 3.492e+2 * niv               // +1746/5
+                                          - 3.908e+2 * njv )             // -1954/5
+                             + 3.3980952380952383e+1 * nv * iv2          // +3568/105
+                             + njv * ( + 1.58e+2 * njv2                  // +158
+                                       - 5.478095238095238e+1 * jv2      // -5752/105
+                                       + 9.569523809523808e+1 * ivjv ) ) // +10048/105
             + ( + nv * ( - 5.6e+1 * nvnv * nvnv                          // -56
-                         - 7.0285714285714285 * vi4 )                    // -246/35
-                + nvi * ( + v2 * ( + 6.0e+1 * nvi2                       // +60
-                                   - 1.80e+2 * nvinvj                    // -180
-                                   + 1.74e+2 * nvj2 )                    // +174
-                          + vivj * ( + 3.051428571428571e+1 * ( + vi2    // +1068/35
-                                                                - vivj )
-                                     + 2.8114285714285714e+1 * vj2 )     // +984/35
-                          - 1.5257142857142856e+1 * vi2 * vj2            // -534/35
-                          - 5.828571428571428 * vj4 )                    // -204/35
-                + nvj * ( - 54.0 * nvj2 * v2                             // -54
-                          + vivj * ( - 2.8114285714285714e+1 * vi2       // -984/35
-                                     + 2.5714285714285716e+1 * vivj      // +180/7
-                                     - 2.0914285714285716e+1 * vj2 )     // -732/35
-                          + 1.2857142857142858e+1 * vi2 * vj2            // +90/7
-                          + 3.4285714285714284 * vj4 ) );                // +24/7
+                         - 7.0285714285714285 * iv4 )                    // -246/35
+                + niv * ( + v2 * ( + 6.0e+1 * niv2                       // +60
+                                   - 1.80e+2 * nivnjv                    // -180
+                                   + 1.74e+2 * njv2 )                    // +174
+                          + ivjv * ( + 3.051428571428571e+1 * ( + iv2    // +1068/35
+                                                                - ivjv )
+                                     + 2.8114285714285714e+1 * jv2 )     // +984/35
+                          - 1.5257142857142856e+1 * iv2 * jv2            // -534/35
+                          - 5.828571428571428 * jv4 )                    // -204/35
+                + njv * ( - 54.0 * njv2 * v2                             // -54
+                          + ivjv * ( - 2.8114285714285714e+1 * iv2       // -984/35
+                                     + 2.5714285714285716e+1 * ivjv      // +180/7
+                                     - 2.0914285714285716e+1 * jv2 )     // -732/35
+                          + 1.2857142857142858e+1 * iv2 * jv2            // +90/7
+                          + 3.4285714285714284 * jv4 ) );                // +24/7
 
-    pn7.y = - mi2 * inv_r2 * 8.761904761904763                           // -184/21
+    pn7.b = - mi2 * inv_r2 * 8.761904761904763                           // -184/21
             + mimj * inv_r2 * 5.927619047619047e+1                       // +6224/105
             + mj2 * inv_r2 * 6.083809523809523e+1                        // +6388/105
-            + mi * inv_r * ( + 3.466666666666667 * nvi2                  // +52/15
-                             - 3.7333333333333334 * nvinvj               // -56/15
-                             - 2.933333333333333 * nvj2                  // -44/15
-                             - 3.7714285714285714 * vi2                  // -132/35
-                             + 4.3428571428571425 * vivj                 // +152/35
-                             - 1.3714285714285714 * vj2 )                // -48/35
-            + mj * inv_r * ( + 3.0266666666666664e+1 * nvi2              // +454/15
-                             - 7.44e+1 * nvinvj                          // -372/5
-                             + 5.693333333333333e+1 * nvj2               // +854/15
-                             - 7.238095238095238 * vi2                   // -152/21
-                             + 2.7276190476190476e+1 * vivj              // +2864/105
-                             - 1.6838095238095239e+1 * vj2 )             // -1768/105
+            + mi * inv_r * ( + 3.466666666666667 * niv2                  // +52/15
+                             - 3.7333333333333334 * nivnjv               // -56/15
+                             - 2.933333333333333 * njv2                  // -44/15
+                             - 3.7714285714285714 * iv2                  // -132/35
+                             + 4.3428571428571425 * ivjv                 // +152/35
+                             - 1.3714285714285714 * jv2 )                // -48/35
+            + mj * inv_r * ( + 3.0266666666666664e+1 * niv2              // +454/15
+                             - 7.44e+1 * nivnjv                          // -372/5
+                             + 5.693333333333333e+1 * njv2               // +854/15
+                             - 7.238095238095238 * iv2                   // -152/21
+                             + 2.7276190476190476e+1 * ivjv              // +2864/105
+                             - 1.6838095238095239e+1 * jv2 )             // -1768/105
             + ( + 6.0e+1 * nvnv * nvnv                                   // +60
-                + v2 * ( - 6.96e+1 * nvi2                                // -348/5
-                         + 1.368e+2 * nvinvj                             // +684/5
-                         - 6.6e+1 * nvj2 )                               // -66
-                + 9.542857142857143 * vi4                                // +334/35
-                + vivj * ( - 3.817142857142857e+1 * vi2                  // -1336/35
-                           + 3.7371428571428575e+1 * vivj                // +1308/35
-                           - 3.5771428571428574e+1 * vj2 )               // -1252/35
-                + 1.8685714285714288e+1 * vi2 * vj2                      // +654/35
-                + 8.342857142857143 * vj4 );                             // +292/35
+                + v2 * ( - 6.96e+1 * niv2                                // -348/5
+                         + 1.368e+2 * nivnjv                             // +684/5
+                         - 6.6e+1 * njv2 )                               // -66
+                + 9.542857142857143 * iv4                                // +334/35
+                + ivjv * ( - 3.817142857142857e+1 * iv2                  // -1336/35
+                           + 3.7371428571428575e+1 * ivjv                // +1308/35
+                           - 3.5771428571428574e+1 * jv2 )               // -1252/35
+                + 1.8685714285714288e+1 * iv2 * jv2                      // +654/35
+                + 8.342857142857143 * jv4 );                             // +292/35
 
     REAL m_c7r = (mi * inv_r) * clight.inv7;
-    pn7.x *= m_c7r;
-    pn7.y *= m_c7r;
+    pn7.a *= m_c7r;
+    pn7.b *= m_c7r;
 
     return pn7;
 }   // ??+??+?? == ??? FLOPs
 
 
-inline REAL2
-p2p_pnterms(REAL mi, REAL mj,
-            REAL3 r, REAL3 v, REAL v2,
-            REAL3 vi, REAL3 vj,
-            REAL inv_r, REAL inv_r2, REAL inv_r3,
-            CLIGHT clight)
+inline PN
+p2p_pnterms(
+    REAL mi,
+    REAL mj,
+    REAL rx,
+    REAL ry,
+    REAL rz,
+    REAL vx,
+    REAL vy,
+    REAL vz,
+    REAL v2,
+    REAL ivx,
+    REAL ivy,
+    REAL ivz,
+    REAL jvx,
+    REAL jvy,
+    REAL jvz,
+    REAL inv_r,
+    REAL inv_r2,
+    REAL inv_r3,
+    CLIGHT clight)
 {
-    REAL2 pn1 = {0.0, 0.0};
-    REAL2 pn2 = {0.0, 0.0};
-    REAL2 pn3 = {0.0, 0.0};
-    REAL2 pn4 = {0.0, 0.0};
-    REAL2 pn5 = {0.0, 0.0};
-    REAL2 pn6 = {0.0, 0.0};
-    REAL2 pn7 = {0.0, 0.0};
+    PN pn1 = {0.0, 0.0};
+    PN pn2 = {0.0, 0.0};
+    PN pn3 = {0.0, 0.0};
+    PN pn4 = {0.0, 0.0};
+    PN pn5 = {0.0, 0.0};
+    PN pn6 = {0.0, 0.0};
+    PN pn7 = {0.0, 0.0};
 
     REAL3 n;
-    n.x = r.x * inv_r;                                               // 1 FLOPs
-    n.y = r.y * inv_r;                                               // 1 FLOPs
-    n.z = r.z * inv_r;                                               // 1 FLOPs
-    REAL vi2 = vi.x * vi.x + vi.y * vi.y + vi.z * vi.z;
-    REAL vj2 = vj.x * vj.x + vj.y * vj.y + vj.z * vj.z;
+    n.x = rx * inv_r;                                               // 1 FLOPs
+    n.y = ry * inv_r;                                               // 1 FLOPs
+    n.z = rz * inv_r;                                               // 1 FLOPs
+    REAL iv2 = ivx * ivx + ivy * ivy + ivz * ivz;
+    REAL jv2 = jvx * jvx + jvy * jvy + jvz * jvz;
 
     if (clight.order > 0) {
         // XXX: not implemented.
         if (clight.order > 1) {
-            REAL nvi = n.x * vi.x + n.y * vi.y + n.z * vi.z;
-            REAL nvj = n.x * vj.x + n.y * vj.y + n.z * vj.z;
-            REAL nvj2 = nvj * nvj;
-            REAL vivj = vi.x * vj.x + vi.y * vj.y + vi.z * vj.z;
+            REAL niv = n.x * ivx + n.y * ivy + n.z * ivz;
+            REAL njv = n.x * jvx + n.y * jvy + n.z * jvz;
+            REAL njv2 = njv * njv;
+            REAL ivjv = ivx * jvx + ivy * jvy + ivz * jvz;
             pn2 = p2p_pn2(mi, mj, inv_r,
-                          vi2, vj2, vivj,
-                          nvi, nvj, nvj2,
+                          iv2, jv2, ivjv,
+                          niv, njv, njv2,
                           clight);
             if (clight.order > 2) {
                 // XXX: not implemented.
@@ -345,31 +424,31 @@ p2p_pnterms(REAL mi, REAL mj,
                     REAL mi2 = mi * mi;
                     REAL mj2 = mj * mj;
                     REAL mimj = mi * mj;
-                    REAL vj4 = vj2 * vj2;
-                    REAL vivjvivj = vivj * vivj;
-                    REAL nv = n.x * v.x + n.y * v.y + n.z * v.z;
-                    REAL nvi = n.x * vi.x + n.y * vi.y + n.z * vi.z;
-                    REAL nvj = n.x * vj.x + n.y * vj.y + n.z * vj.z;
-                    REAL nvi2 = nvi * nvi;
-                    REAL nvj2 = nvj * nvj;
-                    REAL nvinvj = nvi * nvj;
+                    REAL jv4 = jv2 * jv2;
+                    REAL ivjvivjv = ivjv * ivjv;
+                    REAL nv = n.x * vx + n.y * vy + n.z * vz;
+                    REAL niv = n.x * ivx + n.y * ivy + n.z * ivz;
+                    REAL njv = n.x * jvx + n.y * jvy + n.z * jvz;
+                    REAL niv2 = niv * niv;
+                    REAL njv2 = njv * njv;
+                    REAL nivnjv = niv * njv;
                     pn4 = p2p_pn4(mi, mj, mi2, mj2, mimj, inv_r, inv_r2,
-                                  vi2, vj2, vj4, vivj, vivjvivj,
-                                  nv, nvi, nvj, nvi2, nvj2, nvinvj,
+                                  iv2, jv2, jv4, ivjv, ivjvivjv,
+                                  nv, niv, njv, niv2, njv2, nivnjv,
                                   clight);
                     if (clight.order > 4) {
                         pn5 = p2p_pn5(mi, mj, inv_r, v2, nv, clight);
                         if (clight.order > 5) {
                             REAL nvnv = nv * nv;
                             pn6 = p2p_pn6(mi, mj, mi2, mj2, mimj, inv_r, inv_r2,
-                                          v2, vi2, vj2, vj4, vivj, vivjvivj,
-                                          nv, nvnv, nvi, nvj, nvi2, nvj2, nvinvj,
+                                          v2, iv2, jv2, jv4, ivjv, ivjvivjv,
+                                          nv, nvnv, niv, njv, niv2, njv2, nivnjv,
                                           clight);
                             if (clight.order > 6) {
-                                REAL vi4 = vi2 * vi2;
+                                REAL iv4 = iv2 * iv2;
                                 pn7 = p2p_pn7(mi, mj, mi2, mj2, mimj, inv_r, inv_r2,
-                                              v2, vi2, vj2, vi4, vj4, vivj,
-                                              nv, nvnv, nvi, nvj, nvi2, nvj2, nvinvj,
+                                              v2, iv2, jv2, iv4, jv4, ivjv,
+                                              nv, nvnv, niv, njv, niv2, njv2, nivnjv,
                                               clight);
                             }
                         }
@@ -380,19 +459,18 @@ p2p_pnterms(REAL mi, REAL mj,
     }
 
     // Form the 213 terms post-Newtonian
-    REAL2 pn = {0.0, 0.0};
+    PN pn = {0.0, 0.0};
 
     // ---> (((((((65   ) + 103  ) + 6    ) + 31   ) + 0    ) + 8    ) + 0    )
-    pn.x += (((((((pn7.x) + pn6.x) + pn5.x) + pn4.x) + pn3.x) + pn2.x) + pn1.x);
-    pn.y += (((((((pn7.y) + pn6.y) + pn5.y) + pn4.y) + pn3.y) + pn2.y) + pn1.y);
+    pn.a += (((((((pn7.a) + pn6.a) + pn5.a) + pn4.a) + pn3.a) + pn2.a) + pn1.a);
+    pn.b += (((((((pn7.b) + pn6.b) + pn5.b) + pn4.b) + pn3.b) + pn2.b) + pn1.b);
 
     REAL gm_r3 = mj * inv_r3;
     REAL gm_r2 = mj * inv_r2;
-    pn.x *= gm_r3;
-    pn.y *= gm_r2;
+    pn.a *= gm_r3;
+    pn.b *= gm_r2;
 
     return pn;
 }
 
-#endif  // PN_TERMS_H
-
+#endif  // __PN_TERMS_H__
