@@ -49,11 +49,11 @@ def wrap_lib(fptype):
         """,
         define_macros=define_macros,
         include_dirs=[PATH],
-        libraries=['m'],
-        extra_compile_args=[],
+        libraries=["m"],
+        extra_compile_args=["-O3"],
         sources=[os.path.join(PATH, src) for src in sources],
         force_generic_engine=hasattr(
-            sys, '_force_generic_engine_'),
+            sys, "_force_generic_engine_"),
         modulename=modulename,
     )
     return ffi, clib

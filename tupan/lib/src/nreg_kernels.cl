@@ -1,54 +1,5 @@
 #include "nreg_kernels_common.h"
 
-
-inline void
-accum_nreg_X(
-    uint j_begin,
-    uint j_end,
-    const REAL dt,
-    const REAL im,
-    const REAL irx,
-    const REAL iry,
-    const REAL irz,
-    const REAL ie2,
-    const REAL ivx,
-    const REAL ivy,
-    const REAL ivz,
-    __local REAL *__jm,
-    __local REAL *__jrx,
-    __local REAL *__jry,
-    __local REAL *__jrz,
-    __local REAL *__je2,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz,
-    REAL *idrx,
-    REAL *idry,
-    REAL *idrz,
-    REAL *iax,
-    REAL *iay,
-    REAL *iaz,
-    REAL *iu)
-{
-    uint j;
-    for (j = j_begin; j < j_end; ++j) {
-        REAL jm = __jm[j];
-        REAL jrx = __jrx[j];
-        REAL jry = __jry[j];
-        REAL jrz = __jrz[j];
-        REAL je2 = __je2[j];
-        REAL jvx = __jvx[j];
-        REAL jvy = __jvy[j];
-        REAL jvz = __jvz[j];
-        nreg_Xkernel_core(dt,
-                          im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                          jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-                          &(*idrx), &(*idry), &(*idrz),
-                          &(*iax), &(*iay), &(*iaz), &(*iu));
-    }
-}
-
-
 inline void
 nreg_Xkernel_main_loop(
     const REAL dt,
@@ -103,22 +54,21 @@ nreg_Xkernel_main_loop(
         e[7] = async_work_group_copy(__jvz, _jvz + tile * lsize, nb, 0);
         wait_group_events(8, e);
 
-        uint j = 0;
-        uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
-        for (; j < j_max; j += JUNROLL) {
-            accum_nreg_X(j, j + JUNROLL,
-                         dt,
-                         im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                         __jm, __jrx, __jry, __jrz, __je2, __jvx, __jvy, __jvz,
-                         &(*idrx), &(*idry), &(*idrz),
-                         &(*iax), &(*iay), &(*iaz), &(*iu));
+        for (uint j = 0; j < nb; ++j) {
+            REAL jm = __jm[j];
+            REAL jrx = __jrx[j];
+            REAL jry = __jry[j];
+            REAL jrz = __jrz[j];
+            REAL je2 = __je2[j];
+            REAL jvx = __jvx[j];
+            REAL jvy = __jvy[j];
+            REAL jvz = __jvz[j];
+            nreg_Xkernel_core(dt,
+                              im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                              jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                              &(*idrx), &(*idry), &(*idrz),
+                              &(*iax), &(*iay), &(*iaz), &(*iu));
         }
-        accum_nreg_X(j, nb,
-                     dt,
-                     im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                     __jm, __jrx, __jry, __jrz, __je2, __jvx, __jvy, __jvz,
-                     &(*idrx), &(*idry), &(*idrz),
-                     &(*iax), &(*iay), &(*iaz), &(*iu));
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }
@@ -203,47 +153,6 @@ nreg_Xkernel(
 
 
 inline void
-accum_nreg_V(
-    uint j_begin,
-    uint j_end,
-    const REAL dt,
-    const REAL im,
-    const REAL ivx,
-    const REAL ivy,
-    const REAL ivz,
-    const REAL iax,
-    const REAL iay,
-    const REAL iaz,
-    __local REAL *__jm,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz,
-    __local REAL *__jax,
-    __local REAL *__jay,
-    __local REAL *__jaz,
-    REAL *idvx,
-    REAL *idvy,
-    REAL *idvz,
-    REAL *ik)
-{
-    uint j;
-    for (j = j_begin; j < j_end; ++j) {
-        REAL jm = __jm[j];
-        REAL jvx = __jvx[j];
-        REAL jvy = __jvy[j];
-        REAL jvz = __jvz[j];
-        REAL jax = __jax[j];
-        REAL jay = __jay[j];
-        REAL jaz = __jaz[j];
-        nreg_Vkernel_core(dt,
-                          im, ivx, ivy, ivz, iax, iay, iaz,
-                          jm, jvx, jvy, jvz, jax, jay, jaz,
-                          &(*idvx), &(*idvy), &(*idvz), &(*ik));
-    }
-}
-
-
-inline void
 nreg_Vkernel_main_loop(
     const REAL dt,
     const REAL im,
@@ -290,20 +199,19 @@ nreg_Vkernel_main_loop(
         e[6] = async_work_group_copy(__jaz, _jaz + tile * lsize, nb, 0);
         wait_group_events(7, e);
 
-        uint j = 0;
-        uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
-        for (; j < j_max; j += JUNROLL) {
-            accum_nreg_V(j, j + JUNROLL,
-                         dt,
-                         im, ivx, ivy, ivz, iax, iay, iaz,
-                         __jm, __jvx, __jvy, __jvz, __jax, __jay, __jaz,
-                         &(*idvx), &(*idvy), &(*idvz), &(*ik));
+        for (uint j = 0; j < nb; ++j) {
+            REAL jm = __jm[j];
+            REAL jvx = __jvx[j];
+            REAL jvy = __jvy[j];
+            REAL jvz = __jvz[j];
+            REAL jax = __jax[j];
+            REAL jay = __jay[j];
+            REAL jaz = __jaz[j];
+            nreg_Vkernel_core(dt,
+                              im, ivx, ivy, ivz, iax, iay, iaz,
+                              jm, jvx, jvy, jvz, jax, jay, jaz,
+                              &(*idvx), &(*idvy), &(*idvz), &(*ik));
         }
-        accum_nreg_V(j, nb,
-                     dt,
-                     im, ivx, ivy, ivz, iax, iay, iaz,
-                     __jm, __jvx, __jvy, __jvz, __jax, __jay, __jaz,
-                     &(*idvx), &(*idvy), &(*idvz), &(*ik));
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }

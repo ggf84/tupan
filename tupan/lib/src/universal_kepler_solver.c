@@ -7,7 +7,8 @@
     #define TOLERANCE ((REAL)1.52587890625e-5)              // sqrt(2^-32)
 #endif
 #define MAXITER 64
-#define SIGN(x) (((x) > 0) ? (+1):(-1))
+#define COMPARE(x, y) (((x) > (y)) - ((x) < (y)))
+#define SIGN(x) COMPARE(x, 0)
 
 
 inline REAL

@@ -1,51 +1,5 @@
 #include "acc_jerk_kernel_common.h"
 
-
-inline void
-accum_acc_jerk(
-    uint j_begin,
-    uint j_end,
-    const REAL im,
-    const REAL irx,
-    const REAL iry,
-    const REAL irz,
-    const REAL ie2,
-    const REAL ivx,
-    const REAL ivy,
-    const REAL ivz,
-    __local REAL *__jm,
-    __local REAL *__jrx,
-    __local REAL *__jry,
-    __local REAL *__jrz,
-    __local REAL *__je2,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz,
-    REAL *iax,
-    REAL *iay,
-    REAL *iaz,
-    REAL *ijx,
-    REAL *ijy,
-    REAL *ijz)
-{
-    uint j;
-    for (j = j_begin; j < j_end; ++j) {
-        REAL jm = __jm[j];
-        REAL jrx = __jrx[j];
-        REAL jry = __jry[j];
-        REAL jrz = __jrz[j];
-        REAL je2 = __je2[j];
-        REAL jvx = __jvx[j];
-        REAL jvy = __jvy[j];
-        REAL jvz = __jvz[j];
-        acc_jerk_kernel_core(im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                             jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-                             &(*iax), &(*iay), &(*iaz),
-                             &(*ijx), &(*ijy), &(*ijz));
-    }
-}
-
-
 inline void
 acc_jerk_kernel_main_loop(
     const REAL im,
@@ -98,22 +52,20 @@ acc_jerk_kernel_main_loop(
         e[7] = async_work_group_copy(__jvz, _jvz + tile * lsize, nb, 0);
         wait_group_events(8, e);
 
-        uint j = 0;
-        uint j_max = (nb > (JUNROLL - 1)) ? (nb - (JUNROLL - 1)):(0);
-        for (; j < j_max; j += JUNROLL) {
-            accum_acc_jerk(
-                j, j + JUNROLL,
-                im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                __jm, __jrx, __jry, __jrz, __je2, __jvx, __jvy, __jvz,
-                &(*iax), &(*iay), &(*iaz),
-                &(*ijx), &(*ijy), &(*ijz));
+        for (uint j = 0; j < nb; ++j) {
+            REAL jm = __jm[j];
+            REAL jrx = __jrx[j];
+            REAL jry = __jry[j];
+            REAL jrz = __jrz[j];
+            REAL je2 = __je2[j];
+            REAL jvx = __jvx[j];
+            REAL jvy = __jvy[j];
+            REAL jvz = __jvz[j];
+            acc_jerk_kernel_core(im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                                 jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                                 &(*iax), &(*iay), &(*iaz),
+                                 &(*ijx), &(*ijy), &(*ijz));
         }
-        accum_acc_jerk(
-            j, nb,
-            im, irx, iry, irz, ie2, ivx, ivy, ivz,
-            __jm, __jrx, __jry, __jrz, __je2, __jvx, __jvy, __jvz,
-            &(*iax), &(*iay), &(*iaz),
-            &(*ijx), &(*ijy), &(*ijz));
 
         barrier(CLK_LOCAL_MEM_FENCE);
     }

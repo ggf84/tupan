@@ -153,13 +153,12 @@ class CLModule(object):
         self.src = src
         self.path = path
 
-    def build(self, junroll=2):
+    def build(self):
         logger.debug("Building %s precision CL extension module.",
                      self.env.prec)
 
         # setting options
         options = " -I {path}".format(path=self.path)
-        options += " -D JUNROLL={junroll}".format(junroll=junroll)
         if self.env.prec is "double":
             options += " -D DOUBLE"
         if self.env.fast_math:
@@ -265,7 +264,7 @@ def get_kernel(name, exttype, prec):
         )
     elif exttype == "cl":
         return getattr(
-            CLModule(CLEnv(prec=prec, fast_math=True)).build(junroll=2),
+            CLModule(CLEnv(prec=prec, fast_math=True)).build(),
             name
         )
     else:
