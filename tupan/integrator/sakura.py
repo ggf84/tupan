@@ -58,13 +58,14 @@ class SAKURA(Base):
         iw2_b = 1/tstep_b**2
 
 #        diw2 = (iw2_a - iw2_b)
-        diw2 = (iw2_a - iw2_b) / iw2_b
+#        diw2 = (iw2_a.max() - iw2_b.max())
+        diw2 = (iw2_a**0.5 - iw2_b**0.5)
 
 #        w2_sakura = diw2.max()
-        w2_sakura = diw2.max()**2
+        w2_sakura = diw2.max()
 
 #        sakura_tstep = 1/w2_sakura**0.5
-        sakura_tstep = eta/w2_sakura**0.5
+        sakura_tstep = 1/w2_sakura
 
         return sakura_tstep
 

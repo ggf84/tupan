@@ -5,69 +5,89 @@
 #include "smoothing.h"
 #include "universal_kepler_solver.h"
 
-inline REAL
+inline void
 get_phi(
     const REAL m,
-    const REAL x,
-    const REAL y,
-    const REAL z,
-    const REAL eps2)
+    const REAL rx,
+    const REAL ry,
+    const REAL rz,
+    const REAL e2,
+    REAL *phi)
 {
-    REAL r2 = x * x + y * y + z * z;                                 // 5 FLOPs
+    REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
     REAL inv_r1;
-    smoothed_inv_r1(r2, eps2, &inv_r1);                              // 3 FLOPs
-    return m * inv_r1;                                               // 1 FLOPs
+    smoothed_inv_r1(r2, e2, &inv_r1);                                // 3 FLOPs
+    *phi = m * inv_r1;                                               // 1 FLOPs
 }
 
 
-inline REAL3
+inline void
 get_acc(
     const REAL m,
-    const REAL x,
-    const REAL y,
-    const REAL z,
-    const REAL eps2)
+    const REAL rx,
+    const REAL ry,
+    const REAL rz,
+    const REAL e2,
+    REAL *ax,
+    REAL *ay,
+    REAL *az)
 {
-    REAL r2 = x * x + y * y + z * z;                                 // 5 FLOPs
+    REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
     REAL inv_r3;
-    smoothed_inv_r3(r2, eps2, &inv_r3);                              // 4 FLOPs
+    smoothed_inv_r3(r2, e2, &inv_r3);                                // 4 FLOPs
     REAL m_r3 = m * inv_r3;                                          // 1 FLOPs
-    REAL3 a;
-    a.x = -m_r3 * x;                                                 // 1 FLOPs
-    a.y = -m_r3 * y;                                                 // 1 FLOPs
-    a.z = -m_r3 * z;                                                 // 1 FLOPs
-    return a;
+    *ax = -m_r3 * rx;                                                // 1 FLOPs
+    *ay = -m_r3 * ry;                                                // 1 FLOPs
+    *az = -m_r3 * rz;                                                // 1 FLOPs
 }
 
 
 inline void
 leapfrog(
     const REAL dt,
-    const REAL4 r0,
-    const REAL4 v0,
-    REAL4 *r1,
-    REAL4 *v1)
+    const REAL m,
+    const REAL r0x,
+    const REAL r0y,
+    const REAL r0z,
+    const REAL v0x,
+    const REAL v0y,
+    const REAL v0z,
+    REAL *r1x,
+    REAL *r1y,
+    REAL *r1z,
+    REAL *v1x,
+    REAL *v1y,
+    REAL *v1z)
 {
-    REAL4 r = r0;
-    REAL4 v = v0;
     REAL dt_2 = dt / 2;
+    REAL rx = r0x;
+    REAL ry = r0y;
+    REAL rz = r0z;
+    REAL vx = v0x;
+    REAL vy = v0y;
+    REAL vz = v0z;
 
-    r.x += v.x * dt_2;
-    r.y += v.y * dt_2;
-    r.z += v.z * dt_2;
+    rx += vx * dt_2;
+    ry += vy * dt_2;
+    rz += vz * dt_2;
 
-    REAL3 a = get_acc(r.w, r.x, r.y, r.z, v.w);
+    REAL ax, ay, az;
+    get_acc(m, rx, ry, rz, 0, &ax, &ay, &az);
 
-    v.x += a.x * dt;
-    v.y += a.y * dt;
-    v.z += a.z * dt;
+    vx += ax * dt;
+    vy += ay * dt;
+    vz += az * dt;
 
-    r.x += v.x * dt_2;
-    r.y += v.y * dt_2;
-    r.z += v.z * dt_2;
+    rx += vx * dt_2;
+    ry += vy * dt_2;
+    rz += vz * dt_2;
 
-    *r1 = r;
-    *v1 = v;
+    *r1x = rx;
+    *r1y = ry;
+    *r1z = rz;
+    *v1x = vx;
+    *v1y = vy;
+    *v1z = vz;
 }
 
 
@@ -88,21 +108,12 @@ twobody_solver(
     REAL *v1y,
     REAL *v1z)
 {
-    REAL4 r0 = (REAL4){r0x, r0y, r0z, m};
-    REAL4 v0 = (REAL4){v0x, v0y, v0z, 0};
-
-    REAL4 r1 = r0;
-    REAL4 v1 = v0;
-
-//    leapfrog(dt, r0, v0, &r1, &v1);
-    universal_kepler_solver(dt, r0, v0, &r1, &v1);
-
-    *r1x = r1.x;
-    *r1y = r1.y;
-    *r1z = r1.z;
-    *v1x = v1.x;
-    *v1y = v1.y;
-    *v1z = v1.z;
+//    leapfrog(dt, m, r0x, r0y, r0z, v0x, v0y, v0z,
+//             &(*r1x), &(*r1y), &(*r1z),
+//             &(*v1x), &(*v1y), &(*v1z));
+    universal_kepler_solver(dt, m, r0x, r0y, r0z, v0x, v0y, v0z,
+                            &(*r1x), &(*r1y), &(*r1z),
+                            &(*v1x), &(*v1y), &(*v1z));
 }
 
 
@@ -123,13 +134,13 @@ evolve_twobody(
     REAL *v1y,
     REAL *v1z)
 {
+    REAL dt_2 = dt / 2;                                              // 1 FLOPs
     REAL rx = r0x;
     REAL ry = r0y;
     REAL rz = r0z;
     REAL vx = v0x;
     REAL vy = v0y;
     REAL vz = v0z;
-    REAL dt_2 = dt / 2;                                              // 1 FLOPs
 
     rx -= vx * dt_2;                                                 // 2 FLOPs
     ry -= vy * dt_2;                                                 // 2 FLOPs

@@ -400,18 +400,18 @@ p2p_pnterms(
     PN pn6 = {0.0, 0.0};
     PN pn7 = {0.0, 0.0};
 
-    REAL3 n;
-    n.x = rx * inv_r;                                               // 1 FLOPs
-    n.y = ry * inv_r;                                               // 1 FLOPs
-    n.z = rz * inv_r;                                               // 1 FLOPs
+    REAL nx, ny, nz;
+    nx = rx * inv_r;                                                // 1 FLOPs
+    ny = ry * inv_r;                                                // 1 FLOPs
+    nz = rz * inv_r;                                                // 1 FLOPs
     REAL iv2 = ivx * ivx + ivy * ivy + ivz * ivz;
     REAL jv2 = jvx * jvx + jvy * jvy + jvz * jvz;
 
     if (clight.order > 0) {
         // XXX: not implemented.
         if (clight.order > 1) {
-            REAL niv = n.x * ivx + n.y * ivy + n.z * ivz;
-            REAL njv = n.x * jvx + n.y * jvy + n.z * jvz;
+            REAL niv = nx * ivx + ny * ivy + nz * ivz;
+            REAL njv = nx * jvx + ny * jvy + nz * jvz;
             REAL njv2 = njv * njv;
             REAL ivjv = ivx * jvx + ivy * jvy + ivz * jvz;
             pn2 = p2p_pn2(mi, mj, inv_r,
@@ -426,9 +426,9 @@ p2p_pnterms(
                     REAL mimj = mi * mj;
                     REAL jv4 = jv2 * jv2;
                     REAL ivjvivjv = ivjv * ivjv;
-                    REAL nv = n.x * vx + n.y * vy + n.z * vz;
-                    REAL niv = n.x * ivx + n.y * ivy + n.z * ivz;
-                    REAL njv = n.x * jvx + n.y * jvy + n.z * jvz;
+                    REAL nv = nx * vx + ny * vy + nz * vz;
+                    REAL niv = nx * ivx + ny * ivy + nz * ivz;
+                    REAL njv = nx * jvx + ny * jvy + nz * jvz;
                     REAL niv2 = niv * niv;
                     REAL njv2 = njv * njv;
                     REAL nivnjv = niv * njv;
