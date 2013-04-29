@@ -60,29 +60,28 @@ class CLKernel(object):
 
     @property
     def local_size(self):
-        lsize = self._lsize
-        return lsize if isinstance(lsize, tuple) else (lsize,)
+        return self._lsize
 
     @local_size.setter
     def local_size(self, lsize):
-        self._lsize = lsize
-        self._lsize_max = lsize
+        self._lsize = (lsize,)
+        self._lsize_max = (lsize,)
 
     @property
     def global_size(self):
-        gsize = self._gsize
-        return gsize if isinstance(gsize, tuple) else (gsize,)
+        return self._gsize
 
     @global_size.setter
     def global_size(self, ni):
-        self._gsize = ((ni-1)//2 + 1) * 2
+        gs0 = ((ni-1)//2 + 1) * 2
+        self._gsize = (gs0,)
 
     def set_local_memory(self, i, arg):
         def foo(x, y):
             return x * y
 #        size = np.dtype(ctype.REAL).itemsize * reduce(foo, self.local_size)
 #        size = np.dtype(ctype.REAL).itemsize * reduce(foo, (self._lsize_max,))
-        size = 8 * reduce(foo, (self._lsize_max,))
+        size = 8 * reduce(foo, self._lsize_max)
         arg = cl.LocalMemory(size * arg)
         self.kernel.set_arg(i, arg)
 
@@ -132,7 +131,7 @@ class CLKernel(object):
         cl.enqueue_nd_range_kernel(self.env.queue,
                                    self.kernel,
                                    self.global_size,
-                                   None,  # self.local_size,
+                                   None,
                                    ).wait()
 
 

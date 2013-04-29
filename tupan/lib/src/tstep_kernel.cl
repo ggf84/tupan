@@ -32,10 +32,9 @@ tstep_kernel_main_loop(
     REAL *iw2_b)
 {
     uint lsize = get_local_size(0);
+    uint ntiles = (nj - 1)/lsize + 1;
 
-    uint tile;
-    uint numTiles = (nj - 1)/lsize + 1;
-    for (tile = 0; tile < numTiles; ++tile) {
+    for (uint tile = 0; tile < ntiles; ++tile) {
         uint nb = min(lsize, (nj - (tile * lsize)));
 
         event_t e[8];
