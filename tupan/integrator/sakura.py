@@ -54,20 +54,20 @@ class SAKURA(Base):
     def get_sakura_tstep(self, isys, jsys, eta):
         (tstep_a, tstep_b) = isys.get_tstep(jsys, eta)
 
-        iw2_a = 1/tstep_a**2
-        iw2_b = 1/tstep_b**2
+        iw_a = eta/tstep_a
+        iw_b = eta/tstep_b
 
-#        diw2 = (iw2_a - iw2_b)
-#        diw2 = (iw2_a.max() - iw2_b.max())
-        diw2 = (iw2_a**0.5 - iw2_b**0.5)
+        beta = 6
 
-#        w2_sakura = diw2.max()
-        w2_sakura = diw2.max()
+#        diw = ((iw_a.max()**beta - iw_b.max()**beta)**(1.0/beta))
+        diw = (iw_a**beta - iw_b**beta)**(1.0/beta)
 
-#        sakura_tstep = 1/w2_sakura**0.5
-        sakura_tstep = 1/w2_sakura
+#        w_sakura = diw
+        w_sakura = diw.max()
 
-        return sakura_tstep
+        tstep_sakura = eta/w_sakura
+
+        return tstep_sakura
 
     def do_step(self, p, tau):
         """
