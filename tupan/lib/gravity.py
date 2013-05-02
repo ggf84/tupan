@@ -71,24 +71,15 @@ class Phi(object):
         nj = jobj.n
 
         self.kernel.global_size = ni
-        self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.mass)
-        self.kernel.set_array(2, iobj.x)
-        self.kernel.set_array(3, iobj.y)
-        self.kernel.set_array(4, iobj.z)
-        self.kernel.set_array(5, iobj.eps2)
-        self.kernel.set_array(6, iobj.vx)
-        self.kernel.set_array(7, iobj.vy)
-        self.kernel.set_array(8, iobj.vz)
-        self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.mass)
-        self.kernel.set_array(11, jobj.x)
-        self.kernel.set_array(12, jobj.y)
-        self.kernel.set_array(13, jobj.z)
-        self.kernel.set_array(14, jobj.eps2)
-        self.kernel.set_array(15, jobj.vx)
-        self.kernel.set_array(16, jobj.vy)
-        self.kernel.set_array(17, jobj.vz)
+
+        args = (ni,
+                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                nj,
+                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.eps2, jobj.vx, jobj.vy, jobj.vz)
+
+        self.kernel.set_args(*args)
 
         self.osize = ni
         if ni > self.max_output_size:
@@ -127,32 +118,13 @@ class Acc(object):
         nj = jobj.n
 
         self.kernel.global_size = ni
-#        self.kernel.set_int(0, ni)
-#        self.kernel.set_array(1, iobj.mass)
-#        self.kernel.set_array(2, iobj.x)
-#        self.kernel.set_array(3, iobj.y)
-#        self.kernel.set_array(4, iobj.z)
-#        self.kernel.set_array(5, iobj.eps2)
-#        self.kernel.set_array(6, iobj.vx)
-#        self.kernel.set_array(7, iobj.vy)
-#        self.kernel.set_array(8, iobj.vz)
-#        self.kernel.set_int(9, nj)
-#        self.kernel.set_array(10, jobj.mass)
-#        self.kernel.set_array(11, jobj.x)
-#        self.kernel.set_array(12, jobj.y)
-#        self.kernel.set_array(13, jobj.z)
-#        self.kernel.set_array(14, jobj.eps2)
-#        self.kernel.set_array(15, jobj.vx)
-#        self.kernel.set_array(16, jobj.vy)
-#        self.kernel.set_array(17, jobj.vz)
 
         args = (ni,
                 iobj.mass, iobj.x, iobj.y, iobj.z,
                 iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
                 nj,
                 jobj.mass, jobj.x, jobj.y, jobj.z,
-                jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                )
+                jobj.eps2, jobj.vx, jobj.vy, jobj.vz)
 
         self.kernel.set_args(*args)
 
@@ -197,24 +169,15 @@ class AccJerk(object):
         nj = jobj.n
 
         self.kernel.global_size = ni
-        self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.mass)
-        self.kernel.set_array(2, iobj.x)
-        self.kernel.set_array(3, iobj.y)
-        self.kernel.set_array(4, iobj.z)
-        self.kernel.set_array(5, iobj.eps2)
-        self.kernel.set_array(6, iobj.vx)
-        self.kernel.set_array(7, iobj.vy)
-        self.kernel.set_array(8, iobj.vz)
-        self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.mass)
-        self.kernel.set_array(11, jobj.x)
-        self.kernel.set_array(12, jobj.y)
-        self.kernel.set_array(13, jobj.z)
-        self.kernel.set_array(14, jobj.eps2)
-        self.kernel.set_array(15, jobj.vx)
-        self.kernel.set_array(16, jobj.vy)
-        self.kernel.set_array(17, jobj.vz)
+
+        args = (ni,
+                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                nj,
+                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.eps2, jobj.vx, jobj.vy, jobj.vz)
+
+        self.kernel.set_args(*args)
 
         self.osize = ni
         if ni > self.max_output_size:
@@ -264,25 +227,16 @@ class Tstep(object):
         nj = jobj.n
 
         self.kernel.global_size = ni
-        self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.mass)
-        self.kernel.set_array(2, iobj.x)
-        self.kernel.set_array(3, iobj.y)
-        self.kernel.set_array(4, iobj.z)
-        self.kernel.set_array(5, iobj.eps2)
-        self.kernel.set_array(6, iobj.vx)
-        self.kernel.set_array(7, iobj.vy)
-        self.kernel.set_array(8, iobj.vz)
-        self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.mass)
-        self.kernel.set_array(11, jobj.x)
-        self.kernel.set_array(12, jobj.y)
-        self.kernel.set_array(13, jobj.z)
-        self.kernel.set_array(14, jobj.eps2)
-        self.kernel.set_array(15, jobj.vx)
-        self.kernel.set_array(16, jobj.vy)
-        self.kernel.set_array(17, jobj.vz)
-        self.kernel.set_float(18, eta)
+
+        args = (ni,
+                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                nj,
+                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                eta)
+
+        self.kernel.set_args(*args)
 
         self.osize = ni
         if ni > self.max_output_size:
@@ -324,32 +278,19 @@ class PNAcc(object):
         nj = jobj.n
 
         self.kernel.global_size = ni
-        self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.mass)
-        self.kernel.set_array(2, iobj.x)
-        self.kernel.set_array(3, iobj.y)
-        self.kernel.set_array(4, iobj.z)
-        self.kernel.set_array(5, iobj.eps2)
-        self.kernel.set_array(6, iobj.vx)
-        self.kernel.set_array(7, iobj.vy)
-        self.kernel.set_array(8, iobj.vz)
-        self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.mass)
-        self.kernel.set_array(11, jobj.x)
-        self.kernel.set_array(12, jobj.y)
-        self.kernel.set_array(13, jobj.z)
-        self.kernel.set_array(14, jobj.eps2)
-        self.kernel.set_array(15, jobj.vx)
-        self.kernel.set_array(16, jobj.vy)
-        self.kernel.set_array(17, jobj.vz)
-        self.kernel.set_int(18, clight.pn_order)
-        self.kernel.set_float(19, clight.inv1)
-        self.kernel.set_float(20, clight.inv2)
-        self.kernel.set_float(21, clight.inv3)
-        self.kernel.set_float(22, clight.inv4)
-        self.kernel.set_float(23, clight.inv5)
-        self.kernel.set_float(24, clight.inv6)
-        self.kernel.set_float(25, clight.inv7)
+
+        args = (ni,
+                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                nj,
+                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                clight.pn_order, clight.inv1,
+                clight.inv2, clight.inv3,
+                clight.inv4, clight.inv5,
+                clight.inv6, clight.inv7)
+
+        self.kernel.set_args(*args)
 
         self.osize = ni
         if ni > self.max_output_size:
@@ -392,25 +333,16 @@ class Sakura(object):
         nj = jobj.n
 
         self.kernel.global_size = ni
-        self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.mass)
-        self.kernel.set_array(2, iobj.x)
-        self.kernel.set_array(3, iobj.y)
-        self.kernel.set_array(4, iobj.z)
-        self.kernel.set_array(5, iobj.eps2)
-        self.kernel.set_array(6, iobj.vx)
-        self.kernel.set_array(7, iobj.vy)
-        self.kernel.set_array(8, iobj.vz)
-        self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.mass)
-        self.kernel.set_array(11, jobj.x)
-        self.kernel.set_array(12, jobj.y)
-        self.kernel.set_array(13, jobj.z)
-        self.kernel.set_array(14, jobj.eps2)
-        self.kernel.set_array(15, jobj.vx)
-        self.kernel.set_array(16, jobj.vy)
-        self.kernel.set_array(17, jobj.vz)
-        self.kernel.set_float(18, dt)
+
+        args = (ni,
+                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                nj,
+                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                dt)
+
+        self.kernel.set_args(*args)
 
         self.osize = ni
         if ni > self.max_output_size:
@@ -460,25 +392,16 @@ class NREG_X(object):
         nj = jobj.n
 
         self.kernel.global_size = ni
-        self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.mass)
-        self.kernel.set_array(2, iobj.x)
-        self.kernel.set_array(3, iobj.y)
-        self.kernel.set_array(4, iobj.z)
-        self.kernel.set_array(5, iobj.eps2)
-        self.kernel.set_array(6, iobj.vx)
-        self.kernel.set_array(7, iobj.vy)
-        self.kernel.set_array(8, iobj.vz)
-        self.kernel.set_int(9, nj)
-        self.kernel.set_array(10, jobj.mass)
-        self.kernel.set_array(11, jobj.x)
-        self.kernel.set_array(12, jobj.y)
-        self.kernel.set_array(13, jobj.z)
-        self.kernel.set_array(14, jobj.eps2)
-        self.kernel.set_array(15, jobj.vx)
-        self.kernel.set_array(16, jobj.vy)
-        self.kernel.set_array(17, jobj.vz)
-        self.kernel.set_float(18, dt)
+
+        args = (ni,
+                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                nj,
+                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                dt)
+
+        self.kernel.set_args(*args)
 
         self.osize = ni
         if ni > self.max_output_size:
@@ -531,23 +454,16 @@ class NREG_V(object):
         nj = jobj.n
 
         self.kernel.global_size = ni
-        self.kernel.set_int(0, ni)
-        self.kernel.set_array(1, iobj.mass)
-        self.kernel.set_array(2, iobj.vx)
-        self.kernel.set_array(3, iobj.vy)
-        self.kernel.set_array(4, iobj.vz)
-        self.kernel.set_array(5, iobj.ax)
-        self.kernel.set_array(6, iobj.ay)
-        self.kernel.set_array(7, iobj.az)
-        self.kernel.set_int(8, nj)
-        self.kernel.set_array(9, jobj.mass)
-        self.kernel.set_array(10, jobj.vx)
-        self.kernel.set_array(11, jobj.vy)
-        self.kernel.set_array(12, jobj.vz)
-        self.kernel.set_array(13, jobj.ax)
-        self.kernel.set_array(14, jobj.ay)
-        self.kernel.set_array(15, jobj.az)
-        self.kernel.set_float(16, dt)
+
+        args = (ni,
+                iobj.mass, iobj.vx, iobj.vy, iobj.vz,
+                iobj.ax, iobj.ay, iobj.az,
+                nj,
+                jobj.mass, jobj.vx, jobj.vy, jobj.vz,
+                jobj.ax, jobj.ay, jobj.az,
+                dt)
+
+        self.kernel.set_args(*args)
 
         self.osize = ni
         if ni > self.max_output_size:
