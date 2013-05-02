@@ -134,6 +134,18 @@ class CLKernel(object):
                                    None,
                                    ).wait()
 
+    def set_arg(self, i, arg):
+        if isinstance(arg, int):
+            self.set_int(i, arg)
+        if isinstance(arg, float):
+            self.set_float(i, arg)
+        if isinstance(arg, np.ndarray):
+            self.set_array(i, arg)
+
+    def set_args(self, *args):
+        for i, arg in enumerate(args):
+            self.set_arg(i, arg)
+
 
 @decallmethods(timings)
 class CLModule(object):
@@ -221,6 +233,18 @@ class CKernel(object):
     def run(self):
         args = self.dev_args.values()
         self.kernel(*args)
+
+    def set_arg(self, i, arg):
+        if isinstance(arg, int):
+            self.set_int(i, arg)
+        if isinstance(arg, float):
+            self.set_float(i, arg)
+        if isinstance(arg, np.ndarray):
+            self.set_array(i, arg)
+
+    def set_args(self, *args):
+        for i, arg in enumerate(args):
+            self.set_arg(i, arg)
 
 
 @decallmethods(timings)
