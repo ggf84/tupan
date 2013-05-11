@@ -21,23 +21,23 @@ logger = logging.getLogger(__name__)
 
 
 def sakura_step(p, tau):
-    p.x += p.vx * tau / 2
-    p.y += p.vy * tau / 2
-    p.z += p.vz * tau / 2
+    p.rx += p.vx * tau / 2
+    p.ry += p.vy * tau / 2
+    p.rz += p.vz * tau / 2
 
     llsakura.set_args(p, p, tau)
     llsakura.run()
     (drx, dry, drz, dvx, dvy, dvz) = llsakura.get_result()
-    p.x += drx
-    p.y += dry
-    p.z += drz
+    p.rx += drx
+    p.ry += dry
+    p.rz += drz
     p.vx += dvx
     p.vy += dvy
     p.vz += dvz
 
-    p.x += p.vx * tau / 2
-    p.y += p.vy * tau / 2
-    p.z += p.vz * tau / 2
+    p.rx += p.vx * tau / 2
+    p.ry += p.vy * tau / 2
+    p.rz += p.vz * tau / 2
 
     return p
 
@@ -54,14 +54,19 @@ class SAKURA(Base):
     def get_sakura_tstep(self, isys, jsys, eta):
         (tstep_a, tstep_b) = isys.get_tstep(jsys, eta)
 
-        iw_a = eta/tstep_a
-        iw_b = eta/tstep_b
+        iw2_a = (eta/tstep_a)**2
+        iw2_b = (eta/tstep_b)**2
 
-        beta = 2
-        diw = (iw_a**beta - iw_b**beta)**(1.0/beta)
-        w_sakura = diw.max()
+        diw2 = (iw2_a - iw2_b)
 
-        tstep_sakura = eta/w_sakura
+#        beta = 1
+#        w2_sakura = ((beta+1)/(1/diw2 - beta/iw2_a)).max()
+#        w2_sakura = (1/(1/diw2**beta - 1/iw2_a**beta)).max()**(1.0/beta)
+#        w2_sakura = (1/(1/diw2**beta + 1/iw2_b**beta)).max()**(1.0/beta)
+
+        w2_sakura = diw2.max()
+
+        tstep_sakura = eta/w2_sakura**0.5
 
         return tstep_sakura
 

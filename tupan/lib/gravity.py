@@ -87,10 +87,10 @@ class Phi(object):
             self.max_output_size = ni
 
         args = (ni,
-                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
                 iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
                 nj,
-                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                 jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
                 self.__jm, self.__jrx, self.__jry, self.__jrz,
                 self.__je2, self.__jvx, self.__jvy, self.__jvz,
@@ -104,7 +104,7 @@ class Phi(object):
     def get_result(self):
         ni = self.osize
         self.kernel.map_buffer(26, self._phi)
-        return self._phi[:ni]
+        return (self._phi[:ni],)
 
 
 @decallmethods(timings)
@@ -137,10 +137,10 @@ class Acc(object):
             self.max_output_size = ni
 
         args = (ni,
-                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
                 iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
                 nj,
-                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                 jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
                 self.__jm, self.__jrx, self.__jry, self.__jrz,
                 self.__je2, self.__jvx, self.__jvy, self.__jvz,
@@ -156,7 +156,7 @@ class Acc(object):
         self.kernel.map_buffer(26, self._ax)
         self.kernel.map_buffer(27, self._ay)
         self.kernel.map_buffer(28, self._az)
-        return [self._ax[:ni], self._ay[:ni], self._az[:ni]]
+        return (self._ax[:ni], self._ay[:ni], self._az[:ni],)
 
 
 @decallmethods(timings)
@@ -192,10 +192,10 @@ class AccJerk(object):
             self.max_output_size = ni
 
         args = (ni,
-                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
                 iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
                 nj,
-                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                 jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
                 self.__jm, self.__jrx, self.__jry, self.__jrz,
                 self.__je2, self.__jvx, self.__jvy, self.__jvz,
@@ -215,8 +215,8 @@ class AccJerk(object):
         self.kernel.map_buffer(29, self._jx)
         self.kernel.map_buffer(30, self._jy)
         self.kernel.map_buffer(31, self._jz)
-        return [self._ax[:ni], self._ay[:ni], self._az[:ni],
-                self._jx[:ni], self._jy[:ni], self._jz[:ni]]
+        return (self._ax[:ni], self._ay[:ni], self._az[:ni],
+                self._jx[:ni], self._jy[:ni], self._jz[:ni],)
 
 
 @decallmethods(timings)
@@ -248,10 +248,10 @@ class Tstep(object):
             self.max_output_size = ni
 
         args = (ni,
-                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
                 iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
                 nj,
-                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                 jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
                 eta,
                 self.__jm, self.__jrx, self.__jry, self.__jrz,
@@ -268,7 +268,7 @@ class Tstep(object):
         self.kernel.map_buffer(27, self._tstep_a)
         self.kernel.map_buffer(28, self._tstep_b)
 
-        return (self._tstep_a[:ni], self._tstep_b[:ni])
+        return (self._tstep_a[:ni], self._tstep_b[:ni],)
 
 
 @decallmethods(timings)
@@ -301,10 +301,10 @@ class PNAcc(object):
             self.max_output_size = ni
 
         args = (ni,
-                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
                 iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
                 nj,
-                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                 jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
                 clight.pn_order, clight.inv1,
                 clight.inv2, clight.inv3,
@@ -324,7 +324,7 @@ class PNAcc(object):
         self.kernel.map_buffer(34, self._pnax)
         self.kernel.map_buffer(35, self._pnay)
         self.kernel.map_buffer(36, self._pnaz)
-        return [self._pnax[:ni], self._pnay[:ni], self._pnaz[:ni]]
+        return (self._pnax[:ni], self._pnay[:ni], self._pnaz[:ni],)
 
 
 @decallmethods(timings)
@@ -360,10 +360,10 @@ class Sakura(object):
             self.max_output_size = ni
 
         args = (ni,
-                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
                 iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
                 nj,
-                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                 jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
                 dt,
                 self.__jm, self.__jrx, self.__jry, self.__jrz,
@@ -384,8 +384,8 @@ class Sakura(object):
         self.kernel.map_buffer(30, self._dvx)
         self.kernel.map_buffer(31, self._dvy)
         self.kernel.map_buffer(32, self._dvz)
-        return [self._drx[:ni], self._dry[:ni], self._drz[:ni],
-                self._dvx[:ni], self._dvy[:ni], self._dvz[:ni]]
+        return (self._drx[:ni], self._dry[:ni], self._drz[:ni],
+                self._dvx[:ni], self._dvy[:ni], self._dvz[:ni],)
 
 
 @decallmethods(timings)
@@ -422,10 +422,10 @@ class NREG_X(object):
             self.max_output_size = ni
 
         args = (ni,
-                iobj.mass, iobj.x, iobj.y, iobj.z,
+                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
                 iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
                 nj,
-                jobj.mass, jobj.x, jobj.y, jobj.z,
+                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                 jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
                 dt,
                 self.__jm, self.__jrx, self.__jry, self.__jrz,
@@ -448,9 +448,9 @@ class NREG_X(object):
         self.kernel.map_buffer(31, self._ay)
         self.kernel.map_buffer(32, self._az)
         self.kernel.map_buffer(33, self._u)
-        return [self._rx[:ni], self._ry[:ni], self._rz[:ni],
+        return (self._rx[:ni], self._ry[:ni], self._rz[:ni],
                 self._ax[:ni], self._ay[:ni], self._az[:ni],
-                0.5 * self._u[:ni].sum()]
+                0.5 * self._u[:ni].sum(),)
 
 
 @decallmethods(timings)
@@ -505,8 +505,8 @@ class NREG_V(object):
         self.kernel.map_buffer(25, self._vy)
         self.kernel.map_buffer(26, self._vz)
         self.kernel.map_buffer(27, self._k)
-        return [self._vx[:ni], self._vy[:ni], self._vz[:ni],
-                0.5 * self._k[:ni].sum()]
+        return (self._vx[:ni], self._vy[:ni], self._vz[:ni],
+                0.5 * self._k[:ni].sum(),)
 
 
 exttype = "cl" if "--use_cl" in sys.argv else "c"

@@ -83,9 +83,9 @@ def drift_n(isys, tau):
     """
     if isys.n:
         for iobj in isys.members:
-            iobj.x += tau * iobj.vx
-            iobj.y += tau * iobj.vy
-            iobj.z += tau * iobj.vz
+            iobj.rx += tau * iobj.vx
+            iobj.ry += tau * iobj.vy
+            iobj.rz += tau * iobj.vz
     return isys
 
 

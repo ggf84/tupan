@@ -38,9 +38,9 @@ def make_binary(m, a, e, m_ratio=1, rcom=[0, 0, 0], vcom=[0, 0, 0]):
 
     b.mass = [m1, m2]
 
-    b.x = [rcom[0]+r1, rcom[0]+r2]
-    b.y = [rcom[1], rcom[1]]
-    b.z = [rcom[2], rcom[2]]
+    b.rx = [rcom[0]+r1, rcom[0]+r2]
+    b.ry = [rcom[1], rcom[1]]
+    b.rz = [rcom[2], rcom[2]]
 
     b.vx = [vcom[0], vcom[0]]
     b.vy = [vcom[1]+v1, vcom[1]+v2]

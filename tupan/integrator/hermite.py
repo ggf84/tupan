@@ -32,9 +32,9 @@ class Hermite(Base):
 
         """
         (ax, ay, az, jx, jy, jz) = ip.get_acc_jerk(ip)
-        ip.prev_x = ip.x.copy()
-        ip.prev_y = ip.y.copy()
-        ip.prev_z = ip.z.copy()
+        ip.prev_rx = ip.rx.copy()
+        ip.prev_ry = ip.ry.copy()
+        ip.prev_rz = ip.rz.copy()
         ip.prev_vx = ip.vx.copy()
         ip.prev_vy = ip.vy.copy()
         ip.prev_vz = ip.vz.copy()
@@ -45,9 +45,9 @@ class Hermite(Base):
         ip.prev_jy = jy.copy()
         ip.prev_jz = jz.copy()
 
-        ip.x += tau * (ip.vx + (tau/2) * (ax + (tau/3) * jx))
-        ip.y += tau * (ip.vy + (tau/2) * (ay + (tau/3) * jy))
-        ip.z += tau * (ip.vz + (tau/2) * (az + (tau/3) * jz))
+        ip.rx += tau * (ip.vx + (tau/2) * (ax + (tau/3) * jx))
+        ip.ry += tau * (ip.vy + (tau/2) * (ay + (tau/3) * jy))
+        ip.rz += tau * (ip.vz + (tau/2) * (az + (tau/3) * jz))
         ip.vx += tau * (ax + (tau/2) * jx)
         ip.vy += tau * (ay + (tau/2) * jy)
         ip.vz += tau * (az + (tau/2) * jz)
@@ -60,12 +60,12 @@ class Hermite(Base):
                             + tau * (ip.prev_jy - jy)/12))
         ip.vz = (ip.prev_vz + tau * ((ip.prev_az + az)/2
                             + tau * (ip.prev_jz - jz)/12))
-        ip.x = (ip.prev_x + tau * ((ip.prev_vx + ip.vx)/2
-                          + tau * (ip.prev_ax - ax)/12))
-        ip.y = (ip.prev_y + tau * ((ip.prev_vy + ip.vy)/2
-                          + tau * (ip.prev_ay - ay)/12))
-        ip.z = (ip.prev_z + tau * ((ip.prev_vz + ip.vz)/2
-                          + tau * (ip.prev_az - az)/12))
+        ip.rx = (ip.prev_rx + tau * ((ip.prev_vx + ip.vx)/2
+                            + tau * (ip.prev_ax - ax)/12))
+        ip.ry = (ip.prev_ry + tau * ((ip.prev_vy + ip.vy)/2
+                            + tau * (ip.prev_ay - ay)/12))
+        ip.rz = (ip.prev_rz + tau * ((ip.prev_vz + ip.vz)/2
+                            + tau * (ip.prev_az - az)/12))
 
     def pec(self, n, p, tau):
         """

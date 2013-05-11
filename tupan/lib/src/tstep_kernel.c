@@ -51,8 +51,8 @@ tstep_kernel(
                               jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
                               &iw2_a, &iw2_b);
         }
-        _idt_a[i] = 2 * eta / sqrt(iw2_a);
-        _idt_b[i] = 2 * eta / sqrt(iw2_b);
+        _idt_a[i] = 2 * eta / sqrt(1+iw2_a);
+        _idt_b[i] = 2 * eta / sqrt(1+iw2_b);
     }
 }
 

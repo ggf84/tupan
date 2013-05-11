@@ -39,8 +39,10 @@ pnacc_kernel_core(
     REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
     REAL v2 = vx * vx + vy * vy + vz * vz;                           // 5 FLOPs
 
+    REAL e2 = ie2 + je2;                                             // 1 FLOPs
+
     REAL inv_r1, inv_r2, inv_r3;
-    smoothed_inv_r1r2r3(r2, ie2 + je2, &inv_r1, &inv_r2, &inv_r3);   // 5+1 FLOPs
+    smoothed_inv_r1r2r3(r2, e2, &inv_r1, &inv_r2, &inv_r3);          // 5 FLOPs
 
     REAL m = im + jm;                                                // 1 FLOPs
     REAL r_sch = 2 * m * clight.inv2;

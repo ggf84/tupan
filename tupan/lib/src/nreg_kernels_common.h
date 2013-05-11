@@ -48,8 +48,10 @@ nreg_Xkernel_core(
 
     REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
 
+    REAL e2 = ie2 + je2;                                             // 1 FLOPs
+
     REAL inv_r1, inv_r3;
-    smoothed_inv_r1r3(r2, ie2 + je2, &inv_r1, &inv_r3);              // 5+1 FLOPs
+    smoothed_inv_r1r3(r2, e2, &inv_r1, &inv_r3);                     // 5 FLOPs
 
     rx *= jm;                                                        // 1 FLOPs
     ry *= jm;                                                        // 1 FLOPs

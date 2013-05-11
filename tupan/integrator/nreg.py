@@ -28,17 +28,17 @@ def nreg_x(p, dt):
 
     mtot = p.total_mass
 
-    p.x = rx / mtot
-    p.y = ry / mtot
-    p.z = rz / mtot
+    p.rx = rx / mtot
+    p.ry = ry / mtot
+    p.rz = rz / mtot
 
     p.ax = ax.copy()
     p.ay = ay.copy()
     p.az = az.copy()
 
-#    p.x += dt * p.vx
-#    p.y += dt * p.vy
-#    p.z += dt * p.vz
+#    p.rx += dt * p.vx
+#    p.ry += dt * p.vy
+#    p.rz += dt * p.vz
 #    (ax, ay, az) = p.get_acc(p)
 #    U = -p.potential_energy
     return U

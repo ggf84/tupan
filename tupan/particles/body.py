@@ -72,9 +72,9 @@ class NbodyMethods(NbodyUtils):
         ("id", ctype.UINT, "index"),
         ("mass", ctype.REAL, "mass"),
         ("eps2", ctype.REAL, "squared softening"),
-        ("x", ctype.REAL, "x-position"),
-        ("y", ctype.REAL, "y-position"),
-        ("z", ctype.REAL, "z-position"),
+        ("rx", ctype.REAL, "x-position"),
+        ("ry", ctype.REAL, "y-position"),
+        ("rz", ctype.REAL, "z-position"),
         ("vx", ctype.REAL, "x-velocity"),
         ("vy", ctype.REAL, "y-velocity"),
         ("vz", ctype.REAL, "z-velocity"),
@@ -91,23 +91,23 @@ class NbodyMethods(NbodyUtils):
 
     @property
     def pos(self):
-        return np.concatenate((self.x, self.y, self.z,)).reshape(3, -1).T
+        return np.concatenate((self.rx, self.ry, self.rz,)).reshape(3, -1).T
 
 #    @pos.setter
 #    def pos(self, value):
 #        try:
-#            self.x = value[:,0]
-#            self.y = value[:,1]
-#            self.z = value[:,2]
+#            self.rx = value[:,0]
+#            self.ry = value[:,1]
+#            self.rz = value[:,2]
 #        except:
 #            try:
-#                self.x = value[0]
-#                self.y = value[1]
-#                self.z = value[2]
+#                self.rx = value[0]
+#                self.ry = value[1]
+#                self.rz = value[2]
 #            except:
-#                self.x = value
-#                self.y = value
-#                self.z = value
+#                self.rx = value
+#                self.ry = value
+#                self.rz = value
 
     @property
     def vel(self):
@@ -143,9 +143,9 @@ class NbodyMethods(NbodyUtils):
         Position of the center-of-mass.
         """
         mtot = self.total_mass
-        rcomx = (self.mass * self.x).sum()
-        rcomy = (self.mass * self.y).sum()
-        rcomz = (self.mass * self.z).sum()
+        rcomx = (self.mass * self.rx).sum()
+        rcomy = (self.mass * self.ry).sum()
+        rcomz = (self.mass * self.rz).sum()
         return (np.array([rcomx, rcomy, rcomz]) / mtot)
 
     @property
@@ -164,9 +164,9 @@ class NbodyMethods(NbodyUtils):
         Moves the center-of-mass to the origin of coordinates.
         """
         rcom = self.rcom
-        self.x -= rcom[0]
-        self.y -= rcom[1]
-        self.z -= rcom[2]
+        self.rx -= rcom[0]
+        self.ry -= rcom[1]
+        self.rz -= rcom[2]
         vcom = self.vcom
         self.vx -= vcom[0]
         self.vy -= vcom[1]
@@ -196,9 +196,9 @@ class NbodyMethods(NbodyUtils):
         """
         Individual angular momentum.
         """
-        amx = self.mass * ((self.y * self.vz) - (self.z * self.vy))
-        amy = self.mass * ((self.z * self.vx) - (self.x * self.vz))
-        amz = self.mass * ((self.x * self.vy) - (self.y * self.vx))
+        amx = self.mass * ((self.ry * self.vz) - (self.rz * self.vy))
+        amy = self.mass * ((self.rz * self.vx) - (self.rx * self.vz))
+        amz = self.mass * ((self.rx * self.vy) - (self.ry * self.vx))
         return np.array([amx, amy, amz]).T
 
     @property
@@ -229,7 +229,7 @@ class NbodyMethods(NbodyUtils):
         """
         Individual potential energy.
         """
-        phi = self.get_phi(self)
+        phi, = self.get_phi(self)
         return self.mass * phi
 
     @property
@@ -245,8 +245,8 @@ class NbodyMethods(NbodyUtils):
         """
         Individual virial energy.
         """
-        (ax, ay, az) = self.get_acc(self)
-        return self.mass * (self.x * ax + self.y * ay + self.z * az)
+        ax, ay, az = self.get_acc(self)
+        return self.mass * (self.rx * ax + self.ry * ay + self.rz * az)
 
     @property
     def virial_energy(self):
@@ -293,7 +293,7 @@ class NbodyMethods(NbodyUtils):
         """
         Update the individual time-steps due to other particles.
         """
-        (tstep_a, tstep_b) = self.get_tstep(objs, eta)
+        tstep_a, tstep_b = self.get_tstep(objs, eta)
         self.tstep = tstep_a
         return tstep_b
 
@@ -301,21 +301,23 @@ class NbodyMethods(NbodyUtils):
         """
         Update the individual gravitational potential due to other particles.
         """
-        self.phi = self.get_phi(objs)
+        self.phi, = self.get_phi(objs)
 
     def update_acc(self, objs):
         """
         Update the individual gravitational acceleration due to other
         particles.
         """
-        self.acc = self.get_acc(objs)
+        self.ax, self.ay, self.az = self.get_acc(objs)
 
     def update_acc_jerk(self, objs):
         """
         Update the individual gravitational acceleration and jerk due to
         other particles.
         """
-        (self.acc, self.jerk) = self.get_acc_jerk(objs)
+        ax, ay, az, jx, jy, jz = self.get_acc_jerk(objs)
+        self.ax, self.ay, self.az = ax, ay, az
+        self.jx, self.jy, self.jz = jx, jy, jz
 
     ### miscellaneous methods
     def min_tstep(self):
@@ -424,11 +426,11 @@ class PNbodyMethods(NbodyMethods):
         Evolves angular momentum shift in time due to post-newtonian terms.
         """
         self.pn_amx -= self.mass * ((
-            self.y * self.pn_dvz) - (self.z * self.pn_dvy))
+            self.ry * self.pn_dvz) - (self.rz * self.pn_dvy))
         self.pn_amy -= self.mass * ((
-            self.z * self.pn_dvx) - (self.x * self.pn_dvz))
+            self.rz * self.pn_dvx) - (self.rx * self.pn_dvz))
         self.pn_amz -= self.mass * ((
-            self.x * self.pn_dvy) - (self.y * self.pn_dvx))
+            self.rx * self.pn_dvy) - (self.ry * self.pn_dvx))
 
     def get_amom_pn_shift(self):
         amx = self.pn_amx.sum()

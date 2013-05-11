@@ -24,9 +24,9 @@ def scale_mass(p, m_scale):
 
 
 def scale_pos(p, r_scale):
-    p.x *= r_scale
-    p.y *= r_scale
-    p.z *= r_scale
+    p.rx *= r_scale
+    p.ry *= r_scale
+    p.rz *= r_scale
 
 
 def scale_vel(p, v_scale):
@@ -161,9 +161,9 @@ class Plummer(object):
 
         # set pos
         pos = self.set_pos(np.random.permutation(ilist))
-        self.particles.x = pos[0]
-        self.particles.y = pos[1]
-        self.particles.z = pos[2]
+        self.particles.rx = pos[0]
+        self.particles.ry = pos[1]
+        self.particles.rz = pos[2]
 
         # set vel
         vel = self.set_vel(self.particles.get_phi(self.particles))
@@ -217,8 +217,8 @@ class Plummer(object):
 
         b = self.particles
         n = b.n
-        x = b.x
-        y = b.y
+        rx = b.rx
+        ry = b.ry
         radius = 2 * n * b.mass
         color = n * b.mass
 
@@ -227,7 +227,7 @@ class Plummer(object):
 
         ax2 = fig.add_subplot(1, 2, 2)
 #        ax.set_axis_bgcolor('0.75')
-        ax2.scatter(x, y, c=color, s=radius, cmap='gist_rainbow',
+        ax2.scatter(rx, ry, c=color, s=radius, cmap='gist_rainbow',
                     alpha=0.75, label=r'$Stars$')
         circle = Circle(
             (0, 0), 1,

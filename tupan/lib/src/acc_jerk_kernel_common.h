@@ -36,8 +36,10 @@ acc_jerk_kernel_core(
     REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
     REAL rv = rx * vx + ry * vy + rz * vz;                           // 5 FLOPs
 
+    REAL e2 = ie2 + je2;                                             // 1 FLOPs
+
     REAL inv_r2, inv_r3;
-    smoothed_inv_r2r3(r2, ie2 + je2, &inv_r2, &inv_r3);              // 5+1 FLOPs
+    smoothed_inv_r2r3(r2, e2, &inv_r2, &inv_r3);                     // 5 FLOPs
 
     inv_r3 *= jm;                                                    // 1 FLOPs
     rv *= 3 * inv_r2;                                                // 2 FLOPs
