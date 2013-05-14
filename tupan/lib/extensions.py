@@ -178,39 +178,38 @@ class CKernel(object):
         self.ffi = ffi
         self.kernel = kernel
         self.keep_ref = dict()
-        self.dev_args = OrderedDict()
 
     def alloc_local_memory(self, wgsize):
         return None
 
     def set_int(self, i, arg):
-        self.dev_args[i] = arg
+        return arg
 
     def set_float(self, i, arg):
-        self.dev_args[i] = arg
+        return arg
 
     def set_array(self, i, arg):
         self.keep_ref[i] = arg
-        self.dev_args[i] = self.ffi.cast(
-            "REAL *", arg.__array_interface__['data'][0])
+        return self.ffi.cast("REAL *", arg.__array_interface__['data'][0])
 
     def set_arg(self, i, arg):
         if isinstance(arg, int):
-            self.set_int(i, arg)
+            return self.set_int(i, arg)
         if isinstance(arg, float):
-            self.set_float(i, arg)
+            return self.set_float(i, arg)
         if isinstance(arg, np.ndarray):
-            self.set_array(i, arg)
+            return self.set_array(i, arg)
 
     def set_args(self, *args):
-        for i, arg in enumerate(args):
-            self.set_arg(i, arg)
+        self.dev_args = [self.set_arg(i, arg)
+                         for i, arg in enumerate(args)
+                         if arg is not None]
 
     def map_buffer(self, i, arr):
         pass
 
     def run(self):
-        args = self.dev_args.values()
+        args = self.dev_args
         self.kernel(*args)
 
 

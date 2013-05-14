@@ -152,7 +152,7 @@ class System(AbstractNbodyMethods):
             for (k, v) in obj.items():
                 if v.n:
                     if not k in self.__dict__:
-                        self.__dict__[k] = v
+                        self.__dict__[k] = v.copy()
                     else:
                         self.__dict__[k].append(v)
 
