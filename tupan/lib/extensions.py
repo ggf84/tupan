@@ -9,7 +9,6 @@ TODO.
 from __future__ import print_function
 import os
 import logging
-from collections import OrderedDict
 import numpy as np
 from .utils import ctype
 from .utils.timing import decallmethods, timings
@@ -52,7 +51,6 @@ class CLKernel(object):
     def __init__(self, env, kernel):
         self.env = env
         self.kernel = kernel
-        self.dev_buff = {}
         self._gsize = None
 
     @property
@@ -69,50 +67,49 @@ class CLKernel(object):
         size = itemsize * wgsize
         return cl.LocalMemory(size)
 
-    def set_local_memory(self, i, arg):
-        self.kernel.set_arg(i, arg)
+    def set_local_memory(self, arg):
+        return arg
 
-    def set_int(self, i, arg):
-        arg = ctype.UINT(arg)
-        self.kernel.set_arg(i, arg)
+    def set_int(self, arg):
+        return ctype.UINT(arg)
 
-    def set_float(self, i, arg):
-        arg = ctype.REAL(arg)
-        self.kernel.set_arg(i, arg)
+    def set_float(self, arg):
+        return ctype.REAL(arg)
 
-    def set_array(self, i, arr):
+    def set_array(self, arr):
         memf = cl.mem_flags
-        self.dev_buff[i] = cl.Buffer(self.env.ctx,
-                                     memf.READ_WRITE | memf.USE_HOST_PTR,
-                                     hostbuf=arr)
-        arg = self.dev_buff[i]
-        self.kernel.set_arg(i, arg)
+        return cl.Buffer(self.env.ctx,
+                         memf.READ_WRITE | memf.USE_HOST_PTR,
+                         hostbuf=arr)
 
-    def set_arg(self, i, arg):
+    def set_arg(self, arg):
         if isinstance(arg, int):
-            self.set_int(i, arg)
+            return self.set_int(arg)
         if isinstance(arg, float):
-            self.set_float(i, arg)
+            return self.set_float(arg)
         if isinstance(arg, np.ndarray):
-            self.set_array(i, arg)
+            return self.set_array(arg)
         if isinstance(arg, cl.LocalMemory):
-            self.set_local_memory(i, arg)
+            return self.set_local_memory(arg)
 
     def set_args(self, *args):
+        self.dev_args = []
         for i, arg in enumerate(args):
-            self.set_arg(i, arg)
+            arg = self.set_arg(arg)
+            self.dev_args.append(arg)
+            self.kernel.set_arg(i, arg)
 
     def map_buffer(self, i, arr):
         mapf = cl.map_flags
         (pointer, ev) = cl.enqueue_map_buffer(self.env.queue,
-                                              self.dev_buff[i],
+                                              self.dev_args[i],
                                               mapf.READ,
                                               0,
                                               arr.shape,
                                               arr.dtype,
                                               "C")
         ev.wait()
-#        cl.enqueue_copy(self.env.queue, arr, self.dev_buff[i])
+#        cl.enqueue_copy(self.env.queue, arr, self.dev_args[i])
 
     def run(self):
         cl.enqueue_nd_range_kernel(self.env.queue,
@@ -177,33 +174,35 @@ class CKernel(object):
         self.env = env
         self.ffi = ffi
         self.kernel = kernel
-        self.keep_ref = dict()
 
     def alloc_local_memory(self, wgsize):
         return None
 
-    def set_int(self, i, arg):
+    def set_int(self, arg):
         return arg
 
-    def set_float(self, i, arg):
+    def set_float(self, arg):
         return arg
 
-    def set_array(self, i, arg):
-        self.keep_ref[i] = arg
+    def set_array(self, arg):
         return self.ffi.cast("REAL *", arg.__array_interface__['data'][0])
 
-    def set_arg(self, i, arg):
+    def set_arg(self, arg):
         if isinstance(arg, int):
-            return self.set_int(i, arg)
+            return self.set_int(arg)
         if isinstance(arg, float):
-            return self.set_float(i, arg)
+            return self.set_float(arg)
         if isinstance(arg, np.ndarray):
-            return self.set_array(i, arg)
+            return self.set_array(arg)
 
     def set_args(self, *args):
-        self.dev_args = [self.set_arg(i, arg)
-                         for i, arg in enumerate(args)
-                         if arg is not None]
+        self.ref_keep = []
+        self.dev_args = []
+        for i, arg in enumerate(args):
+            if arg is not None:
+                self.ref_keep.append(arg)
+                arg = self.set_arg(arg)
+                self.dev_args.append(arg)
 
     def map_buffer(self, i, arr):
         pass
