@@ -111,7 +111,7 @@ twobody_solver(
     REAL r2 = r0x * r0x + r0y * r0y + r0z * r0z;
     REAL v2 = v0x * v0x + v0y * v0y + v0z * v0z;
     REAL dr2 = dt * dt * v2;
-    if (r2 > 1024 * dr2) {
+    if (r2 > 16384 * dr2) {
     leapfrog(dt, m, r0x, r0y, r0z, v0x, v0y, v0z,
              &(*r1x), &(*r1y), &(*r1z),
              &(*v1x), &(*v1y), &(*v1z));

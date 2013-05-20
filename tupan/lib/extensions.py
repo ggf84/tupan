@@ -92,24 +92,24 @@ class CLKernel(object):
         if isinstance(arg, cl.LocalMemory):
             return self.set_local_memory(arg)
 
-    def set_args(self, *args):
-        self.dev_args = []
-        for i, arg in enumerate(args):
-            arg = self.set_arg(arg)
-            self.dev_args.append(arg)
+    def set_args(self, **args):
+        self.in_buf = [self.set_arg(arg) for arg in args["in"]]
+        self.out_buf = [self.set_arg(arg) for arg in args["out"]]
+        for i, arg in enumerate(self.in_buf + self.out_buf):
             self.kernel.set_arg(i, arg)
 
-    def map_buffer(self, i, arr):
+    def map_buffers(self, arrays):
         mapf = cl.map_flags
-        (pointer, ev) = cl.enqueue_map_buffer(self.env.queue,
-                                              self.dev_args[i],
-                                              mapf.READ,
-                                              0,
-                                              arr.shape,
-                                              arr.dtype,
-                                              "C")
-        ev.wait()
-#        cl.enqueue_copy(self.env.queue, arr, self.dev_args[i])
+        for i, arr in enumerate(arrays):
+            (pointer, ev) = cl.enqueue_map_buffer(self.env.queue,
+                                                  self.out_buf[i],
+                                                  mapf.READ,
+                                                  0,
+                                                  arr.shape,
+                                                  arr.dtype,
+                                                  "C")
+            ev.wait()
+#            cl.enqueue_copy(self.env.queue, arr, self.out_buf[i])
 
     def run(self):
         cl.enqueue_nd_range_kernel(self.env.queue,
@@ -195,20 +195,17 @@ class CKernel(object):
         if isinstance(arg, np.ndarray):
             return self.set_array(arg)
 
-    def set_args(self, *args):
-        self.ref_keep = []
-        self.dev_args = []
-        for i, arg in enumerate(args):
-            if arg is not None:
-                self.ref_keep.append(arg)
-                arg = self.set_arg(arg)
-                self.dev_args.append(arg)
+    def set_args(self, **args):
+        self.in_buf = [self.set_arg(arg) for arg in args["in"]
+                       if arg is not None]
+        self.out_buf = [self.set_arg(arg) for arg in args["out"]]
+        self.args = self.in_buf + self.out_buf
 
-    def map_buffer(self, i, arr):
+    def map_buffers(self, arrays):
         pass
 
     def run(self):
-        args = self.dev_args
+        args = self.args
         self.kernel(*args)
 
 

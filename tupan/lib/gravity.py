@@ -72,7 +72,6 @@ class Phi(object):
         ni = iobj.n
         nj = jobj.n
 
-        self.osize = ni
         self.kernel.global_size = ni
         if ni > self.max_output_size:
             self.__jm = self.kernel.alloc_local_memory(512)
@@ -86,25 +85,24 @@ class Phi(object):
             self._phi = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        args = (ni,
-                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                nj,
-                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                self.__jm, self.__jrx, self.__jry, self.__jrz,
-                self.__je2, self.__jvx, self.__jvy, self.__jvz,
-                self._phi)
+        self.args = {"in": (ni,
+                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                     nj,
+                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                     self.__jm, self.__jrx, self.__jry, self.__jrz,
+                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     "out": (self._phi[:ni],)}
 
-        self.kernel.set_args(*args)
+        self.kernel.set_args(**self.args)
 
     def run(self):
         self.kernel.run()
 
     def get_result(self):
-        ni = self.osize
-        self.kernel.map_buffer(26, self._phi)
-        return (self._phi[:ni],)
+        self.kernel.map_buffers(self.args["out"])
+        return self.args["out"]
 
 
 @decallmethods(timings)
@@ -120,7 +118,6 @@ class Acc(object):
         ni = iobj.n
         nj = jobj.n
 
-        self.osize = ni
         self.kernel.global_size = ni
         if ni > self.max_output_size:
             self.__jm = self.kernel.alloc_local_memory(512)
@@ -136,27 +133,24 @@ class Acc(object):
             self._az = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        args = (ni,
-                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                nj,
-                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                self.__jm, self.__jrx, self.__jry, self.__jrz,
-                self.__je2, self.__jvx, self.__jvy, self.__jvz,
-                self._ax, self._ay, self._az)
+        self.args = {"in": (ni,
+                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                     nj,
+                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                     self.__jm, self.__jrx, self.__jry, self.__jrz,
+                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     "out": (self._ax[:ni], self._ay[:ni], self._az[:ni])}
 
-        self.kernel.set_args(*args)
+        self.kernel.set_args(**self.args)
 
     def run(self):
         self.kernel.run()
 
     def get_result(self):
-        ni = self.osize
-        self.kernel.map_buffer(26, self._ax)
-        self.kernel.map_buffer(27, self._ay)
-        self.kernel.map_buffer(28, self._az)
-        return (self._ax[:ni], self._ay[:ni], self._az[:ni],)
+        self.kernel.map_buffers(self.args["out"])
+        return self.args["out"]
 
 
 @decallmethods(timings)
@@ -172,7 +166,6 @@ class AccJerk(object):
         ni = iobj.n
         nj = jobj.n
 
-        self.osize = ni
         self.kernel.global_size = ni
         if ni > self.max_output_size:
             self.__jm = self.kernel.alloc_local_memory(512)
@@ -191,32 +184,25 @@ class AccJerk(object):
             self._jz = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        args = (ni,
-                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                nj,
-                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                self.__jm, self.__jrx, self.__jry, self.__jrz,
-                self.__je2, self.__jvx, self.__jvy, self.__jvz,
-                self._ax, self._ay, self._az,
-                self._jx, self._jy, self._jz)
+        self.args = {"in": (ni,
+                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                     nj,
+                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                     self.__jm, self.__jrx, self.__jry, self.__jrz,
+                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     "out": (self._ax[:ni], self._ay[:ni], self._az[:ni],
+                     self._jx[:ni], self._jy[:ni], self._jz[:ni])}
 
-        self.kernel.set_args(*args)
+        self.kernel.set_args(**self.args)
 
     def run(self):
         self.kernel.run()
 
     def get_result(self):
-        ni = self.osize
-        self.kernel.map_buffer(26, self._ax)
-        self.kernel.map_buffer(27, self._ay)
-        self.kernel.map_buffer(28, self._az)
-        self.kernel.map_buffer(29, self._jx)
-        self.kernel.map_buffer(30, self._jy)
-        self.kernel.map_buffer(31, self._jz)
-        return (self._ax[:ni], self._ay[:ni], self._az[:ni],
-                self._jx[:ni], self._jy[:ni], self._jz[:ni],)
+        self.kernel.map_buffers(self.args["out"])
+        return self.args["out"]
 
 
 @decallmethods(timings)
@@ -232,7 +218,6 @@ class Tstep(object):
         ni = iobj.n
         nj = jobj.n
 
-        self.osize = ni
         self.kernel.global_size = ni
         if ni > self.max_output_size:
             self.__jm = self.kernel.alloc_local_memory(512)
@@ -247,28 +232,25 @@ class Tstep(object):
             self._tstep_b = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        args = (ni,
-                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                nj,
-                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                eta,
-                self.__jm, self.__jrx, self.__jry, self.__jrz,
-                self.__je2, self.__jvx, self.__jvy, self.__jvz,
-                self._tstep_a, self._tstep_b)
+        self.args = {"in": (ni,
+                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                     nj,
+                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                     eta,
+                     self.__jm, self.__jrx, self.__jry, self.__jrz,
+                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     "out": (self._tstep_a[:ni], self._tstep_b[:ni])}
 
-        self.kernel.set_args(*args)
+        self.kernel.set_args(**self.args)
 
     def run(self):
         self.kernel.run()
 
     def get_result(self):
-        ni = self.osize
-        self.kernel.map_buffer(27, self._tstep_a)
-        self.kernel.map_buffer(28, self._tstep_b)
-
-        return (self._tstep_a[:ni], self._tstep_b[:ni],)
+        self.kernel.map_buffers(self.args["out"])
+        return self.args["out"]
 
 
 @decallmethods(timings)
@@ -284,7 +266,6 @@ class PNAcc(object):
         ni = iobj.n
         nj = jobj.n
 
-        self.osize = ni
         self.kernel.global_size = ni
         if ni > self.max_output_size:
             self.__jm = self.kernel.alloc_local_memory(512)
@@ -300,31 +281,29 @@ class PNAcc(object):
             self._pnaz = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        args = (ni,
-                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                nj,
-                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                clight.pn_order, clight.inv1,
-                clight.inv2, clight.inv3,
-                clight.inv4, clight.inv5,
-                clight.inv6, clight.inv7,
-                self.__jm, self.__jrx, self.__jry, self.__jrz,
-                self.__je2, self.__jvx, self.__jvy, self.__jvz,
-                self._pnax, self._pnay, self._pnaz)
+        self.args = {"in": (ni,
+                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                     nj,
+                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                     clight.pn_order, clight.inv1,
+                     clight.inv2, clight.inv3,
+                     clight.inv4, clight.inv5,
+                     clight.inv6, clight.inv7,
+                     self.__jm, self.__jrx, self.__jry, self.__jrz,
+                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     "out": (self._pnax[:ni], self._pnay[:ni], self._pnaz[:ni])
+                     }
 
-        self.kernel.set_args(*args)
+        self.kernel.set_args(**self.args)
 
     def run(self):
         self.kernel.run()
 
     def get_result(self):
-        ni = self.osize
-        self.kernel.map_buffer(34, self._pnax)
-        self.kernel.map_buffer(35, self._pnay)
-        self.kernel.map_buffer(36, self._pnaz)
-        return (self._pnax[:ni], self._pnay[:ni], self._pnaz[:ni],)
+        self.kernel.map_buffers(self.args["out"])
+        return self.args["out"]
 
 
 @decallmethods(timings)
@@ -340,7 +319,6 @@ class Sakura(object):
         ni = iobj.n
         nj = jobj.n
 
-        self.osize = ni
         self.kernel.global_size = ni
         if ni > self.max_output_size:
             self.__jm = self.kernel.alloc_local_memory(512)
@@ -359,33 +337,26 @@ class Sakura(object):
             self._dvz = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        args = (ni,
-                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                nj,
-                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                dt,
-                self.__jm, self.__jrx, self.__jry, self.__jrz,
-                self.__je2, self.__jvx, self.__jvy, self.__jvz,
-                self._drx, self._dry, self._drz,
-                self._dvx, self._dvy, self._dvz)
+        self.args = {"in": (ni,
+                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                     nj,
+                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                     dt,
+                     self.__jm, self.__jrx, self.__jry, self.__jrz,
+                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     "out": (self._drx[:ni], self._dry[:ni], self._drz[:ni],
+                     self._dvx[:ni], self._dvy[:ni], self._dvz[:ni])}
 
-        self.kernel.set_args(*args)
+        self.kernel.set_args(**self.args)
 
     def run(self):
         self.kernel.run()
 
     def get_result(self):
-        ni = self.osize
-        self.kernel.map_buffer(27, self._drx)
-        self.kernel.map_buffer(28, self._dry)
-        self.kernel.map_buffer(29, self._drz)
-        self.kernel.map_buffer(30, self._dvx)
-        self.kernel.map_buffer(31, self._dvy)
-        self.kernel.map_buffer(32, self._dvz)
-        return (self._drx[:ni], self._dry[:ni], self._drz[:ni],
-                self._dvx[:ni], self._dvy[:ni], self._dvz[:ni],)
+        self.kernel.map_buffers(self.args["out"])
+        return self.args["out"]
 
 
 @decallmethods(timings)
@@ -401,7 +372,6 @@ class NREG_X(object):
         ni = iobj.n
         nj = jobj.n
 
-        self.osize = ni
         self.kernel.global_size = ni
         if ni > self.max_output_size:
             self.__jm = self.kernel.alloc_local_memory(512)
@@ -421,36 +391,27 @@ class NREG_X(object):
             self._u = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        args = (ni,
-                iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                nj,
-                jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                dt,
-                self.__jm, self.__jrx, self.__jry, self.__jrz,
-                self.__je2, self.__jvx, self.__jvy, self.__jvz,
-                self._rx, self._ry, self._rz,
-                self._ax, self._ay, self._az,
-                self._u)
+        self.args = {"in": (ni,
+                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                     nj,
+                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                     dt,
+                     self.__jm, self.__jrx, self.__jry, self.__jrz,
+                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     "out": (self._rx[:ni], self._ry[:ni], self._rz[:ni],
+                     self._ax[:ni], self._ay[:ni], self._az[:ni],
+                     self._u[:ni])}
 
-        self.kernel.set_args(*args)
+        self.kernel.set_args(**self.args)
 
     def run(self):
         self.kernel.run()
 
     def get_result(self):
-        ni = self.osize
-        self.kernel.map_buffer(27, self._rx)
-        self.kernel.map_buffer(28, self._ry)
-        self.kernel.map_buffer(29, self._rz)
-        self.kernel.map_buffer(30, self._ax)
-        self.kernel.map_buffer(31, self._ay)
-        self.kernel.map_buffer(32, self._az)
-        self.kernel.map_buffer(33, self._u)
-        return (self._rx[:ni], self._ry[:ni], self._rz[:ni],
-                self._ax[:ni], self._ay[:ni], self._az[:ni],
-                0.5 * self._u[:ni].sum(),)
+        self.kernel.map_buffers(self.args["out"])
+        return self.args["out"]
 
 
 @decallmethods(timings)
@@ -466,7 +427,6 @@ class NREG_V(object):
         ni = iobj.n
         nj = jobj.n
 
-        self.osize = ni
         self.kernel.global_size = ni
         if ni > self.max_output_size:
             self.__jm = self.kernel.alloc_local_memory(512)
@@ -482,31 +442,26 @@ class NREG_V(object):
             self._k = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        args = (ni,
-                iobj.mass, iobj.vx, iobj.vy, iobj.vz,
-                iobj.ax, iobj.ay, iobj.az,
-                nj,
-                jobj.mass, jobj.vx, jobj.vy, jobj.vz,
-                jobj.ax, jobj.ay, jobj.az,
-                dt,
-                self.__jm, self.__jvx, self.__jvy, self.__jvz,
-                self.__jax, self.__jay, self.__jaz,
-                self._vx, self._vy, self._vz,
-                self._k)
+        self.args = {"in": (ni,
+                     iobj.mass, iobj.vx, iobj.vy, iobj.vz,
+                     iobj.ax, iobj.ay, iobj.az,
+                     nj,
+                     jobj.mass, jobj.vx, jobj.vy, jobj.vz,
+                     jobj.ax, jobj.ay, jobj.az,
+                     dt,
+                     self.__jm, self.__jvx, self.__jvy, self.__jvz,
+                     self.__jax, self.__jay, self.__jaz),
+                     "out": (self._vx[:ni], self._vy[:ni], self._vz[:ni],
+                     self._k[:ni])}
 
-        self.kernel.set_args(*args)
+        self.kernel.set_args(**self.args)
 
     def run(self):
         self.kernel.run()
 
     def get_result(self):
-        ni = self.osize
-        self.kernel.map_buffer(24, self._vx)
-        self.kernel.map_buffer(25, self._vy)
-        self.kernel.map_buffer(26, self._vz)
-        self.kernel.map_buffer(27, self._k)
-        return (self._vx[:ni], self._vy[:ni], self._vz[:ni],
-                0.5 * self._k[:ni].sum(),)
+        self.kernel.map_buffers(self.args["out"])
+        return self.args["out"]
 
 
 exttype = "cl" if "--use_cl" in sys.argv else "c"

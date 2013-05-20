@@ -415,7 +415,6 @@ class SIA(Base):
             p = self.dkd69(p, tau, True, False)
         elif self.method == 0:
             pass
-##            p = self.heapq0(p, tau, True)
         else:
             raise ValueError("Unexpected method: {0}".format(self.method))
 

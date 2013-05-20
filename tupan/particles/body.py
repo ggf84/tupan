@@ -260,7 +260,7 @@ class NbodyMethods(NbodyUtils):
         """
         Get the individual time-steps due to other particles.
         """
-        gravity.tstep.set_args(self, objs, eta/2)
+        gravity.tstep.set_args(self, objs, eta)
         gravity.tstep.run()
         return gravity.tstep.get_result()
 

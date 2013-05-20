@@ -24,7 +24,8 @@ logger = logging.getLogger(__name__)
 def nreg_x(p, dt):
     llnreg_x.set_args(p, p, dt)
     llnreg_x.run()
-    (rx, ry, rz, ax, ay, az, U) = llnreg_x.get_result()
+    (rx, ry, rz, ax, ay, az, u) = llnreg_x.get_result()
+    U = 0.5 * u.sum()
 
     mtot = p.total_mass
 
@@ -47,7 +48,8 @@ def nreg_x(p, dt):
 def nreg_v(p, dt):
     llnreg_v.set_args(p, p, dt)
     llnreg_v.run()
-    (vx, vy, vz, K) = llnreg_v.get_result()
+    (vx, vy, vz, k) = llnreg_v.get_result()
+    K = 0.5 * k.sum()
 
     mtot = p.total_mass
 
@@ -69,19 +71,21 @@ def nreg_v(p, dt):
 def nreg_step(p, h, W, U):
     t = 0.0
 
-    dt = 0.5 * h / W
+    dt = 0.5 * (h / W)
     t += dt
     U = nreg_x(p, dt)
 
-    W += 0.5 * h * (p.mass * (
-        p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
+    W += 0.5 * (h / U) * (p.mass * (p.vx * p.ax
+                                    + p.vy * p.ay
+                                    + p.vz * p.az)).sum()
 
-    K = nreg_v(p, h/U)
+    nreg_v(p, (h / U))
 
-    W += 0.5 * h * (p.mass * (
-        p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
+    W += 0.5 * (h / U) * (p.mass * (p.vx * p.ax
+                                    + p.vy * p.ay
+                                    + p.vz * p.az)).sum()
 
-    dt = 0.5 * h / W
+    dt = 0.5 * (h / W)
     U = nreg_x(p, dt)
     t += dt
 
@@ -97,50 +101,42 @@ class NREG(Base):
         super(NREG, self).__init__(eta, time, particles, **kwargs)
         self.U = None
         self.W = None
-        self.S = None
 
     def do_step(self, p, tau):
         """
 
         """
-        def do_nsteps(p, tau, W, U, S, nsteps, gamma=0.5):
+        def do_nsteps(p, tau, W, U, nsteps):
             t = 0.0
             h = tau / nsteps
             for i in range(nsteps):
-                S += 0.5 * (h/(abs(W)**gamma)) * (p.mass * (
-                    p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
-                tt, W, U = nreg_step(p, h/(abs(S)**gamma), W, U)
-                S += 0.5 * (h/(abs(W)**gamma)) * (p.mass * (
-                    p.vx * p.ax + p.vy * p.ay + p.vz * p.az)).sum() / U
+                dW = (h / U) * (p.mass * (p.vx * p.ax
+                                          + p.vy * p.ay
+                                          + p.vz * p.az)).sum()
+                tt, W, U = nreg_step(p, h*W*(1+0.5*dW), W, U)
                 t += tt
-            return p, t, W, U, S
+            return p, t, W, U
 
-#        i = 1
-#        tol = 1.0e-2#max(min(2.0**(-12), tau**2), 2.0**(-32))
-#        while True:
-#            U = self.U
-#            W = self.W
-#            S = self.S
-#            p0 = p.copy()
-#            p0, t, W, U, S = do_nsteps(p0, tau, W, U, S, i)
-#            i *= 2
-#            if abs(W-U)/U < tol:
-##                if abs(t-tau)/tau < tol:
-#                break
-#
-#        self.S = S
-#        self.W = W
-#        self.U = U
-#        p = p0.copy()
-        U = self.U
-        W = self.W
-        S = self.S
-        p, t, W, U, S = do_nsteps(p, tau, W, U, S, 64)
-        self.S = S
-        self.W = W
+        i = 16
+        tol = max((tau/4)**3, (2.0**(-53))**0.5)
+        while True:
+            W = self.W
+            U = self.U
+            p0 = p.copy()
+            p0, t, W, U = do_nsteps(p0, tau, W, U, i)
+            i *= 2
+            if abs(W-U)/U < tol:
+                if abs(t-tau)/tau < tol:
+                    break
         self.U = U
+        self.W = W
+        p = p0.copy()
 
-#        print(self.W, self.U, self.S, abs(self.W-self.U))
+#        W = self.W
+#        U = self.U
+#        p, t, W, U = do_nsteps(p, tau, W, U, 16)
+#        self.U = U
+#        self.W = W
 
         p.tstep = t
         p.time += t
@@ -161,10 +157,9 @@ class NREG(Base):
 
         p = self.particles
         U = nreg_x(p, 0.0)
-        K = nreg_v(p, 0.0)
+        nreg_v(p, 0.0)
         self.U = U
         self.W = U
-        self.S = U
 
 #        if self.dumpper:
 #            self.snap_number = 0
