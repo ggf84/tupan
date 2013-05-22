@@ -2,7 +2,7 @@
 #define __C_COMMON_H__
 
 #include <stdio.h>
-#include <math.h>
+#include <tgmath.h>
 
 #define min(a, b) ({ __typeof__ (a) _a = (a); \
                      __typeof__ (b) _b = (b); \

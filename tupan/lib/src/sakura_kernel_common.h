@@ -8,10 +8,10 @@
 inline void
 get_phi(
     const REAL m,
+    const REAL e2,
     const REAL rx,
     const REAL ry,
     const REAL rz,
-    const REAL e2,
     REAL *phi)
 {
     REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
@@ -24,10 +24,10 @@ get_phi(
 inline void
 get_acc(
     const REAL m,
+    const REAL e2,
     const REAL rx,
     const REAL ry,
     const REAL rz,
-    const REAL e2,
     REAL *ax,
     REAL *ay,
     REAL *az)
@@ -46,6 +46,7 @@ inline void
 leapfrog(
     const REAL dt,
     const REAL m,
+    const REAL e2,
     const REAL r0x,
     const REAL r0y,
     const REAL r0z,
@@ -72,7 +73,7 @@ leapfrog(
     rz += vz * dt_2;
 
     REAL ax, ay, az;
-    get_acc(m, rx, ry, rz, 0, &ax, &ay, &az);
+    get_acc(m, e2, rx, ry, rz, &ax, &ay, &az);
 
     vx += ax * dt;
     vy += ay * dt;
@@ -95,6 +96,7 @@ inline void
 twobody_solver(
     const REAL dt,
     const REAL m,
+    const REAL e2,
     const REAL r0x,
     const REAL r0y,
     const REAL r0z,
@@ -112,11 +114,11 @@ twobody_solver(
     REAL v2 = v0x * v0x + v0y * v0y + v0z * v0z;
     REAL dr2 = dt * dt * v2;
     if (r2 > 16384 * dr2) {
-    leapfrog(dt, m, r0x, r0y, r0z, v0x, v0y, v0z,
+    leapfrog(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
              &(*r1x), &(*r1y), &(*r1z),
              &(*v1x), &(*v1y), &(*v1z));
     } else {
-    universal_kepler_solver(dt, m, r0x, r0y, r0z, v0x, v0y, v0z,
+    universal_kepler_solver(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
                             &(*r1x), &(*r1y), &(*r1z),
                             &(*v1x), &(*v1y), &(*v1z));
     }
@@ -127,6 +129,7 @@ inline void
 evolve_twobody(
     const REAL dt,
     const REAL m,
+    const REAL e2,
     const REAL r0x,
     const REAL r0y,
     const REAL r0z,
@@ -152,7 +155,7 @@ evolve_twobody(
     ry -= vy * dt_2;                                                 // 2 FLOPs
     rz -= vz * dt_2;                                                 // 2 FLOPs
 
-    twobody_solver(dt, m, rx, ry, rz, vx, vy, vz,
+    twobody_solver(dt, m, e2, rx, ry, rz, vx, vy, vz,
                    &rx, &ry, &rz, &vx, &vy, &vz);                    // ? FLOPS
 
     rx -= vx * dt_2;                                                 // 2 FLOPs
@@ -203,11 +206,12 @@ sakura_kernel_core(
     v0y = ivy - jvy;                                                 // 1 FLOPs
     v0z = ivz - jvz;                                                 // 1 FLOPs
 
-    REAL m = im + jm;
+    REAL m = im + jm;                                                // 1 FLOPs
+    REAL e2 = ie2 + je2;                                             // 1 FLOPs
 
     REAL r1x, r1y, r1z;
     REAL v1x, v1y, v1z;
-    evolve_twobody(dt, m, r0x, r0y, r0z, v0x, v0y, v0z,
+    evolve_twobody(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
                    &r1x, &r1y, &r1z, &v1x, &v1y, &v1z);              // ? FLOPs
 
     REAL jmu = jm / m;                                               // 1 FLOPs
