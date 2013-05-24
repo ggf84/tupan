@@ -1,7 +1,6 @@
 #include "nreg_kernels_common.h"
 
-inline void
-nreg_Xkernel_main_loop(
+inline void nreg_Xkernel_main_loop(
     const REAL dt,
     const REAL im,
     const REAL irx,
@@ -74,8 +73,7 @@ nreg_Xkernel_main_loop(
 }
 
 
-__kernel void
-nreg_Xkernel(
+__kernel void nreg_Xkernel(
     const uint ni,
     __global const REAL *_im,
     __global const REAL *_irx,
@@ -151,8 +149,7 @@ nreg_Xkernel(
 
 
 
-inline void
-nreg_Vkernel_main_loop(
+inline void nreg_Vkernel_main_loop(
     const REAL dt,
     const REAL im,
     const REAL ivx,
@@ -216,8 +213,7 @@ nreg_Vkernel_main_loop(
 }
 
 
-__kernel void
-nreg_Vkernel(
+__kernel void nreg_Vkernel(
     const uint ni,
     __global const REAL *_im,
     __global const REAL *_ivx,

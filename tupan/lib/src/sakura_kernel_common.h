@@ -5,8 +5,7 @@
 #include "smoothing.h"
 #include "universal_kepler_solver.h"
 
-inline void
-get_phi(
+inline void get_phi(
     const REAL m,
     const REAL e2,
     const REAL rx,
@@ -21,8 +20,7 @@ get_phi(
 }
 
 
-inline void
-get_acc(
+inline void get_acc(
     const REAL m,
     const REAL e2,
     const REAL rx,
@@ -42,8 +40,7 @@ get_acc(
 }
 
 
-inline void
-leapfrog(
+inline void leapfrog(
     const REAL dt,
     const REAL m,
     const REAL e2,
@@ -92,8 +89,7 @@ leapfrog(
 }
 
 
-inline void
-twobody_solver(
+inline void twobody_solver(
     const REAL dt,
     const REAL m,
     const REAL e2,
@@ -112,8 +108,8 @@ twobody_solver(
 {
     REAL r2 = r0x * r0x + r0y * r0y + r0z * r0z;
     REAL v2 = v0x * v0x + v0y * v0y + v0z * v0z;
-    REAL dr2 = dt * dt * v2;
-    if (r2 > 16384 * dr2) {
+    REAL R = 32 * (2 * m / v2);
+    if (r2 > R*R) {
     leapfrog(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
              &(*r1x), &(*r1y), &(*r1z),
              &(*v1x), &(*v1y), &(*v1z));
@@ -125,8 +121,7 @@ twobody_solver(
 }
 
 
-inline void
-evolve_twobody(
+inline void evolve_twobody(
     const REAL dt,
     const REAL m,
     const REAL e2,
@@ -171,8 +166,7 @@ evolve_twobody(
 }
 
 
-inline void
-sakura_kernel_core(
+inline void sakura_kernel_core(
     const REAL dt,
     const REAL im,
     const REAL irx,

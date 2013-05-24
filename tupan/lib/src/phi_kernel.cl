@@ -1,7 +1,6 @@
 #include "phi_kernel_common.h"
 
-inline void
-phi_kernel_main_loop(
+inline void phi_kernel_main_loop(
     const REAL im,
     const REAL irx,
     const REAL iry,
@@ -65,8 +64,7 @@ phi_kernel_main_loop(
 }
 
 
-__kernel void
-phi_kernel(
+__kernel void phi_kernel(
     const uint ni,
     __global const REAL *_im,
     __global const REAL *_irx,

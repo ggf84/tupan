@@ -1,8 +1,7 @@
 #include "sakura_kernel_common.h"
 
 
-inline void
-sakura_kernel(
+inline void sakura_kernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,

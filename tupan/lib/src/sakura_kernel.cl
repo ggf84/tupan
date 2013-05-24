@@ -1,7 +1,6 @@
 #include "sakura_kernel_common.h"
 
-static inline void
-sakura_kernel_main_loop(
+inline void sakura_kernel_main_loop(
     const REAL dt,
     const REAL im,
     const REAL irx,
@@ -73,8 +72,7 @@ sakura_kernel_main_loop(
 }
 
 
-__kernel void
-sakura_kernel(
+__kernel void sakura_kernel(
     const uint ni,
     __global const REAL *_im,
     __global const REAL *_irx,

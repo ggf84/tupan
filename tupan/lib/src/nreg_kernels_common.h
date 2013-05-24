@@ -4,8 +4,7 @@
 #include "common.h"
 #include "smoothing.h"
 
-inline void
-nreg_Xkernel_core(
+inline void nreg_Xkernel_core(
     const REAL dt,
     const REAL im,
     const REAL irx,
@@ -67,8 +66,7 @@ nreg_Xkernel_core(
 }
 // Total flop count: 38
 
-inline void
-nreg_Vkernel_core(
+inline void nreg_Vkernel_core(
     const REAL dt,
     const REAL im,
     const REAL ivx,

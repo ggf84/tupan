@@ -4,8 +4,7 @@
 #include "common.h"
 #include "smoothing.h"
 
-inline void
-tstep_kernel_core(
+inline void tstep_kernel_core(
     const REAL eta,
     const REAL im,
     const REAL irx,

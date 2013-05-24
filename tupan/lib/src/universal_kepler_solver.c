@@ -11,8 +11,7 @@
 #define SIGN(x) COMPARE(x, 0)
 
 
-inline REAL
-stumpff_c0(
+inline REAL stumpff_c0(
     const REAL zeta)
 {
     if (zeta > 0) {
@@ -27,8 +26,7 @@ stumpff_c0(
 }
 
 
-inline REAL
-stumpff_c1(
+inline REAL stumpff_c1(
     const REAL zeta)
 {
     if (zeta > 0) {
@@ -43,8 +41,7 @@ stumpff_c1(
 }
 
 
-inline REAL
-stumpff_c2(
+inline REAL stumpff_c2(
     const REAL zeta)
 {
     if (zeta > 0) {
@@ -59,8 +56,7 @@ stumpff_c2(
 }
 
 
-inline REAL
-stumpff_c3(
+inline REAL stumpff_c3(
     const REAL zeta)
 {
     if (zeta > 0) {
@@ -75,111 +71,125 @@ stumpff_c3(
 }
 
 
-inline REAL
-lagrange_f(
+inline REAL S0(
+    const REAL s,
+    const REAL alpha)
+{
+    REAL s2 = s * s;
+    REAL zeta = alpha * s2;
+    return stumpff_c0(zeta);
+}
+
+
+inline REAL S1(
+    const REAL s,
+    const REAL alpha)
+{
+    REAL s2 = s * s;
+    REAL zeta = alpha * s2;
+    return s * stumpff_c1(zeta);
+}
+
+
+inline REAL S2(
+    const REAL s,
+    const REAL alpha)
+{
+    REAL s2 = s * s;
+    REAL zeta = alpha * s2;
+    return s2 * stumpff_c2(zeta);
+}
+
+
+inline REAL S3(
+    const REAL s,
+    const REAL alpha)
+{
+    REAL s2 = s * s;
+    REAL s3 = s * s2;
+    REAL zeta = alpha * s2;
+    return s3 * stumpff_c3(zeta);
+}
+
+
+inline REAL lagrange_f(
     const REAL s,
     const REAL r0,
     const REAL m,
     const REAL alpha)
 {
-    REAL s2 = s * s;
-    REAL zeta = alpha * s2;
     REAL m_r0 = m / r0;
-    return 1 - m_r0 * s2 * stumpff_c2(zeta);
+    return 1 - m_r0 * S2(s, alpha);
 }
 
 
-inline REAL
-lagrange_dfds(
+inline REAL lagrange_dfds(
     const REAL s,
     const REAL r0,
     const REAL r1,
     const REAL m,
     const REAL alpha)
 {
-    REAL s2 = s * s;
-    REAL zeta = alpha * s2;
     REAL m_r0r1 = m / (r0 * r1);
-    return -m_r0r1 * s * stumpff_c1(zeta);
+    return -m_r0r1 * S1(s, alpha);
 }
 
 
-inline REAL
-lagrange_g(
+inline REAL lagrange_g(
     const REAL dt,
     const REAL s,
     const REAL m,
     const REAL alpha)
 {
-    REAL s2 = s * s;
-    REAL s3 = s * s2;
-    REAL zeta = alpha * s2;
-    return dt - m * s3 * stumpff_c3(zeta);
+    return dt - m * S3(s, alpha);
 }
 
 
-inline REAL
-lagrange_dgds(
+inline REAL lagrange_dgds(
     const REAL s,
     const REAL r1,
     const REAL m,
     const REAL alpha)
 {
-    REAL s2 = s * s;
-    REAL zeta = alpha * s2;
     REAL m_r1 = m / r1;
-    return 1 - m_r1 * s2 * stumpff_c2(zeta);
+    return 1 - m_r1 * S2(s, alpha);
 }
 
 
-inline REAL
-universal_kepler(
+inline REAL universal_kepler(
     const REAL s,
     const REAL r0,
     const REAL r0v0,
     const REAL m,
     const REAL alpha)
 {
-
-    REAL s2 = s * s;
-    REAL s3 = s * s2;
-    REAL zeta = alpha * s2;
-    return r0 * s * stumpff_c1(zeta) + r0v0 * s2 * stumpff_c2(zeta) + m * s3 * stumpff_c3(zeta);
+    return r0 * S1(s, alpha) + r0v0 * S2(s, alpha) + m * S3(s, alpha);
 }
 
 
-inline REAL
-universal_kepler_ds(
+inline REAL universal_kepler_ds(
     const REAL s,
     const REAL r0,
     const REAL r0v0,
     const REAL m,
     const REAL alpha)
 {
-
-    REAL s2 = s * s;
-    REAL zeta = alpha * s2;
-    return r0 * stumpff_c0(zeta) + r0v0 * s * stumpff_c1(zeta) + m * s2 * stumpff_c2(zeta);
+    return r0 * S0(s, alpha) + r0v0 * S1(s, alpha) + m * S2(s, alpha);
 }
 
 
-inline REAL
-universal_kepler_dsds(
+inline REAL universal_kepler_dsds(
     const REAL s,
     const REAL r0,
     const REAL r0v0,
     const REAL m,
     const REAL alpha)
 {
-
-    REAL s2 = s * s;
-    REAL zeta = alpha * s2;
-    return (m - alpha * r0) * s * stumpff_c1(zeta) + r0v0 * stumpff_c0(zeta);
+    return (m - alpha * r0) * S1(s, alpha) + r0v0 * S0(s, alpha);
 }
 
 
-inline REAL
-f(
+inline REAL f(
     const REAL s,
     REAL *arg)
 {
@@ -187,8 +197,7 @@ f(
 }
 
 
-inline REAL
-fprime(
+inline REAL fprime(
     const REAL s,
     REAL *arg)
 {
@@ -196,8 +205,7 @@ fprime(
 }
 
 
-inline REAL
-fprimeprime(
+inline REAL fprimeprime(
     const REAL s,
     REAL *arg)
 {
@@ -206,8 +214,7 @@ fprimeprime(
 
 
 #define ORDER 5
-inline int
-laguerre(
+inline int laguerre(
     REAL x0,
     REAL *x,
     REAL *arg)
@@ -238,8 +245,7 @@ laguerre(
 }
 
 
-inline int
-halley(
+inline int halley(
     REAL x0,
     REAL *x,
     REAL *arg)
@@ -267,8 +273,7 @@ halley(
 }
 
 
-inline int
-newton(
+inline int newton(
     REAL x0,
     REAL *x,
     REAL *arg)
@@ -295,8 +300,7 @@ newton(
 }
 
 
-inline void
-set_new_pos_vel(
+inline void set_new_pos_vel(
     const REAL dt,
     const REAL s,
     const REAL r0,
@@ -343,8 +347,7 @@ set_new_pos_vel(
 }
 
 
-inline void
-universal_kepler_solver(
+inline void universal_kepler_solver(
     const REAL dt,
     const REAL m,
     const REAL e2,
@@ -381,6 +384,7 @@ universal_kepler_solver(
                 REAL r0v0 = rx * vx + ry * vy + rz * vz;
                 REAL v0sqr = vx * vx + vy * vy + vz * vz;
                 REAL alpha = 2 * m / r0 - v0sqr;
+
                 REAL s0, s, arg[5];
 
                 s0 = dt0 / r0;

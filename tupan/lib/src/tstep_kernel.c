@@ -1,8 +1,7 @@
 #include "tstep_kernel_common.h"
 
 
-inline void
-tstep_kernel(
+inline void tstep_kernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,

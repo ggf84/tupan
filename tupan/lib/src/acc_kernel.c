@@ -1,8 +1,7 @@
 #include "acc_kernel_common.h"
 
 
-inline void
-acc_kernel(
+inline void acc_kernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,

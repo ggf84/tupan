@@ -1,8 +1,7 @@
 #include "nreg_kernels_common.h"
 
 
-inline void
-nreg_Xkernel(
+inline void nreg_Xkernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,
@@ -73,8 +72,7 @@ nreg_Xkernel(
 }
 
 
-inline void
-nreg_Vkernel(
+inline void nreg_Vkernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_ivx,

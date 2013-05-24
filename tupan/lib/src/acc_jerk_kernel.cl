@@ -1,7 +1,6 @@
 #include "acc_jerk_kernel_common.h"
 
-inline void
-acc_jerk_kernel_main_loop(
+inline void acc_jerk_kernel_main_loop(
     const REAL im,
     const REAL irx,
     const REAL iry,
@@ -71,8 +70,7 @@ acc_jerk_kernel_main_loop(
 }
 
 
-__kernel void
-acc_jerk_kernel(
+__kernel void acc_jerk_kernel(
     const uint ni,
     __global const REAL *_im,
     __global const REAL *_irx,

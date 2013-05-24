@@ -3,8 +3,7 @@
 
 #include "common.h"
 
-inline PN
-p2p_pn2(
+inline PN p2p_pn2(
     REAL mi,
     REAL mj,
     REAL inv_r,
@@ -36,8 +35,7 @@ p2p_pn2(
 }   // 11+3+2 == 16 FLOPs
 
 
-inline PN
-p2p_pn4(
+inline PN p2p_pn4(
     REAL mi,
     REAL mj,
     REAL mi2,
@@ -101,8 +99,7 @@ p2p_pn4(
 }   // 46+24+2 == 72 FLOPs
 
 
-inline PN
-p2p_pn5(
+inline PN p2p_pn5(
     REAL mi,
     REAL mj,
     REAL inv_r,
@@ -129,8 +126,7 @@ p2p_pn5(
 }   // 7+5+4 == 16 FLOPs
 
 
-inline PN
-p2p_pn6(
+inline PN p2p_pn6(
     REAL mi,
     REAL mj,
     REAL mi2,
@@ -268,8 +264,7 @@ p2p_pn6(
 }   // ??+??+?? == ??? FLOPs
 
 
-inline PN
-p2p_pn7(
+inline PN p2p_pn7(
     REAL mi,
     REAL mj,
     REAL mi2,
@@ -370,8 +365,7 @@ p2p_pn7(
 }   // ??+??+?? == ??? FLOPs
 
 
-inline PN
-p2p_pnterms(
+inline PN p2p_pnterms(
     REAL mi,
     REAL mj,
     REAL rx,

@@ -1,7 +1,6 @@
 #include "tstep_kernel_common.h"
 
-inline void
-tstep_kernel_main_loop(
+inline void tstep_kernel_main_loop(
     const REAL eta,
     const REAL im,
     const REAL irx,
@@ -68,8 +67,7 @@ tstep_kernel_main_loop(
 }
 
 
-__kernel void
-tstep_kernel(
+__kernel void tstep_kernel(
     const uint ni,
     __global const REAL *_im,
     __global const REAL *_irx,

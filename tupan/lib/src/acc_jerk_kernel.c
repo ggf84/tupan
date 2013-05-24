@@ -1,8 +1,7 @@
 #include "acc_jerk_kernel_common.h"
 
 
-inline void
-acc_jerk_kernel(
+inline void acc_jerk_kernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,

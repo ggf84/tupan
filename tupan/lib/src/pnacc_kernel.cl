@@ -1,7 +1,6 @@
 #include "pnacc_kernel_common.h"
 
-inline void
-pnacc_kernel_main_loop(
+inline void pnacc_kernel_main_loop(
     const REAL im,
     const REAL irx,
     const REAL iry,
@@ -69,8 +68,7 @@ pnacc_kernel_main_loop(
 }
 
 
-__kernel void
-pnacc_kernel(
+__kernel void pnacc_kernel(
     const uint ni,
     __global const REAL *_im,
     __global const REAL *_irx,

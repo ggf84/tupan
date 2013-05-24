@@ -3,8 +3,7 @@
 
 #include "common.h"
 
-void
-universal_kepler_solver(
+void universal_kepler_solver(
     const REAL dt,
     const REAL m,
     const REAL e2,

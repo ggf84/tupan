@@ -1,8 +1,7 @@
 #include "pnacc_kernel_common.h"
 
 
-inline void
-pnacc_kernel(
+inline void pnacc_kernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,

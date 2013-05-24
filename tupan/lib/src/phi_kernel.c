@@ -1,8 +1,7 @@
 #include "phi_kernel_common.h"
 
 
-inline void
-phi_kernel(
+inline void phi_kernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,

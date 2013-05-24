@@ -1,6 +1,5 @@
 
-void
-phi_kernel(
+void phi_kernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,
@@ -21,8 +20,7 @@ phi_kernel(
     const REAL *_jvz,
     REAL *_iphi);
 
-void
-acc_kernel(
+void acc_kernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,
@@ -45,8 +43,7 @@ acc_kernel(
     REAL *_iay,
     REAL *_iaz);
 
-void
-acc_jerk_kernel(
+void acc_jerk_kernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,
@@ -72,8 +69,7 @@ acc_jerk_kernel(
     REAL *_ijy,
     REAL *_ijz);
 
-void
-tstep_kernel(
+void tstep_kernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,
@@ -96,8 +92,7 @@ tstep_kernel(
     REAL *_idt_a,
     REAL *_idt_b);
 
-void
-pnacc_kernel(
+void pnacc_kernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,
@@ -128,8 +123,7 @@ pnacc_kernel(
     REAL *_ipnay,
     REAL *_ipnaz);
 
-void
-nreg_Xkernel(
+void nreg_Xkernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,
@@ -157,8 +151,7 @@ nreg_Xkernel(
     REAL *_iaz,
     REAL *_iu);
 
-void
-nreg_Vkernel(
+void nreg_Vkernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_ivx,
@@ -181,8 +174,7 @@ nreg_Vkernel(
     REAL *_idvz,
     REAL *_ik);
 
-void
-sakura_kernel(
+void sakura_kernel(
     const unsigned int ni,
     const REAL *_im,
     const REAL *_irx,
