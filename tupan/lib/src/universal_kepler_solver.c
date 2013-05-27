@@ -14,12 +14,12 @@
 inline REAL stumpff_c0(
     const REAL zeta)
 {
-    if (zeta > 0) {
-        REAL sz = sqrt(zeta);
-        return cos(sz);
-    }
     if (zeta < 0) {
         REAL sz = sqrt(-zeta);
+        return cos(sz);
+    }
+    if (zeta > 0) {
+        REAL sz = sqrt(zeta);
         return cosh(sz);
     }
     return ((REAL)1);
@@ -29,12 +29,12 @@ inline REAL stumpff_c0(
 inline REAL stumpff_c1(
     const REAL zeta)
 {
-    if (zeta > 0) {
-        REAL sz = sqrt(zeta);
-        return sin(sz) / sz;
-    }
     if (zeta < 0) {
         REAL sz = sqrt(-zeta);
+        return sin(sz) / sz;
+    }
+    if (zeta > 0) {
+        REAL sz = sqrt(zeta);
         return sinh(sz) / sz;
     }
     return ((REAL)1);
@@ -44,13 +44,13 @@ inline REAL stumpff_c1(
 inline REAL stumpff_c2(
     const REAL zeta)
 {
-    if (zeta > 0) {
-        REAL sz = sqrt(zeta);
-        return (1 - cos(sz)) / zeta;
-    }
     if (zeta < 0) {
         REAL sz = sqrt(-zeta);
-        return (1 - cosh(sz)) / zeta;
+        return (cos(sz) - 1) / zeta;
+    }
+    if (zeta > 0) {
+        REAL sz = sqrt(zeta);
+        return (cosh(sz) - 1) / zeta;
     }
     return 1/((REAL)2);
 }
@@ -59,13 +59,13 @@ inline REAL stumpff_c2(
 inline REAL stumpff_c3(
     const REAL zeta)
 {
-    if (zeta > 0) {
-        REAL sz = sqrt(zeta);
-        return (1 - sin(sz) / sz) / zeta;
-    }
     if (zeta < 0) {
         REAL sz = sqrt(-zeta);
-        return (1 - sinh(sz) / sz) / zeta;
+        return (sin(sz) / sz - 1) / zeta;
+    }
+    if (zeta > 0) {
+        REAL sz = sqrt(zeta);
+        return (sinh(sz) / sz - 1) / zeta;
     }
     return 1/((REAL)6);
 }
@@ -185,7 +185,7 @@ inline REAL universal_kepler_dsds(
     const REAL m,
     const REAL alpha)
 {
-    return (m - alpha * r0) * S1(s, alpha) + r0v0 * S0(s, alpha);
+    return (m + alpha * r0) * S1(s, alpha) + r0v0 * S0(s, alpha);
 }
 
 
@@ -383,7 +383,7 @@ inline void universal_kepler_solver(
                 REAL r0 = sqrt(r0sqr);   // XXX: +e2
                 REAL r0v0 = rx * vx + ry * vy + rz * vz;
                 REAL v0sqr = vx * vx + vy * vy + vz * vz;
-                REAL alpha = 2 * m / r0 - v0sqr;
+                REAL alpha = v0sqr - 2 * m / r0;
 
                 REAL s0, s, arg[5];
 
