@@ -86,17 +86,18 @@ def get_h(p, tau, W):
     W0 = W
     h = tau * W0
     err = 1.0
-    tol = 2.0**(-32)
+    tol = 2.0**(-52)
     i = 0
     while err > tol:
         h0 = h
         p0 = p.copy()
         p1, dt, W1, U1 = nreg_step(p0, h0, W0)
         h = 2 * tau * (W0 * W1) / (W0 + W1)
-        err = abs((dt-tau)/tau)
+        err = abs((dt - tau) / tau)
         i += 1
-    h = 2 * tau * (W0 * W1) / (W0 + W1)
-    return h
+        if i > 32:
+            return h, True
+    return h, False
 
 
 def nreg_step(p, h, W):
@@ -123,31 +124,22 @@ class NREG(Base):
         """
 
         """
-        def do_nsteps(p, tau, W, nsteps):
+        def step(p, tau, W, nsteps=1):
             t = 0.0
             dtau = tau / nsteps
             for i in range(nsteps):
-                h = get_h(p, dtau, W)
-                p, dt, W, U = nreg_step(p, h, W)
+                h, err = get_h(p, dtau, W)
+                if not err:
+                    p, dt, W, U = nreg_step(p, h, W)
+                else:
+                    p, dt, W, U = step(p, dtau, W, 2*nsteps)
                 t += dt
             return p, t, W, U
 
-        def rec_do_nsteps(p, tau, W, nsteps, tol):
-            W0 = W
-            p0 = p.copy()
-            p, t, W, U = do_nsteps(p, tau, W, nsteps)
-            err = abs(t-tau)/tau
-            if err > tol:
-                p, t, W, U = rec_do_nsteps(p0, tau, W0, 2*nsteps, tol)
-            return p, t, W, U
-
-        nsteps = 16
-        tol = (tau/nsteps)**2  # max((tau/4)**3, (2.0**(-53))**0.5)
-
         W = self.W
         U = self.U
-        p, t, W, U = do_nsteps(p, tau, W, 1)
-#        p, t, W, U = rec_do_nsteps(p, tau, W, U, nsteps, tol)
+        p, t, W, U = step(p, tau, W)
+#        p, t, W, U = nreg_step(p, tau, W)   # h = tau
         self.U = U
         self.W = W
 
