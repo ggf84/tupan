@@ -43,10 +43,7 @@ def nreg_x(p, t, dt):
     p.rx += dt * p.vx
     p.ry += dt * p.vy
     p.rz += dt * p.vz
-    (ax, ay, az) = p.get_acc(p)
-    p.ax = ax.copy()
-    p.ay = ay.copy()
-    p.az = az.copy()
+    (p.ax, p.ay, p.az) = p.get_acc(p)
     U = -p.potential_energy
     t += dt
     return t, U
@@ -82,32 +79,44 @@ def nreg_v(p, W, dt):
     return W
 
 
-def get_h(p, tau, W):
-    W0 = W
+def get_h(p, tau):
+    W0 = -p.potential_energy
     h = tau * W0
     err = 1.0
-    tol = 2.0**(-52)
-    i = 0
+    tol = 2.0**(-42)
     while err > tol:
-        h0 = h
         p0 = p.copy()
-        p1, dt, W1, U1 = nreg_step(p0, h0, W0)
+        p1, dt, W1 = nreg_base_step(p0, h)
         h = 2 * tau * (W0 * W1) / (W0 + W1)
+        err0 = err
         err = abs((dt - tau) / tau)
-        i += 1
-        if i > 32:
+        if err0 < err:
             return h, True
     return h, False
 
 
-def nreg_step(p, h, W):
+def nreg_base_step(p, h):
     t = 0.0
+    W = -p.potential_energy
 
     t, U = nreg_x(p, t, 0.5 * (h / W))
     W = nreg_v(p, W, (h / U))
     t, U = nreg_x(p, t, 0.5 * (h / W))
 
-    return p, t, W, U
+    return p, t, W
+
+
+def nreg_step(p, tau, nsteps=1):
+    t = 0.0
+    dtau = tau / nsteps
+    for i in range(nsteps):
+        h, err = get_h(p, dtau)
+        if not err:
+            p, dt, W = nreg_base_step(p, h)
+        else:
+            p, dt, W = nreg_step(p, dtau, 2*nsteps)
+        t += dt
+    return p, t, W
 
 
 @decallmethods(timings)
@@ -117,31 +126,13 @@ class NREG(Base):
     """
     def __init__(self, eta, time, particles, **kwargs):
         super(NREG, self).__init__(eta, time, particles, **kwargs)
-        self.U = None
-        self.W = None
 
     def do_step(self, p, tau):
         """
 
         """
-        def step(p, tau, W, nsteps=1):
-            t = 0.0
-            dtau = tau / nsteps
-            for i in range(nsteps):
-                h, err = get_h(p, dtau, W)
-                if not err:
-                    p, dt, W, U = nreg_step(p, h, W)
-                else:
-                    p, dt, W, U = step(p, dtau, W, 2*nsteps)
-                t += dt
-            return p, t, W, U
-
-        W = self.W
-        U = self.U
-        p, t, W, U = step(p, tau, W)
-#        p, t, W, U = nreg_step(p, tau, W)   # h = tau
-        self.U = U
-        self.W = W
+        p, t, W = nreg_step(p, tau)
+#        p, t, W = nreg_base_step(p, tau)   # h = tau
 
         p.tstep = t
         p.time += t
@@ -161,13 +152,6 @@ class NREG(Base):
         )
 
         p = self.particles
-        U = -p.potential_energy
-        (ax, ay, az) = p.get_acc(p)
-        p.ax = ax.copy()
-        p.ay = ay.copy()
-        p.az = az.copy()
-        self.U = U
-        self.W = U
 
 #        if self.dumpper:
 #            self.snap_number = 0

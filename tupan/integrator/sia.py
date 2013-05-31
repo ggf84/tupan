@@ -13,6 +13,7 @@ import numpy as np
 from ..integrator import Base
 from ..lib import gravity
 from .sakura import sakura_step
+from .nreg import nreg_step
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -99,10 +100,10 @@ def kick_n(isys, jsys, tau):
     """
     if isys.n and jsys.n:
         for iobj in isys.members:
-            (iax, iay, iaz) = iobj.get_acc(jsys)
-            iobj.vx += tau * iax
-            iobj.vy += tau * iay
-            iobj.vz += tau * iaz
+            (iobj.ax, iobj.ay, iobj.az) = iobj.get_acc(jsys)
+            iobj.vx += tau * iobj.ax
+            iobj.vy += tau * iobj.ay
+            iobj.vz += tau * iobj.az
     return isys
 
 
@@ -485,6 +486,7 @@ class SIA(Base):
         )
 
         p = self.particles
+        (p.ax, p.ay, p.az) = p.get_acc(p)
 
         if self.dumpper:
             self.dumpper.dump_worldline(p)
