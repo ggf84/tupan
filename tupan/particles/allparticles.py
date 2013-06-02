@@ -89,9 +89,6 @@ class System(AbstractNbodyMethods):
         fmt += "])"
         return fmt
 
-    def __repr__(self):
-        return str(self.__dict__)
-
     def __hash__(self):
         return hash(tuple(self.values()))
 

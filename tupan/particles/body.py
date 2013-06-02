@@ -36,6 +36,9 @@ class NbodyUtils(object):
     """
 
     """
+    def __repr__(self):
+        return repr(self.__dict__)
+
     def __len__(self):
         return len(self.id)
 
@@ -577,12 +580,6 @@ class Bodies(AbstractNbodyMethods):
     def kind(self):
         return {type(self).__name__.lower(): self}
 
-    def __repr__(self):
-        return repr(self.__dict__)
-
-    def __len__(self):
-        return len(self.id)
-
     def __setattr__(self, name, value):
         if not name in self.__dict__:
             dtype = np.array(value).dtype
@@ -594,9 +591,6 @@ class Bodies(AbstractNbodyMethods):
             slc = [slc]
         items = {k: v[slc] for k, v in self.__dict__.items()}
         return type(self)(items=items)
-
-    def copy(self):
-        return copy.deepcopy(self)
 
     def append(self, obj):
         if obj.n:

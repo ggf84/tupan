@@ -118,8 +118,7 @@ inline REAL lagrange_f(
     const REAL m,
     const REAL alpha)
 {
-    REAL m_r0 = m / r0;
-    return 1 - m_r0 * S2(s, alpha);
+    return 1 - m * S2(s, alpha) / r0;
 }
 
 
@@ -130,16 +129,16 @@ inline REAL lagrange_dfds(
     const REAL m,
     const REAL alpha)
 {
-    REAL m_r0r1 = m / (r0 * r1);
-    return -m_r0r1 * S1(s, alpha);
+    return -m * S1(s, alpha) / (r0 * r1);
 }
 
 
 inline REAL lagrange_g(
-    const REAL dt,
     const REAL s,
+    const REAL r0,
     const REAL m,
-    const REAL alpha)
+    const REAL alpha,
+    const REAL dt)
 {
     return dt - m * S3(s, alpha);
 }
@@ -147,12 +146,12 @@ inline REAL lagrange_g(
 
 inline REAL lagrange_dgds(
     const REAL s,
+    const REAL r0,
     const REAL r1,
     const REAL m,
     const REAL alpha)
 {
-    REAL m_r1 = m / r1;
-    return 1 - m_r1 * S2(s, alpha);
+    return 1 - m * S2(s, alpha) / r1;
 }
 
 
@@ -163,7 +162,8 @@ inline REAL universal_kepler(
     const REAL m,
     const REAL alpha)
 {
-    return r0 * S1(s, alpha) + r0v0 * S2(s, alpha) + m * S3(s, alpha);
+//    return r0 * S1(s, alpha) + r0v0 * S2(s, alpha) + m * S3(s, alpha);
+    return r0 * s + r0v0 * S2(s, alpha) + (m + alpha * r0) * S3(s, alpha);
 }
 
 
@@ -174,7 +174,8 @@ inline REAL universal_kepler_ds(
     const REAL m,
     const REAL alpha)
 {
-    return r0 * S0(s, alpha) + r0v0 * S1(s, alpha) + m * S2(s, alpha);
+//    return r0 * S0(s, alpha) + r0v0 * S1(s, alpha) + m * S2(s, alpha);
+    return r0 + r0v0 * S1(s, alpha) + (m + alpha * r0) * S2(s, alpha);
 }
 
 
@@ -185,7 +186,7 @@ inline REAL universal_kepler_dsds(
     const REAL m,
     const REAL alpha)
 {
-    return (m + alpha * r0) * S1(s, alpha) + r0v0 * S0(s, alpha);
+    return r0v0 * S0(s, alpha) + (m + alpha * r0) * S1(s, alpha);
 }
 
 
@@ -322,7 +323,7 @@ inline void set_new_pos_vel(
     REAL v0z = *vz;
 
     REAL lf = lagrange_f(s, r0, m, alpha);
-    REAL lg = lagrange_g(dt, s, m, alpha);
+    REAL lg = lagrange_g(s, r0, m, alpha, dt);
     REAL r1x, r1y, r1z;
     r1x = r0x * lf + v0x * lg;
     r1y = r0y * lf + v0y * lg;
@@ -332,7 +333,8 @@ inline void set_new_pos_vel(
     REAL r1 = sqrt(r1sqr);   // XXX: +e2
 
     REAL ldf = lagrange_dfds(s, r0, r1, m, alpha);
-    REAL ldg = lagrange_dgds(s, r1, m, alpha);
+//    REAL ldg = lagrange_dgds(s, r0, r1, m, alpha);
+    REAL ldg = (1 + lg * ldf) / lf;
     REAL v1x, v1y, v1z;
     v1x = r0x * ldf + v0x * ldg;
     v1y = r0y * ldf + v0y * ldg;
@@ -383,7 +385,9 @@ inline void universal_kepler_solver(
                 REAL r0 = sqrt(r0sqr);   // XXX: +e2
                 REAL r0v0 = rx * vx + ry * vy + rz * vz;
                 REAL v0sqr = vx * vx + vy * vy + vz * vz;
-                REAL alpha = v0sqr - 2 * m / r0;
+
+                REAL beta = 2;// - (e2 / (r0sqr + e2));
+                REAL alpha = v0sqr - beta * (m / r0);
 
                 REAL s0, s, arg[5];
 
