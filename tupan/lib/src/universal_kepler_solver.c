@@ -12,7 +12,9 @@
 
 
 inline REAL stumpff_c0(
-    const REAL zeta)
+//    const REAL zeta)
+    REAL zeta)      // This is because of bug 4775 on old versions of glibc.
+                    // That bug has already been fixed in latter versions.
 {
     if (zeta < 0) {
         REAL sz = sqrt(-zeta);
@@ -27,7 +29,8 @@ inline REAL stumpff_c0(
 
 
 inline REAL stumpff_c1(
-    const REAL zeta)
+//    const REAL zeta)
+    REAL zeta)
 {
     if (zeta < 0) {
         REAL sz = sqrt(-zeta);
@@ -42,7 +45,8 @@ inline REAL stumpff_c1(
 
 
 inline REAL stumpff_c2(
-    const REAL zeta)
+//    const REAL zeta)
+    REAL zeta)
 {
     if (zeta < 0) {
         REAL sz = sqrt(-zeta);
@@ -57,7 +61,8 @@ inline REAL stumpff_c2(
 
 
 inline REAL stumpff_c3(
-    const REAL zeta)
+//    const REAL zeta)
+    REAL zeta)
 {
     if (zeta < 0) {
         REAL sz = sqrt(-zeta);
