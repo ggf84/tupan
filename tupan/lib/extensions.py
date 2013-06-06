@@ -6,7 +6,7 @@ TODO.
 """
 
 
-from __future__ import print_function
+from __future__ import print_function, division
 import os
 import logging
 import numpy as np
@@ -61,6 +61,13 @@ class CLKernel(object):
     def global_size(self, ni):
         gs0 = ((ni-1)//2 + 1) * 2
         self._gsize = (gs0,)
+
+    def get_wgsize(self, numbufs):
+        itemsize = np.dtype(ctype.REAL).itemsize
+        dev = self.env.ctx.devices[0]
+        wgsize = (dev.local_mem_size // itemsize) // numbufs
+        max_wgsize = dev.max_work_group_size
+        return min(wgsize, max_wgsize)
 
     def alloc_local_memory(self, wgsize):
         itemsize = np.dtype(ctype.REAL).itemsize
@@ -174,6 +181,9 @@ class CKernel(object):
         self.env = env
         self.ffi = ffi
         self.kernel = kernel
+
+    def get_wgsize(self, numbufs):
+        return None
 
     def alloc_local_memory(self, wgsize):
         return None
