@@ -62,9 +62,12 @@ class System(AbstractNbodyMethods):
     #
     # miscellaneous methods
     #
+    def __len__(self):
+        return sum(len(obj) for obj in self.values())
+
     @property
     def n(self):
-        return sum(obj.n for obj in self.values())
+        return len(self)
 
     @property
     def kind(self):

@@ -39,9 +39,6 @@ class NbodyUtils(object):
     def __repr__(self):
         return repr(self.__dict__)
 
-    def __len__(self):
-        return len(self.id)
-
     def __contains__(self, id):
         return id in self.id
 
@@ -571,6 +568,9 @@ class Bodies(AbstractNbodyMethods):
                 self.__dict__[name] = np.zeros(n, dtype=dtype)
         else:
             self.__dict__.update(items)
+
+    def __len__(self):
+        return len(self.id)
 
     @property
     def n(self):

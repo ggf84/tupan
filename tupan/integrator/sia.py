@@ -31,28 +31,17 @@ INCLUDE_PN_CORRECTIONS = False
 # split
 #
 @timings
-def split(isys, condition):
+def split(ip, condition):
     """
-    Splits the particle's system in slow/fast components.
+    Splits the particle's system into slow/fast components.
     """
-    slow = isys[condition]
-    fast = isys[~condition]
+    slow = ip[condition]
+    fast = ip[~condition]
 
-    # prevents the occurrence of a slow level with only one particle.
-    if slow.n == 1:
-        fast.append(slow)
-        slow = slow[:0]
-
-    # prevents the occurrence of a fast level with only one particle.
-    if fast.n == 1:
-        slow.append(fast)
-        fast = fast[:0]
-
-    if slow.n + fast.n != isys.n:
+    if slow.n + fast.n != ip.n:
         logger.error(
-            "slow.n + fast.n != isys.n: %d, %d, %d.",
-            slow.n, fast.n, isys.n
-        )
+            "slow.n + fast.n != ip.n: %d, %d, %d.",
+            slow.n, fast.n, ip.n)
 
     return slow, fast
 
@@ -69,56 +58,53 @@ def join(slow, fast):
         return slow
     if not slow.n:
         return fast
-    isys = slow.copy()
-    isys.append(fast)
-    return isys
+    ip = slow.copy()
+    ip.append(fast)
+    return ip
 
 
 #
 # drift_n
 #
 @timings
-def drift_n(isys, tau):
+def drift_n(ip, tau):
     """
     Drift operator for Newtonian quantities.
     """
-    if isys.n:
-        for iobj in isys.members:
-            iobj.rx += tau * iobj.vx
-            iobj.ry += tau * iobj.vy
-            iobj.rz += tau * iobj.vz
-    return isys
+    for iobj in ip.members:
+        iobj.rx += tau * iobj.vx
+        iobj.ry += tau * iobj.vy
+        iobj.rz += tau * iobj.vz
+    return ip
 
 
 #
 # kick_n
 #
 @timings
-def kick_n(isys, jsys, tau):
+def kick_n(ip, jp, tau):
     """
     Kick operator for Newtonian quantities.
     """
-    if isys.n and jsys.n:
-        for iobj in isys.members:
-            (iobj.ax, iobj.ay, iobj.az) = iobj.get_acc(jsys)
-            iobj.vx += tau * iobj.ax
-            iobj.vy += tau * iobj.ay
-            iobj.vz += tau * iobj.az
-    return isys
+    (ip.ax, ip.ay, ip.az) = ip.get_acc(jp)
+    for iobj in ip.members:
+        iobj.vx += tau * iobj.ax
+        iobj.vy += tau * iobj.ay
+        iobj.vz += tau * iobj.az
+    return ip
 
 
 #
 # drift_pn
 #
 @timings
-def drift_pn(isys, tau):
+def drift_pn(ip, tau):
     """
     Drift operator for post-Newtonian quantities.
     """
-    isys = drift_n(isys, tau)
-    if isys.n:
-        isys.evolve_rcom_pn_shift(tau)
-    return isys
+    ip = drift_n(ip, tau)
+    ip.evolve_rcom_pn_shift(tau)
+    return ip
 
 
 #
@@ -129,32 +115,31 @@ def kick_pn(ip, jp, tau):
     """
     Kick operator for post-Newtonian quantities.
     """
-    if ip.n and jp.n:
-        ip = kick_n(ip, jp, tau / 2)
+    ip = kick_n(ip, jp, tau / 2)
 
-        ip.vx += ip.pn_dvx
-        ip.vy += ip.pn_dvy
-        ip.vz += ip.pn_dvz
+    ip.vx += ip.pn_dvx
+    ip.vy += ip.pn_dvy
+    ip.vz += ip.pn_dvz
 
-        ip.evolve_ke_pn_shift(tau / 2)
-        ip.evolve_lmom_pn_shift(tau / 2)
-        ip.evolve_amom_pn_shift(tau / 2)
+    ip.evolve_ke_pn_shift(tau / 2)
+    ip.evolve_lmom_pn_shift(tau / 2)
+    ip.evolve_amom_pn_shift(tau / 2)
 
-        (pnax, pnay, pnaz) = ip.get_pnacc(jp)
-        g = 2 * tau * 0
-        ip.pn_dvx = (tau * pnax - (1 - g) * ip.pn_dvx) / (1 + g)
-        ip.pn_dvy = (tau * pnay - (1 - g) * ip.pn_dvy) / (1 + g)
-        ip.pn_dvz = (tau * pnaz - (1 - g) * ip.pn_dvz) / (1 + g)
+    (pnax, pnay, pnaz) = ip.get_pnacc(jp)
+    g = 2 * tau * 0
+    ip.pn_dvx = (tau * pnax - (1 - g) * ip.pn_dvx) / (1 + g)
+    ip.pn_dvy = (tau * pnay - (1 - g) * ip.pn_dvy) / (1 + g)
+    ip.pn_dvz = (tau * pnaz - (1 - g) * ip.pn_dvz) / (1 + g)
 
-        ip.evolve_amom_pn_shift(tau / 2)
-        ip.evolve_lmom_pn_shift(tau / 2)
-        ip.evolve_ke_pn_shift(tau / 2)
+    ip.evolve_amom_pn_shift(tau / 2)
+    ip.evolve_lmom_pn_shift(tau / 2)
+    ip.evolve_ke_pn_shift(tau / 2)
 
-        ip.vz += ip.pn_dvz
-        ip.vy += ip.pn_dvy
-        ip.vx += ip.pn_dvx
+    ip.vz += ip.pn_dvz
+    ip.vy += ip.pn_dvy
+    ip.vx += ip.pn_dvx
 
-        ip = kick_n(ip, jp, tau / 2)
+    ip = kick_n(ip, jp, tau / 2)
     return ip
 
 
@@ -162,26 +147,26 @@ def kick_pn(ip, jp, tau):
 # drift
 #
 @timings
-def drift(isys, tau):
+def drift(ip, tau):
     """
     Drift operator.
     """
     if INCLUDE_PN_CORRECTIONS:
-        return drift_pn(isys, tau)
-    return drift_n(isys, tau)
+        return drift_pn(ip, tau)
+    return drift_n(ip, tau)
 
 
 #
 # kick
 #
 @timings
-def kick(isys, jsys, tau, pn):
+def kick(ip, jp, tau, pn):
     """
     Kick operator.
     """
     if pn and INCLUDE_PN_CORRECTIONS:
-        return kick_pn(isys, jsys, tau)
-    return kick_n(isys, jsys, tau)
+        return kick_pn(ip, jp, tau)
+    return kick_n(ip, jp, tau)
 
 
 #
@@ -192,8 +177,9 @@ def kick_sf(slow, fast, tau):
     """
     Slow<->Fast Kick operator.
     """
-    slow = kick(slow, fast, tau, pn=True)
-    fast = kick(fast, slow, tau, pn=True)
+    if slow.n and fast.n:
+        slow = kick(slow, fast, tau, pn=True)
+        fast = kick(fast, slow, tau, pn=True)
     return slow, fast
 
 
@@ -205,17 +191,23 @@ dkd21_coefs = ([1.0],
 
 
 @timings
-def base_dkd21(isys, tau):
+def base_dkd21(ip, tau):
     """
     Standard dkd21 operator.
     """
+    if ip.n == 0:
+        return ip
+
+    if ip.n == 1:
+        return drift(ip, tau)
+
     k, d = dkd21_coefs
 
-    isys = drift(isys, d[0] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[0] * tau)
+    ip = drift(ip, d[0] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[0] * tau)
 
-    return isys
+    return ip
 
 
 #
@@ -227,19 +219,25 @@ dkd22_coefs = ([0.5],
 
 
 @timings
-def base_dkd22(isys, tau):
+def base_dkd22(ip, tau):
     """
     Standard dkd22 operator.
     """
+    if ip.n == 0:
+        return ip
+
+    if ip.n == 1:
+        return drift(ip, tau)
+
     k, d = dkd22_coefs
 
-    isys = drift(isys, d[0] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[0] * tau)
+    ip = drift(ip, d[0] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[0] * tau)
 
-    return isys
+    return ip
 
 
 #
@@ -252,21 +250,27 @@ dkd43_coefs = ([1.3512071919596575,
 
 
 @timings
-def base_dkd43(isys, tau):
+def base_dkd43(ip, tau):
     """
     Standard dkd43 operator.
     """
+    if ip.n == 0:
+        return ip
+
+    if ip.n == 1:
+        return drift(ip, tau)
+
     k, d = dkd43_coefs
 
-    isys = drift(isys, d[0] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[1] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[0] * tau)
+    ip = drift(ip, d[0] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[1] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[0] * tau)
 
-    return isys
+    return ip
 
 
 #
@@ -280,23 +284,29 @@ dkd44_coefs = ([0.7123418310626056,
 
 
 @timings
-def base_dkd44(isys, tau):
+def base_dkd44(ip, tau):
     """
     Standard dkd44 operator.
     """
+    if ip.n == 0:
+        return ip
+
+    if ip.n == 1:
+        return drift(ip, tau)
+
     k, d = dkd44_coefs
 
-    isys = drift(isys, d[0] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[1] * tau, pn=True)
-    isys = drift(isys, d[2] * tau)
-    isys = kick(isys, isys, k[1] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[0] * tau)
+    ip = drift(ip, d[0] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[1] * tau, pn=True)
+    ip = drift(ip, d[2] * tau)
+    ip = kick(ip, ip, k[1] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[0] * tau)
 
-    return isys
+    return ip
 
 
 #
@@ -311,25 +321,31 @@ dkd45_coefs = ([-0.0844296195070715,
 
 
 @timings
-def base_dkd45(isys, tau):
+def base_dkd45(ip, tau):
     """
     Standard dkd45 operator.
     """
+    if ip.n == 0:
+        return ip
+
+    if ip.n == 1:
+        return drift(ip, tau)
+
     k, d = dkd45_coefs
 
-    isys = drift(isys, d[0] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[1] * tau, pn=True)
-    isys = drift(isys, d[2] * tau)
-    isys = kick(isys, isys, k[2] * tau, pn=True)
-    isys = drift(isys, d[2] * tau)
-    isys = kick(isys, isys, k[1] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[0] * tau)
+    ip = drift(ip, d[0] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[1] * tau, pn=True)
+    ip = drift(ip, d[2] * tau)
+    ip = kick(ip, ip, k[2] * tau, pn=True)
+    ip = drift(ip, d[2] * tau)
+    ip = kick(ip, ip, k[1] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[0] * tau)
 
-    return isys
+    return ip
 
 
 #
@@ -345,27 +361,33 @@ dkd46_coefs = ([0.209515106613362,
 
 
 @timings
-def base_dkd46(isys, tau):
+def base_dkd46(ip, tau):
     """
     Standard dkd46 operator.
     """
+    if ip.n == 0:
+        return ip
+
+    if ip.n == 1:
+        return drift(ip, tau)
+
     k, d = dkd46_coefs
 
-    isys = drift(isys, d[0] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[1] * tau, pn=True)
-    isys = drift(isys, d[2] * tau)
-    isys = kick(isys, isys, k[2] * tau, pn=True)
-    isys = drift(isys, d[3] * tau)
-    isys = kick(isys, isys, k[2] * tau, pn=True)
-    isys = drift(isys, d[2] * tau)
-    isys = kick(isys, isys, k[1] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[0] * tau)
+    ip = drift(ip, d[0] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[1] * tau, pn=True)
+    ip = drift(ip, d[2] * tau)
+    ip = kick(ip, ip, k[2] * tau, pn=True)
+    ip = drift(ip, d[3] * tau)
+    ip = kick(ip, ip, k[2] * tau, pn=True)
+    ip = drift(ip, d[2] * tau)
+    ip = kick(ip, ip, k[1] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[0] * tau)
 
-    return isys
+    return ip
 
 
 #
@@ -382,29 +404,35 @@ dkd67_coefs = ([0.7845136104775573,
 
 
 @timings
-def base_dkd67(isys, tau):
+def base_dkd67(ip, tau):
     """
     Standard dkd67 operator.
     """
+    if ip.n == 0:
+        return ip
+
+    if ip.n == 1:
+        return drift(ip, tau)
+
     k, d = dkd67_coefs
 
-    isys = drift(isys, d[0] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[1] * tau, pn=True)
-    isys = drift(isys, d[2] * tau)
-    isys = kick(isys, isys, k[2] * tau, pn=True)
-    isys = drift(isys, d[3] * tau)
-    isys = kick(isys, isys, k[3] * tau, pn=True)
-    isys = drift(isys, d[3] * tau)
-    isys = kick(isys, isys, k[2] * tau, pn=True)
-    isys = drift(isys, d[2] * tau)
-    isys = kick(isys, isys, k[1] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[0] * tau)
+    ip = drift(ip, d[0] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[1] * tau, pn=True)
+    ip = drift(ip, d[2] * tau)
+    ip = kick(ip, ip, k[2] * tau, pn=True)
+    ip = drift(ip, d[3] * tau)
+    ip = kick(ip, ip, k[3] * tau, pn=True)
+    ip = drift(ip, d[3] * tau)
+    ip = kick(ip, ip, k[2] * tau, pn=True)
+    ip = drift(ip, d[2] * tau)
+    ip = kick(ip, ip, k[1] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[0] * tau)
 
-    return isys
+    return ip
 
 
 #
@@ -423,33 +451,39 @@ dkd69_coefs = ([0.39103020330868477,
 
 
 @timings
-def base_dkd69(isys, tau):
+def base_dkd69(ip, tau):
     """
     Standard dkd69 operator.
     """
+    if ip.n == 0:
+        return ip
+
+    if ip.n == 1:
+        return drift(ip, tau)
+
     k, d = dkd69_coefs
 
-    isys = drift(isys, d[0] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[1] * tau, pn=True)
-    isys = drift(isys, d[2] * tau)
-    isys = kick(isys, isys, k[2] * tau, pn=True)
-    isys = drift(isys, d[3] * tau)
-    isys = kick(isys, isys, k[3] * tau, pn=True)
-    isys = drift(isys, d[4] * tau)
-    isys = kick(isys, isys, k[4] * tau, pn=True)
-    isys = drift(isys, d[4] * tau)
-    isys = kick(isys, isys, k[3] * tau, pn=True)
-    isys = drift(isys, d[3] * tau)
-    isys = kick(isys, isys, k[2] * tau, pn=True)
-    isys = drift(isys, d[2] * tau)
-    isys = kick(isys, isys, k[1] * tau, pn=True)
-    isys = drift(isys, d[1] * tau)
-    isys = kick(isys, isys, k[0] * tau, pn=True)
-    isys = drift(isys, d[0] * tau)
+    ip = drift(ip, d[0] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[1] * tau, pn=True)
+    ip = drift(ip, d[2] * tau)
+    ip = kick(ip, ip, k[2] * tau, pn=True)
+    ip = drift(ip, d[3] * tau)
+    ip = kick(ip, ip, k[3] * tau, pn=True)
+    ip = drift(ip, d[4] * tau)
+    ip = kick(ip, ip, k[4] * tau, pn=True)
+    ip = drift(ip, d[4] * tau)
+    ip = kick(ip, ip, k[3] * tau, pn=True)
+    ip = drift(ip, d[3] * tau)
+    ip = kick(ip, ip, k[2] * tau, pn=True)
+    ip = drift(ip, d[2] * tau)
+    ip = kick(ip, ip, k[1] * tau, pn=True)
+    ip = drift(ip, d[1] * tau)
+    ip = kick(ip, ip, k[0] * tau, pn=True)
+    ip = drift(ip, d[0] * tau)
 
-    return isys
+    return ip
 
 
 @decallmethods(timings)
@@ -598,55 +632,10 @@ class SIA(Base):
     #
     # dkd21[std,shr,hcc] method -- D.K.D
     #
-    def dkd21__(self, p, tau, update_tstep, shared_tstep=False):
-        if not p.n:
-            return p
-
-        if update_tstep:
-            p.update_tstep(p, self.eta)
-            if shared_tstep:
-                tau = self.get_min_block_tstep(p, tau)
-        flag = 0 if shared_tstep and not update_tstep else 1
-
-        if p.n == 2:
-            flag = 0
-
-        slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
-
-        k, d = dkd21_coefs
-        #
-        if fast.n:
-            fast = self.dkd21(fast, d[0] * tau / 2, True)
-            if slow.n:
-                slow = sakura_step(slow, d[0] * tau)
-            fast = self.dkd21(fast, d[0] * tau / 2, True)
-            fast, slow = kick_sf(fast, slow, k[0] * tau)
-            fast = self.dkd21(fast, d[0] * tau / 2, True)
-            if slow.n:
-                slow = sakura_step(slow, d[0] * tau)
-            fast = self.dkd21(fast, d[0] * tau / 2, True)
-        else:
-            if slow.n:
-                slow = sakura_step(slow, tau)
-        #
-
-        if slow.n:
-            slow.tstep = tau
-            slow.time += tau
-            slow.nstep += 1
-            wp = slow[slow.time % (self.dump_freq * tau) == 0]
-            if wp.n:
-                self.wl.append(wp.copy())
-
-        return join(slow, fast)
-
-    #
-    # dkd21[std,shr,hcc] method -- D.K.D
-    #
     def dkd21(self, p, tau, update_tstep, shared_tstep=False):
-        if not p.n:
-            return p
+        """
 
+        """
         if update_tstep:
             p.update_tstep(p, self.eta)
             if shared_tstep:
@@ -685,9 +674,9 @@ class SIA(Base):
     # dkd22[std,shr,hcc] method -- D.K.D.K.D
     #
     def dkd22(self, p, tau, update_tstep, shared_tstep=False):
-        if not p.n:
-            return p
+        """
 
+        """
         if update_tstep:
             p.update_tstep(p, self.eta)
             if shared_tstep:
@@ -732,9 +721,9 @@ class SIA(Base):
     # dkd43[std,shr,hcc] method -- D.K.D.K.D.K.D
     #
     def dkd43(self, p, tau, update_tstep, shared_tstep=False):
-        if not p.n:
-            return p
+        """
 
+        """
         if update_tstep:
             p.update_tstep(p, self.eta)
             if shared_tstep:
@@ -785,9 +774,9 @@ class SIA(Base):
     # dkd44[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D
     #
     def dkd44(self, p, tau, update_tstep, shared_tstep=False):
-        if not p.n:
-            return p
+        """
 
+        """
         if update_tstep:
             p.update_tstep(p, self.eta)
             if shared_tstep:
@@ -844,9 +833,9 @@ class SIA(Base):
     # dkd45[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D
     #
     def dkd45(self, p, tau, update_tstep, shared_tstep=False):
-        if not p.n:
-            return p
+        """
 
+        """
         if update_tstep:
             p.update_tstep(p, self.eta)
             if shared_tstep:
@@ -909,9 +898,9 @@ class SIA(Base):
     # dkd46[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D
     #
     def dkd46(self, p, tau, update_tstep, shared_tstep=False):
-        if not p.n:
-            return p
+        """
 
+        """
         if update_tstep:
             p.update_tstep(p, self.eta)
             if shared_tstep:
@@ -980,9 +969,9 @@ class SIA(Base):
     # dkd67[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
     def dkd67(self, p, tau, update_tstep, shared_tstep=False):
-        if not p.n:
-            return p
+        """
 
+        """
         if update_tstep:
             p.update_tstep(p, self.eta)
             if shared_tstep:
@@ -1057,9 +1046,9 @@ class SIA(Base):
     # dkd69[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
     def dkd69(self, p, tau, update_tstep, shared_tstep=False):
-        if not p.n:
-            return p
+        """
 
+        """
         if update_tstep:
             p.update_tstep(p, self.eta)
             if shared_tstep:
