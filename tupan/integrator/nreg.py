@@ -83,10 +83,9 @@ def get_h(p, tau):
     W0 = -p.potential_energy
     h = tau * W0
     err = 1.0
-    tol = 2.0**(-42)
+    tol = 2.0**(-48)
     while err > tol:
-        p0 = p.copy()
-        p1, dt, W1 = nreg_base_step(p0, h)
+        p1, dt, W1 = nreg_base_step(p.copy(), h)
         h = 2 * tau * (W0 * W1) / (W0 + W1)
         err0 = err
         err = abs((dt - tau) / tau)
@@ -131,8 +130,8 @@ class NREG(Base):
         """
 
         """
-        p, t, W = nreg_step(p, tau)
-#        p, t, W = nreg_base_step(p, tau)   # h = tau
+#        p, t, W = nreg_step(p, tau)
+        p, t, W = nreg_base_step(p, tau)   # h = tau
 
         p.tstep = t
         p.time += t
@@ -178,7 +177,8 @@ class NREG(Base):
             self.initialize(t_end)
 
         p = self.particles
-        tau = self.get_base_tstep(t_end)
+#        tau = self.get_base_tstep(t_end)
+        tau = self.eta
 
         if self.reporter:
             self.reporter.report(self.time, p)

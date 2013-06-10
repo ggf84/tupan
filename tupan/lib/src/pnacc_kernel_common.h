@@ -41,7 +41,7 @@ inline void pnacc_kernel_core(
     REAL e2 = ie2 + je2;                                             // 1 FLOPs
 
     REAL inv_r1, inv_r2, inv_r3;
-    smoothed_inv_r1r2r3(r2, e2, &inv_r1, &inv_r2, &inv_r3);          // 5 FLOPs
+    smoothed_inv_r1r2r3(r2, e2, &inv_r1, &inv_r2, &inv_r3);          // 4 FLOPs
 
     REAL m = im + jm;                                                // 1 FLOPs
     REAL r_sch = 2 * m * clight.inv2;
@@ -61,6 +61,6 @@ inline void pnacc_kernel_core(
         *ipnaz += pn.a * rz + pn.b * vz;                           // 4 FLOPs
     }
 }
-// Total flop count: 36+?+???
+// Total flop count: 35+?+???
 
 #endif  // __PNACC_KERNEL_COMMON_H__

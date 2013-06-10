@@ -38,7 +38,7 @@ inline void acc_jerk_kernel_core(
     REAL e2 = ie2 + je2;                                             // 1 FLOPs
 
     REAL inv_r2, inv_r3;
-    smoothed_inv_r2r3(r2, e2, &inv_r2, &inv_r3);                     // 5 FLOPs
+    smoothed_inv_r2r3(r2, e2, &inv_r2, &inv_r3);                     // 4 FLOPs
 
     inv_r3 *= jm;                                                    // 1 FLOPs
     rv *= 3 * inv_r2;                                                // 2 FLOPs
@@ -50,6 +50,6 @@ inline void acc_jerk_kernel_core(
     *ijy -= inv_r3 * (vy - rv * ry);                                 // 4 FLOPs
     *ijz -= inv_r3 * (vz - rv * rz);                                 // 4 FLOPs
 }
-// Total flop count: 43
+// Total flop count: 42
 
 #endif  // __ACC_JERK_KERNEL_COMMON_H__

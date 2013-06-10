@@ -32,10 +32,10 @@ inline void phi_kernel_core(
     REAL e2 = ie2 + je2;                                             // 1 FLOPs
 
     REAL inv_r1;
-    smoothed_inv_r1(r2, e2, &inv_r1);                                // 4 FLOPs
+    smoothed_inv_r1(r2, e2, &inv_r1);                                // 3 FLOPs
 
     *iphi -= jm * inv_r1;                                            // 2 FLOPs
 }
-// Total flop count: 15
+// Total flop count: 14
 
 #endif  // __PHI_KERNEL_COMMON_H__

@@ -31,17 +31,17 @@ INCLUDE_PN_CORRECTIONS = False
 # split
 #
 @timings
-def split(ip, condition):
+def split(ps, condition):
     """
     Splits the particle's system into slow/fast components.
     """
-    slow = ip[condition]
-    fast = ip[~condition]
+    slow = ps[condition]
+    fast = ps[~condition]
 
-    if slow.n + fast.n != ip.n:
+    if slow.n + fast.n != ps.n:
         logger.error(
-            "slow.n + fast.n != ip.n: %d, %d, %d.",
-            slow.n, fast.n, ip.n)
+            "slow.n + fast.n != ps.n: %d, %d, %d.",
+            slow.n, fast.n, ps.n)
 
     return slow, fast
 
@@ -58,115 +58,115 @@ def join(slow, fast):
         return slow
     if not slow.n:
         return fast
-    ip = slow.copy()
-    ip.append(fast)
-    return ip
+    ps = slow.copy()
+    ps.append(fast)
+    return ps
 
 
 #
 # drift_n
 #
 @timings
-def drift_n(ip, tau):
+def drift_n(ips, tau):
     """
     Drift operator for Newtonian quantities.
     """
-    for iobj in ip.members:
+    for iobj in ips.members:
         iobj.rx += tau * iobj.vx
         iobj.ry += tau * iobj.vy
         iobj.rz += tau * iobj.vz
-    return ip
+    return ips
 
 
 #
 # kick_n
 #
 @timings
-def kick_n(ip, jp, tau):
+def kick_n(ips, jps, tau):
     """
     Kick operator for Newtonian quantities.
     """
-    (ip.ax, ip.ay, ip.az) = ip.get_acc(jp)
-    for iobj in ip.members:
+    (ips.ax, ips.ay, ips.az) = ips.get_acc(jps)
+    for iobj in ips.members:
         iobj.vx += tau * iobj.ax
         iobj.vy += tau * iobj.ay
         iobj.vz += tau * iobj.az
-    return ip
+    return ips
 
 
 #
 # drift_pn
 #
 @timings
-def drift_pn(ip, tau):
+def drift_pn(ips, tau):
     """
     Drift operator for post-Newtonian quantities.
     """
-    ip = drift_n(ip, tau)
-    ip.evolve_rcom_pn_shift(tau)
-    return ip
+    ips = drift_n(ips, tau)
+    ips.evolve_rcom_pn_shift(tau)
+    return ips
 
 
 #
 # kick_pn
 #
 @timings
-def kick_pn(ip, jp, tau):
+def kick_pn(ips, jps, tau):
     """
     Kick operator for post-Newtonian quantities.
     """
-    ip = kick_n(ip, jp, tau / 2)
+    ips = kick_n(ips, jps, tau / 2)
 
-    ip.vx += ip.pn_dvx
-    ip.vy += ip.pn_dvy
-    ip.vz += ip.pn_dvz
+    ips.vx += ips.pn_dvx
+    ips.vy += ips.pn_dvy
+    ips.vz += ips.pn_dvz
 
-    ip.evolve_ke_pn_shift(tau / 2)
-    ip.evolve_lmom_pn_shift(tau / 2)
-    ip.evolve_amom_pn_shift(tau / 2)
+    ips.evolve_ke_pn_shift(tau / 2)
+    ips.evolve_lmom_pn_shift(tau / 2)
+    ips.evolve_amom_pn_shift(tau / 2)
 
-    (pnax, pnay, pnaz) = ip.get_pnacc(jp)
+    (pnax, pnay, pnaz) = ips.get_pnacc(jps)
     g = 2 * tau * 0
-    ip.pn_dvx = (tau * pnax - (1 - g) * ip.pn_dvx) / (1 + g)
-    ip.pn_dvy = (tau * pnay - (1 - g) * ip.pn_dvy) / (1 + g)
-    ip.pn_dvz = (tau * pnaz - (1 - g) * ip.pn_dvz) / (1 + g)
+    ips.pn_dvx = (tau * pnax - (1 - g) * ips.pn_dvx) / (1 + g)
+    ips.pn_dvy = (tau * pnay - (1 - g) * ips.pn_dvy) / (1 + g)
+    ips.pn_dvz = (tau * pnaz - (1 - g) * ips.pn_dvz) / (1 + g)
 
-    ip.evolve_amom_pn_shift(tau / 2)
-    ip.evolve_lmom_pn_shift(tau / 2)
-    ip.evolve_ke_pn_shift(tau / 2)
+    ips.evolve_amom_pn_shift(tau / 2)
+    ips.evolve_lmom_pn_shift(tau / 2)
+    ips.evolve_ke_pn_shift(tau / 2)
 
-    ip.vz += ip.pn_dvz
-    ip.vy += ip.pn_dvy
-    ip.vx += ip.pn_dvx
+    ips.vz += ips.pn_dvz
+    ips.vy += ips.pn_dvy
+    ips.vx += ips.pn_dvx
 
-    ip = kick_n(ip, jp, tau / 2)
-    return ip
+    ips = kick_n(ips, jps, tau / 2)
+    return ips
 
 
 #
 # drift
 #
 @timings
-def drift(ip, tau):
+def drift(ips, tau):
     """
     Drift operator.
     """
     if INCLUDE_PN_CORRECTIONS:
-        return drift_pn(ip, tau)
-    return drift_n(ip, tau)
+        return drift_pn(ips, tau)
+    return drift_n(ips, tau)
 
 
 #
 # kick
 #
 @timings
-def kick(ip, jp, tau, pn):
+def kick(ips, jps, tau, pn):
     """
     Kick operator.
     """
     if pn and INCLUDE_PN_CORRECTIONS:
-        return kick_pn(ip, jp, tau)
-    return kick_n(ip, jp, tau)
+        return kick_pn(ips, jps, tau)
+    return kick_n(ips, jps, tau)
 
 
 #
@@ -191,23 +191,23 @@ dkd21_coefs = ([1.0],
 
 
 @timings
-def base_dkd21(ip, tau):
+def base_dkd21(ips, tau):
     """
     Standard dkd21 operator.
     """
-    if ip.n == 0:
-        return ip
+    if ips.n == 0:
+        return ips
 
-    if ip.n == 1:
-        return drift(ip, tau)
+    if ips.n == 1:
+        return drift(ips, tau)
 
     k, d = dkd21_coefs
 
-    ip = drift(ip, d[0] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[0] * tau)
+    ips = drift(ips, d[0] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[0] * tau)
 
-    return ip
+    return ips
 
 
 #
@@ -219,25 +219,25 @@ dkd22_coefs = ([0.5],
 
 
 @timings
-def base_dkd22(ip, tau):
+def base_dkd22(ips, tau):
     """
     Standard dkd22 operator.
     """
-    if ip.n == 0:
-        return ip
+    if ips.n == 0:
+        return ips
 
-    if ip.n == 1:
-        return drift(ip, tau)
+    if ips.n == 1:
+        return drift(ips, tau)
 
     k, d = dkd22_coefs
 
-    ip = drift(ip, d[0] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[0] * tau)
+    ips = drift(ips, d[0] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[0] * tau)
 
-    return ip
+    return ips
 
 
 #
@@ -250,27 +250,27 @@ dkd43_coefs = ([1.3512071919596575,
 
 
 @timings
-def base_dkd43(ip, tau):
+def base_dkd43(ips, tau):
     """
     Standard dkd43 operator.
     """
-    if ip.n == 0:
-        return ip
+    if ips.n == 0:
+        return ips
 
-    if ip.n == 1:
-        return drift(ip, tau)
+    if ips.n == 1:
+        return drift(ips, tau)
 
     k, d = dkd43_coefs
 
-    ip = drift(ip, d[0] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[1] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[0] * tau)
+    ips = drift(ips, d[0] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[1] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[0] * tau)
 
-    return ip
+    return ips
 
 
 #
@@ -284,29 +284,29 @@ dkd44_coefs = ([0.7123418310626056,
 
 
 @timings
-def base_dkd44(ip, tau):
+def base_dkd44(ips, tau):
     """
     Standard dkd44 operator.
     """
-    if ip.n == 0:
-        return ip
+    if ips.n == 0:
+        return ips
 
-    if ip.n == 1:
-        return drift(ip, tau)
+    if ips.n == 1:
+        return drift(ips, tau)
 
     k, d = dkd44_coefs
 
-    ip = drift(ip, d[0] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[1] * tau, pn=True)
-    ip = drift(ip, d[2] * tau)
-    ip = kick(ip, ip, k[1] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[0] * tau)
+    ips = drift(ips, d[0] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[1] * tau, pn=True)
+    ips = drift(ips, d[2] * tau)
+    ips = kick(ips, ips, k[1] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[0] * tau)
 
-    return ip
+    return ips
 
 
 #
@@ -321,31 +321,31 @@ dkd45_coefs = ([-0.0844296195070715,
 
 
 @timings
-def base_dkd45(ip, tau):
+def base_dkd45(ips, tau):
     """
     Standard dkd45 operator.
     """
-    if ip.n == 0:
-        return ip
+    if ips.n == 0:
+        return ips
 
-    if ip.n == 1:
-        return drift(ip, tau)
+    if ips.n == 1:
+        return drift(ips, tau)
 
     k, d = dkd45_coefs
 
-    ip = drift(ip, d[0] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[1] * tau, pn=True)
-    ip = drift(ip, d[2] * tau)
-    ip = kick(ip, ip, k[2] * tau, pn=True)
-    ip = drift(ip, d[2] * tau)
-    ip = kick(ip, ip, k[1] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[0] * tau)
+    ips = drift(ips, d[0] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[1] * tau, pn=True)
+    ips = drift(ips, d[2] * tau)
+    ips = kick(ips, ips, k[2] * tau, pn=True)
+    ips = drift(ips, d[2] * tau)
+    ips = kick(ips, ips, k[1] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[0] * tau)
 
-    return ip
+    return ips
 
 
 #
@@ -361,33 +361,33 @@ dkd46_coefs = ([0.209515106613362,
 
 
 @timings
-def base_dkd46(ip, tau):
+def base_dkd46(ips, tau):
     """
     Standard dkd46 operator.
     """
-    if ip.n == 0:
-        return ip
+    if ips.n == 0:
+        return ips
 
-    if ip.n == 1:
-        return drift(ip, tau)
+    if ips.n == 1:
+        return drift(ips, tau)
 
     k, d = dkd46_coefs
 
-    ip = drift(ip, d[0] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[1] * tau, pn=True)
-    ip = drift(ip, d[2] * tau)
-    ip = kick(ip, ip, k[2] * tau, pn=True)
-    ip = drift(ip, d[3] * tau)
-    ip = kick(ip, ip, k[2] * tau, pn=True)
-    ip = drift(ip, d[2] * tau)
-    ip = kick(ip, ip, k[1] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[0] * tau)
+    ips = drift(ips, d[0] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[1] * tau, pn=True)
+    ips = drift(ips, d[2] * tau)
+    ips = kick(ips, ips, k[2] * tau, pn=True)
+    ips = drift(ips, d[3] * tau)
+    ips = kick(ips, ips, k[2] * tau, pn=True)
+    ips = drift(ips, d[2] * tau)
+    ips = kick(ips, ips, k[1] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[0] * tau)
 
-    return ip
+    return ips
 
 
 #
@@ -404,35 +404,35 @@ dkd67_coefs = ([0.7845136104775573,
 
 
 @timings
-def base_dkd67(ip, tau):
+def base_dkd67(ips, tau):
     """
     Standard dkd67 operator.
     """
-    if ip.n == 0:
-        return ip
+    if ips.n == 0:
+        return ips
 
-    if ip.n == 1:
-        return drift(ip, tau)
+    if ips.n == 1:
+        return drift(ips, tau)
 
     k, d = dkd67_coefs
 
-    ip = drift(ip, d[0] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[1] * tau, pn=True)
-    ip = drift(ip, d[2] * tau)
-    ip = kick(ip, ip, k[2] * tau, pn=True)
-    ip = drift(ip, d[3] * tau)
-    ip = kick(ip, ip, k[3] * tau, pn=True)
-    ip = drift(ip, d[3] * tau)
-    ip = kick(ip, ip, k[2] * tau, pn=True)
-    ip = drift(ip, d[2] * tau)
-    ip = kick(ip, ip, k[1] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[0] * tau)
+    ips = drift(ips, d[0] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[1] * tau, pn=True)
+    ips = drift(ips, d[2] * tau)
+    ips = kick(ips, ips, k[2] * tau, pn=True)
+    ips = drift(ips, d[3] * tau)
+    ips = kick(ips, ips, k[3] * tau, pn=True)
+    ips = drift(ips, d[3] * tau)
+    ips = kick(ips, ips, k[2] * tau, pn=True)
+    ips = drift(ips, d[2] * tau)
+    ips = kick(ips, ips, k[1] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[0] * tau)
 
-    return ip
+    return ips
 
 
 #
@@ -451,39 +451,39 @@ dkd69_coefs = ([0.39103020330868477,
 
 
 @timings
-def base_dkd69(ip, tau):
+def base_dkd69(ips, tau):
     """
     Standard dkd69 operator.
     """
-    if ip.n == 0:
-        return ip
+    if ips.n == 0:
+        return ips
 
-    if ip.n == 1:
-        return drift(ip, tau)
+    if ips.n == 1:
+        return drift(ips, tau)
 
     k, d = dkd69_coefs
 
-    ip = drift(ip, d[0] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[1] * tau, pn=True)
-    ip = drift(ip, d[2] * tau)
-    ip = kick(ip, ip, k[2] * tau, pn=True)
-    ip = drift(ip, d[3] * tau)
-    ip = kick(ip, ip, k[3] * tau, pn=True)
-    ip = drift(ip, d[4] * tau)
-    ip = kick(ip, ip, k[4] * tau, pn=True)
-    ip = drift(ip, d[4] * tau)
-    ip = kick(ip, ip, k[3] * tau, pn=True)
-    ip = drift(ip, d[3] * tau)
-    ip = kick(ip, ip, k[2] * tau, pn=True)
-    ip = drift(ip, d[2] * tau)
-    ip = kick(ip, ip, k[1] * tau, pn=True)
-    ip = drift(ip, d[1] * tau)
-    ip = kick(ip, ip, k[0] * tau, pn=True)
-    ip = drift(ip, d[0] * tau)
+    ips = drift(ips, d[0] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[1] * tau, pn=True)
+    ips = drift(ips, d[2] * tau)
+    ips = kick(ips, ips, k[2] * tau, pn=True)
+    ips = drift(ips, d[3] * tau)
+    ips = kick(ips, ips, k[3] * tau, pn=True)
+    ips = drift(ips, d[4] * tau)
+    ips = kick(ips, ips, k[4] * tau, pn=True)
+    ips = drift(ips, d[4] * tau)
+    ips = kick(ips, ips, k[3] * tau, pn=True)
+    ips = drift(ips, d[3] * tau)
+    ips = kick(ips, ips, k[2] * tau, pn=True)
+    ips = drift(ips, d[2] * tau)
+    ips = kick(ips, ips, k[1] * tau, pn=True)
+    ips = drift(ips, d[1] * tau)
+    ips = kick(ips, ips, k[0] * tau, pn=True)
+    ips = drift(ips, d[0] * tau)
 
-    return ip
+    return ips
 
 
 @decallmethods(timings)
@@ -508,7 +508,7 @@ class SIA(Base):
         INCLUDE_PN_CORRECTIONS = True if gravity.clight.pn_order > 0 else False
 
     def get_base_tstep(self, t_end):
-        self.tstep = self.eta
+        self.tstep = 0.125
         if abs(self.time + self.tstep) > t_end:
             self.tstep = math.copysign(t_end - abs(self.time), self.eta)
         return self.tstep
@@ -519,11 +519,11 @@ class SIA(Base):
             self.method
         )
 
-        p = self.particles
-        (p.ax, p.ay, p.az) = p.get_acc(p)
+        ps = self.particles
+        (ps.ax, ps.ay, ps.az) = ps.get_acc(ps)
 
         if self.dumpper:
-            self.dumpper.dump_worldline(p)
+            self.dumpper.dump_worldline(ps)
 
         self.is_initialized = True
 
@@ -533,13 +533,13 @@ class SIA(Base):
             self.method
         )
 
-        p = self.particles
+        ps = self.particles
 
         if self.reporter:
-            self.reporter.report(self.time, p)
+            self.reporter.report(self.time, ps)
 
-    def get_min_block_tstep(self, p, tau):
-        min_tstep = p.min_tstep()
+    def get_min_block_tstep(self, ps, tau):
+        min_tstep = ps.min_tstep()
 
         power = int(np.log2(min_tstep) - 1)
         min_block_tstep = 2.0**power
@@ -563,61 +563,61 @@ class SIA(Base):
         if not self.is_initialized:
             self.initialize(t_end)
 
-        p = self.particles
+        ps = self.particles
         tau = self.get_base_tstep(t_end)
 
         if self.reporter:
-            self.reporter.report(self.time, p)
-        self.wl = p[:0]
+            self.reporter.report(self.time, ps)
+        self.wl = ps[:0]
 
         if self.method == "sia.dkd21std":
-            p = self.dkd21(p, tau, False, True)
+            ps = self.dkd21(ps, tau, False, True)
         elif self.method == "sia.dkd21shr":
-            p = self.dkd21(p, tau, True, True)
+            ps = self.dkd21(ps, tau, True, True)
         elif self.method == "sia.dkd21hcc":
-            p = self.dkd21(p, tau, True, False)
+            ps = self.dkd21(ps, tau, True, False)
         elif self.method == "sia.dkd22std":
-            p = self.dkd22(p, tau, False, True)
+            ps = self.dkd22(ps, tau, False, True)
         elif self.method == "sia.dkd22shr":
-            p = self.dkd22(p, tau, True, True)
+            ps = self.dkd22(ps, tau, True, True)
         elif self.method == "sia.dkd22hcc":
-            p = self.dkd22(p, tau, True, False)
+            ps = self.dkd22(ps, tau, True, False)
         elif self.method == "sia.dkd43std":
-            p = self.dkd43(p, tau, False, True)
+            ps = self.dkd43(ps, tau, False, True)
         elif self.method == "sia.dkd43shr":
-            p = self.dkd43(p, tau, True, True)
+            ps = self.dkd43(ps, tau, True, True)
         elif self.method == "sia.dkd43hcc":
-            p = self.dkd43(p, tau, True, False)
+            ps = self.dkd43(ps, tau, True, False)
         elif self.method == "sia.dkd44std":
-            p = self.dkd44(p, tau, False, True)
+            ps = self.dkd44(ps, tau, False, True)
         elif self.method == "sia.dkd44shr":
-            p = self.dkd44(p, tau, True, True)
+            ps = self.dkd44(ps, tau, True, True)
         elif self.method == "sia.dkd44hcc":
-            p = self.dkd44(p, tau, True, False)
+            ps = self.dkd44(ps, tau, True, False)
         elif self.method == "sia.dkd45std":
-            p = self.dkd45(p, tau, False, True)
+            ps = self.dkd45(ps, tau, False, True)
         elif self.method == "sia.dkd45shr":
-            p = self.dkd45(p, tau, True, True)
+            ps = self.dkd45(ps, tau, True, True)
         elif self.method == "sia.dkd45hcc":
-            p = self.dkd45(p, tau, True, False)
+            ps = self.dkd45(ps, tau, True, False)
         elif self.method == "sia.dkd46std":
-            p = self.dkd46(p, tau, False, True)
+            ps = self.dkd46(ps, tau, False, True)
         elif self.method == "sia.dkd46shr":
-            p = self.dkd46(p, tau, True, True)
+            ps = self.dkd46(ps, tau, True, True)
         elif self.method == "sia.dkd46hcc":
-            p = self.dkd46(p, tau, True, False)
+            ps = self.dkd46(ps, tau, True, False)
         elif self.method == "sia.dkd67std":
-            p = self.dkd67(p, tau, False, True)
+            ps = self.dkd67(ps, tau, False, True)
         elif self.method == "sia.dkd67shr":
-            p = self.dkd67(p, tau, True, True)
+            ps = self.dkd67(ps, tau, True, True)
         elif self.method == "sia.dkd67hcc":
-            p = self.dkd67(p, tau, True, False)
+            ps = self.dkd67(ps, tau, True, False)
         elif self.method == "sia.dkd69std":
-            p = self.dkd69(p, tau, False, True)
+            ps = self.dkd69(ps, tau, False, True)
         elif self.method == "sia.dkd69shr":
-            p = self.dkd69(p, tau, True, True)
+            ps = self.dkd69(ps, tau, True, True)
         elif self.method == "sia.dkd69hcc":
-            p = self.dkd69(p, tau, True, False)
+            ps = self.dkd69(ps, tau, True, False)
         elif self.method == 0:
             pass
         else:
@@ -627,22 +627,23 @@ class SIA(Base):
             self.dumpper.dump_worldline(self.wl)
 
         self.time += self.tstep
-        self.particles = p
+        self.particles = ps
 
     #
     # dkd21[std,shr,hcc] method -- D.K.D
     #
-    def dkd21(self, p, tau, update_tstep, shared_tstep=False):
+    def dkd21(self, ps, tau, update_tstep, shared_tstep=False):
         """
 
         """
+        flag = 0
         if update_tstep:
-            p.update_tstep(p, self.eta)
+            flag = 1
+            ps.update_tstep(ps, self.eta)
             if shared_tstep:
-                tau = self.get_min_block_tstep(p, tau)
-        flag = 0 if shared_tstep and not update_tstep else 1
+                tau = self.get_min_block_tstep(ps, tau)
 
-        slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
+        slow, fast = split(ps, abs(ps.tstep) >= flag*abs(tau))
 
         k, d = dkd21_coefs
         #
@@ -673,17 +674,18 @@ class SIA(Base):
     #
     # dkd22[std,shr,hcc] method -- D.K.D.K.D
     #
-    def dkd22(self, p, tau, update_tstep, shared_tstep=False):
+    def dkd22(self, ps, tau, update_tstep, shared_tstep=False):
         """
 
         """
+        flag = 0
         if update_tstep:
-            p.update_tstep(p, self.eta)
+            flag = 1
+            ps.update_tstep(ps, self.eta)
             if shared_tstep:
-                tau = self.get_min_block_tstep(p, tau)
-        flag = 0 if shared_tstep and not update_tstep else 1
+                tau = self.get_min_block_tstep(ps, tau)
 
-        slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
+        slow, fast = split(ps, abs(ps.tstep) >= flag*abs(tau))
 
         k, d = dkd22_coefs
         #
@@ -720,17 +722,18 @@ class SIA(Base):
     #
     # dkd43[std,shr,hcc] method -- D.K.D.K.D.K.D
     #
-    def dkd43(self, p, tau, update_tstep, shared_tstep=False):
+    def dkd43(self, ps, tau, update_tstep, shared_tstep=False):
         """
 
         """
+        flag = 0
         if update_tstep:
-            p.update_tstep(p, self.eta)
+            flag = 1
+            ps.update_tstep(ps, self.eta)
             if shared_tstep:
-                tau = self.get_min_block_tstep(p, tau)
-        flag = 0 if shared_tstep and not update_tstep else 1
+                tau = self.get_min_block_tstep(ps, tau)
 
-        slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
+        slow, fast = split(ps, abs(ps.tstep) >= flag*abs(tau))
 
         k, d = dkd43_coefs
         #
@@ -773,17 +776,18 @@ class SIA(Base):
     #
     # dkd44[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D
     #
-    def dkd44(self, p, tau, update_tstep, shared_tstep=False):
+    def dkd44(self, ps, tau, update_tstep, shared_tstep=False):
         """
 
         """
+        flag = 0
         if update_tstep:
-            p.update_tstep(p, self.eta)
+            flag = 1
+            ps.update_tstep(ps, self.eta)
             if shared_tstep:
-                tau = self.get_min_block_tstep(p, tau)
-        flag = 0 if shared_tstep and not update_tstep else 1
+                tau = self.get_min_block_tstep(ps, tau)
 
-        slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
+        slow, fast = split(ps, abs(ps.tstep) >= flag*abs(tau))
 
         k, d = dkd44_coefs
         #
@@ -832,17 +836,18 @@ class SIA(Base):
     #
     # dkd45[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D
     #
-    def dkd45(self, p, tau, update_tstep, shared_tstep=False):
+    def dkd45(self, ps, tau, update_tstep, shared_tstep=False):
         """
 
         """
+        flag = 0
         if update_tstep:
-            p.update_tstep(p, self.eta)
+            flag = 1
+            ps.update_tstep(ps, self.eta)
             if shared_tstep:
-                tau = self.get_min_block_tstep(p, tau)
-        flag = 0 if shared_tstep and not update_tstep else 1
+                tau = self.get_min_block_tstep(ps, tau)
 
-        slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
+        slow, fast = split(ps, abs(ps.tstep) >= flag*abs(tau))
 
         k, d = dkd45_coefs
         #
@@ -897,17 +902,18 @@ class SIA(Base):
     #
     # dkd46[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D
     #
-    def dkd46(self, p, tau, update_tstep, shared_tstep=False):
+    def dkd46(self, ps, tau, update_tstep, shared_tstep=False):
         """
 
         """
+        flag = 0
         if update_tstep:
-            p.update_tstep(p, self.eta)
+            flag = 1
+            ps.update_tstep(ps, self.eta)
             if shared_tstep:
-                tau = self.get_min_block_tstep(p, tau)
-        flag = 0 if shared_tstep and not update_tstep else 1
+                tau = self.get_min_block_tstep(ps, tau)
 
-        slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
+        slow, fast = split(ps, abs(ps.tstep) >= flag*abs(tau))
 
         k, d = dkd46_coefs
         #
@@ -968,17 +974,18 @@ class SIA(Base):
     #
     # dkd67[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
-    def dkd67(self, p, tau, update_tstep, shared_tstep=False):
+    def dkd67(self, ps, tau, update_tstep, shared_tstep=False):
         """
 
         """
+        flag = 0
         if update_tstep:
-            p.update_tstep(p, self.eta)
+            flag = 1
+            ps.update_tstep(ps, self.eta)
             if shared_tstep:
-                tau = self.get_min_block_tstep(p, tau)
-        flag = 0 if shared_tstep and not update_tstep else 1
+                tau = self.get_min_block_tstep(ps, tau)
 
-        slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
+        slow, fast = split(ps, abs(ps.tstep) >= flag*abs(tau))
 
         k, d = dkd67_coefs
         #
@@ -1045,17 +1052,18 @@ class SIA(Base):
     #
     # dkd69[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
-    def dkd69(self, p, tau, update_tstep, shared_tstep=False):
+    def dkd69(self, ps, tau, update_tstep, shared_tstep=False):
         """
 
         """
+        flag = 0
         if update_tstep:
-            p.update_tstep(p, self.eta)
+            flag = 1
+            ps.update_tstep(ps, self.eta)
             if shared_tstep:
-                tau = self.get_min_block_tstep(p, tau)
-        flag = 0 if shared_tstep and not update_tstep else 1
+                tau = self.get_min_block_tstep(ps, tau)
 
-        slow, fast = split(p, abs(p.tstep) >= abs(tau*flag))
+        slow, fast = split(ps, abs(ps.tstep) >= flag*abs(tau))
 
         k, d = dkd69_coefs
         #

@@ -8,13 +8,11 @@ inline void plummer_smoothed_inv_r1(
     REAL h2,
     REAL *inv_r1)
 {
-    int mask1 = (r2 > 0);
-    int mask0 = 1^mask1;
-
-    REAL inv_r2 = mask1 / (r2 + h2 + mask0);
+    REAL inv_r2 = 1 / (r2 + h2);
+    inv_r2 = (r2 > 0) ? (inv_r2):(0);
     *inv_r1 = sqrt(inv_r2);
 }
-// Total flop count: 4
+// Total flop count: 3
 
 inline void smoothed_inv_r1(
     REAL r2,
@@ -32,12 +30,10 @@ inline void plummer_smoothed_inv_r2(
     REAL h2,
     REAL *inv_r2)
 {
-    int mask1 = (r2 > 0);
-    int mask0 = 1^mask1;
-
-    *inv_r2 = mask1 / (r2 + h2 + mask0);
+    *inv_r2 = 1 / (r2 + h2);
+    *inv_r2 = (r2 > 0) ? (*inv_r2):(0);
 }
-// Total flop count: 3
+// Total flop count: 2
 
 inline void smoothed_inv_r2(
     REAL r2,
@@ -55,14 +51,12 @@ inline void plummer_smoothed_inv_r3(
     REAL h2,
     REAL *inv_r3)
 {
-    int mask1 = (r2 > 0);
-    int mask0 = 1^mask1;
-
-    REAL inv_r2 = mask1 / (r2 + h2 + mask0);
+    REAL inv_r2 = 1 / (r2 + h2);
+    inv_r2 = (r2 > 0) ? (inv_r2):(0);
     REAL inv_r1 = sqrt(inv_r2);
     *inv_r3 = inv_r1 * inv_r2;
 }
-// Total flop count: 5
+// Total flop count: 4
 
 inline void smoothed_inv_r3(
     REAL r2,
@@ -81,13 +75,11 @@ inline void plummer_smoothed_inv_r1r2(
     REAL *inv_r1,
     REAL *inv_r2)
 {
-    int mask1 = (r2 > 0);
-    int mask0 = 1^mask1;
-
-    *inv_r2 = mask1 / (r2 + h2 + mask0);
+    *inv_r2 = 1 / (r2 + h2);
+    *inv_r2 = (r2 > 0) ? (*inv_r2):(0);
     *inv_r1 = sqrt(*inv_r2);
 }
-// Total flop count: 4
+// Total flop count: 3
 
 inline void smoothed_inv_r1r2(
     REAL r2,
@@ -107,14 +99,12 @@ inline void plummer_smoothed_inv_r1r3(
     REAL *inv_r1,
     REAL *inv_r3)
 {
-    int mask1 = (r2 > 0);
-    int mask0 = 1^mask1;
-
-    REAL inv_r2 = mask1 / (r2 + h2 + mask0);
+    REAL inv_r2 = 1 / (r2 + h2);
+    inv_r2 = (r2 > 0) ? (inv_r2):(0);
     *inv_r1 = sqrt(inv_r2);
     *inv_r3 = *inv_r1 * inv_r2;
 }
-// Total flop count: 5
+// Total flop count: 4
 
 inline void smoothed_inv_r1r3(
     REAL r2,
@@ -134,14 +124,12 @@ inline void plummer_smoothed_inv_r2r3(
     REAL *inv_r2,
     REAL *inv_r3)
 {
-    int mask1 = (r2 > 0);
-    int mask0 = 1^mask1;
-
-    *inv_r2 = mask1 / (r2 + h2 + mask0);
+    *inv_r2 = 1 / (r2 + h2);
+    *inv_r2 = (r2 > 0) ? (*inv_r2):(0);
     REAL inv_r1 = sqrt(*inv_r2);
     *inv_r3 = inv_r1 * *inv_r2;
 }
-// Total flop count: 5
+// Total flop count: 4
 
 inline void smoothed_inv_r2r3(
     REAL r2,
@@ -162,14 +150,12 @@ inline void plummer_smoothed_inv_r1r2r3(
     REAL *inv_r2,
     REAL *inv_r3)
 {
-    int mask1 = (r2 > 0);
-    int mask0 = 1^mask1;
-
-    *inv_r2 = mask1 / (r2 + h2 + mask0);
+    *inv_r2 = 1 / (r2 + h2);
+    *inv_r2 = (r2 > 0) ? (*inv_r2):(0);
     *inv_r1 = sqrt(*inv_r2);
     *inv_r3 = *inv_r1 * *inv_r2;
 }
-// Total flop count: 5
+// Total flop count: 4
 
 inline void smoothed_inv_r1r2r3(
     REAL r2,

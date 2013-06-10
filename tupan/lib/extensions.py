@@ -31,8 +31,7 @@ except Exception as exc:
         See 'tupan.log' for more details.
         Continuing with C extension...
         """,
-        stacklevel=1
-    )
+        stacklevel=1)
 
 
 @decallmethods(timings)

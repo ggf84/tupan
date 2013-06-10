@@ -2,9 +2,9 @@
 
 
 #ifdef DOUBLE
-    #define TOLERANCE ((REAL)2.3283064365386962891e-10)     // sqrt(2^-64)
+    #define TOLERANCE ((REAL)2.2737367544323205948E-13)     // 2^(-42)
 #else
-    #define TOLERANCE ((REAL)1.52587890625e-5)              // sqrt(2^-32)
+    #define TOLERANCE ((REAL)1.52587890625e-5)              // (2^-16)
 #endif
 #define MAXITER 64
 #define COMPARE(x, y) (((x) > (y)) - ((x) < (y)))
@@ -391,7 +391,7 @@ inline void universal_kepler_solver(
                 REAL r0v0 = rx * vx + ry * vy + rz * vz;
                 REAL v0sqr = vx * vx + vy * vy + vz * vz;
 
-                REAL beta = 2;// - (e2 / (r0sqr + e2));
+                REAL beta = 2;  // - (e2 / (r0sqr + e2));
                 REAL alpha = v0sqr - beta * (m / r0);
 
                 REAL s0, s, arg[5];
