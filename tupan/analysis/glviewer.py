@@ -86,7 +86,7 @@ class GLviewer(object):
         self.mouse_x = 0
         self.mouse_y = 0
 
-        self.particle = None
+        self.ps = None
         self.exitgl = False
         self.timer = Timer()
         self.timer.start()
@@ -124,16 +124,16 @@ class GLviewer(object):
 #                                         stdout=open(os.devnull, 'w'),
 #                                         stderr=subprocess.STDOUT)
 
-    def set_particle(self, particle):
-        self.particle = particle.copy()
+    def set_particle_system(self, ps):
+        self.ps = ps.copy()
 
     def enter_main_loop(self):
         if not self.exitgl:
             glut.glutMainLoop()
 
-    def show_event(self, particles):
+    def show_event(self, ps):
         if not self.exitgl:
-            self.set_particle(particles)
+            self.set_particle_system(ps)
             glut.glutMainLoopEvent()
             glut.glutSetWindow(self.window_handle)
             glut.glutPostRedisplay()
@@ -509,10 +509,10 @@ class GLviewer(object):
 
         gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_MODULATE)
 
-        Ntot = self.particle.n
+        Ntot = self.ps.n
 
-        if hasattr(self.particle, "blackholes"):
-            blackholes = self.particle.blackholes
+        if hasattr(self.ps, "blackholes"):
+            blackholes = self.ps.blackholes
             if blackholes.n:
                 points = blackholes.pos
                 colors = self.get_colors(blackholes.mass)
@@ -532,8 +532,8 @@ class GLviewer(object):
                 gl.glDepthMask(gl.GL_FALSE)
 #                gl.glAlphaFunc(gl.GL_GREATER, 0)
 
-        if hasattr(self.particle, "stars"):
-            stars = self.particle.stars
+        if hasattr(self.ps, "stars"):
+            stars = self.ps.stars
             if stars.n:
                 points = stars.pos
                 colors = self.get_colors(stars.mass)
@@ -545,8 +545,8 @@ class GLviewer(object):
                 self.draw_points(points, colors, sizes, self.textures['star'])
                 gl.glDisable(gl.GL_BLEND)
 
-        if hasattr(self.particle, "sphs"):
-            sph = self.particle.sphs
+        if hasattr(self.ps, "sphs"):
+            sph = self.ps.sphs
             if sph.n:
                 points = sph.pos
                 colors = self.get_colors(sph.mass)

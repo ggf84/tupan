@@ -22,11 +22,11 @@ class PSDFIO(object):
     def __init__(self, fname):
         self.fname = fname
 
-    def dump(self, particles, fmode='a'):
+    def dump(self, ps, fmode='a'):
         """
         Serialize particle objects into a YAML stream.
         """
-        data = Stream.to_dumper(particles)
+        data = Stream.to_dumper(ps)
         with open(self.fname, fmode) as fobj:
             yaml.dump_all(data,
                           stream=fobj,
@@ -39,8 +39,8 @@ class PSDFIO(object):
         """
         with open(self.fname, 'r') as fobj:
             data = [i for i in yaml.load_all(fobj)]
-        particles = Stream.from_loader(data)
-        return particles
+        ps = Stream.from_loader(data)
+        return ps
 
     def to_hdf5(self):
         """
@@ -50,11 +50,11 @@ class PSDFIO(object):
         fname = self.fname.replace('.psdf', '.hdf5')
         stream = hdf5io.HDF5IO(fname, fmode='w')
         try:
-            p = self.load_snapshot()
-            stream.dump_snapshot(p)
+            ps = self.load_snapshot()
+            stream.dump_snapshot(ps)
         except:
-            p = self.load_worldline()
-            stream.dump_worldline(p)
+            ps = self.load_worldline()
+            stream.dump_worldline(ps)
 
 
 #@decallmethods(timings)
@@ -89,48 +89,48 @@ class Stream(yaml.YAMLObject):
         return dumper.represent_mapping(data.yaml_tag, attributes)
 
     @classmethod
-    def to_dumper(cls, particles):
+    def to_dumper(cls, ps):
         data = []
-        for (key, objs) in particles.items:
+        for (key, objs) in ps.items:
             if objs.n:
                 for obj in objs:
-                    p = cls()
+                    od = cls()
                     attributes = obj.data.dtype.names
                     # default attributes
                     if 'id' in attributes:
-                        p.id = int(obj.id)
+                        od.id = int(obj.id)
                     if 'mass' in attributes:
-                        p.m = float(obj.mass)
+                        od.m = float(obj.mass)
                     if 'pos' in attributes:
-                        p.r = [float(obj.pos[0]),
-                               float(obj.pos[1]),
-                               float(obj.pos[2])]
+                        od.r = [float(obj.pos[0]),
+                                float(obj.pos[1]),
+                                float(obj.pos[2])]
                     if 'vel' in attributes:
-                        p.v = [float(obj.vel[0]),
-                               float(obj.vel[1]),
-                               float(obj.vel[2])]
+                        od.v = [float(obj.vel[0]),
+                                float(obj.vel[1]),
+                                float(obj.vel[2])]
                     if 'acc' in attributes:
-                        p.a = [float(obj.acc[0]),
-                               float(obj.acc[1]),
-                               float(obj.acc[2])]
+                        od.a = [float(obj.acc[0]),
+                                float(obj.acc[1]),
+                                float(obj.acc[2])]
                     if 't_curr' in attributes:
-                        p.t_curr = float(obj.t_curr)
+                        od.t_curr = float(obj.t_curr)
                     # Tupan's specific attributes
-                    p.type = key
+                    od.type = key
                     if 'dt_prev' in attributes:
-                        p.dt_prev = float(obj.dt_prev)
+                        od.dt_prev = float(obj.dt_prev)
                     if 'dt_next' in attributes:
-                        p.dt_next = float(obj.dt_next)
+                        od.dt_next = float(obj.dt_next)
                     if 'eps2' in attributes:
-                        p.eps2 = float(obj.eps2)
+                        od.eps2 = float(obj.eps2)
                     if 'phi' in attributes:
-                        p.pot = float(obj.phi)
+                        od.pot = float(obj.phi)
                     if 'spin' in attributes:
-                        p.s = [float(obj.spin[0]),
-                               float(obj.spin[1]),
-                               float(obj.spin[2])]
+                        od.s = [float(obj.spin[0]),
+                                float(obj.spin[1]),
+                                float(obj.spin[2])]
 
-                    data.append(p)
+                    data.append(od)
         return data
 
     @classmethod
@@ -168,51 +168,51 @@ class Stream(yaml.YAMLObject):
             if 's' in item:
                 obj.spin[index] = item['s']
 
-        p = System()
+        ps = System()
 
         for item in data:
             if 'type' in item:
                 # set Body
                 if item['type'] == 'body':
-                    if p['body']:
-                        olen = len(p['body'])
-                        p['body'].append(Stars(1))
-                        set_attributes(p['body'], olen, item)
+                    if ps['body']:
+                        olen = len(ps['body'])
+                        ps['body'].append(Stars(1))
+                        set_attributes(ps['body'], olen, item)
                     else:
-                        p['body'] = Stars(1)
-                        set_attributes(p['body'], 0, item)
+                        ps['body'] = Stars(1)
+                        set_attributes(ps['body'], 0, item)
                 # set BlackHole
                 elif item['type'] == 'blackhole':
-                    if p['blackhole']:
-                        olen = len(p['blackhole'])
-                        p['blackhole'].append(Blackholes(1))
-                        set_attributes(p['blackhole'], olen, item)
+                    if ps['blackhole']:
+                        olen = len(ps['blackhole'])
+                        ps['blackhole'].append(Blackholes(1))
+                        set_attributes(ps['blackhole'], olen, item)
                     else:
-                        p['blackhole'] = Blackholes(1)
-                        set_attributes(p['blackhole'], 0, item)
+                        ps['blackhole'] = Blackholes(1)
+                        set_attributes(ps['blackhole'], 0, item)
                 # set Sph
                 elif item['type'] == 'sph':
-                    if p['sph']:
-                        olen = len(p['sph'])
-                        p['sph'].append(Sphs(1))
-                        set_attributes(p['sph'], olen, item)
+                    if ps['sph']:
+                        olen = len(ps['sph'])
+                        ps['sph'].append(Sphs(1))
+                        set_attributes(ps['sph'], olen, item)
                     else:
-                        p['sph'] = Sphs(1)
-                        set_attributes(p['sph'], 0, item)
+                        ps['sph'] = Sphs(1)
+                        set_attributes(ps['sph'], 0, item)
             else:
                 print(
                     "Unspecified particle type! "
                     "Using by default the 'body' type."
                 )
-                if p['body']:
-                    olen = len(p['body'])
-                    p['body'].append(Stars(1))
-                    set_attributes(p['body'], olen, item)
+                if ps['body']:
+                    olen = len(ps['body'])
+                    ps['body'].append(Stars(1))
+                    set_attributes(ps['body'], olen, item)
                 else:
-                    p['body'] = Stars(1)
-                    set_attributes(p['body'], 0, item)
+                    ps['body'] = Stars(1)
+                    set_attributes(ps['body'], 0, item)
 
-        return p
+        return ps
 
 
 ########## end of file ##########

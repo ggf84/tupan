@@ -28,11 +28,11 @@ if __name__ == "__main__":
 
         fname = "plummer"+str(numBodies).zfill(4)+".hdf5"
         io = IO(fname, 'w')
-        io.dump_snapshot(p.particles)
+        io.dump_snapshot(p.ps)
 
 #        p.show()
 
-        return p.particles
+        return p.ps
 
     p = main()
 

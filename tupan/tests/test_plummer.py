@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
         fname = "plummer"+str(numBodies).zfill(4)+".hdf5"
         io = IO(fname, 'w')
-        io.dump_snapshot(p.particles)
+        io.dump_snapshot(p.ps)
 
         p.show()
 
@@ -37,10 +37,10 @@ if __name__ == "__main__":
 #        from tupan.analysis import GLviewer
 #        viewer = GLviewer()
 #        viewer.initialize()
-#        viewer.set_particle(p.particles.copy())
+#        viewer.set_particle(p.ps.copy())
 #        viewer.enter_main_loop()
 
-#        bi = p.particles['body']
+#        bi = p.ps['body']
 #        plt.semilogx(np.abs(bi.pos[:,0]),bi.phi,'r,')
 #        plt.semilogx(np.abs(bi.pos[:,0]),bi.get_ekin()/bi.mass,'r,')
 #        plt.semilogx(np.abs(bi.pos[:,0]),bi.get_ekin()/bi.mass+bi.phi,'r,')

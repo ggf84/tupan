@@ -19,45 +19,45 @@ __all__ = ['Plummer']
 logger = logging.getLogger(__name__)
 
 
-def scale_mass(p, m_scale):
-    p.mass *= m_scale
+def scale_mass(ps, m_scale):
+    ps.mass *= m_scale
 
 
-def scale_pos(p, r_scale):
-    p.rx *= r_scale
-    p.ry *= r_scale
-    p.rz *= r_scale
+def scale_pos(ps, r_scale):
+    ps.rx *= r_scale
+    ps.ry *= r_scale
+    ps.rz *= r_scale
 
 
-def scale_vel(p, v_scale):
-    p.vx *= v_scale
-    p.vy *= v_scale
-    p.vz *= v_scale
+def scale_vel(ps, v_scale):
+    ps.vx *= v_scale
+    ps.vy *= v_scale
+    ps.vz *= v_scale
 
 
-def scale_to_virial(particles, ke, pe, te):
-    scale_vel(particles, math.sqrt(-0.5 * pe / ke))
+def scale_to_virial(ps, ke, pe, te):
+    scale_vel(ps, math.sqrt(-0.5 * pe / ke))
     ke = -0.5 * pe
     te = ke + pe
-    scale_pos(particles, -te / 0.25)
-    pe = particles.potential_energy
-    scale_vel(particles, math.sqrt(0.5 * abs(pe / te)))
+    scale_pos(ps, -te / 0.25)
+    pe = ps.potential_energy
+    scale_vel(ps, math.sqrt(0.5 * abs(pe / te)))
 
 
-def scale_to_nbody_units(particles):
-#    scale_mass(particles["star"], 1.0/particles["star"].get_mass())
-#    particles["star"].set_phi(particles)
+def scale_to_nbody_units(ps):
+#    scale_mass(ps["star"], 1.0/ps["star"].get_mass())
+#    ps["star"].set_phi(ps)
 
-    ke = particles.kinetic_energy
-    pe = particles.potential_energy
+    ke = ps.kinetic_energy
+    pe = ps.potential_energy
     te = ke + pe
     ve = ke + te
     print(ke, pe, te, ve)
 
-    scale_to_virial(particles, ke, pe, te)
+    scale_to_virial(ps, ke, pe, te)
 
-    ke = particles.kinetic_energy
-    pe = particles.potential_energy
+    ke = ps.kinetic_energy
+    pe = ps.potential_energy
     te = ke + pe
     ve = ke + te
     print(ke, pe, te, ve)
@@ -74,7 +74,7 @@ class Plummer(object):
         self.mfrac = mfrac
         self.eps2 = eps*eps
         self.eps_parametrization = eps_parametrization
-        self.particles = System(nstars=num)
+        self.ps = System(nstars=num)
         np.random.seed(seed)
 
     def set_eps2(self, mass):
@@ -146,42 +146,42 @@ class Plummer(object):
         ilist = np.arange(n)
 
         # set index
-        self.particles.id = ilist
+        self.ps.id = ilist
 
         srand = np.random.get_state()
 
         # set mass
-        self.particles.mass = self.imf.sample(n)
-        self.particles.mass /= self.particles.total_mass
+        self.ps.mass = self.imf.sample(n)
+        self.ps.mass /= self.ps.total_mass
 
         # set eps2
-        self.particles.eps2 = self.set_eps2(self.particles.mass)
+        self.ps.eps2 = self.set_eps2(self.ps.mass)
 
         np.random.set_state(srand)
 
         # set pos
         pos = self.set_pos(np.random.permutation(ilist))
-        self.particles.rx = pos[0]
-        self.particles.ry = pos[1]
-        self.particles.rz = pos[2]
+        self.ps.rx = pos[0]
+        self.ps.ry = pos[1]
+        self.ps.rz = pos[2]
 
         # set vel
-        vel = self.set_vel(self.particles.get_phi(self.particles))
-        self.particles.vx = vel[0]
-        self.particles.vy = vel[1]
-        self.particles.vz = vel[2]
+        vel = self.set_vel(self.ps.get_phi(self.ps))
+        self.ps.vx = vel[0]
+        self.ps.vy = vel[1]
+        self.ps.vz = vel[2]
 
     def make_plummer(self):
         self.set_bodies()
-        self.particles.move_to_center()
-        scale_to_nbody_units(self.particles)
+        self.ps.move_to_center()
+        scale_to_nbody_units(self.ps)
 
     def show(self, nbins=32):
         from scipy import optimize
         import matplotlib.pyplot as plt
         from matplotlib.patches import Circle
 
-        mass = self.imf._mtot * self.particles.mass.copy()
+        mass = self.imf._mtot * self.ps.mass.copy()
 
         ###################################
 
@@ -215,7 +215,7 @@ class Plummer(object):
 
         ###################################
 
-        b = self.particles
+        b = self.ps
         n = b.n
         rx = b.rx
         ry = b.ry

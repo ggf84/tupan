@@ -10,10 +10,10 @@ class Base(object):
     """
 
     """
-    def __init__(self, eta, time, particles, **kwargs):
+    def __init__(self, eta, time, ps, **kwargs):
         self.eta = eta
         self.time = time
-        self.particles = particles
+        self.ps = ps
         self.is_initialized = False
 
         pn_order = kwargs.pop("pn_order", 0)
@@ -52,7 +52,7 @@ class Integrator(object):
     PROVIDED_METHODS = ["nreg", "sakura", "hermite", "adapthermite"]
     PROVIDED_METHODS.extend(sia.SIA.PROVIDED_METHODS)
 
-    def __init__(self, eta, time, particles, **kwargs):
+    def __init__(self, eta, time, ps, **kwargs):
         import logging
         logger = logging.getLogger(__name__)
 
@@ -61,20 +61,20 @@ class Integrator(object):
         self.integrator = None
         if method in sia.SIA.PROVIDED_METHODS:
             logger.info("Using %s integrator.", method)
-            self.integrator = sia.SIA(eta, time, particles, method, **kwargs)
+            self.integrator = sia.SIA(eta, time, ps, method, **kwargs)
         elif method == "hermite":
             logger.info("Using 'hermite' integrator.")
-            self.integrator = hermite.Hermite(eta, time, particles, **kwargs)
+            self.integrator = hermite.Hermite(eta, time, ps, **kwargs)
         elif method == "adapthermite":
             logger.info("Using 'adapthermite' integrator.")
             self.integrator = hermite.AdaptHermite(
-                eta, time, particles, **kwargs)
+                eta, time, ps, **kwargs)
         elif method == "nreg":
             logger.info("Using 'nreg' integrator.")
-            self.integrator = nreg.NREG(eta, time, particles, **kwargs)
+            self.integrator = nreg.NREG(eta, time, ps, **kwargs)
         elif method == "sakura":
             logger.info("Using 'sakura' integrator.")
-            self.integrator = sakura.SAKURA(eta, time, particles, **kwargs)
+            self.integrator = sakura.SAKURA(eta, time, ps, **kwargs)
         else:
             logger.critical(
                 "Unexpected integrator method: '%s'. Provided methods: %s",
@@ -98,8 +98,8 @@ class Integrator(object):
         return self.integrator.time
 
     @property
-    def particles(self):
-        return self.integrator.particles
+    def particle_system(self):
+        return self.integrator.ps
 
 
 ########## end of file ##########

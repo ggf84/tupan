@@ -115,14 +115,14 @@ class IO(object):
 
         #######################################################################
         import matplotlib.pyplot as plt
-        p0 = IO("snapshots0.hdf5").load_worldline()
-        p1 = IO("snapshots1.hdf5").load_worldline()
-        p = IO("snapshots.hdf5").load_worldline()
+        ps0 = IO("snapshots0.hdf5").load_worldline()
+        ps1 = IO("snapshots1.hdf5").load_worldline()
+        ps = IO("snapshots.hdf5").load_worldline()
 
-        index = p[p.nstep == p.nstep.max()].id[0]
-        a0 = p0[p0.id == index]
-        a1 = p1[p1.id == index]
-        a = p[p.id == index]
+        index = ps[ps.nstep == ps.nstep.max()].id[0]
+        a0 = ps0[ps0.id == index]
+        a1 = ps1[ps1.id == index]
+        a = ps[ps.id == index]
 
         plt.plot(a0.pos[:, 0], a0.pos[:, 1], label="PBaSS: l=1")
         plt.plot(a1.pos[:, 0], a1.pos[:, 1], label="PBaSS: l=8")
@@ -143,13 +143,13 @@ class IO(object):
         plt.show()
         #######################################################################
 
-        p = self.load_worldline()
+        ps = self.load_worldline()
 
         snaps = OrderedDict()
         for t in times:
-            snaps[t] = type(p)()
+            snaps[t] = type(ps)()
 
-        for key, obj in p.items:
+        for key, obj in ps.items:
             if obj.n:
                 n = int(obj.id.max())+1
 

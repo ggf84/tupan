@@ -48,7 +48,7 @@ class HDF5IO(object):
         dset.resize((nlen,))
         dset[olen:] = obj.get_state()
 
-    def snapshot_dumpper(self, fobj, p, snap_number):
+    def snapshot_dumpper(self, fobj, ps, snap_number):
         """
 
         """
@@ -56,20 +56,20 @@ class HDF5IO(object):
         if isinstance(snap_number, int):
             base_name += "_"+str(snap_number).zfill(6)
         base_group = fobj.require_group(base_name)
-        group_name = type(p).__name__.lower()
+        group_name = type(ps).__name__.lower()
         group = base_group.require_group(group_name)
-        cls = pickle.dumps(type(p), protocol=PICKLE_PROTOCOL)
+        cls = pickle.dumps(type(ps), protocol=PICKLE_PROTOCOL)
         group.attrs["Class"] = cls.decode('utf-8') if IS_PY3K else cls
-        for (key, obj) in p.items():
+        for (key, obj) in ps.items():
             if obj.n:
                 self.store_dset(group, key, obj)
 
-    def dump_snapshot(self, p, snap_number=None):
+    def dump_snapshot(self, ps, snap_number=None):
         """
 
         """
         with h5py.File(self.fname, self.fmode) as fobj:
-            self.snapshot_dumpper(fobj, p, snap_number)
+            self.snapshot_dumpper(fobj, ps, snap_number)
 
     def snapshot_loader(self, fobj, snap_number=None):
         """
@@ -79,20 +79,20 @@ class HDF5IO(object):
         if isinstance(snap_number, int):
             base_name += "_"+str(snap_number).zfill(6)
         group = list(fobj[base_name].values())[0]
-        p = pickle.loads(group.attrs["Class"])()
+        ps = pickle.loads(group.attrs["Class"])()
         for (k, v) in group.items():
             obj = pickle.loads(v.attrs["Class"])(len(v))
             obj.set_state(v[:])
-            p.append(obj)
-        return p
+            ps.append(obj)
+        return ps
 
     def load_snapshot(self, snap_number=None):
         """
 
         """
         with h5py.File(self.fname, self.fmode) as fobj:
-            p = self.snapshot_loader(fobj, snap_number)
-        return p
+            ps = self.snapshot_loader(fobj, snap_number)
+        return ps
 
     def worldline_dumpper(self, fobj, wl):
         """
@@ -136,11 +136,11 @@ class HDF5IO(object):
         fname = self.fname.replace(".hdf5", ".psdf")
         stream = psdfio.PSDFIO(fname, fmode='w')
         try:
-            p = self.load_snapshot()
-            stream.dump_snapshot(p)
+            ps = self.load_snapshot()
+            stream.dump_snapshot(ps)
         except:
-            p = self.load_worldline()
-            stream.dump_worldline(p)
+            ps = self.load_worldline()
+            stream.dump_worldline(ps)
 
 
 ########## end of file ##########

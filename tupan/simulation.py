@@ -41,23 +41,21 @@ class Diagnostic(object):
     """
 
     """
-    def __init__(self, fname, time, particles, report_freq=4, pn_order=0):
+    def __init__(self, fname, time, ps, report_freq=4, pn_order=0):
         self.fname = fname
         self.time = time
         self.report_freq = report_freq
         self.pn_order = pn_order
         self.nreport = 0
 
-        p = particles
-
-        self.ke0 = p.kinetic_energy
-        self.pe0 = p.potential_energy
+        self.ke0 = ps.kinetic_energy
+        self.pe0 = ps.potential_energy
         self.te0 = self.ke0 + self.pe0
 
-        self.rcom0 = p.rcom
-        self.vcom0 = p.vcom
-        self.lmom0 = p.linear_momentum
-        self.amom0 = p.angular_momentum
+        self.rcom0 = ps.rcom
+        self.vcom0 = ps.vcom
+        self.lmom0 = ps.linear_momentum
+        self.amom0 = ps.angular_momentum
 
         self.count = 0
         self.ceerr = 0.0
@@ -83,35 +81,33 @@ class Diagnostic(object):
                            '#11:amom', '#12:wct'),
                 self.fname, 'w')
 
-    def report(self, time, particles):
+    def diagnostic_report(self, time, ps):
         if self.nreport % self.report_freq == 0:
-            self.print_diagnostic(time, time - self.time, particles)
+            self.print_diagnostic(time, time - self.time, ps)
         self.nreport += 1
 
-    def print_diagnostic(self, time, dtime, particles):
+    def print_diagnostic(self, time, dtime, ps):
         self.time = time
 
-        p = particles
-
-        ke = p.kinetic_energy
+        ke = ps.kinetic_energy
         if self.pn_order > 0:
-            ke += p.get_ke_pn_shift()
-        pe = p.potential_energy
+            ke += ps.get_ke_pn_shift()
+        pe = ps.potential_energy
         te = ke + pe
-        virial = p.virial_energy
+        virial = ps.virial_energy
 
-        rcom = p.rcom
+        rcom = ps.rcom
         if self.pn_order > 0:
-            rcom += p.get_rcom_pn_shift()
-        vcom = p.vcom
+            rcom += ps.get_rcom_pn_shift()
+        vcom = ps.vcom
         if self.pn_order > 0:
-            vcom += p.get_vcom_pn_shift()
-        lmom = p.linear_momentum
+            vcom += ps.get_vcom_pn_shift()
+        lmom = ps.linear_momentum
         if self.pn_order > 0:
-            lmom += p.get_lmom_pn_shift()
-        amom = p.angular_momentum
+            lmom += ps.get_lmom_pn_shift()
+        amom = ps.angular_momentum
         if self.pn_order > 0:
-            amom += p.get_amom_pn_shift()
+            amom += ps.get_amom_pn_shift()
 
         eerr = (te-self.te0)/(-pe)
         self.count += 1
@@ -151,7 +147,7 @@ class Simulation(object):
 
         # Read the initial conditions
         fname = self.args.input_file
-        particles = IO(fname, 'r').load_snapshot()
+        ps = IO(fname, 'r').load_snapshot()
 
         # Initializes output file
         fname = self.args.output_file
@@ -160,7 +156,7 @@ class Simulation(object):
         # Initializes the diagnostic report of the simulation
         self.dia = Diagnostic(self.args.log_file,
                               self.args.t_begin,
-                              particles,
+                              ps,
                               report_freq=self.args.report_freq,
                               pn_order=self.args.pn_order,
                               )
@@ -168,7 +164,7 @@ class Simulation(object):
         # Initializes the integrator
         self.integrator = Integrator(self.args.eta,
                                      self.args.t_begin,
-                                     particles,
+                                     ps,
                                      method=self.args.meth,
                                      pn_order=self.args.pn_order,
                                      clight=self.args.clight,
@@ -197,9 +193,9 @@ class Simulation(object):
         """
         if self.viewer:
             self.viewer.initialize()
-            particles = self.integrator.particles
-            self.viewer.show_event(particles)
-            self.viewer.show_event(particles)
+            ps = self.integrator.particle_system
+            self.viewer.show_event(ps)
+            self.viewer.show_event(ps)
 
         while (abs(self.integrator.time) < self.args.t_end):
             # evolve a single time-step
@@ -213,16 +209,16 @@ class Simulation(object):
             # call GL viewer (if enabled)
             if self.gl_steps % self.args.gl_freq == 0:
                 if self.viewer:
-                    particles = self.integrator.particles
-                    self.viewer.show_event(particles)
+                    ps = self.integrator.particle_system
+                    self.viewer.show_event(ps)
             self.gl_steps += 1
 
         # Finalize the integrator
         self.integrator.finalize(self.args.t_end)
 
         if self.viewer:
-            particles = self.integrator.particles
-            self.viewer.show_event(particles)
+            ps = self.integrator.particle_system
+            self.viewer.show_event(ps)
             self.viewer.enter_main_loop()
 
 

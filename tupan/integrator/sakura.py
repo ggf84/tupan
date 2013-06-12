@@ -20,26 +20,29 @@ __all__ = ["SAKURA"]
 logger = logging.getLogger(__name__)
 
 
-def sakura_step(p, tau):
-    p.rx += p.vx * tau / 2
-    p.ry += p.vy * tau / 2
-    p.rz += p.vz * tau / 2
+def sakura_step(ps, tau):
+    """
 
-    llsakura.set_args(p, p, tau)
+    """
+    ps.rx += ps.vx * tau / 2
+    ps.ry += ps.vy * tau / 2
+    ps.rz += ps.vz * tau / 2
+
+    llsakura.set_args(ps, ps, tau)
     llsakura.run()
     (drx, dry, drz, dvx, dvy, dvz) = llsakura.get_result()
-    p.rx += drx
-    p.ry += dry
-    p.rz += drz
-    p.vx += dvx
-    p.vy += dvy
-    p.vz += dvz
+    ps.rx += drx
+    ps.ry += dry
+    ps.rz += drz
+    ps.vx += dvx
+    ps.vy += dvy
+    ps.vz += dvz
 
-    p.rx += p.vx * tau / 2
-    p.ry += p.vy * tau / 2
-    p.rz += p.vz * tau / 2
+    ps.rx += ps.vx * tau / 2
+    ps.ry += ps.vy * tau / 2
+    ps.rz += ps.vz * tau / 2
 
-    return p
+    return ps
 
 
 @decallmethods(timings)
@@ -47,12 +50,56 @@ class SAKURA(Base):
     """
 
     """
-    def __init__(self, eta, time, particles, **kwargs):
-        super(SAKURA, self).__init__(eta, time, particles, **kwargs)
+    def __init__(self, eta, time, ps, **kwargs):
+        """
+
+        """
+        super(SAKURA, self).__init__(eta, time, ps, **kwargs)
         self.e0 = None
 
-    def get_sakura_tstep(self, isys, jsys, eta):
-        (tstep_a, tstep_b) = isys.get_tstep(jsys, eta)
+    def get_base_tstep(self, t_end):
+        """
+
+        """
+        ps = self.ps
+        self.tstep = self.get_sakura_tstep(ps, ps, self.eta)
+#        self.tstep = self.eta
+        if abs(self.time + self.tstep) > t_end:
+            self.tstep = math.copysign(t_end - abs(self.time), self.eta)
+        return self.tstep
+
+    def initialize(self, t_end):
+        """
+
+        """
+        logger.info(
+            "Initializing '%s' integrator.",
+            type(self).__name__.lower()
+        )
+
+        ps = self.ps
+
+        if self.reporter:
+            self.reporter.diagnostic_report(self.time, ps)
+        if self.dumpper:
+            self.dumpper.dump_worldline(ps)
+
+        self.is_initialized = True
+
+    def finalize(self, t_end):
+        """
+
+        """
+        logger.info(
+            "Finalizing '%s' integrator.",
+            type(self).__name__.lower()
+        )
+
+    def get_sakura_tstep(self, ips, jps, eta):
+        """
+
+        """
+        (tstep_a, tstep_b) = ips.get_tstep(jps, eta)
 
         iw2_a = (eta/tstep_a)**2
         iw2_b = (eta/tstep_b)**2
@@ -64,7 +111,7 @@ class SAKURA(Base):
 
         return dt_sakura
 
-    def do_step(self, p, tau):
+    def do_step(self, ps, tau):
         """
 
         """
@@ -88,47 +135,15 @@ class SAKURA(Base):
 ##                    print(nsteps, de, tol)
 #                    break
 
-        p = sakura_step(p, tau)
+        ps = sakura_step(ps, tau)
 
-        p.tstep = tau
-        p.time += tau
-        p.nstep += 1
-        return p
-
-    def get_base_tstep(self, t_end):
-        p = self.particles
-        self.tstep = self.get_sakura_tstep(p, p, self.eta)
-#        self.tstep = self.eta
-        if abs(self.time + self.tstep) > t_end:
-            self.tstep = math.copysign(t_end - abs(self.time), self.eta)
-        return self.tstep
-
-    def initialize(self, t_end):
-        logger.info(
-            "Initializing '%s' integrator.",
-            type(self).__name__.lower()
-        )
-
-        p = self.particles
-
-        if self.dumpper:
-            self.snap_number = 0
-            self.dumpper.dump_snapshot(p, self.snap_number)
-
-        self.is_initialized = True
-
-    def finalize(self, t_end):
-        logger.info(
-            "Finalizing '%s' integrator.",
-            type(self).__name__.lower()
-        )
-
-        p = self.particles
-        tau = self.get_base_tstep(t_end)
-        p.tstep = tau
-
-        if self.reporter:
-            self.reporter.report(self.time, p)
+        ps.tstep = tau
+        ps.time += tau
+        ps.nstep += 1
+        wp = ps[ps.nstep % self.dump_freq == 0]
+        if wp.n:
+            self.wl.append(wp.copy())
+        return ps
 
     def evolve_step(self, t_end):
         """
@@ -137,24 +152,19 @@ class SAKURA(Base):
         if not self.is_initialized:
             self.initialize(t_end)
 
-        p = self.particles
+        ps = self.ps
         tau = self.get_base_tstep(t_end)
+        self.wl = ps[:0]
 
-        p.tstep = tau
+        ps = self.do_step(ps, tau)
+
+        self.time += tau
+        self.ps = ps
 
         if self.reporter:
-            self.reporter.report(self.time, p)
-
-        p = self.do_step(p, tau)
-        self.time += tau
-
+            self.reporter.diagnostic_report(self.time, ps)
         if self.dumpper:
-            pp = p[p.nstep % self.dump_freq == 0]
-            if pp.n:
-                self.snap_number += 1
-                self.dumpper.dump_snapshot(pp, self.snap_number)
-
-        self.particles = p
+            self.dumpper.dump_worldline(self.wl)
 
 
 ########## end of file ##########
