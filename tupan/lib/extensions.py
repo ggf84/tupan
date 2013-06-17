@@ -10,6 +10,7 @@ from __future__ import print_function, division
 import os
 import logging
 import numpy as np
+from itertools import chain
 from .utils import ctype
 from .utils.timing import decallmethods, timings
 
@@ -61,17 +62,13 @@ class CLKernel(object):
         gs0 = ((ni-1)//2 + 1) * 2
         self._gsize = (gs0,)
 
-    def get_wgsize(self, numbufs):
-        itemsize = np.dtype(ctype.REAL).itemsize
+    def allocate_local_memory(self, numbufs, dtype):
+        itemsize = dtype.itemsize
         dev = self.env.ctx.devices[0]
         wgsize = (dev.local_mem_size // itemsize) // numbufs
-        max_wgsize = dev.max_work_group_size
-        return min(wgsize, max_wgsize)
-
-    def alloc_local_memory(self, wgsize):
-        itemsize = np.dtype(ctype.REAL).itemsize
+        wgsize = min(wgsize, dev.max_work_group_size)
         size = itemsize * wgsize
-        return cl.LocalMemory(size)
+        return [cl.LocalMemory(size) for i in range(numbufs)]
 
     def set_local_memory(self, arg):
         return arg
@@ -95,13 +92,14 @@ class CLKernel(object):
             return self.set_float(arg)
         if isinstance(arg, np.ndarray):
             return self.set_array(arg)
-        if isinstance(arg, cl.LocalMemory):
-            return self.set_local_memory(arg)
 
     def set_args(self, **args):
         self.in_buf = [self.set_arg(arg) for arg in args["in"]]
+        self.lmem_buf = [self.set_local_memory(arg) for arg in args["lmem"]]
         self.out_buf = [self.set_arg(arg) for arg in args["out"]]
-        for i, arg in enumerate(self.in_buf + self.out_buf):
+        for i, arg in enumerate(chain(self.in_buf,
+                                      self.lmem_buf,
+                                      self.out_buf)):
             self.kernel.set_arg(i, arg)
 
     def map_buffers(self, arrays):
@@ -181,11 +179,8 @@ class CKernel(object):
         self.ffi = ffi
         self.kernel = kernel
 
-    def get_wgsize(self, numbufs):
-        return None
-
-    def alloc_local_memory(self, wgsize):
-        return None
+    def allocate_local_memory(self, numbufs, dtype):
+        return []
 
     def set_int(self, arg):
         return arg
@@ -205,17 +200,14 @@ class CKernel(object):
             return self.set_array(arg)
 
     def set_args(self, **args):
-        self.in_buf = [self.set_arg(arg) for arg in args["in"]
-                       if arg is not None]
+        self.in_buf = [self.set_arg(arg) for arg in args["in"]]
         self.out_buf = [self.set_arg(arg) for arg in args["out"]]
-        self.args = self.in_buf + self.out_buf
 
     def map_buffers(self, arrays):
         pass
 
     def run(self):
-        args = self.args
-        self.kernel(*args)
+        self.kernel(*chain(self.in_buf, self.out_buf))
 
 
 @decallmethods(timings)

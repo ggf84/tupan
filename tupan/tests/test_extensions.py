@@ -53,6 +53,9 @@ class TestCase(unittest.TestCase):
         npart = self.small_system.n
         deviations = []
 
+        kernel_c = gravity.Phi("c", ctype.prec)
+        kernel_cl = gravity.Phi("cl", ctype.prec)
+
         iobj = self.small_system
         for j in range(1, npart+1):
             res = {'c': None, 'cl': None}
@@ -61,16 +64,14 @@ class TestCase(unittest.TestCase):
             jobj = self.small_system[:j]
 
             # calculating on CPU
-            kernel = gravity.Phi("c", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['c'] = kernel.get_result()
+            kernel_c.set_args(iobj, jobj)
+            kernel_c.run()
+            res['c'] = kernel_c.get_result()
 
             # calculating on GPU
-            kernel = gravity.Phi("cl", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['cl'] = kernel.get_result()
+            kernel_cl.set_args(iobj, jobj)
+            kernel_cl.run()
+            res['cl'] = kernel_cl.get_result()
 
             # calculating deviation of result
             deviation = np.sqrt(
@@ -87,16 +88,14 @@ class TestCase(unittest.TestCase):
             iobj = self.small_system[:i]
 
             # calculating on CPU
-            kernel = gravity.Phi("c", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['c'] = kernel.get_result()
+            kernel_c.set_args(iobj, jobj)
+            kernel_c.run()
+            res['c'] = kernel_c.get_result()
 
             # calculating on GPU
-            kernel = gravity.Phi("cl", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['cl'] = kernel.get_result()
+            kernel_cl.set_args(iobj, jobj)
+            kernel_cl.run()
+            res['cl'] = kernel_cl.get_result()
 
             # calculating deviation of result
             deviation = np.sqrt(
@@ -118,6 +117,9 @@ class TestCase(unittest.TestCase):
         npart = self.small_system.n
         deviations = []
 
+        kernel_c = gravity.Acc("c", ctype.prec)
+        kernel_cl = gravity.Acc("cl", ctype.prec)
+
         iobj = self.small_system
         for j in range(1, npart+1):
             res = {'c': None, 'cl': None}
@@ -126,16 +128,14 @@ class TestCase(unittest.TestCase):
             jobj = self.small_system[:j]
 
             # calculating on CPU
-            kernel = gravity.Acc("c", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['c'] = kernel.get_result()
+            kernel_c.set_args(iobj, jobj)
+            kernel_c.run()
+            res['c'] = kernel_c.get_result()
 
             # calculating on GPU
-            kernel = gravity.Acc("cl", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['cl'] = kernel.get_result()
+            kernel_cl.set_args(iobj, jobj)
+            kernel_cl.run()
+            res['cl'] = kernel_cl.get_result()
 
             # calculating deviation of result
             deviation = np.sqrt(
@@ -152,16 +152,14 @@ class TestCase(unittest.TestCase):
             iobj = self.small_system[:i]
 
             # calculating on CPU
-            kernel = gravity.Acc("c", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['c'] = kernel.get_result()
+            kernel_c.set_args(iobj, jobj)
+            kernel_c.run()
+            res['c'] = kernel_c.get_result()
 
             # calculating on GPU
-            kernel = gravity.Acc("cl", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['cl'] = kernel.get_result()
+            kernel_cl.set_args(iobj, jobj)
+            kernel_cl.run()
+            res['cl'] = kernel_cl.get_result()
 
             # calculating deviation of result
             deviation = np.sqrt(
@@ -183,6 +181,9 @@ class TestCase(unittest.TestCase):
         npart = self.small_system.n
         deviations = []
 
+        kernel_c = gravity.AccJerk("c", ctype.prec)
+        kernel_cl = gravity.AccJerk("cl", ctype.prec)
+
         iobj = self.small_system
         for j in range(1, npart+1):
             res = {'c': None, 'cl': None}
@@ -191,16 +192,14 @@ class TestCase(unittest.TestCase):
             jobj = self.small_system[:j]
 
             # calculating on CPU
-            kernel = gravity.AccJerk("c", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['c'] = kernel.get_result()
+            kernel_c.set_args(iobj, jobj)
+            kernel_c.run()
+            res['c'] = kernel_c.get_result()
 
             # calculating on GPU
-            kernel = gravity.AccJerk("cl", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['cl'] = kernel.get_result()
+            kernel_cl.set_args(iobj, jobj)
+            kernel_cl.run()
+            res['cl'] = kernel_cl.get_result()
 
             # calculating deviation of result
             deviation = np.sqrt(
@@ -217,16 +216,14 @@ class TestCase(unittest.TestCase):
             iobj = self.small_system[:i]
 
             # calculating on CPU
-            kernel = gravity.AccJerk("c", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['c'] = kernel.get_result()
+            kernel_c.set_args(iobj, jobj)
+            kernel_c.run()
+            res['c'] = kernel_c.get_result()
 
             # calculating on GPU
-            kernel = gravity.AccJerk("cl", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['cl'] = kernel.get_result()
+            kernel_cl.set_args(iobj, jobj)
+            kernel_cl.run()
+            res['cl'] = kernel_cl.get_result()
 
             # calculating deviation of result
             deviation = np.sqrt(
@@ -249,6 +246,9 @@ class TestCase(unittest.TestCase):
         npart = self.small_system.n
         deviations = []
 
+        kernel_c = gravity.Tstep("c", ctype.prec)
+        kernel_cl = gravity.Tstep("cl", ctype.prec)
+
         iobj = self.small_system
         for j in range(1, npart+1):
             res = {'c': None, 'cl': None}
@@ -257,16 +257,14 @@ class TestCase(unittest.TestCase):
             jobj = self.small_system[:j]
 
             # calculating on CPU
-            kernel = gravity.Tstep("c", ctype.prec)
-            kernel.set_args(iobj, jobj, eta)
-            kernel.run()
-            res['c'] = kernel.get_result()
+            kernel_c.set_args(iobj, jobj, eta)
+            kernel_c.run()
+            res['c'] = kernel_c.get_result()
 
             # calculating on GPU
-            kernel = gravity.Tstep("cl", ctype.prec)
-            kernel.set_args(iobj, jobj, eta)
-            kernel.run()
-            res['cl'] = kernel.get_result()
+            kernel_cl.set_args(iobj, jobj, eta)
+            kernel_cl.run()
+            res['cl'] = kernel_cl.get_result()
 
             # calculating deviation of result
             deviation0 = np.sqrt(
@@ -287,16 +285,14 @@ class TestCase(unittest.TestCase):
             iobj = self.small_system[:i]
 
             # calculating on CPU
-            kernel = gravity.Tstep("c", ctype.prec)
-            kernel.set_args(iobj, jobj, eta)
-            kernel.run()
-            res['c'] = kernel.get_result()
+            kernel_c.set_args(iobj, jobj, eta)
+            kernel_c.run()
+            res['c'] = kernel_c.get_result()
 
             # calculating on GPU
-            kernel = gravity.Tstep("cl", ctype.prec)
-            kernel.set_args(iobj, jobj, eta)
-            kernel.run()
-            res['cl'] = kernel.get_result()
+            kernel_cl.set_args(iobj, jobj, eta)
+            kernel_cl.run()
+            res['cl'] = kernel_cl.get_result()
 
             # calculating deviation of result
             deviation0 = np.sqrt(
@@ -325,6 +321,9 @@ class TestCase(unittest.TestCase):
         gravity.clight.pn_order = 7
         gravity.clight.clight = 128
 
+        kernel_c = gravity.PNAcc("c", ctype.prec)
+        kernel_cl = gravity.PNAcc("cl", ctype.prec)
+
         iobj = self.small_system
         for j in range(1, npart+1):
             res = {'c': None, 'cl': None}
@@ -333,16 +332,14 @@ class TestCase(unittest.TestCase):
             jobj = self.small_system[:j]
 
             # calculating on CPU
-            kernel = gravity.PNAcc("c", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['c'] = kernel.get_result()
+            kernel_c.set_args(iobj, jobj)
+            kernel_c.run()
+            res['c'] = kernel_c.get_result()
 
             # calculating on GPU
-            kernel = gravity.PNAcc("cl", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['cl'] = kernel.get_result()
+            kernel_cl.set_args(iobj, jobj)
+            kernel_cl.run()
+            res['cl'] = kernel_cl.get_result()
 
             # calculating deviation of result
             deviation = np.sqrt(
@@ -359,16 +356,14 @@ class TestCase(unittest.TestCase):
             iobj = self.small_system[:i]
 
             # calculating on CPU
-            kernel = gravity.PNAcc("c", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['c'] = kernel.get_result()
+            kernel_c.set_args(iobj, jobj)
+            kernel_c.run()
+            res['c'] = kernel_c.get_result()
 
             # calculating on GPU
-            kernel = gravity.PNAcc("cl", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['cl'] = kernel.get_result()
+            kernel_cl.set_args(iobj, jobj)
+            kernel_cl.run()
+            res['cl'] = kernel_cl.get_result()
 
             # calculating deviation of result
             deviation = np.sqrt(
@@ -391,6 +386,9 @@ class TestCase(unittest.TestCase):
         npart = self.small_system.n
         deviations = []
 
+        kernel_c = gravity.Sakura("c", ctype.prec)
+        kernel_cl = gravity.Sakura("cl", ctype.prec)
+
         iobj = self.small_system
         for j in range(1, npart+1):
             res = {'c': None, 'cl': None}
@@ -399,16 +397,14 @@ class TestCase(unittest.TestCase):
             jobj = self.small_system[:j]
 
             # calculating on CPU
-            kernel = gravity.Sakura("c", ctype.prec)
-            kernel.set_args(iobj, jobj, dt)
-            kernel.run()
-            res['c'] = kernel.get_result()
+            kernel_c.set_args(iobj, jobj, dt)
+            kernel_c.run()
+            res['c'] = kernel_c.get_result()
 
             # calculating on GPU
-            kernel = gravity.Sakura("cl", ctype.prec)
-            kernel.set_args(iobj, jobj, dt)
-            kernel.run()
-            res['cl'] = kernel.get_result()
+            kernel_cl.set_args(iobj, jobj, dt)
+            kernel_cl.run()
+            res['cl'] = kernel_cl.get_result()
 
             # calculating deviation of result
             deviation = np.sqrt(
@@ -425,16 +421,14 @@ class TestCase(unittest.TestCase):
             iobj = self.small_system[:i]
 
             # calculating on CPU
-            kernel = gravity.AccJerk("c", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['c'] = kernel.get_result()
+            kernel_c.set_args(iobj, jobj, dt)
+            kernel_c.run()
+            res['c'] = kernel_c.get_result()
 
             # calculating on GPU
-            kernel = gravity.AccJerk("cl", ctype.prec)
-            kernel.set_args(iobj, jobj)
-            kernel.run()
-            res['cl'] = kernel.get_result()
+            kernel_cl.set_args(iobj, jobj, dt)
+            kernel_cl.run()
+            res['cl'] = kernel_cl.get_result()
 
             # calculating deviation of result
             deviation = np.sqrt(

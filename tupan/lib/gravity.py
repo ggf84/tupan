@@ -66,6 +66,7 @@ class Phi(object):
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("phi_kernel", exttype, prec)
+        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
 
     def set_args(self, iobj, jobj):
@@ -74,15 +75,6 @@ class Phi(object):
 
         self.kernel.global_size = ni
         if ni > self.max_output_size:
-            wgsize = self.kernel.get_wgsize(8)
-            self.__jm = self.kernel.alloc_local_memory(wgsize)
-            self.__jrx = self.kernel.alloc_local_memory(wgsize)
-            self.__jry = self.kernel.alloc_local_memory(wgsize)
-            self.__jrz = self.kernel.alloc_local_memory(wgsize)
-            self.__je2 = self.kernel.alloc_local_memory(wgsize)
-            self.__jvx = self.kernel.alloc_local_memory(wgsize)
-            self.__jvy = self.kernel.alloc_local_memory(wgsize)
-            self.__jvz = self.kernel.alloc_local_memory(wgsize)
             self._phi = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
@@ -91,9 +83,8 @@ class Phi(object):
                      iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
                      nj,
                      jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                     self.__jm, self.__jrx, self.__jry, self.__jrz,
-                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz),
+                     "lmem": self._lmem,
                      "out": (self._phi[:ni],)}
 
         self.kernel.set_args(**self.args)
@@ -113,6 +104,7 @@ class Acc(object):
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("acc_kernel", exttype, prec)
+        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
 
     def set_args(self, iobj, jobj):
@@ -121,15 +113,6 @@ class Acc(object):
 
         self.kernel.global_size = ni
         if ni > self.max_output_size:
-            wgsize = self.kernel.get_wgsize(8)
-            self.__jm = self.kernel.alloc_local_memory(wgsize)
-            self.__jrx = self.kernel.alloc_local_memory(wgsize)
-            self.__jry = self.kernel.alloc_local_memory(wgsize)
-            self.__jrz = self.kernel.alloc_local_memory(wgsize)
-            self.__je2 = self.kernel.alloc_local_memory(wgsize)
-            self.__jvx = self.kernel.alloc_local_memory(wgsize)
-            self.__jvy = self.kernel.alloc_local_memory(wgsize)
-            self.__jvz = self.kernel.alloc_local_memory(wgsize)
             self._ax = np.zeros(ni, dtype=ctype.REAL)
             self._ay = np.zeros(ni, dtype=ctype.REAL)
             self._az = np.zeros(ni, dtype=ctype.REAL)
@@ -140,9 +123,8 @@ class Acc(object):
                      iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
                      nj,
                      jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                     self.__jm, self.__jrx, self.__jry, self.__jrz,
-                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz),
+                     "lmem": self._lmem,
                      "out": (self._ax[:ni], self._ay[:ni], self._az[:ni])}
 
         self.kernel.set_args(**self.args)
@@ -162,6 +144,7 @@ class AccJerk(object):
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("acc_jerk_kernel", exttype, prec)
+        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
 
     def set_args(self, iobj, jobj):
@@ -170,15 +153,6 @@ class AccJerk(object):
 
         self.kernel.global_size = ni
         if ni > self.max_output_size:
-            wgsize = self.kernel.get_wgsize(8)
-            self.__jm = self.kernel.alloc_local_memory(wgsize)
-            self.__jrx = self.kernel.alloc_local_memory(wgsize)
-            self.__jry = self.kernel.alloc_local_memory(wgsize)
-            self.__jrz = self.kernel.alloc_local_memory(wgsize)
-            self.__je2 = self.kernel.alloc_local_memory(wgsize)
-            self.__jvx = self.kernel.alloc_local_memory(wgsize)
-            self.__jvy = self.kernel.alloc_local_memory(wgsize)
-            self.__jvz = self.kernel.alloc_local_memory(wgsize)
             self._ax = np.zeros(ni, dtype=ctype.REAL)
             self._ay = np.zeros(ni, dtype=ctype.REAL)
             self._az = np.zeros(ni, dtype=ctype.REAL)
@@ -192,9 +166,8 @@ class AccJerk(object):
                      iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
                      nj,
                      jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                     self.__jm, self.__jrx, self.__jry, self.__jrz,
-                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz),
+                     "lmem": self._lmem,
                      "out": (self._ax[:ni], self._ay[:ni], self._az[:ni],
                      self._jx[:ni], self._jy[:ni], self._jz[:ni])}
 
@@ -215,6 +188,7 @@ class Tstep(object):
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("tstep_kernel", exttype, prec)
+        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
 
     def set_args(self, iobj, jobj, eta):
@@ -223,15 +197,6 @@ class Tstep(object):
 
         self.kernel.global_size = ni
         if ni > self.max_output_size:
-            wgsize = self.kernel.get_wgsize(8)
-            self.__jm = self.kernel.alloc_local_memory(wgsize)
-            self.__jrx = self.kernel.alloc_local_memory(wgsize)
-            self.__jry = self.kernel.alloc_local_memory(wgsize)
-            self.__jrz = self.kernel.alloc_local_memory(wgsize)
-            self.__je2 = self.kernel.alloc_local_memory(wgsize)
-            self.__jvx = self.kernel.alloc_local_memory(wgsize)
-            self.__jvy = self.kernel.alloc_local_memory(wgsize)
-            self.__jvz = self.kernel.alloc_local_memory(wgsize)
             self._tstep_a = np.zeros(ni, dtype=ctype.REAL)
             self._tstep_b = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
@@ -242,9 +207,8 @@ class Tstep(object):
                      nj,
                      jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                      jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                     eta,
-                     self.__jm, self.__jrx, self.__jry, self.__jrz,
-                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     eta),
+                     "lmem": self._lmem,
                      "out": (self._tstep_a[:ni], self._tstep_b[:ni])}
 
         self.kernel.set_args(**self.args)
@@ -264,6 +228,7 @@ class PNAcc(object):
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("pnacc_kernel", exttype, prec)
+        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
 
     def set_args(self, iobj, jobj):
@@ -272,15 +237,6 @@ class PNAcc(object):
 
         self.kernel.global_size = ni
         if ni > self.max_output_size:
-            wgsize = self.kernel.get_wgsize(8)
-            self.__jm = self.kernel.alloc_local_memory(wgsize)
-            self.__jrx = self.kernel.alloc_local_memory(wgsize)
-            self.__jry = self.kernel.alloc_local_memory(wgsize)
-            self.__jrz = self.kernel.alloc_local_memory(wgsize)
-            self.__je2 = self.kernel.alloc_local_memory(wgsize)
-            self.__jvx = self.kernel.alloc_local_memory(wgsize)
-            self.__jvy = self.kernel.alloc_local_memory(wgsize)
-            self.__jvz = self.kernel.alloc_local_memory(wgsize)
             self._pnax = np.zeros(ni, dtype=ctype.REAL)
             self._pnay = np.zeros(ni, dtype=ctype.REAL)
             self._pnaz = np.zeros(ni, dtype=ctype.REAL)
@@ -295,9 +251,8 @@ class PNAcc(object):
                      clight.pn_order, clight.inv1,
                      clight.inv2, clight.inv3,
                      clight.inv4, clight.inv5,
-                     clight.inv6, clight.inv7,
-                     self.__jm, self.__jrx, self.__jry, self.__jrz,
-                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     clight.inv6, clight.inv7),
+                     "lmem": self._lmem,
                      "out": (self._pnax[:ni], self._pnay[:ni], self._pnaz[:ni])
                      }
 
@@ -318,6 +273,7 @@ class Sakura(object):
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("sakura_kernel", exttype, prec)
+        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
 
     def set_args(self, iobj, jobj, dt):
@@ -326,15 +282,6 @@ class Sakura(object):
 
         self.kernel.global_size = ni
         if ni > self.max_output_size:
-            wgsize = self.kernel.get_wgsize(8)
-            self.__jm = self.kernel.alloc_local_memory(wgsize)
-            self.__jrx = self.kernel.alloc_local_memory(wgsize)
-            self.__jry = self.kernel.alloc_local_memory(wgsize)
-            self.__jrz = self.kernel.alloc_local_memory(wgsize)
-            self.__je2 = self.kernel.alloc_local_memory(wgsize)
-            self.__jvx = self.kernel.alloc_local_memory(wgsize)
-            self.__jvy = self.kernel.alloc_local_memory(wgsize)
-            self.__jvz = self.kernel.alloc_local_memory(wgsize)
             self._drx = np.zeros(ni, dtype=ctype.REAL)
             self._dry = np.zeros(ni, dtype=ctype.REAL)
             self._drz = np.zeros(ni, dtype=ctype.REAL)
@@ -349,9 +296,8 @@ class Sakura(object):
                      nj,
                      jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                      jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                     dt,
-                     self.__jm, self.__jrx, self.__jry, self.__jrz,
-                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     dt),
+                     "lmem": self._lmem,
                      "out": (self._drx[:ni], self._dry[:ni], self._drz[:ni],
                      self._dvx[:ni], self._dvy[:ni], self._dvz[:ni])}
 
@@ -372,6 +318,7 @@ class NREG_X(object):
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("nreg_Xkernel", exttype, prec)
+        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
 
     def set_args(self, iobj, jobj, dt):
@@ -380,15 +327,6 @@ class NREG_X(object):
 
         self.kernel.global_size = ni
         if ni > self.max_output_size:
-            wgsize = self.kernel.get_wgsize(8)
-            self.__jm = self.kernel.alloc_local_memory(wgsize)
-            self.__jrx = self.kernel.alloc_local_memory(wgsize)
-            self.__jry = self.kernel.alloc_local_memory(wgsize)
-            self.__jrz = self.kernel.alloc_local_memory(wgsize)
-            self.__je2 = self.kernel.alloc_local_memory(wgsize)
-            self.__jvx = self.kernel.alloc_local_memory(wgsize)
-            self.__jvy = self.kernel.alloc_local_memory(wgsize)
-            self.__jvz = self.kernel.alloc_local_memory(wgsize)
             self._rx = np.zeros(ni, dtype=ctype.REAL)
             self._ry = np.zeros(ni, dtype=ctype.REAL)
             self._rz = np.zeros(ni, dtype=ctype.REAL)
@@ -404,9 +342,8 @@ class NREG_X(object):
                      nj,
                      jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                      jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                     dt,
-                     self.__jm, self.__jrx, self.__jry, self.__jrz,
-                     self.__je2, self.__jvx, self.__jvy, self.__jvz),
+                     dt),
+                     "lmem": self._lmem,
                      "out": (self._rx[:ni], self._ry[:ni], self._rz[:ni],
                      self._ax[:ni], self._ay[:ni], self._az[:ni],
                      self._u[:ni])}
@@ -428,6 +365,7 @@ class NREG_V(object):
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("nreg_Vkernel", exttype, prec)
+        self._lmem = self.kernel.allocate_local_memory(7, np.dtype(ctype.REAL))
         self.max_output_size = 0
 
     def set_args(self, iobj, jobj, dt):
@@ -436,14 +374,6 @@ class NREG_V(object):
 
         self.kernel.global_size = ni
         if ni > self.max_output_size:
-            wgsize = self.kernel.get_wgsize(7)
-            self.__jm = self.kernel.alloc_local_memory(wgsize)
-            self.__jvx = self.kernel.alloc_local_memory(wgsize)
-            self.__jvy = self.kernel.alloc_local_memory(wgsize)
-            self.__jvz = self.kernel.alloc_local_memory(wgsize)
-            self.__jax = self.kernel.alloc_local_memory(wgsize)
-            self.__jay = self.kernel.alloc_local_memory(wgsize)
-            self.__jaz = self.kernel.alloc_local_memory(wgsize)
             self._vx = np.zeros(ni, dtype=ctype.REAL)
             self._vy = np.zeros(ni, dtype=ctype.REAL)
             self._vz = np.zeros(ni, dtype=ctype.REAL)
@@ -456,9 +386,8 @@ class NREG_V(object):
                      nj,
                      jobj.mass, jobj.vx, jobj.vy, jobj.vz,
                      jobj.ax, jobj.ay, jobj.az,
-                     dt,
-                     self.__jm, self.__jvx, self.__jvy, self.__jvz,
-                     self.__jax, self.__jay, self.__jaz),
+                     dt),
+                     "lmem": self._lmem,
                      "out": (self._vx[:ni], self._vy[:ni], self._vz[:ni],
                      self._k[:ni])}
 

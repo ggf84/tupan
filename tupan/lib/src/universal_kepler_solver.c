@@ -541,7 +541,7 @@ inline void universal_kepler_solver(
     REAL e1 = v2 - u1;
 
     int n = 1;
-    REAL tol = 16*TOLERANCE;
+    REAL tol = 64*TOLERANCE;
     REAL err = fabs(e1 - e0);
     if (2*err < tol * (u1+u0)) {
         *r1x = rx;
