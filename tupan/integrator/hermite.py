@@ -14,7 +14,7 @@ from ..integrator import Base
 from ..lib.utils.timing import decallmethods, timings
 
 
-__all__ = ["Hermite", "AdaptHermite"]
+__all__ = ["Hermite"]
 
 logger = logging.getLogger(__name__)
 
@@ -24,29 +24,25 @@ class Hermite(Base):
     """
 
     """
-    def __init__(self, eta, time, ps, **kwargs):
+    PROVIDED_METHODS = ['hermite4', 'ahermite4',
+                        # TBD
+                        # 'hermite6', 'ahermite6',
+                        # 'hermite8', 'ahermite8',
+                        ]
+
+    def __init__(self, eta, time, ps, method, **kwargs):
         """
 
         """
         super(Hermite, self).__init__(eta, time, ps, **kwargs)
-
-    def get_base_tstep(self, t_end):
-        """
-
-        """
-        self.tstep = self.eta
-        if abs(self.time + self.tstep) > t_end:
-            self.tstep = math.copysign(t_end - abs(self.time), self.eta)
-        return self.tstep
+        self.method = method
 
     def initialize(self, t_end):
         """
 
         """
-        logger.info(
-            "Initializing '%s' integrator.",
-            type(self).__name__.lower()
-        )
+        logger.info("Initializing '%s' integrator.",
+                    self.method)
 
         ps = self.ps
         (ps.ax, ps.ay, ps.az, ps.jx, ps.jy, ps.jz) = ps.get_acc_jerk(ps)
@@ -62,10 +58,37 @@ class Hermite(Base):
         """
 
         """
-        logger.info(
-            "Finalizing '%s' integrator.",
-            type(self).__name__.lower()
-        )
+        logger.info("Finalizing '%s' integrator.",
+                    self.method)
+
+    def get_min_block_tstep(self, ps):
+        """
+
+        """
+        min_ts = ps.min_tstep()
+
+        power = int(np.log2(min_ts) - 1)
+        min_bts = 2.0**power
+
+        t_curr = self.time
+        t_next = t_curr + min_bts
+        if t_next % min_bts != 0:
+            min_bts /= 2
+
+        return math.copysign(min_bts, self.eta)
+
+    def get_hermite_tstep(self, ps, eta, tau):
+        """
+
+        """
+        ps.update_tstep(ps, eta)
+        min_bts = self.get_min_block_tstep(ps)
+
+        if abs(min_bts) > abs(tau):
+            min_bts = tau
+
+        self.tstep = min_bts
+        return self.tstep
 
     def predict(self, ps, tau):
         """
@@ -123,75 +146,18 @@ class Hermite(Base):
         """
 
         """
+        if "ahermite" in self.method:
+            tau = self.get_hermite_tstep(ps, self.eta, tau)
         ps = self.pec(1, ps, tau)
+        self.time += tau
 
         ps.tstep = tau
         ps.time += tau
         ps.nstep += 1
-        wp = ps[ps.nstep % self.dump_freq == 0]
+        wp = ps[ps.time % (self.dump_freq * tau) == 0]
         if wp.n:
             self.wl.append(wp.copy())
         return ps
-
-    def evolve_step(self, t_end):
-        """
-
-        """
-        if not self.is_initialized:
-            self.initialize(t_end)
-
-        ps = self.ps
-        tau = self.get_base_tstep(t_end)
-        self.wl = ps[:0]
-
-        ps = self.do_step(ps, tau)
-
-        self.time += tau
-        self.ps = ps
-
-        if self.reporter:
-            self.reporter.diagnostic_report(self.time, ps)
-        if self.dumpper:
-            self.dumpper.dump_worldline(self.wl)
-
-
-@decallmethods(timings)
-class AdaptHermite(Hermite):
-    """
-
-    """
-    def __init__(self, eta, time, ps, **kwargs):
-        """
-
-        """
-        super(AdaptHermite, self).__init__(eta, time, ps, **kwargs)
-
-    def get_min_block_tstep(self, ps):
-        """
-
-        """
-        min_tstep = ps.min_tstep()
-
-        power = int(np.log2(min_tstep) - 1)
-        min_block_tstep = 2.0**power
-
-        next_time = self.time + min_block_tstep
-        if next_time % min_block_tstep != 0:
-            min_block_tstep /= 2
-
-        return math.copysign(min_block_tstep, self.eta)
-
-    def get_base_tstep(self, t_end):
-        """
-
-        """
-        ps = self.ps
-        ps.update_tstep(ps, self.eta)
-        tau = self.get_min_block_tstep(ps)
-        self.tstep = tau
-        if abs(self.time + self.tstep) > t_end:
-            self.tstep = math.copysign(t_end - abs(self.time), self.eta)
-        return self.tstep
 
 
 ########## end of file ##########

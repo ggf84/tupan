@@ -7,9 +7,7 @@ TODO.
 
 
 from __future__ import print_function
-import math
 import logging
-import numpy as np
 from ..integrator import Base
 from ..lib import gravity
 from .sakura import sakura_step
@@ -510,23 +508,12 @@ class SIA(Base):
         global INCLUDE_PN_CORRECTIONS
         INCLUDE_PN_CORRECTIONS = True if gravity.clight.pn_order > 0 else False
 
-    def get_base_tstep(self, t_end):
-        """
-
-        """
-        self.tstep = 0.125
-        if abs(self.time + self.tstep) > t_end:
-            self.tstep = math.copysign(t_end - abs(self.time), self.eta)
-        return self.tstep
-
     def initialize(self, t_end):
         """
 
         """
-        logger.info(
-            "Initializing '%s' integrator.",
-            self.method
-        )
+        logger.info("Initializing '%s' integrator.",
+                    self.method)
 
         ps = self.ps
         (ps.ax, ps.ay, ps.az) = ps.get_acc(ps)
@@ -542,121 +529,58 @@ class SIA(Base):
         """
 
         """
-        logger.info(
-            "Finalizing '%s' integrator.",
-            self.method
-        )
-
-    def get_min_block_tstep(self, ps, tau):
-        """
-
-        """
-        min_tstep = ps.min_tstep()
-
-        power = int(np.log2(min_tstep) - 1)
-        min_block_tstep = 2.0**power
-
-        next_time = self.time + min_block_tstep
-        if next_time % min_block_tstep != 0:
-            min_block_tstep /= 2
-
-        self.tstep = min_block_tstep
-        if self.tstep > abs(tau):
-            self.tstep = tau
-
-        self.tstep = math.copysign(self.tstep, self.eta)
-        return self.tstep
+        logger.info("Finalizing '%s' integrator.",
+                    self.method)
 
     def do_step(self, ps, tau):
         """
 
         """
-        if self.method == "sia.dkd21std":
-            return self.dkd21(ps, tau, False, True)
-        elif self.method == "sia.dkd21shr":
-            return self.dkd21(ps, tau, True, True)
-        elif self.method == "sia.dkd21hcc":
-            return self.dkd21(ps, tau, True, False)
-        elif self.method == "sia.dkd22std":
-            return self.dkd22(ps, tau, False, True)
-        elif self.method == "sia.dkd22shr":
-            return self.dkd22(ps, tau, True, True)
-        elif self.method == "sia.dkd22hcc":
-            return self.dkd22(ps, tau, True, False)
-        elif self.method == "sia.dkd43std":
-            return self.dkd43(ps, tau, False, True)
-        elif self.method == "sia.dkd43shr":
-            return self.dkd43(ps, tau, True, True)
-        elif self.method == "sia.dkd43hcc":
-            return self.dkd43(ps, tau, True, False)
-        elif self.method == "sia.dkd44std":
-            return self.dkd44(ps, tau, False, True)
-        elif self.method == "sia.dkd44shr":
-            return self.dkd44(ps, tau, True, True)
-        elif self.method == "sia.dkd44hcc":
-            return self.dkd44(ps, tau, True, False)
-        elif self.method == "sia.dkd45std":
-            return self.dkd45(ps, tau, False, True)
-        elif self.method == "sia.dkd45shr":
-            return self.dkd45(ps, tau, True, True)
-        elif self.method == "sia.dkd45hcc":
-            return self.dkd45(ps, tau, True, False)
-        elif self.method == "sia.dkd46std":
-            return self.dkd46(ps, tau, False, True)
-        elif self.method == "sia.dkd46shr":
-            return self.dkd46(ps, tau, True, True)
-        elif self.method == "sia.dkd46hcc":
-            return self.dkd46(ps, tau, True, False)
-        elif self.method == "sia.dkd67std":
-            return self.dkd67(ps, tau, False, True)
-        elif self.method == "sia.dkd67shr":
-            return self.dkd67(ps, tau, True, True)
-        elif self.method == "sia.dkd67hcc":
-            return self.dkd67(ps, tau, True, False)
-        elif self.method == "sia.dkd69std":
-            return self.dkd69(ps, tau, False, True)
-        elif self.method == "sia.dkd69shr":
-            return self.dkd69(ps, tau, True, True)
-        elif self.method == "sia.dkd69hcc":
-            return self.dkd69(ps, tau, True, False)
+        if "std" in self.method:
+            self.update_tstep = False
+            self.shared_tstep = True
+        elif "shr" in self.method:
+            self.update_tstep = True
+            self.shared_tstep = True
+        elif "hcc" in self.method:
+            self.update_tstep = True
+            self.shared_tstep = False
         else:
             raise ValueError("Unexpected method: {0}".format(self.method))
 
-    def evolve_step(self, t_end):
-        """
+        if "dkd21" in self.method:
+            return self.dkd21(ps, tau)
+        elif "dkd22" in self.method:
+            return self.dkd22(ps, tau)
+        elif "dkd43" in self.method:
+            return self.dkd43(ps, tau)
+        elif "dkd44" in self.method:
+            return self.dkd44(ps, tau)
+        elif "dkd45" in self.method:
+            return self.dkd45(ps, tau)
+        elif "dkd46" in self.method:
+            return self.dkd46(ps, tau)
+        elif "dkd67" in self.method:
+            return self.dkd67(ps, tau)
+        elif "dkd69" in self.method:
+            return self.dkd69(ps, tau)
+        else:
+            raise ValueError("Unexpected method: {0}".format(self.method))
 
-        """
-        if not self.is_initialized:
-            self.initialize(t_end)
-
-        ps = self.ps
-        tau = self.get_base_tstep(t_end)
-        self.wl = ps[:0]
-
-        ps = self.do_step(ps, tau)
-
-        self.time += self.tstep
-        self.ps = ps
-
-        if self.reporter:
-            self.reporter.diagnostic_report(self.time, ps)
-        if self.dumpper:
-            self.dumpper.dump_worldline(self.wl)
-
-    def rdkdxy(self, ps, tau, sfdkdxy, update_tstep, shared_tstep=False):
+    def recurse(self, ps, tau, sfdkdxy):
         """
 
         """
         flag = 0
-        if update_tstep:
+        if self.update_tstep:
             flag = 1
             ps.update_tstep(ps, self.eta)
-            if shared_tstep:
-                tau = self.get_min_block_tstep(ps, tau)
+            if self.shared_tstep:
+                ps.tstep = ps.min_tstep()
 
         slow, fast = split(ps, abs(ps.tstep) >= flag*abs(tau))
 
-        slow, fast = sfdkdxy(slow, fast, tau, sfdkdxy)
+        slow, fast = sfdkdxy(slow, fast, tau, self.recurse)
 
         if slow.n:
             slow.tstep = tau
@@ -671,424 +595,432 @@ class SIA(Base):
     #
     # dkd21[std,shr,hcc] method -- D.K.D
     #
-    def dkd21_sf(self, slow, fast, tau, sfdkdxy):
+    def sfdkd21(self, slow, fast, tau, recurse):
         """
 
         """
         if fast.n == 0:
             slow = base_dkd21(slow, tau)
+            self.time += tau
             return slow, fast
 
         k, d = dkd21_coefs
         #
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd21)
         slow = base_dkd21(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd21)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd21)
         slow = base_dkd21(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd21)
         #
         return slow, fast
 
-    def dkd21(self, ps, tau, update_tstep, shared_tstep=False):
+    def dkd21(self, ps, tau):
         """
 
         """
-        return self.rdkdxy(ps, tau, self.dkd21_sf, update_tstep, shared_tstep)
+        return self.recurse(ps, tau, self.sfdkd21)
 
     #
     # dkd22[std,shr,hcc] method -- D.K.D.K.D
     #
-    def dkd22_sf(self, slow, fast, tau, sfdkdxy):
+    def sfdkd22(self, slow, fast, tau, recurse):
         """
 
         """
         if fast.n == 0:
             slow = base_dkd22(slow, tau)
+            self.time += tau
             return slow, fast
 
         k, d = dkd22_coefs
         #
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd22)
         slow = base_dkd22(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd22)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd22)
         slow = base_dkd22(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd22)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd22)
         slow = base_dkd22(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd22)
         #
         return slow, fast
 
-    def dkd22(self, ps, tau, update_tstep, shared_tstep=False):
+    def dkd22(self, ps, tau):
         """
 
         """
-        return self.rdkdxy(ps, tau, self.dkd22_sf, update_tstep, shared_tstep)
+        return self.recurse(ps, tau, self.sfdkd22)
 
     #
     # dkd43[std,shr,hcc] method -- D.K.D.K.D.K.D
     #
-    def dkd43_sf(self, slow, fast, tau, sfdkdxy):
+    def sfdkd43(self, slow, fast, tau, recurse):
         """
 
         """
         if fast.n == 0:
             slow = base_dkd43(slow, tau)
+            self.time += tau
             return slow, fast
 
         k, d = dkd43_coefs
         #
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd43)
         slow = base_dkd43(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd43)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd43)
         slow = base_dkd43(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd43)
 
         slow, fast = kick_sf(slow, fast, k[1] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd43)
         slow = base_dkd43(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd43)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd43)
         slow = base_dkd43(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd43)
         #
         return slow, fast
 
-    def dkd43(self, ps, tau, update_tstep, shared_tstep=False):
+    def dkd43(self, ps, tau):
         """
 
         """
-        return self.rdkdxy(ps, tau, self.dkd43_sf, update_tstep, shared_tstep)
+        return self.recurse(ps, tau, self.sfdkd43)
 
     #
     # dkd44[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D
     #
-    def dkd44_sf(self, slow, fast, tau, sfdkdxy):
+    def sfdkd44(self, slow, fast, tau, recurse):
         """
 
         """
         if fast.n == 0:
             slow = base_dkd44(slow, tau)
+            self.time += tau
             return slow, fast
 
         k, d = dkd44_coefs
         #
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd44)
         slow = base_dkd44(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd44)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd44)
         slow = base_dkd44(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd44)
 
         slow, fast = kick_sf(slow, fast, k[1] * tau)
 
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd44)
         slow = base_dkd44(slow, d[2] * tau)
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd44)
 
         slow, fast = kick_sf(slow, fast, k[1] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd44)
         slow = base_dkd44(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd44)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd44)
         slow = base_dkd44(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd44)
         #
         return slow, fast
 
-    def dkd44(self, ps, tau, update_tstep, shared_tstep=False):
+    def dkd44(self, ps, tau):
         """
 
         """
-        return self.rdkdxy(ps, tau, self.dkd44_sf, update_tstep, shared_tstep)
+        return self.recurse(ps, tau, self.sfdkd44)
 
     #
     # dkd45[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D
     #
-    def dkd45_sf(self, slow, fast, tau, sfdkdxy):
+    def sfdkd45(self, slow, fast, tau, recurse):
         """
 
         """
         if fast.n == 0:
             slow = base_dkd45(slow, tau)
+            self.time += tau
             return slow, fast
 
         k, d = dkd45_coefs
         #
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd45)
         slow = base_dkd45(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd45)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd45)
         slow = base_dkd45(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd45)
 
         slow, fast = kick_sf(slow, fast, k[1] * tau)
 
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd45)
         slow = base_dkd45(slow, d[2] * tau)
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd45)
 
         slow, fast = kick_sf(slow, fast, k[2] * tau)
 
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd45)
         slow = base_dkd45(slow, d[2] * tau)
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd45)
 
         slow, fast = kick_sf(slow, fast, k[1] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd45)
         slow = base_dkd45(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd45)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd45)
         slow = base_dkd45(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd45)
         #
         return slow, fast
 
-    def dkd45(self, ps, tau, update_tstep, shared_tstep=False):
+    def dkd45(self, ps, tau):
         """
 
         """
-        return self.rdkdxy(ps, tau, self.dkd45_sf, update_tstep, shared_tstep)
+        return self.recurse(ps, tau, self.sfdkd45)
 
     #
     # dkd46[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D
     #
-    def dkd46_sf(self, slow, fast, tau, sfdkdxy):
+    def sfdkd46(self, slow, fast, tau, recurse):
         """
 
         """
         if fast.n == 0:
             slow = base_dkd46(slow, tau)
+            self.time += tau
             return slow, fast
 
         k, d = dkd46_coefs
         #
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd46)
         slow = base_dkd46(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd46)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd46)
         slow = base_dkd46(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd46)
 
         slow, fast = kick_sf(slow, fast, k[1] * tau)
 
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd46)
         slow = base_dkd46(slow, d[2] * tau)
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd46)
 
         slow, fast = kick_sf(slow, fast, k[2] * tau)
 
-        fast = self.rdkdxy(fast, d[3] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[3] * tau / 2, self.sfdkd46)
         slow = base_dkd46(slow, d[3] * tau)
-        fast = self.rdkdxy(fast, d[3] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[3] * tau / 2, self.sfdkd46)
 
         slow, fast = kick_sf(slow, fast, k[2] * tau)
 
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd46)
         slow = base_dkd46(slow, d[2] * tau)
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd46)
 
         slow, fast = kick_sf(slow, fast, k[1] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd46)
         slow = base_dkd46(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd46)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd46)
         slow = base_dkd46(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd46)
         #
         return slow, fast
 
-    def dkd46(self, ps, tau, update_tstep, shared_tstep=False):
+    def dkd46(self, ps, tau):
         """
 
         """
-        return self.rdkdxy(ps, tau, self.dkd46_sf, update_tstep, shared_tstep)
+        return self.recurse(ps, tau, self.sfdkd46)
 
     #
     # dkd67[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
-    def dkd67_sf(self, slow, fast, tau, sfdkdxy):
+    def sfdkd67(self, slow, fast, tau, recurse):
         """
 
         """
         if fast.n == 0:
             slow = base_dkd67(slow, tau)
+            self.time += tau
             return slow, fast
 
         k, d = dkd67_coefs
         #
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd67)
         slow = base_dkd67(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd67)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd67)
         slow = base_dkd67(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd67)
 
         slow, fast = kick_sf(slow, fast, k[1] * tau)
 
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd67)
         slow = base_dkd67(slow, d[2] * tau)
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd67)
 
         slow, fast = kick_sf(slow, fast, k[2] * tau)
 
-        fast = self.rdkdxy(fast, d[3] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[3] * tau / 2, self.sfdkd67)
         slow = base_dkd67(slow, d[3] * tau)
-        fast = self.rdkdxy(fast, d[3] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[3] * tau / 2, self.sfdkd67)
 
         slow, fast = kick_sf(slow, fast, k[3] * tau)
 
-        fast = self.rdkdxy(fast, d[3] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[3] * tau / 2, self.sfdkd67)
         slow = base_dkd67(slow, d[3] * tau)
-        fast = self.rdkdxy(fast, d[3] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[3] * tau / 2, self.sfdkd67)
 
         slow, fast = kick_sf(slow, fast, k[2] * tau)
 
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd67)
         slow = base_dkd67(slow, d[2] * tau)
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd67)
 
         slow, fast = kick_sf(slow, fast, k[1] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd67)
         slow = base_dkd67(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd67)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd67)
         slow = base_dkd67(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd67)
         #
         return slow, fast
 
-    def dkd67(self, ps, tau, update_tstep, shared_tstep=False):
+    def dkd67(self, ps, tau):
         """
 
         """
-        return self.rdkdxy(ps, tau, self.dkd67_sf, update_tstep, shared_tstep)
+        return self.recurse(ps, tau, self.sfdkd67)
 
     #
     # dkd69[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
-    def dkd69_sf(self, slow, fast, tau, sfdkdxy):
+    def sfdkd69(self, slow, fast, tau, recurse):
         """
 
         """
         if fast.n == 0:
             slow = base_dkd69(slow, tau)
+            self.time += tau
             return slow, fast
 
         k, d = dkd69_coefs
         #
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd69)
         slow = base_dkd69(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd69)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd69)
         slow = base_dkd69(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd69)
 
         slow, fast = kick_sf(slow, fast, k[1] * tau)
 
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd69)
         slow = base_dkd69(slow, d[2] * tau)
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd69)
 
         slow, fast = kick_sf(slow, fast, k[2] * tau)
 
-        fast = self.rdkdxy(fast, d[3] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[3] * tau / 2, self.sfdkd69)
         slow = base_dkd69(slow, d[3] * tau)
-        fast = self.rdkdxy(fast, d[3] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[3] * tau / 2, self.sfdkd69)
 
         slow, fast = kick_sf(slow, fast, k[3] * tau)
 
-        fast = self.rdkdxy(fast, d[4] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[4] * tau / 2, self.sfdkd69)
         slow = base_dkd69(slow, d[4] * tau)
-        fast = self.rdkdxy(fast, d[4] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[4] * tau / 2, self.sfdkd69)
 
         slow, fast = kick_sf(slow, fast, k[4] * tau)
 
-        fast = self.rdkdxy(fast, d[4] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[4] * tau / 2, self.sfdkd69)
         slow = base_dkd69(slow, d[4] * tau)
-        fast = self.rdkdxy(fast, d[4] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[4] * tau / 2, self.sfdkd69)
 
         slow, fast = kick_sf(slow, fast, k[3] * tau)
 
-        fast = self.rdkdxy(fast, d[3] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[3] * tau / 2, self.sfdkd69)
         slow = base_dkd69(slow, d[3] * tau)
-        fast = self.rdkdxy(fast, d[3] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[3] * tau / 2, self.sfdkd69)
 
         slow, fast = kick_sf(slow, fast, k[2] * tau)
 
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd69)
         slow = base_dkd69(slow, d[2] * tau)
-        fast = self.rdkdxy(fast, d[2] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[2] * tau / 2, self.sfdkd69)
 
         slow, fast = kick_sf(slow, fast, k[1] * tau)
 
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd69)
         slow = base_dkd69(slow, d[1] * tau)
-        fast = self.rdkdxy(fast, d[1] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[1] * tau / 2, self.sfdkd69)
 
         slow, fast = kick_sf(slow, fast, k[0] * tau)
 
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd69)
         slow = base_dkd69(slow, d[0] * tau)
-        fast = self.rdkdxy(fast, d[0] * tau / 2, sfdkdxy, True)
+        fast = recurse(fast, d[0] * tau / 2, self.sfdkd69)
         #
         return slow, fast
 
-    def dkd69(self, ps, tau, update_tstep, shared_tstep=False):
+    def dkd69(self, ps, tau):
         """
 
         """
-        return self.rdkdxy(ps, tau, self.dkd69_sf, update_tstep, shared_tstep)
+        return self.recurse(ps, tau, self.sfdkd69)
 
 
 ########## end of file ##########

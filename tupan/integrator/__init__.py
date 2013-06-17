@@ -6,6 +6,9 @@ TODO.
 """
 
 
+import math
+
+
 class Base(object):
     """
 
@@ -38,6 +41,35 @@ class Base(object):
             raise TypeError(msg.format(type(
                 self).__name__, ", ".join(kwargs.keys())))
 
+    def get_base_tstep(self, t_end):
+        """
+
+        """
+        dt = min(t_end-abs(self.time), abs(self.eta))
+        self.tstep = math.copysign(dt, self.eta)
+        return self.tstep
+
+    def evolve_step(self, t_end):
+        """
+
+        """
+        if not self.is_initialized:
+            self.initialize(t_end)
+
+        ps = self.ps
+
+        self.wl = ps[:0]
+        tau = self.get_base_tstep(t_end)
+
+        ps = self.do_step(ps, tau)
+
+        if self.reporter:
+            self.reporter.diagnostic_report(self.time, ps)
+        if self.dumpper:
+            self.dumpper.dump_worldline(self.wl)
+
+        self.ps = ps
+
 
 from . import sia
 from . import nreg
@@ -49,8 +81,11 @@ class Integrator(object):
     """
 
     """
-    PROVIDED_METHODS = ["nreg", "sakura", "hermite", "adapthermite"]
+    PROVIDED_METHODS = []
     PROVIDED_METHODS.extend(sia.SIA.PROVIDED_METHODS)
+    PROVIDED_METHODS.extend(nreg.NREG.PROVIDED_METHODS)
+    PROVIDED_METHODS.extend(sakura.Sakura.PROVIDED_METHODS)
+    PROVIDED_METHODS.extend(hermite.Hermite.PROVIDED_METHODS)
 
     def __init__(self, eta, time, ps, **kwargs):
         import logging
@@ -62,22 +97,18 @@ class Integrator(object):
         if method in sia.SIA.PROVIDED_METHODS:
             logger.info("Using %s integrator.", method)
             self.integrator = sia.SIA(eta, time, ps, method, **kwargs)
-        elif method == "hermite":
-            logger.info("Using 'hermite' integrator.")
-            self.integrator = hermite.Hermite(eta, time, ps, **kwargs)
-        elif method == "adapthermite":
-            logger.info("Using 'adapthermite' integrator.")
-            self.integrator = hermite.AdaptHermite(
-                eta, time, ps, **kwargs)
-        elif method == "nreg":
-            logger.info("Using 'nreg' integrator.")
-            self.integrator = nreg.NREG(eta, time, ps, **kwargs)
-        elif method == "sakura":
-            logger.info("Using 'sakura' integrator.")
-            self.integrator = sakura.SAKURA(eta, time, ps, **kwargs)
+        elif method in nreg.NREG.PROVIDED_METHODS:
+            logger.info("Using %s integrator.", method)
+            self.integrator = nreg.NREG(eta, time, ps, method, **kwargs)
+        elif method in sakura.Sakura.PROVIDED_METHODS:
+            logger.info("Using %s integrator.", method)
+            self.integrator = sakura.Sakura(eta, time, ps, method, **kwargs)
+        elif method in hermite.Hermite.PROVIDED_METHODS:
+            logger.info("Using %s integrator.", method)
+            self.integrator = hermite.Hermite(eta, time, ps, method, **kwargs)
         else:
             logger.critical(
-                "Unexpected integrator method: '%s'. Provided methods: %s",
+                "Unexpected integration method: '%s'. Provided methods: %s",
                 method, str(self.PROVIDED_METHODS))
 
     def initialize(self, t_end):

@@ -7,7 +7,6 @@ TODO.
 
 
 from __future__ import print_function, division
-import math
 import logging
 from ..integrator import Base
 from ..lib.gravity import nreg_x as llnreg_x
@@ -138,29 +137,22 @@ class NREG(Base):
     """
 
     """
-    def __init__(self, eta, time, ps, **kwargs):
+    PROVIDED_METHODS = ['nreg',
+                        ]
+
+    def __init__(self, eta, time, ps, method, **kwargs):
         """
 
         """
         super(NREG, self).__init__(eta, time, ps, **kwargs)
-
-    def get_base_tstep(self, t_end):
-        """
-
-        """
-        self.tstep = self.eta
-        if abs(self.time + self.tstep) > t_end:
-            self.tstep = math.copysign(t_end - abs(self.time), self.eta)
-        return self.tstep
+        self.method = method
 
     def initialize(self, t_end):
         """
 
         """
-        logger.info(
-            "Initializing '%s' integrator.",
-            type(self).__name__.lower()
-        )
+        logger.info("Initializing '%s' integrator.",
+                    self.method)
 
         ps = self.ps
 
@@ -175,10 +167,8 @@ class NREG(Base):
         """
 
         """
-        logger.info(
-            "Finalizing '%s' integrator.",
-            type(self).__name__.lower()
-        )
+        logger.info("Finalizing '%s' integrator.",
+                    self.method)
 
     def do_step(self, ps, tau):
         """
@@ -186,35 +176,16 @@ class NREG(Base):
         """
         ps, t, W = nreg_step(ps, tau)
 #        ps, t, W = nreg_base_step(ps, tau)   # h = tau
+        tau = t
+        self.time += tau
 
         ps.tstep = tau
         ps.time += tau
         ps.nstep += 1
-        wp = ps[ps.nstep % self.dump_freq == 0]
+        wp = ps[ps.time % (self.dump_freq * tau) == 0]
         if wp.n:
             self.wl.append(wp.copy())
         return ps
-
-    def evolve_step(self, t_end):
-        """
-
-        """
-        if not self.is_initialized:
-            self.initialize(t_end)
-
-        ps = self.ps
-        tau = self.get_base_tstep(t_end)
-        self.wl = ps[:0]
-
-        ps = self.do_step(ps, tau)
-
-        self.time += tau
-        self.ps = ps
-
-        if self.reporter:
-            self.reporter.diagnostic_report(self.time, ps)
-        if self.dumpper:
-            self.dumpper.dump_worldline(self.wl)
 
 
 ########## end of file ##########
