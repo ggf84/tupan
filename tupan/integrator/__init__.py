@@ -7,6 +7,7 @@ TODO.
 
 
 import math
+import numpy as np
 
 
 class Base(object):
@@ -48,6 +49,27 @@ class Base(object):
         dt = min(t_end-abs(self.time), abs(self.eta))
         self.tstep = math.copysign(dt, self.eta)
         return self.tstep
+
+    def get_min_block_tstep(self, ps, tau):
+        """
+
+        """
+        min_ts = ps.min_tstep()
+
+        power = int(np.log2(min_ts) - 1)
+        min_bts = 2.0**power
+
+        t_curr = self.time
+        t_next = t_curr + min_bts
+        while t_next % min_bts != 0:
+            min_bts /= 2
+
+        min_bts = math.copysign(min_bts, tau)
+
+        if abs(min_bts) > abs(tau):
+            min_bts = tau
+
+        return min_bts
 
     def evolve_step(self, t_end):
         """

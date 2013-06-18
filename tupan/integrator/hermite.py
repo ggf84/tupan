@@ -9,7 +9,6 @@ TODO.
 from __future__ import print_function
 import logging
 import math
-import numpy as np
 from ..integrator import Base
 from ..lib.utils.timing import decallmethods, timings
 
@@ -61,32 +60,12 @@ class Hermite(Base):
         logger.info("Finalizing '%s' integrator.",
                     self.method)
 
-    def get_min_block_tstep(self, ps):
-        """
-
-        """
-        min_ts = ps.min_tstep()
-
-        power = int(np.log2(min_ts) - 1)
-        min_bts = 2.0**power
-
-        t_curr = self.time
-        t_next = t_curr + min_bts
-        if t_next % min_bts != 0:
-            min_bts /= 2
-
-        return math.copysign(min_bts, self.eta)
-
     def get_hermite_tstep(self, ps, eta, tau):
         """
 
         """
         ps.update_tstep(ps, eta)
-        min_bts = self.get_min_block_tstep(ps)
-
-        if abs(min_bts) > abs(tau):
-            min_bts = tau
-
+        min_bts = self.get_min_block_tstep(ps, tau)
         self.tstep = min_bts
         return self.tstep
 

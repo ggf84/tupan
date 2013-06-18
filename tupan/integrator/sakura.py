@@ -97,10 +97,10 @@ class Sakura(Base):
         w2_sakura = diw2.max()
         dt_sakura = eta/(1 + w2_sakura)**0.5
 
-        if abs(dt_sakura) > abs(tau):
-            dt_sakura = tau
+        ps.tstep = dt_sakura
 
-        self.tstep = dt_sakura
+        min_bts = self.get_min_block_tstep(ps, tau)
+        self.tstep = min_bts
         return self.tstep
 
     def do_step(self, ps, tau):

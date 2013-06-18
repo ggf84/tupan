@@ -577,6 +577,7 @@ class SIA(Base):
             ps.update_tstep(ps, self.eta)
             if self.shared_tstep:
                 ps.tstep = ps.min_tstep()
+#                tau = self.get_min_block_tstep(ps, tau)
 
         slow, fast = split(ps, abs(ps.tstep) >= flag*abs(tau))
 
