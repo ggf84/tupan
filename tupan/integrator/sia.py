@@ -69,7 +69,7 @@ def drift_n(ips, tau):
     """
     Drift operator for Newtonian quantities.
     """
-    for iobj in ips.members:
+    for iobj in ips.members.values():
         iobj.rx += tau * iobj.vx
         iobj.ry += tau * iobj.vy
         iobj.rz += tau * iobj.vz
@@ -84,8 +84,8 @@ def kick_n(ips, jps, tau):
     """
     Kick operator for Newtonian quantities.
     """
-    (ips.ax, ips.ay, ips.az) = ips.get_acc(jps)
-    for iobj in ips.members:
+    for iobj in ips.members.values():
+        (iobj.ax, iobj.ay, iobj.az) = iobj.get_acc(jps)
         iobj.vx += tau * iobj.ax
         iobj.vy += tau * iobj.ay
         iobj.vz += tau * iobj.az
@@ -516,7 +516,6 @@ class SIA(Base):
                     self.method)
 
         ps = self.ps
-        (ps.ax, ps.ay, ps.az) = ps.get_acc(ps)
 
         if self.reporter:
             self.reporter.diagnostic_report(self.time, ps)

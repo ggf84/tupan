@@ -511,7 +511,7 @@ class GLviewer(object):
 
         Ntot = self.ps.n
 
-        if hasattr(self.ps, "blackholes"):
+        if "blackholes" in self.ps.members:
             blackholes = self.ps.blackholes
             if blackholes.n:
                 points = blackholes.pos
@@ -532,7 +532,7 @@ class GLviewer(object):
                 gl.glDepthMask(gl.GL_FALSE)
 #                gl.glAlphaFunc(gl.GL_GREATER, 0)
 
-        if hasattr(self.ps, "stars"):
+        if "stars" in self.ps.members:
             stars = self.ps.stars
             if stars.n:
                 points = stars.pos
@@ -545,7 +545,7 @@ class GLviewer(object):
                 self.draw_points(points, colors, sizes, self.textures['star'])
                 gl.glDisable(gl.GL_BLEND)
 
-        if hasattr(self.ps, "sphs"):
+        if "sphs" in self.ps.members:
             sph = self.ps.sphs
             if sph.n:
                 points = sph.pos

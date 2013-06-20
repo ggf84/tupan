@@ -60,7 +60,7 @@ class HDF5IO(object):
         group = base_group.require_group(group_name)
         cls = pickle.dumps(type(ps), protocol=PICKLE_PROTOCOL)
         group.attrs["Class"] = cls.decode('utf-8') if IS_PY3K else cls
-        for (key, obj) in ps.items():
+        for (key, obj) in ps.members.items():
             if obj.n:
                 self.store_dset(group, key, obj)
 
@@ -103,7 +103,7 @@ class HDF5IO(object):
         group = base_group.require_group(group_name)
         cls = pickle.dumps(type(wl), protocol=PICKLE_PROTOCOL)
         group.attrs["Class"] = cls.decode('utf-8') if IS_PY3K else cls
-        for (key, obj) in wl.items():
+        for (key, obj) in wl.members.items():
             if obj.n:
                 self.store_dset(group, key, obj)
 

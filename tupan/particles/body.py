@@ -32,39 +32,7 @@ __all__ = ["Bodies"]
 #    return cls
 
 
-class NbodyUtils(object):
-    """
-
-    """
-    def __repr__(self):
-        return repr(self.__dict__)
-
-    def __contains__(self, id):
-        return id in self.id
-
-    def keys(self):
-        return self.kind.keys()
-
-    def values(self):
-        return self.kind.values()
-    members = property(values)
-
-    def items(self):
-        return self.kind.items()
-
-    def copy(self):
-        return copy.deepcopy(self)
-
-    def astype(self, cls):
-        newobj = cls()
-        for obj in self.values():
-            tmp = cls(obj.n)
-            tmp.set_state(obj.get_state())
-            newobj.append(tmp)
-        return newobj
-
-
-class NbodyMethods(NbodyUtils):
+class NbodyMethods(object):
     """
     This class holds common methods for particles in n-body systems.
     """
@@ -569,6 +537,28 @@ class Bodies(AbstractNbodyMethods):
         else:
             self.__dict__.update(items)
 
+    def __repr__(self):
+        return repr(self.__dict__)
+
+    def __str__(self):
+        fmt = type(self).__name__+"(["
+        if self.n:
+            for k, v in self.__dict__.items():
+                fmt += "\n\t{0}: {1},".format(k, v)
+            fmt += "\n"
+        fmt += "])"
+        return fmt
+
+    @property
+    def members(self):
+        return {type(self).__name__.lower(): self}
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+    def __contains__(self, id):
+        return id in self.id
+
     def __len__(self):
         return len(self.id)
 
@@ -576,9 +566,11 @@ class Bodies(AbstractNbodyMethods):
     def n(self):
         return len(self)
 
-    @property
-    def kind(self):
-        return {type(self).__name__.lower(): self}
+    def append(self, obj):
+        if obj.n:
+            items = {k: np.concatenate((self.__dict__.get(k, []), v))
+                     for k, v in obj.__dict__.items()}
+            self.__dict__.update(items)
 
     def __setattr__(self, name, value):
         if not name in self.__dict__:
@@ -592,11 +584,13 @@ class Bodies(AbstractNbodyMethods):
         items = {k: v[slc] for k, v in self.__dict__.items()}
         return type(self)(items=items)
 
-    def append(self, obj):
-        if obj.n:
-            items = {k: np.concatenate((self.__dict__.get(k, []), v))
-                     for k, v in obj.__dict__.items()}
-            self.__dict__.update(items)
+    def astype(self, cls):
+        newobj = cls()
+        for obj in self.members.values():
+            tmp = cls(obj.n)
+            tmp.set_state(obj.get_state())
+            newobj.append(tmp)
+        return newobj
 
     def get_state(self):
         array = np.zeros(self.n, dtype=self.dtype)

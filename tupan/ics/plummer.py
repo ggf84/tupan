@@ -10,7 +10,7 @@ from __future__ import (print_function, division)
 import math
 import logging
 import numpy as np
-from ..particles.allparticles import System
+from ..particles.allparticles import ParticleSystem
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -74,7 +74,7 @@ class Plummer(object):
         self.mfrac = mfrac
         self.eps2 = eps*eps
         self.eps_parametrization = eps_parametrization
-        self.ps = System(nstars=num)
+        self.ps = ParticleSystem(nstars=num)
         np.random.seed(seed)
 
     def set_eps2(self, mass):
