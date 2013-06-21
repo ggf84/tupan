@@ -8,7 +8,6 @@ TODO.
 
 from __future__ import print_function
 import logging
-import math
 from ..integrator import Base
 from ..lib.utils.timing import decallmethods, timings
 

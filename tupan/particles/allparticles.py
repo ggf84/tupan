@@ -20,33 +20,33 @@ from ..lib.utils.timing import decallmethods, timings
 __all__ = ["ParticleSystem"]
 
 
-def make_common_attrs(cls):
-    def make_property(attr, doc):
-        @timings
-        def fget(self):
-            return np.concatenate([getattr(obj, attr)
-                                   for obj in self.members.values()])
-
-        @timings
-        def fset(self, value):
-            try:
-                for obj in self.members.values():
-                    setattr(obj, attr, value)
-            except:
-                for obj in self.members.values():
-                    setattr(obj, attr, value[:obj.n])
-                    value = value[obj.n:]
-
-        return property(fget=fget, fset=fset, fdel=None, doc=doc)
-    attrs = ((i[0], cls.__name__+"\'s "+i[2])
-             for i in cls.attrs+cls.special_attrs)
-    for (attr, doc) in attrs:
-        setattr(cls, attr, make_property(attr, doc))
-    return cls
+#def make_common_attrs(cls):
+#    def make_property(attr, doc):
+#        @timings
+#        def fget(self):
+#            return np.concatenate([getattr(obj, attr)
+#                                   for obj in self.members.values()])
+#
+#        @timings
+#        def fset(self, value):
+#            try:
+#                for obj in self.members.values():
+#                    setattr(obj, attr, value)
+#            except:
+#                for obj in self.members.values():
+#                    setattr(obj, attr, value[:obj.n])
+#                    value = value[obj.n:]
+#
+#        return property(fget=fget, fset=fset, fdel=None, doc=doc)
+#    attrs = ((i[0], cls.__name__+"\'s "+i[2])
+#             for i in cls.attrs+cls.special_attrs)
+#    for (attr, doc) in attrs:
+#        setattr(cls, attr, make_property(attr, doc))
+#    return cls
 
 
 @decallmethods(timings)
-@make_common_attrs
+#@make_common_attrs
 class ParticleSystem(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
@@ -60,6 +60,31 @@ class ParticleSystem(AbstractNbodyMethods):
                                        (nstars, Stars),
                                        (nbhs, Blackholes),
                                        (nsphs, Sphs)] if n}
+
+    def __getattr__(self, attr):
+        try:
+            members = self.__dict__["members"]
+            seq = [getattr(obj, attr)
+                   for obj in members.values()
+                   if hasattr(obj, attr)]
+            return np.concatenate(seq)
+        except:
+            return self.__dict__[attr]
+
+    def __setattr__(self, attr, value):
+        try:
+            members = self.__dict__["members"]
+            ns = 0
+            nf = 0
+            for obj in members.values():
+                try:
+                    setattr(obj, attr, value)
+                except:
+                    nf += obj.n
+                    setattr(obj, attr, value[ns:nf])
+                    ns += obj.n
+        except:
+            self.__dict__[attr] = value
 
     #
     # miscellaneous methods
@@ -81,7 +106,8 @@ class ParticleSystem(AbstractNbodyMethods):
         return self.members["sphs"]
 
     def copy(self):
-        return copy.deepcopy(self)
+#        return copy.deepcopy(self)
+        return copy.copy(self)
 
     def __repr__(self):
         return repr(self.__dict__)
@@ -103,45 +129,43 @@ class ParticleSystem(AbstractNbodyMethods):
         return len(self)
 
     def append(self, obj):
-        if obj.n:
-            for (k, v) in obj.members.items():
-                if v.n:
-                    if not k in self.members:
-                        self.members[k] = v.copy()
-                    else:
-                        self.members[k].append(v)
+        for (k, v) in obj.members.items():
+            try:
+                self.members[k].append(v)
+            except:
+                self.members[k] = v.copy()
 
     def __hash__(self):
         return hash(tuple(self.members.values()))
 
     def __getitem__(self, slc):
-        if isinstance(slc, list):
-            slc = np.array(slc)
-
-        if isinstance(slc, np.ndarray):
-            if slc.all():
+        if isinstance(slc, (list, np.ndarray)):
+            if all(slc):
                 return self
-            subset = type(self)()
-            if slc.any():
-                for (key, obj) in self.members.items():
-                    if obj.n:
-                        subset.append(obj[slc[:obj.n]])
-                        slc = slc[obj.n:]
-            return subset
+            if any(slc):
+                ns = 0
+                nf = 0
+                subset = type(self)()
+                for obj in self.members.values():
+                    nf += obj.n
+                    subset.append(obj[slc[ns:nf]])
+                    ns += obj.n
+                return subset
+            return type(self)()
 
         if isinstance(slc, int):
-            if slc < 0:
-                slc = self.n + slc
+            subset = type(self)()
             if abs(slc) > self.n-1:
                 raise IndexError(
                     "index {0} out of bounds 0<=index<{1}".format(slc, self.n))
-            subset = type(self)()
+            if slc < 0:
+                slc = self.n + slc
             n = 0
-            for (key, obj) in self.members.items():
-                if obj.n:
-                    if n <= slc < n+obj.n:
-                        subset.append(obj[slc-n])
-                    n += obj.n
+            for obj in self.members.values():
+                i = slc - n
+                if 0 <= i < obj.n:
+                    subset.append(obj[i])
+                n += obj.n
             return subset
 
         if isinstance(slc, slice):

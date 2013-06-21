@@ -155,6 +155,7 @@ class NREG(Base):
                     self.method)
 
         ps = self.ps
+        (ps.ax, ps.ay, ps.az) = ps.get_acc(ps)
 
         if self.reporter:
             self.reporter.diagnostic_report(self.time, ps)
@@ -174,8 +175,8 @@ class NREG(Base):
         """
 
         """
-        ps, t, W = nreg_step(ps, tau)
-#        ps, t, W = nreg_base_step(ps, tau)   # h = tau
+#        ps, t, W = nreg_step(ps, tau)
+        ps, t, W = nreg_base_step(ps, tau)   # h = tau
         tau = t
         self.time += tau
 

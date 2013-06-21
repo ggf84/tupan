@@ -554,7 +554,8 @@ class Bodies(AbstractNbodyMethods):
         return {type(self).__name__.lower(): self}
 
     def copy(self):
-        return copy.deepcopy(self)
+#        return copy.deepcopy(self)
+        return copy.copy(self)
 
     def __contains__(self, id):
         return id in self.id
@@ -568,7 +569,7 @@ class Bodies(AbstractNbodyMethods):
 
     def append(self, obj):
         if obj.n:
-            items = {k: np.concatenate((self.__dict__.get(k, []), v))
+            items = {k: np.concatenate((self.__dict__[k], v))
                      for k, v in obj.__dict__.items()}
             self.__dict__.update(items)
 
