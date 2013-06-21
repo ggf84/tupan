@@ -9,6 +9,7 @@ TODO.
 from __future__ import print_function
 import copy
 import numpy as np
+from .body import Bodies
 from .sph import Sphs
 from .star import Stars
 from .blackhole import Blackholes
@@ -50,18 +51,23 @@ class ParticleSystem(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
     """
-    def __init__(self, nstars=0, nbhs=0, nsphs=0):
+    def __init__(self, nbodies=0, nstars=0, nbhs=0, nsphs=0):
         """
         Initializer
         """
         self.members = {cls.__name__.lower(): cls(n)
-                        for n, cls in [(nstars, Stars),
+                        for n, cls in [(nbodies, Bodies),
+                                       (nstars, Stars),
                                        (nbhs, Blackholes),
                                        (nsphs, Sphs)] if n}
 
     #
     # miscellaneous methods
     #
+    @property
+    def bodies(self):
+        return self.members["bodies"]
+
     @property
     def stars(self):
         return self.members["stars"]

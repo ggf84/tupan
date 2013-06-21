@@ -6,25 +6,27 @@ TODO.
 """
 
 
-from ..particles.body import Bodies
+from ..particles.allparticles import ParticleSystem
 
 
 def make_system():
-    p = Bodies(3)
+    """
 
-    p.id = [0, 1, 2]
+    """
+    ps = ParticleSystem(3)
 
-    p.mass = [3.0, 4.0, 5.0]
+    ps.mass = [3.0, 4.0, 5.0]
 
-    p.rx = [+1.0, -2.0, +1.0]
-    p.ry = [+3.0, -1.0, -1.0]
-    p.rz = [0.0, 0.0, 0.0]
+    ps.rx = [+1.0, -2.0, +1.0]
+    ps.ry = [+3.0, -1.0, -1.0]
+    ps.rz = [0.0, 0.0, 0.0]
 
-    p.vx = [0.0, 0.0, 0.0]
-    p.vy = [0.0, 0.0, 0.0]
-    p.vz = [0.0, 0.0, 0.0]
+    ps.vx = [0.0, 0.0, 0.0]
+    ps.vy = [0.0, 0.0, 0.0]
+    ps.vz = [0.0, 0.0, 0.0]
 
-    return p
+    ps.id = range(ps.n)
+    return ps
 
 
 ########## end of file ##########
