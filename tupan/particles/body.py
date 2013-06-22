@@ -554,8 +554,7 @@ class Bodies(AbstractNbodyMethods):
         return {type(self).__name__.lower(): self}
 
     def copy(self):
-#        return copy.deepcopy(self)
-        return copy.copy(self)
+        return copy.deepcopy(self)
 
     def __contains__(self, id):
         return id in self.id
@@ -574,10 +573,18 @@ class Bodies(AbstractNbodyMethods):
             self.__dict__.update(items)
 
     def __setattr__(self, name, value):
-        if not name in self.__dict__:
-            dtype = np.array(value).dtype
-            self.__dict__[name] = np.zeros(self.n, dtype)
-        self.__dict__[name][:] = value
+        try:
+            self.__dict__[name][:] = value
+        except:
+            if isinstance(value, int):
+                ary = np.empty(self.n, ctype.UINT)
+                ary.fill(value)
+                value = ary
+            if isinstance(value, float):
+                ary = np.empty(self.n, ctype.REAL)
+                ary.fill(value)
+                value = ary
+            self.__dict__[name] = value
 
     def __getitem__(self, slc):
         if isinstance(slc, int):

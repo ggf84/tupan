@@ -55,11 +55,12 @@ class ParticleSystem(AbstractNbodyMethods):
         """
         Initializer
         """
-        self.members = {cls.__name__.lower(): cls(n)
-                        for n, cls in [(nbodies, Bodies),
-                                       (nstars, Stars),
-                                       (nbhs, Blackholes),
-                                       (nsphs, Sphs)] if n}
+        members = {cls.__name__.lower(): cls(n)
+                   for n, cls in [(nbodies, Bodies),
+                                  (nstars, Stars),
+                                  (nbhs, Blackholes),
+                                  (nsphs, Sphs)] if n}
+        object.__setattr__(self, "members", members)
 
     def __getattr__(self, attr):
         try:
@@ -69,14 +70,13 @@ class ParticleSystem(AbstractNbodyMethods):
                    if hasattr(obj, attr)]
             return np.concatenate(seq)
         except:
-            return self.__dict__[attr]
+            raise AttributeError(attr)
 
     def __setattr__(self, attr, value):
         try:
-            members = self.__dict__["members"]
             ns = 0
             nf = 0
-            for obj in members.values():
+            for obj in self.members.values():
                 try:
                     setattr(obj, attr, value)
                 except:
@@ -84,7 +84,7 @@ class ParticleSystem(AbstractNbodyMethods):
                     setattr(obj, attr, value[ns:nf])
                     ns += obj.n
         except:
-            self.__dict__[attr] = value
+            object.__setattr__(self, attr, value)
 
     #
     # miscellaneous methods
@@ -106,8 +106,7 @@ class ParticleSystem(AbstractNbodyMethods):
         return self.members["sphs"]
 
     def copy(self):
-#        return copy.deepcopy(self)
-        return copy.copy(self)
+        return copy.deepcopy(self)
 
     def __repr__(self):
         return repr(self.__dict__)
@@ -187,7 +186,6 @@ class ParticleSystem(AbstractNbodyMethods):
                             subset.append(obj[start-obj.n:stop])
                     start -= obj.n
                     stop -= obj.n
-
             return subset
 
 
