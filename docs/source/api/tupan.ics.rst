@@ -17,18 +17,10 @@ ics Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`chain4` Module
---------------------
-
-.. automodule:: tupan.ics.chain4
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`figure8` Module
+:mod:`fewbody` Module
 ---------------------
 
-.. automodule:: tupan.ics.figure8
+.. automodule:: tupan.ics.fewbody
     :members:
     :undoc-members:
     :show-inheritance:
@@ -41,26 +33,10 @@ ics Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`lagrange3` Module
------------------------
-
-.. automodule:: tupan.ics.lagrange3
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`plummer` Module
 ---------------------
 
 .. automodule:: tupan.ics.plummer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`pyth` Module
-------------------
-
-.. automodule:: tupan.ics.pyth
     :members:
     :undoc-members:
     :show-inheritance:
