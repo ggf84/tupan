@@ -516,6 +516,7 @@ class SIA(Base):
                     self.method)
 
         ps = self.ps
+        ps.tstep, _ = ps.get_tstep(ps, self.eta)
 
         if self.reporter:
             self.reporter.diagnostic_report(self.time, ps)
@@ -565,6 +566,24 @@ class SIA(Base):
             return self.dkd69(ps, tau)
         else:
             raise ValueError("Unexpected method: {0}".format(self.method))
+
+    def recurse2(self, ps, tau, sfdkdxy):
+        """
+
+        """
+        slow, fast = split(ps, abs(ps.tstep) >= abs(tau / 2))
+        slow, fast = sfdkdxy(slow, fast, tau / 2, self.recurse2)
+        ps = join(slow, fast)
+
+        tstep, _ = ps.get_tstep(ps, self.eta)
+        ps.tstep = (tstep**2) / ps.tstep
+#        ps.tstep = tstep
+
+        slow, fast = split(ps, abs(ps.tstep) >= abs(tau / 2))
+        slow, fast = sfdkdxy(slow, fast, tau / 2, self.recurse2)
+        ps = join(slow, fast)
+
+        return ps
 
     def recurse(self, ps, tau, sfdkdxy):
         """
@@ -623,6 +642,7 @@ class SIA(Base):
 
         """
         return self.recurse(ps, tau, self.sfdkd21)
+#        return self.recurse2(ps, tau, self.sfdkd21)
 
     #
     # dkd22[std,shr,hcc] method -- D.K.D.K.D
