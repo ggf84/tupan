@@ -511,6 +511,19 @@ class GLviewer(object):
 
         Ntot = self.ps.n
 
+        if "bodies" in self.ps.members:
+            bodies = self.ps.bodies
+            if bodies.n:
+                points = bodies.pos
+                colors = self.get_colors(bodies.mass)
+                sizes = np.sqrt(bodies.eps2 * Ntot)
+
+                gl.glEnable(gl.GL_BLEND)
+#                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+                self.draw_points(points, colors, sizes, self.textures['star'])
+                gl.glDisable(gl.GL_BLEND)
+
         if "blackholes" in self.ps.members:
             blackholes = self.ps.blackholes
             if blackholes.n:

@@ -36,9 +36,9 @@ if __name__ == "__main__":
 
     p = main()
 
-    from tupan.ics import figure8
+    from tupan.ics.fewbody import make_figure83
     from tupan.particles.blackhole import Blackholes
-    b = figure8.make_system()
+    b = make_figure83()
     p.append(b.bodies.astype(Blackholes))
 
     fname = "plummer"+str(numBodies).zfill(4)+'-'+"3bh"+".hdf5"
