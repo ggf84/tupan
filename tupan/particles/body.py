@@ -127,7 +127,7 @@ class NbodyMethods(object):
         vcomz = (self.mass * self.vz).sum()
         return (np.array([vcomx, vcomy, vcomz]) / mtot)
 
-    def move_to_center(self):
+    def move_to_origin(self):
         """
         Moves the center-of-mass to the origin of coordinates.
         """
@@ -139,6 +139,18 @@ class NbodyMethods(object):
         self.vx -= vcom[0]
         self.vy -= vcom[1]
         self.vz -= vcom[2]
+
+    def move_com(self, rcom, vcom):
+        """
+        Moves the center-of-mass to the given coordinates.
+        """
+        self.move_to_origin()
+        self.rx += rcom[0]
+        self.ry += rcom[1]
+        self.rz += rcom[2]
+        self.vx += vcom[0]
+        self.vy += vcom[1]
+        self.vz += vcom[2]
 
     ### linear momentum
     @property
@@ -299,6 +311,32 @@ class NbodyMethods(object):
         Maximum absolute value of tstep.
         """
         return np.abs(self.tstep).max()
+
+    ### rescaling methods
+    def dynrescale_total_mass(self, total_mass):
+        """Rescales the total mass of the system while maintaining
+        its dynamics unchanged.
+        """
+        m_ratio = total_mass / self.total_mass
+        self.mass *= m_ratio
+        self.rx *= m_ratio
+        self.ry *= m_ratio
+        self.rz *= m_ratio
+
+    def dynrescale_size(self, size):
+        """Rescales the size of the system while maintaining
+        its dynamics unchanged.
+        """
+        I = (self.mass * (self.rx**2 + self.ry**2 + self.rz**2)).sum()
+        S = (I / self.total_mass)**0.5
+
+        s_ratio = size / S
+        self.rx *= s_ratio
+        self.ry *= s_ratio
+        self.rz *= s_ratio
+        self.vx /= s_ratio**0.5
+        self.vy /= s_ratio**0.5
+        self.vz /= s_ratio**0.5
 
 
 class PNbodyMethods(NbodyMethods):

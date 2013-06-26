@@ -67,42 +67,39 @@ def scale_to_nbody_units(ps):
 class Plummer(object):
     """  """
 
-    def __init__(self, num, imf, mfrac=0.999, eps=0.0,
-                 eps_parametrization=0, seed=None):
-        self.num = num
+    def __init__(self, n, eps, imf, seed=None, mfrac=0.999, softening_type=0):
+        self.n = n
+        self.eps2 = eps*eps
         self.imf = imf
         self.mfrac = mfrac
-        self.eps2 = eps*eps
-        self.eps_parametrization = eps_parametrization
-        self.ps = ParticleSystem(nstars=num)
+        self.softening_type = softening_type
+        self.ps = ParticleSystem(n)
         np.random.seed(seed)
 
     def set_eps2(self, mass):
-        n = self.num
-        if self.eps_parametrization == 0:
+        n = self.n
+        if self.softening_type == 0:
             # eps2 ~ cte
             eps2 = np.ones(n)
-        elif self.eps_parametrization == 1:
+        elif self.softening_type == 1:
             # eps2 ~ m^2 ~ 1/n^2 if m ~ 1/n
             eps2 = mass**2
-        elif self.eps_parametrization == 2:
+        elif self.softening_type == 2:
             # eps2 ~ m/n ~ 1/n^2 if m ~ 1/n
             eps2 = mass / n
-        elif self.eps_parametrization == 3:
+        elif self.softening_type == 3:
             # eps2 ~ (m/n^2)^(2/3) ~ 1/n^2 if m ~ 1/n
             eps2 = (mass / n**2)**(2.0/3)
-        elif self.eps_parametrization == 4:
+        elif self.softening_type == 4:
             # eps2 ~ (1/(m*n^2))^2 ~ 1/n^2 if m ~ 1/n
             eps2 = (1.0 / (mass * n**2))**2
         else:
             logger.critical(
-                "Unexpected value for eps_parametrization: %d.",
-                self.eps_parametrization
-            )
+                "Unexpected value for softening_type: %d.",
+                self.softening_type)
             raise ValueError(
-                "Unexpected value for eps_parametrization: {}.".format(
-                self.eps_parametrization)
-            )
+                "Unexpected value for softening_type: {}.".format(
+                self.softening_type))
 
         # normalizes by the provided scale of eps2
         eps2 *= self.eps2 / np.mean(eps2)
@@ -111,7 +108,7 @@ class Plummer(object):
         return eps2 / 2
 
     def set_pos(self, irand):
-        n = self.num
+        n = self.n
         mfrac = self.mfrac
         mrand = (irand + np.random.random(n)) * mfrac / n
         radius = 1.0 / np.sqrt(np.power(mrand, -2.0 / 3.0) - 1.0)
@@ -124,7 +121,7 @@ class Plummer(object):
 
     def set_vel(self, pot):
         count = 0
-        n = self.num
+        n = self.n
         rnd = np.empty(n)
         while count < n:
             r1 = np.random.random()
@@ -142,7 +139,7 @@ class Plummer(object):
 
     def set_bodies(self):
         """  """
-        n = self.num
+        n = self.n
         ilist = np.arange(n)
 
         # set index
@@ -173,7 +170,7 @@ class Plummer(object):
 
     def make_plummer(self):
         self.set_bodies()
-        self.ps.move_to_center()
+        self.ps.move_to_origin()
         scale_to_nbody_units(self.ps)
 
     def show(self, nbins=32):
@@ -253,6 +250,16 @@ class Plummer(object):
         plt.show()
         plt.close()
 
+
+def make_plummer(n, eps, imf, seed=None, mfrac=0.999, softening_type=0):
+    if n < 2:
+        n = 2
+    from tupan.ics.imf import IMF
+    imf = getattr(IMF, imf[0])(*imf[1:])
+    p = Plummer(n, eps, imf, seed=seed, mfrac=mfrac,
+                softening_type=softening_type)
+    p.make_plummer()
+    return p.ps
 
 
 ########## end of file ##########

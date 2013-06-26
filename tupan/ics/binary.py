@@ -21,7 +21,7 @@ def make_binary(m, a, e, m_ratio=1, rcom=[0, 0, 0], vcom=[0, 0, 0]):
         raise ValueError("semi-major-axis out of range (a > 0)")
 
     if not m_ratio >= 1:
-        raise ValueError("m_ratio out of range (m_ration >= 1)")
+        raise ValueError("m_ratio out of range (m_ratio >= 1)")
 
     r = a * (1 + e)
     v = ((m / a) * (1 - e) / (1 + e))**0.5

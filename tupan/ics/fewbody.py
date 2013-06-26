@@ -26,6 +26,7 @@ def make_pythagorean():
     ps.vz = [0.0, 0.0, 0.0]
 
     ps.id = range(ps.n)
+    ps.dynrescale_total_mass(1.0)
     return ps
 
 
@@ -46,6 +47,7 @@ def make_circular3():
     ps.vz = [0.0, 0.0, 0.0]
 
     ps.id = range(ps.n)
+    ps.dynrescale_total_mass(1.0)
     return ps
 
 
@@ -66,6 +68,7 @@ def make_figure83():
     ps.vz = [0.0, 0.0, 0.0]
 
     ps.id = range(ps.n)
+    ps.dynrescale_total_mass(1.0)
     return ps
 
 
@@ -86,6 +89,7 @@ def make_figure84():
     ps.vz = [0.0, 0.0, 0.0, 0.0]
 
     ps.id = range(ps.n)
+    ps.dynrescale_total_mass(1.0)
     return ps
 
 
@@ -176,6 +180,7 @@ def make_solar_system():
              ]
 
     ps.id = range(ps.n)
+    ps.dynrescale_total_mass(1.0)
     return ps
 
 

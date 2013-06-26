@@ -20,20 +20,16 @@ def best_of(n, func, *args, **kwargs):
     for i in range(n):
         timer = Timer()
         timer.start()
-        ret = func(*args, **kwargs)
+        func(*args, **kwargs)
     elapsed.append(timer.elapsed())
     return min(elapsed)
 
 
-def set_particles(npart):
-    if npart < 2:
-        npart = 2
-    from tupan.ics.imf import IMF
-    from tupan.ics.plummer import Plummer
-    imf = IMF.padoan2007(0.075, 120.0)
-    p = Plummer(npart, imf, eps=0.0, seed=1)
-    p.make_plummer()
-    return p.ps
+def set_particles(n):
+    from tupan.ics.plummer import make_plummer
+    imf = ("salpeter1955", 0.5, 120.0)
+    ps = make_plummer(n, 0.0, imf, seed=1)
+    return ps
 
 
 class TestCase(unittest.TestCase):

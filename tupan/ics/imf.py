@@ -72,7 +72,7 @@ class IMF(object):
         return object.__new__(cls)
 
     @classmethod
-    def equal(self):
+    def equalmass(self):
         imf_func = lambda m: (1.0+m)-m
         min_mlow = 0.1
         max_mhigh = 10.0
