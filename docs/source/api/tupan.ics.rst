@@ -25,6 +25,14 @@ ics Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`hierarchy` Module
+-----------------------
+
+.. automodule:: tupan.ics.hierarchy
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`imf` Module
 -----------------
 
