@@ -312,16 +312,15 @@ class NbodyMethods(object):
         """
         return np.abs(self.tstep).max()
 
-    ### rescaling methods
-    def dynrescale_total_mass(self, total_mass):
-        """Rescales the total mass of the system while maintaining
-        its dynamics unchanged.
+    ### lenght scales
+    @property
+    def virial_radius(self):
         """
-        m_ratio = total_mass / self.total_mass
-        self.mass *= m_ratio
-        self.rx *= m_ratio
-        self.ry *= m_ratio
-        self.rz *= m_ratio
+        Virial radius of the system.
+        """
+        mtot = self.total_mass
+        pe = self.potential_energy
+        return (mtot**2) / (-2*pe)
 
     @property
     def radial_size(self):
@@ -336,9 +335,20 @@ class NbodyMethods(object):
         s = (I / self.total_mass)**0.5
         return s
 
+    ### rescaling methods
+    def dynrescale_total_mass(self, total_mass):
+        """Rescales the total mass of the system while maintaining its
+        dynamics unchanged.
+        """
+        m_ratio = total_mass / self.total_mass
+        self.mass *= m_ratio
+        self.rx *= m_ratio
+        self.ry *= m_ratio
+        self.rz *= m_ratio
+
     def dynrescale_radial_size(self, size):
-        """Rescales the radial size of the system while maintaining
-        its dynamics unchanged.
+        """Rescales the radial size of the system while maintaining its
+        dynamics unchanged.
         """
         r_scale = size / self.radial_size
         v_scale = 1 / r_scale**0.5
@@ -349,20 +359,11 @@ class NbodyMethods(object):
         self.vy *= v_scale
         self.vz *= v_scale
 
-    @property
-    def rvir(self):
+    def dynrescale_virial_radius(self, rvir):
+        """Rescales the virial radius of the system while maintaining its
+        dynamics unchanged.
         """
-        Virial radius of the system.
-        """
-        mtot = self.total_mass
-        u = -self.potential_energy
-        return (mtot**2) / (2 * u)
-
-    def dynrescale_rvir(self, rvir):
-        """Rescales the virial radius of the system while maintaining
-        its dynamics unchanged.
-        """
-        r_scale = rvir / self.rvir
+        r_scale = rvir / self.virial_radius
         v_scale = 1 / r_scale**0.5
         self.rx *= r_scale
         self.ry *= r_scale
@@ -371,13 +372,24 @@ class NbodyMethods(object):
         self.vy *= v_scale
         self.vz *= v_scale
 
-    def to_nbody_units(self):
-        self.dynrescale_rvir(1.0)
+    def scale_to_virial(self):
+        """
+        Rescale system to virial equilibrium (2K + U = 0).
+        """
         ke = self.kinetic_energy
-        v_scale = (0.25 / ke)**0.5
+        pe = self.potential_energy
+        v_scale = ((-0.5 * pe) / ke)**0.5
         self.vx *= v_scale
         self.vy *= v_scale
         self.vz *= v_scale
+
+    def to_nbody_units(self):
+        """
+        Rescales system to nbody units while maintaining its dynamics
+        unchanged.
+        """
+        self.dynrescale_total_mass(1.0)
+        self.dynrescale_virial_radius(1.0)
 
 
 class PNbodyMethods(NbodyMethods):

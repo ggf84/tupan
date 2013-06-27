@@ -14,13 +14,14 @@ if __name__ == "__main__":
     from tupan.io import IO
 
     n = 256
+    eps = 4.0/n
 
     imf = ("equalmass",)
 #    imf = ("salpeter1955", 0.5, 120.0)
 #    imf = ("parravano2011", 0.075, 120.0)
 #    imf = ("padoan2007", 0.075, 120.0)
 
-    ps = make_plummer(n, 4.0/n, imf, seed=1)
+    ps = make_plummer(n, eps, imf, seed=1)
 
     fname = ("plummer" + str(n).zfill(5) + '-'
              + '_'.join(str(i) for i in imf) + ".hdf5")

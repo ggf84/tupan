@@ -123,12 +123,11 @@ class Plummer(object):
         self.ps.vy = vel[1]
         self.ps.vz = vel[2]
 
-    def make_plummer(self):
+    def make_model(self):
         self.set_bodies()
         self.ps.com_to_origin()
+        self.ps.scale_to_virial()
         self.ps.to_nbody_units()
-        if self.eps2 > 0:
-            self.ps.to_nbody_units()
 
     def show(self, nbins=32):
         from scipy import optimize
@@ -215,7 +214,7 @@ def make_plummer(n, eps, imf, seed=None, mfrac=0.999, softening_type=0):
     imf = getattr(IMF, imf[0])(*imf[1:])
     p = Plummer(n, eps, imf, seed=seed, mfrac=mfrac,
                 softening_type=softening_type)
-    p.make_plummer()
+    p.make_model()
     return p.ps
 
 
