@@ -127,7 +127,7 @@ class NbodyMethods(object):
         vcomz = (self.mass * self.vz).sum()
         return (np.array([vcomx, vcomy, vcomz]) / mtot)
 
-    def move_to_origin(self):
+    def com_to_origin(self):
         """
         Moves the center-of-mass to the origin of coordinates.
         """
@@ -144,7 +144,7 @@ class NbodyMethods(object):
         """
         Moves the center-of-mass to the given coordinates.
         """
-        self.move_to_origin()
+        self.com_to_origin()
         self.rx += rcom[0]
         self.ry += rcom[1]
         self.rz += rcom[2]
@@ -323,20 +323,61 @@ class NbodyMethods(object):
         self.ry *= m_ratio
         self.rz *= m_ratio
 
-    def dynrescale_size(self, size):
-        """Rescales the size of the system while maintaining
+    @property
+    def radial_size(self):
+        """
+        Radial size of the system (a.k.a. radius of gyration).
+        """
+        rcom = self.rcom
+        rx = self.rx - rcom[0]
+        ry = self.ry - rcom[1]
+        rz = self.rz - rcom[2]
+        I = (self.mass * (rx**2 + ry**2 + rz**2)).sum()
+        s = (I / self.total_mass)**0.5
+        return s
+
+    def dynrescale_radial_size(self, size):
+        """Rescales the radial size of the system while maintaining
         its dynamics unchanged.
         """
-        I = (self.mass * (self.rx**2 + self.ry**2 + self.rz**2)).sum()
-        S = (I / self.total_mass)**0.5
+        r_scale = size / self.radial_size
+        v_scale = 1 / r_scale**0.5
+        self.rx *= r_scale
+        self.ry *= r_scale
+        self.rz *= r_scale
+        self.vx *= v_scale
+        self.vy *= v_scale
+        self.vz *= v_scale
 
-        s_ratio = size / S
-        self.rx *= s_ratio
-        self.ry *= s_ratio
-        self.rz *= s_ratio
-        self.vx /= s_ratio**0.5
-        self.vy /= s_ratio**0.5
-        self.vz /= s_ratio**0.5
+    @property
+    def rvir(self):
+        """
+        Virial radius of the system.
+        """
+        mtot = self.total_mass
+        u = -self.potential_energy
+        return (mtot**2) / (2 * u)
+
+    def dynrescale_rvir(self, rvir):
+        """Rescales the virial radius of the system while maintaining
+        its dynamics unchanged.
+        """
+        r_scale = rvir / self.rvir
+        v_scale = 1 / r_scale**0.5
+        self.rx *= r_scale
+        self.ry *= r_scale
+        self.rz *= r_scale
+        self.vx *= v_scale
+        self.vy *= v_scale
+        self.vz *= v_scale
+
+    def to_nbody_units(self):
+        self.dynrescale_rvir(1.0)
+        ke = self.kinetic_energy
+        v_scale = (0.25 / ke)**0.5
+        self.vx *= v_scale
+        self.vy *= v_scale
+        self.vz *= v_scale
 
 
 class PNbodyMethods(NbodyMethods):

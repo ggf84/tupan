@@ -7,7 +7,6 @@ TODO.
 
 
 from __future__ import (print_function, division)
-import math
 import logging
 import numpy as np
 from ..particles.allparticles import ParticleSystem
@@ -17,50 +16,6 @@ from ..lib.utils.timing import decallmethods, timings
 __all__ = ['Plummer']
 
 logger = logging.getLogger(__name__)
-
-
-def scale_mass(ps, m_scale):
-    ps.mass *= m_scale
-
-
-def scale_pos(ps, r_scale):
-    ps.rx *= r_scale
-    ps.ry *= r_scale
-    ps.rz *= r_scale
-
-
-def scale_vel(ps, v_scale):
-    ps.vx *= v_scale
-    ps.vy *= v_scale
-    ps.vz *= v_scale
-
-
-def scale_to_virial(ps, ke, pe, te):
-    scale_vel(ps, math.sqrt(-0.5 * pe / ke))
-    ke = -0.5 * pe
-    te = ke + pe
-    scale_pos(ps, -te / 0.25)
-    pe = ps.potential_energy
-    scale_vel(ps, math.sqrt(0.5 * abs(pe / te)))
-
-
-def scale_to_nbody_units(ps):
-#    scale_mass(ps["star"], 1.0/ps["star"].get_mass())
-#    ps["star"].set_phi(ps)
-
-    ke = ps.kinetic_energy
-    pe = ps.potential_energy
-    te = ke + pe
-    ve = ke + te
-    print(ke, pe, te, ve)
-
-    scale_to_virial(ps, ke, pe, te)
-
-    ke = ps.kinetic_energy
-    pe = ps.potential_energy
-    te = ke + pe
-    ve = ke + te
-    print(ke, pe, te, ve)
 
 
 @decallmethods(timings)
@@ -170,8 +125,10 @@ class Plummer(object):
 
     def make_plummer(self):
         self.set_bodies()
-        self.ps.move_to_origin()
-        scale_to_nbody_units(self.ps)
+        self.ps.com_to_origin()
+        self.ps.to_nbody_units()
+        if self.eps2 > 0:
+            self.ps.to_nbody_units()
 
     def show(self, nbins=32):
         from scipy import optimize

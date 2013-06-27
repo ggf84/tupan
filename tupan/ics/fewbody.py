@@ -6,7 +6,48 @@ known numerical solutions.
 """
 
 
+from __future__ import division
 from ..particles.allparticles import ParticleSystem
+
+
+def make_binary(m1, m2, a, e):
+    """
+    Returns initial conditions for a binary system.
+    """
+    if not m1 > 0:
+        raise ValueError("mass out of range (m1 > 0)")
+
+    if not m2 > 0:
+        raise ValueError("mass out of range (m2 > 0)")
+
+    if not a > 0:
+        raise ValueError("semi-major-axis out of range (a > 0)")
+
+    if e > 1 or e < 0:
+        raise ValueError("eccentricity out of range (0 < e < 1)")
+
+    m = m1 + m2
+    r = a * (1 + e)
+    v = ((m / a) * (1 - e) / (1 + e))**0.5
+    r1 = (m2 / m) * r
+    r2 = -(m1 / m) * r
+    v1 = (m2 / m) * v
+    v2 = -(m1 / m) * v
+
+    ps = ParticleSystem(2)
+
+    ps.mass = [m1, m2]
+
+    ps.rx = [r1, r2]
+    ps.ry = [0.0, 0.0]
+    ps.rz = [0.0, 0.0]
+
+    ps.vx = [0.0, 0.0]
+    ps.vy = [v1, v2]
+    ps.vz = [0.0, 0.0]
+
+    ps.id = range(ps.n)
+    return ps
 
 
 def make_pythagorean():
@@ -26,7 +67,6 @@ def make_pythagorean():
     ps.vz = [0.0, 0.0, 0.0]
 
     ps.id = range(ps.n)
-    ps.dynrescale_total_mass(1.0)
     return ps
 
 
@@ -47,7 +87,6 @@ def make_circular3():
     ps.vz = [0.0, 0.0, 0.0]
 
     ps.id = range(ps.n)
-    ps.dynrescale_total_mass(1.0)
     return ps
 
 
@@ -68,7 +107,6 @@ def make_figure83():
     ps.vz = [0.0, 0.0, 0.0]
 
     ps.id = range(ps.n)
-    ps.dynrescale_total_mass(1.0)
     return ps
 
 
@@ -89,7 +127,6 @@ def make_figure84():
     ps.vz = [0.0, 0.0, 0.0, 0.0]
 
     ps.id = range(ps.n)
-    ps.dynrescale_total_mass(1.0)
     return ps
 
 
@@ -180,7 +217,6 @@ def make_solar_system():
              ]
 
     ps.id = range(ps.n)
-    ps.dynrescale_total_mass(1.0)
     return ps
 
 
