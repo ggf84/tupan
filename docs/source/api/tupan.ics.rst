@@ -9,14 +9,6 @@ ics Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`binary` Module
---------------------
-
-.. automodule:: tupan.ics.binary
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`fewbody` Module
 ---------------------
 
