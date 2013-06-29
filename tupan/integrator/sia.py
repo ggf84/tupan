@@ -549,55 +549,40 @@ class SIA(Base):
             raise ValueError("Unexpected method: {0}".format(self.method))
 
         if "dkd21" in self.method:
-            return self.dkd21(ps, tau)
+            return self.recurse(ps, tau, self.sfdkd21)
         elif "dkd22" in self.method:
-            return self.dkd22(ps, tau)
+            return self.recurse(ps, tau, self.sfdkd22)
         elif "dkd43" in self.method:
-            return self.dkd43(ps, tau)
+            return self.recurse(ps, tau, self.sfdkd43)
         elif "dkd44" in self.method:
-            return self.dkd44(ps, tau)
+            return self.recurse(ps, tau, self.sfdkd44)
         elif "dkd45" in self.method:
-            return self.dkd45(ps, tau)
+            return self.recurse(ps, tau, self.sfdkd45)
         elif "dkd46" in self.method:
-            return self.dkd46(ps, tau)
+            return self.recurse(ps, tau, self.sfdkd46)
         elif "dkd67" in self.method:
-            return self.dkd67(ps, tau)
+            return self.recurse(ps, tau, self.sfdkd67)
         elif "dkd69" in self.method:
-            return self.dkd69(ps, tau)
+            return self.recurse(ps, tau, self.sfdkd69)
         else:
             raise ValueError("Unexpected method: {0}".format(self.method))
-
-    def recurse2(self, ps, tau, sfdkdxy):
-        """
-
-        """
-        slow, fast = split(ps, abs(ps.tstep) >= abs(tau / 2))
-        slow, fast = sfdkdxy(slow, fast, tau / 2, self.recurse2)
-        ps = join(slow, fast)
-
-        tstep, _ = ps.get_tstep(ps, self.eta)
-        ps.tstep = (tstep**2) / ps.tstep
-#        ps.tstep = tstep
-
-        slow, fast = split(ps, abs(ps.tstep) >= abs(tau / 2))
-        slow, fast = sfdkdxy(slow, fast, tau / 2, self.recurse2)
-        ps = join(slow, fast)
-
-        return ps
 
     def recurse(self, ps, tau, sfdkdxy):
         """
 
         """
+        if ps.n == 0:
+            self.time += tau
+            return ps
+
         flag = 0
         if self.update_tstep:
             flag = 1
             ps.update_tstep(ps, self.eta)
             if self.shared_tstep:
-                ps.tstep = ps.min_tstep()
-#                tau = self.get_min_block_tstep(ps, tau)
+                tau = self.get_min_block_tstep(ps, tau)
 
-        slow, fast = split(ps, abs(ps.tstep) >= flag*abs(tau))
+        slow, fast = split(ps, abs(ps.tstep) > flag*abs(tau))
 
         slow, fast = sfdkdxy(slow, fast, tau, self.recurse)
 
@@ -618,11 +603,6 @@ class SIA(Base):
         """
 
         """
-        if fast.n == 0:
-            slow = base_dkd21(slow, tau)
-            self.time += tau
-            return slow, fast
-
         k, d = dkd21_coefs
         #
         fast = recurse(fast, d[0] * tau / 2, self.sfdkd21)
@@ -637,13 +617,6 @@ class SIA(Base):
         #
         return slow, fast
 
-    def dkd21(self, ps, tau):
-        """
-
-        """
-        return self.recurse(ps, tau, self.sfdkd21)
-#        return self.recurse2(ps, tau, self.sfdkd21)
-
     #
     # dkd22[std,shr,hcc] method -- D.K.D.K.D
     #
@@ -651,11 +624,6 @@ class SIA(Base):
         """
 
         """
-        if fast.n == 0:
-            slow = base_dkd22(slow, tau)
-            self.time += tau
-            return slow, fast
-
         k, d = dkd22_coefs
         #
         fast = recurse(fast, d[0] * tau / 2, self.sfdkd22)
@@ -676,12 +644,6 @@ class SIA(Base):
         #
         return slow, fast
 
-    def dkd22(self, ps, tau):
-        """
-
-        """
-        return self.recurse(ps, tau, self.sfdkd22)
-
     #
     # dkd43[std,shr,hcc] method -- D.K.D.K.D.K.D
     #
@@ -689,11 +651,6 @@ class SIA(Base):
         """
 
         """
-        if fast.n == 0:
-            slow = base_dkd43(slow, tau)
-            self.time += tau
-            return slow, fast
-
         k, d = dkd43_coefs
         #
         fast = recurse(fast, d[0] * tau / 2, self.sfdkd43)
@@ -720,12 +677,6 @@ class SIA(Base):
         #
         return slow, fast
 
-    def dkd43(self, ps, tau):
-        """
-
-        """
-        return self.recurse(ps, tau, self.sfdkd43)
-
     #
     # dkd44[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D
     #
@@ -733,11 +684,6 @@ class SIA(Base):
         """
 
         """
-        if fast.n == 0:
-            slow = base_dkd44(slow, tau)
-            self.time += tau
-            return slow, fast
-
         k, d = dkd44_coefs
         #
         fast = recurse(fast, d[0] * tau / 2, self.sfdkd44)
@@ -770,12 +716,6 @@ class SIA(Base):
         #
         return slow, fast
 
-    def dkd44(self, ps, tau):
-        """
-
-        """
-        return self.recurse(ps, tau, self.sfdkd44)
-
     #
     # dkd45[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D
     #
@@ -783,11 +723,6 @@ class SIA(Base):
         """
 
         """
-        if fast.n == 0:
-            slow = base_dkd45(slow, tau)
-            self.time += tau
-            return slow, fast
-
         k, d = dkd45_coefs
         #
         fast = recurse(fast, d[0] * tau / 2, self.sfdkd45)
@@ -826,12 +761,6 @@ class SIA(Base):
         #
         return slow, fast
 
-    def dkd45(self, ps, tau):
-        """
-
-        """
-        return self.recurse(ps, tau, self.sfdkd45)
-
     #
     # dkd46[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D
     #
@@ -839,11 +768,6 @@ class SIA(Base):
         """
 
         """
-        if fast.n == 0:
-            slow = base_dkd46(slow, tau)
-            self.time += tau
-            return slow, fast
-
         k, d = dkd46_coefs
         #
         fast = recurse(fast, d[0] * tau / 2, self.sfdkd46)
@@ -888,12 +812,6 @@ class SIA(Base):
         #
         return slow, fast
 
-    def dkd46(self, ps, tau):
-        """
-
-        """
-        return self.recurse(ps, tau, self.sfdkd46)
-
     #
     # dkd67[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
@@ -901,11 +819,6 @@ class SIA(Base):
         """
 
         """
-        if fast.n == 0:
-            slow = base_dkd67(slow, tau)
-            self.time += tau
-            return slow, fast
-
         k, d = dkd67_coefs
         #
         fast = recurse(fast, d[0] * tau / 2, self.sfdkd67)
@@ -956,12 +869,6 @@ class SIA(Base):
         #
         return slow, fast
 
-    def dkd67(self, ps, tau):
-        """
-
-        """
-        return self.recurse(ps, tau, self.sfdkd67)
-
     #
     # dkd69[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
     #
@@ -969,11 +876,6 @@ class SIA(Base):
         """
 
         """
-        if fast.n == 0:
-            slow = base_dkd69(slow, tau)
-            self.time += tau
-            return slow, fast
-
         k, d = dkd69_coefs
         #
         fast = recurse(fast, d[0] * tau / 2, self.sfdkd69)
@@ -1035,12 +937,6 @@ class SIA(Base):
         fast = recurse(fast, d[0] * tau / 2, self.sfdkd69)
         #
         return slow, fast
-
-    def dkd69(self, ps, tau):
-        """
-
-        """
-        return self.recurse(ps, tau, self.sfdkd69)
 
 
 ########## end of file ##########

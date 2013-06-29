@@ -78,11 +78,11 @@ class ParticleSystem(AbstractNbodyMethods):
             nf = 0
             for obj in self.members.values():
                 try:
-                    setattr(obj, attr, value)
-                except:
                     nf += obj.n
                     setattr(obj, attr, value[ns:nf])
                     ns += obj.n
+                except:
+                    setattr(obj, attr, value)
         except:
             object.__setattr__(self, attr, value)
 
