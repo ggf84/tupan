@@ -2,9 +2,8 @@ cffi
 numpy
 scipy
 h5py
-matplotlib
 pyopencl
-Sphinx
+matplotlib
 PyOpenGL
 PyYAML
 Pillow
