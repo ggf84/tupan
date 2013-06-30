@@ -6,12 +6,12 @@ TODO.
 """
 
 from __future__ import (print_function, division)
-import numpy as np
 import os
 import sys
 import logging
-import Image
 import subprocess
+import numpy as np
+from PIL import Image
 from matplotlib import cm
 from ..lib.utils.timing import Timer, decallmethods, timings
 

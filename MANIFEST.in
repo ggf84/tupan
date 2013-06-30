@@ -1,5 +1,8 @@
 include MANIFEST.in
 include *.txt *.cfg
 global-include *.py *.cl *.c *.h
-recursive-include doc *.rst
-include doc/Makefile
+recursive-include docs *.rst
+include docs/Makefile
+include tox.ini
+prune .tox
+prune tupan/lib/__pycache__
