@@ -91,38 +91,8 @@ class GLviewer(object):
         self.timer = Timer()
         self.timer.start()
 
-        cmdstring = ["ffmpeg", "-y",
-                     "-r", "30",
-                     "-f", "image2pipe",
-                     "-vcodec", "ppm",
-                     "-i", "pipe:",
-                     "-vcodec", "libx264",
-                     "-vpre", "slow",
-                     "-qmin", "1",
-                     "-qmax", "11",
-                     "movie.mp4"]
-
-        self.ffmpeg = subprocess.Popen(cmdstring,
-                                       stdin=subprocess.PIPE,
-                                       stdout=open(os.devnull, 'w'),
-                                       stderr=subprocess.STDOUT)
-
-#        cmdstring = ["mencoder",
-#                     "-",
-#                     "-demuxer", "rawvideo",
-#                     "-rawvideo",
-#                     "w={0}:h={1}:fps={2}:format={3}".format(WINDOW_WIDTH,
-#                                                             WINDOW_HEIGHT,
-#                                                             60, "rgba"),
-#                     "-ovc", "lavc",
-#                     "-of", "rawvideo",
-#                     "-lavcopts", "vcodec=mpeg2video:vbitrate=10000",
-#                     "-o", "video.mp4"]
-
-#        self.mencoder = subprocess.Popen(cmdstring,
-#                                         stdin=subprocess.PIPE,
-#                                         stdout=open(os.devnull, 'w'),
-#                                         stderr=subprocess.STDOUT)
+        self.ffmpeg = None
+        self.mencoder = None
 
     def set_particle_system(self, ps):
         self.ps = ps.copy()
@@ -410,6 +380,39 @@ class GLviewer(object):
         self.adjust_zoom()
 
     def record_screen(self):
+        if self.ffmpeg is None:
+            cmdstring = ["ffmpeg", "-y",
+                         "-r", "30",
+                         "-f", "image2pipe",
+                         "-vcodec", "ppm",
+                         "-i", "pipe:",
+                         "-vcodec", "libx264",
+                         "-vpre", "slow",
+                         "-qmin", "1",
+                         "-qmax", "11",
+                         "movie.mp4"]
+            self.ffmpeg = subprocess.Popen(cmdstring,
+                                           stdin=subprocess.PIPE,
+                                           stdout=open(os.devnull, 'w'),
+                                           stderr=subprocess.STDOUT)
+#        if self.mencoder is None:
+#            cmdstring = ["mencoder",
+#                         "-",
+#                         "-demuxer", "rawvideo",
+#                         "-rawvideo",
+#                         "w={0}:h={1}:fps={2}:format={3}".format(
+#                             WINDOW_WIDTH,
+#                             WINDOW_HEIGHT,
+#                             60, "rgba"),
+#                         "-ovc", "lavc",
+#                         "-of", "rawvideo",
+#                         "-lavcopts", "vcodec=mpeg2video:vbitrate=10000",
+#                         "-o", "video.mp4"]
+#            self.mencoder = subprocess.Popen(cmdstring,
+#                                             stdin=subprocess.PIPE,
+#                                             stdout=open(os.devnull, 'w'),
+#                                             stderr=subprocess.STDOUT)
+
         gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 8)
         screenshot = gl.glReadPixels(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
                                      gl.GL_RGBA, gl.GL_UNSIGNED_BYTE)
