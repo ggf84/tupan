@@ -46,7 +46,9 @@ class Base(object):
         """
 
         """
-        dt = min(t_end-abs(self.time), abs(self.eta))
+        import sys
+        dt = min(abs(t_end)-abs(self.time), abs(self.eta))
+        dt = max(dt, abs(t_end)*(2*sys.float_info.epsilon))
         self.tstep = math.copysign(dt, self.eta)
         return self.tstep
 
