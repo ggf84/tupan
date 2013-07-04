@@ -51,8 +51,7 @@ class Base(object):
         t_curr = ps.t_curr
         dt = min(abs(t_end)-abs(t_curr), abs(self.eta))
         dt = max(dt, abs(t_end)*(2*sys.float_info.epsilon))
-        self.tstep = math.copysign(dt, self.eta)
-        return self.tstep
+        return math.copysign(dt, self.eta)
 
     def get_min_block_tstep(self, ps, tau):
         """
@@ -145,10 +144,6 @@ class Integrator(object):
 
     def evolve_step(self, t_end):
         self.integrator.evolve_step(t_end)
-
-    @property
-    def tstep(self):
-        return self.integrator.tstep
 
     @property
     def time(self):

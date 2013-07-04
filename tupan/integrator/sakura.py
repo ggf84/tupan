@@ -100,8 +100,7 @@ class Sakura(Base):
         ps.tstep = dt_sakura
 
         min_bts = self.get_min_block_tstep(ps, tau)
-        self.tstep = min_bts
-        return self.tstep
+        return min_bts
 
     def do_step(self, ps, tau):
         """
