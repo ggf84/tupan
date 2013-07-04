@@ -519,7 +519,7 @@ class SIA(Base):
         ps.tstep, _ = ps.get_tstep(ps, self.eta)
 
         if self.reporter:
-            self.reporter.diagnostic_report(self.time, ps)
+            self.reporter.diagnostic_report(ps)
         if self.dumpper:
             self.dumpper.dump_worldline(ps)
 
@@ -572,7 +572,7 @@ class SIA(Base):
 
         """
         if ps.n == 0:
-            self.time += tau
+            type(ps).t_curr += tau
             return ps
 
         flag = 0

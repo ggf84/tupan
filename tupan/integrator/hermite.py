@@ -46,7 +46,7 @@ class Hermite(Base):
         (ps.ax, ps.ay, ps.az, ps.jx, ps.jy, ps.jz) = ps.get_acc_jerk(ps)
 
         if self.reporter:
-            self.reporter.diagnostic_report(self.time, ps)
+            self.reporter.diagnostic_report(ps)
         if self.dumpper:
             self.dumpper.dump_worldline(ps)
 
@@ -127,8 +127,8 @@ class Hermite(Base):
         if "ahermite" in self.method:
             tau = self.get_hermite_tstep(ps, self.eta, tau)
         ps = self.pec(1, ps, tau)
-        self.time += tau
 
+        type(ps).t_curr += tau
         ps.tstep = tau
         ps.time += tau
         ps.nstep += 1

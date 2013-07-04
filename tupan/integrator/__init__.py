@@ -16,7 +16,7 @@ class Base(object):
     """
     def __init__(self, eta, time, ps, **kwargs):
         self.eta = eta
-        self.time = time
+        type(ps).t_curr = time
         self.ps = ps
         self.is_initialized = False
 
@@ -47,7 +47,9 @@ class Base(object):
 
         """
         import sys
-        dt = min(abs(t_end)-abs(self.time), abs(self.eta))
+        ps = self.ps
+        t_curr = ps.t_curr
+        dt = min(abs(t_end)-abs(t_curr), abs(self.eta))
         dt = max(dt, abs(t_end)*(2*sys.float_info.epsilon))
         self.tstep = math.copysign(dt, self.eta)
         return self.tstep
@@ -61,7 +63,7 @@ class Base(object):
         power = int(np.log2(min_ts) - 1)
         min_bts = 2.0**power
 
-        t_curr = self.time
+        t_curr = ps.t_curr
         t_next = t_curr + min_bts
         while t_next % min_bts != 0:
             min_bts /= 2
@@ -88,7 +90,7 @@ class Base(object):
         ps = self.do_step(ps, tau)
 
         if self.reporter:
-            self.reporter.diagnostic_report(self.time, ps)
+            self.reporter.diagnostic_report(ps)
         if self.dumpper:
             self.dumpper.dump_worldline(self.wl)
 
@@ -150,7 +152,7 @@ class Integrator(object):
 
     @property
     def time(self):
-        return self.integrator.time
+        return self.integrator.ps.t_curr
 
     @property
     def particle_system(self):

@@ -61,6 +61,7 @@ class ParticleSystem(AbstractNbodyMethods):
                                   (nbhs, Blackholes),
                                   (nsphs, Sphs)] if n}
         object.__setattr__(self, "members", members)
+        object.__setattr__(self, "n", len(self))
 
     def __getattr__(self, attr):
         try:
@@ -123,16 +124,13 @@ class ParticleSystem(AbstractNbodyMethods):
     def __len__(self):
         return sum(len(obj) for obj in self.members.values())
 
-    @property
-    def n(self):
-        return len(self)
-
     def append(self, obj):
         for (k, v) in obj.members.items():
             try:
                 self.members[k].append(v)
             except:
                 self.members[k] = v.copy()
+        object.__setattr__(self, "n", len(self))
 
     def __hash__(self):
         return hash(tuple(self.members.values()))

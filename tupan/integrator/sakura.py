@@ -70,7 +70,7 @@ class Sakura(Base):
         ps = self.ps
 
         if self.reporter:
-            self.reporter.diagnostic_report(self.time, ps)
+            self.reporter.diagnostic_report(ps)
         if self.dumpper:
             self.dumpper.dump_worldline(ps)
 
@@ -130,8 +130,8 @@ class Sakura(Base):
         if "asakura" in self.method:
             tau = self.get_sakura_tstep(ps, self.eta, tau)
         ps = sakura_step(ps, tau)
-        self.time += tau
 
+        type(ps).t_curr += tau
         ps.tstep = tau
         ps.time += tau
         ps.nstep += 1

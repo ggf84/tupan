@@ -158,7 +158,7 @@ class NREG(Base):
         (ps.ax, ps.ay, ps.az) = ps.get_acc(ps)
 
         if self.reporter:
-            self.reporter.diagnostic_report(self.time, ps)
+            self.reporter.diagnostic_report(ps)
         if self.dumpper:
             self.dumpper.dump_worldline(ps)
 
@@ -178,8 +178,8 @@ class NREG(Base):
 #        ps, t, W = nreg_step(ps, tau)
         ps, t, W = nreg_base_step(ps, tau)   # h = tau
         tau = t
-        self.time += tau
 
+        type(ps).t_curr += tau
         ps.tstep = tau
         ps.time += tau
         ps.nstep += 1

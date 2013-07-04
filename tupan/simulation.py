@@ -81,9 +81,10 @@ class Diagnostic(object):
                            '#11:amom', '#12:wct'),
                 self.fname, 'w')
 
-    def diagnostic_report(self, time, ps):
+    def diagnostic_report(self, ps):
+        t_curr = ps.t_curr
         if self.nreport % self.report_freq == 0:
-            self.print_diagnostic(time, time - self.time, ps)
+            self.print_diagnostic(t_curr, t_curr - self.time, ps)
         self.nreport += 1
 
     def print_diagnostic(self, time, dtime, ps):
