@@ -126,8 +126,8 @@ class Plummer(object):
     def make_model(self):
         self.set_bodies()
         self.ps.com_to_origin()
-        self.ps.scale_to_virial()
         self.ps.to_nbody_units()
+        self.ps.scale_to_virial()
 
     def show(self, nbins=32):
         from scipy import optimize

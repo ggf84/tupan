@@ -20,7 +20,7 @@ __all__ = ["NREG"]
 logger = logging.getLogger(__name__)
 
 
-def nreg_x(ps, t, dt):
+def nreg_x(ps, dt):
     """
 
     """
@@ -45,13 +45,13 @@ def nreg_x(ps, t, dt):
     ps.rx += dt * ps.vx
     ps.ry += dt * ps.vy
     ps.rz += dt * ps.vz
+    type(ps).t_curr += dt
+    type(ps).U = -ps.potential_energy
     (ps.ax, ps.ay, ps.az) = ps.get_acc(ps)
-    U = -ps.potential_energy
-    t += dt
-    return t, U
+    return ps
 
 
-def nreg_v(ps, W, dt):
+def nreg_v(ps, dt):
     """
 
     """
@@ -72,64 +72,42 @@ def nreg_v(ps, W, dt):
 #                                + ps.vz * ps.az)).sum()
 #    return W
 
-    W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
-                                + ps.vy * ps.ay
-                                + ps.vz * ps.az)).sum()
+    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
+                                         + ps.vy * ps.ay
+                                         + ps.vz * ps.az)).sum()
     ps.vx += dt * ps.ax
     ps.vy += dt * ps.ay
     ps.vz += dt * ps.az
-    W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
-                                + ps.vy * ps.ay
-                                + ps.vz * ps.az)).sum()
-    return W
+    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
+                                         + ps.vy * ps.ay
+                                         + ps.vz * ps.az)).sum()
+    return ps
 
 
-def get_h(ps, tau):
+def nreg_step(ps, h):
     """
 
     """
-    W0 = -ps.potential_energy
-    h = tau * W0
-    err = 1.0
-    tol = 2.0**(-48)
-    while err > tol:
-        ps1, dt, W1 = nreg_base_step(ps.copy(), h)
-        h = 2 * tau * (W0 * W1) / (W0 + W1)
-        err0 = err
-        err = abs((dt - tau) / tau)
-        if err0 < err:
-            return h, True
-    return h, False
+    ps = nreg_x(ps, 0.5 * (h / ps.W))
+    ps = nreg_v(ps, (h / ps.U))
+    ps = nreg_x(ps, 0.5 * (h / ps.W))
+
+    return ps
 
 
-def nreg_base_step(ps, h):
+def nreg_step2(ps, h):
     """
 
     """
-    t = 0.0
-    W = -ps.potential_energy
+    ps = nreg_x(ps, 0.5 * (h * ps.S / ps.W))
+    ps = nreg_v(ps, (h * ps.S / ps.U))
+    ps = nreg_x(ps, 0.5 * (h * ps.S / ps.W))
+    type(ps).S = 1/(2/ps.W - 1/ps.S)
+    ps = nreg_x(ps, 0.5 * (h * ps.S / ps.W))
+    ps = nreg_v(ps, (h * ps.S / ps.U))
+    ps = nreg_x(ps, 0.5 * (h * ps.S / ps.W))
 
-    t, U = nreg_x(ps, t, 0.5 * (h / W))
-    W = nreg_v(ps, W, (h / U))
-    t, U = nreg_x(ps, t, 0.5 * (h / W))
-
-    return ps, t, W
-
-
-def nreg_step(ps, tau, nsteps=1):
-    """
-
-    """
-    t = 0.0
-    dtau = tau / nsteps
-    for i in range(nsteps):
-        h, err = get_h(ps, dtau)
-        if not err:
-            ps, dt, W = nreg_base_step(ps, h)
-        else:
-            ps, dt, W = nreg_step(ps, dtau, 2*nsteps)
-        t += dt
-    return ps, t, W
+    return ps
 
 
 @decallmethods(timings)
@@ -155,6 +133,9 @@ class NREG(Base):
                     self.method)
 
         ps = self.ps
+        type(ps).W = -ps.potential_energy
+        type(ps).U = -ps.potential_energy
+        type(ps).S = -ps.potential_energy
         (ps.ax, ps.ay, ps.az) = ps.get_acc(ps)
 
         if self.reporter:
@@ -175,12 +156,17 @@ class NREG(Base):
         """
 
         """
-#        ps, t, W = nreg_step(ps, tau)
-        ps, t, W = nreg_base_step(ps, tau)   # h = tau
-        tau = t
+#        t0 = ps.t_curr
+#        ps = nreg_step(ps, tau)
+#        t1 = ps.t_curr
 
-        type(ps).t_curr += tau
-        ps.tstep = tau
+        t0 = ps.t_curr
+        ps = nreg_step2(ps, tau/2)
+        t1 = ps.t_curr
+
+        dt = t1 - t0
+
+        ps.tstep = dt
         ps.time += tau
         ps.nstep += 1
         wp = ps[ps.time % (self.dump_freq * tau) == 0]

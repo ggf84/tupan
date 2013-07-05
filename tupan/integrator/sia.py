@@ -11,7 +11,6 @@ import logging
 from ..integrator import Base
 from ..lib import gravity
 from .sakura import sakura_step
-from .nreg import nreg_step
 from ..lib.utils.timing import decallmethods, timings
 
 
