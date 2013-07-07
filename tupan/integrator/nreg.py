@@ -166,7 +166,7 @@ class NREG(Base):
 
         dt = t1 - t0
 
-        ps.tstep = dt
+        ps.tstep[:] = dt
         ps.time += tau
         ps.nstep += 1
         wp = ps[ps.time % (self.dump_freq * tau) == 0]

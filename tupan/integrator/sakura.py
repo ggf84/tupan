@@ -9,7 +9,7 @@ TODO.
 from __future__ import print_function, division
 import logging
 from ..integrator import Base
-from ..lib.gravity import sakura as llsakura
+from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -27,9 +27,7 @@ def sakura_step(ps, tau):
     ps.ry += ps.vy * tau / 2
     ps.rz += ps.vz * tau / 2
 
-    llsakura.set_args(ps, ps, tau)
-    llsakura.run()
-    (drx, dry, drz, dvx, dvy, dvz) = llsakura.get_result()
+    (drx, dry, drz, dvx, dvy, dvz) = gravity.sakura.calc(ps, ps, tau)
     ps.rx += drx
     ps.ry += dry
     ps.rz += drz
@@ -97,7 +95,7 @@ class Sakura(Base):
         w2_sakura = diw2.max()
         dt_sakura = eta/(1 + w2_sakura)**0.5
 
-        ps.tstep = dt_sakura
+        ps.tstep[:] = dt_sakura
 
         min_bts = self.get_min_block_tstep(ps, tau)
         return min_bts
@@ -131,7 +129,7 @@ class Sakura(Base):
         ps = sakura_step(ps, tau)
 
         type(ps).t_curr += tau
-        ps.tstep = tau
+        ps.tstep[:] = tau
         ps.time += tau
         ps.nstep += 1
         wp = ps[ps.time % (self.dump_freq * tau) == 0]

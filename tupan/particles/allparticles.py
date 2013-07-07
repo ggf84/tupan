@@ -20,33 +20,7 @@ from ..lib.utils.timing import decallmethods, timings
 __all__ = ["ParticleSystem"]
 
 
-#def make_common_attrs(cls):
-#    def make_property(attr, doc):
-#        @timings
-#        def fget(self):
-#            return np.concatenate([getattr(obj, attr)
-#                                   for obj in self.members.values()])
-#
-#        @timings
-#        def fset(self, value):
-#            try:
-#                for obj in self.members.values():
-#                    setattr(obj, attr, value)
-#            except:
-#                for obj in self.members.values():
-#                    setattr(obj, attr, value[:obj.n])
-#                    value = value[obj.n:]
-#
-#        return property(fget=fget, fset=fset, fdel=None, doc=doc)
-#    attrs = ((i[0], cls.__name__+"\'s "+i[2])
-#             for i in cls.attrs+cls.special_attrs)
-#    for (attr, doc) in attrs:
-#        setattr(cls, attr, make_property(attr, doc))
-#    return cls
-
-
 @decallmethods(timings)
-#@make_common_attrs
 class ParticleSystem(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
@@ -60,54 +34,31 @@ class ParticleSystem(AbstractNbodyMethods):
                                   (nstars, Stars),
                                   (nbhs, Blackholes),
                                   (nsphs, Sphs)] if n}
-        object.__setattr__(self, "members", members)
-        object.__setattr__(self, "n", len(self))
+        self.members = members
+        self.n = len(self)
+        if self.n:
+            self._rebind_attrs()
 
-    def __getattr__(self, attr):
-        try:
-            members = self.__dict__["members"]
-            seq = [getattr(obj, attr)
-                   for obj in members.values()
-                   if hasattr(obj, attr)]
-            return np.concatenate(seq)
-        except:
-            raise AttributeError(attr)
-
-    def __setattr__(self, attr, value):
-        try:
+    def _rebind_attrs(self):
+        for k, v in self.members.items():
+            setattr(self, k, v)
+        objs = self.members.values()
+        attrlist = {attr for obj in objs for (attr, _, _) in obj.attrs}
+        for attr in attrlist:
+            seq = [getattr(obj, attr) for obj in objs if hasattr(obj, attr)]
+            ary = np.concatenate(seq)
+            setattr(self, attr, ary)
             ns = 0
             nf = 0
-            for obj in self.members.values():
-                try:
+            for obj in objs:
+                if hasattr(obj, attr):
                     nf += obj.n
-                    setattr(obj, attr, value[ns:nf])
+                    setattr(obj, attr, ary[ns:nf])
                     ns += obj.n
-                except:
-                    setattr(obj, attr, value)
-        except:
-            object.__setattr__(self, attr, value)
 
     #
     # miscellaneous methods
     #
-    @property
-    def bodies(self):
-        return self.members["bodies"]
-
-    @property
-    def stars(self):
-        return self.members["stars"]
-
-    @property
-    def blackholes(self):
-        return self.members["blackholes"]
-
-    @property
-    def sphs(self):
-        return self.members["sphs"]
-
-    def copy(self):
-        return copy.deepcopy(self)
 
     def __repr__(self):
         return repr(self.__dict__)
@@ -124,16 +75,25 @@ class ParticleSystem(AbstractNbodyMethods):
     def __len__(self):
         return sum(len(obj) for obj in self.members.values())
 
+    def copy(self):
+        return copy.deepcopy(self)
+
     def append(self, obj):
-        for (k, v) in obj.members.items():
+        try:
+            for (k, v) in obj.members.items():
+                try:
+                    self.members[k].append(v)
+                except:
+                    self.members[k] = v.copy()
+        except:
+            k, v = type(obj).__name__.lower(), obj
             try:
                 self.members[k].append(v)
             except:
                 self.members[k] = v.copy()
-        object.__setattr__(self, "n", len(self))
-
-    def __hash__(self):
-        return hash(tuple(self.members.values()))
+        self.n = len(self)
+        if self.n:
+            self._rebind_attrs()
 
     def __getitem__(self, slc):
         if isinstance(slc, (list, np.ndarray)):

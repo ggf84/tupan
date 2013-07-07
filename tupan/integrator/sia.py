@@ -10,7 +10,6 @@ from __future__ import print_function
 import logging
 from ..integrator import Base
 from ..lib import gravity
-from .sakura import sakura_step
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -68,10 +67,9 @@ def drift_n(ips, tau):
     """
     Drift operator for Newtonian quantities.
     """
-    for iobj in ips.members.values():
-        iobj.rx += tau * iobj.vx
-        iobj.ry += tau * iobj.vy
-        iobj.rz += tau * iobj.vz
+    ips.rx += tau * ips.vx
+    ips.ry += tau * ips.vy
+    ips.rz += tau * ips.vz
     return ips
 
 
@@ -83,11 +81,10 @@ def kick_n(ips, jps, tau):
     """
     Kick operator for Newtonian quantities.
     """
-    for iobj in ips.members.values():
-        (iobj.ax, iobj.ay, iobj.az) = iobj.get_acc(jps)
-        iobj.vx += tau * iobj.ax
-        iobj.vy += tau * iobj.ay
-        iobj.vz += tau * iobj.az
+    (ips.ax, ips.ay, ips.az) = ips.get_acc(jps)
+    ips.vx += tau * ips.ax
+    ips.vy += tau * ips.ay
+    ips.vz += tau * ips.az
     return ips
 
 
@@ -515,7 +512,6 @@ class SIA(Base):
                     self.method)
 
         ps = self.ps
-        ps.tstep, _ = ps.get_tstep(ps, self.eta)
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)
@@ -574,10 +570,10 @@ class SIA(Base):
             type(ps).t_curr += tau
             return ps
 
-        flag = 0
+        flag = -1
         if self.update_tstep:
             flag = 1
-            ps.update_tstep(ps, self.eta)
+            ps.tstep[:], _ = ps.get_tstep(ps, self.eta)
             if self.shared_tstep:
                 tau = self.get_min_block_tstep(ps, tau)
 
@@ -586,7 +582,7 @@ class SIA(Base):
         slow, fast = sfdkdxy(slow, fast, tau, self.recurse)
 
         if slow.n:
-            slow.tstep = tau
+            slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
             wp = slow[slow.time % (self.dump_freq * tau) == 0]

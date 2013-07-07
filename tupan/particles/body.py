@@ -18,20 +18,6 @@ from ..lib.utils import ctype
 __all__ = ["Bodies"]
 
 
-# def make_attrs(cls):
-#    def make_property(attr, doc):
-#        @timings
-#        def fget(self): return self.data[attr]
-#        @timings
-#        def fset(self, value): self.data[attr] = value
-#        return property(fget=fget, fset=fset, fdel=None, doc=doc)
-#    attrs = ((i[0], cls.__name__+"\'s "+i[2])
-#             for i in cls.attrs+cls.special_attrs)
-#    for (attr, doc) in attrs:
-#        setattr(cls, attr, make_property(attr, doc))
-#    return cls
-
-
 class NbodyMethods(object):
     """
     This class holds common methods for particles in n-body systems.
@@ -58,44 +44,12 @@ class NbodyMethods(object):
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
 
     @property
-    def pos(self):
+    def pos(self):  # XXX: deprecate?
         return np.concatenate((self.rx, self.ry, self.rz,)).reshape(3, -1).T
 
-#    @pos.setter
-#    def pos(self, value):
-#        try:
-#            self.rx = value[:,0]
-#            self.ry = value[:,1]
-#            self.rz = value[:,2]
-#        except:
-#            try:
-#                self.rx = value[0]
-#                self.ry = value[1]
-#                self.rz = value[2]
-#            except:
-#                self.rx = value
-#                self.ry = value
-#                self.rz = value
-
     @property
-    def vel(self):
+    def vel(self):  # XXX: deprecate?
         return np.concatenate((self.vx, self.vy, self.vz,)).reshape(3, -1).T
-
-#    @vel.setter
-#    def vel(self, value):
-#        try:
-#            self.vx = value[:,0]
-#            self.vy = value[:,1]
-#            self.vz = value[:,2]
-#        except:
-#            try:
-#                self.vx = value[0]
-#                self.vy = value[1]
-#                self.vz = value[2]
-#            except:
-#                self.vx = value
-#                self.vy = value
-#                self.vz = value
 
     ### total mass and center-of-mass
     @property
@@ -236,81 +190,43 @@ class NbodyMethods(object):
         return float(self.ve.sum())
 
     ### gravity
-    def get_tstep(self, objs, eta):
+    def get_tstep(self, jps, eta):
         """
         Get the individual time-steps due to other particles.
         """
-        gravity.tstep.set_args(self, objs, eta)
-        gravity.tstep.run()
-        return gravity.tstep.get_result()
+        return gravity.tstep.calc(self, jps, eta)
 
-    def get_phi(self, objs):
+    def get_phi(self, jps):
         """
         Get the individual gravitational potential due to other particles.
         """
-        gravity.phi.set_args(self, objs)
-        gravity.phi.run()
-        return gravity.phi.get_result()
+        return gravity.phi.calc(self, jps)
 
-    def get_acc(self, objs):
+    def get_acc(self, jps):
         """
         Get the individual gravitational acceleration due to other particles.
         """
-        gravity.acc.set_args(self, objs)
-        gravity.acc.run()
-        return gravity.acc.get_result()
+        return gravity.acc.calc(self, jps)
 
-    def get_acc_jerk(self, objs):
+    def get_acc_jerk(self, jps):
         """
         Get the individual gravitational acceleration and jerk due to other
         particles.
         """
-        gravity.acc_jerk.set_args(self, objs)
-        gravity.acc_jerk.run()
-        return gravity.acc_jerk.get_result()
-
-    def update_tstep(self, objs, eta):
-        """
-        Update the individual time-steps due to other particles.
-        """
-        tstep_a, tstep_b = self.get_tstep(objs, eta)
-        self.tstep = tstep_a
-        return tstep_b
-
-    def update_phi(self, objs):
-        """
-        Update the individual gravitational potential due to other particles.
-        """
-        self.phi, = self.get_phi(objs)
-
-    def update_acc(self, objs):
-        """
-        Update the individual gravitational acceleration due to other
-        particles.
-        """
-        self.ax, self.ay, self.az = self.get_acc(objs)
-
-    def update_acc_jerk(self, objs):
-        """
-        Update the individual gravitational acceleration and jerk due to
-        other particles.
-        """
-        ax, ay, az, jx, jy, jz = self.get_acc_jerk(objs)
-        self.ax, self.ay, self.az = ax, ay, az
-        self.jx, self.jy, self.jz = jx, jy, jz
+        return gravity.acc_jerk.calc(self, jps)
 
     ### miscellaneous methods
     def min_tstep(self):
         """
         Minimum absolute value of tstep.
         """
-        return np.abs(self.tstep).min()
+        return abs(self.tstep).min()
 
     def max_tstep(self):
         """
         Maximum absolute value of tstep.
         """
-        return np.abs(self.tstep).max()
+        return abs(self.tstep).max()
 
     ### lenght scales
     @property
@@ -428,14 +344,12 @@ class PNbodyMethods(NbodyMethods):
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
 
     ### PN stuff
-    def get_pnacc(self, objs):
+    def get_pnacc(self, jps):
         """
         Get the individual post-newtonian gravitational acceleration due to
         other particles.
         """
-        gravity.pnacc.set_args(self, objs)
-        gravity.pnacc.run()
-        return gravity.pnacc.get_result()
+        return gravity.pnacc.calc(self, jps)
 
     def evolve_ke_pn_shift(self, tstep):
         """
@@ -524,38 +438,9 @@ if "--pn_order" in sys.argv:
 #        self.data = data
 #        self.n = len(self)
 #
-#    @property
-#    def kind(self):
-#        return {type(self).__name__.lower(): self}
-#
 #    #
 #    # miscellaneous methods
 #    #
-#
-#    def __str__(self):
-#        fmt = type(self).__name__+"(["
-#        if self.n:
-#            fmt += "\n"
-#            for obj in self:
-#                fmt += "{\n"
-#                for name in obj.data.dtype.names:
-#                    arr = getattr(obj, name)
-#                    fmt += " {0}: {1},\n".format(name, arr.tolist()[0])
-#                fmt += "},\n"
-#        fmt += "])"
-#        return fmt
-#
-#
-#    def __repr__(self):
-#        fmt = type(self).__name__+"("
-#        if self.n: fmt += str(self.data)
-#        else: fmt += "[]"
-#        fmt += ")"
-#        return fmt
-#
-#
-#    def __hash__(self):
-#        return hash(buffer(self.data))
 #
 #
 #    def __getitem__(self, slc):
@@ -640,13 +525,6 @@ class Bodies(AbstractNbodyMethods):
         fmt += "])"
         return fmt
 
-    @property
-    def members(self):
-        return {type(self).__name__.lower(): self}
-
-    def copy(self):
-        return copy.deepcopy(self)
-
     def __contains__(self, id):
         return id in self.id
 
@@ -657,25 +535,14 @@ class Bodies(AbstractNbodyMethods):
     def n(self):
         return len(self)
 
+    def copy(self):
+        return copy.deepcopy(self)
+
     def append(self, obj):
         if obj.n:
             items = {k: np.concatenate((self.__dict__[k], v))
                      for k, v in obj.__dict__.items()}
             self.__dict__.update(items)
-
-    def __setattr__(self, name, value):
-        try:
-            self.__dict__[name][:] = value
-        except:
-            if isinstance(value, int):
-                ary = np.empty(self.n, ctype.UINT)
-                ary.fill(value)
-                value = ary
-            if isinstance(value, float):
-                ary = np.empty(self.n, ctype.REAL)
-                ary.fill(value)
-                value = ary
-            self.__dict__[name] = value
 
     def __getitem__(self, slc):
         if isinstance(slc, int):
@@ -685,10 +552,9 @@ class Bodies(AbstractNbodyMethods):
 
     def astype(self, cls):
         newobj = cls()
-        for obj in self.members.values():
-            tmp = cls(obj.n)
-            tmp.set_state(obj.get_state())
-            newobj.append(tmp)
+        tmp = cls(self.n)
+        tmp.set_state(self.get_state())
+        newobj.append(tmp)
         return newobj
 
     def get_state(self):

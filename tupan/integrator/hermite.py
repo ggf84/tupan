@@ -63,7 +63,7 @@ class Hermite(Base):
         """
 
         """
-        ps.update_tstep(ps, eta)
+        ps.tstep[:], _ = ps.get_tstep(ps, eta)
         min_bts = self.get_min_block_tstep(ps, tau)
         return min_bts
 
@@ -96,12 +96,24 @@ class Hermite(Base):
 
         """
         (ps.ax, ps.ay, ps.az, ps.jx, ps.jy, ps.jz) = ps.get_acc_jerk(ps)
-        ps.vx = ps.vx0 + ((ps.ax0 + ps.ax) + (ps.jx0 - ps.jx) * tau/6) * tau/2
-        ps.vy = ps.vy0 + ((ps.ay0 + ps.ay) + (ps.jy0 - ps.jy) * tau/6) * tau/2
-        ps.vz = ps.vz0 + ((ps.az0 + ps.az) + (ps.jz0 - ps.jz) * tau/6) * tau/2
-        ps.rx = ps.rx0 + ((ps.vx0 + ps.vx) + (ps.ax0 - ps.ax) * tau/6) * tau/2
-        ps.ry = ps.ry0 + ((ps.vy0 + ps.vy) + (ps.ay0 - ps.ay) * tau/6) * tau/2
-        ps.rz = ps.rz0 + ((ps.vz0 + ps.vz) + (ps.az0 - ps.az) * tau/6) * tau/2
+        ps.vx[:] = (ps.vx0
+                    + ((ps.ax0 + ps.ax)
+                    + (ps.jx0 - ps.jx) * tau/6) * tau/2)
+        ps.vy[:] = (ps.vy0
+                    + ((ps.ay0 + ps.ay)
+                    + (ps.jy0 - ps.jy) * tau/6) * tau/2)
+        ps.vz[:] = (ps.vz0
+                    + ((ps.az0 + ps.az)
+                    + (ps.jz0 - ps.jz) * tau/6) * tau/2)
+        ps.rx[:] = (ps.rx0
+                    + ((ps.vx0 + ps.vx)
+                    + (ps.ax0 - ps.ax) * tau/6) * tau/2)
+        ps.ry[:] = (ps.ry0
+                    + ((ps.vy0 + ps.vy)
+                    + (ps.ay0 - ps.ay) * tau/6) * tau/2)
+        ps.rz[:] = (ps.rz0
+                    + ((ps.vz0 + ps.vz)
+                    + (ps.az0 - ps.az) * tau/6) * tau/2)
 
     def pec(self, n, ps, tau):
         """
@@ -121,7 +133,7 @@ class Hermite(Base):
         ps = self.pec(2, ps, tau)
 
         type(ps).t_curr += tau
-        ps.tstep = tau
+        ps.tstep[:] = tau
         ps.time += tau
         ps.nstep += 1
         wp = ps[ps.time % (self.dump_freq * tau) == 0]

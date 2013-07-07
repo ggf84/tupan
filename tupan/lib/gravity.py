@@ -69,6 +69,11 @@ class Phi(object):
         self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
 
+    def calc(self, iobj, jobj):
+        self.set_args(iobj, jobj)
+        self.run()
+        return self.get_result()
+
     def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
@@ -106,6 +111,11 @@ class Acc(object):
         self.kernel = get_kernel("acc_kernel", exttype, prec)
         self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
+
+    def calc(self, iobj, jobj):
+        self.set_args(iobj, jobj)
+        self.run()
+        return self.get_result()
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -146,6 +156,11 @@ class AccJerk(object):
         self.kernel = get_kernel("acc_jerk_kernel", exttype, prec)
         self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
+
+    def calc(self, iobj, jobj):
+        self.set_args(iobj, jobj)
+        self.run()
+        return self.get_result()
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -191,6 +206,11 @@ class Tstep(object):
         self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
 
+    def calc(self, iobj, jobj, eta):
+        self.set_args(iobj, jobj, eta)
+        self.run()
+        return self.get_result()
+
     def set_args(self, iobj, jobj, eta):
         ni = iobj.n
         nj = jobj.n
@@ -230,6 +250,11 @@ class PNAcc(object):
         self.kernel = get_kernel("pnacc_kernel", exttype, prec)
         self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
+
+    def calc(self, iobj, jobj):
+        self.set_args(iobj, jobj)
+        self.run()
+        return self.get_result()
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -276,6 +301,11 @@ class Sakura(object):
         self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
 
+    def calc(self, iobj, jobj, dt):
+        self.set_args(iobj, jobj, dt)
+        self.run()
+        return self.get_result()
+
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
@@ -320,6 +350,11 @@ class NREG_X(object):
         self.kernel = get_kernel("nreg_Xkernel", exttype, prec)
         self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
+
+    def calc(self, iobj, jobj, dt):
+        self.set_args(iobj, jobj, dt)
+        self.run()
+        return self.get_result()
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
@@ -367,6 +402,11 @@ class NREG_V(object):
         self.kernel = get_kernel("nreg_Vkernel", exttype, prec)
         self._lmem = self.kernel.allocate_local_memory(7, np.dtype(ctype.REAL))
         self.max_output_size = 0
+
+    def calc(self, iobj, jobj, dt):
+        self.set_args(iobj, jobj, dt)
+        self.run()
+        return self.get_result()
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n

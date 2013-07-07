@@ -98,30 +98,30 @@ class Plummer(object):
         ilist = np.arange(n)
 
         # set index
-        self.ps.id = ilist
+        self.ps.id[:] = ilist
 
         srand = np.random.get_state()
 
         # set mass
-        self.ps.mass = self.imf.sample(n)
+        self.ps.mass[:] = self.imf.sample(n)
         self.ps.mass /= self.ps.total_mass
 
         # set eps2
-        self.ps.eps2 = self.set_eps2(self.ps.mass)
+        self.ps.eps2[:] = self.set_eps2(self.ps.mass)
 
         np.random.set_state(srand)
 
         # set pos
         pos = self.set_pos(np.random.permutation(ilist))
-        self.ps.rx = pos[0]
-        self.ps.ry = pos[1]
-        self.ps.rz = pos[2]
+        self.ps.rx[:] = pos[0]
+        self.ps.ry[:] = pos[1]
+        self.ps.rz[:] = pos[2]
 
         # set vel
         vel = self.set_vel(self.ps.get_phi(self.ps))
-        self.ps.vx = vel[0]
-        self.ps.vy = vel[1]
-        self.ps.vz = vel[2]
+        self.ps.vx[:] = vel[0]
+        self.ps.vy[:] = vel[1]
+        self.ps.vz[:] = vel[2]
 
     def make_model(self):
         self.set_bodies()
