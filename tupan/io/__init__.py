@@ -157,13 +157,13 @@ class IO(object):
                 for t in times:
                     snaps[t].append(snap)
 
-                for i in xrange(n):
+                for i in range(n):
                     stream = obj[obj.id == i]
                     time = stream.time
                     for name in obj.names:
                         attr = getattr(stream, name)
                         if attr.ndim > 1:
-                            for k in xrange(attr.shape[1]):
+                            for k in range(attr.shape[1]):
                                 f = interpolate.UnivariateSpline(
                                     time, attr[:, k], s=0, k=2)
                                 for t in times:

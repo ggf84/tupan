@@ -443,23 +443,6 @@ if "--pn_order" in sys.argv:
 #    #
 #
 #
-#    def __getitem__(self, slc):
-#        if isinstance(slc, int):
-#            data = self.data[[slc]]
-#        if isinstance(slc, slice):
-#            data = self.data[slc]
-#        if isinstance(slc, list):
-#            data = self.data[slc]
-#        if isinstance(slc, np.ndarray):
-#            if slc.all():
-#                return self
-#            data = None
-#            if slc.any():
-#                data = self.data[slc]
-#
-#        return type(self)(data=data)
-#
-#
 #    def append(self, obj):
 #        if obj.n:
 #            self.data = np.concatenate((self.data, obj.data))
@@ -507,9 +490,9 @@ class Bodies(AbstractNbodyMethods):
     """
     def __init__(self, n=0, items=None):
         if items is None:
-            self.__dict__['id'] = np.arange(n, dtype=ctype.UINT)
-            for name, dtype in self.dtype+self.special_dtype:
+            for (name, dtype) in self.dtype+self.special_dtype:
                 self.__dict__[name] = np.zeros(n, dtype=dtype)
+            self.id[:] = np.arange(n, dtype=ctype.UINT)
         else:
             self.__dict__.update(items)
 
@@ -519,7 +502,7 @@ class Bodies(AbstractNbodyMethods):
     def __str__(self):
         fmt = type(self).__name__+"(["
         if self.n:
-            for k, v in self.__dict__.items():
+            for (k, v) in self.__dict__.items():
                 fmt += "\n\t{0}: {1},".format(k, v)
             fmt += "\n"
         fmt += "])"
@@ -540,14 +523,14 @@ class Bodies(AbstractNbodyMethods):
 
     def append(self, obj):
         if obj.n:
-            items = {k: np.concatenate((self.__dict__[k], v))
-                     for k, v in obj.__dict__.items()}
+            items = {k: np.concatenate((getattr(self, k), v))
+                     for (k, v) in obj.__dict__.items()}
             self.__dict__.update(items)
 
     def __getitem__(self, slc):
         if isinstance(slc, int):
             slc = [slc]
-        items = {k: v[slc] for k, v in self.__dict__.items()}
+        items = {k: v[slc] for (k, v) in self.__dict__.items()}
         return type(self)(items=items)
 
     def astype(self, cls):

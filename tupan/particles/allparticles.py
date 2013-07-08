@@ -9,6 +9,7 @@ TODO.
 from __future__ import print_function
 import copy
 import numpy as np
+from collections import defaultdict
 from .body import Bodies
 from .sph import Sphs
 from .star import Stars
@@ -25,36 +26,38 @@ class ParticleSystem(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
     """
-    def __init__(self, nbodies=0, nstars=0, nbhs=0, nsphs=0):
+    def __init__(self, nbodies=0, nstars=0, nbhs=0, nsphs=0, members=None):
         """
         Initializer
         """
-        members = {cls.__name__.lower(): cls(n)
-                   for n, cls in [(nbodies, Bodies),
-                                  (nstars, Stars),
-                                  (nbhs, Blackholes),
-                                  (nsphs, Sphs)] if n}
+        if members is None:
+            members = {cls.__name__.lower(): cls(n)
+                       for (n, cls) in [(nbodies, Bodies),
+                                        (nstars, Stars),
+                                        (nbhs, Blackholes),
+                                        (nsphs, Sphs)] if n}
         self.members = members
         self.n = len(self)
         if self.n:
             self._rebind_attrs()
 
     def _rebind_attrs(self):
-        for k, v in self.members.items():
-            setattr(self, k, v)
-        objs = self.members.values()
-        attrlist = {attr for obj in objs for (attr, _, _) in obj.attrs}
-        for attr in attrlist:
-            seq = [getattr(obj, attr) for obj in objs if hasattr(obj, attr)]
-            ary = np.concatenate(seq)
-            setattr(self, attr, ary)
-            ns = 0
-            nf = 0
-            for obj in objs:
-                if hasattr(obj, attr):
-                    nf += obj.n
-                    setattr(obj, attr, ary[ns:nf])
-                    ns += obj.n
+        attrs = defaultdict(list)
+        for (key, obj) in self.members.items():
+            for attr in obj.__dict__:
+                attrs[attr].append(getattr(obj, attr))
+
+        for (attr, seq) in attrs.items():
+            setattr(self, attr, np.concatenate(seq))
+
+        ns = 0
+        nf = 0
+        for (key, obj) in self.members.items():
+            setattr(self, key, obj)
+            nf += obj.n
+            for attr in obj.__dict__:
+                setattr(obj, attr, getattr(self, attr)[ns:nf])
+            ns += obj.n
 
     #
     # miscellaneous methods
@@ -79,20 +82,20 @@ class ParticleSystem(AbstractNbodyMethods):
         return copy.deepcopy(self)
 
     def append(self, obj):
-        try:
-            for (k, v) in obj.members.items():
+        if obj.n:
+            try:
+                for (k, v) in obj.members.items():
+                    try:
+                        self.members[k].append(v)
+                    except:
+                        self.members[k] = v.copy()
+            except:
+                k, v = type(obj).__name__.lower(), obj
                 try:
                     self.members[k].append(v)
                 except:
                     self.members[k] = v.copy()
-        except:
-            k, v = type(obj).__name__.lower(), obj
-            try:
-                self.members[k].append(v)
-            except:
-                self.members[k] = v.copy()
-        self.n = len(self)
-        if self.n:
+            self.n = len(self)
             self._rebind_attrs()
 
     def __getitem__(self, slc):
@@ -102,31 +105,30 @@ class ParticleSystem(AbstractNbodyMethods):
             if any(slc):
                 ns = 0
                 nf = 0
-                subset = type(self)()
-                for obj in self.members.values():
+                members = {}
+                for (key, obj) in self.members.items():
                     nf += obj.n
-                    subset.append(obj[slc[ns:nf]])
+                    members[key] = obj[slc[ns:nf]]
                     ns += obj.n
-                return subset
+                return type(self)(members=members)
             return type(self)()
 
         if isinstance(slc, int):
-            subset = type(self)()
             if abs(slc) > self.n-1:
                 raise IndexError(
                     "index {0} out of bounds 0<=index<{1}".format(slc, self.n))
             if slc < 0:
                 slc = self.n + slc
             n = 0
-            for obj in self.members.values():
+            members = {}
+            for (key, obj) in self.members.items():
                 i = slc - n
                 if 0 <= i < obj.n:
-                    subset.append(obj[i])
+                    members[key] = obj[i]
                 n += obj.n
-            return subset
+            return type(self)(members=members)
 
         if isinstance(slc, slice):
-            subset = type(self)()
             start = slc.start
             stop = slc.stop
             if start is None:
@@ -137,14 +139,15 @@ class ParticleSystem(AbstractNbodyMethods):
                 start = self.n + start
             if stop < 0:
                 stop = self.n + stop
+            members = {}
             for (key, obj) in self.members.items():
                 if obj.n:
                     if stop >= 0:
                         if start < obj.n:
-                            subset.append(obj[start-obj.n:stop])
+                            members[key] = obj[start-obj.n:stop]
                     start -= obj.n
                     stop -= obj.n
-            return subset
+            return type(self)(members=members)
 
 
 ########## end of file ##########

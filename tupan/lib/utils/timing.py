@@ -12,6 +12,7 @@ import timeit
 import atexit
 import inspect
 import functools
+from collections import defaultdict
 
 
 __all__ = ["Timer", "decallmethods", "timings"]
@@ -44,31 +45,14 @@ class Timing(object):
     """
 
     """
-    def __init__(self, is_enabled):
-        self.timings = {}
-        self.is_enabled = is_enabled
-
-    def collector(self, module, name, elapsed):
-        if module in self.timings:
-            if name in self.timings[module]:
-                self.timings[module][name]["count"] += 1
-                self.timings[module][name]["total"] += elapsed
-            else:
-                self.timings[module][name] = {}
-                self.timings[module][name]["count"] = 1
-                self.timings[module][name]["total"] = elapsed
-        else:
-            self.timings[module] = {}
-            if name in self.timings[module]:
-                self.timings[module][name]["count"] += 1
-                self.timings[module][name]["total"] += elapsed
-            else:
-                self.timings[module][name] = {}
-                self.timings[module][name]["count"] = 1
-                self.timings[module][name]["total"] = elapsed
+    def __init__(self, profile):
+        d = lambda: defaultdict(int)
+        dd = lambda: defaultdict(d)
+        self.timings = defaultdict(dd)
+        self.profile = profile
 
     def __call__(self, func):
-        if not self.is_enabled:
+        if not self.profile:
             return func
         if func.func_code.co_name == "wrapper":
             return func
@@ -79,26 +63,22 @@ class Timing(object):
             timer.start()
             ret = func(that, *args, **kwargs)
             timer.stop()
-            name = func.__name__
             cls = that.__class__
-            if hasattr(cls, name):
+            name = func.__name__
+            module = func.__module__
+            if name in cls.__dict__:
                 name = cls.__name__ + '.' + name
                 module = cls.__module__
-            else:
-                module = func.__module__
-            self.collector(module, name, timer.elapsed())
+            self.timings[module][name]["count"] += 1
+            self.timings[module][name]["total"] += timer.elapsed()
             return ret
-        wrapper.__wrapped__ = func  # adds a __wrapped__ attribute pointing to
-                                    # the original callable function. It will
-                                    # becomes unnecessary with functools module
-                                    # from Python v3.2+.
         return wrapper
 
     def __str__(self):
         mcount = 0
         mark = "+-"
         indent = " "
-        mfmt = mark + "{0:s}:"
+        mfmt = mark*2 + "{0:s}:"
         nfmt = mark + \
             "{0:s}: [count: {1} | total: {2:.4e} s | average: {3:.4e} s]"
         _str = ""
@@ -118,7 +98,7 @@ class Timing(object):
                     _str += "\n" + mindent + " " + indent + "|"
                     _str += "\n" + mindent + " " + indent
                 _str += nfmt.format(key, count, total, total / count)
-        return mark + "Timings:{0}".format(_str)
+        return mark*2 + "Timings:{0}".format(_str)
 
 
 def decallmethods(decorator, prefix=''):
