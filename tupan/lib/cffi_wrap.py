@@ -59,11 +59,9 @@ def wrap_lib(fptype):
     return ffi, clib
 
 
-ffi_sp, clib_sp = wrap_lib("float")
-ffi_dp, clib_dp = wrap_lib("double")
-
-
 def get_extensions():
+    ffi_sp, clib_sp = wrap_lib("float")
+    ffi_dp, clib_dp = wrap_lib("double")
     return [ffi_sp.verifier.get_extension(), ffi_dp.verifier.get_extension()]
 
 

@@ -70,9 +70,6 @@ class CLKernel(object):
         size = itemsize * wgsize
         return [cl.LocalMemory(size) for i in range(numbufs)]
 
-    def set_local_memory(self, arg):
-        return arg
-
     def set_int(self, arg):
         return ctype.UINT(arg)
 
@@ -86,34 +83,32 @@ class CLKernel(object):
                          hostbuf=arr)
 
     def set_arg(self, arg):
+        if isinstance(arg, np.ndarray):
+            return self.set_array(arg)
         if isinstance(arg, int):
             return self.set_int(arg)
         if isinstance(arg, float):
             return self.set_float(arg)
-        if isinstance(arg, np.ndarray):
-            return self.set_array(arg)
 
-    def set_args(self, **args):
-        self.in_buf = [self.set_arg(arg) for arg in args["in"]]
-        self.lmem_buf = [self.set_local_memory(arg) for arg in args["lmem"]]
-        self.out_buf = [self.set_arg(arg) for arg in args["out"]]
-        for i, arg in enumerate(chain(self.in_buf,
-                                      self.lmem_buf,
-                                      self.out_buf)):
+    def set_args(self, **kwargs):
+        self.in_buf = [self.set_arg(arg) for arg in kwargs["in"]]
+        self.out_buf = [self.set_arg(arg) for arg in kwargs["out"]]
+        args = chain(self.in_buf, kwargs["lmem"], self.out_buf)
+        for i, arg in enumerate(args):
             self.kernel.set_arg(i, arg)
 
     def map_buffers(self, arrays):
         mapf = cl.map_flags
-        for i, arr in enumerate(arrays):
+        for i, array in enumerate(arrays):
             (pointer, ev) = cl.enqueue_map_buffer(self.env.queue,
                                                   self.out_buf[i],
                                                   mapf.READ,
                                                   0,
-                                                  arr.shape,
-                                                  arr.dtype,
+                                                  array.shape,
+                                                  array.dtype,
                                                   "C")
             ev.wait()
-#            cl.enqueue_copy(self.env.queue, arr, self.out_buf[i])
+#            cl.enqueue_copy(self.env.queue, array, self.out_buf[i])
 
     def run(self):
         cl.enqueue_nd_range_kernel(self.env.queue,
@@ -192,22 +187,23 @@ class CKernel(object):
         return self.ffi.cast("REAL *", arg.__array_interface__['data'][0])
 
     def set_arg(self, arg):
+        if isinstance(arg, np.ndarray):
+            return self.set_array(arg)
         if isinstance(arg, int):
             return self.set_int(arg)
         if isinstance(arg, float):
             return self.set_float(arg)
-        if isinstance(arg, np.ndarray):
-            return self.set_array(arg)
 
-    def set_args(self, **args):
-        self.in_buf = [self.set_arg(arg) for arg in args["in"]]
-        self.out_buf = [self.set_arg(arg) for arg in args["out"]]
+    def set_args(self, **kwargs):
+        in_buf = (self.set_arg(arg) for arg in kwargs["in"])
+        out_buf = (self.set_arg(arg) for arg in kwargs["out"])
+        self.args = [i for i in chain(in_buf, out_buf)]
 
     def map_buffers(self, arrays):
         pass
 
     def run(self):
-        self.kernel(*chain(self.in_buf, self.out_buf))
+        self.kernel(*self.args)
 
 
 @decallmethods(timings)
@@ -220,14 +216,10 @@ class CModule(object):
         logger.debug("Building %s precision C extension module.",
                      self.env.prec)
 
-        if self.env.prec is "double":
-            from .cffi_wrap import clib_dp as program
-            from .cffi_wrap import ffi_dp as ffi
-        else:
-            from .cffi_wrap import clib_sp as program
-            from .cffi_wrap import ffi_sp as ffi
-        self.program = program
-        self.ffi = ffi
+        fptype = "float" if self.env.prec == "single" else "double"
+
+        from .cffi_wrap import wrap_lib
+        self.ffi, self.program = wrap_lib(fptype)
 
         logger.debug("done.")
         return self
@@ -236,6 +228,7 @@ class CModule(object):
         return CKernel(self.env, self.ffi, getattr(self.program, name))
 
 
+@timings
 def get_kernel(name, exttype, prec):
     if not HAS_CL and exttype == "cl":
         exttype = "c"
