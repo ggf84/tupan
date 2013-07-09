@@ -99,19 +99,62 @@ class ParticleSystem(AbstractNbodyMethods):
             self._rebind_attrs()
 
     def __getitem__(self, slc):
-        if isinstance(slc, (list, np.ndarray)):
-            if all(slc):
-                return self
-            if any(slc):
-                ns = 0
-                nf = 0
-                members = {}
-                for (key, obj) in self.members.items():
-                    nf += obj.n
-                    members[key] = obj[slc[ns:nf]]
-                    ns += obj.n
-                return type(self)(members=members)
-            return type(self)()
+        if isinstance(slc, np.ndarray):
+            members = {}
+            ns = 0
+            nf = 0
+            for (key, obj) in self.members.items():
+                nf += obj.n
+                members[key] = obj[slc[ns:nf]]
+                ns += obj.n
+            return type(self)(members=members)
+
+        if isinstance(slc, int):
+            members = {}
+            if abs(slc) > self.n-1:
+                raise IndexError(
+                    "index {0} out of bounds 0<=index<{1}".format(slc, self.n))
+            if slc < 0:
+                slc = self.n + slc
+            n = 0
+            for (key, obj) in self.members.items():
+                i = slc - n
+                if 0 <= i < obj.n:
+                    members[key] = obj[i]
+                n += obj.n
+            return type(self)(members=members)
+
+        if isinstance(slc, slice):
+            members = {}
+            start = slc.start
+            stop = slc.stop
+            if start is None:
+                start = 0
+            if stop is None:
+                stop = self.n
+            if start < 0:
+                start = self.n + start
+            if stop < 0:
+                stop = self.n + stop
+            for (key, obj) in self.members.items():
+                if obj.n:
+                    if stop >= 0:
+                        if start < obj.n:
+                            members[key] = obj[start-obj.n:stop]
+                    start -= obj.n
+                    stop -= obj.n
+            return type(self)(members=members)
+
+    def __setitem__(self, slc, values):
+        if isinstance(slc, np.ndarray):
+            ns = 0
+            nf = 0
+            for (key, obj) in self.members.items():
+                nf += obj.n
+                obj[slc[ns:nf]] = getattr(values, key)
+                ns += obj.n
+            self._rebind_attrs()
+            return
 
         if isinstance(slc, int):
             if abs(slc) > self.n-1:
@@ -120,13 +163,13 @@ class ParticleSystem(AbstractNbodyMethods):
             if slc < 0:
                 slc = self.n + slc
             n = 0
-            members = {}
             for (key, obj) in self.members.items():
                 i = slc - n
                 if 0 <= i < obj.n:
-                    members[key] = obj[i]
+                    obj[i] = getattr(values, key)
                 n += obj.n
-            return type(self)(members=members)
+            self._rebind_attrs()
+            return
 
         if isinstance(slc, slice):
             start = slc.start
@@ -139,15 +182,15 @@ class ParticleSystem(AbstractNbodyMethods):
                 start = self.n + start
             if stop < 0:
                 stop = self.n + stop
-            members = {}
             for (key, obj) in self.members.items():
                 if obj.n:
                     if stop >= 0:
                         if start < obj.n:
-                            members[key] = obj[start-obj.n:stop]
+                            obj[start-obj.n:stop] = getattr(values, key)
                     start -= obj.n
                     stop -= obj.n
-            return type(self)(members=members)
+            self._rebind_attrs()
+            return
 
 
 ########## end of file ##########

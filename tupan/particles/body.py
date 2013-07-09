@@ -533,6 +533,10 @@ class Bodies(AbstractNbodyMethods):
         items = {k: v[slc] for (k, v) in self.__dict__.items()}
         return type(self)(items=items)
 
+    def __setitem__(self, slc, values):
+        for (k, v) in self.__dict__.items():
+            v[slc] = getattr(values, k)
+
     def astype(self, cls):
         newobj = cls()
         tmp = cls(self.n)
