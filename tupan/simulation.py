@@ -173,10 +173,10 @@ class Simulation(object):
                                      viewer=self.viewer,
                                      dumpper=self.io,
                                      dump_freq=self.args.dump_freq,
+                                     gl_freq=self.args.gl_freq,
                                      )
 
         # Initializes some counters
-        self.gl_steps = 0
         self.res_steps = 0
 
     def dump_restart_file(self):
@@ -192,12 +192,6 @@ class Simulation(object):
         """
 
         """
-        if self.viewer:
-            self.viewer.initialize()
-            ps = self.integrator.particle_system
-            self.viewer.show_event(ps)
-            self.viewer.show_event(ps)
-
         while (abs(self.integrator.time) < self.args.t_end):
             # evolve a single time-step
             self.integrator.evolve_step(self.args.t_end)
@@ -207,20 +201,8 @@ class Simulation(object):
                 self.dump_restart_file()
             self.res_steps += 1
 
-            # call GL viewer (if enabled)
-            if self.gl_steps % self.args.gl_freq == 0:
-                if self.viewer:
-                    ps = self.integrator.particle_system
-                    self.viewer.show_event(ps)
-            self.gl_steps += 1
-
         # Finalize the integrator
         self.integrator.finalize(self.args.t_end)
-
-        if self.viewer:
-            ps = self.integrator.particle_system
-            self.viewer.show_event(ps)
-            self.viewer.enter_main_loop()
 
 
 # ------------------------------------------------------------------------

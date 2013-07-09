@@ -142,6 +142,8 @@ class NREG(Base):
             self.reporter.diagnostic_report(ps)
         if self.dumpper:
             self.dumpper.dump_worldline(ps)
+        if self.viewer:
+            self.viewer.show_event(ps)
 
         self.is_initialized = True
 
@@ -151,6 +153,12 @@ class NREG(Base):
         """
         logger.info("Finalizing '%s' integrator.",
                     self.method)
+
+        ps = self.ps
+
+        if self.viewer:
+            self.viewer.show_event(ps)
+            self.viewer.enter_main_loop()
 
     def do_step(self, ps, tau):
         """
@@ -169,9 +177,13 @@ class NREG(Base):
         ps.tstep[:] = dt
         ps.time += tau
         ps.nstep += 1
-        wp = ps[ps.time % (self.dump_freq * tau) == 0]
-        if wp.n:
-            self.wl.append(wp.copy())
+        slc = ps.time % (self.dump_freq * tau) == 0
+        if any(slc):
+            self.wl.append(ps[slc].copy())
+        if self.viewer:
+            slc = ps.time % (self.gl_freq * tau) == 0
+            if any(slc):
+                self.viewer.show_event(ps[slc])
         return ps
 
 

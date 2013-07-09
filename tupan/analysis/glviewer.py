@@ -88,6 +88,7 @@ class GLviewer(object):
 
         self.ps = None
         self.exitgl = False
+        self.is_initialized = False
         self.timer = Timer()
         self.timer.start()
 
@@ -95,7 +96,10 @@ class GLviewer(object):
         self.mencoder = None
 
     def set_particle_system(self, ps):
-        self.ps = ps.copy()
+        if self.ps is None:
+            self.ps = ps.copy()
+        else:
+            self.ps[np.in1d(self.ps.id, ps.id)] = ps
 
     def enter_main_loop(self):
         if not self.exitgl:
@@ -103,6 +107,8 @@ class GLviewer(object):
 
     def show_event(self, ps):
         if not self.exitgl:
+            if not self.is_initialized:
+                self.initialize()
             self.set_particle_system(ps)
             glut.glutMainLoopEvent()
             glut.glutSetWindow(self.window_handle)
@@ -111,6 +117,7 @@ class GLviewer(object):
     def initialize(self):
         self.init_window()
         self.init_gl()
+        self.is_initialized = True
 
     def idle(self):
         glut.glutPostRedisplay()
@@ -466,9 +473,7 @@ class GLviewer(object):
 
     def get_colors(self, qty):
 
-        qty /= qty.max()
-
-        qty = np.power(qty, 1.0/CONTRAST)
+        qty = np.power(qty / qty.max(), 1.0/CONTRAST)
 
         if COLORMAP == 0:
             rgba = cm.gray(qty, alpha=ALPHA)
