@@ -8,20 +8,19 @@ Test suite for extensions module.
 
 from __future__ import print_function
 import unittest
-import numpy as np
-from pprint import pprint
+from collections import OrderedDict, defaultdict
 from tupan.lib import gravity
 from tupan.lib.utils import ctype
 from tupan.lib.utils.timing import Timer
 
 
 def best_of(n, func, *args, **kwargs):
+    timer = Timer()
     elapsed = []
     for i in range(n):
-        timer = Timer()
         timer.start()
         func(*args, **kwargs)
-    elapsed.append(timer.elapsed())
+        elapsed.append(timer.elapsed())
     return min(elapsed)
 
 
@@ -32,646 +31,168 @@ def set_particles(n):
     return ps
 
 
-class TestCase(unittest.TestCase):
+class TestCase1(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.small_system = set_particles(41)
-        cls.large_system = set_particles(1151)
+        cls.ps = set_particles(223)
+
+    def compare_result(self, kernel, ps, *args):
+        msg = ("gravity.{0}: max deviation of results "
+               "calculated using C(CPU) vs CL(device):")
+        print(msg.format(kernel.__name__))
+
+        n = ps.n
+        deviations = []
+
+        krnlC = kernel("C", ctype.prec)
+        krnlCL = kernel("CL", ctype.prec)
+
+        iobj = ps
+        for jdx in range(1, n+1):
+            res = {}
+
+            # setup data
+            jobj = ps[:jdx]
+
+            # calculating using C on CPU
+            res["C"] = krnlC.calc(iobj, jobj, *args)
+
+            # calculating using CL on device
+            res["CL"] = krnlCL.calc(iobj, jobj, *args)
+
+            # estimate deviation
+            deviation = max(abs(c_res-cl_res).max()
+                            for (c_res, cl_res) in zip(res["C"], res["CL"]))
+            deviations.append(deviation)
+
+            # calculating using C on CPU
+            res["C"] = krnlC.calc(jobj, iobj, *args)
+
+            # calculating using CL on device
+            res["CL"] = krnlCL.calc(jobj, iobj, *args)
+
+            # estimate deviation
+            deviation = max(abs(resC - resCL).max()
+                            for (resC, resCL) in zip(res["C"], res["CL"]))
+            deviations.append(deviation)
+
+        print(max(deviations))
 
     def test01(self):
-        print(
-            "\ntest01: C(CPU) vs CL(device): max deviation of grav-phi "
-            "among all combinations of i- and j-particles:",
-            end=" "
-        )
-
-        npart = self.small_system.n
-        deviations = []
-
-        kernel_c = gravity.Phi("c", ctype.prec)
-        kernel_cl = gravity.Phi("cl", ctype.prec)
-
-        iobj = self.small_system
-        for j in range(1, npart+1):
-            res = {'c': None, 'cl': None}
-
-            # setup data
-            jobj = self.small_system[:j]
-
-            # calculating on CPU
-            kernel_c.set_args(iobj, jobj)
-            kernel_c.run()
-            res['c'] = kernel_c.get_result()
-
-            # calculating on GPU
-            kernel_cl.set_args(iobj, jobj)
-            kernel_cl.run()
-            res['cl'] = kernel_cl.get_result()
-
-            # calculating deviation of result
-            deviation = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'], res['cl']))
-            )
-            deviations.append(deviation.max())
-
-        jobj = self.small_system
-        for i in range(1, npart+1):
-            res = {'c': None, 'cl': None}
-
-            # setup data
-            iobj = self.small_system[:i]
-
-            # calculating on CPU
-            kernel_c.set_args(iobj, jobj)
-            kernel_c.run()
-            res['c'] = kernel_c.get_result()
-
-            # calculating on GPU
-            kernel_cl.set_args(iobj, jobj)
-            kernel_cl.run()
-            res['cl'] = kernel_cl.get_result()
-
-            # calculating deviation of result
-            deviation = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'], res['cl']))
-            )
-            deviations.append(deviation.max())
-
-        deviations = np.array(deviations)
-        print(deviations.max())
+        print("\n---------- test01 ----------")
+        self.compare_result(gravity.Phi, self.ps)
 
     def test02(self):
-        print(
-            "\ntest02: C(CPU) vs CL(device): max deviation of grav-acc "
-            "among all combinations of i- and j-particles:",
-            end=" "
-        )
-
-        npart = self.small_system.n
-        deviations = []
-
-        kernel_c = gravity.Acc("c", ctype.prec)
-        kernel_cl = gravity.Acc("cl", ctype.prec)
-
-        iobj = self.small_system
-        for j in range(1, npart+1):
-            res = {'c': None, 'cl': None}
-
-            # setup data
-            jobj = self.small_system[:j]
-
-            # calculating on CPU
-            kernel_c.set_args(iobj, jobj)
-            kernel_c.run()
-            res['c'] = kernel_c.get_result()
-
-            # calculating on GPU
-            kernel_cl.set_args(iobj, jobj)
-            kernel_cl.run()
-            res['cl'] = kernel_cl.get_result()
-
-            # calculating deviation of result
-            deviation = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'], res['cl']))
-            )
-            deviations.append(deviation.max())
-
-        jobj = self.small_system
-        for i in range(1, npart+1):
-            res = {'c': None, 'cl': None}
-
-            # setup data
-            iobj = self.small_system[:i]
-
-            # calculating on CPU
-            kernel_c.set_args(iobj, jobj)
-            kernel_c.run()
-            res['c'] = kernel_c.get_result()
-
-            # calculating on GPU
-            kernel_cl.set_args(iobj, jobj)
-            kernel_cl.run()
-            res['cl'] = kernel_cl.get_result()
-
-            # calculating deviation of result
-            deviation = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'], res['cl']))
-            )
-            deviations.append(deviation.max())
-
-        deviations = np.array(deviations)
-        print(deviations.max())
+        print("\n---------- test02 ----------")
+        self.compare_result(gravity.Acc, self.ps)
 
     def test03(self):
-        print(
-            "\ntest03: C(CPU) vs CL(device): max deviation of grav-acc_jerk "
-            "among all combinations of i- and j-particles:",
-            end=" "
-        )
-
-        npart = self.small_system.n
-        deviations = []
-
-        kernel_c = gravity.AccJerk("c", ctype.prec)
-        kernel_cl = gravity.AccJerk("cl", ctype.prec)
-
-        iobj = self.small_system
-        for j in range(1, npart+1):
-            res = {'c': None, 'cl': None}
-
-            # setup data
-            jobj = self.small_system[:j]
-
-            # calculating on CPU
-            kernel_c.set_args(iobj, jobj)
-            kernel_c.run()
-            res['c'] = kernel_c.get_result()
-
-            # calculating on GPU
-            kernel_cl.set_args(iobj, jobj)
-            kernel_cl.run()
-            res['cl'] = kernel_cl.get_result()
-
-            # calculating deviation of result
-            deviation = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'], res['cl']))
-            )
-            deviations.append(deviation.max())
-
-        jobj = self.small_system
-        for i in range(1, npart+1):
-            res = {'c': None, 'cl': None}
-
-            # setup data
-            iobj = self.small_system[:i]
-
-            # calculating on CPU
-            kernel_c.set_args(iobj, jobj)
-            kernel_c.run()
-            res['c'] = kernel_c.get_result()
-
-            # calculating on GPU
-            kernel_cl.set_args(iobj, jobj)
-            kernel_cl.run()
-            res['cl'] = kernel_cl.get_result()
-
-            # calculating deviation of result
-            deviation = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'], res['cl']))
-            )
-            deviations.append(deviation.max())
-
-        deviations = np.array(deviations)
-        print(deviations.max())
+        print("\n---------- test03 ----------")
+        self.compare_result(gravity.AccJerk, self.ps)
 
     def test04(self):
-        print(
-            "\ntest04: C(CPU) vs CL(device): max deviation of grav-tstep "
-            "among all combinations of i- and j-particles:",
-            end=" "
-        )
-
+        print("\n---------- test04 ----------")
         eta = 1.0/64
-        npart = self.small_system.n
-        deviations = []
-
-        kernel_c = gravity.Tstep("c", ctype.prec)
-        kernel_cl = gravity.Tstep("cl", ctype.prec)
-
-        iobj = self.small_system
-        for j in range(1, npart+1):
-            res = {'c': None, 'cl': None}
-
-            # setup data
-            jobj = self.small_system[:j]
-
-            # calculating on CPU
-            kernel_c.set_args(iobj, jobj, eta)
-            kernel_c.run()
-            res['c'] = kernel_c.get_result()
-
-            # calculating on GPU
-            kernel_cl.set_args(iobj, jobj, eta)
-            kernel_cl.run()
-            res['cl'] = kernel_cl.get_result()
-
-            # calculating deviation of result
-            deviation0 = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'][0], res['cl'][0]))
-            )
-            deviation1 = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'][1], res['cl'][1]))
-            )
-            deviations.append([deviation0.max(), deviation1.max()])
-
-        jobj = self.small_system
-        for i in range(1, npart+1):
-            res = {'c': None, 'cl': None}
-
-            # setup data
-            iobj = self.small_system[:i]
-
-            # calculating on CPU
-            kernel_c.set_args(iobj, jobj, eta)
-            kernel_c.run()
-            res['c'] = kernel_c.get_result()
-
-            # calculating on GPU
-            kernel_cl.set_args(iobj, jobj, eta)
-            kernel_cl.run()
-            res['cl'] = kernel_cl.get_result()
-
-            # calculating deviation of result
-            deviation0 = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'][0], res['cl'][0]))
-            )
-            deviation1 = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'][1], res['cl'][1]))
-            )
-            deviations.append([deviation0.max(), deviation1.max()])
-
-        deviations = np.array(deviations)
-        print(deviations[:, 0].max(), deviations[:, 1].max())
+        self.compare_result(gravity.Tstep, self.ps, eta)
 
     def test05(self):
-        print(
-            "\ntest05: C(CPU) vs CL(device): max deviation of grav-pnacc "
-            "among all combinations of i- and j-particles:",
-            end=" "
-        )
-
-        npart = self.small_system.n
-        deviations = []
-
+        print("\n---------- test05 ----------")
         gravity.clight.pn_order = 7
         gravity.clight.clight = 128
-
-        kernel_c = gravity.PNAcc("c", ctype.prec)
-        kernel_cl = gravity.PNAcc("cl", ctype.prec)
-
-        iobj = self.small_system
-        for j in range(1, npart+1):
-            res = {'c': None, 'cl': None}
-
-            # setup data
-            jobj = self.small_system[:j]
-
-            # calculating on CPU
-            kernel_c.set_args(iobj, jobj)
-            kernel_c.run()
-            res['c'] = kernel_c.get_result()
-
-            # calculating on GPU
-            kernel_cl.set_args(iobj, jobj)
-            kernel_cl.run()
-            res['cl'] = kernel_cl.get_result()
-
-            # calculating deviation of result
-            deviation = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'], res['cl']))
-            )
-            deviations.append(deviation.max())
-
-        jobj = self.small_system
-        for i in range(1, npart+1):
-            res = {'c': None, 'cl': None}
-
-            # setup data
-            iobj = self.small_system[:i]
-
-            # calculating on CPU
-            kernel_c.set_args(iobj, jobj)
-            kernel_c.run()
-            res['c'] = kernel_c.get_result()
-
-            # calculating on GPU
-            kernel_cl.set_args(iobj, jobj)
-            kernel_cl.run()
-            res['cl'] = kernel_cl.get_result()
-
-            # calculating deviation of result
-            deviation = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'], res['cl']))
-            )
-            deviations.append(deviation.max())
-
-        deviations = np.array(deviations)
-        print(deviations.max())
+        self.compare_result(gravity.PNAcc, self.ps)
 
     def test06(self):
-        print(
-            "\ntest06: C(CPU) vs CL(device): max deviation of grav-sakura "
-            "among all combinations of i- and j-particles:",
-            end=" "
-        )
-
+        print("\n---------- test06 ----------")
         dt = 1.0/64
-        npart = self.small_system.n
-        deviations = []
+        self.compare_result(gravity.Sakura, self.ps, dt)
 
-        kernel_c = gravity.Sakura("c", ctype.prec)
-        kernel_cl = gravity.Sakura("cl", ctype.prec)
 
-        iobj = self.small_system
-        for j in range(1, npart+1):
-            res = {'c': None, 'cl': None}
+class TestCase2(unittest.TestCase):
 
-            # setup data
-            jobj = self.small_system[:j]
+    @classmethod
+    def setUpClass(cls):
+        nlist = [3, 13, 53, 223, 907, 3631]
+#        nlist.extend([14533, 58147, 232591])
+        cls.pslist = [set_particles(n) for n in nlist]
 
-            # calculating on CPU
-            kernel_c.set_args(iobj, jobj, dt)
-            kernel_c.run()
-            res['c'] = kernel_c.get_result()
+    def performance(self, kernel, pslist, *args):
+        msg = ("gravity.{0}: performance measurement:")
+        print(msg.format(kernel.__name__))
 
-            # calculating on GPU
-            kernel_cl.set_args(iobj, jobj, dt)
-            kernel_cl.run()
-            res['cl'] = kernel_cl.get_result()
-
-            # calculating deviation of result
-            deviation = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'], res['cl']))
-            )
-            deviations.append(deviation.max())
-
-        jobj = self.small_system
-        for i in range(1, npart+1):
-            res = {'c': None, 'cl': None}
+        for ps in pslist:
+            best = OrderedDict()
+            best["set"] = defaultdict(float)
+            best["get"] = defaultdict(float)
+            best["run"] = defaultdict(float)
+            best["total"] = defaultdict(float)
 
             # setup data
-            iobj = self.small_system[:i]
+            iobj = ps
+            jobj = ps
 
-            # calculating on CPU
-            kernel_c.set_args(iobj, jobj, dt)
-            kernel_c.run()
-            res['c'] = kernel_c.get_result()
+            # calculating using C on CPU
+            krnlC = kernel("C", ctype.prec)
+            best['set']["C"] = best_of(5, krnlC.set_args, iobj, jobj, *args)
+            best['run']["C"] = best_of(3, krnlC.run)
+            best['get']["C"] = best_of(5, krnlC.get_result)
 
-            # calculating on GPU
-            kernel_cl.set_args(iobj, jobj, dt)
-            kernel_cl.run()
-            res['cl'] = kernel_cl.get_result()
+            # calculating using CL on device
+            krnlCL = kernel("CL", ctype.prec)
+            best['set']["CL"] = best_of(5, krnlCL.set_args, iobj, jobj, *args)
+            best['run']["CL"] = best_of(3, krnlCL.run)
+            best['get']["CL"] = best_of(5, krnlCL.get_result)
 
-            # calculating deviation of result
-            deviation = np.sqrt(
-                sum((c_res-cl_res)**2
-                    for c_res, cl_res in zip(res['c'], res['cl']))
-            )
-            deviations.append(deviation.max())
+            for d in best.values():
+                for k, v in d.items():
+                    best["total"][k] += v
 
-        deviations = np.array(deviations)
-        print(deviations.max())
+            print("  N={0}:".format(ps.n))
+            for (k, v) in best.items():
+                r = v["C"] / v["CL"]
+                print("    {0} time: {1} | ratio(C/CL): {2}".format(k, v, r))
 
-    def test07(self):
-        print(
-            "\ntest07: C(CPU) vs CL(device): performance of grav-phi:",
-            end=" "
-        )
+    def test01(self):
+        print("\n---------- test01 ----------")
+        self.performance(gravity.Phi, self.pslist)
 
-        n = 5   # no. of samples
-        best = {'set_args': {'c': None, 'cl': None},
-                'run': {'c': None, 'cl': None},
-                'get_result': {'c': None, 'cl': None}}
+    def test02(self):
+        print("\n---------- test02 ----------")
+        self.performance(gravity.Acc, self.pslist)
 
-        # setup data
-        iobj = self.large_system
-        jobj = self.large_system
+    def test03(self):
+        print("\n---------- test03 ----------")
+        self.performance(gravity.AccJerk, self.pslist)
 
-        # calculating using SP on CPU
-        kernel = gravity.Phi("c", ctype.prec)
-        best['set_args']['c'] = best_of(n, kernel.set_args, iobj, jobj)
-        best['run']['c'] = best_of(n, kernel.run)
-        best['get_result']['c'] = best_of(n, kernel.get_result)
-
-        # calculating using DP on CPU
-        kernel = gravity.Phi("cl", ctype.prec)
-        best['set_args']['cl'] = best_of(n, kernel.set_args, iobj, jobj)
-        best['run']['cl'] = best_of(n, kernel.run)
-        best['get_result']['cl'] = best_of(n, kernel.get_result)
-
-        total = {'c': 0.0, 'cl': 0.0}
-        for d in best.values():
-            for k, v in d.items():
-                total[k] += v
-        for key in best.keys():
-            for k, v in total.items():
-                best[key][k] /= v / 100
-        print('total time:', total)
-        print('percentage:')
-        pprint(best, width=40)
-
-    def test08(self):
-        print(
-            "\ntest08: C(CPU) vs CL(device): performance of grav-acc:",
-            end=" "
-        )
-
-        n = 5   # no. of samples
-        best = {'set_args': {'c': None, 'cl': None},
-                'run': {'c': None, 'cl': None},
-                'get_result': {'c': None, 'cl': None}}
-
-        # setup data
-        iobj = self.large_system
-        jobj = self.large_system
-
-        # calculating using SP on CPU
-        kernel = gravity.Acc("c", ctype.prec)
-        best['set_args']['c'] = best_of(n, kernel.set_args, iobj, jobj)
-        best['run']['c'] = best_of(n, kernel.run)
-        best['get_result']['c'] = best_of(n, kernel.get_result)
-
-        # calculating using DP on CPU
-        kernel = gravity.Acc("cl", ctype.prec)
-        best['set_args']['cl'] = best_of(n, kernel.set_args, iobj, jobj)
-        best['run']['cl'] = best_of(n, kernel.run)
-        best['get_result']['cl'] = best_of(n, kernel.get_result)
-
-        total = {'c': 0.0, 'cl': 0.0}
-        for d in best.values():
-            for k, v in d.items():
-                total[k] += v
-        for key in best.keys():
-            for k, v in total.items():
-                best[key][k] /= v / 100
-        print('total time:', total)
-        print('percentage:')
-        pprint(best, width=40)
-
-    def test09(self):
-        print(
-            "\ntest09: C(CPU) vs CL(device): performance of grav-acc_jerk:",
-            end=" "
-        )
-
-        n = 5   # no. of samples
-        best = {'set_args': {'c': None, 'cl': None},
-                'run': {'c': None, 'cl': None},
-                'get_result': {'c': None, 'cl': None}}
-
-        # setup data
-        iobj = self.large_system
-        jobj = self.large_system
-
-        # calculating using SP on CPU
-        kernel = gravity.AccJerk("c", ctype.prec)
-        best['set_args']['c'] = best_of(n, kernel.set_args, iobj, jobj)
-        best['run']['c'] = best_of(n, kernel.run)
-        best['get_result']['c'] = best_of(n, kernel.get_result)
-
-        # calculating using DP on CPU
-        kernel = gravity.AccJerk("cl", ctype.prec)
-        best['set_args']['cl'] = best_of(n, kernel.set_args, iobj, jobj)
-        best['run']['cl'] = best_of(n, kernel.run)
-        best['get_result']['cl'] = best_of(n, kernel.get_result)
-
-        total = {'c': 0.0, 'cl': 0.0}
-        for d in best.values():
-            for k, v in d.items():
-                total[k] += v
-        for key in best.keys():
-            for k, v in total.items():
-                best[key][k] /= v / 100
-        print('total time:', total)
-        print('percentage:')
-        pprint(best, width=40)
-
-    def test10(self):
-        print(
-            "\ntest10: C(CPU) vs CL(device): performance of grav-tstep:",
-            end=" "
-        )
-
-        n = 5   # no. of samples
-        best = {'set_args': {'c': None, 'cl': None},
-                'run': {'c': None, 'cl': None},
-                'get_result': {'c': None, 'cl': None}}
-
-        # setup data
-        iobj = self.large_system
-        jobj = self.large_system
+    def test04(self):
+        print("\n---------- test04 ----------")
         eta = 1.0/64
+        self.performance(gravity.Tstep, self.pslist, eta)
 
-        # calculating using SP on CPU
-        kernel = gravity.Tstep("c", ctype.prec)
-        best['set_args']['c'] = best_of(n, kernel.set_args, iobj, jobj, eta)
-        best['run']['c'] = best_of(n, kernel.run)
-        best['get_result']['c'] = best_of(n, kernel.get_result)
-
-        # calculating using DP on CPU
-        kernel = gravity.Tstep("cl", ctype.prec)
-        best['set_args']['cl'] = best_of(n, kernel.set_args, iobj, jobj, eta)
-        best['run']['cl'] = best_of(n, kernel.run)
-        best['get_result']['cl'] = best_of(n, kernel.get_result)
-
-        total = {'c': 0.0, 'cl': 0.0}
-        for d in best.values():
-            for k, v in d.items():
-                total[k] += v
-        for key in best.keys():
-            for k, v in total.items():
-                best[key][k] /= v / 100
-        print('total time:', total)
-        print('percentage:')
-        pprint(best, width=40)
-
-    def test11(self):
-        print(
-            "\ntest11: C(CPU) vs CL(device): performance of grav-pnacc:",
-            end=" "
-        )
-
-        n = 5   # no. of samples
-        best = {'set_args': {'c': None, 'cl': None},
-                'run': {'c': None, 'cl': None},
-                'get_result': {'c': None, 'cl': None}}
-
-        # setup data
-        iobj = self.large_system
-        jobj = self.large_system
-
+    def test05(self):
+        print("\n---------- test05 ----------")
         gravity.clight.pn_order = 7
         gravity.clight.clight = 128
+        self.performance(gravity.PNAcc, self.pslist)
 
-        # calculating using SP on CPU
-        kernel = gravity.PNAcc("c", ctype.prec)
-        best['set_args']['c'] = best_of(n, kernel.set_args, iobj, jobj)
-        best['run']['c'] = best_of(n, kernel.run)
-        best['get_result']['c'] = best_of(n, kernel.get_result)
-
-        # calculating using DP on CPU
-        kernel = gravity.PNAcc("cl", ctype.prec)
-        best['set_args']['cl'] = best_of(n, kernel.set_args, iobj, jobj)
-        best['run']['cl'] = best_of(n, kernel.run)
-        best['get_result']['cl'] = best_of(n, kernel.get_result)
-
-        total = {'c': 0.0, 'cl': 0.0}
-        for d in best.values():
-            for k, v in d.items():
-                total[k] += v
-        for key in best.keys():
-            for k, v in total.items():
-                best[key][k] /= v / 100
-        print('total time:', total)
-        print('percentage:')
-        pprint(best, width=40)
-
-    def test12(self):
-        print(
-            "\ntest12: C(CPU) vs CL(device): performance of grav-sakura:",
-            end=" "
-        )
-
-        n = 5   # no. of samples
-        best = {'set_args': {'c': None, 'cl': None},
-                'run': {'c': None, 'cl': None},
-                'get_result': {'c': None, 'cl': None}}
-
-        # setup data
-        iobj = self.large_system
-        jobj = self.large_system
+    def test06(self):
+        print("\n---------- test06 ----------")
         dt = 1.0/64
-
-        # calculating using SP on CPU
-        kernel = gravity.Sakura("c", ctype.prec)
-        best['set_args']['c'] = best_of(n, kernel.set_args, iobj, jobj, dt)
-        best['run']['c'] = best_of(n, kernel.run)
-        best['get_result']['c'] = best_of(n, kernel.get_result)
-
-        # calculating using DP on CPU
-        kernel = gravity.Sakura("cl", ctype.prec)
-        best['set_args']['cl'] = best_of(n, kernel.set_args, iobj, jobj, dt)
-        best['run']['cl'] = best_of(n, kernel.run)
-        best['get_result']['cl'] = best_of(n, kernel.get_result)
-
-        total = {'c': 0.0, 'cl': 0.0}
-        for d in best.values():
-            for k, v in d.items():
-                total[k] += v
-        for key in best.keys():
-            for k, v in total.items():
-                best[key][k] /= v / 100
-        print('total time:', total)
-        print('percentage:')
-        pprint(best, width=40)
+        self.performance(gravity.Sakura, self.pslist, dt)
 
 
 if __name__ == "__main__":
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestCase)
+    def load_tests(test_cases):
+        loader = unittest.TestLoader()
+        suite = unittest.TestSuite()
+        for test_class in test_cases:
+            tests = loader.loadTestsFromTestCase(test_class)
+            suite.addTests(tests)
+        return suite
+
+    test_cases = (TestCase1, TestCase2)
+
+    suite = load_tests(test_cases)
     unittest.TextTestRunner(verbosity=1).run(suite)
 
 

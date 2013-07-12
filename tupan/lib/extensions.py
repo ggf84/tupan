@@ -230,25 +230,25 @@ class CModule(object):
 
 @timings
 def get_kernel(name, exttype, prec):
-    if not HAS_CL and exttype == "cl":
-        exttype = "c"
+    if not HAS_CL and exttype == "CL":
+        exttype = "C"
     logger.debug(
         "Using '%s' from %s precision %s extension module.",
-        name, ctype.prec, exttype.upper()
+        name, ctype.prec, exttype
     )
-    if exttype == "c":
+    if exttype == "C":
         return getattr(
             CModule(CEnv(prec=prec, fast_math=True)).build(),
             name
         )
-    elif exttype == "cl":
+    elif exttype == "CL":
         return getattr(
             CLModule(CLEnv(prec=prec, fast_math=True)).build(),
             name
         )
     else:
         raise ValueError(
-            "Inappropriate 'exttype' value. Supported values: ['c', 'cl']"
+            "Inappropriate 'exttype' value. Supported values: ['C', 'CL']"
         )
 
 

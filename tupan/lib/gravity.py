@@ -69,6 +69,32 @@ class Phi(object):
         self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
 
+    def _pycalc(self, iobj, jobj):
+        # Never use this method for production runs. It is very slow
+        # and is here only for performance comparisons. It is also
+        # likely that only the classes Acc and Phi will have an
+        # implementation of this method.
+        ni = iobj.n
+        if ni > self.max_output_size:
+            self._phi = np.zeros(ni, dtype=ctype.REAL)
+            self.max_output_size = ni
+        for i in range(ni):
+            ie2 = iobj.eps2[i]
+            irx = iobj.rx[i]
+            iry = iobj.ry[i]
+            irz = iobj.rz[i]
+            rx = irx - jobj.rx
+            ry = iry - jobj.ry
+            rz = irz - jobj.rz
+            r2 = rx * rx + ry * ry + rz * rz
+            mask = r2 > 0
+            e2 = ie2 + jobj.eps2
+            inv_r2 = 1 / (r2 + e2)
+            inv_r = inv_r2**0.5
+            self._phi[i] = -(jobj.mass * inv_r)[mask].sum()
+        return (self._phi[:ni],)
+#    calc = _pycalc
+
     def calc(self, iobj, jobj):
         self.set_args(iobj, jobj)
         self.run()
@@ -111,6 +137,38 @@ class Acc(object):
         self.kernel = get_kernel("acc_kernel", exttype, prec)
         self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.max_output_size = 0
+
+    def _pycalc(self, iobj, jobj):
+        # Never use this method for production runs. It is very slow
+        # and is here only for performance comparisons. It is also
+        # likely that only the classes Acc and Phi will have an
+        # implementation of this method.
+        ni = iobj.n
+        if ni > self.max_output_size:
+            self._ax = np.zeros(ni, dtype=ctype.REAL)
+            self._ay = np.zeros(ni, dtype=ctype.REAL)
+            self._az = np.zeros(ni, dtype=ctype.REAL)
+            self.max_output_size = ni
+        for i in range(ni):
+            ie2 = iobj.eps2[i]
+            irx = iobj.rx[i]
+            iry = iobj.ry[i]
+            irz = iobj.rz[i]
+            rx = irx - jobj.rx
+            ry = iry - jobj.ry
+            rz = irz - jobj.rz
+            r2 = rx * rx + ry * ry + rz * rz
+            mask = r2 > 0
+            e2 = ie2 + jobj.eps2
+            inv_r2 = 1 / (r2 + e2)
+            inv_r = inv_r2**0.5
+            inv_r3 = inv_r * inv_r2
+            inv_r3 *= jobj.mass
+            self._ax[i] = -(inv_r3 * rx)[mask].sum()
+            self._ay[i] = -(inv_r3 * ry)[mask].sum()
+            self._az[i] = -(inv_r3 * rz)[mask].sum()
+        return (self._ax[:ni], self._ay[:ni], self._az[:ni])
+#    calc = _pycalc
 
     def calc(self, iobj, jobj):
         self.set_args(iobj, jobj)
@@ -441,7 +499,7 @@ class NREG_V(object):
         return self.args["out"]
 
 
-exttype = "cl" if "--use_cl" in sys.argv else "c"
+exttype = "CL" if "--use_cl" in sys.argv else "C"
 
 clight = Clight()
 phi = Phi(exttype, ctype.prec)
