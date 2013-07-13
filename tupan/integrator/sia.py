@@ -593,9 +593,10 @@ class SIA(Base):
             slow.tstep[:] = tau
             slow.time += tau
             slow.nstep += 1
-            slc = slow.time % (self.dump_freq * tau) == 0
-            if any(slc):
-                self.wl.append(slow[slc].copy())
+            if self.dumpper:
+                slc = slow.time % (self.dump_freq * tau) == 0
+                if any(slc):
+                    self.wl.append(slow[slc])
             if self.viewer:
                 slc = slow.time % (self.gl_freq * tau) == 0
                 if any(slc):

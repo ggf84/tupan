@@ -112,7 +112,7 @@ class TestCase2(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        nlist = [3, 13, 53, 223, 907, 3631]
+        nlist = [3, 13, 53, 223, 907, 3631]  # prime numbers
 #        nlist.extend([14533, 58147, 232591])
         cls.pslist = [set_particles(n) for n in nlist]
 
@@ -150,7 +150,8 @@ class TestCase2(unittest.TestCase):
             print("  N={0}:".format(ps.n))
             for (k, v) in best.items():
                 r = v["C"] / v["CL"]
-                print("    {0} time: {1} | ratio(C/CL): {2}".format(k, v, r))
+                msg = "    {0} time: {1} | ratio(C/CL): {2}"
+                print(msg.format(k, dict(v), r))
 
     def test01(self):
         print("\n---------- test01 ----------")

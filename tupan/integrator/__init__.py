@@ -84,7 +84,7 @@ class Base(object):
 
         ps = self.ps
 
-        self.wl = ps[:0]
+        self.wl = type(ps)()
         tau = self.get_base_tstep(t_end)
 
         ps = self.do_step(ps, tau)

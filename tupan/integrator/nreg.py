@@ -177,9 +177,10 @@ class NREG(Base):
         ps.tstep[:] = dt
         ps.time += tau
         ps.nstep += 1
-        slc = ps.time % (self.dump_freq * tau) == 0
-        if any(slc):
-            self.wl.append(ps[slc].copy())
+        if self.dumpper:
+            slc = ps.time % (self.dump_freq * tau) == 0
+            if any(slc):
+                self.wl.append(ps[slc])
         if self.viewer:
             slc = ps.time % (self.gl_freq * tau) == 0
             if any(slc):
