@@ -79,18 +79,14 @@ class Phi(object):
             self._phi = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
         for i in range(ni):
-            ie2 = iobj.eps2[i]
-            irx = iobj.rx[i]
-            iry = iobj.ry[i]
-            irz = iobj.rz[i]
-            rx = irx - jobj.rx
-            ry = iry - jobj.ry
-            rz = irz - jobj.rz
+            rx = iobj.rx[i] - jobj.rx
+            ry = iobj.ry[i] - jobj.ry
+            rz = iobj.rz[i] - jobj.rz
+            e2 = iobj.eps2[i] + jobj.eps2
             r2 = rx * rx + ry * ry + rz * rz
             mask = r2 > 0
-            e2 = ie2 + jobj.eps2
             inv_r2 = 1 / (r2 + e2)
-            inv_r = inv_r2**0.5
+            inv_r = np.sqrt(inv_r2)
             self._phi[i] = -(jobj.mass * inv_r)[mask].sum()
         return (self._phi[:ni],)
 #    calc = _pycalc
@@ -150,18 +146,14 @@ class Acc(object):
             self._az = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
         for i in range(ni):
-            ie2 = iobj.eps2[i]
-            irx = iobj.rx[i]
-            iry = iobj.ry[i]
-            irz = iobj.rz[i]
-            rx = irx - jobj.rx
-            ry = iry - jobj.ry
-            rz = irz - jobj.rz
+            rx = iobj.rx[i] - jobj.rx
+            ry = iobj.ry[i] - jobj.ry
+            rz = iobj.rz[i] - jobj.rz
+            e2 = iobj.eps2[i] + jobj.eps2
             r2 = rx * rx + ry * ry + rz * rz
             mask = r2 > 0
-            e2 = ie2 + jobj.eps2
             inv_r2 = 1 / (r2 + e2)
-            inv_r = inv_r2**0.5
+            inv_r = np.sqrt(inv_r2)
             inv_r3 = inv_r * inv_r2
             inv_r3 *= jobj.mass
             self._ax[i] = -(inv_r3 * rx)[mask].sum()

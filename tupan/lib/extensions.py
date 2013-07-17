@@ -35,6 +35,10 @@ except Exception as exc:
         stacklevel=1)
 
 
+DIRNAME = os.path.dirname(__file__)
+PATH = os.path.join(DIRNAME, "src")
+
+
 @decallmethods(timings)
 class CLEnv(object):
 
@@ -102,7 +106,7 @@ class CLKernel(object):
         for i, array in enumerate(arrays):
             (pointer, ev) = cl.enqueue_map_buffer(self.env.queue,
                                                   self.out_buf[i],
-                                                  mapf.READ,
+                                                  mapf.READ | mapf.WRITE,
                                                   0,
                                                   array.shape,
                                                   array.dtype,
@@ -124,23 +128,31 @@ class CLModule(object):
     def __init__(self, env):
         self.env = env
 
-        # read the kernel source code
-        dirname = os.path.dirname(__file__)
-        abspath = os.path.abspath(dirname)
-        path = os.path.join(abspath, "src")
-        src_file = "libtupan.cl"
-        fname = os.path.join(path, src_file)
-        with open(fname, 'r') as fobj:
-            src = fobj.read()
-        self.src = src
-        self.path = path
+        files = ("smoothing.c",
+                 "universal_kepler_solver.c",
+                 #
+                 "phi_kernel.cl",
+                 "acc_kernel.cl",
+                 "acc_jerk_kernel.cl",
+                 "tstep_kernel.cl",
+                 "pnacc_kernel.cl",
+                 "nreg_kernels.cl",
+                 "sakura_kernel.cl",
+                 )
+
+        sources = []
+        for file in files:
+            fname = os.path.join(PATH, file)
+            with open(fname, 'r') as fobj:
+                sources.append(fobj.read())
+        self.src = "\n\n".join(sources)
 
     def build(self):
         logger.debug("Building %s precision CL extension module.",
                      self.env.prec)
 
         # setting options
-        options = " -I {path}".format(path=self.path)
+        options = " -I {path}".format(path=PATH)
         if self.env.prec is "double":
             options += " -D DOUBLE"
         if self.env.fast_math:
@@ -184,7 +196,7 @@ class CKernel(object):
         return arg
 
     def set_array(self, arg):
-        return self.ffi.cast("REAL *", arg.__array_interface__['data'][0])
+        return self.ffi.cast("REAL *", arg.__array_interface__["data"][0])
 
     def set_arg(self, arg):
         if isinstance(arg, np.ndarray):

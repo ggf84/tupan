@@ -8,7 +8,6 @@ TODO.
 
 from __future__ import print_function
 import os
-import sys
 import cffi
 
 
@@ -17,17 +16,17 @@ PATH = os.path.join(DIRNAME, "src")
 
 
 def wrap_lib(fptype):
-    sources = ("smoothing.c",
-               "universal_kepler_solver.c",
-               #
-               "phi_kernel.c",
-               "acc_kernel.c",
-               "acc_jerk_kernel.c",
-               "tstep_kernel.c",
-               "pnacc_kernel.c",
-               "nreg_kernels.c",
-               "sakura_kernel.c",
-               )
+    files = ("smoothing.c",
+             "universal_kepler_solver.c",
+             #
+             "phi_kernel.c",
+             "acc_kernel.c",
+             "acc_jerk_kernel.c",
+             "tstep_kernel.c",
+             "pnacc_kernel.c",
+             "nreg_kernels.c",
+             "sakura_kernel.c",
+             )
 
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
         source = "typedef {} REAL;".format(fptype) + fobj.read()
@@ -51,9 +50,7 @@ def wrap_lib(fptype):
         include_dirs=[PATH],
         libraries=["m"],
         extra_compile_args=["-O3"],
-        sources=[os.path.join(PATH, src) for src in sources],
-        force_generic_engine=hasattr(
-            sys, "_force_generic_engine_"),
+        sources=[os.path.join(PATH, file) for file in files],
         modulename=modulename,
     )
     return ffi, clib
