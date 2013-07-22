@@ -59,6 +59,18 @@ class ParticleSystem(AbstractNbodyMethods):
                 setattr(obj, attr, getattr(self, attr)[ns:nf])
             ns += obj.n
 
+    def register_attr(self, attr, dtype):
+        if attr in self.__dict__:
+            raise ValueError("'{0}' is already a registered "
+                             "attribute.".format(attr))
+        setattr(self, attr, np.zeros(self.n, dtype))
+        ns = 0
+        nf = 0
+        for obj in self.members.values():
+            nf += obj.n
+            setattr(obj, attr, getattr(self, attr)[ns:nf])
+            ns += obj.n
+
     #
     # miscellaneous methods
     #

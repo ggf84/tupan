@@ -92,6 +92,12 @@ __kernel void sakura_kernel(
     __global const REAL *_jvy,
     __global const REAL *_jvz,
     const REAL dt,
+    __global REAL *_idrx,
+    __global REAL *_idry,
+    __global REAL *_idrz,
+    __global REAL *_idvx,
+    __global REAL *_idvy,
+    __global REAL *_idvz,
     __local REAL *__jm,
     __local REAL *__jrx,
     __local REAL *__jry,
@@ -99,13 +105,7 @@ __kernel void sakura_kernel(
     __local REAL *__je2,
     __local REAL *__jvx,
     __local REAL *__jvy,
-    __local REAL *__jvz,
-    __global REAL *_idrx,
-    __global REAL *_idry,
-    __global REAL *_idrz,
-    __global REAL *_idvx,
-    __global REAL *_idvy,
-    __global REAL *_idvz)
+    __local REAL *__jvz)
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);

@@ -28,8 +28,12 @@ def wrap_lib(fptype):
              "sakura_kernel.c",
              )
 
+    s = []
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
-        source = "typedef {} REAL;".format(fptype) + fobj.read()
+        s.append("typedef unsigned int UINT;")
+        s.append("typedef {} REAL;".format(fptype))
+        s.append(fobj.read())
+    source = "\n".join(s)
 
     ffi = cffi.FFI()
 

@@ -93,6 +93,13 @@ __kernel void nreg_Xkernel(
     __global const REAL *_jvy,
     __global const REAL *_jvz,
     const REAL dt,
+    __global REAL *_idrx,
+    __global REAL *_idry,
+    __global REAL *_idrz,
+    __global REAL *_iax,
+    __global REAL *_iay,
+    __global REAL *_iaz,
+    __global REAL *_iu,
     __local REAL *__jm,
     __local REAL *__jrx,
     __local REAL *__jry,
@@ -100,14 +107,7 @@ __kernel void nreg_Xkernel(
     __local REAL *__je2,
     __local REAL *__jvx,
     __local REAL *__jvy,
-    __local REAL *__jvz,
-    __global REAL *_idrx,
-    __global REAL *_idry,
-    __global REAL *_idrz,
-    __global REAL *_iax,
-    __global REAL *_iay,
-    __global REAL *_iaz,
-    __global REAL *_iu)
+    __local REAL *__jvz)
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);
@@ -231,17 +231,17 @@ __kernel void nreg_Vkernel(
     __global const REAL *_jay,
     __global const REAL *_jaz,
     const REAL dt,
+    __global REAL *_idvx,
+    __global REAL *_idvy,
+    __global REAL *_idvz,
+    __global REAL *_ik,
     __local REAL *__jm,
     __local REAL *__jvx,
     __local REAL *__jvy,
     __local REAL *__jvz,
     __local REAL *__jax,
     __local REAL *__jay,
-    __local REAL *__jaz,
-    __global REAL *_idvx,
-    __global REAL *_idvy,
-    __global REAL *_idvz,
-    __global REAL *_ik)
+    __local REAL *__jaz)
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);

@@ -7,6 +7,7 @@ Test suite for extensions module.
 
 
 from __future__ import print_function
+import sys
 import unittest
 from collections import OrderedDict, defaultdict
 from tupan.lib import gravity
@@ -25,9 +26,17 @@ def best_of(n, func, *args, **kwargs):
 
 
 def set_particles(n):
-    from tupan.ics.plummer import make_plummer
-    imf = ("salpeter1955", 0.5, 120.0)
-    ps = make_plummer(n, 0.0, imf, seed=1)
+    import numpy as np
+    from tupan.particles.allparticles import ParticleSystem
+    ps = ParticleSystem(n-n//2, n//2)
+    ps.mass[:] = np.random.random((ps.n,))
+    ps.eps2[:] = np.zeros((ps.n,))
+    ps.rx[:], ps.ry[:], ps.rz[:] = np.random.random((ps.n, 3)).T * 10
+    ps.vx[:], ps.vy[:], ps.vz[:] = np.random.random((ps.n, 3)).T * 10
+    ps.register_attr("ax", ctype.REAL)
+    ps.register_attr("ay", ctype.REAL)
+    ps.register_attr("az", ctype.REAL)
+    ps.ax[:], ps.ay[:], ps.az[:] = np.random.random((ps.n, 3)).T * 100
     return ps
 
 
@@ -35,7 +44,7 @@ class TestCase1(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.ps = set_particles(223)
+        cls.ps = set_particles(128)
 
     def compare_result(self, kernel, ps, *args):
         msg = ("gravity.{0}: max deviation of results "
@@ -107,51 +116,77 @@ class TestCase1(unittest.TestCase):
         dt = 1.0/64
         self.compare_result(gravity.Sakura, self.ps, dt)
 
+    def test07(self):
+        print("\n---------- test07 ----------")
+        dt = 1.0/64
+        self.compare_result(gravity.NREG_X, self.ps, dt)
+
+    def test08(self):
+        print("\n---------- test08 ----------")
+        dt = 1.0/64
+        self.compare_result(gravity.NREG_V, self.ps, dt)
+
+
+highN = True if "--highN" in sys.argv else False
+
 
 class TestCase2(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        nlist = [3, 13, 53, 223, 907, 3631]  # prime numbers
-#        nlist.extend([14533, 58147, 232591])
-        cls.pslist = [set_particles(n) for n in nlist]
+        imax = 11
+        if highN:
+            imax = 13
+        cls.pslist = [set_particles(2**(i+1)) for i in range(imax)]
 
     def performance(self, kernel, pslist, *args):
         msg = ("gravity.{0}: performance measurement:")
         print(msg.format(kernel.__name__))
+
+        krnlC = kernel("C", ctype.prec)
+        krnlCL = kernel("CL", ctype.prec)
 
         for ps in pslist:
             best = OrderedDict()
             best["set"] = defaultdict(float)
             best["get"] = defaultdict(float)
             best["run"] = defaultdict(float)
-            best["total"] = defaultdict(float)
-
-            # setup data
-            iobj = ps
-            jobj = ps
-
-            # calculating using C on CPU
-            krnlC = kernel("C", ctype.prec)
-            best['set']["C"] = best_of(5, krnlC.set_args, iobj, jobj, *args)
-            best['run']["C"] = best_of(3, krnlC.run)
-            best['get']["C"] = best_of(5, krnlC.get_result)
 
             # calculating using CL on device
-            krnlCL = kernel("CL", ctype.prec)
-            best['set']["CL"] = best_of(5, krnlCL.set_args, iobj, jobj, *args)
+            best['set']["CL"] = best_of(5, krnlCL.set_args, ps, ps, *args)
             best['run']["CL"] = best_of(3, krnlCL.run)
             best['get']["CL"] = best_of(5, krnlCL.get_result)
 
-            for d in best.values():
-                for k, v in d.items():
-                    best["total"][k] += v
+            if ps.n > 2048:
+                print("  N={0}:".format(ps.n))
+                for (k, v) in best.items():
+                    print("    {k} time (s): 'C': ----------, 'CL': {CL:.4e} "
+                          "| ratio(C/CL): ------".format(k=k, CL=v["CL"]))
 
-            print("  N={0}:".format(ps.n))
-            for (k, v) in best.items():
-                r = v["C"] / v["CL"]
-                msg = "    {0} time: {1} | ratio(C/CL): {2}"
-                print(msg.format(k, dict(v), r))
+                overhead = {}
+                for k, v in best["run"].items():
+                    overhead[k] = (best["set"][k] + best["get"][k]) / v
+                    overhead[k] *= 100
+                print("    overhead (%): 'C': ----------, "
+                      "'CL': {CL:.4e}".format(CL=overhead["CL"]))
+            else:
+                # calculating using C on CPU
+                best['set']["C"] = best_of(5, krnlC.set_args, ps, ps, *args)
+                best['run']["C"] = best_of(3, krnlC.run)
+                best['get']["C"] = best_of(5, krnlC.get_result)
+
+                print("  N={0}:".format(ps.n))
+                for (k, v) in best.items():
+                    r = v["C"] / v["CL"]
+                    print("    {k} time (s): 'C': {C:.4e}, 'CL': {CL:.4e} "
+                          "| ratio(C/CL): {r:.4f}".format(k=k, r=r, **v))
+
+                overhead = {}
+                for k, v in best["run"].items():
+                    overhead[k] = (best["set"][k] + best["get"][k]) / v
+                    overhead[k] *= 100
+                print("    overhead (%): 'C': {C:.4e}, "
+                      "'CL': {CL:.4e}".format(**overhead))
 
     def test01(self):
         print("\n---------- test01 ----------")
@@ -180,6 +215,16 @@ class TestCase2(unittest.TestCase):
         print("\n---------- test06 ----------")
         dt = 1.0/64
         self.performance(gravity.Sakura, self.pslist, dt)
+
+    def test07(self):
+        print("\n---------- test07 ----------")
+        dt = 1.0/64
+        self.performance(gravity.NREG_X, self.pslist, dt)
+
+    def test08(self):
+        print("\n---------- test08 ----------")
+        dt = 1.0/64
+        self.performance(gravity.NREG_V, self.pslist, dt)
 
 
 if __name__ == "__main__":

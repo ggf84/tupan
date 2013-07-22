@@ -95,6 +95,9 @@ __kernel void pnacc_kernel(
     const REAL inv5,
     const REAL inv6,
     const REAL inv7,
+    __global REAL *_ipnax,
+    __global REAL *_ipnay,
+    __global REAL *_ipnaz,
     __local REAL *__jm,
     __local REAL *__jrx,
     __local REAL *__jry,
@@ -102,10 +105,7 @@ __kernel void pnacc_kernel(
     __local REAL *__je2,
     __local REAL *__jvx,
     __local REAL *__jvy,
-    __local REAL *__jvz,
-    __global REAL *_ipnax,
-    __global REAL *_ipnay,
-    __global REAL *_ipnaz)
+    __local REAL *__jvz)
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);

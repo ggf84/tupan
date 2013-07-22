@@ -59,15 +59,68 @@ class Clight(object):
         self.inv7 = self.inv1**7
 
 
+def prepare_args(args, argtypes):
+    return [argtype(arg) for (arg, argtype) in zip(args, argtypes)]
+
+
+class AbstractExtension(object):
+    def set_args(self, iobj, jobj, *args):
+        raise NotImplemented
+
+    def run(self):
+        self.kernel.run()
+
+    def get_result(self):
+        return self.kernel.map_buffers(self._outargs, self.outargs)
+
+    def calc(self, iobj, jobj, *args):
+        self.set_args(iobj, jobj, *args)
+        self.run()
+        return self.get_result()
+
+
 @decallmethods(timings)
-class Phi(object):
+class Phi(AbstractExtension):
     """
 
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("phi_kernel", exttype, prec)
-        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        cty = self.kernel.cty
+        argtypes = (cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        restypes = (cty.c_real_p,)
+        self.argtypes = argtypes
+        self.restypes = restypes
+        lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem, start=19)
         self.max_output_size = 0
+
+    def set_args(self, iobj, jobj):
+        ni = iobj.n
+        nj = jobj.n
+
+        self.kernel.global_size = ni
+        if ni > self.max_output_size:
+            self._phi = np.zeros(ni, dtype=ctype.REAL)
+            self.max_output_size = ni
+
+        self._inargs = (ni,
+                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        nj,
+                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz)
+        self._outargs = (self._phi[:ni],)
+
+        self.inargs = prepare_args(self._inargs, self.argtypes)
+        self.outargs = prepare_args(self._outargs, self.restypes)
+
+        self.kernel.set_args(self.inargs + self.outargs)
 
     def _pycalc(self, iobj, jobj):
         # Never use this method for production runs. It is very slow
@@ -91,10 +144,27 @@ class Phi(object):
         return (self._phi[:ni],)
 #    calc = _pycalc
 
-    def calc(self, iobj, jobj):
-        self.set_args(iobj, jobj)
-        self.run()
-        return self.get_result()
+
+@decallmethods(timings)
+class Acc(AbstractExtension):
+    """
+
+    """
+    def __init__(self, exttype, prec):
+        self.kernel = get_kernel("acc_kernel", exttype, prec)
+        cty = self.kernel.cty
+        argtypes = (cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        self.argtypes = argtypes
+        self.restypes = restypes
+        lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem, start=21)
+        self.max_output_size = 0
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -102,37 +172,23 @@ class Phi(object):
 
         self.kernel.global_size = ni
         if ni > self.max_output_size:
-            self._phi = np.zeros(ni, dtype=ctype.REAL)
+            self._ax = np.zeros(ni, dtype=ctype.REAL)
+            self._ay = np.zeros(ni, dtype=ctype.REAL)
+            self._az = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        self.args = {"in": (ni,
-                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                     nj,
-                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz),
-                     "lmem": self._lmem,
-                     "out": (self._phi[:ni],)}
+        self._inargs = (ni,
+                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        nj,
+                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz)
+        self._outargs = (self._ax[:ni], self._ay[:ni], self._az[:ni])
 
-        self.kernel.set_args(**self.args)
+        self.inargs = prepare_args(self._inargs, self.argtypes)
+        self.outargs = prepare_args(self._outargs, self.restypes)
 
-    def run(self):
-        self.kernel.run()
-
-    def get_result(self):
-        self.kernel.map_buffers(self.args["out"])
-        return self.args["out"]
-
-
-@decallmethods(timings)
-class Acc(object):
-    """
-
-    """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("acc_kernel", exttype, prec)
-        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
-        self.max_output_size = 0
+        self.kernel.set_args(self.inargs + self.outargs)
 
     def _pycalc(self, iobj, jobj):
         # Never use this method for production runs. It is very slow
@@ -162,55 +218,28 @@ class Acc(object):
         return (self._ax[:ni], self._ay[:ni], self._az[:ni])
 #    calc = _pycalc
 
-    def calc(self, iobj, jobj):
-        self.set_args(iobj, jobj)
-        self.run()
-        return self.get_result()
-
-    def set_args(self, iobj, jobj):
-        ni = iobj.n
-        nj = jobj.n
-
-        self.kernel.global_size = ni
-        if ni > self.max_output_size:
-            self._ax = np.zeros(ni, dtype=ctype.REAL)
-            self._ay = np.zeros(ni, dtype=ctype.REAL)
-            self._az = np.zeros(ni, dtype=ctype.REAL)
-            self.max_output_size = ni
-
-        self.args = {"in": (ni,
-                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                     nj,
-                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz),
-                     "lmem": self._lmem,
-                     "out": (self._ax[:ni], self._ay[:ni], self._az[:ni])}
-
-        self.kernel.set_args(**self.args)
-
-    def run(self):
-        self.kernel.run()
-
-    def get_result(self):
-        self.kernel.map_buffers(self.args["out"])
-        return self.args["out"]
-
 
 @decallmethods(timings)
-class AccJerk(object):
+class AccJerk(AbstractExtension):
     """
 
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("acc_jerk_kernel", exttype, prec)
-        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        cty = self.kernel.cty
+        argtypes = (cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        self.argtypes = argtypes
+        self.restypes = restypes
+        lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem, start=24)
         self.max_output_size = 0
-
-    def calc(self, iobj, jobj):
-        self.set_args(iobj, jobj)
-        self.run()
-        return self.get_result()
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -226,40 +255,42 @@ class AccJerk(object):
             self._jz = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        self.args = {"in": (ni,
-                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                     nj,
-                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz),
-                     "lmem": self._lmem,
-                     "out": (self._ax[:ni], self._ay[:ni], self._az[:ni],
-                     self._jx[:ni], self._jy[:ni], self._jz[:ni])}
+        self._inargs = (ni,
+                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        nj,
+                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz)
+        self._outargs = (self._ax[:ni], self._ay[:ni], self._az[:ni],
+                         self._jx[:ni], self._jy[:ni], self._jz[:ni])
 
-        self.kernel.set_args(**self.args)
+        self.inargs = prepare_args(self._inargs, self.argtypes)
+        self.outargs = prepare_args(self._outargs, self.restypes)
 
-    def run(self):
-        self.kernel.run()
-
-    def get_result(self):
-        self.kernel.map_buffers(self.args["out"])
-        return self.args["out"]
+        self.kernel.set_args(self.inargs + self.outargs)
 
 
 @decallmethods(timings)
-class Tstep(object):
+class Tstep(AbstractExtension):
     """
 
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("tstep_kernel", exttype, prec)
-        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        cty = self.kernel.cty
+        argtypes = (cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real)
+        restypes = (cty.c_real_p, cty.c_real_p)
+        self.argtypes = argtypes
+        self.restypes = restypes
+        lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem, start=21)
         self.max_output_size = 0
-
-    def calc(self, iobj, jobj, eta):
-        self.set_args(iobj, jobj, eta)
-        self.run()
-        return self.get_result()
 
     def set_args(self, iobj, jobj, eta):
         ni = iobj.n
@@ -271,40 +302,45 @@ class Tstep(object):
             self._tstep_b = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        self.args = {"in": (ni,
-                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                     nj,
-                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                     eta),
-                     "lmem": self._lmem,
-                     "out": (self._tstep_a[:ni], self._tstep_b[:ni])}
+        self._inargs = (ni,
+                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        nj,
+                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                        eta)
+        self._outargs = (self._tstep_a[:ni], self._tstep_b[:ni])
 
-        self.kernel.set_args(**self.args)
+        self.inargs = prepare_args(self._inargs, self.argtypes)
+        self.outargs = prepare_args(self._outargs, self.restypes)
 
-    def run(self):
-        self.kernel.run()
-
-    def get_result(self):
-        self.kernel.map_buffers(self.args["out"])
-        return self.args["out"]
+        self.kernel.set_args(self.inargs + self.outargs)
 
 
 @decallmethods(timings)
-class PNAcc(object):
+class PNAcc(AbstractExtension):
     """
 
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("pnacc_kernel", exttype, prec)
-        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        cty = self.kernel.cty
+        argtypes = (cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_uint, cty.c_real,
+                    cty.c_real, cty.c_real,
+                    cty.c_real, cty.c_real,
+                    cty.c_real, cty.c_real)
+        restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        self.argtypes = argtypes
+        self.restypes = restypes
+        lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem, start=29)
         self.max_output_size = 0
-
-    def calc(self, iobj, jobj):
-        self.set_args(iobj, jobj)
-        self.run()
-        return self.get_result()
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
@@ -317,44 +353,46 @@ class PNAcc(object):
             self._pnaz = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        self.args = {"in": (ni,
-                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                     nj,
-                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                     clight.pn_order, clight.inv1,
-                     clight.inv2, clight.inv3,
-                     clight.inv4, clight.inv5,
-                     clight.inv6, clight.inv7),
-                     "lmem": self._lmem,
-                     "out": (self._pnax[:ni], self._pnay[:ni], self._pnaz[:ni])
-                     }
+        self._inargs = (ni,
+                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        nj,
+                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                        clight.pn_order, clight.inv1,
+                        clight.inv2, clight.inv3,
+                        clight.inv4, clight.inv5,
+                        clight.inv6, clight.inv7)
+        self._outargs = (self._pnax[:ni], self._pnay[:ni], self._pnaz[:ni])
 
-        self.kernel.set_args(**self.args)
+        self.inargs = prepare_args(self._inargs, self.argtypes)
+        self.outargs = prepare_args(self._outargs, self.restypes)
 
-    def run(self):
-        self.kernel.run()
-
-    def get_result(self):
-        self.kernel.map_buffers(self.args["out"])
-        return self.args["out"]
+        self.kernel.set_args(self.inargs + self.outargs)
 
 
 @decallmethods(timings)
-class Sakura(object):
+class Sakura(AbstractExtension):
     """
 
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("sakura_kernel", exttype, prec)
-        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        cty = self.kernel.cty
+        argtypes = (cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real)
+        restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        self.argtypes = argtypes
+        self.restypes = restypes
+        lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem, start=25)
         self.max_output_size = 0
-
-    def calc(self, iobj, jobj, dt):
-        self.set_args(iobj, jobj, dt)
-        self.run()
-        return self.get_result()
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
@@ -370,41 +408,45 @@ class Sakura(object):
             self._dvz = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        self.args = {"in": (ni,
-                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                     nj,
-                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                     dt),
-                     "lmem": self._lmem,
-                     "out": (self._drx[:ni], self._dry[:ni], self._drz[:ni],
-                     self._dvx[:ni], self._dvy[:ni], self._dvz[:ni])}
+        self._inargs = (ni,
+                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        nj,
+                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                        dt)
+        self._outargs = (self._drx[:ni], self._dry[:ni], self._drz[:ni],
+                         self._dvx[:ni], self._dvy[:ni], self._dvz[:ni])
 
-        self.kernel.set_args(**self.args)
+        self.inargs = prepare_args(self._inargs, self.argtypes)
+        self.outargs = prepare_args(self._outargs, self.restypes)
 
-    def run(self):
-        self.kernel.run()
-
-    def get_result(self):
-        self.kernel.map_buffers(self.args["out"])
-        return self.args["out"]
+        self.kernel.set_args(self.inargs + self.outargs)
 
 
 @decallmethods(timings)
-class NREG_X(object):
+class NREG_X(AbstractExtension):
     """
 
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("nreg_Xkernel", exttype, prec)
-        self._lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        cty = self.kernel.cty
+        argtypes = (cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real)
+        restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p)
+        self.argtypes = argtypes
+        self.restypes = restypes
+        lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem, start=26)
         self.max_output_size = 0
-
-    def calc(self, iobj, jobj, dt):
-        self.set_args(iobj, jobj, dt)
-        self.run()
-        return self.get_result()
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
@@ -421,42 +463,45 @@ class NREG_X(object):
             self._u = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        self.args = {"in": (ni,
-                     iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                     iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
-                     nj,
-                     jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                     jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
-                     dt),
-                     "lmem": self._lmem,
-                     "out": (self._rx[:ni], self._ry[:ni], self._rz[:ni],
-                     self._ax[:ni], self._ay[:ni], self._az[:ni],
-                     self._u[:ni])}
+        self._inargs = (ni,
+                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
+                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        nj,
+                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
+                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                        dt)
+        self._outargs = (self._rx[:ni], self._ry[:ni], self._rz[:ni],
+                         self._ax[:ni], self._ay[:ni], self._az[:ni],
+                         self._u[:ni])
 
-        self.kernel.set_args(**self.args)
+        self.inargs = prepare_args(self._inargs, self.argtypes)
+        self.outargs = prepare_args(self._outargs, self.restypes)
 
-    def run(self):
-        self.kernel.run()
-
-    def get_result(self):
-        self.kernel.map_buffers(self.args["out"])
-        return self.args["out"]
+        self.kernel.set_args(self.inargs + self.outargs)
 
 
 @decallmethods(timings)
-class NREG_V(object):
+class NREG_V(AbstractExtension):
     """
 
     """
     def __init__(self, exttype, prec):
         self.kernel = get_kernel("nreg_Vkernel", exttype, prec)
-        self._lmem = self.kernel.allocate_local_memory(7, np.dtype(ctype.REAL))
+        cty = self.kernel.cty
+        argtypes = (cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real)
+        restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p)
+        self.argtypes = argtypes
+        self.restypes = restypes
+        lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem[:7], start=21)
         self.max_output_size = 0
-
-    def calc(self, iobj, jobj, dt):
-        self.set_args(iobj, jobj, dt)
-        self.run()
-        return self.get_result()
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
@@ -470,25 +515,20 @@ class NREG_V(object):
             self._k = np.zeros(ni, dtype=ctype.REAL)
             self.max_output_size = ni
 
-        self.args = {"in": (ni,
-                     iobj.mass, iobj.vx, iobj.vy, iobj.vz,
-                     iobj.ax, iobj.ay, iobj.az,
-                     nj,
-                     jobj.mass, jobj.vx, jobj.vy, jobj.vz,
-                     jobj.ax, jobj.ay, jobj.az,
-                     dt),
-                     "lmem": self._lmem,
-                     "out": (self._vx[:ni], self._vy[:ni], self._vz[:ni],
-                     self._k[:ni])}
+        self._inargs = (ni,
+                        iobj.mass, iobj.vx, iobj.vy, iobj.vz,
+                        iobj.ax, iobj.ay, iobj.az,
+                        nj,
+                        jobj.mass, jobj.vx, jobj.vy, jobj.vz,
+                        jobj.ax, jobj.ay, jobj.az,
+                        dt)
+        self._outargs = (self._vx[:ni], self._vy[:ni], self._vz[:ni],
+                         self._k[:ni])
 
-        self.kernel.set_args(**self.args)
+        self.inargs = prepare_args(self._inargs, self.argtypes)
+        self.outargs = prepare_args(self._outargs, self.restypes)
 
-    def run(self):
-        self.kernel.run()
-
-    def get_result(self):
-        self.kernel.map_buffers(self.args["out"])
-        return self.args["out"]
+        self.kernel.set_args(self.inargs + self.outargs)
 
 
 exttype = "CL" if "--use_cl" in sys.argv else "C"

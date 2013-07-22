@@ -87,6 +87,8 @@ __kernel void tstep_kernel(
     __global const REAL *_jvy,
     __global const REAL *_jvz,
     const REAL eta,
+    __global REAL *_idt_a,
+    __global REAL *_idt_b,
     __local REAL *__jm,
     __local REAL *__jrx,
     __local REAL *__jry,
@@ -94,9 +96,7 @@ __kernel void tstep_kernel(
     __local REAL *__je2,
     __local REAL *__jvx,
     __local REAL *__jvy,
-    __local REAL *__jvz,
-    __global REAL *_idt_a,
-    __global REAL *_idt_b)
+    __local REAL *__jvz)
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);

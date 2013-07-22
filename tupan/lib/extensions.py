@@ -8,9 +8,10 @@ TODO.
 
 from __future__ import print_function, division
 import os
+import ctypes
 import logging
-import numpy as np
-from itertools import chain
+from functools import partial
+from collections import namedtuple
 from .utils import ctype
 from .utils.timing import decallmethods, timings
 
@@ -57,6 +58,18 @@ class CLKernel(object):
         self.kernel = kernel
         self._gsize = None
 
+        memf = cl.mem_flags
+        flags = memf.READ_WRITE | memf.USE_HOST_PTR
+        clBuffer = partial(cl.Buffer, self.env.ctx, flags)
+
+        types = namedtuple("Types", ["c_uint", "c_uint_p",
+                                     "c_real", "c_real_p"])
+        self.cty = types(c_uint=ctype.UINT,
+                         c_uint_p=lambda x: clBuffer(hostbuf=x),
+                         c_real=ctype.REAL,
+                         c_real_p=lambda x: clBuffer(hostbuf=x),
+                         )
+
     @property
     def global_size(self):
         return self._gsize
@@ -65,6 +78,8 @@ class CLKernel(object):
     def global_size(self, ni):
         gs0 = ((ni-1)//2 + 1) * 2
         self._gsize = (gs0,)
+        ls0 = min(self.max_local_size, gs0//2)
+        self.local_size = (ls0,)
 
     def allocate_local_memory(self, numbufs, dtype):
         itemsize = dtype.itemsize
@@ -72,53 +87,34 @@ class CLKernel(object):
         wgsize = (dev.local_mem_size // itemsize) // numbufs
         wgsize = min(wgsize, dev.max_work_group_size)
         size = itemsize * wgsize
+        self.max_local_size = wgsize
         return [cl.LocalMemory(size) for i in range(numbufs)]
 
-    def set_int(self, arg):
-        return ctype.UINT(arg)
-
-    def set_float(self, arg):
-        return ctype.REAL(arg)
-
-    def set_array(self, arr):
-        memf = cl.mem_flags
-        return cl.Buffer(self.env.ctx,
-                         memf.READ_WRITE | memf.USE_HOST_PTR,
-                         hostbuf=arr)
-
-    def set_arg(self, arg):
-        if isinstance(arg, np.ndarray):
-            return self.set_array(arg)
-        if isinstance(arg, int):
-            return self.set_int(arg)
-        if isinstance(arg, float):
-            return self.set_float(arg)
-
-    def set_args(self, **kwargs):
-        self.in_buf = [self.set_arg(arg) for arg in kwargs["in"]]
-        self.out_buf = [self.set_arg(arg) for arg in kwargs["out"]]
-        args = chain(self.in_buf, kwargs["lmem"], self.out_buf)
-        for i, arg in enumerate(args):
+    def set_args(self, args, start=0):
+        for (i, arg) in enumerate(args, start):
             self.kernel.set_arg(i, arg)
 
-    def map_buffers(self, arrays):
+    def map_buffers(self, arrays, buffers):
         mapf = cl.map_flags
-        for i, array in enumerate(arrays):
-            (pointer, ev) = cl.enqueue_map_buffer(self.env.queue,
-                                                  self.out_buf[i],
-                                                  mapf.READ | mapf.WRITE,
+        flags = mapf.READ | mapf.WRITE
+        queue = self.env.queue
+        for (i, array) in enumerate(arrays):
+            (pointer, ev) = cl.enqueue_map_buffer(queue,
+                                                  buffers[i],
+                                                  flags,
                                                   0,
                                                   array.shape,
                                                   array.dtype,
                                                   "C")
             ev.wait()
-#            cl.enqueue_copy(self.env.queue, array, self.out_buf[i])
+#            cl.enqueue_copy(self.env.queue, array, buffers[i])
+        return arrays
 
     def run(self):
         cl.enqueue_nd_range_kernel(self.env.queue,
                                    self.kernel,
                                    self.global_size,
-                                   None,
+                                   self.local_size,
                                    ).wait()
 
 
@@ -183,36 +179,29 @@ class CKernel(object):
 
     def __init__(self, env, ffi, kernel):
         self.env = env
-        self.ffi = ffi
         self.kernel = kernel
+
+        from_buffer = ctypes.c_char.from_buffer
+        addressof = ctypes.addressof
+        icast = partial(ffi.cast, "UINT *")
+        rcast = partial(ffi.cast, "REAL *")
+
+        types = namedtuple("Types", ["c_uint", "c_uint_p",
+                                     "c_real", "c_real_p"])
+        self.cty = types(c_uint=lambda x: x,
+                         c_uint_p=lambda x: icast(addressof(from_buffer(x))),
+                         c_real=lambda x: x,
+                         c_real_p=lambda x: rcast(addressof(from_buffer(x))),
+                         )
 
     def allocate_local_memory(self, numbufs, dtype):
         return []
 
-    def set_int(self, arg):
-        return arg
+    def set_args(self, args, start=0):
+        self.args = args
 
-    def set_float(self, arg):
-        return arg
-
-    def set_array(self, arg):
-        return self.ffi.cast("REAL *", arg.__array_interface__["data"][0])
-
-    def set_arg(self, arg):
-        if isinstance(arg, np.ndarray):
-            return self.set_array(arg)
-        if isinstance(arg, int):
-            return self.set_int(arg)
-        if isinstance(arg, float):
-            return self.set_float(arg)
-
-    def set_args(self, **kwargs):
-        in_buf = (self.set_arg(arg) for arg in kwargs["in"])
-        out_buf = (self.set_arg(arg) for arg in kwargs["out"])
-        self.args = [i for i in chain(in_buf, out_buf)]
-
-    def map_buffers(self, arrays):
-        pass
+    def map_buffers(self, arrays, buffers):
+        return arrays
 
     def run(self):
         self.kernel(*self.args)

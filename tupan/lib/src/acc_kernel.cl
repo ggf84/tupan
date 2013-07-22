@@ -85,6 +85,9 @@ __kernel void acc_kernel(
     __global const REAL *_jvx,
     __global const REAL *_jvy,
     __global const REAL *_jvz,
+    __global REAL *_iax,
+    __global REAL *_iay,
+    __global REAL *_iaz,
     __local REAL *__jm,
     __local REAL *__jrx,
     __local REAL *__jry,
@@ -92,10 +95,7 @@ __kernel void acc_kernel(
     __local REAL *__je2,
     __local REAL *__jvx,
     __local REAL *__jvy,
-    __local REAL *__jvz,
-    __global REAL *_iax,
-    __global REAL *_iay,
-    __global REAL *_iaz)
+    __local REAL *__jvz)
 {
     uint gid = get_global_id(0);
     uint i = (gid < ni) ? (gid) : (ni-1);
