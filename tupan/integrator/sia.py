@@ -10,6 +10,7 @@ from __future__ import print_function
 import logging
 from ..integrator import Base
 from ..lib import gravity
+from ..lib.utils import ctype
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -81,7 +82,7 @@ def kick_n(ips, jps, tau):
     """
     Kick operator for Newtonian quantities.
     """
-    (ips.ax, ips.ay, ips.az) = ips.get_acc(jps)
+    (ips.ax[:], ips.ay[:], ips.az[:]) = ips.get_acc(jps)
     ips.vx += tau * ips.ax
     ips.vy += tau * ips.ay
     ips.vz += tau * ips.az
@@ -512,6 +513,9 @@ class SIA(Base):
                     self.method)
 
         ps = self.ps
+        ps.register_attr("ax", ctype.REAL)
+        ps.register_attr("ay", ctype.REAL)
+        ps.register_attr("az", ctype.REAL)
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)

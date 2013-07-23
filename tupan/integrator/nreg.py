@@ -11,6 +11,7 @@ import logging
 from ..integrator import Base
 from ..lib.gravity import nreg_x as llnreg_x
 from ..lib.gravity import nreg_v as llnreg_v
+from ..lib.utils import ctype
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -47,7 +48,7 @@ def nreg_x(ps, dt):
     ps.rz += dt * ps.vz
     type(ps).t_curr += dt
     type(ps).U = -ps.potential_energy
-    (ps.ax, ps.ay, ps.az) = ps.get_acc(ps)
+    (ps.ax[:], ps.ay[:], ps.az[:]) = ps.get_acc(ps)
     return ps
 
 
@@ -133,6 +134,9 @@ class NREG(Base):
                     self.method)
 
         ps = self.ps
+        ps.register_attr("ax", ctype.REAL)
+        ps.register_attr("ay", ctype.REAL)
+        ps.register_attr("az", ctype.REAL)
         type(ps).W = -ps.potential_energy
         type(ps).U = -ps.potential_energy
         type(ps).S = -ps.potential_energy
