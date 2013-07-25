@@ -239,7 +239,7 @@ if __name__ == "__main__":
     test_cases = (TestCase1, TestCase2)
 
     suite = load_tests(test_cases)
-    unittest.TextTestRunner(verbosity=1).run(suite)
+    unittest.TextTestRunner(verbosity=1, failfast=True).run(suite)
 
 
 ########## end of file ##########

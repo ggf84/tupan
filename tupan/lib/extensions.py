@@ -10,6 +10,7 @@ from __future__ import print_function, division
 import os
 import ctypes
 import logging
+from fractions import gcd
 from functools import partial
 from collections import namedtuple
 from .utils import ctype
@@ -47,7 +48,6 @@ class CLEnv(object):
         self.prec = prec
         self.fast_math = fast_math
         self.ctx = cl.create_some_context()
-        self.queue = cl.CommandQueue(self.ctx)
 
 
 @decallmethods(timings)
@@ -55,6 +55,7 @@ class CLKernel(object):
 
     def __init__(self, env, kernel):
         self.env = env
+        self.queue = cl.CommandQueue(self.env.ctx)
         self.kernel = kernel
         self._gsize = None
 
@@ -78,17 +79,21 @@ class CLKernel(object):
     def global_size(self, ni):
         gs0 = ((ni-1)//2 + 1) * 2
         self._gsize = (gs0,)
-        ls0 = min(self.max_local_size, gs0//2)
+        ls0 = gcd(gs0, self.wgsize)
         self.local_size = (ls0,)
 
-    def allocate_local_memory(self, numbufs, dtype):
+    def allocate_local_memory(self, nbufs, dtype):
         itemsize = dtype.itemsize
         dev = self.env.ctx.devices[0]
-        wgsize = (dev.local_mem_size // itemsize) // numbufs
-        wgsize = min(wgsize, dev.max_work_group_size)
-        size = itemsize * wgsize
-        self.max_local_size = wgsize
-        return [cl.LocalMemory(size) for i in range(numbufs)]
+
+        nbsize = itemsize * nbufs
+        size0 = dev.local_mem_size
+        size1 = dev.max_work_group_size
+        wgsize = gcd(size0, size1 * nbsize) // nbsize
+        self.wgsize = wgsize
+        lmsize = wgsize * itemsize
+
+        return [cl.LocalMemory(lmsize) for i in range(nbufs)]
 
     def set_args(self, args, start=0):
         for (i, arg) in enumerate(args, start):
@@ -97,7 +102,7 @@ class CLKernel(object):
     def map_buffers(self, arrays, buffers):
         mapf = cl.map_flags
         flags = mapf.READ | mapf.WRITE
-        queue = self.env.queue
+        queue = self.queue
         for (i, array) in enumerate(arrays):
             (pointer, ev) = cl.enqueue_map_buffer(queue,
                                                   buffers[i],
@@ -107,11 +112,11 @@ class CLKernel(object):
                                                   array.dtype,
                                                   "C")
             ev.wait()
-#            cl.enqueue_copy(self.env.queue, array, buffers[i])
+#            cl.enqueue_copy(self.queue, array, buffers[i])
         return arrays
 
     def run(self):
-        cl.enqueue_nd_range_kernel(self.env.queue,
+        cl.enqueue_nd_range_kernel(self.queue,
                                    self.kernel,
                                    self.global_size,
                                    self.local_size,
