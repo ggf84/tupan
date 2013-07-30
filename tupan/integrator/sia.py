@@ -119,11 +119,10 @@ def kick_pn(ips, jps, tau):
     ips.evolve_lmom_pn_shift(tau / 2)
     ips.evolve_amom_pn_shift(tau / 2)
 
-    (pnax, pnay, pnaz) = ips.get_pnacc(jps)
-    g = 2 * tau * 0
-    ips.pn_dvx = (tau * pnax - (1 - g) * ips.pn_dvx) / (1 + g)
-    ips.pn_dvy = (tau * pnay - (1 - g) * ips.pn_dvy) / (1 + g)
-    ips.pn_dvz = (tau * pnaz - (1 - g) * ips.pn_dvz) / (1 + g)
+    ips.set_pnacc(jps)
+    ips.pn_dvx = (tau * ips.pnax - ips.pn_dvx)
+    ips.pn_dvy = (tau * ips.pnay - ips.pn_dvy)
+    ips.pn_dvz = (tau * ips.pnaz - ips.pn_dvz)
 
     ips.evolve_amom_pn_shift(tau / 2)
     ips.evolve_lmom_pn_shift(tau / 2)

@@ -64,7 +64,7 @@ def prepare_args(args, argtypes):
 
 
 class AbstractExtension(object):
-    def set_args(self, iobj, jobj, *args):
+    def set_args(self, ips, jps, *args):
         raise NotImplemented
 
     def run(self):
@@ -73,8 +73,8 @@ class AbstractExtension(object):
     def get_result(self):
         return self.kernel.map_buffers(self._outargs, self.outargs)
 
-    def calc(self, iobj, jobj, *args):
-        self.set_args(iobj, jobj, *args)
+    def calc(self, ips, jps, *args):
+        self.set_args(ips, jps, *args)
         self.run()
         return self.get_result()
 
@@ -99,46 +99,46 @@ class Phi(AbstractExtension):
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=19)
 
-    def set_args(self, iobj, jobj):
-        ni = iobj.n
-        nj = jobj.n
+    def set_args(self, ips, jps):
+        ni = ips.n
+        nj = jps.n
 
         self.kernel.global_size = ni
-        if not "phi" in iobj.__dict__:
-            iobj.register_attr("phi", ctype.REAL)
+        if not "phi" in ips.__dict__:
+            ips.register_auxiliary_attribute("phi", ctype.REAL)
 
         self._inargs = (ni,
-                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        ips.mass, ips.rx, ips.ry, ips.rz,
+                        ips.eps2, ips.vx, ips.vy, ips.vz,
                         nj,
-                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz)
-        self._outargs = (iobj.phi,)
+                        jps.mass, jps.rx, jps.ry, jps.rz,
+                        jps.eps2, jps.vx, jps.vy, jps.vz)
+        self._outargs = (ips.phi,)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
 
         self.kernel.set_args(self.inargs + self.outargs)
 
-    def _pycalc(self, iobj, jobj):
+    def _pycalc(self, ips, jps):
         # Never use this method for production runs. It is very slow
         # and is here only for performance comparisons. It is also
         # likely that only the classes Acc and Phi will have an
         # implementation of this method.
-        ni = iobj.n
-        if not "phi" in iobj.__dict__:
-            iobj.register_attr("phi", ctype.REAL)
+        ni = ips.n
+        if not "phi" in ips.__dict__:
+            ips.register_auxiliary_attribute("phi", ctype.REAL)
         for i in range(ni):
-            rx = iobj.rx[i] - jobj.rx
-            ry = iobj.ry[i] - jobj.ry
-            rz = iobj.rz[i] - jobj.rz
-            e2 = iobj.eps2[i] + jobj.eps2
+            rx = ips.rx[i] - jps.rx
+            ry = ips.ry[i] - jps.ry
+            rz = ips.rz[i] - jps.rz
+            e2 = ips.eps2[i] + jps.eps2
             r2 = rx * rx + ry * ry + rz * rz
             mask = r2 > 0
             inv_r2 = 1 / (r2 + e2)
             inv_r = np.sqrt(inv_r2)
-            iobj.phi[i] = -(jobj.mass * inv_r)[mask].sum()
-        return (iobj.phi,)
+            ips.phi[i] = -(jps.mass * inv_r)[mask].sum()
+        return (ips.phi,)
 #    calc = _pycalc
 
 
@@ -162,58 +162,58 @@ class Acc(AbstractExtension):
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=21)
 
-    def set_args(self, iobj, jobj):
-        ni = iobj.n
-        nj = jobj.n
+    def set_args(self, ips, jps):
+        ni = ips.n
+        nj = jps.n
 
         self.kernel.global_size = ni
-        if not "ax" in iobj.__dict__:
-            iobj.register_attr("ax", ctype.REAL)
-        if not "ay" in iobj.__dict__:
-            iobj.register_attr("ay", ctype.REAL)
-        if not "az" in iobj.__dict__:
-            iobj.register_attr("az", ctype.REAL)
+        if not "ax" in ips.__dict__:
+            ips.register_auxiliary_attribute("ax", ctype.REAL)
+        if not "ay" in ips.__dict__:
+            ips.register_auxiliary_attribute("ay", ctype.REAL)
+        if not "az" in ips.__dict__:
+            ips.register_auxiliary_attribute("az", ctype.REAL)
 
         self._inargs = (ni,
-                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        ips.mass, ips.rx, ips.ry, ips.rz,
+                        ips.eps2, ips.vx, ips.vy, ips.vz,
                         nj,
-                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz)
-        self._outargs = (iobj.ax, iobj.ay, iobj.az)
+                        jps.mass, jps.rx, jps.ry, jps.rz,
+                        jps.eps2, jps.vx, jps.vy, jps.vz)
+        self._outargs = (ips.ax, ips.ay, ips.az)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
 
         self.kernel.set_args(self.inargs + self.outargs)
 
-    def _pycalc(self, iobj, jobj):
+    def _pycalc(self, ips, jps):
         # Never use this method for production runs. It is very slow
         # and is here only for performance comparisons. It is also
         # likely that only the classes Acc and Phi will have an
         # implementation of this method.
-        ni = iobj.n
-        if not "ax" in iobj.__dict__:
-            iobj.register_attr("ax", ctype.REAL)
-        if not "ay" in iobj.__dict__:
-            iobj.register_attr("ay", ctype.REAL)
-        if not "az" in iobj.__dict__:
-            iobj.register_attr("az", ctype.REAL)
+        ni = ips.n
+        if not "ax" in ips.__dict__:
+            ips.register_auxiliary_attribute("ax", ctype.REAL)
+        if not "ay" in ips.__dict__:
+            ips.register_auxiliary_attribute("ay", ctype.REAL)
+        if not "az" in ips.__dict__:
+            ips.register_auxiliary_attribute("az", ctype.REAL)
         for i in range(ni):
-            rx = iobj.rx[i] - jobj.rx
-            ry = iobj.ry[i] - jobj.ry
-            rz = iobj.rz[i] - jobj.rz
-            e2 = iobj.eps2[i] + jobj.eps2
+            rx = ips.rx[i] - jps.rx
+            ry = ips.ry[i] - jps.ry
+            rz = ips.rz[i] - jps.rz
+            e2 = ips.eps2[i] + jps.eps2
             r2 = rx * rx + ry * ry + rz * rz
             mask = r2 > 0
             inv_r2 = 1 / (r2 + e2)
             inv_r = np.sqrt(inv_r2)
             inv_r3 = inv_r * inv_r2
-            inv_r3 *= jobj.mass
-            iobj.ax[i] = -(inv_r3 * rx)[mask].sum()
-            iobj.ay[i] = -(inv_r3 * ry)[mask].sum()
-            iobj.az[i] = -(inv_r3 * rz)[mask].sum()
-        return (iobj.ax, iobj.ay, iobj.az)
+            inv_r3 *= jps.mass
+            ips.ax[i] = -(inv_r3 * rx)[mask].sum()
+            ips.ay[i] = -(inv_r3 * ry)[mask].sum()
+            ips.az[i] = -(inv_r3 * rz)[mask].sum()
+        return (ips.ax, ips.ay, ips.az)
 #    calc = _pycalc
 
 
@@ -238,32 +238,32 @@ class AccJerk(AbstractExtension):
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=24)
 
-    def set_args(self, iobj, jobj):
-        ni = iobj.n
-        nj = jobj.n
+    def set_args(self, ips, jps):
+        ni = ips.n
+        nj = jps.n
 
         self.kernel.global_size = ni
-        if not "ax" in iobj.__dict__:
-            iobj.register_attr("ax", ctype.REAL)
-        if not "ay" in iobj.__dict__:
-            iobj.register_attr("ay", ctype.REAL)
-        if not "az" in iobj.__dict__:
-            iobj.register_attr("az", ctype.REAL)
-        if not "jx" in iobj.__dict__:
-            iobj.register_attr("jx", ctype.REAL)
-        if not "jy" in iobj.__dict__:
-            iobj.register_attr("jy", ctype.REAL)
-        if not "jz" in iobj.__dict__:
-            iobj.register_attr("jz", ctype.REAL)
+        if not "ax" in ips.__dict__:
+            ips.register_auxiliary_attribute("ax", ctype.REAL)
+        if not "ay" in ips.__dict__:
+            ips.register_auxiliary_attribute("ay", ctype.REAL)
+        if not "az" in ips.__dict__:
+            ips.register_auxiliary_attribute("az", ctype.REAL)
+        if not "jx" in ips.__dict__:
+            ips.register_auxiliary_attribute("jx", ctype.REAL)
+        if not "jy" in ips.__dict__:
+            ips.register_auxiliary_attribute("jy", ctype.REAL)
+        if not "jz" in ips.__dict__:
+            ips.register_auxiliary_attribute("jz", ctype.REAL)
 
         self._inargs = (ni,
-                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        ips.mass, ips.rx, ips.ry, ips.rz,
+                        ips.eps2, ips.vx, ips.vy, ips.vz,
                         nj,
-                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz)
-        self._outargs = (iobj.ax, iobj.ay, iobj.az,
-                         iobj.jx, iobj.jy, iobj.jz)
+                        jps.mass, jps.rx, jps.ry, jps.rz,
+                        jps.eps2, jps.vx, jps.vy, jps.vz)
+        self._outargs = (ips.ax, ips.ay, ips.az,
+                         ips.jx, ips.jy, ips.jz)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -292,24 +292,24 @@ class Tstep(AbstractExtension):
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=21)
 
-    def set_args(self, iobj, jobj, eta):
-        ni = iobj.n
-        nj = jobj.n
+    def set_args(self, ips, jps, eta):
+        ni = ips.n
+        nj = jps.n
 
         self.kernel.global_size = ni
-        if not "tstep" in iobj.__dict__:
-            iobj.register_attr("tstep", ctype.REAL)
-        if not "tstepij" in iobj.__dict__:
-            iobj.register_attr("tstepij", ctype.REAL)
+        if not "tstep" in ips.__dict__:
+            ips.register_auxiliary_attribute("tstep", ctype.REAL)
+        if not "tstepij" in ips.__dict__:
+            ips.register_auxiliary_attribute("tstepij", ctype.REAL)
 
         self._inargs = (ni,
-                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        ips.mass, ips.rx, ips.ry, ips.rz,
+                        ips.eps2, ips.vx, ips.vy, ips.vz,
                         nj,
-                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                        jps.mass, jps.rx, jps.ry, jps.rz,
+                        jps.eps2, jps.vx, jps.vy, jps.vz,
                         eta)
-        self._outargs = (iobj.tstep, iobj.tstepij)
+        self._outargs = (ips.tstep, ips.tstepij)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -341,29 +341,29 @@ class PNAcc(AbstractExtension):
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=29)
 
-    def set_args(self, iobj, jobj):
-        ni = iobj.n
-        nj = jobj.n
+    def set_args(self, ips, jps):
+        ni = ips.n
+        nj = jps.n
 
         self.kernel.global_size = ni
-        if not "pnax" in iobj.__dict__:
-            iobj.register_attr("pnax", ctype.REAL)
-        if not "pnay" in iobj.__dict__:
-            iobj.register_attr("pnay", ctype.REAL)
-        if not "pnaz" in iobj.__dict__:
-            iobj.register_attr("pnaz", ctype.REAL)
+        if not "pnax" in ips.__dict__:
+            ips.register_auxiliary_attribute("pnax", ctype.REAL)
+        if not "pnay" in ips.__dict__:
+            ips.register_auxiliary_attribute("pnay", ctype.REAL)
+        if not "pnaz" in ips.__dict__:
+            ips.register_auxiliary_attribute("pnaz", ctype.REAL)
 
         self._inargs = (ni,
-                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        ips.mass, ips.rx, ips.ry, ips.rz,
+                        ips.eps2, ips.vx, ips.vy, ips.vz,
                         nj,
-                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                        jps.mass, jps.rx, jps.ry, jps.rz,
+                        jps.eps2, jps.vx, jps.vy, jps.vz,
                         clight.pn_order, clight.inv1,
                         clight.inv2, clight.inv3,
                         clight.inv4, clight.inv5,
                         clight.inv6, clight.inv7)
-        self._outargs = (iobj.pnax, iobj.pnay, iobj.pnaz)
+        self._outargs = (ips.pnax, ips.pnay, ips.pnaz)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -393,33 +393,33 @@ class Sakura(AbstractExtension):
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=25)
 
-    def set_args(self, iobj, jobj, dt):
-        ni = iobj.n
-        nj = jobj.n
+    def set_args(self, ips, jps, dt):
+        ni = ips.n
+        nj = jps.n
 
         self.kernel.global_size = ni
-        if not "drx" in iobj.__dict__:
-            iobj.register_attr("drx", ctype.REAL)
-        if not "dry" in iobj.__dict__:
-            iobj.register_attr("dry", ctype.REAL)
-        if not "drz" in iobj.__dict__:
-            iobj.register_attr("drz", ctype.REAL)
-        if not "dvx" in iobj.__dict__:
-            iobj.register_attr("dvx", ctype.REAL)
-        if not "dvy" in iobj.__dict__:
-            iobj.register_attr("dvy", ctype.REAL)
-        if not "dvz" in iobj.__dict__:
-            iobj.register_attr("dvz", ctype.REAL)
+        if not "drx" in ips.__dict__:
+            ips.register_auxiliary_attribute("drx", ctype.REAL)
+        if not "dry" in ips.__dict__:
+            ips.register_auxiliary_attribute("dry", ctype.REAL)
+        if not "drz" in ips.__dict__:
+            ips.register_auxiliary_attribute("drz", ctype.REAL)
+        if not "dvx" in ips.__dict__:
+            ips.register_auxiliary_attribute("dvx", ctype.REAL)
+        if not "dvy" in ips.__dict__:
+            ips.register_auxiliary_attribute("dvy", ctype.REAL)
+        if not "dvz" in ips.__dict__:
+            ips.register_auxiliary_attribute("dvz", ctype.REAL)
 
         self._inargs = (ni,
-                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        ips.mass, ips.rx, ips.ry, ips.rz,
+                        ips.eps2, ips.vx, ips.vy, ips.vz,
                         nj,
-                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                        jps.mass, jps.rx, jps.ry, jps.rz,
+                        jps.eps2, jps.vx, jps.vy, jps.vz,
                         dt)
-        self._outargs = (iobj.drx, iobj.dry, iobj.drz,
-                         iobj.dvx, iobj.dvy, iobj.dvz)
+        self._outargs = (ips.drx, ips.dry, ips.drz,
+                         ips.dvx, ips.dvy, ips.dvz)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -450,36 +450,36 @@ class NREG_X(AbstractExtension):
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=26)
 
-    def set_args(self, iobj, jobj, dt):
-        ni = iobj.n
-        nj = jobj.n
+    def set_args(self, ips, jps, dt):
+        ni = ips.n
+        nj = jps.n
 
         self.kernel.global_size = ni
-        if not "mrx" in iobj.__dict__:
-            iobj.register_attr("mrx", ctype.REAL)
-        if not "mry" in iobj.__dict__:
-            iobj.register_attr("mry", ctype.REAL)
-        if not "mrz" in iobj.__dict__:
-            iobj.register_attr("mrz", ctype.REAL)
-        if not "ax" in iobj.__dict__:
-            iobj.register_attr("ax", ctype.REAL)
-        if not "ay" in iobj.__dict__:
-            iobj.register_attr("ay", ctype.REAL)
-        if not "az" in iobj.__dict__:
-            iobj.register_attr("az", ctype.REAL)
-        if not "u" in iobj.__dict__:
-            iobj.register_attr("u", ctype.REAL)
+        if not "mrx" in ips.__dict__:
+            ips.register_auxiliary_attribute("mrx", ctype.REAL)
+        if not "mry" in ips.__dict__:
+            ips.register_auxiliary_attribute("mry", ctype.REAL)
+        if not "mrz" in ips.__dict__:
+            ips.register_auxiliary_attribute("mrz", ctype.REAL)
+        if not "ax" in ips.__dict__:
+            ips.register_auxiliary_attribute("ax", ctype.REAL)
+        if not "ay" in ips.__dict__:
+            ips.register_auxiliary_attribute("ay", ctype.REAL)
+        if not "az" in ips.__dict__:
+            ips.register_auxiliary_attribute("az", ctype.REAL)
+        if not "u" in ips.__dict__:
+            ips.register_auxiliary_attribute("u", ctype.REAL)
 
         self._inargs = (ni,
-                        iobj.mass, iobj.rx, iobj.ry, iobj.rz,
-                        iobj.eps2, iobj.vx, iobj.vy, iobj.vz,
+                        ips.mass, ips.rx, ips.ry, ips.rz,
+                        ips.eps2, ips.vx, ips.vy, ips.vz,
                         nj,
-                        jobj.mass, jobj.rx, jobj.ry, jobj.rz,
-                        jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
+                        jps.mass, jps.rx, jps.ry, jps.rz,
+                        jps.eps2, jps.vx, jps.vy, jps.vz,
                         dt)
-        self._outargs = (iobj.mrx, iobj.mry, iobj.mrz,
-                         iobj.ax, iobj.ay, iobj.az,
-                         iobj.u)
+        self._outargs = (ips.mrx, ips.mry, ips.mrz,
+                         ips.ax, ips.ay, ips.az,
+                         ips.u)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -509,29 +509,29 @@ class NREG_V(AbstractExtension):
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem[:7], start=21)
 
-    def set_args(self, iobj, jobj, dt):
-        ni = iobj.n
-        nj = jobj.n
+    def set_args(self, ips, jps, dt):
+        ni = ips.n
+        nj = jps.n
 
         self.kernel.global_size = ni
-        if not "mvx" in iobj.__dict__:
-            iobj.register_attr("mvx", ctype.REAL)
-        if not "mvy" in iobj.__dict__:
-            iobj.register_attr("mvy", ctype.REAL)
-        if not "mvz" in iobj.__dict__:
-            iobj.register_attr("mvz", ctype.REAL)
-        if not "mk" in iobj.__dict__:
-            iobj.register_attr("mk", ctype.REAL)
+        if not "mvx" in ips.__dict__:
+            ips.register_auxiliary_attribute("mvx", ctype.REAL)
+        if not "mvy" in ips.__dict__:
+            ips.register_auxiliary_attribute("mvy", ctype.REAL)
+        if not "mvz" in ips.__dict__:
+            ips.register_auxiliary_attribute("mvz", ctype.REAL)
+        if not "mk" in ips.__dict__:
+            ips.register_auxiliary_attribute("mk", ctype.REAL)
 
         self._inargs = (ni,
-                        iobj.mass, iobj.vx, iobj.vy, iobj.vz,
-                        iobj.ax, iobj.ay, iobj.az,
+                        ips.mass, ips.vx, ips.vy, ips.vz,
+                        ips.ax, ips.ay, ips.az,
                         nj,
-                        jobj.mass, jobj.vx, jobj.vy, jobj.vz,
-                        jobj.ax, jobj.ay, jobj.az,
+                        jps.mass, jps.vx, jps.vy, jps.vz,
+                        jps.ax, jps.ay, jps.az,
                         dt)
-        self._outargs = (iobj.mvx, iobj.mvy, iobj.mvz,
-                         iobj.mk)
+        self._outargs = (ips.mvx, ips.mvy, ips.mvz,
+                         ips.mk)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)

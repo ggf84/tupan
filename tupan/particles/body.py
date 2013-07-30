@@ -35,7 +35,6 @@ class NbodyMethods(object):
         ("time", ctype.REAL, "current time"),
         ("nstep", ctype.UINT, "step number"),
         ("tstep", ctype.REAL, "time step"),
-        ("tstepij", ctype.REAL, "min i-j time step"),
     ]
     dtype = [(_[0], _[1]) for _ in attrs]
 
@@ -190,30 +189,30 @@ class NbodyMethods(object):
         return 2 * self.kinetic_energy + self.potential_energy
 
     ### gravity
-    def set_tstep(self, jps, eta):
+    def set_tstep(self, ps, eta):
         """
         Set the individual time-steps due to other particles.
         """
-        gravity.tstep.calc(self, jps, eta)
+        gravity.tstep.calc(self, ps, eta)
 
-    def set_phi(self, jps):
+    def set_phi(self, ps):
         """
         Set the individual gravitational potential due to other particles.
         """
-        gravity.phi.calc(self, jps)
+        gravity.phi.calc(self, ps)
 
-    def set_acc(self, jps):
+    def set_acc(self, ps):
         """
         Set the individual gravitational acceleration due to other particles.
         """
-        gravity.acc.calc(self, jps)
+        gravity.acc.calc(self, ps)
 
-    def set_acc_jerk(self, jps):
+    def set_acc_jerk(self, ps):
         """
         Set the individual gravitational acceleration and jerk due to other
         particles.
         """
-        gravity.acc_jerk.calc(self, jps)
+        gravity.acc_jerk.calc(self, ps)
 
     ### miscellaneous methods
     def min_tstep(self):
@@ -344,12 +343,12 @@ class PNbodyMethods(NbodyMethods):
     special_dtype = [(_[0], _[1]) for _ in special_attrs]
 
     ### PN stuff
-    def get_pnacc(self, jps):
+    def set_pnacc(self, ps):
         """
-        Get the individual post-newtonian gravitational acceleration due to
+        Set the individual post-newtonian gravitational acceleration due to
         other particles.
         """
-        return gravity.pnacc.calc(self, jps)
+        gravity.pnacc.calc(self, ps)
 
     def evolve_ke_pn_shift(self, tstep):
         """

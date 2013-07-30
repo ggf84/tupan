@@ -28,7 +28,7 @@ class ParticleSystem(AbstractNbodyMethods):
     """
     def __init__(self, nbodies=0, nstars=0, nbhs=0, nsphs=0, members=None):
         """
-        Initializer
+        Initializer.
         """
         if members is None:
             members = {cls.__name__.lower(): cls(n)
@@ -59,7 +59,7 @@ class ParticleSystem(AbstractNbodyMethods):
                 setattr(obj, attr, getattr(self, attr)[ns:nf])
             ns += obj.n
 
-    def register_attr(self, attr, dtype):
+    def register_auxiliary_attribute(self, attr, dtype):
         if attr in self.__dict__:
             raise ValueError("'{0}' is already a registered "
                              "attribute.".format(attr))
