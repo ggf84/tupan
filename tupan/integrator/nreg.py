@@ -9,9 +9,7 @@ TODO.
 from __future__ import print_function, division
 import logging
 from ..integrator import Base
-from ..lib.gravity import nreg_x as llnreg_x
-from ..lib.gravity import nreg_v as llnreg_v
-from ..lib.utils import ctype
+from ..lib import gravity
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -25,67 +23,58 @@ def nreg_x(ps, dt):
     """
 
     """
-#    llnreg_x.set_args(ps, ps, dt)
-#    llnreg_x.run()
-#    (rx, ry, rz, ax, ay, az, u) = llnreg_x.get_result()
-#    U = 0.5 * u.sum()
-#
-#    mtot = ps.total_mass
-#
-#    ps.rx = rx / mtot
-#    ps.ry = ry / mtot
-#    ps.rz = rz / mtot
-#
-#    ps.ax = ax.copy()
-#    ps.ay = ay.copy()
-#    ps.az = az.copy()
-#
-#    t += dt
-#    return t, U
-
-    ps.rx += dt * ps.vx
-    ps.ry += dt * ps.vy
-    ps.rz += dt * ps.vz
+    mtot = ps.total_mass
+    gravity.nreg_x.calc(ps, ps, dt)
+    ps.rx[:] = ps.mrx / mtot
+    ps.ry[:] = ps.mry / mtot
+    ps.rz[:] = ps.mrz / mtot
+    U = 0.5 * ps.u.sum()
+    type(ps).U = U
     type(ps).t_curr += dt
-    type(ps).U = -ps.potential_energy
-    (ps.ax[:], ps.ay[:], ps.az[:]) = ps.get_acc(ps)
     return ps
+
+#    ps.rx += dt * ps.vx
+#    ps.ry += dt * ps.vy
+#    ps.rz += dt * ps.vz
+#    type(ps).U = -ps.potential_energy
+#    type(ps).t_curr += dt
+#    ps.set_acc(ps)
+#    return ps
 
 
 def nreg_v(ps, dt):
     """
 
     """
-#    W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
-#                                + ps.vy * ps.ay
-#                                + ps.vz * ps.az)).sum()
-#
-#    llnreg_v.set_args(ps, ps, dt)
-#    llnreg_v.run()
-#    (vx, vy, vz, k) = llnreg_v.get_result()
-#    mtot = ps.total_mass
-#    ps.vx = vx / mtot
-#    ps.vy = vy / mtot
-#    ps.vz = vz / mtot
-#
-#    W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
-#                                + ps.vy * ps.ay
-#                                + ps.vz * ps.az)).sum()
-#    return W
-
-    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
-                                         + ps.vy * ps.ay
-                                         + ps.vz * ps.az)).sum()
-    ps.vx += dt * ps.ax
-    ps.vy += dt * ps.ay
-    ps.vz += dt * ps.az
-    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
-                                         + ps.vy * ps.ay
-                                         + ps.vz * ps.az)).sum()
+#    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
+#                                         + ps.vy * ps.ay
+#                                         + ps.vz * ps.az)).sum()
+    mtot = ps.total_mass
+    gravity.nreg_v.calc(ps, ps, dt)
+    ps.vx[:] = ps.mvx / mtot
+    ps.vy[:] = ps.mvy / mtot
+    ps.vz[:] = ps.mvz / mtot
+    K = 0.25 * ps.mk.sum() / mtot
+    type(ps).W = (K - ps.E0)
+#    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
+#                                         + ps.vy * ps.ay
+#                                         + ps.vz * ps.az)).sum()
     return ps
 
+##    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
+##                                         + ps.vy * ps.ay
+##                                         + ps.vz * ps.az)).sum()
+#    ps.vx += dt * ps.ax
+#    ps.vy += dt * ps.ay
+#    ps.vz += dt * ps.az
+#    type(ps).W = (ps.kinetic_energy - ps.E0)
+##    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
+##                                         + ps.vy * ps.ay
+##                                         + ps.vz * ps.az)).sum()
+#    return ps
 
-def nreg_step(ps, h):
+
+def anreg_step(ps, h):
     """
 
     """
@@ -96,17 +85,13 @@ def nreg_step(ps, h):
     return ps
 
 
-def nreg_step2(ps, h):
+def nreg_step(ps, h):
     """
 
     """
-    ps = nreg_x(ps, 0.5 * (h * ps.S / ps.W))
-    ps = nreg_v(ps, (h * ps.S / ps.U))
-    ps = nreg_x(ps, 0.5 * (h * ps.S / ps.W))
+    ps = anreg_step(ps, 0.5 * (h * ps.S))
     type(ps).S = 1/(2/ps.W - 1/ps.S)
-    ps = nreg_x(ps, 0.5 * (h * ps.S / ps.W))
-    ps = nreg_v(ps, (h * ps.S / ps.U))
-    ps = nreg_x(ps, 0.5 * (h * ps.S / ps.W))
+    ps = anreg_step(ps, 0.5 * (h * ps.S))
 
     return ps
 
@@ -116,7 +101,7 @@ class NREG(Base):
     """
 
     """
-    PROVIDED_METHODS = ['nreg',
+    PROVIDED_METHODS = ['nreg', 'anreg'
                         ]
 
     def __init__(self, eta, time, ps, method, **kwargs):
@@ -134,13 +119,10 @@ class NREG(Base):
                     self.method)
 
         ps = self.ps
-        ps.register_attr("ax", ctype.REAL)
-        ps.register_attr("ay", ctype.REAL)
-        ps.register_attr("az", ctype.REAL)
+        type(ps).E0 = ps.kinetic_energy + ps.potential_energy
         type(ps).W = -ps.potential_energy
         type(ps).U = -ps.potential_energy
         type(ps).S = -ps.potential_energy
-        (ps.ax, ps.ay, ps.az) = ps.get_acc(ps)
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)
@@ -168,13 +150,14 @@ class NREG(Base):
         """
 
         """
-#        t0 = ps.t_curr
-#        ps = nreg_step(ps, tau)
-#        t1 = ps.t_curr
-
-        t0 = ps.t_curr
-        ps = nreg_step2(ps, tau/2)
-        t1 = ps.t_curr
+        if "anreg" in self.method:
+            t0 = ps.t_curr
+            ps = anreg_step(ps, tau/2)
+            t1 = ps.t_curr
+        else:
+            t0 = ps.t_curr
+            ps = nreg_step(ps, tau)
+            t1 = ps.t_curr
 
         dt = t1 - t0
 

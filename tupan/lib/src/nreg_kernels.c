@@ -124,7 +124,7 @@ inline void nreg_Vkernel(
         _idvx[i] = idvx;
         _idvy[i] = idvy;
         _idvz[i] = idvz;
-        _ik[i] = ik / 2;
+        _ik[i] = ik;
     }
 }
 

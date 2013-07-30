@@ -33,10 +33,6 @@ def set_particles(n):
     ps.eps2[:] = np.zeros((ps.n,))
     ps.rx[:], ps.ry[:], ps.rz[:] = np.random.random((ps.n, 3)).T * 10
     ps.vx[:], ps.vy[:], ps.vz[:] = np.random.random((ps.n, 3)).T * 10
-    ps.register_attr("ax", ctype.REAL)
-    ps.register_attr("ay", ctype.REAL)
-    ps.register_attr("az", ctype.REAL)
-    ps.ax[:], ps.ay[:], ps.az[:] = np.random.random((ps.n, 3)).T * 100
     return ps
 
 

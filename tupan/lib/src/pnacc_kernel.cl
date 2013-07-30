@@ -108,7 +108,7 @@ __kernel void pnacc_kernel(
     __local REAL *__jvz)
 {
     uint gid = get_global_id(0);
-    uint i = (gid < ni) ? (gid) : (ni-1);
+    uint i = min(gid, ni-1);
 
     CLIGHT clight = (CLIGHT){.order=order, .inv1=inv1,
                              .inv2=inv2, .inv3=inv3,

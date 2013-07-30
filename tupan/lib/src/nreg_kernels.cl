@@ -110,7 +110,7 @@ __kernel void nreg_Xkernel(
     __local REAL *__jvz)
 {
     uint gid = get_global_id(0);
-    uint i = (gid < ni) ? (gid) : (ni-1);
+    uint i = min(gid, ni-1);
 
     REAL im = _im[i];
     REAL irx = _irx[i];
@@ -244,7 +244,7 @@ __kernel void nreg_Vkernel(
     __local REAL *__jaz)
 {
     uint gid = get_global_id(0);
-    uint i = (gid < ni) ? (gid) : (ni-1);
+    uint i = min(gid, ni-1);
 
     REAL im = _im[i];
     REAL ivx = _ivx[i];
@@ -270,6 +270,6 @@ __kernel void nreg_Vkernel(
     _idvx[i] = idvx;
     _idvy[i] = idvy;
     _idvz[i] = idvz;
-    _ik[i] = ik / 2;
+    _ik[i] = ik;
 }
 

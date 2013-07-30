@@ -55,12 +55,13 @@ class CLKernel(object):
 
     def __init__(self, env, kernel):
         self.env = env
-        self.queue = cl.CommandQueue(self.env.ctx)
         self.kernel = kernel
+        self.queue = cl.CommandQueue(self.env.ctx)
         self._gsize = None
 
         memf = cl.mem_flags
-        flags = memf.READ_WRITE | memf.USE_HOST_PTR
+#        flags = memf.READ_WRITE | memf.USE_HOST_PTR
+        flags = memf.READ_WRITE | memf.COPY_HOST_PTR
         clBuffer = partial(cl.Buffer, self.env.ctx, flags)
 
         types = namedtuple("Types", ["c_uint", "c_uint_p",
@@ -79,40 +80,45 @@ class CLKernel(object):
     def global_size(self, ni):
         gs0 = ((ni-1)//2 + 1) * 2
         self._gsize = (gs0,)
-        ls0 = gcd(gs0, self.wgsize)
+
+        gs1 = ((ni-1)//self.wgsize + 1) * 2
+        ls0 = gs0 // gs1
+
         self.local_size = (ls0,)
 
     def allocate_local_memory(self, nbufs, dtype):
         itemsize = dtype.itemsize
         dev = self.env.ctx.devices[0]
 
-        nbsize = itemsize * nbufs
-        size0 = dev.local_mem_size
+        size0 = dev.local_mem_size // itemsize
         size1 = dev.max_work_group_size
-        wgsize = gcd(size0, size1 * nbsize) // nbsize
+        wgsize = gcd(size0, size1 * nbufs) // nbufs
         self.wgsize = wgsize
         lmsize = wgsize * itemsize
 
-        return [cl.LocalMemory(lmsize) for i in range(nbufs)]
+        lmem = [cl.LocalMemory(lmsize) for i in range(nbufs)]
+        self.lmem = lmem    # keep alive!
+        return lmem
 
     def set_args(self, args, start=0):
         for (i, arg) in enumerate(args, start):
             self.kernel.set_arg(i, arg)
 
     def map_buffers(self, arrays, buffers):
-        mapf = cl.map_flags
-        flags = mapf.READ | mapf.WRITE
-        queue = self.queue
-        for (i, array) in enumerate(arrays):
-            (pointer, ev) = cl.enqueue_map_buffer(queue,
-                                                  buffers[i],
-                                                  flags,
-                                                  0,
-                                                  array.shape,
-                                                  array.dtype,
-                                                  "C")
-            ev.wait()
-#            cl.enqueue_copy(self.queue, array, buffers[i])
+#        mapf = cl.map_flags
+#        flags = mapf.READ | mapf.WRITE
+#        queue = self.queue
+#        for (ary, buf) in zip(arrays, buffers):
+#            (pointer, ev) = cl.enqueue_map_buffer(queue,
+#                                                  buf,
+#                                                  flags,
+#                                                  0,
+#                                                  ary.shape,
+#                                                  ary.dtype,
+#                                                  "C")
+#            ev.wait()
+        for (ary, buf) in zip(arrays, buffers):
+            cl.enqueue_copy(self.queue, ary, buf)
         return arrays
 
     def run(self):

@@ -47,7 +47,9 @@ class Diagnostic(object):
         self.report_freq = report_freq
         self.pn_order = pn_order
         self.nreport = 0
+        self.is_initialized = False
 
+    def initialize(self, ps):
         self.ke0 = ps.kinetic_energy
         self.pe0 = ps.potential_energy
         self.te0 = self.ke0 + self.pe0
@@ -64,6 +66,8 @@ class Diagnostic(object):
         self.timer.start()
 
         self.print_header()
+
+        self.is_initialized = True
 
     def __repr__(self):
         return '{0}'.format(self.__dict__)
@@ -82,6 +86,8 @@ class Diagnostic(object):
                 self.fname, 'w')
 
     def diagnostic_report(self, ps):
+        if not self.is_initialized:
+            self.initialize(ps)
         t_curr = ps.t_curr
         if self.nreport % self.report_freq == 0:
             self.print_diagnostic(t_curr, t_curr - self.time, ps)

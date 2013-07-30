@@ -108,7 +108,7 @@ __kernel void sakura_kernel(
     __local REAL *__jvz)
 {
     uint gid = get_global_id(0);
-    uint i = (gid < ni) ? (gid) : (ni-1);
+    uint i = min(gid, ni-1);
 
     REAL im = _im[i];
     REAL irx = _irx[i];

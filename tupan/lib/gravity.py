@@ -98,16 +98,14 @@ class Phi(AbstractExtension):
         self.restypes = restypes
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=19)
-        self.max_output_size = 0
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
 
         self.kernel.global_size = ni
-        if ni > self.max_output_size:
-            self._phi = np.zeros(ni, dtype=ctype.REAL)
-            self.max_output_size = ni
+        if not "phi" in iobj.__dict__:
+            iobj.register_attr("phi", ctype.REAL)
 
         self._inargs = (ni,
                         iobj.mass, iobj.rx, iobj.ry, iobj.rz,
@@ -115,7 +113,7 @@ class Phi(AbstractExtension):
                         nj,
                         jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                         jobj.eps2, jobj.vx, jobj.vy, jobj.vz)
-        self._outargs = (self._phi[:ni],)
+        self._outargs = (iobj.phi,)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -128,9 +126,8 @@ class Phi(AbstractExtension):
         # likely that only the classes Acc and Phi will have an
         # implementation of this method.
         ni = iobj.n
-        if ni > self.max_output_size:
-            self._phi = np.zeros(ni, dtype=ctype.REAL)
-            self.max_output_size = ni
+        if not "phi" in iobj.__dict__:
+            iobj.register_attr("phi", ctype.REAL)
         for i in range(ni):
             rx = iobj.rx[i] - jobj.rx
             ry = iobj.ry[i] - jobj.ry
@@ -140,8 +137,8 @@ class Phi(AbstractExtension):
             mask = r2 > 0
             inv_r2 = 1 / (r2 + e2)
             inv_r = np.sqrt(inv_r2)
-            self._phi[i] = -(jobj.mass * inv_r)[mask].sum()
-        return (self._phi[:ni],)
+            iobj.phi[i] = -(jobj.mass * inv_r)[mask].sum()
+        return (iobj.phi,)
 #    calc = _pycalc
 
 
@@ -164,18 +161,18 @@ class Acc(AbstractExtension):
         self.restypes = restypes
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=21)
-        self.max_output_size = 0
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
 
         self.kernel.global_size = ni
-        if ni > self.max_output_size:
-            self._ax = np.zeros(ni, dtype=ctype.REAL)
-            self._ay = np.zeros(ni, dtype=ctype.REAL)
-            self._az = np.zeros(ni, dtype=ctype.REAL)
-            self.max_output_size = ni
+        if not "ax" in iobj.__dict__:
+            iobj.register_attr("ax", ctype.REAL)
+        if not "ay" in iobj.__dict__:
+            iobj.register_attr("ay", ctype.REAL)
+        if not "az" in iobj.__dict__:
+            iobj.register_attr("az", ctype.REAL)
 
         self._inargs = (ni,
                         iobj.mass, iobj.rx, iobj.ry, iobj.rz,
@@ -183,7 +180,7 @@ class Acc(AbstractExtension):
                         nj,
                         jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                         jobj.eps2, jobj.vx, jobj.vy, jobj.vz)
-        self._outargs = (self._ax[:ni], self._ay[:ni], self._az[:ni])
+        self._outargs = (iobj.ax, iobj.ay, iobj.az)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -196,11 +193,12 @@ class Acc(AbstractExtension):
         # likely that only the classes Acc and Phi will have an
         # implementation of this method.
         ni = iobj.n
-        if ni > self.max_output_size:
-            self._ax = np.zeros(ni, dtype=ctype.REAL)
-            self._ay = np.zeros(ni, dtype=ctype.REAL)
-            self._az = np.zeros(ni, dtype=ctype.REAL)
-            self.max_output_size = ni
+        if not "ax" in iobj.__dict__:
+            iobj.register_attr("ax", ctype.REAL)
+        if not "ay" in iobj.__dict__:
+            iobj.register_attr("ay", ctype.REAL)
+        if not "az" in iobj.__dict__:
+            iobj.register_attr("az", ctype.REAL)
         for i in range(ni):
             rx = iobj.rx[i] - jobj.rx
             ry = iobj.ry[i] - jobj.ry
@@ -212,10 +210,10 @@ class Acc(AbstractExtension):
             inv_r = np.sqrt(inv_r2)
             inv_r3 = inv_r * inv_r2
             inv_r3 *= jobj.mass
-            self._ax[i] = -(inv_r3 * rx)[mask].sum()
-            self._ay[i] = -(inv_r3 * ry)[mask].sum()
-            self._az[i] = -(inv_r3 * rz)[mask].sum()
-        return (self._ax[:ni], self._ay[:ni], self._az[:ni])
+            iobj.ax[i] = -(inv_r3 * rx)[mask].sum()
+            iobj.ay[i] = -(inv_r3 * ry)[mask].sum()
+            iobj.az[i] = -(inv_r3 * rz)[mask].sum()
+        return (iobj.ax, iobj.ay, iobj.az)
 #    calc = _pycalc
 
 
@@ -239,21 +237,24 @@ class AccJerk(AbstractExtension):
         self.restypes = restypes
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=24)
-        self.max_output_size = 0
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
 
         self.kernel.global_size = ni
-        if ni > self.max_output_size:
-            self._ax = np.zeros(ni, dtype=ctype.REAL)
-            self._ay = np.zeros(ni, dtype=ctype.REAL)
-            self._az = np.zeros(ni, dtype=ctype.REAL)
-            self._jx = np.zeros(ni, dtype=ctype.REAL)
-            self._jy = np.zeros(ni, dtype=ctype.REAL)
-            self._jz = np.zeros(ni, dtype=ctype.REAL)
-            self.max_output_size = ni
+        if not "ax" in iobj.__dict__:
+            iobj.register_attr("ax", ctype.REAL)
+        if not "ay" in iobj.__dict__:
+            iobj.register_attr("ay", ctype.REAL)
+        if not "az" in iobj.__dict__:
+            iobj.register_attr("az", ctype.REAL)
+        if not "jx" in iobj.__dict__:
+            iobj.register_attr("jx", ctype.REAL)
+        if not "jy" in iobj.__dict__:
+            iobj.register_attr("jy", ctype.REAL)
+        if not "jz" in iobj.__dict__:
+            iobj.register_attr("jz", ctype.REAL)
 
         self._inargs = (ni,
                         iobj.mass, iobj.rx, iobj.ry, iobj.rz,
@@ -261,8 +262,8 @@ class AccJerk(AbstractExtension):
                         nj,
                         jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                         jobj.eps2, jobj.vx, jobj.vy, jobj.vz)
-        self._outargs = (self._ax[:ni], self._ay[:ni], self._az[:ni],
-                         self._jx[:ni], self._jy[:ni], self._jz[:ni])
+        self._outargs = (iobj.ax, iobj.ay, iobj.az,
+                         iobj.jx, iobj.jy, iobj.jz)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -290,17 +291,16 @@ class Tstep(AbstractExtension):
         self.restypes = restypes
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=21)
-        self.max_output_size = 0
 
     def set_args(self, iobj, jobj, eta):
         ni = iobj.n
         nj = jobj.n
 
         self.kernel.global_size = ni
-        if ni > self.max_output_size:
-            self._tstep_a = np.zeros(ni, dtype=ctype.REAL)
-            self._tstep_b = np.zeros(ni, dtype=ctype.REAL)
-            self.max_output_size = ni
+        if not "tstep" in iobj.__dict__:
+            iobj.register_attr("tstep", ctype.REAL)
+        if not "tstepij" in iobj.__dict__:
+            iobj.register_attr("tstepij", ctype.REAL)
 
         self._inargs = (ni,
                         iobj.mass, iobj.rx, iobj.ry, iobj.rz,
@@ -309,7 +309,7 @@ class Tstep(AbstractExtension):
                         jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                         jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
                         eta)
-        self._outargs = (self._tstep_a[:ni], self._tstep_b[:ni])
+        self._outargs = (iobj.tstep, iobj.tstepij)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -340,18 +340,18 @@ class PNAcc(AbstractExtension):
         self.restypes = restypes
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=29)
-        self.max_output_size = 0
 
     def set_args(self, iobj, jobj):
         ni = iobj.n
         nj = jobj.n
 
         self.kernel.global_size = ni
-        if ni > self.max_output_size:
-            self._pnax = np.zeros(ni, dtype=ctype.REAL)
-            self._pnay = np.zeros(ni, dtype=ctype.REAL)
-            self._pnaz = np.zeros(ni, dtype=ctype.REAL)
-            self.max_output_size = ni
+        if not "pnax" in iobj.__dict__:
+            iobj.register_attr("pnax", ctype.REAL)
+        if not "pnay" in iobj.__dict__:
+            iobj.register_attr("pnay", ctype.REAL)
+        if not "pnaz" in iobj.__dict__:
+            iobj.register_attr("pnaz", ctype.REAL)
 
         self._inargs = (ni,
                         iobj.mass, iobj.rx, iobj.ry, iobj.rz,
@@ -363,7 +363,7 @@ class PNAcc(AbstractExtension):
                         clight.inv2, clight.inv3,
                         clight.inv4, clight.inv5,
                         clight.inv6, clight.inv7)
-        self._outargs = (self._pnax[:ni], self._pnay[:ni], self._pnaz[:ni])
+        self._outargs = (iobj.pnax, iobj.pnay, iobj.pnaz)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -392,21 +392,24 @@ class Sakura(AbstractExtension):
         self.restypes = restypes
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=25)
-        self.max_output_size = 0
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
 
         self.kernel.global_size = ni
-        if ni > self.max_output_size:
-            self._drx = np.zeros(ni, dtype=ctype.REAL)
-            self._dry = np.zeros(ni, dtype=ctype.REAL)
-            self._drz = np.zeros(ni, dtype=ctype.REAL)
-            self._dvx = np.zeros(ni, dtype=ctype.REAL)
-            self._dvy = np.zeros(ni, dtype=ctype.REAL)
-            self._dvz = np.zeros(ni, dtype=ctype.REAL)
-            self.max_output_size = ni
+        if not "drx" in iobj.__dict__:
+            iobj.register_attr("drx", ctype.REAL)
+        if not "dry" in iobj.__dict__:
+            iobj.register_attr("dry", ctype.REAL)
+        if not "drz" in iobj.__dict__:
+            iobj.register_attr("drz", ctype.REAL)
+        if not "dvx" in iobj.__dict__:
+            iobj.register_attr("dvx", ctype.REAL)
+        if not "dvy" in iobj.__dict__:
+            iobj.register_attr("dvy", ctype.REAL)
+        if not "dvz" in iobj.__dict__:
+            iobj.register_attr("dvz", ctype.REAL)
 
         self._inargs = (ni,
                         iobj.mass, iobj.rx, iobj.ry, iobj.rz,
@@ -415,8 +418,8 @@ class Sakura(AbstractExtension):
                         jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                         jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
                         dt)
-        self._outargs = (self._drx[:ni], self._dry[:ni], self._drz[:ni],
-                         self._dvx[:ni], self._dvy[:ni], self._dvz[:ni])
+        self._outargs = (iobj.drx, iobj.dry, iobj.drz,
+                         iobj.dvx, iobj.dvy, iobj.dvz)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -446,22 +449,26 @@ class NREG_X(AbstractExtension):
         self.restypes = restypes
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem, start=26)
-        self.max_output_size = 0
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
 
         self.kernel.global_size = ni
-        if ni > self.max_output_size:
-            self._rx = np.zeros(ni, dtype=ctype.REAL)
-            self._ry = np.zeros(ni, dtype=ctype.REAL)
-            self._rz = np.zeros(ni, dtype=ctype.REAL)
-            self._ax = np.zeros(ni, dtype=ctype.REAL)
-            self._ay = np.zeros(ni, dtype=ctype.REAL)
-            self._az = np.zeros(ni, dtype=ctype.REAL)
-            self._u = np.zeros(ni, dtype=ctype.REAL)
-            self.max_output_size = ni
+        if not "mrx" in iobj.__dict__:
+            iobj.register_attr("mrx", ctype.REAL)
+        if not "mry" in iobj.__dict__:
+            iobj.register_attr("mry", ctype.REAL)
+        if not "mrz" in iobj.__dict__:
+            iobj.register_attr("mrz", ctype.REAL)
+        if not "ax" in iobj.__dict__:
+            iobj.register_attr("ax", ctype.REAL)
+        if not "ay" in iobj.__dict__:
+            iobj.register_attr("ay", ctype.REAL)
+        if not "az" in iobj.__dict__:
+            iobj.register_attr("az", ctype.REAL)
+        if not "u" in iobj.__dict__:
+            iobj.register_attr("u", ctype.REAL)
 
         self._inargs = (ni,
                         iobj.mass, iobj.rx, iobj.ry, iobj.rz,
@@ -470,9 +477,9 @@ class NREG_X(AbstractExtension):
                         jobj.mass, jobj.rx, jobj.ry, jobj.rz,
                         jobj.eps2, jobj.vx, jobj.vy, jobj.vz,
                         dt)
-        self._outargs = (self._rx[:ni], self._ry[:ni], self._rz[:ni],
-                         self._ax[:ni], self._ay[:ni], self._az[:ni],
-                         self._u[:ni])
+        self._outargs = (iobj.mrx, iobj.mry, iobj.mrz,
+                         iobj.ax, iobj.ay, iobj.az,
+                         iobj.u)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -501,19 +508,20 @@ class NREG_V(AbstractExtension):
         self.restypes = restypes
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
         self.kernel.set_args(lmem[:7], start=21)
-        self.max_output_size = 0
 
     def set_args(self, iobj, jobj, dt):
         ni = iobj.n
         nj = jobj.n
 
         self.kernel.global_size = ni
-        if ni > self.max_output_size:
-            self._vx = np.zeros(ni, dtype=ctype.REAL)
-            self._vy = np.zeros(ni, dtype=ctype.REAL)
-            self._vz = np.zeros(ni, dtype=ctype.REAL)
-            self._k = np.zeros(ni, dtype=ctype.REAL)
-            self.max_output_size = ni
+        if not "mvx" in iobj.__dict__:
+            iobj.register_attr("mvx", ctype.REAL)
+        if not "mvy" in iobj.__dict__:
+            iobj.register_attr("mvy", ctype.REAL)
+        if not "mvz" in iobj.__dict__:
+            iobj.register_attr("mvz", ctype.REAL)
+        if not "mk" in iobj.__dict__:
+            iobj.register_attr("mk", ctype.REAL)
 
         self._inargs = (ni,
                         iobj.mass, iobj.vx, iobj.vy, iobj.vz,
@@ -522,8 +530,8 @@ class NREG_V(AbstractExtension):
                         jobj.mass, jobj.vx, jobj.vy, jobj.vz,
                         jobj.ax, jobj.ay, jobj.az,
                         dt)
-        self._outargs = (self._vx[:ni], self._vy[:ni], self._vz[:ni],
-                         self._k[:ni])
+        self._outargs = (iobj.mvx, iobj.mvy, iobj.mvz,
+                         iobj.mk)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)

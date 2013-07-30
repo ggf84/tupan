@@ -9,7 +9,6 @@ TODO.
 from __future__ import print_function
 import logging
 from ..integrator import Base
-from ..lib.utils import ctype
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -44,14 +43,7 @@ class Hermite(Base):
                     self.method)
 
         ps = self.ps
-        ps.register_attr("ax", ctype.REAL)
-        ps.register_attr("ay", ctype.REAL)
-        ps.register_attr("az", ctype.REAL)
-        ps.register_attr("jx", ctype.REAL)
-        ps.register_attr("jy", ctype.REAL)
-        ps.register_attr("jz", ctype.REAL)
-        (ps.ax[:], ps.ay[:], ps.az[:],
-         ps.jx[:], ps.jy[:], ps.jz[:]) = ps.get_acc_jerk(ps)
+        ps.set_acc_jerk(ps)
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)
@@ -79,7 +71,7 @@ class Hermite(Base):
         """
 
         """
-        ps.tstep[:], _ = ps.get_tstep(ps, eta)
+        ps.set_tstep(ps, eta)
         min_bts = self.get_min_block_tstep(ps, tau)
         return min_bts
 
@@ -111,8 +103,7 @@ class Hermite(Base):
         """
 
         """
-        (ps.ax[:], ps.ay[:], ps.az[:],
-         ps.jx[:], ps.jy[:], ps.jz[:]) = ps.get_acc_jerk(ps)
+        ps.set_acc_jerk(ps)
         ps.vx[:] = (ps.vx0
                     + ((ps.ax0 + ps.ax)
                     + (ps.jx0 - ps.jx) * tau/6) * tau/2)

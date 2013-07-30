@@ -33,8 +33,9 @@ class NbodyMethods(object):
         ("vy", ctype.REAL, "y-velocity"),
         ("vz", ctype.REAL, "z-velocity"),
         ("time", ctype.REAL, "current time"),
-        ("tstep", ctype.REAL, "time step"),
         ("nstep", ctype.UINT, "step number"),
+        ("tstep", ctype.REAL, "time step"),
+        ("tstepij", ctype.REAL, "min i-j time step"),
     ]
     dtype = [(_[0], _[1]) for _ in attrs]
 
@@ -163,8 +164,8 @@ class NbodyMethods(object):
         """
         Individual potential energy.
         """
-        phi, = self.get_phi(self)
-        return self.mass * phi
+        self.set_phi(self)
+        return self.mass * self.phi
 
     @property
     def potential_energy(self):
@@ -179,41 +180,40 @@ class NbodyMethods(object):
         """
         Individual virial energy.
         """
-        ax, ay, az = self.get_acc(self)
-        return self.mass * (self.rx * ax + self.ry * ay + self.rz * az)
+        return 2 * self.ke + self.pe
 
     @property
     def virial_energy(self):
         """
         Total virial energy.
         """
-        return float(self.ve.sum())
+        return 2 * self.kinetic_energy + self.potential_energy
 
     ### gravity
-    def get_tstep(self, jps, eta):
+    def set_tstep(self, jps, eta):
         """
-        Get the individual time-steps due to other particles.
+        Set the individual time-steps due to other particles.
         """
-        return gravity.tstep.calc(self, jps, eta)
+        gravity.tstep.calc(self, jps, eta)
 
-    def get_phi(self, jps):
+    def set_phi(self, jps):
         """
-        Get the individual gravitational potential due to other particles.
+        Set the individual gravitational potential due to other particles.
         """
-        return gravity.phi.calc(self, jps)
+        gravity.phi.calc(self, jps)
 
-    def get_acc(self, jps):
+    def set_acc(self, jps):
         """
-        Get the individual gravitational acceleration due to other particles.
+        Set the individual gravitational acceleration due to other particles.
         """
-        return gravity.acc.calc(self, jps)
+        gravity.acc.calc(self, jps)
 
-    def get_acc_jerk(self, jps):
+    def set_acc_jerk(self, jps):
         """
-        Get the individual gravitational acceleration and jerk due to other
+        Set the individual gravitational acceleration and jerk due to other
         particles.
         """
-        return gravity.acc_jerk.calc(self, jps)
+        gravity.acc_jerk.calc(self, jps)
 
     ### miscellaneous methods
     def min_tstep(self):

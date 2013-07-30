@@ -117,8 +117,11 @@ class Plummer(object):
         self.ps.ry[:] = pos[1]
         self.ps.rz[:] = pos[2]
 
+        # set phi
+        self.ps.set_phi(self.ps)
+
         # set vel
-        vel = self.set_vel(self.ps.get_phi(self.ps))
+        vel = self.set_vel(self.ps.phi)
         self.ps.vx[:] = vel[0]
         self.ps.vy[:] = vel[1]
         self.ps.vz[:] = vel[2]

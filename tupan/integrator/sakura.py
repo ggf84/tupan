@@ -27,13 +27,13 @@ def sakura_step(ps, tau):
     ps.ry += ps.vy * tau / 2
     ps.rz += ps.vz * tau / 2
 
-    (drx, dry, drz, dvx, dvy, dvz) = gravity.sakura.calc(ps, ps, tau)
-    ps.rx += drx
-    ps.ry += dry
-    ps.rz += drz
-    ps.vx += dvx
-    ps.vy += dvy
-    ps.vz += dvz
+    gravity.sakura.calc(ps, ps, tau)
+    ps.rx += ps.drx
+    ps.ry += ps.dry
+    ps.rz += ps.drz
+    ps.vx += ps.dvx
+    ps.vy += ps.dvy
+    ps.vz += ps.dvz
 
     ps.rx += ps.vx * tau / 2
     ps.ry += ps.vy * tau / 2
@@ -93,10 +93,10 @@ class Sakura(Base):
         """
 
         """
-        (tstep_a, tstep_b) = ps.get_tstep(ps, eta)
+        ps.set_tstep(ps, eta)
 
-        iw2_a = (eta/tstep_a)**2
-        iw2_b = (eta/tstep_b)**2
+        iw2_a = (eta/ps.tstep)**2
+        iw2_b = (eta/ps.tstepij)**2
 
         diw2 = (iw2_a - iw2_b)
 
