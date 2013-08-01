@@ -11,16 +11,16 @@ import sys
 import copy
 import numpy as np
 from ..lib import gravity
-from ..lib.utils.timing import decallmethods, timings
 from ..lib.utils import ctype
+from ..lib.utils.timing import decallmethods, timings
 
 
 __all__ = ["Bodies"]
 
 
 class NbodyMethods(object):
-    """
-    This class holds common methods for particles in n-body systems.
+    """This class holds common methods for particles in n-body systems.
+
     """
     attrs = [  # name, dtype, doc
         ("id", ctype.UINT, "index"),
@@ -54,15 +54,15 @@ class NbodyMethods(object):
     ### total mass and center-of-mass
     @property
     def total_mass(self):
-        """
-        Total mass.
+        """Total mass.
+
         """
         return float(self.mass.sum())
 
     @property
     def rcom(self):
-        """
-        Position of the center-of-mass.
+        """Position of the center-of-mass.
+
         """
         mtot = self.total_mass
         rcomx = (self.mass * self.rx).sum()
@@ -72,8 +72,8 @@ class NbodyMethods(object):
 
     @property
     def vcom(self):
-        """
-        Velocity of the center-of-mass.
+        """Velocity of the center-of-mass.
+
         """
         mtot = self.total_mass
         vcomx = (self.mass * self.vx).sum()
@@ -82,8 +82,8 @@ class NbodyMethods(object):
         return (np.array([vcomx, vcomy, vcomz]) / mtot)
 
     def com_to_origin(self):
-        """
-        Moves the center-of-mass to the origin of coordinates.
+        """Moves the center-of-mass to the origin of coordinates.
+
         """
         rcom = self.rcom
         self.rx -= rcom[0]
@@ -95,8 +95,8 @@ class NbodyMethods(object):
         self.vz -= vcom[2]
 
     def move_com(self, rcom, vcom):
-        """
-        Moves the center-of-mass to the given coordinates.
+        """Moves the center-of-mass to the given coordinates.
+
         """
         self.com_to_origin()
         self.rx += rcom[0]
@@ -109,8 +109,8 @@ class NbodyMethods(object):
     ### linear momentum
     @property
     def lm(self):
-        """
-        Individual linear momentum.
+        """Individual linear momentum.
+
         """
         lmx = (self.mass * self.vx)
         lmy = (self.mass * self.vy)
@@ -119,16 +119,16 @@ class NbodyMethods(object):
 
     @property
     def linear_momentum(self):
-        """
-        Total linear momentum.
+        """Total linear momentum.
+
         """
         return self.lm.sum(0)
 
     ### angular momentum
     @property
     def am(self):
-        """
-        Individual angular momentum.
+        """Individual angular momentum.
+
         """
         amx = self.mass * ((self.ry * self.vz) - (self.rz * self.vy))
         amy = self.mass * ((self.rz * self.vx) - (self.rx * self.vz))
@@ -137,101 +137,101 @@ class NbodyMethods(object):
 
     @property
     def angular_momentum(self):
-        """
-        Total angular momentum.
+        """Total angular momentum.
+
         """
         return self.am.sum(0)
 
     ### kinetic energy
     @property
     def ke(self):
-        """
-        Individual kinetic energy.
+        """Individual kinetic energy.
+
         """
         return 0.5 * self.mass * (self.vx**2 + self.vy**2 + self.vz**2)
 
     @property
     def kinetic_energy(self):
-        """
-        Total kinetic energy.
+        """Total kinetic energy.
+
         """
         return float(self.ke.sum())
 
     ### potential energy
     @property
     def pe(self):
-        """
-        Individual potential energy.
+        """Individual potential energy.
+
         """
         self.set_phi(self)
         return self.mass * self.phi
 
     @property
     def potential_energy(self):
-        """
-        Total potential energy.
+        """Total potential energy.
+
         """
         return 0.5 * float(self.pe.sum())
 
     ### virial energy
     @property
     def ve(self):
-        """
-        Individual virial energy.
+        """Individual virial energy.
+
         """
         return 2 * self.ke + self.pe
 
     @property
     def virial_energy(self):
-        """
-        Total virial energy.
+        """Total virial energy.
+
         """
         return 2 * self.kinetic_energy + self.potential_energy
 
     ### gravity
     def set_tstep(self, ps, eta):
-        """
-        Set the individual time-steps due to other particles.
+        """Set individual time-steps due to other particles.
+
         """
         gravity.tstep.calc(self, ps, eta)
 
     def set_phi(self, ps):
-        """
-        Set the individual gravitational potential due to other particles.
+        """Set individual gravitational potential due to other particles.
+
         """
         gravity.phi.calc(self, ps)
 
     def set_acc(self, ps):
-        """
-        Set the individual gravitational acceleration due to other particles.
+        """Set individual gravitational acceleration due to other particles.
+
         """
         gravity.acc.calc(self, ps)
 
     def set_acc_jerk(self, ps):
-        """
-        Set the individual gravitational acceleration and jerk due to other
+        """Set individual gravitational acceleration and jerk due to other
         particles.
+
         """
         gravity.acc_jerk.calc(self, ps)
 
     ### miscellaneous methods
     def min_tstep(self):
-        """
-        Minimum absolute value of tstep.
+        """Minimum absolute value of tstep.
+
         """
         return abs(self.tstep).min()
 
     def max_tstep(self):
-        """
-        Maximum absolute value of tstep.
+        """Maximum absolute value of tstep.
+
         """
         return abs(self.tstep).max()
 
     ### lenght scales
     @property
     def virial_radius(self):
-        """
-        Virial radius of the system.
+        """Virial radius of the system.
+
         """
         mtot = self.total_mass
         pe = self.potential_energy
@@ -239,8 +239,8 @@ class NbodyMethods(object):
 
     @property
     def radial_size(self):
-        """
-        Radial size of the system (a.k.a. radius of gyration).
+        """Radial size of the system (a.k.a. radius of gyration).
+
         """
         rcom = self.rcom
         rx = self.rx - rcom[0]
@@ -254,6 +254,7 @@ class NbodyMethods(object):
     def dynrescale_total_mass(self, total_mass):
         """Rescales the total mass of the system while maintaining its
         dynamics unchanged.
+
         """
         m_ratio = total_mass / self.total_mass
         self.mass *= m_ratio
@@ -264,6 +265,7 @@ class NbodyMethods(object):
     def dynrescale_radial_size(self, size):
         """Rescales the radial size of the system while maintaining its
         dynamics unchanged.
+
         """
         r_scale = size / self.radial_size
         v_scale = 1 / r_scale**0.5
@@ -277,6 +279,7 @@ class NbodyMethods(object):
     def dynrescale_virial_radius(self, rvir):
         """Rescales the virial radius of the system while maintaining its
         dynamics unchanged.
+
         """
         r_scale = rvir / self.virial_radius
         v_scale = 1 / r_scale**0.5
@@ -288,8 +291,8 @@ class NbodyMethods(object):
         self.vz *= v_scale
 
     def scale_to_virial(self):
-        """
-        Rescale system to virial equilibrium (2K + U = 0).
+        """Rescale system to virial equilibrium (2K + U = 0).
+
         """
         ke = self.kinetic_energy
         pe = self.potential_energy
@@ -299,112 +302,120 @@ class NbodyMethods(object):
         self.vz *= v_scale
 
     def to_nbody_units(self):
-        """
-        Rescales system to nbody units while maintaining its dynamics
+        """Rescales system to nbody units while maintaining its dynamics
         unchanged.
+
         """
         self.dynrescale_total_mass(1.0)
         self.dynrescale_virial_radius(1.0)
 
 
 class PNbodyMethods(NbodyMethods):
-    """
-    This class holds common methods for particles in n-body systems with
-    post-Newtonian corrections.
-    """
-    special_attrs = [  # name, dtype, doc
-        ("pn_dvx", ctype.REAL,
-         "post-Newtonian correction for the x-velocity"),
-        ("pn_dvy", ctype.REAL,
-         "post-Newtonian correction for the y-velocity"),
-        ("pn_dvz", ctype.REAL,
-         "post-Newtonian correction for the z-velocity"),
-        ("pn_ke", ctype.REAL,
-         "post-Newtonian correction for the kinetic energy"),
-        ("pn_rcomx", ctype.REAL,
-         "post-Newtonian correction for the center-of-mass x-position"),
-        ("pn_rcomy", ctype.REAL,
-         "post-Newtonian correction for the center-of-mass y-position"),
-        ("pn_rcomz", ctype.REAL,
-         "post-Newtonian correction for the center-of-mass z-position"),
-        ("pn_lmx", ctype.REAL,
-         "post-Newtonian correction for the x-linear momentum"),
-        ("pn_lmy", ctype.REAL,
-         "post-Newtonian correction for the y-linear momentum"),
-        ("pn_lmz", ctype.REAL,
-         "post-Newtonian correction for the z-linear momentum"),
-        ("pn_amx", ctype.REAL,
-         "post-Newtonian correction for the x-angular momentum"),
-        ("pn_amy", ctype.REAL,
-         "post-Newtonian correction for the y-angular momentum"),
-        ("pn_amz", ctype.REAL,
-         "post-Newtonian correction for the z-angular momentum"),
-    ]
-    special_dtype = [(_[0], _[1]) for _ in special_attrs]
+    """This class holds some post-Newtonian methods.
 
+    """
     ### PN stuff
     def set_pnacc(self, ps):
-        """
-        Set the individual post-newtonian gravitational acceleration due to
+        """Set individual post-newtonian gravitational acceleration due to
         other particles.
+
         """
         gravity.pnacc.calc(self, ps)
 
-    def evolve_ke_pn_shift(self, tstep):
-        """
-        Evolves kinetic energy shift in time due to post-newtonian terms.
-        """
-        self.pn_ke -= self.mass * (self.vx * self.pn_dvx
-                                   + self.vy * self.pn_dvy
-                                   + self.vz * self.pn_dvz)
+    def pn_kick_ke(self, tau):
+        """Kicks kinetic energy due to post-newtonian terms.
 
-    def get_ke_pn_shift(self):
+        """
+        if not "pn_ke" in self.__dict__:
+            self.register_auxiliary_attribute("pn_ke", ctype.REAL)
+        self.pn_ke -= self.mass * (self.vx * self.pnax
+                                   + self.vy * self.pnay
+                                   + self.vz * self.pnaz) * tau
+
+    def pn_get_ke_correction(self):
+        if not "pn_ke" in self.__dict__:
+            self.register_auxiliary_attribute("pn_ke", ctype.REAL)
         return float(self.pn_ke.sum())
 
-    def evolve_rcom_pn_shift(self, tstep):
-        """
-        Evolves center of mass position shift in time due to post-newtonian
-        terms.
-        """
-        self.pn_rcomx += tstep * self.pn_lmx
-        self.pn_rcomy += tstep * self.pn_lmy
-        self.pn_rcomz += tstep * self.pn_lmz
+    def pn_drift_rcom(self, tau):
+        """Drifts center of mass position due to post-newtonian terms.
 
-    def get_rcom_pn_shift(self):
+        """
+        if not "pn_rcomx" in self.__dict__:
+            self.register_auxiliary_attribute("pn_rcomx", ctype.REAL)
+        if not "pn_rcomy" in self.__dict__:
+            self.register_auxiliary_attribute("pn_rcomy", ctype.REAL)
+        if not "pn_rcomz" in self.__dict__:
+            self.register_auxiliary_attribute("pn_rcomz", ctype.REAL)
+        self.pn_rcomx += self.pn_lmx * tau
+        self.pn_rcomy += self.pn_lmy * tau
+        self.pn_rcomz += self.pn_lmz * tau
+
+    def pn_get_rcom_correction(self):
+        if not "pn_rcomx" in self.__dict__:
+            self.register_auxiliary_attribute("pn_rcomx", ctype.REAL)
+        if not "pn_rcomy" in self.__dict__:
+            self.register_auxiliary_attribute("pn_rcomy", ctype.REAL)
+        if not "pn_rcomz" in self.__dict__:
+            self.register_auxiliary_attribute("pn_rcomz", ctype.REAL)
         rcomx = self.pn_rcomx.sum()
         rcomy = self.pn_rcomy.sum()
         rcomz = self.pn_rcomz.sum()
         return np.array([rcomx, rcomy, rcomz]) / self.total_mass
 
-    def evolve_lmom_pn_shift(self, tstep):
-        """
-        Evolves linear momentum shift in time due to post-newtonian terms.
-        """
-        self.pn_lmx -= self.mass * self.pn_dvx
-        self.pn_lmy -= self.mass * self.pn_dvy
-        self.pn_lmz -= self.mass * self.pn_dvz
+    def pn_kick_lmom(self, tau):
+        """Kicks linear momentum due to post-newtonian terms.
 
-    def get_lmom_pn_shift(self):
+        """
+        if not "pn_lmx" in self.__dict__:
+            self.register_auxiliary_attribute("pn_lmx", ctype.REAL)
+        if not "pn_lmy" in self.__dict__:
+            self.register_auxiliary_attribute("pn_lmy", ctype.REAL)
+        if not "pn_lmz" in self.__dict__:
+            self.register_auxiliary_attribute("pn_lmz", ctype.REAL)
+        self.pn_lmx -= self.mass * self.pnax * tau
+        self.pn_lmy -= self.mass * self.pnay * tau
+        self.pn_lmz -= self.mass * self.pnaz * tau
+
+    def pn_get_lmom_correction(self):
+        if not "pn_lmx" in self.__dict__:
+            self.register_auxiliary_attribute("pn_lmx", ctype.REAL)
+        if not "pn_lmy" in self.__dict__:
+            self.register_auxiliary_attribute("pn_lmy", ctype.REAL)
+        if not "pn_lmz" in self.__dict__:
+            self.register_auxiliary_attribute("pn_lmz", ctype.REAL)
         lmx = self.pn_lmx.sum()
         lmy = self.pn_lmy.sum()
         lmz = self.pn_lmz.sum()
         return np.array([lmx, lmy, lmz])
 
-    def get_vcom_pn_shift(self):
-        return self.get_lmom_pn_shift() / self.total_mass
+    def pn_get_vcom_correction(self):
+        return self.pn_get_lmom_correction() / self.total_mass
 
-    def evolve_amom_pn_shift(self, tstep):
-        """
-        Evolves angular momentum shift in time due to post-newtonian terms.
-        """
-        self.pn_amx -= self.mass * ((
-            self.ry * self.pn_dvz) - (self.rz * self.pn_dvy))
-        self.pn_amy -= self.mass * ((
-            self.rz * self.pn_dvx) - (self.rx * self.pn_dvz))
-        self.pn_amz -= self.mass * ((
-            self.rx * self.pn_dvy) - (self.ry * self.pn_dvx))
+    def pn_kick_amom(self, tau):
+        """Kicks angular momentum due to post-newtonian terms.
 
-    def get_amom_pn_shift(self):
+        """
+        if not "pn_amx" in self.__dict__:
+            self.register_auxiliary_attribute("pn_amx", ctype.REAL)
+        if not "pn_amy" in self.__dict__:
+            self.register_auxiliary_attribute("pn_amy", ctype.REAL)
+        if not "pn_amz" in self.__dict__:
+            self.register_auxiliary_attribute("pn_amz", ctype.REAL)
+        self.pn_amx -= self.mass * (self.ry * self.pnaz
+                                    - self.rz * self.pnay) * tau
+        self.pn_amy -= self.mass * (self.rz * self.pnax
+                                    - self.rx * self.pnaz) * tau
+        self.pn_amz -= self.mass * (self.rx * self.pnay
+                                    - self.ry * self.pnax) * tau
+
+    def pn_get_amom_correction(self):
+        if not "pn_amx" in self.__dict__:
+            self.register_auxiliary_attribute("pn_amx", ctype.REAL)
+        if not "pn_amy" in self.__dict__:
+            self.register_auxiliary_attribute("pn_amy", ctype.REAL)
+        if not "pn_amz" in self.__dict__:
+            self.register_auxiliary_attribute("pn_amz", ctype.REAL)
         amx = self.pn_amx.sum()
         amy = self.pn_amy.sum()
         amz = self.pn_amz.sum()
@@ -552,7 +563,7 @@ class Bodies(AbstractNbodyMethods):
     def set_state(self, array):
         for name in array.dtype.names:
             if name in self.__dict__:
-                setattr(self, name, array[name])
+                self.__dict__[name][:] = array[name]
 
 
 ########## end of file ##########

@@ -9,7 +9,7 @@ TODO.
 from __future__ import print_function
 import logging
 from ..integrator import Base
-from ..lib import gravity
+from ..lib.utils import ctype
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -28,8 +28,8 @@ INCLUDE_PN_CORRECTIONS = False
 #
 @timings
 def split(ps, condition):
-    """
-    Splits the particle's system into slow/fast components.
+    """Splits the particle's system into slow/fast components.
+
     """
     slow = ps[condition]
     fast = ps[~condition]
@@ -47,8 +47,8 @@ def split(ps, condition):
 #
 @timings
 def join(slow, fast):
-    """
-    Joins the slow/fast components of a particle's system.
+    """Joins the slow/fast components of a particle's system.
+
     """
     if not fast.n:
         return slow
@@ -64,8 +64,8 @@ def join(slow, fast):
 #
 @timings
 def drift_n(ips, tau):
-    """
-    Drift operator for Newtonian quantities.
+    """Drift operator for Newtonian quantities.
+
     """
     ips.rx += tau * ips.vx
     ips.ry += tau * ips.vy
@@ -78,8 +78,8 @@ def drift_n(ips, tau):
 #
 @timings
 def kick_n(ips, jps, tau):
-    """
-    Kick operator for Newtonian quantities.
+    """Kick operator for Newtonian quantities.
+
     """
     ips.set_acc(jps)
     ips.vx += tau * ips.ax
@@ -93,11 +93,11 @@ def kick_n(ips, jps, tau):
 #
 @timings
 def drift_pn(ips, tau):
-    """
-    Drift operator for post-Newtonian quantities.
+    """Drift operator for post-Newtonian quantities.
+
     """
     ips = drift_n(ips, tau)
-    ips.evolve_rcom_pn_shift(tau)
+    ips.pn_drift_rcom(tau)
     return ips
 
 
@@ -106,33 +106,41 @@ def drift_pn(ips, tau):
 #
 @timings
 def kick_pn(ips, jps, tau):
-    """
-    Kick operator for post-Newtonian quantities.
-    """
-    ips = kick_n(ips, jps, tau / 2)
+    """Kick operator for post-Newtonian quantities.
 
-    ips.vx += ips.pn_dvx
-    ips.vy += ips.pn_dvy
-    ips.vz += ips.pn_dvz
-
-    ips.evolve_ke_pn_shift(tau / 2)
-    ips.evolve_lmom_pn_shift(tau / 2)
-    ips.evolve_amom_pn_shift(tau / 2)
+    """
+    ips.set_acc(jps)
 
     ips.set_pnacc(jps)
-    ips.pn_dvx = (tau * ips.pnax - ips.pn_dvx)
-    ips.pn_dvy = (tau * ips.pnay - ips.pn_dvy)
-    ips.pn_dvz = (tau * ips.pnaz - ips.pn_dvz)
+    ips.wx += (ips.ax + ips.pnax) * tau / 2
+    ips.wy += (ips.ay + ips.pnay) * tau / 2
+    ips.wz += (ips.az + ips.pnaz) * tau / 2
 
-    ips.evolve_amom_pn_shift(tau / 2)
-    ips.evolve_lmom_pn_shift(tau / 2)
-    ips.evolve_ke_pn_shift(tau / 2)
+    ips.vx, ips.wx = ips.wx, ips.vx
+    ips.vy, ips.wy = ips.wy, ips.vy
+    ips.vz, ips.wz = ips.wz, ips.vz
+    ips.set_pnacc(jps)
+    ips.vx, ips.wx = ips.wx, ips.vx
+    ips.vy, ips.wy = ips.wy, ips.vy
+    ips.vz, ips.wz = ips.wz, ips.vz
 
-    ips.vz += ips.pn_dvz
-    ips.vy += ips.pn_dvy
-    ips.vx += ips.pn_dvx
+    ips.pn_kick_ke(tau / 2)
+    ips.pn_kick_lmom(tau / 2)
+    ips.pn_kick_amom(tau / 2)
 
-    ips = kick_n(ips, jps, tau / 2)
+    ips.vx += (ips.ax + ips.pnax) * tau
+    ips.vy += (ips.ay + ips.pnay) * tau
+    ips.vz += (ips.az + ips.pnaz) * tau
+
+    ips.pn_kick_ke(tau / 2)
+    ips.pn_kick_lmom(tau / 2)
+    ips.pn_kick_amom(tau / 2)
+
+    ips.set_pnacc(jps)
+    ips.wx += (ips.ax + ips.pnax) * tau / 2
+    ips.wy += (ips.ay + ips.pnay) * tau / 2
+    ips.wz += (ips.az + ips.pnaz) * tau / 2
+
     return ips
 
 
@@ -141,8 +149,8 @@ def kick_pn(ips, jps, tau):
 #
 @timings
 def drift(ips, tau):
-    """
-    Drift operator.
+    """Drift operator.
+
     """
     if INCLUDE_PN_CORRECTIONS:
         return drift_pn(ips, tau)
@@ -154,8 +162,8 @@ def drift(ips, tau):
 #
 @timings
 def kick(ips, jps, tau, pn):
-    """
-    Kick operator.
+    """Kick operator.
+
     """
     if pn and INCLUDE_PN_CORRECTIONS:
         return kick_pn(ips, jps, tau)
@@ -167,8 +175,8 @@ def kick(ips, jps, tau, pn):
 #
 @timings
 def kick_sf(slow, fast, tau):
-    """
-    Slow<->Fast Kick operator.
+    """Slow<->Fast Kick operator.
+
     """
     if slow.n and fast.n:
         slow = kick(slow, fast, tau, pn=True)
@@ -185,8 +193,8 @@ dkd21_coefs = ([1.0],
 
 @timings
 def base_dkd21(ips, tau):
-    """
-    Standard dkd21 operator.
+    """Standard dkd21 operator.
+
     """
     if ips.n == 0:
         return ips
@@ -213,8 +221,8 @@ dkd22_coefs = ([0.5],
 
 @timings
 def base_dkd22(ips, tau):
-    """
-    Standard dkd22 operator.
+    """Standard dkd22 operator.
+
     """
     if ips.n == 0:
         return ips
@@ -244,8 +252,8 @@ dkd43_coefs = ([1.3512071919596575,
 
 @timings
 def base_dkd43(ips, tau):
-    """
-    Standard dkd43 operator.
+    """Standard dkd43 operator.
+
     """
     if ips.n == 0:
         return ips
@@ -278,8 +286,8 @@ dkd44_coefs = ([0.7123418310626056,
 
 @timings
 def base_dkd44(ips, tau):
-    """
-    Standard dkd44 operator.
+    """Standard dkd44 operator.
+
     """
     if ips.n == 0:
         return ips
@@ -315,8 +323,8 @@ dkd45_coefs = ([-0.0844296195070715,
 
 @timings
 def base_dkd45(ips, tau):
-    """
-    Standard dkd45 operator.
+    """Standard dkd45 operator.
+
     """
     if ips.n == 0:
         return ips
@@ -355,8 +363,8 @@ dkd46_coefs = ([0.209515106613362,
 
 @timings
 def base_dkd46(ips, tau):
-    """
-    Standard dkd46 operator.
+    """Standard dkd46 operator.
+
     """
     if ips.n == 0:
         return ips
@@ -398,8 +406,8 @@ dkd67_coefs = ([0.7845136104775573,
 
 @timings
 def base_dkd67(ips, tau):
-    """
-    Standard dkd67 operator.
+    """Standard dkd67 operator.
+
     """
     if ips.n == 0:
         return ips
@@ -445,8 +453,8 @@ dkd69_coefs = ([0.39103020330868477,
 
 @timings
 def base_dkd69(ips, tau):
-    """
-    Standard dkd69 operator.
+    """Standard dkd69 operator.
+
     """
     if ips.n == 0:
         return ips
@@ -501,7 +509,7 @@ class SIA(Base):
         super(SIA, self).__init__(eta, time, ps, **kwargs)
         self.method = method
         global INCLUDE_PN_CORRECTIONS
-        INCLUDE_PN_CORRECTIONS = True if gravity.clight.pn_order > 0 else False
+        INCLUDE_PN_CORRECTIONS = self.include_pn_corrections
 
     def initialize(self, t_end):
         """
@@ -511,6 +519,13 @@ class SIA(Base):
                     self.method)
 
         ps = self.ps
+        if INCLUDE_PN_CORRECTIONS:
+            ps.register_auxiliary_attribute("wx", ctype.REAL)
+            ps.register_auxiliary_attribute("wy", ctype.REAL)
+            ps.register_auxiliary_attribute("wz", ctype.REAL)
+            ps.wx[:] = ps.vx
+            ps.wy[:] = ps.vy
+            ps.wz[:] = ps.vz
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)

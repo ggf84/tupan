@@ -4,8 +4,8 @@
 #include "common.h"
 
 inline PN p2p_pn2(
-    REAL mi,
-    REAL mj,
+    REAL im,
+    REAL jm,
     REAL inv_r,
     REAL iv2,
     REAL jv2,
@@ -22,8 +22,8 @@ inline PN p2p_pn2(
             - 2.0 * jv2
             + 4.0 * ivjv
             + 1.5 * njv2
-            + inv_r * ( + 5.0 * mi
-                        + 4.0 * mj );
+            + inv_r * ( + 5.0 * im
+                        + 4.0 * jm );
 
     pn2.b = + 4.0 * niv
             - 3.0 * njv;
@@ -36,11 +36,11 @@ inline PN p2p_pn2(
 
 
 inline PN p2p_pn4(
-    REAL mi,
-    REAL mj,
-    REAL mi2,
-    REAL mj2,
-    REAL mimj,
+    REAL im,
+    REAL jm,
+    REAL im2,
+    REAL jm2,
+    REAL imjm,
     REAL inv_r,
     REAL inv_r2,
     REAL iv2,
@@ -66,24 +66,24 @@ inline PN p2p_pn4(
                        + 4.5 * jv2
                        - 6.0 * ivjv
                        - 1.875 * njv2 )
-            - inv_r2 * ( + 14.25 * mi2
-                         + 9.0 * mj2
-                         + 34.5 * mimj )
-            + inv_r * ( + mi * ( - 3.75 * iv2
+            - inv_r2 * ( + 14.25 * im2
+                         + 9.0 * jm2
+                         + 34.5 * imjm )
+            + inv_r * ( + im * ( - 3.75 * iv2
                                  + 1.25 * jv2
                                  - 2.5 * ivjv
                                  + 19.5 * niv2
                                  - 39.0 * nivnjv
                                  + 8.5 * njv2 )
-                        + mj * ( + 4.0 * jv2
+                        + jm * ( + 4.0 * jv2
                                  - 8.0 * ivjv
                                  + 2.0 * niv2
                                  - 4.0 * nivnjv
                                  - 6.0 * njv2 ) );
 
-    pn4.b = + inv_r * ( + mi * ( - 15.75 * niv
+    pn4.b = + inv_r * ( + im * ( - 15.75 * niv
                                  + 13.75 * njv )
-                        - mj * 2.0 * ( + niv
+                        - jm * 2.0 * ( + niv
                                        + njv ) )
             + iv2 * njv
             - ivjv * nv * 4.0
@@ -100,8 +100,8 @@ inline PN p2p_pn4(
 
 
 inline PN p2p_pn5(
-    REAL mi,
-    REAL mj,
+    REAL im,
+    REAL jm,
     REAL inv_r,
     REAL v2,
     REAL nv,
@@ -110,15 +110,15 @@ inline PN p2p_pn5(
     // Include ~1/c^5 terms (3+3 == 6 terms)
     PN pn5;
 
-    pn5.a = + nv * ( + inv_r * ( - 4.8 * mi
-                                 + 1.3866666666666667e+1 * mj )          // +208/15
+    pn5.a = + nv * ( + inv_r * ( - 4.8 * im
+                                 + 1.3866666666666667e+1 * jm )          // +208/15
                      + 2.4 * v2 );
 
     pn5.b = - v2
-            + inv_r * ( + 1.6 * mi
-                        - 6.4 * mj );
+            + inv_r * ( + 1.6 * im
+                        - 6.4 * jm );
 
-    REAL m_c5r = (mi * inv_r) * clight.inv5;
+    REAL m_c5r = (im * inv_r) * clight.inv5;
     pn5.a *= m_c5r;
     pn5.b *= m_c5r;
 
@@ -127,11 +127,11 @@ inline PN p2p_pn5(
 
 
 inline PN p2p_pn6(
-    REAL mi,
-    REAL mj,
-    REAL mi2,
-    REAL mj2,
-    REAL mimj,
+    REAL im,
+    REAL jm,
+    REAL im2,
+    REAL jm2,
+    REAL imjm,
     REAL inv_r,
     REAL inv_r2,
     REAL v2,
@@ -163,7 +163,7 @@ inline PN p2p_pn6(
            + 2.0 * jv2 * ( - ivjvivjv
                            + jv2 * ( + 2.0 * ivjv
                                      - jv2 ) )
-           + mi * inv_r * ( + niv * ( + njv * ( + 244.0 * ivjv
+           + im * inv_r * ( + niv * ( + njv * ( + 244.0 * ivjv
                                                 - 102.5 * iv2
                                                 - 141.5 * jv2
                                                 + 191.5 * njv2 )
@@ -183,7 +183,7 @@ inline PN p2p_pn6(
                             - 11.375 * iv2 * ( + iv2
                                                + 2.0 * jv2 )
                             - 10.125 * jv4 )
-           + mj * inv_r * 4.0 * ( + jv4
+           + jm * inv_r * 4.0 * ( + jv4
                                   + njv * ( + niv * ( + ivjv
                                                       - jv2 )
                                             + njv * ( + 3.0 * ( + ivjv
@@ -193,12 +193,12 @@ inline PN p2p_pn6(
                                                                 + 1.5 * njv ) ) )
                                   + ivjv * ( + ivjv
                                              - 2.0 * jv2 ) )
-           + mj2 * inv_r2 * ( - niv2
+           + jm2 * inv_r2 * ( - niv2
                               + 2.0 * nivnjv
                               + 21.5 * njv2
                               + 18.0 * ivjv
                               - 9.0 * jv2 )
-           + mimj * inv_r2 * ( + 51.875 * niv2
+           + imjm * inv_r2 * ( + 51.875 * niv2
                                - 93.75 * nivnjv
                                + 139.125 * njv2
                                + 18.0 * iv2
@@ -206,17 +206,17 @@ inline PN p2p_pn6(
                                          - 9.609375 * nvnv )
                                + 33.0 * ( + ivjv
                                           - 0.5 * jv2 ) )
-           + mi2 * inv_r2 * ( - 258.625 * niv2
+           + im2 * inv_r2 * ( - 258.625 * niv2
                               + 543.0 * nivnjv
                               - 234.75 * njv2
                               + 58.875 * iv2
                               + 44.625 * ( + jv2
                                            - 2.0 * ivjv ) )
-           + inv_r * inv_r2 * ( + 16.0 * mj * mj2
-                                + mi2 * mj * ( + 1.8233333333333333e+2   // +547/3
+           + inv_r * inv_r2 * ( + 16.0 * jm * jm2
+                                + im2 * jm * ( + 1.8233333333333333e+2   // +547/3
                                                - 2.5625 * PI2 )
-                                - 1.0833333333333333 * mi * mi2          // -13/12
-                                + mi * mj2 * ( + 1.8166666666666667e+2   // +545/3
+                                - 1.0833333333333333 * im * im2          // -13/12
+                                + im * jm2 * ( + 1.8166666666666667e+2   // +545/3
                                                - 2.5625 * PI2 ) );
 
 	pn6.b = + njv * ( + jv2 * ( + iv2
@@ -232,14 +232,14 @@ inline PN p2p_pn6(
                                                               - 0.75 * njv ) ) ) ) )
            + 4.0 * niv * ( + jv4
                            - ivjv * jv2 )
-           + mj * inv_r * ( + njv * ( + 4.0 * ( + ivjv
+           + jm * inv_r * ( + njv * ( + 4.0 * ( + ivjv
                                                 - jv2
                                                 - 0.5 * niv2 )
                                       + njv * ( + 2.0 * ( + 4.0 * niv
                                                           + njv ) ) )
                             + 2.0 * niv * ( + ivjv
                                             - jv2 ) )
-           + mi * inv_r * ( + niv * ( + 25.875 * iv2
+           + im * inv_r * ( + niv * ( + 25.875 * iv2
                                       + 10.125 * jv2
                                       - 36.0 * ivjv
                                       - 67.25 * njv2
@@ -249,11 +249,11 @@ inline PN p2p_pn6(
                                       + 6.75 * ivjv
                                       - 17.125 * iv2
                                       - 7.916666666666667 * njv2 ) )     // -95/12
-           + inv_r2 * ( + mj2 * ( + 4.0 * niv
+           + inv_r2 * ( + jm2 * ( + 4.0 * niv
                                   + 5.0 * njv )
-                        + mi2 * ( + 77.75 * niv
+                        + im2 * ( + 77.75 * niv
                                   - 89.25 * njv )
-                        + mimj * ( + 59.875 * njv
+                        + imjm * ( + 59.875 * njv
                                    - 38.375 * niv
                                    + 3.84375 * PI2 * nv ) );
 
@@ -265,11 +265,11 @@ inline PN p2p_pn6(
 
 
 inline PN p2p_pn7(
-    REAL mi,
-    REAL mj,
-    REAL mi2,
-    REAL mj2,
-    REAL mimj,
+    REAL im,
+    REAL jm,
+    REAL im2,
+    REAL jm2,
+    REAL imjm,
     REAL inv_r,
     REAL inv_r2,
     REAL v2,
@@ -290,12 +290,12 @@ inline PN p2p_pn7(
     // Include ~1/c^7 terms (40+25 == 65 terms)
     PN pn7;
 
-    pn7.a = + mi2 * inv_r2 * ( + 3.801904761904762e+1 * niv              // +3992/105
+    pn7.a = + im2 * inv_r2 * ( + 3.801904761904762e+1 * niv              // +3992/105
                                - 4.121904761904762e+1 * njv )            // -4328/105
-            + mimj * inv_r * inv_r2 * ( - 1.2929523809523809e+2 * niv    // -13576/105
+            + imjm * inv_r * inv_r2 * ( - 1.2929523809523809e+2 * niv    // -13576/105
                                         + 1.3676190476190475e+2 * njv )  // +2872/21
-            + mj2 * inv_r * inv_r2 * ( - 1.5104761904761905e+2 * nv )    // -3172/21
-            + mi * inv_r * ( + niv * ( + 4.8e+1 * niv2                   // +48
+            + jm2 * inv_r * inv_r2 * ( - 1.5104761904761905e+2 * nv )    // -3172/21
+            + im * inv_r * ( + niv * ( + 4.8e+1 * niv2                   // +48
                                        - 4.655238095238095e+1 * iv2      // -4888/105
                                        + 9.79047619047619e+1 * ivjv      // +2056/21
                                        - 4.895238095238095e+1 * jv2 )    // -1028/21
@@ -305,7 +305,7 @@ inline PN p2p_pn7(
                                        + 4.8152380952380955e+1 * iv2     // +5056/105
                                        - 1.059047619047619e+2 * ivjv     // -2224/21
                                        + 5.535238095238095e+1 * jv2 ) )  // +5812/105
-            + mj * inv_r * ( + niv * ( - 1.164e+2 * niv2                 // -582/5
+            + jm * inv_r * ( + niv * ( - 1.164e+2 * niv2                 // -582/5
                                        - 8.182857142857141e+1 * ivjv     // -2864/35
                                        + 4.091428571428571e+1 * jv2 )    // +1432/35
                              + nivnjv * ( + 3.492e+2 * niv               // +1746/5
@@ -331,16 +331,16 @@ inline PN p2p_pn7(
                           + 1.2857142857142858e+1 * iv2 * jv2            // +90/7
                           + 3.4285714285714284 * jv4 ) );                // +24/7
 
-    pn7.b = - mi2 * inv_r2 * 8.761904761904763                           // -184/21
-            + mimj * inv_r2 * 5.927619047619047e+1                       // +6224/105
-            + mj2 * inv_r2 * 6.083809523809523e+1                        // +6388/105
-            + mi * inv_r * ( + 3.466666666666667 * niv2                  // +52/15
+    pn7.b = - im2 * inv_r2 * 8.761904761904763                           // -184/21
+            + imjm * inv_r2 * 5.927619047619047e+1                       // +6224/105
+            + jm2 * inv_r2 * 6.083809523809523e+1                        // +6388/105
+            + im * inv_r * ( + 3.466666666666667 * niv2                  // +52/15
                              - 3.7333333333333334 * nivnjv               // -56/15
                              - 2.933333333333333 * njv2                  // -44/15
                              - 3.7714285714285714 * iv2                  // -132/35
                              + 4.3428571428571425 * ivjv                 // +152/35
                              - 1.3714285714285714 * jv2 )                // -48/35
-            + mj * inv_r * ( + 3.0266666666666664e+1 * niv2              // +454/15
+            + jm * inv_r * ( + 3.0266666666666664e+1 * niv2              // +454/15
                              - 7.44e+1 * nivnjv                          // -372/5
                              + 5.693333333333333e+1 * njv2               // +854/15
                              - 7.238095238095238 * iv2                   // -152/21
@@ -357,7 +357,7 @@ inline PN p2p_pn7(
                 + 1.8685714285714288e+1 * iv2 * jv2                      // +654/35
                 + 8.342857142857143 * jv4 );                             // +292/35
 
-    REAL m_c7r = (mi * inv_r) * clight.inv7;
+    REAL m_c7r = (im * inv_r) * clight.inv7;
     pn7.a *= m_c7r;
     pn7.b *= m_c7r;
 
@@ -365,9 +365,9 @@ inline PN p2p_pn7(
 }   // ??+??+?? == ??? FLOPs
 
 
-inline PN p2p_pnterms(
-    REAL mi,
-    REAL mj,
+inline void p2p_pnterms(
+    REAL im,
+    REAL jm,
     REAL rx,
     REAL ry,
     REAL rz,
@@ -384,7 +384,8 @@ inline PN p2p_pnterms(
     REAL inv_r,
     REAL inv_r2,
     REAL inv_r3,
-    CLIGHT clight)
+    CLIGHT clight,
+    PN *pn)
 {
     PN pn1 = {0.0, 0.0};
     PN pn2 = {0.0, 0.0};
@@ -408,16 +409,16 @@ inline PN p2p_pnterms(
             REAL njv = nx * jvx + ny * jvy + nz * jvz;
             REAL njv2 = njv * njv;
             REAL ivjv = ivx * jvx + ivy * jvy + ivz * jvz;
-            pn2 = p2p_pn2(mi, mj, inv_r,
+            pn2 = p2p_pn2(im, jm, inv_r,
                           iv2, jv2, ivjv,
                           niv, njv, njv2,
                           clight);
             if (clight.order > 2) {
                 // XXX: not implemented.
                 if (clight.order > 3) {
-                    REAL mi2 = mi * mi;
-                    REAL mj2 = mj * mj;
-                    REAL mimj = mi * mj;
+                    REAL im2 = im * im;
+                    REAL jm2 = jm * jm;
+                    REAL imjm = im * jm;
                     REAL jv4 = jv2 * jv2;
                     REAL ivjvivjv = ivjv * ivjv;
                     REAL nv = nx * vx + ny * vy + nz * vz;
@@ -426,21 +427,21 @@ inline PN p2p_pnterms(
                     REAL niv2 = niv * niv;
                     REAL njv2 = njv * njv;
                     REAL nivnjv = niv * njv;
-                    pn4 = p2p_pn4(mi, mj, mi2, mj2, mimj, inv_r, inv_r2,
+                    pn4 = p2p_pn4(im, jm, im2, jm2, imjm, inv_r, inv_r2,
                                   iv2, jv2, jv4, ivjv, ivjvivjv,
                                   nv, niv, njv, niv2, njv2, nivnjv,
                                   clight);
                     if (clight.order > 4) {
-                        pn5 = p2p_pn5(mi, mj, inv_r, v2, nv, clight);
+                        pn5 = p2p_pn5(im, jm, inv_r, v2, nv, clight);
                         if (clight.order > 5) {
                             REAL nvnv = nv * nv;
-                            pn6 = p2p_pn6(mi, mj, mi2, mj2, mimj, inv_r, inv_r2,
+                            pn6 = p2p_pn6(im, jm, im2, jm2, imjm, inv_r, inv_r2,
                                           v2, iv2, jv2, jv4, ivjv, ivjvivjv,
                                           nv, nvnv, niv, njv, niv2, njv2, nivnjv,
                                           clight);
                             if (clight.order > 6) {
                                 REAL iv4 = iv2 * iv2;
-                                pn7 = p2p_pn7(mi, mj, mi2, mj2, mimj, inv_r, inv_r2,
+                                pn7 = p2p_pn7(im, jm, im2, jm2, imjm, inv_r, inv_r2,
                                               v2, iv2, jv2, iv4, jv4, ivjv,
                                               nv, nvnv, niv, njv, niv2, njv2, nivnjv,
                                               clight);
@@ -453,18 +454,14 @@ inline PN p2p_pnterms(
     }
 
     // Form the 213 terms post-Newtonian
-    PN pn = {0.0, 0.0};
-
     // ---> (((((((65   ) + 103  ) + 6    ) + 31   ) + 0    ) + 8    ) + 0    )
-    pn.a += (((((((pn7.a) + pn6.a) + pn5.a) + pn4.a) + pn3.a) + pn2.a) + pn1.a);
-    pn.b += (((((((pn7.b) + pn6.b) + pn5.b) + pn4.b) + pn3.b) + pn2.b) + pn1.b);
+    pn->a += (((((((pn7.a) + pn6.a) + pn5.a) + pn4.a) + pn3.a) + pn2.a) + pn1.a);
+    pn->b += (((((((pn7.b) + pn6.b) + pn5.b) + pn4.b) + pn3.b) + pn2.b) + pn1.b);
 
-    REAL gm_r3 = mj * inv_r3;
-    REAL gm_r2 = mj * inv_r2;
-    pn.a *= gm_r3;
-    pn.b *= gm_r2;
-
-    return pn;
+    REAL gm_r3 = jm * inv_r3;
+    REAL gm_r2 = jm * inv_r2;
+    pn->a *= gm_r3;
+    pn->b *= gm_r2;
 }
 
 #endif  // __PN_TERMS_H__

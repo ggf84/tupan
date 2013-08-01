@@ -22,6 +22,7 @@ class Base(object):
 
         pn_order = kwargs.pop("pn_order", 0)
         clight = kwargs.pop("clight", None)
+        self.include_pn_corrections = False
         if pn_order > 0:
             if clight is None:
                 raise TypeError(
@@ -32,6 +33,7 @@ class Base(object):
                 from ..lib import gravity
                 gravity.clight.pn_order = pn_order
                 gravity.clight.clight = clight
+                self.include_pn_corrections = True
 
         self.reporter = kwargs.pop("reporter", None)
         self.viewer = kwargs.pop("viewer", None)

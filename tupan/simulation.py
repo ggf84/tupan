@@ -45,7 +45,7 @@ class Diagnostic(object):
         self.fname = fname
         self.time = time
         self.report_freq = report_freq
-        self.pn_order = pn_order
+        self.include_pn_corrections = True if pn_order else False
         self.nreport = 0
         self.is_initialized = False
 
@@ -97,24 +97,24 @@ class Diagnostic(object):
         self.time = time
 
         ke = ps.kinetic_energy
-        if self.pn_order > 0:
-            ke += ps.get_ke_pn_shift()
+        if self.include_pn_corrections:
+            ke += ps.pn_get_ke_correction()
         pe = ps.potential_energy
         te = ke + pe
         virial = ps.virial_energy
 
         rcom = ps.rcom
-        if self.pn_order > 0:
-            rcom += ps.get_rcom_pn_shift()
+        if self.include_pn_corrections:
+            rcom += ps.pn_get_rcom_correction()
         vcom = ps.vcom
-        if self.pn_order > 0:
-            vcom += ps.get_vcom_pn_shift()
+        if self.include_pn_corrections:
+            vcom += ps.pn_get_vcom_correction()
         lmom = ps.linear_momentum
-        if self.pn_order > 0:
-            lmom += ps.get_lmom_pn_shift()
+        if self.include_pn_corrections:
+            lmom += ps.pn_get_lmom_correction()
         amom = ps.angular_momentum
-        if self.pn_order > 0:
-            amom += ps.get_amom_pn_shift()
+        if self.include_pn_corrections:
+            amom += ps.pn_get_amom_correction()
 
         eerr = (te-self.te0)/(-pe)
         self.count += 1
