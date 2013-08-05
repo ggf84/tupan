@@ -589,7 +589,6 @@ class SIA(Base):
 
         """
         if ps.n == 0:
-            type(ps).t_curr += tau
             return ps
 
         flag = -1
@@ -602,6 +601,9 @@ class SIA(Base):
         slow, fast = split(ps, abs(ps.tstep) > flag*abs(tau))
 
         slow, fast = sfdkdxy(slow, fast, tau, self.recurse)
+
+        if fast.n == 0:
+            type(ps).t_curr += tau
 
         if slow.n:
             slow.tstep[:] = tau
