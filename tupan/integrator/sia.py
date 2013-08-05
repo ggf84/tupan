@@ -185,7 +185,7 @@ def kick_sf(slow, fast, tau):
 
 
 #
-# dkd21
+# dkd21 - REF.: Yoshida, Phys. Lett. A 150 (1990)
 #
 dkd21_coefs = ([1.0],
                [0.5])
@@ -212,7 +212,7 @@ def base_dkd21(ips, tau):
 
 
 #
-# dkd22
+# dkd22 - REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
 #
 dkd22_coefs = ([0.5],
                [0.1931833275037836,
@@ -242,7 +242,7 @@ def base_dkd22(ips, tau):
 
 
 #
-# dkd43
+# dkd43 - REF.: Yoshida, Phys. Lett. A 150 (1990)
 #
 dkd43_coefs = ([1.3512071919596575,
                 -1.7024143839193150],
@@ -275,7 +275,7 @@ def base_dkd43(ips, tau):
 
 
 #
-# dkd44
+# dkd44 - REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
 #
 dkd44_coefs = ([0.7123418310626056,
                 -0.21234183106260562],
@@ -311,7 +311,7 @@ def base_dkd44(ips, tau):
 
 
 #
-# dkd45
+# dkd45 - REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
 #
 dkd45_coefs = ([-0.0844296195070715,
                 0.354900057157426,
@@ -350,7 +350,7 @@ def base_dkd45(ips, tau):
 
 
 #
-# dkd46
+# dkd46 - REF.: Blanes & Moan, J. Comp. Appl. Math. 142 (2002)
 #
 dkd46_coefs = ([0.209515106613362,
                 -0.143851773179818,
@@ -392,7 +392,7 @@ def base_dkd46(ips, tau):
 
 
 #
-# dkd67
+# dkd67 - REF.: Yoshida, Phys. Lett. A 150 (1990)
 #
 dkd67_coefs = ([0.7845136104775573,
                 0.23557321335935813,
@@ -437,7 +437,7 @@ def base_dkd67(ips, tau):
 
 
 #
-# dkd69
+# dkd69 - REF.: Kahan & Li, Math. Comput. 66 (1997)
 #
 dkd69_coefs = ([0.39103020330868477,
                 0.334037289611136,
