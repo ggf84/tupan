@@ -28,26 +28,26 @@ inline void pnacc_kernel_core(
     REAL *ipnaz)
 {
     REAL rx, ry, rz;
-    rx = irx - jrx;                                                  // 1 FLOPs
-    ry = iry - jry;                                                  // 1 FLOPs
-    rz = irz - jrz;                                                  // 1 FLOPs
+    rx = irx - jrx;                                                             // 1 FLOPs
+    ry = iry - jry;                                                             // 1 FLOPs
+    rz = irz - jrz;                                                             // 1 FLOPs
     REAL vx, vy, vz;
-    vx = ivx - jvx;                                                  // 1 FLOPs
-    vy = ivy - jvy;                                                  // 1 FLOPs
-    vz = ivz - jvz;                                                  // 1 FLOPs
-    REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
-    REAL v2 = vx * vx + vy * vy + vz * vz;                           // 5 FLOPs
+    vx = ivx - jvx;                                                             // 1 FLOPs
+    vy = ivy - jvy;                                                             // 1 FLOPs
+    vz = ivz - jvz;                                                             // 1 FLOPs
+    REAL r2 = rx * rx + ry * ry + rz * rz;                                      // 5 FLOPs
+    REAL v2 = vx * vx + vy * vy + vz * vz;                                      // 5 FLOPs
 
-    REAL e2 = ie2 + je2;                                             // 1 FLOPs
+    REAL e2 = ie2 + je2;                                                        // 1 FLOPs
 
     REAL inv_r1, inv_r2, inv_r3;
-    smoothed_inv_r1r2r3(r2, e2, &inv_r1, &inv_r2, &inv_r3);          // 4 FLOPs
+    smoothed_inv_r1r2r3(r2, e2, &inv_r1, &inv_r2, &inv_r3);                     // 4 FLOPs
 
-    REAL m = im + jm;                                                // 1 FLOPs
-    REAL r_sch = 2 * m * clight.inv2;                                // 2 FLOPs
-    REAL gamma2_a = r_sch * inv_r1;                                  // 1 FLOPs
-    REAL gamma2_b = v2 * clight.inv2;                                // 1 FLOPs
-    REAL gamma2 = gamma2_a + gamma2_b;                               // 1 FLOPs
+    REAL m = im + jm;                                                           // 1 FLOPs
+    REAL r_sch = 2 * m * clight.inv2;                                           // 2 FLOPs
+    REAL gamma2_a = r_sch * inv_r1;                                             // 1 FLOPs
+    REAL gamma2_b = v2 * clight.inv2;                                           // 1 FLOPs
+    REAL gamma2 = gamma2_a + gamma2_b;                                          // 1 FLOPs
 
     PN pn = {0, 0};
     /* PN acceleration will only be calculated
@@ -60,11 +60,11 @@ inline void pnacc_kernel_core(
                     rx, ry, rz, vx, vy, vz, v2,
                     ivx, ivy, ivz, jvx, jvy, jvz,
                     inv_r1, inv_r2, inv_r3,
-                    clight, &pn);                                    // ??? FLOPs
+                    clight, &pn);                                               // ??? FLOPs
     }
-    *ipnax += pn.a * rx + pn.b * vx;                                 // 4 FLOPs
-    *ipnay += pn.a * ry + pn.b * vy;                                 // 4 FLOPs
-    *ipnaz += pn.a * rz + pn.b * vz;                                 // 4 FLOPs
+    *ipnax += pn.a * rx + pn.b * vx;                                            // 4 FLOPs
+    *ipnay += pn.a * ry + pn.b * vy;                                            // 4 FLOPs
+    *ipnaz += pn.a * rz + pn.b * vz;                                            // 4 FLOPs
 }
 // Total flop count: 40+???
 

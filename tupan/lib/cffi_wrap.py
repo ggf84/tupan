@@ -22,6 +22,7 @@ def wrap_lib(fptype):
              "phi_kernel.c",
              "acc_kernel.c",
              "acc_jerk_kernel.c",
+             "snap_crackle_kernel.c",
              "tstep_kernel.c",
              "pnacc_kernel.c",
              "nreg_kernels.c",

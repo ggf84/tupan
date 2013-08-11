@@ -501,55 +501,55 @@ inline void p2p_pnterms(
     PN pn7 = {0, 0};
 
     REAL nx, ny, nz;
-    nx = rx * inv_r;                                                 // 1 FLOPs
-    ny = ry * inv_r;                                                 // 1 FLOPs
-    nz = rz * inv_r;                                                 // 1 FLOPs
-    REAL iv2 = ivx * ivx + ivy * ivy + ivz * ivz;                    // 5 FLOPs
-    REAL jv2 = jvx * jvx + jvy * jvy + jvz * jvz;                    // 5 FLOPs
+    nx = rx * inv_r;                                                            // 1 FLOPs
+    ny = ry * inv_r;                                                            // 1 FLOPs
+    nz = rz * inv_r;                                                            // 1 FLOPs
+    REAL iv2 = ivx * ivx + ivy * ivy + ivz * ivz;                               // 5 FLOPs
+    REAL jv2 = jvx * jvx + jvy * jvy + jvz * jvz;                               // 5 FLOPs
 
     if (clight.order > 0) {
         // XXX: not implemented.
         if (clight.order > 1) {
-            REAL niv = nx * ivx + ny * ivy + nz * ivz;               // 5 FLOPs
-            REAL njv = nx * jvx + ny * jvy + nz * jvz;               // 5 FLOPs
-            REAL njv2 = njv * njv;                                   // 1 FLOPs
-            REAL ivjv = ivx * jvx + ivy * jvy + ivz * jvz;           // 5 FLOPs
+            REAL niv = nx * ivx + ny * ivy + nz * ivz;                          // 5 FLOPs
+            REAL njv = nx * jvx + ny * jvy + nz * jvz;                          // 5 FLOPs
+            REAL njv2 = njv * njv;                                              // 1 FLOPs
+            REAL ivjv = ivx * jvx + ivy * jvy + ivz * jvz;                      // 5 FLOPs
             p2p_pn2(im, jm, inv_r,
                     iv2, jv2, ivjv,
                     niv, njv, njv2,
-                    clight, &pn2);                                   // 16 FLOPs
+                    clight, &pn2);                                              // 16 FLOPs
             if (clight.order > 2) {
                 // XXX: not implemented.
                 if (clight.order > 3) {
-                    REAL im2 = im * im;                              // 1 FLOPs
-                    REAL jm2 = jm * jm;                              // 1 FLOPs
-                    REAL imjm = im * jm;                             // 1 FLOPs
-                    REAL jv4 = jv2 * jv2;                            // 1 FLOPs
-                    REAL ivjvivjv = ivjv * ivjv;                     // 1 FLOPs
-                    REAL nv = nx * vx + ny * vy + nz * vz;           // 5 FLOPs
-                    REAL niv = nx * ivx + ny * ivy + nz * ivz;       // 5 FLOPs
-                    REAL njv = nx * jvx + ny * jvy + nz * jvz;       // 5 FLOPs
-                    REAL niv2 = niv * niv;                           // 1 FLOPs
-                    REAL njv2 = njv * njv;                           // 1 FLOPs
-                    REAL nivnjv = niv * njv;                         // 1 FLOPs
+                    REAL im2 = im * im;                                         // 1 FLOPs
+                    REAL jm2 = jm * jm;                                         // 1 FLOPs
+                    REAL imjm = im * jm;                                        // 1 FLOPs
+                    REAL jv4 = jv2 * jv2;                                       // 1 FLOPs
+                    REAL ivjvivjv = ivjv * ivjv;                                // 1 FLOPs
+                    REAL nv = nx * vx + ny * vy + nz * vz;                      // 5 FLOPs
+                    REAL niv = nx * ivx + ny * ivy + nz * ivz;                  // 5 FLOPs
+                    REAL njv = nx * jvx + ny * jvy + nz * jvz;                  // 5 FLOPs
+                    REAL niv2 = niv * niv;                                      // 1 FLOPs
+                    REAL njv2 = njv * njv;                                      // 1 FLOPs
+                    REAL nivnjv = niv * njv;                                    // 1 FLOPs
                     p2p_pn4(im, jm, im2, jm2, imjm, inv_r, inv_r2,
                             iv2, jv2, jv4, ivjv, ivjvivjv,
                             nv, niv, njv, niv2, njv2, nivnjv,
-                            clight, &pn4);                           // 72 FLOPs
+                            clight, &pn4);                                      // 72 FLOPs
                     if (clight.order > 4) {
-                        p2p_pn5(im, jm, inv_r, v2, nv, clight, &pn5);// 16 FLOPs
+                        p2p_pn5(im, jm, inv_r, v2, nv, clight, &pn5);           // 16 FLOPs
                         if (clight.order > 5) {
-                            REAL nvnv = nv * nv;                     // 1 FLOPs
+                            REAL nvnv = nv * nv;                                // 1 FLOPs
                             p2p_pn6(im, jm, im2, jm2, imjm, inv_r, inv_r2,
                                     v2, iv2, jv2, jv4, ivjv, ivjvivjv,
                                     nv, nvnv, niv, njv, niv2, njv2, nivnjv,
-                                    clight, &pn6);                   // ??? FLOPs
+                                    clight, &pn6);                              // ??? FLOPs
                             if (clight.order > 6) {
-                                REAL iv4 = iv2 * iv2;                // 1 FLOPs
+                                REAL iv4 = iv2 * iv2;                           // 1 FLOPs
                                 p2p_pn7(im, jm, im2, jm2, imjm, inv_r, inv_r2,
                                         v2, iv2, jv2, iv4, jv4, ivjv,
                                         nv, nvnv, niv, njv, niv2, njv2, nivnjv,
-                                        clight, &pn7);               // ??? FLOPs
+                                        clight, &pn7);                          // ??? FLOPs
                             }
                         }
                     }
@@ -559,14 +559,14 @@ inline void p2p_pnterms(
     }
 
     // Form the 213 terms post-Newtonian
-    // ----> (((((((65   ) + 103  ) + 6    ) + 31   ) + 0    ) + 8    ) + 0    )
-    pn->a += (((((((pn7.a) + pn6.a) + pn5.a) + pn4.a) + pn3.a) + pn2.a) + pn1.a);// 7 FLOPs
-    pn->b += (((((((pn7.b) + pn6.b) + pn5.b) + pn4.b) + pn3.b) + pn2.b) + pn1.b);// 7 FLOPs
+    // ----> ((((((65    + 103  ) + 6    ) + 31   ) + 0    ) + 8    ) + 0    )
+    pn->a += ((((((pn7.a + pn6.a) + pn5.a) + pn4.a) + pn3.a) + pn2.a) + pn1.a); // 7 FLOPs
+    pn->b += ((((((pn7.b + pn6.b) + pn5.b) + pn4.b) + pn3.b) + pn2.b) + pn1.b); // 7 FLOPs
 
-    REAL gm_r3 = jm * inv_r3;                                        // 1 FLOPs
-    REAL gm_r2 = jm * inv_r2;                                        // 1 FLOPs
-    pn->a *= gm_r3;                                                  // 1 FLOPs
-    pn->b *= gm_r2;                                                  // 1 FLOPs
+    REAL gm_r3 = jm * inv_r3;                                                   // 1 FLOPs
+    REAL gm_r2 = jm * inv_r2;                                                   // 1 FLOPs
+    pn->a *= gm_r3;                                                             // 1 FLOPs
+    pn->b *= gm_r2;                                                             // 1 FLOPs
 }   // ??+??+?? == ??? FLOPs
 
 #endif  // __PN_TERMS_H__

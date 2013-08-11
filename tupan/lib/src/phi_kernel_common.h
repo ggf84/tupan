@@ -24,17 +24,17 @@ inline void phi_kernel_core(
     REAL *iphi)
 {
     REAL rx, ry, rz;
-    rx = irx - jrx;                                                  // 1 FLOPs
-    ry = iry - jry;                                                  // 1 FLOPs
-    rz = irz - jrz;                                                  // 1 FLOPs
-    REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
+    rx = irx - jrx;                                                             // 1 FLOPs
+    ry = iry - jry;                                                             // 1 FLOPs
+    rz = irz - jrz;                                                             // 1 FLOPs
+    REAL r2 = rx * rx + ry * ry + rz * rz;                                      // 5 FLOPs
 
-    REAL e2 = ie2 + je2;                                             // 1 FLOPs
+    REAL e2 = ie2 + je2;                                                        // 1 FLOPs
 
     REAL inv_r1;
-    smoothed_inv_r1(r2, e2, &inv_r1);                                // 3 FLOPs
+    smoothed_inv_r1(r2, e2, &inv_r1);                                           // 3 FLOPs
 
-    *iphi -= jm * inv_r1;                                            // 2 FLOPs
+    *iphi -= jm * inv_r1;                                                       // 2 FLOPs
 }
 // Total flop count: 14
 

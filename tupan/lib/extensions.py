@@ -141,6 +141,7 @@ class CLModule(object):
                  "phi_kernel.cl",
                  "acc_kernel.cl",
                  "acc_jerk_kernel.cl",
+                 "snap_crackle_kernel.cl",
                  "tstep_kernel.cl",
                  "pnacc_kernel.cl",
                  "nreg_kernels.cl",

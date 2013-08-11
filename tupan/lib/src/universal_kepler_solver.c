@@ -2,7 +2,7 @@
 
 
 #ifdef DOUBLE
-    #define TOLERANCE ((REAL)2.2737367544323205948E-13)     // 2^(-42)
+    #define TOLERANCE ((REAL)2.2737367544323205948e-13)     // 2^(-42)
 #else
     #define TOLERANCE ((REAL)1.52587890625e-5)              // (2^-16)
 #endif

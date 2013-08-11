@@ -21,34 +21,39 @@ inline void acc_jerk_kernel_core(
     const REAL jvx,
     const REAL jvy,
     const REAL jvz,
-    REAL *iax, REAL *iay, REAL *iaz,
-    REAL *ijx, REAL *ijy, REAL *ijz)
+    REAL *iAx, REAL *iAy, REAL *iAz,
+    REAL *iJx, REAL *iJy, REAL *iJz)
 {
     REAL rx, ry, rz;
-    rx = irx - jrx;                                                  // 1 FLOPs
-    ry = iry - jry;                                                  // 1 FLOPs
-    rz = irz - jrz;                                                  // 1 FLOPs
+    rx = irx - jrx;                                                             // 1 FLOPs
+    ry = iry - jry;                                                             // 1 FLOPs
+    rz = irz - jrz;                                                             // 1 FLOPs
     REAL vx, vy, vz;
-    vx = ivx - jvx;                                                  // 1 FLOPs
-    vy = ivy - jvy;                                                  // 1 FLOPs
-    vz = ivz - jvz;                                                  // 1 FLOPs
-    REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
-    REAL rv = rx * vx + ry * vy + rz * vz;                           // 5 FLOPs
+    vx = ivx - jvx;                                                             // 1 FLOPs
+    vy = ivy - jvy;                                                             // 1 FLOPs
+    vz = ivz - jvz;                                                             // 1 FLOPs
+    REAL r2 = rx * rx + ry * ry + rz * rz;                                      // 5 FLOPs
+    REAL rv = rx * vx + ry * vy + rz * vz;                                      // 5 FLOPs
 
-    REAL e2 = ie2 + je2;                                             // 1 FLOPs
+    REAL e2 = ie2 + je2;                                                        // 1 FLOPs
 
     REAL inv_r2, inv_r3;
-    smoothed_inv_r2r3(r2, e2, &inv_r2, &inv_r3);                     // 4 FLOPs
+    smoothed_inv_r2r3(r2, e2, &inv_r2, &inv_r3);                                // 4 FLOPs
 
-    inv_r3 *= jm;                                                    // 1 FLOPs
-    rv *= 3 * inv_r2;                                                // 2 FLOPs
+    REAL alpha = 3 * rv * inv_r2;                                               // 2 FLOPs
 
-    *iax -= inv_r3 * rx;                                             // 2 FLOPs
-    *iay -= inv_r3 * ry;                                             // 2 FLOPs
-    *iaz -= inv_r3 * rz;                                             // 2 FLOPs
-    *ijx -= inv_r3 * (vx - rv * rx);                                 // 4 FLOPs
-    *ijy -= inv_r3 * (vy - rv * ry);                                 // 4 FLOPs
-    *ijz -= inv_r3 * (vz - rv * rz);                                 // 4 FLOPs
+    vx -= alpha * rx;                                                           // 2 FLOPs
+    vy -= alpha * ry;                                                           // 2 FLOPs
+    vz -= alpha * rz;                                                           // 2 FLOPs
+
+    inv_r3 *= jm;                                                               // 1 FLOPs
+
+    *iAx -= inv_r3 * rx;                                                        // 2 FLOPs
+    *iAy -= inv_r3 * ry;                                                        // 2 FLOPs
+    *iAz -= inv_r3 * rz;                                                        // 2 FLOPs
+    *iJx -= inv_r3 * vx;                                                        // 2 FLOPs
+    *iJy -= inv_r3 * vy;                                                        // 2 FLOPs
+    *iJz -= inv_r3 * vz;                                                        // 2 FLOPs
 }
 // Total flop count: 42
 

@@ -13,10 +13,10 @@ inline void get_phi(
     const REAL rz,
     REAL *phi)
 {
-    REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
+    REAL r2 = rx * rx + ry * ry + rz * rz;                                      // 5 FLOPs
     REAL inv_r1;
-    smoothed_inv_r1(r2, e2, &inv_r1);                                // 3 FLOPs
-    *phi = m * inv_r1;                                               // 1 FLOPs
+    smoothed_inv_r1(r2, e2, &inv_r1);                                           // 3 FLOPs
+    *phi = m * inv_r1;                                                          // 1 FLOPs
 }
 
 
@@ -30,13 +30,13 @@ inline void get_acc(
     REAL *ay,
     REAL *az)
 {
-    REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
+    REAL r2 = rx * rx + ry * ry + rz * rz;                                      // 5 FLOPs
     REAL inv_r3;
-    smoothed_inv_r3(r2, e2, &inv_r3);                                // 4 FLOPs
-    REAL m_r3 = m * inv_r3;                                          // 1 FLOPs
-    *ax = -m_r3 * rx;                                                // 1 FLOPs
-    *ay = -m_r3 * ry;                                                // 1 FLOPs
-    *az = -m_r3 * rz;                                                // 1 FLOPs
+    smoothed_inv_r3(r2, e2, &inv_r3);                                           // 4 FLOPs
+    REAL m_r3 = m * inv_r3;                                                     // 1 FLOPs
+    *ax = -m_r3 * rx;                                                           // 1 FLOPs
+    *ay = -m_r3 * ry;                                                           // 1 FLOPs
+    *az = -m_r3 * rz;                                                           // 1 FLOPs
 }
 
 
@@ -108,7 +108,7 @@ inline void twobody_solver(
 {
     REAL r2 = r0x * r0x + r0y * r0y + r0z * r0z;
     REAL v2 = v0x * v0x + v0y * v0y + v0z * v0z;
-    REAL R = 32 * (2 * m / v2);
+    REAL R = 64 * (m / v2);
     if (r2 > R*R) {
     leapfrog(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
              &(*r1x), &(*r1y), &(*r1z),
@@ -138,7 +138,7 @@ inline void evolve_twobody(
     REAL *v1y,
     REAL *v1z)
 {
-    REAL dt_2 = dt / 2;                                              // 1 FLOPs
+    REAL dt_2 = dt / 2;                                                         // 1 FLOPs
     REAL rx = r0x;
     REAL ry = r0y;
     REAL rz = r0z;
@@ -146,16 +146,16 @@ inline void evolve_twobody(
     REAL vy = v0y;
     REAL vz = v0z;
 
-    rx -= vx * dt_2;                                                 // 2 FLOPs
-    ry -= vy * dt_2;                                                 // 2 FLOPs
-    rz -= vz * dt_2;                                                 // 2 FLOPs
+    rx -= vx * dt_2;                                                            // 2 FLOPs
+    ry -= vy * dt_2;                                                            // 2 FLOPs
+    rz -= vz * dt_2;                                                            // 2 FLOPs
 
     twobody_solver(dt, m, e2, rx, ry, rz, vx, vy, vz,
-                   &rx, &ry, &rz, &vx, &vy, &vz);                    // ? FLOPS
+                   &rx, &ry, &rz, &vx, &vy, &vz);                               // ? FLOPS
 
-    rx -= vx * dt_2;                                                 // 2 FLOPs
-    ry -= vy * dt_2;                                                 // 2 FLOPs
-    rz -= vz * dt_2;                                                 // 2 FLOPs
+    rx -= vx * dt_2;                                                            // 2 FLOPs
+    ry -= vy * dt_2;                                                            // 2 FLOPs
+    rz -= vz * dt_2;                                                            // 2 FLOPs
 
     *r1x = rx;
     *r1y = ry;
@@ -192,30 +192,30 @@ inline void sakura_kernel_core(
     REAL *idvz)
 {
     REAL r0x, r0y, r0z;
-    r0x = irx - jrx;                                                 // 1 FLOPs
-    r0y = iry - jry;                                                 // 1 FLOPs
-    r0z = irz - jrz;                                                 // 1 FLOPs
+    r0x = irx - jrx;                                                            // 1 FLOPs
+    r0y = iry - jry;                                                            // 1 FLOPs
+    r0z = irz - jrz;                                                            // 1 FLOPs
     REAL v0x, v0y, v0z;
-    v0x = ivx - jvx;                                                 // 1 FLOPs
-    v0y = ivy - jvy;                                                 // 1 FLOPs
-    v0z = ivz - jvz;                                                 // 1 FLOPs
+    v0x = ivx - jvx;                                                            // 1 FLOPs
+    v0y = ivy - jvy;                                                            // 1 FLOPs
+    v0z = ivz - jvz;                                                            // 1 FLOPs
 
-    REAL m = im + jm;                                                // 1 FLOPs
-    REAL e2 = ie2 + je2;                                             // 1 FLOPs
+    REAL m = im + jm;                                                           // 1 FLOPs
+    REAL e2 = ie2 + je2;                                                        // 1 FLOPs
 
     REAL r1x, r1y, r1z;
     REAL v1x, v1y, v1z;
     evolve_twobody(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
-                   &r1x, &r1y, &r1z, &v1x, &v1y, &v1z);              // ? FLOPs
+                   &r1x, &r1y, &r1z, &v1x, &v1y, &v1z);                         // ? FLOPs
 
-    REAL jmu = jm / m;                                               // 1 FLOPs
+    REAL jmu = jm / m;                                                          // 1 FLOPs
 
-    *idrx += jmu * (r1x - r0x);                                      // 3 FLOPs
-    *idry += jmu * (r1y - r0y);                                      // 3 FLOPs
-    *idrz += jmu * (r1z - r0z);                                      // 3 FLOPs
-    *idvx += jmu * (v1x - v0x);                                      // 3 FLOPs
-    *idvy += jmu * (v1y - v0y);                                      // 3 FLOPs
-    *idvz += jmu * (v1z - v0z);                                      // 3 FLOPs
+    *idrx += jmu * (r1x - r0x);                                                 // 3 FLOPs
+    *idry += jmu * (r1y - r0y);                                                 // 3 FLOPs
+    *idrz += jmu * (r1z - r0z);                                                 // 3 FLOPs
+    *idvx += jmu * (v1x - v0x);                                                 // 3 FLOPs
+    *idvy += jmu * (v1y - v0y);                                                 // 3 FLOPs
+    *idvz += jmu * (v1z - v0z);                                                 // 3 FLOPs
 }
 // Total flop count: 36 + ?
 

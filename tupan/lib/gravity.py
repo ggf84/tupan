@@ -18,6 +18,7 @@ from .utils.timing import decallmethods, timings
 __all__ = ["Phi", "phi",
            "Acc", "acc",
            "AccJerk", "acc_jerk",
+           "SnapCrackle", "snap_crackle",
            "Tstep", "tstep",
            "PNAcc", "pnacc",
            "Sakura", "sakura",
@@ -264,6 +265,66 @@ class AccJerk(AbstractExtension):
                         jps.eps2, jps.vx, jps.vy, jps.vz)
         self._outargs = (ips.ax, ips.ay, ips.az,
                          ips.jx, ips.jy, ips.jz)
+
+        self.inargs = prepare_args(self._inargs, self.argtypes)
+        self.outargs = prepare_args(self._outargs, self.restypes)
+
+        self.kernel.set_args(self.inargs + self.outargs)
+
+
+@decallmethods(timings)
+class SnapCrackle(AbstractExtension):
+    """
+
+    """
+    def __init__(self, exttype, prec):
+        self.kernel = get_kernel("snap_crackle_kernel", exttype, prec)
+        cty = self.kernel.cty
+        argtypes = (cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p,
+                    cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p)
+        restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        self.argtypes = argtypes
+        self.restypes = restypes
+        lmem = self.kernel.allocate_local_memory(16, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem[:14], start=36)
+
+    def set_args(self, ips, jps):
+        ni = ips.n
+        nj = jps.n
+
+        self.kernel.global_size = ni
+        if not "sx" in ips.__dict__:
+            ips.register_auxiliary_attribute("sx", ctype.REAL)
+        if not "sy" in ips.__dict__:
+            ips.register_auxiliary_attribute("sy", ctype.REAL)
+        if not "sz" in ips.__dict__:
+            ips.register_auxiliary_attribute("sz", ctype.REAL)
+        if not "cx" in ips.__dict__:
+            ips.register_auxiliary_attribute("cx", ctype.REAL)
+        if not "cy" in ips.__dict__:
+            ips.register_auxiliary_attribute("cy", ctype.REAL)
+        if not "cz" in ips.__dict__:
+            ips.register_auxiliary_attribute("cz", ctype.REAL)
+
+        self._inargs = (ni,
+                        ips.mass, ips.rx, ips.ry, ips.rz,
+                        ips.eps2, ips.vx, ips.vy, ips.vz,
+                        ips.ax, ips.ay, ips.az, ips.jx, ips.jy, ips.jz,
+                        nj,
+                        jps.mass, jps.rx, jps.ry, jps.rz,
+                        jps.eps2, jps.vx, jps.vy, jps.vz,
+                        jps.ax, jps.ay, jps.az, jps.jx, jps.jy, jps.jz)
+        self._outargs = (ips.sx, ips.sy, ips.sz,
+                         ips.cx, ips.cy, ips.cz)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
         self.outargs = prepare_args(self._outargs, self.restypes)
@@ -545,6 +606,7 @@ clight = Clight()
 phi = Phi(exttype, ctype.prec)
 acc = Acc(exttype, ctype.prec)
 acc_jerk = AccJerk(exttype, ctype.prec)
+snap_crackle = SnapCrackle(exttype, ctype.prec)
 tstep = Tstep(exttype, ctype.prec)
 pnacc = PNAcc(exttype, ctype.prec)
 sakura = Sakura(exttype, ctype.prec)

@@ -21,9 +21,9 @@ class Blackholes(Bodies):
 
     """
     attrs = Bodies.attrs + [
-        ("sx", ctype.REAL, "x-spin"),
-        ("sy", ctype.REAL, "y-spin"),
-        ("sz", ctype.REAL, "z-spin"),
+        ("spinx", ctype.REAL, "x-spin"),
+        ("spiny", ctype.REAL, "y-spin"),
+        ("spinz", ctype.REAL, "z-spin"),
         ("radius", ctype.REAL, "radius"),
     ]
     dtype = [(_[0], _[1]) for _ in attrs]
