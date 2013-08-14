@@ -214,6 +214,13 @@ class NbodyMethods(object):
         """
         gravity.acc_jerk.calc(self, ps)
 
+    def set_snap_crackle(self, ps):
+        """Set individual gravitational snap and crackle due to other
+        particles.
+
+        """
+        gravity.snap_crackle.calc(self, ps)
+
     ### miscellaneous methods
     def min_tstep(self):
         """Minimum absolute value of tstep.
