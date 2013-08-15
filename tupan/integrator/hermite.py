@@ -17,6 +17,266 @@ __all__ = ["Hermite"]
 logger = logging.getLogger(__name__)
 
 
+class H2(object):
+    """
+
+    """
+    @staticmethod
+    def predict(ps, tau):
+        """
+
+        """
+        ps.rx0[:], ps.ry0[:], ps.rz0[:] = ps.rx, ps.ry, ps.rz
+        ps.vx0[:], ps.vy0[:], ps.vz0[:] = ps.vx, ps.vy, ps.vz
+        ps.ax0[:], ps.ay0[:], ps.az0[:] = ps.ax, ps.ay, ps.az
+
+        ps.rx += (ps.ax * tau / 2 + ps.vx) * tau
+        ps.ry += (ps.ay * tau / 2 + ps.vy) * tau
+        ps.rz += (ps.az * tau / 2 + ps.vz) * tau
+        ps.vx += ps.ax * tau
+        ps.vy += ps.ay * tau
+        ps.vz += ps.az * tau
+
+        return ps
+
+    @staticmethod
+    def ecorrect(ps, tau):
+        """
+
+        """
+        ps.set_acc(ps)
+
+        ps.vx[:] = ((ps.ax0 + ps.ax) * tau / 2 + ps.vx0)
+        ps.vy[:] = ((ps.ay0 + ps.ay) * tau / 2 + ps.vy0)
+        ps.vz[:] = ((ps.az0 + ps.az) * tau / 2 + ps.vz0)
+
+        ps.rx[:] = ((ps.vx0 + ps.vx) * tau / 2 + ps.rx0)
+        ps.ry[:] = ((ps.vy0 + ps.vy) * tau / 2 + ps.ry0)
+        ps.rz[:] = ((ps.vz0 + ps.vz) * tau / 2 + ps.rz0)
+
+        return ps
+
+
+class H4(object):
+    """
+
+    """
+    @staticmethod
+    def predict(ps, tau):
+        """
+
+        """
+        ps.rx0[:], ps.ry0[:], ps.rz0[:] = ps.rx, ps.ry, ps.rz
+        ps.vx0[:], ps.vy0[:], ps.vz0[:] = ps.vx, ps.vy, ps.vz
+        ps.ax0[:], ps.ay0[:], ps.az0[:] = ps.ax, ps.ay, ps.az
+        ps.jx0[:], ps.jy0[:], ps.jz0[:] = ps.jx, ps.jy, ps.jz
+
+        ps.rx += ((ps.jx * tau / 3 + ps.ax) * tau / 2 + ps.vx) * tau
+        ps.ry += ((ps.jy * tau / 3 + ps.ay) * tau / 2 + ps.vy) * tau
+        ps.rz += ((ps.jz * tau / 3 + ps.az) * tau / 2 + ps.vz) * tau
+        ps.vx += (ps.jx * tau / 2 + ps.ax) * tau
+        ps.vy += (ps.jy * tau / 2 + ps.ay) * tau
+        ps.vz += (ps.jz * tau / 2 + ps.az) * tau
+
+        return ps
+
+    @staticmethod
+    def ecorrect(ps, tau):
+        """
+
+        """
+        ps.set_acc_jerk(ps)
+
+        ps.vx[:] = (((ps.jx0 - ps.jx) * tau / 6
+                    + (ps.ax0 + ps.ax)) * tau / 2
+                    + ps.vx0)
+        ps.vy[:] = (((ps.jy0 - ps.jy) * tau / 6
+                    + (ps.ay0 + ps.ay)) * tau / 2
+                    + ps.vy0)
+        ps.vz[:] = (((ps.jz0 - ps.jz) * tau / 6
+                    + (ps.az0 + ps.az)) * tau / 2
+                    + ps.vz0)
+
+        ps.rx[:] = (((ps.ax0 - ps.ax) * tau / 6
+                    + (ps.vx0 + ps.vx)) * tau / 2
+                    + ps.rx0)
+        ps.ry[:] = (((ps.ay0 - ps.ay) * tau / 6
+                    + (ps.vy0 + ps.vy)) * tau / 2
+                    + ps.ry0)
+        ps.rz[:] = (((ps.az0 - ps.az) * tau / 6
+                    + (ps.vz0 + ps.vz)) * tau / 2
+                    + ps.rz0)
+
+        return ps
+
+
+class H6(object):
+    """
+
+    """
+    @staticmethod
+    def predict(ps, tau):
+        """
+
+        """
+        ps.rx0[:], ps.ry0[:], ps.rz0[:] = ps.rx, ps.ry, ps.rz
+        ps.vx0[:], ps.vy0[:], ps.vz0[:] = ps.vx, ps.vy, ps.vz
+        ps.ax0[:], ps.ay0[:], ps.az0[:] = ps.ax, ps.ay, ps.az
+        ps.jx0[:], ps.jy0[:], ps.jz0[:] = ps.jx, ps.jy, ps.jz
+        ps.sx0[:], ps.sy0[:], ps.sz0[:] = ps.sx, ps.sy, ps.sz
+
+        ps.rx += (((ps.sx * tau / 4
+                  + ps.jx) * tau / 3
+                  + ps.ax) * tau / 2
+                  + ps.vx) * tau
+        ps.ry += (((ps.sy * tau / 4
+                  + ps.jy) * tau / 3
+                  + ps.ay) * tau / 2
+                  + ps.vy) * tau
+        ps.rz += (((ps.sz * tau / 4
+                  + ps.jz) * tau / 3
+                  + ps.az) * tau / 2
+                  + ps.vz) * tau
+
+        ps.vx += ((ps.sx * tau / 3
+                  + ps.jx) * tau / 2
+                  + ps.ax) * tau
+        ps.vy += ((ps.sy * tau / 3
+                  + ps.jy) * tau / 2
+                  + ps.ay) * tau
+        ps.vz += ((ps.sz * tau / 3
+                  + ps.jz) * tau / 2
+                  + ps.az) * tau
+
+        return ps
+
+    @staticmethod
+    def ecorrect(ps, tau):
+        """
+
+        """
+        ps.set_acc_jerk(ps)
+        ps.set_snap_crackle(ps)
+
+        ps.vx[:] = ((((ps.sx0 + ps.sx) * tau / 12
+                    + (ps.jx0 - ps.jx)) * tau / 5
+                    + (ps.ax0 + ps.ax)) * tau / 2
+                    + ps.vx0)
+        ps.vy[:] = ((((ps.sy0 + ps.sy) * tau / 12
+                    + (ps.jy0 - ps.jy)) * tau / 5
+                    + (ps.ay0 + ps.ay)) * tau / 2
+                    + ps.vy0)
+        ps.vz[:] = ((((ps.sz0 + ps.sz) * tau / 12
+                    + (ps.jz0 - ps.jz)) * tau / 5
+                    + (ps.az0 + ps.az)) * tau / 2
+                    + ps.vz0)
+
+        ps.rx[:] = ((((ps.jx0 + ps.jx) * tau / 12
+                    + (ps.ax0 - ps.ax)) * tau / 5
+                    + (ps.vx0 + ps.vx)) * tau / 2
+                    + ps.rx0)
+        ps.ry[:] = ((((ps.jy0 + ps.jy) * tau / 12
+                    + (ps.ay0 - ps.ay)) * tau / 5
+                    + (ps.vy0 + ps.vy)) * tau / 2
+                    + ps.ry0)
+        ps.rz[:] = ((((ps.jz0 + ps.jz) * tau / 12
+                    + (ps.az0 - ps.az)) * tau / 5
+                    + (ps.vz0 + ps.vz)) * tau / 2
+                    + ps.rz0)
+
+        return ps
+
+
+class H8(object):
+    """
+
+    """
+    @staticmethod
+    def predict(ps, tau):
+        """
+
+        """
+        ps.rx0[:], ps.ry0[:], ps.rz0[:] = ps.rx, ps.ry, ps.rz
+        ps.vx0[:], ps.vy0[:], ps.vz0[:] = ps.vx, ps.vy, ps.vz
+        ps.ax0[:], ps.ay0[:], ps.az0[:] = ps.ax, ps.ay, ps.az
+        ps.jx0[:], ps.jy0[:], ps.jz0[:] = ps.jx, ps.jy, ps.jz
+        ps.sx0[:], ps.sy0[:], ps.sz0[:] = ps.sx, ps.sy, ps.sz
+        ps.cx0[:], ps.cy0[:], ps.cz0[:] = ps.cx, ps.cy, ps.cz
+
+        ps.rx += ((((ps.cx * tau / 5
+                  + ps.sx) * tau / 4
+                  + ps.jx) * tau / 3
+                  + ps.ax) * tau / 2
+                  + ps.vx) * tau
+        ps.ry += ((((ps.cy * tau / 5
+                  + ps.sy) * tau / 4
+                  + ps.jy) * tau / 3
+                  + ps.ay) * tau / 2
+                  + ps.vy) * tau
+        ps.rz += ((((ps.cz * tau / 5
+                  + ps.sz) * tau / 4
+                  + ps.jz) * tau / 3
+                  + ps.az) * tau / 2
+                  + ps.vz) * tau
+
+        ps.vx += (((ps.cx * tau / 4
+                  + ps.sx) * tau / 3
+                  + ps.jx) * tau / 2
+                  + ps.ax) * tau
+        ps.vy += (((ps.cy * tau / 4
+                  + ps.sy) * tau / 3
+                  + ps.jy) * tau / 2
+                  + ps.ay) * tau
+        ps.vz += (((ps.cz * tau / 4
+                  + ps.sz) * tau / 3
+                  + ps.jz) * tau / 2
+                  + ps.az) * tau
+
+        return ps
+
+    @staticmethod
+    def ecorrect(ps, tau):
+        """
+
+        """
+        ps.set_acc_jerk(ps)
+        ps.set_snap_crackle(ps)
+
+        ps.vx[:] = (((((ps.cx0 - ps.cx) * tau / 20
+                    + (ps.sx0 + ps.sx)) * tau / 3
+                    + 3 * (ps.jx0 - ps.jx)) * tau / 14
+                    + (ps.ax0 + ps.ax)) * tau / 2
+                    + ps.vx0)
+        ps.vy[:] = (((((ps.cy0 - ps.cy) * tau / 20
+                    + (ps.sy0 + ps.sy)) * tau / 3
+                    + 3 * (ps.jy0 - ps.jy)) * tau / 14
+                    + (ps.ay0 + ps.ay)) * tau / 2
+                    + ps.vy0)
+        ps.vz[:] = (((((ps.cz0 - ps.cz) * tau / 20
+                    + (ps.sz0 + ps.sz)) * tau / 3
+                    + 3 * (ps.jz0 - ps.jz)) * tau / 14
+                    + (ps.az0 + ps.az)) * tau / 2
+                    + ps.vz0)
+
+        ps.rx[:] = (((((ps.sx0 - ps.sx) * tau / 20
+                    + (ps.jx0 + ps.jx)) * tau / 3
+                    + 3 * (ps.ax0 - ps.ax)) * tau / 14
+                    + (ps.vx0 + ps.vx)) * tau / 2
+                    + ps.rx0)
+        ps.ry[:] = (((((ps.sy0 - ps.sy) * tau / 20
+                    + (ps.jy0 + ps.jy)) * tau / 3
+                    + 3 * (ps.ay0 - ps.ay)) * tau / 14
+                    + (ps.vy0 + ps.vy)) * tau / 2
+                    + ps.ry0)
+        ps.rz[:] = (((((ps.sz0 - ps.sz) * tau / 20
+                    + (ps.jz0 + ps.jz)) * tau / 3
+                    + 3 * (ps.az0 - ps.az)) * tau / 14
+                    + (ps.vz0 + ps.vz)) * tau / 2
+                    + ps.rz0)
+
+        return ps
+
+
 @decallmethods(timings)
 class Hermite(Base):
     """
@@ -51,12 +311,31 @@ class Hermite(Base):
                     self.method)
 
         ps = self.ps
-        if self.order == 2:
+        ps.register_auxiliary_attribute("rx0", ps.rx.dtype)
+        ps.register_auxiliary_attribute("ry0", ps.ry.dtype)
+        ps.register_auxiliary_attribute("rz0", ps.rz.dtype)
+        ps.register_auxiliary_attribute("vx0", ps.vx.dtype)
+        ps.register_auxiliary_attribute("vy0", ps.vy.dtype)
+        ps.register_auxiliary_attribute("vz0", ps.vz.dtype)
+        if self.order >= 2:
             ps.set_acc(ps)
+            ps.register_auxiliary_attribute("ax0", ps.ax.dtype)
+            ps.register_auxiliary_attribute("ay0", ps.ay.dtype)
+            ps.register_auxiliary_attribute("az0", ps.az.dtype)
         if self.order >= 4:
             ps.set_acc_jerk(ps)
+            ps.register_auxiliary_attribute("jx0", ps.jx.dtype)
+            ps.register_auxiliary_attribute("jy0", ps.jy.dtype)
+            ps.register_auxiliary_attribute("jz0", ps.jz.dtype)
         if self.order >= 6:
             ps.set_snap_crackle(ps)
+            ps.register_auxiliary_attribute("sx0", ps.sx.dtype)
+            ps.register_auxiliary_attribute("sy0", ps.sy.dtype)
+            ps.register_auxiliary_attribute("sz0", ps.sz.dtype)
+        if self.order >= 8:
+            ps.register_auxiliary_attribute("cx0", ps.cx.dtype)
+            ps.register_auxiliary_attribute("cy0", ps.cy.dtype)
+            ps.register_auxiliary_attribute("cz0", ps.cz.dtype)
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)
@@ -92,143 +371,35 @@ class Hermite(Base):
         """
 
         """
-        ps.rx0 = ps.rx.copy()
-        ps.ry0 = ps.ry.copy()
-        ps.rz0 = ps.rz.copy()
-        ps.vx0 = ps.vx.copy()
-        ps.vy0 = ps.vy.copy()
-        ps.vz0 = ps.vz.copy()
-        if self.order >= 2:
-            ps.ax0 = ps.ax.copy()
-            ps.ay0 = ps.ay.copy()
-            ps.az0 = ps.az.copy()
-        if self.order >= 4:
-            ps.jx0 = ps.jx.copy()
-            ps.jy0 = ps.jy.copy()
-            ps.jz0 = ps.jz.copy()
-        if self.order >= 6:
-            ps.sx0 = ps.sx.copy()
-            ps.sy0 = ps.sy.copy()
-            ps.sz0 = ps.sz.copy()
-            ps.cx0 = ps.cx.copy()
-            ps.cy0 = ps.cy.copy()
-            ps.cz0 = ps.cz.copy()
-
-        drx = 0.0
-        dry = 0.0
-        drz = 0.0
-        dvx = 0.0
-        dvy = 0.0
-        dvz = 0.0
-        if self.order >= 6:
-            drx = ((drx + ps.cx) * tau / 5 + ps.sx) * tau / 4
-            dry = ((dry + ps.cy) * tau / 5 + ps.sy) * tau / 4
-            drz = ((drz + ps.cz) * tau / 5 + ps.sz) * tau / 4
-            dvx = ((dvx + ps.cx) * tau / 4 + ps.sx) * tau / 3
-            dvy = ((dvy + ps.cy) * tau / 4 + ps.sy) * tau / 3
-            dvz = ((dvz + ps.cz) * tau / 4 + ps.sz) * tau / 3
-
-        if self.order >= 4:
-            drx = ((drx + ps.jx) * tau / 3 + ps.ax) * tau / 2
-            dry = ((dry + ps.jy) * tau / 3 + ps.ay) * tau / 2
-            drz = ((drz + ps.jz) * tau / 3 + ps.az) * tau / 2
-            dvx = ((dvx + ps.jx) * tau / 2 + ps.ax) * tau
-            dvy = ((dvy + ps.jy) * tau / 2 + ps.ay) * tau
-            dvz = ((dvz + ps.jz) * tau / 2 + ps.az) * tau
-
-        drx = (drx + ps.vx) * tau
-        dry = (dry + ps.vy) * tau
-        drz = (drz + ps.vz) * tau
-
-        ps.rx += drx
-        ps.ry += dry
-        ps.rz += drz
-        ps.vx += dvx
-        ps.vy += dvy
-        ps.vz += dvz
+        if self.order == 2:
+            return H2.predict(ps, tau)
+        elif self.order == 4:
+            return H4.predict(ps, tau)
+        elif self.order == 6:
+            return H6.predict(ps, tau)
+        elif self.order == 8:
+            return H8.predict(ps, tau)
 
     def ecorrect(self, ps, tau):
         """
 
         """
         if self.order == 2:
-            ps.set_acc(ps)
-        if self.order >= 4:
-            ps.set_acc_jerk(ps)
-        if self.order >= 6:
-            ps.set_snap_crackle(ps)
-
-        drx = 0.0
-        dry = 0.0
-        drz = 0.0
-        dvx = 0.0
-        dvy = 0.0
-        dvz = 0.0
-        if self.order == 8:
-            drx = (((drx + (ps.sx0 - ps.sx)) * tau / 20
-                   + (ps.jx0 + ps.jx)) * tau / 3
-                   + 3 * (ps.ax0 - ps.ax)) * tau / 14
-            dry = (((dry + (ps.sy0 - ps.sy)) * tau / 20
-                   + (ps.jy0 + ps.jy)) * tau / 3
-                   + 3 * (ps.ay0 - ps.ay)) * tau / 14
-            drz = (((drz + (ps.sz0 - ps.sz)) * tau / 20
-                   + (ps.jz0 + ps.jz)) * tau / 3
-                   + 3 * (ps.az0 - ps.az)) * tau / 14
-            dvx = (((dvx + (ps.cx0 - ps.cx)) * tau / 20
-                   + (ps.sx0 + ps.sx)) * tau / 3
-                   + 3 * (ps.jx0 - ps.jx)) * tau / 14
-            dvy = (((dvy + (ps.cy0 - ps.cy)) * tau / 20
-                   + (ps.sy0 + ps.sy)) * tau / 3
-                   + 3 * (ps.jy0 - ps.jy)) * tau / 14
-            dvz = (((dvz + (ps.cz0 - ps.cz)) * tau / 20
-                   + (ps.sz0 + ps.sz)) * tau / 3
-                   + 3 * (ps.jz0 - ps.jz)) * tau / 14
-
-        if self.order == 6:
-            drx = ((drx + (ps.jx0 + ps.jx)) * tau / 12
-                   + (ps.ax0 - ps.ax)) * tau / 5
-            dry = ((dry + (ps.jy0 + ps.jy)) * tau / 12
-                   + (ps.ay0 - ps.ay)) * tau / 5
-            drz = ((drz + (ps.jz0 + ps.jz)) * tau / 12
-                   + (ps.az0 - ps.az)) * tau / 5
-            dvx = ((dvx + (ps.sx0 + ps.sx)) * tau / 12
-                   + (ps.jx0 - ps.jx)) * tau / 5
-            dvy = ((dvy + (ps.sy0 + ps.sy)) * tau / 12
-                   + (ps.jy0 - ps.jy)) * tau / 5
-            dvz = ((dvz + (ps.sz0 + ps.sz)) * tau / 12
-                   + (ps.jz0 - ps.jz)) * tau / 5
-
-        if self.order == 4:
-            drx = (drx + (ps.ax0 - ps.ax)) * tau / 6
-            dry = (dry + (ps.ay0 - ps.ay)) * tau / 6
-            drz = (drz + (ps.az0 - ps.az)) * tau / 6
-            dvx = (dvx + (ps.jx0 - ps.jx)) * tau / 6
-            dvy = (dvy + (ps.jy0 - ps.jy)) * tau / 6
-            dvz = (dvz + (ps.jz0 - ps.jz)) * tau / 6
-
-        dvx = (dvx + (ps.ax0 + ps.ax)) * tau / 2
-        dvy = (dvy + (ps.ay0 + ps.ay)) * tau / 2
-        dvz = (dvz + (ps.az0 + ps.az)) * tau / 2
-
-        ps.vx[:] = ps.vx0 + dvx
-        ps.vy[:] = ps.vy0 + dvy
-        ps.vz[:] = ps.vz0 + dvz
-
-        drx = (drx + (ps.vx0 + ps.vx)) * tau / 2
-        dry = (dry + (ps.vy0 + ps.vy)) * tau / 2
-        drz = (drz + (ps.vz0 + ps.vz)) * tau / 2
-
-        ps.rx[:] = ps.rx0 + drx
-        ps.ry[:] = ps.ry0 + dry
-        ps.rz[:] = ps.rz0 + drz
+            return H2.ecorrect(ps, tau)
+        elif self.order == 4:
+            return H4.ecorrect(ps, tau)
+        elif self.order == 6:
+            return H6.ecorrect(ps, tau)
+        elif self.order == 8:
+            return H8.ecorrect(ps, tau)
 
     def pec(self, n, ps, tau):
         """
 
         """
-        self.predict(ps, tau)
+        ps = self.predict(ps, tau)
         for i in range(n):
-            self.ecorrect(ps, tau)
+            ps = self.ecorrect(ps, tau)
         return ps
 
     def do_step(self, ps, tau):
