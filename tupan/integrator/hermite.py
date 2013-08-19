@@ -22,20 +22,21 @@ class H2(object):
 
     """
     @staticmethod
-    def predict(ps, tau):
+    def epredict(ps0, tau):
         """
 
         """
-        ps0 = ps.copy()
+        ps0.set_acc(ps0)
+        ps1 = ps0.copy()
 
-        ps.rx += (ps.ax * tau / 2 + ps.vx) * tau
-        ps.ry += (ps.ay * tau / 2 + ps.vy) * tau
-        ps.rz += (ps.az * tau / 2 + ps.vz) * tau
-        ps.vx += ps.ax * tau
-        ps.vy += ps.ay * tau
-        ps.vz += ps.az * tau
+        ps1.rx += (ps0.ax * tau / 2 + ps0.vx) * tau
+        ps1.ry += (ps0.ay * tau / 2 + ps0.vy) * tau
+        ps1.rz += (ps0.az * tau / 2 + ps0.vz) * tau
+        ps1.vx += ps0.ax * tau
+        ps1.vy += ps0.ay * tau
+        ps1.vz += ps0.az * tau
 
-        return ps, ps0
+        return ps1, ps0
 
     @staticmethod
     def ecorrect(ps1, ps0, tau):
@@ -55,11 +56,11 @@ class H2(object):
         return ps1
 
     @classmethod
-    def pec(cls, n, ps, tau):
+    def epec(cls, n, ps, tau):
         """
 
         """
-        (ps1, ps0) = cls.predict(ps, tau)
+        (ps1, ps0) = cls.epredict(ps, tau)
         for i in range(n):
             ps1 = cls.ecorrect(ps1, ps0, tau)
         return ps1
@@ -70,20 +71,21 @@ class H4(H2):
 
     """
     @staticmethod
-    def predict(ps, tau):
+    def epredict(ps0, tau):
         """
 
         """
-        ps0 = ps.copy()
+        ps0.set_acc_jerk(ps0)
+        ps1 = ps0.copy()
 
-        ps.rx += ((ps.jx * tau / 3 + ps.ax) * tau / 2 + ps.vx) * tau
-        ps.ry += ((ps.jy * tau / 3 + ps.ay) * tau / 2 + ps.vy) * tau
-        ps.rz += ((ps.jz * tau / 3 + ps.az) * tau / 2 + ps.vz) * tau
-        ps.vx += (ps.jx * tau / 2 + ps.ax) * tau
-        ps.vy += (ps.jy * tau / 2 + ps.ay) * tau
-        ps.vz += (ps.jz * tau / 2 + ps.az) * tau
+        ps1.rx += ((ps0.jx * tau / 3 + ps0.ax) * tau / 2 + ps0.vx) * tau
+        ps1.ry += ((ps0.jy * tau / 3 + ps0.ay) * tau / 2 + ps0.vy) * tau
+        ps1.rz += ((ps0.jz * tau / 3 + ps0.az) * tau / 2 + ps0.vz) * tau
+        ps1.vx += (ps0.jx * tau / 2 + ps0.ax) * tau
+        ps1.vy += (ps0.jy * tau / 2 + ps0.ay) * tau
+        ps1.vz += (ps0.jz * tau / 2 + ps0.az) * tau
 
-        return ps, ps0
+        return ps1, ps0
 
     @staticmethod
     def ecorrect(ps1, ps0, tau):
@@ -120,36 +122,38 @@ class H6(H4):
 
     """
     @staticmethod
-    def predict(ps, tau):
+    def epredict(ps0, tau):
         """
 
         """
-        ps0 = ps.copy()
+        ps0.set_acc_jerk(ps0)
+        ps0.set_snap_crackle(ps0)
+        ps1 = ps0.copy()
 
-        ps.rx += (((ps.sx * tau / 4
-                  + ps.jx) * tau / 3
-                  + ps.ax) * tau / 2
-                  + ps.vx) * tau
-        ps.ry += (((ps.sy * tau / 4
-                  + ps.jy) * tau / 3
-                  + ps.ay) * tau / 2
-                  + ps.vy) * tau
-        ps.rz += (((ps.sz * tau / 4
-                  + ps.jz) * tau / 3
-                  + ps.az) * tau / 2
-                  + ps.vz) * tau
+        ps1.rx += (((ps0.sx * tau / 4
+                   + ps0.jx) * tau / 3
+                   + ps0.ax) * tau / 2
+                   + ps0.vx) * tau
+        ps1.ry += (((ps0.sy * tau / 4
+                   + ps0.jy) * tau / 3
+                   + ps0.ay) * tau / 2
+                   + ps0.vy) * tau
+        ps1.rz += (((ps0.sz * tau / 4
+                   + ps0.jz) * tau / 3
+                   + ps0.az) * tau / 2
+                   + ps0.vz) * tau
 
-        ps.vx += ((ps.sx * tau / 3
-                  + ps.jx) * tau / 2
-                  + ps.ax) * tau
-        ps.vy += ((ps.sy * tau / 3
-                  + ps.jy) * tau / 2
-                  + ps.ay) * tau
-        ps.vz += ((ps.sz * tau / 3
-                  + ps.jz) * tau / 2
-                  + ps.az) * tau
+        ps1.vx += ((ps0.sx * tau / 3
+                   + ps0.jx) * tau / 2
+                   + ps0.ax) * tau
+        ps1.vy += ((ps0.sy * tau / 3
+                   + ps0.jy) * tau / 2
+                   + ps0.ay) * tau
+        ps1.vz += ((ps0.sz * tau / 3
+                   + ps0.jz) * tau / 2
+                   + ps0.az) * tau
 
-        return ps, ps0
+        return ps1, ps0
 
     @staticmethod
     def ecorrect(ps1, ps0, tau):
@@ -193,42 +197,44 @@ class H8(H6):
 
     """
     @staticmethod
-    def predict(ps, tau):
+    def epredict(ps0, tau):
         """
 
         """
-        ps0 = ps.copy()
+        ps0.set_acc_jerk(ps0)
+        ps0.set_snap_crackle(ps0)
+        ps1 = ps0.copy()
 
-        ps.rx += ((((ps.cx * tau / 5
-                  + ps.sx) * tau / 4
-                  + ps.jx) * tau / 3
-                  + ps.ax) * tau / 2
-                  + ps.vx) * tau
-        ps.ry += ((((ps.cy * tau / 5
-                  + ps.sy) * tau / 4
-                  + ps.jy) * tau / 3
-                  + ps.ay) * tau / 2
-                  + ps.vy) * tau
-        ps.rz += ((((ps.cz * tau / 5
-                  + ps.sz) * tau / 4
-                  + ps.jz) * tau / 3
-                  + ps.az) * tau / 2
-                  + ps.vz) * tau
+        ps1.rx += ((((ps0.cx * tau / 5
+                   + ps0.sx) * tau / 4
+                   + ps0.jx) * tau / 3
+                   + ps0.ax) * tau / 2
+                   + ps0.vx) * tau
+        ps1.ry += ((((ps0.cy * tau / 5
+                   + ps0.sy) * tau / 4
+                   + ps0.jy) * tau / 3
+                   + ps0.ay) * tau / 2
+                   + ps0.vy) * tau
+        ps1.rz += ((((ps0.cz * tau / 5
+                   + ps0.sz) * tau / 4
+                   + ps0.jz) * tau / 3
+                   + ps0.az) * tau / 2
+                   + ps0.vz) * tau
 
-        ps.vx += (((ps.cx * tau / 4
-                  + ps.sx) * tau / 3
-                  + ps.jx) * tau / 2
-                  + ps.ax) * tau
-        ps.vy += (((ps.cy * tau / 4
-                  + ps.sy) * tau / 3
-                  + ps.jy) * tau / 2
-                  + ps.ay) * tau
-        ps.vz += (((ps.cz * tau / 4
-                  + ps.sz) * tau / 3
-                  + ps.jz) * tau / 2
-                  + ps.az) * tau
+        ps1.vx += (((ps0.cx * tau / 4
+                   + ps0.sx) * tau / 3
+                   + ps0.jx) * tau / 2
+                   + ps0.ax) * tau
+        ps1.vy += (((ps0.cy * tau / 4
+                   + ps0.sy) * tau / 3
+                   + ps0.jy) * tau / 2
+                   + ps0.ay) * tau
+        ps1.vz += (((ps0.cz * tau / 4
+                   + ps0.sz) * tau / 3
+                   + ps0.jz) * tau / 2
+                   + ps0.az) * tau
 
-        return ps, ps0
+        return ps1, ps0
 
     @staticmethod
     def ecorrect(ps1, ps0, tau):
@@ -307,12 +313,6 @@ class Hermite(Base):
                     self.method)
 
         ps = self.ps
-        if self.order == 2:
-            ps.set_acc(ps)
-        if self.order >= 4:
-            ps.set_acc_jerk(ps)
-        if self.order >= 6:
-            ps.set_snap_crackle(ps)
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)
@@ -344,18 +344,18 @@ class Hermite(Base):
         min_bts = self.get_min_block_tstep(ps, tau)
         return min_bts
 
-    def predict(self, ps, tau):
+    def epredict(self, ps, tau):
         """
 
         """
         if self.order == 2:
-            return H2.predict(ps, tau)
+            return H2.epredict(ps, tau)
         elif self.order == 4:
-            return H4.predict(ps, tau)
+            return H4.epredict(ps, tau)
         elif self.order == 6:
-            return H6.predict(ps, tau)
+            return H6.epredict(ps, tau)
         elif self.order == 8:
-            return H8.predict(ps, tau)
+            return H8.epredict(ps, tau)
 
     def ecorrect(self, ps1, ps0, tau):
         """
@@ -370,18 +370,18 @@ class Hermite(Base):
         elif self.order == 8:
             return H8.ecorrect(ps1, ps0, tau)
 
-    def pec(self, n, ps, tau):
+    def epec(self, n, ps, tau):
         """
 
         """
         if self.order == 2:
-            return H2.pec(n, ps, tau)
+            return H2.epec(n, ps, tau)
         elif self.order == 4:
-            return H4.pec(n, ps, tau)
+            return H4.epec(n, ps, tau)
         elif self.order == 6:
-            return H6.pec(n, ps, tau)
+            return H6.epec(n, ps, tau)
         elif self.order == 8:
-            return H8.pec(n, ps, tau)
+            return H8.epec(n, ps, tau)
 
     def do_step(self, ps, tau):
         """
@@ -389,7 +389,7 @@ class Hermite(Base):
         """
         if "ahermite" in self.method:
             tau = self.get_hermite_tstep(ps, self.eta, tau)
-        ps = self.pec(2, ps, tau)
+        ps = self.epec(2, ps, tau)
 
         type(ps).t_curr += tau
         ps.tstep[:] = tau
