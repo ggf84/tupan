@@ -67,9 +67,9 @@ def drift_n(ips, tau):
     """Drift operator for Newtonian quantities.
 
     """
-    ips.rx += tau * ips.vx
-    ips.ry += tau * ips.vy
-    ips.rz += tau * ips.vz
+    ips.rx += ips.vx * tau
+    ips.ry += ips.vy * tau
+    ips.rz += ips.vz * tau
     return ips
 
 
@@ -82,9 +82,9 @@ def kick_n(ips, jps, tau):
 
     """
     ips.set_acc(jps)
-    ips.vx += tau * ips.ax
-    ips.vy += tau * ips.ay
-    ips.vz += tau * ips.az
+    ips.vx += ips.ax * tau
+    ips.vy += ips.ay * tau
+    ips.vz += ips.az * tau
     return ips
 
 
@@ -171,10 +171,23 @@ def kick(ips, jps, tau, pn):
 
 
 #
-# kick_sf
+# sf_drift
 #
 @timings
-def kick_sf(slow, fast, tau):
+def sf_drift(slow, fast, tau, evolve, recurse, bridge):
+    """Slow<->Fast Drift operator.
+
+    """
+    slow = evolve(slow, tau)
+    fast = recurse(fast, tau, evolve, bridge)
+    return slow, fast
+
+
+#
+# sf_kick
+#
+@timings
+def sf_kick(slow, fast, tau):
     """Slow<->Fast Kick operator.
 
     """
@@ -234,21 +247,16 @@ class SIA21(object):
 
     @staticmethod
     @timings
-    def sfdkd(slow, fast, tau, recurse):
+    def bridge_sf(slow, fast, tau, evolve, recurse):
         """
 
         """
         k, d = SIA21.coefs
+        erb = evolve, recurse, SIA21.bridge_sf
         #
-        fast = recurse(fast, d[0] * tau / 2, SIA21.sfdkd)
-        slow = SIA21.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA21.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, SIA21.sfdkd)
-        slow = SIA21.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA21.sfdkd)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
         #
         return slow, fast
 
@@ -308,27 +316,18 @@ class SIA22(object):
 
     @staticmethod
     @timings
-    def sfdkd(slow, fast, tau, recurse):
+    def bridge_sf(slow, fast, tau, evolve, recurse):
         """
 
         """
         k, d = SIA22.coefs
+        erb = evolve, recurse, SIA22.bridge_sf
         #
-        fast = recurse(fast, d[0] * tau / 2, SIA22.sfdkd)
-        slow = SIA22.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA22.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA22.sfdkd)
-        slow = SIA22.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA22.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, SIA22.sfdkd)
-        slow = SIA22.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA22.sfdkd)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
         #
         return slow, fast
 
@@ -393,33 +392,20 @@ class SIA43(object):
 
     @staticmethod
     @timings
-    def sfdkd(slow, fast, tau, recurse):
+    def bridge_sf(slow, fast, tau, evolve, recurse):
         """
 
         """
         k, d = SIA43.coefs
+        erb = evolve, recurse, SIA43.bridge_sf
         #
-        fast = recurse(fast, d[0] * tau / 2, SIA43.sfdkd)
-        slow = SIA43.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA43.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA43.sfdkd)
-        slow = SIA43.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA43.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA43.sfdkd)
-        slow = SIA43.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA43.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, SIA43.sfdkd)
-        slow = SIA43.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA43.sfdkd)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
         #
         return slow, fast
 
@@ -489,39 +475,22 @@ class SIA44(object):
 
     @staticmethod
     @timings
-    def sfdkd(slow, fast, tau, recurse):
+    def bridge_sf(slow, fast, tau, evolve, recurse):
         """
 
         """
         k, d = SIA44.coefs
+        erb = evolve, recurse, SIA44.bridge_sf
         #
-        fast = recurse(fast, d[0] * tau / 2, SIA44.sfdkd)
-        slow = SIA44.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA44.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA44.sfdkd)
-        slow = SIA44.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA44.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, SIA44.sfdkd)
-        slow = SIA44.dkd(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, SIA44.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA44.sfdkd)
-        slow = SIA44.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA44.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, SIA44.sfdkd)
-        slow = SIA44.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA44.sfdkd)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
         #
         return slow, fast
 
@@ -596,45 +565,24 @@ class SIA45(object):
 
     @staticmethod
     @timings
-    def sfdkd(slow, fast, tau, recurse):
+    def bridge_sf(slow, fast, tau, evolve, recurse):
         """
 
         """
         k, d = SIA45.coefs
+        erb = evolve, recurse, SIA45.bridge_sf
         #
-        fast = recurse(fast, d[0] * tau / 2, SIA45.sfdkd)
-        slow = SIA45.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA45.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA45.sfdkd)
-        slow = SIA45.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA45.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, SIA45.sfdkd)
-        slow = SIA45.dkd(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, SIA45.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, SIA45.sfdkd)
-        slow = SIA45.dkd(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, SIA45.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA45.sfdkd)
-        slow = SIA45.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA45.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, SIA45.sfdkd)
-        slow = SIA45.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA45.sfdkd)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
         #
         return slow, fast
 
@@ -714,51 +662,26 @@ class SIA46(object):
 
     @staticmethod
     @timings
-    def sfdkd(slow, fast, tau, recurse):
+    def bridge_sf(slow, fast, tau, evolve, recurse):
         """
 
         """
         k, d = SIA46.coefs
+        erb = evolve, recurse, SIA46.bridge_sf
         #
-        fast = recurse(fast, d[0] * tau / 2, SIA46.sfdkd)
-        slow = SIA46.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA46.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA46.sfdkd)
-        slow = SIA46.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA46.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, SIA46.sfdkd)
-        slow = SIA46.dkd(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, SIA46.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[3] * tau / 2, SIA46.sfdkd)
-        slow = SIA46.dkd(slow, d[3] * tau)
-        fast = recurse(fast, d[3] * tau / 2, SIA46.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, SIA46.sfdkd)
-        slow = SIA46.dkd(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, SIA46.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA46.sfdkd)
-        slow = SIA46.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA46.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, SIA46.sfdkd)
-        slow = SIA46.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA46.sfdkd)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
         #
         return slow, fast
 
@@ -843,57 +766,28 @@ class SIA67(object):
 
     @staticmethod
     @timings
-    def sfdkd(slow, fast, tau, recurse):
+    def bridge_sf(slow, fast, tau, evolve, recurse):
         """
 
         """
         k, d = SIA67.coefs
+        erb = evolve, recurse, SIA67.bridge_sf
         #
-        fast = recurse(fast, d[0] * tau / 2, SIA67.sfdkd)
-        slow = SIA67.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA67.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA67.sfdkd)
-        slow = SIA67.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA67.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, SIA67.sfdkd)
-        slow = SIA67.dkd(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, SIA67.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[3] * tau / 2, SIA67.sfdkd)
-        slow = SIA67.dkd(slow, d[3] * tau)
-        fast = recurse(fast, d[3] * tau / 2, SIA67.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[3] * tau)
-
-        fast = recurse(fast, d[3] * tau / 2, SIA67.sfdkd)
-        slow = SIA67.dkd(slow, d[3] * tau)
-        fast = recurse(fast, d[3] * tau / 2, SIA67.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, SIA67.sfdkd)
-        slow = SIA67.dkd(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, SIA67.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA67.sfdkd)
-        slow = SIA67.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA67.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, SIA67.sfdkd)
-        slow = SIA67.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA67.sfdkd)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[3] * tau)
+        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
         #
         return slow, fast
 
@@ -988,69 +882,32 @@ class SIA69(object):
 
     @staticmethod
     @timings
-    def sfdkd(slow, fast, tau, recurse):
+    def bridge_sf(slow, fast, tau, evolve, recurse):
         """
 
         """
         k, d = SIA69.coefs
+        erb = evolve, recurse, SIA69.bridge_sf
         #
-        fast = recurse(fast, d[0] * tau / 2, SIA69.sfdkd)
-        slow = SIA69.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA69.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA69.sfdkd)
-        slow = SIA69.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA69.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, SIA69.sfdkd)
-        slow = SIA69.dkd(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, SIA69.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[3] * tau / 2, SIA69.sfdkd)
-        slow = SIA69.dkd(slow, d[3] * tau)
-        fast = recurse(fast, d[3] * tau / 2, SIA69.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[3] * tau)
-
-        fast = recurse(fast, d[4] * tau / 2, SIA69.sfdkd)
-        slow = SIA69.dkd(slow, d[4] * tau)
-        fast = recurse(fast, d[4] * tau / 2, SIA69.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[4] * tau)
-
-        fast = recurse(fast, d[4] * tau / 2, SIA69.sfdkd)
-        slow = SIA69.dkd(slow, d[4] * tau)
-        fast = recurse(fast, d[4] * tau / 2, SIA69.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[3] * tau)
-
-        fast = recurse(fast, d[3] * tau / 2, SIA69.sfdkd)
-        slow = SIA69.dkd(slow, d[3] * tau)
-        fast = recurse(fast, d[3] * tau / 2, SIA69.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, SIA69.sfdkd)
-        slow = SIA69.dkd(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, SIA69.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, SIA69.sfdkd)
-        slow = SIA69.dkd(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, SIA69.sfdkd)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, SIA69.sfdkd)
-        slow = SIA69.dkd(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, SIA69.sfdkd)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[3] * tau)
+        slow, fast = sf_drift(slow, fast, d[4] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[4] * tau)
+        slow, fast = sf_drift(slow, fast, d[4] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[3] * tau)
+        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
         #
         return slow, fast
 
@@ -1060,14 +917,22 @@ class SIA(Base):
     """
 
     """
-    PROVIDED_METHODS = ['sia.dkd21std', 'sia.dkd21shr', 'sia.dkd21hcc',
-                        'sia.dkd22std', 'sia.dkd22shr', 'sia.dkd22hcc',
-                        'sia.dkd43std', 'sia.dkd43shr', 'sia.dkd43hcc',
-                        'sia.dkd44std', 'sia.dkd44shr', 'sia.dkd44hcc',
-                        'sia.dkd45std', 'sia.dkd45shr', 'sia.dkd45hcc',
-                        'sia.dkd46std', 'sia.dkd46shr', 'sia.dkd46hcc',
-                        'sia.dkd67std', 'sia.dkd67shr', 'sia.dkd67hcc',
-                        'sia.dkd69std', 'sia.dkd69shr', 'sia.dkd69hcc',
+    PROVIDED_METHODS = ['sia21s.dkd', 'sia21a.dkd', 'sia21h.dkd',
+                        'sia21s.kdk', 'sia21a.kdk', 'sia21h.kdk',
+                        'sia22s.dkd', 'sia22a.dkd', 'sia22h.dkd',
+                        'sia22s.kdk', 'sia22a.kdk', 'sia22h.kdk',
+                        'sia43s.dkd', 'sia43a.dkd', 'sia43h.dkd',
+                        'sia43s.kdk', 'sia43a.kdk', 'sia43h.kdk',
+                        'sia44s.dkd', 'sia44a.dkd', 'sia44h.dkd',
+                        'sia44s.kdk', 'sia44a.kdk', 'sia44h.kdk',
+                        'sia45s.dkd', 'sia45a.dkd', 'sia45h.dkd',
+                        'sia45s.kdk', 'sia45a.kdk', 'sia45h.kdk',
+                        'sia46s.dkd', 'sia46a.dkd', 'sia46h.dkd',
+                        'sia46s.kdk', 'sia46a.kdk', 'sia46h.kdk',
+                        'sia67s.dkd', 'sia67a.dkd', 'sia67h.dkd',
+                        'sia67s.kdk', 'sia67a.kdk', 'sia67h.kdk',
+                        'sia69s.dkd', 'sia69a.dkd', 'sia69h.dkd',
+                        'sia69s.kdk', 'sia69a.kdk', 'sia69h.kdk',
                         ]
 
     def __init__(self, eta, time, ps, method, **kwargs):
@@ -1121,42 +986,64 @@ class SIA(Base):
         """
 
         """
-        if "std" in self.method:
+        if "s." in self.method:
             self.update_tstep = False
             self.shared_tstep = True
-        elif "shr" in self.method:
+        elif "a." in self.method:
             self.update_tstep = True
             self.shared_tstep = True
-        elif "hcc" in self.method:
+        elif "h." in self.method:
             self.update_tstep = True
             self.shared_tstep = False
         else:
             raise ValueError("Unexpected method: {0}".format(self.method))
 
-        if "dkd21" in self.method:
-            return self.recurse(ps, tau, SIA21.sfdkd)
-        elif "dkd22" in self.method:
-            return self.recurse(ps, tau, SIA22.sfdkd)
-        elif "dkd43" in self.method:
-            return self.recurse(ps, tau, SIA43.sfdkd)
-        elif "dkd44" in self.method:
-            return self.recurse(ps, tau, SIA44.sfdkd)
-        elif "dkd45" in self.method:
-            return self.recurse(ps, tau, SIA45.sfdkd)
-        elif "dkd46" in self.method:
-            return self.recurse(ps, tau, SIA46.sfdkd)
-        elif "dkd67" in self.method:
-            return self.recurse(ps, tau, SIA67.sfdkd)
-        elif "dkd69" in self.method:
-            return self.recurse(ps, tau, SIA69.sfdkd)
+        if "dkd" in self.method:
+            if "sia21" in self.method:
+                return self.recurse(ps, tau, SIA21.dkd, SIA21.bridge_sf)
+            elif "sia22" in self.method:
+                return self.recurse(ps, tau, SIA22.dkd, SIA22.bridge_sf)
+            elif "sia43" in self.method:
+                return self.recurse(ps, tau, SIA43.dkd, SIA43.bridge_sf)
+            elif "sia44" in self.method:
+                return self.recurse(ps, tau, SIA44.dkd, SIA44.bridge_sf)
+            elif "sia45" in self.method:
+                return self.recurse(ps, tau, SIA45.dkd, SIA45.bridge_sf)
+            elif "sia46" in self.method:
+                return self.recurse(ps, tau, SIA46.dkd, SIA46.bridge_sf)
+            elif "sia67" in self.method:
+                return self.recurse(ps, tau, SIA67.dkd, SIA67.bridge_sf)
+            elif "sia69" in self.method:
+                return self.recurse(ps, tau, SIA69.dkd, SIA69.bridge_sf)
+            else:
+                raise ValueError("Unexpected method: {0}".format(self.method))
+        elif "kdk" in self.method:
+            if "sia21" in self.method:
+                return self.recurse(ps, tau, SIA21.kdk, SIA21.bridge_sf)
+            elif "sia22" in self.method:
+                return self.recurse(ps, tau, SIA22.kdk, SIA22.bridge_sf)
+            elif "sia43" in self.method:
+                return self.recurse(ps, tau, SIA43.kdk, SIA43.bridge_sf)
+            elif "sia44" in self.method:
+                return self.recurse(ps, tau, SIA44.kdk, SIA44.bridge_sf)
+            elif "sia45" in self.method:
+                return self.recurse(ps, tau, SIA45.kdk, SIA45.bridge_sf)
+            elif "sia46" in self.method:
+                return self.recurse(ps, tau, SIA46.kdk, SIA46.bridge_sf)
+            elif "sia67" in self.method:
+                return self.recurse(ps, tau, SIA67.kdk, SIA67.bridge_sf)
+            elif "sia69" in self.method:
+                return self.recurse(ps, tau, SIA69.kdk, SIA69.bridge_sf)
+            else:
+                raise ValueError("Unexpected method: {0}".format(self.method))
         else:
             raise ValueError("Unexpected method: {0}".format(self.method))
 
-    def recurse(self, ps, tau, sfdkdxy):
+    def recurse(self, ps, tau, evolve, bridge_sf):
         """
 
         """
-        if ps.n == 0:
+        if not ps.n:
             return ps
 
         flag = -1
@@ -1168,7 +1055,7 @@ class SIA(Base):
 
         slow, fast = split(ps, abs(ps.tstep) > flag*abs(tau))
 
-        slow, fast = sfdkdxy(slow, fast, tau, self.recurse)
+        slow, fast = bridge_sf(slow, fast, tau, evolve, self.recurse)
 
         if fast.n == 0:
             type(ps).t_curr += tau

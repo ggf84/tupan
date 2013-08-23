@@ -22,12 +22,13 @@ class H2(object):
 
     """
     @staticmethod
-    def epredict(ps0, tau):
+    def epredict(ps, tau):
         """
 
         """
+        ps0 = ps.copy()
         ps0.set_acc(ps0)
-        ps1 = ps0.copy()
+        ps1 = ps
 
         ps1.rx += (ps0.ax * tau / 2 + ps0.vx) * tau
         ps1.ry += (ps0.ay * tau / 2 + ps0.vy) * tau
@@ -71,12 +72,13 @@ class H4(H2):
 
     """
     @staticmethod
-    def epredict(ps0, tau):
+    def epredict(ps, tau):
         """
 
         """
+        ps0 = ps.copy()
         ps0.set_acc_jerk(ps0)
-        ps1 = ps0.copy()
+        ps1 = ps
 
         ps1.rx += ((ps0.jx * tau / 3 + ps0.ax) * tau / 2 + ps0.vx) * tau
         ps1.ry += ((ps0.jy * tau / 3 + ps0.ay) * tau / 2 + ps0.vy) * tau
@@ -122,13 +124,14 @@ class H6(H4):
 
     """
     @staticmethod
-    def epredict(ps0, tau):
+    def epredict(ps, tau):
         """
 
         """
+        ps0 = ps.copy()
         ps0.set_acc_jerk(ps0)
         ps0.set_snap_crackle(ps0)
-        ps1 = ps0.copy()
+        ps1 = ps
 
         ps1.rx += (((ps0.sx * tau / 4
                    + ps0.jx) * tau / 3
@@ -197,13 +200,14 @@ class H8(H6):
 
     """
     @staticmethod
-    def epredict(ps0, tau):
+    def epredict(ps, tau):
         """
 
         """
+        ps0 = ps.copy()
         ps0.set_acc_jerk(ps0)
         ps0.set_snap_crackle(ps0)
-        ps1 = ps0.copy()
+        ps1 = ps
 
         ps1.rx += ((((ps0.cx * tau / 5
                    + ps0.sx) * tau / 4
