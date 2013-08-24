@@ -54,7 +54,7 @@ def join(slow, fast):
         return slow
     if not slow.n:
         return fast
-    ps = slow.copy()
+    ps = slow
     ps.append(fast)
     return ps
 
@@ -77,11 +77,10 @@ def drift_n(ips, tau):
 # kick_n
 #
 @timings
-def kick_n(ips, jps, tau):
+def kick_n(ips, tau):
     """Kick operator for Newtonian quantities.
 
     """
-    ips.set_acc(jps)
     ips.vx += ips.ax * tau
     ips.vy += ips.ay * tau
     ips.vz += ips.az * tau
@@ -96,7 +95,9 @@ def drift_pn(ips, tau):
     """Drift operator for post-Newtonian quantities.
 
     """
-    ips = drift_n(ips, tau)
+    ips.rx += ips.vx * tau
+    ips.ry += ips.vy * tau
+    ips.rz += ips.vz * tau
     ips.pn_drift_rcom(tau)
     return ips
 
@@ -105,13 +106,11 @@ def drift_pn(ips, tau):
 # kick_pn
 #
 @timings
-def kick_pn(ips, jps, tau):
+def kick_pn(ips, tau):
     """Kick operator for post-Newtonian quantities.
 
     """
-    ips.set_acc(jps)
-
-    ips.set_pnacc(jps)
+    ips.set_pnacc(ips)
     ips.wx += (ips.ax + ips.pnax) * tau / 2
     ips.wy += (ips.ay + ips.pnay) * tau / 2
     ips.wz += (ips.az + ips.pnaz) * tau / 2
@@ -119,7 +118,7 @@ def kick_pn(ips, jps, tau):
     ips.vx, ips.wx = ips.wx, ips.vx
     ips.vy, ips.wy = ips.wy, ips.vy
     ips.vz, ips.wz = ips.wz, ips.vz
-    ips.set_pnacc(jps)
+    ips.set_pnacc(ips)
     ips.vx, ips.wx = ips.wx, ips.vx
     ips.vy, ips.wy = ips.wy, ips.vy
     ips.vz, ips.wz = ips.wz, ips.vz
@@ -136,7 +135,7 @@ def kick_pn(ips, jps, tau):
     ips.pn_kick_lmom(tau / 2)
     ips.pn_kick_amom(tau / 2)
 
-    ips.set_pnacc(jps)
+    ips.set_pnacc(ips)
     ips.wx += (ips.ax + ips.pnax) * tau / 2
     ips.wy += (ips.ay + ips.pnay) * tau / 2
     ips.wz += (ips.az + ips.pnaz) * tau / 2
@@ -161,13 +160,14 @@ def drift(ips, tau):
 # kick
 #
 @timings
-def kick(ips, jps, tau, pn):
+def kick(ips, tau):
     """Kick operator.
 
     """
-    if pn and INCLUDE_PN_CORRECTIONS:
-        return kick_pn(ips, jps, tau)
-    return kick_n(ips, jps, tau)
+    ips.set_acc(ips)
+    if INCLUDE_PN_CORRECTIONS:
+        return kick_pn(ips, tau)
+    return kick_n(ips, tau)
 
 
 #
@@ -192,8 +192,65 @@ def sf_kick(slow, fast, tau):
 
     """
     if slow.n and fast.n:
-        slow = kick(slow, fast, tau, pn=True)
-        fast = kick(fast, slow, tau, pn=True)
+        slow.set_acc(fast)
+        fast.set_acc(slow)
+        if INCLUDE_PN_CORRECTIONS:
+            slow.set_pnacc(fast)
+            fast.set_pnacc(slow)
+            slow.wx += (slow.ax + slow.pnax) * tau / 2
+            slow.wy += (slow.ay + slow.pnay) * tau / 2
+            slow.wz += (slow.az + slow.pnaz) * tau / 2
+            fast.wx += (fast.ax + fast.pnax) * tau / 2
+            fast.wy += (fast.ay + fast.pnay) * tau / 2
+            fast.wz += (fast.az + fast.pnaz) * tau / 2
+
+            slow.vx, slow.wx = slow.wx, slow.vx
+            slow.vy, slow.wy = slow.wy, slow.vy
+            slow.vz, slow.wz = slow.wz, slow.vz
+            fast.vx, fast.wx = fast.wx, fast.vx
+            fast.vy, fast.wy = fast.wy, fast.vy
+            fast.vz, fast.wz = fast.wz, fast.vz
+            slow.set_pnacc(fast)
+            fast.set_pnacc(slow)
+            slow.vx, slow.wx = slow.wx, slow.vx
+            slow.vy, slow.wy = slow.wy, slow.vy
+            slow.vz, slow.wz = slow.wz, slow.vz
+            fast.vx, fast.wx = fast.wx, fast.vx
+            fast.vy, fast.wy = fast.wy, fast.vy
+            fast.vz, fast.wz = fast.wz, fast.vz
+
+            slow.pn_kick_ke(tau / 2)
+            slow.pn_kick_lmom(tau / 2)
+            slow.pn_kick_amom(tau / 2)
+            fast.pn_kick_ke(tau / 2)
+            fast.pn_kick_lmom(tau / 2)
+            fast.pn_kick_amom(tau / 2)
+
+            slow.vx += (slow.ax + slow.pnax) * tau
+            slow.vy += (slow.ay + slow.pnay) * tau
+            slow.vz += (slow.az + slow.pnaz) * tau
+            fast.vx += (fast.ax + fast.pnax) * tau
+            fast.vy += (fast.ay + fast.pnay) * tau
+            fast.vz += (fast.az + fast.pnaz) * tau
+
+            slow.pn_kick_ke(tau / 2)
+            slow.pn_kick_lmom(tau / 2)
+            slow.pn_kick_amom(tau / 2)
+            fast.pn_kick_ke(tau / 2)
+            fast.pn_kick_lmom(tau / 2)
+            fast.pn_kick_amom(tau / 2)
+
+            slow.set_pnacc(fast)
+            fast.set_pnacc(slow)
+            slow.wx += (slow.ax + slow.pnax) * tau / 2
+            slow.wy += (slow.ay + slow.pnay) * tau / 2
+            slow.wz += (slow.az + slow.pnaz) * tau / 2
+            fast.wx += (fast.ax + fast.pnax) * tau / 2
+            fast.wy += (fast.ay + fast.pnay) * tau / 2
+            fast.wz += (fast.az + fast.pnaz) * tau / 2
+        else:
+            slow = kick_n(slow, tau)
+            fast = kick_n(fast, tau)
     return slow, fast
 
 
@@ -220,7 +277,7 @@ class SIA21(object):
         k, d = SIA21.coefs
 
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
 
         return ips
@@ -239,9 +296,9 @@ class SIA21(object):
 
         d, k = SIA21.coefs
 
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
 
         return ips
 
@@ -285,9 +342,9 @@ class SIA22(object):
         k, d = SIA22.coefs
 
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
 
         return ips
@@ -306,11 +363,11 @@ class SIA22(object):
 
         d, k = SIA22.coefs
 
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
 
         return ips
 
@@ -357,11 +414,11 @@ class SIA43(object):
         k, d = SIA43.coefs
 
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
 
         return ips
@@ -380,13 +437,13 @@ class SIA43(object):
 
         d, k = SIA43.coefs
 
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
 
         return ips
 
@@ -436,13 +493,13 @@ class SIA44(object):
         k, d = SIA44.coefs
 
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
 
         return ips
@@ -461,15 +518,15 @@ class SIA44(object):
 
         d, k = SIA44.coefs
 
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
 
         return ips
 
@@ -522,15 +579,15 @@ class SIA45(object):
         k, d = SIA45.coefs
 
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
 
         return ips
@@ -549,17 +606,17 @@ class SIA45(object):
 
         d, k = SIA45.coefs
 
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
 
         return ips
 
@@ -615,17 +672,17 @@ class SIA46(object):
         k, d = SIA46.coefs
 
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[3] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
 
         return ips
@@ -644,19 +701,19 @@ class SIA46(object):
 
         d, k = SIA46.coefs
 
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[3] * tau, pn=True)
+        ips = kick(ips, k[3] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
 
         return ips
 
@@ -715,19 +772,19 @@ class SIA67(object):
         k, d = SIA67.coefs
 
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[3] * tau)
-        ips = kick(ips, ips, k[3] * tau, pn=True)
+        ips = kick(ips, k[3] * tau)
         ips = drift(ips, d[3] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
 
         return ips
@@ -746,21 +803,21 @@ class SIA67(object):
 
         d, k = SIA67.coefs
 
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[3] * tau, pn=True)
+        ips = kick(ips, k[3] * tau)
         ips = drift(ips, d[3] * tau)
-        ips = kick(ips, ips, k[3] * tau, pn=True)
+        ips = kick(ips, k[3] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
 
         return ips
 
@@ -823,23 +880,23 @@ class SIA69(object):
         k, d = SIA69.coefs
 
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[3] * tau)
-        ips = kick(ips, ips, k[3] * tau, pn=True)
+        ips = kick(ips, k[3] * tau)
         ips = drift(ips, d[4] * tau)
-        ips = kick(ips, ips, k[4] * tau, pn=True)
+        ips = kick(ips, k[4] * tau)
         ips = drift(ips, d[4] * tau)
-        ips = kick(ips, ips, k[3] * tau, pn=True)
+        ips = kick(ips, k[3] * tau)
         ips = drift(ips, d[3] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
 
         return ips
@@ -858,25 +915,25 @@ class SIA69(object):
 
         d, k = SIA69.coefs
 
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[3] * tau, pn=True)
+        ips = kick(ips, k[3] * tau)
         ips = drift(ips, d[3] * tau)
-        ips = kick(ips, ips, k[4] * tau, pn=True)
+        ips = kick(ips, k[4] * tau)
         ips = drift(ips, d[4] * tau)
-        ips = kick(ips, ips, k[4] * tau, pn=True)
+        ips = kick(ips, k[4] * tau)
         ips = drift(ips, d[3] * tau)
-        ips = kick(ips, ips, k[3] * tau, pn=True)
+        ips = kick(ips, k[3] * tau)
         ips = drift(ips, d[2] * tau)
-        ips = kick(ips, ips, k[2] * tau, pn=True)
+        ips = kick(ips, k[2] * tau)
         ips = drift(ips, d[1] * tau)
-        ips = kick(ips, ips, k[1] * tau, pn=True)
+        ips = kick(ips, k[1] * tau)
         ips = drift(ips, d[0] * tau)
-        ips = kick(ips, ips, k[0] * tau, pn=True)
+        ips = kick(ips, k[0] * tau)
 
         return ips
 
