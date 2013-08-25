@@ -495,7 +495,7 @@ if "--pn_order" in sys.argv:
 #
 #
 #    def set_state(self, array):
-#        self.data[:] = array
+#        self.data[...] = array
 #        self.n = len(self)
 
 
@@ -509,7 +509,7 @@ class Bodies(AbstractNbodyMethods):
         if items is None:
             for (name, dtype) in self.dtype+self.special_dtype:
                 self.__dict__[name] = np.zeros(n, dtype=dtype)
-            self.id[:] = np.arange(n, dtype=ctype.UINT)
+            self.id[...] = np.arange(n, dtype=ctype.UINT)
         else:
             self.__dict__.update(items)
 
@@ -570,7 +570,7 @@ class Bodies(AbstractNbodyMethods):
     def set_state(self, array):
         for name in array.dtype.names:
             if name in self.__dict__:
-                self.__dict__[name][:] = array[name]
+                self.__dict__[name][...] = array[name]
 
 
 ########## end of file ##########

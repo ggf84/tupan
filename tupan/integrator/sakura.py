@@ -103,7 +103,7 @@ class Sakura(Base):
         w2_sakura = diw2.max()
         dt_sakura = eta/(1 + w2_sakura)**0.5
 
-        ps.tstep[:] = dt_sakura
+        ps.tstep[...] = dt_sakura
 
         min_bts = self.get_min_block_tstep(ps, tau)
         return min_bts
@@ -137,7 +137,7 @@ class Sakura(Base):
         ps = sakura_step(ps, tau)
 
         type(ps).t_curr += tau
-        ps.tstep[:] = tau
+        ps.tstep[...] = tau
         ps.time += tau
         ps.nstep += 1
         if self.dumpper:

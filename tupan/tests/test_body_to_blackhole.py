@@ -30,7 +30,7 @@ if __name__ == "__main__":
     from tupan.ics.fewbody import make_figure83
     from tupan.particles.blackhole import Blackholes
     ps.append(make_figure83().bodies.astype(Blackholes))
-    ps.id[:] = range(ps.n)
+    ps.id[...] = range(ps.n)
     nbh = ps.blackholes.n
 
     fname = ("plummer" + str(n).zfill(5) + '-'

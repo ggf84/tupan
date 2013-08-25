@@ -158,7 +158,7 @@ class Simulation(object):
 
         # Initializes output file
         fname = self.args.output_file
-        self.io = IO(fname, 'a')
+        self.io = IO(fname, 'a') if fname else None
 
         # Initializes the diagnostic report of the simulation
         self.dia = Diagnostic(self.args.log_file,
@@ -277,15 +277,6 @@ def parse_args():
              "discovered (type: str, default: None)."
     )
     newrun.add_argument(
-        "-o", "--output_file",
-        type=str,
-        default=None,
-        required=True,
-        #                        choices=IO.PROVIDED_FORMATS,
-        help="The name of the output file to store the simulation data "
-             "(type: str, default: None)."
-    )
-    newrun.add_argument(
         "-m", "--meth",
         type=str,
         default=None,
@@ -307,6 +298,14 @@ def parse_args():
         default=None,
         required=True,
         help="Time to end the simulation (type: float, default: None)."
+    )
+    newrun.add_argument(
+        "-o", "--output_file",
+        type=str,
+        default='',
+        # choices=IO.PROVIDED_FORMATS,
+        help="The name of the output file to store the simulation data "
+             "(type: str, default: '')."
     )
     newrun.add_argument(
         "--t_begin",

@@ -537,10 +537,10 @@ class GLviewer(object):
             if blackholes.n:
                 points = blackholes.pos
                 colors = self.get_colors(blackholes.mass)
-                colors[:, 0].fill(0)
-                colors[:, 1].fill(1)
-                colors[:, 2].fill(0)
-                colors[:, 3].fill(1)
+                colors[..., 0].fill(0)
+                colors[..., 1].fill(1)
+                colors[..., 2].fill(0)
+                colors[..., 3].fill(1)
                 sizes = np.sqrt(blackholes.mass * Ntot)
 
 #                gl.glAlphaFunc(gl.GL_EQUAL, 1)

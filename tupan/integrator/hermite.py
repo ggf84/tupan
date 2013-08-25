@@ -46,13 +46,13 @@ class H2(object):
         """
         ps1.set_acc(ps1)
 
-        ps1.vx[:] = ((ps0.ax + ps1.ax) * tau / 2 + ps0.vx)
-        ps1.vy[:] = ((ps0.ay + ps1.ay) * tau / 2 + ps0.vy)
-        ps1.vz[:] = ((ps0.az + ps1.az) * tau / 2 + ps0.vz)
+        ps1.vx[...] = ((ps0.ax + ps1.ax) * tau / 2 + ps0.vx)
+        ps1.vy[...] = ((ps0.ay + ps1.ay) * tau / 2 + ps0.vy)
+        ps1.vz[...] = ((ps0.az + ps1.az) * tau / 2 + ps0.vz)
 
-        ps1.rx[:] = ((ps0.vx + ps1.vx) * tau / 2 + ps0.rx)
-        ps1.ry[:] = ((ps0.vy + ps1.vy) * tau / 2 + ps0.ry)
-        ps1.rz[:] = ((ps0.vz + ps1.vz) * tau / 2 + ps0.rz)
+        ps1.rx[...] = ((ps0.vx + ps1.vx) * tau / 2 + ps0.rx)
+        ps1.ry[...] = ((ps0.vy + ps1.vy) * tau / 2 + ps0.ry)
+        ps1.rz[...] = ((ps0.vz + ps1.vz) * tau / 2 + ps0.rz)
 
         return ps1
 
@@ -96,25 +96,25 @@ class H4(H2):
         """
         ps1.set_acc_jerk(ps1)
 
-        ps1.vx[:] = (((ps0.jx - ps1.jx) * tau / 6
-                     + (ps0.ax + ps1.ax)) * tau / 2
-                     + ps0.vx)
-        ps1.vy[:] = (((ps0.jy - ps1.jy) * tau / 6
-                     + (ps0.ay + ps1.ay)) * tau / 2
-                     + ps0.vy)
-        ps1.vz[:] = (((ps0.jz - ps1.jz) * tau / 6
-                     + (ps0.az + ps1.az)) * tau / 2
-                     + ps0.vz)
+        ps1.vx[...] = (((ps0.jx - ps1.jx) * tau / 6
+                       + (ps0.ax + ps1.ax)) * tau / 2
+                       + ps0.vx)
+        ps1.vy[...] = (((ps0.jy - ps1.jy) * tau / 6
+                       + (ps0.ay + ps1.ay)) * tau / 2
+                       + ps0.vy)
+        ps1.vz[...] = (((ps0.jz - ps1.jz) * tau / 6
+                       + (ps0.az + ps1.az)) * tau / 2
+                       + ps0.vz)
 
-        ps1.rx[:] = (((ps0.ax - ps1.ax) * tau / 6
-                     + (ps0.vx + ps1.vx)) * tau / 2
-                     + ps0.rx)
-        ps1.ry[:] = (((ps0.ay - ps1.ay) * tau / 6
-                     + (ps0.vy + ps1.vy)) * tau / 2
-                     + ps0.ry)
-        ps1.rz[:] = (((ps0.az - ps1.az) * tau / 6
-                     + (ps0.vz + ps1.vz)) * tau / 2
-                     + ps0.rz)
+        ps1.rx[...] = (((ps0.ax - ps1.ax) * tau / 6
+                       + (ps0.vx + ps1.vx)) * tau / 2
+                       + ps0.rx)
+        ps1.ry[...] = (((ps0.ay - ps1.ay) * tau / 6
+                       + (ps0.vy + ps1.vy)) * tau / 2
+                       + ps0.ry)
+        ps1.rz[...] = (((ps0.az - ps1.az) * tau / 6
+                       + (ps0.vz + ps1.vz)) * tau / 2
+                       + ps0.rz)
 
         return ps1
 
@@ -166,31 +166,31 @@ class H6(H4):
         ps1.set_acc_jerk(ps1)
         ps1.set_snap_crackle(ps1)
 
-        ps1.vx[:] = ((((ps0.sx + ps1.sx) * tau / 12
-                     + (ps0.jx - ps1.jx)) * tau / 5
-                     + (ps0.ax + ps1.ax)) * tau / 2
-                     + ps0.vx)
-        ps1.vy[:] = ((((ps0.sy + ps1.sy) * tau / 12
-                     + (ps0.jy - ps1.jy)) * tau / 5
-                     + (ps0.ay + ps1.ay)) * tau / 2
-                     + ps0.vy)
-        ps1.vz[:] = ((((ps0.sz + ps1.sz) * tau / 12
-                     + (ps0.jz - ps1.jz)) * tau / 5
-                     + (ps0.az + ps1.az)) * tau / 2
-                     + ps0.vz)
+        ps1.vx[...] = ((((ps0.sx + ps1.sx) * tau / 12
+                       + (ps0.jx - ps1.jx)) * tau / 5
+                       + (ps0.ax + ps1.ax)) * tau / 2
+                       + ps0.vx)
+        ps1.vy[...] = ((((ps0.sy + ps1.sy) * tau / 12
+                       + (ps0.jy - ps1.jy)) * tau / 5
+                       + (ps0.ay + ps1.ay)) * tau / 2
+                       + ps0.vy)
+        ps1.vz[...] = ((((ps0.sz + ps1.sz) * tau / 12
+                       + (ps0.jz - ps1.jz)) * tau / 5
+                       + (ps0.az + ps1.az)) * tau / 2
+                       + ps0.vz)
 
-        ps1.rx[:] = ((((ps0.jx + ps1.jx) * tau / 12
-                     + (ps0.ax - ps1.ax)) * tau / 5
-                     + (ps0.vx + ps1.vx)) * tau / 2
-                     + ps0.rx)
-        ps1.ry[:] = ((((ps0.jy + ps1.jy) * tau / 12
-                     + (ps0.ay - ps1.ay)) * tau / 5
-                     + (ps0.vy + ps1.vy)) * tau / 2
-                     + ps0.ry)
-        ps1.rz[:] = ((((ps0.jz + ps1.jz) * tau / 12
-                     + (ps0.az - ps1.az)) * tau / 5
-                     + (ps0.vz + ps1.vz)) * tau / 2
-                     + ps0.rz)
+        ps1.rx[...] = ((((ps0.jx + ps1.jx) * tau / 12
+                       + (ps0.ax - ps1.ax)) * tau / 5
+                       + (ps0.vx + ps1.vx)) * tau / 2
+                       + ps0.rx)
+        ps1.ry[...] = ((((ps0.jy + ps1.jy) * tau / 12
+                       + (ps0.ay - ps1.ay)) * tau / 5
+                       + (ps0.vy + ps1.vy)) * tau / 2
+                       + ps0.ry)
+        ps1.rz[...] = ((((ps0.jz + ps1.jz) * tau / 12
+                       + (ps0.az - ps1.az)) * tau / 5
+                       + (ps0.vz + ps1.vz)) * tau / 2
+                       + ps0.rz)
 
         return ps1
 
@@ -248,37 +248,37 @@ class H8(H6):
         ps1.set_acc_jerk(ps1)
         ps1.set_snap_crackle(ps1)
 
-        ps1.vx[:] = (((((ps0.cx - ps1.cx) * tau / 20
-                     + (ps0.sx + ps1.sx)) * tau / 3
-                     + 3 * (ps0.jx - ps1.jx)) * tau / 14
-                     + (ps0.ax + ps1.ax)) * tau / 2
-                     + ps0.vx)
-        ps1.vy[:] = (((((ps0.cy - ps1.cy) * tau / 20
-                     + (ps0.sy + ps1.sy)) * tau / 3
-                     + 3 * (ps0.jy - ps1.jy)) * tau / 14
-                     + (ps0.ay + ps1.ay)) * tau / 2
-                     + ps0.vy)
-        ps1.vz[:] = (((((ps0.cz - ps1.cz) * tau / 20
-                     + (ps0.sz + ps1.sz)) * tau / 3
-                     + 3 * (ps0.jz - ps1.jz)) * tau / 14
-                     + (ps0.az + ps1.az)) * tau / 2
-                     + ps0.vz)
+        ps1.vx[...] = (((((ps0.cx - ps1.cx) * tau / 20
+                       + (ps0.sx + ps1.sx)) * tau / 3
+                       + 3 * (ps0.jx - ps1.jx)) * tau / 14
+                       + (ps0.ax + ps1.ax)) * tau / 2
+                       + ps0.vx)
+        ps1.vy[...] = (((((ps0.cy - ps1.cy) * tau / 20
+                       + (ps0.sy + ps1.sy)) * tau / 3
+                       + 3 * (ps0.jy - ps1.jy)) * tau / 14
+                       + (ps0.ay + ps1.ay)) * tau / 2
+                       + ps0.vy)
+        ps1.vz[...] = (((((ps0.cz - ps1.cz) * tau / 20
+                       + (ps0.sz + ps1.sz)) * tau / 3
+                       + 3 * (ps0.jz - ps1.jz)) * tau / 14
+                       + (ps0.az + ps1.az)) * tau / 2
+                       + ps0.vz)
 
-        ps1.rx[:] = (((((ps0.sx - ps1.sx) * tau / 20
-                     + (ps0.jx + ps1.jx)) * tau / 3
-                     + 3 * (ps0.ax - ps1.ax)) * tau / 14
-                     + (ps0.vx + ps1.vx)) * tau / 2
-                     + ps0.rx)
-        ps1.ry[:] = (((((ps0.sy - ps1.sy) * tau / 20
-                     + (ps0.jy + ps1.jy)) * tau / 3
-                     + 3 * (ps0.ay - ps1.ay)) * tau / 14
-                     + (ps0.vy + ps1.vy)) * tau / 2
-                     + ps0.ry)
-        ps1.rz[:] = (((((ps0.sz - ps1.sz) * tau / 20
-                     + (ps0.jz + ps1.jz)) * tau / 3
-                     + 3 * (ps0.az - ps1.az)) * tau / 14
-                     + (ps0.vz + ps1.vz)) * tau / 2
-                     + ps0.rz)
+        ps1.rx[...] = (((((ps0.sx - ps1.sx) * tau / 20
+                       + (ps0.jx + ps1.jx)) * tau / 3
+                       + 3 * (ps0.ax - ps1.ax)) * tau / 14
+                       + (ps0.vx + ps1.vx)) * tau / 2
+                       + ps0.rx)
+        ps1.ry[...] = (((((ps0.sy - ps1.sy) * tau / 20
+                       + (ps0.jy + ps1.jy)) * tau / 3
+                       + 3 * (ps0.ay - ps1.ay)) * tau / 14
+                       + (ps0.vy + ps1.vy)) * tau / 2
+                       + ps0.ry)
+        ps1.rz[...] = (((((ps0.sz - ps1.sz) * tau / 20
+                       + (ps0.jz + ps1.jz)) * tau / 3
+                       + 3 * (ps0.az - ps1.az)) * tau / 14
+                       + (ps0.vz + ps1.vz)) * tau / 2
+                       + ps0.rz)
 
         return ps1
 
@@ -396,7 +396,7 @@ class Hermite(Base):
         ps = self.epec(2, ps, tau)
 
         type(ps).t_curr += tau
-        ps.tstep[:] = tau
+        ps.tstep[...] = tau
         ps.time += tau
         ps.nstep += 1
         if self.dumpper:

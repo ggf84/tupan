@@ -29,10 +29,10 @@ def set_particles(n):
     import numpy as np
     from tupan.particles.allparticles import ParticleSystem
     ps = ParticleSystem(n-n//2, n//2)
-    ps.mass[:] = np.random.random((ps.n,))
-    ps.eps2[:] = np.zeros((ps.n,))
-    ps.rx[:], ps.ry[:], ps.rz[:] = np.random.random((ps.n, 3)).T * 10
-    ps.vx[:], ps.vy[:], ps.vz[:] = np.random.random((ps.n, 3)).T * 10
+    ps.mass[...] = np.random.random((ps.n,))
+    ps.eps2[...] = np.zeros((ps.n,))
+    ps.rx[...], ps.ry[...], ps.rz[...] = np.random.random((ps.n, 3)).T * 10
+    ps.vx[...], ps.vy[...], ps.vz[...] = np.random.random((ps.n, 3)).T * 10
     return ps
 
 

@@ -54,7 +54,7 @@ class Plummer(object):
                 self.softening_type)
             raise ValueError(
                 "Unexpected value for softening_type: {}.".format(
-                self.softening_type))
+                    self.softening_type))
 
         # normalizes by the provided scale of eps2
         eps2 *= self.eps2 / np.mean(eps2)
@@ -98,33 +98,33 @@ class Plummer(object):
         ilist = np.arange(n)
 
         # set index
-        self.ps.id[:] = ilist
+        self.ps.id[...] = ilist
 
         srand = np.random.get_state()
 
         # set mass
-        self.ps.mass[:] = self.imf.sample(n)
+        self.ps.mass[...] = self.imf.sample(n)
         self.ps.mass /= self.ps.total_mass
 
         # set eps2
-        self.ps.eps2[:] = self.set_eps2(self.ps.mass)
+        self.ps.eps2[...] = self.set_eps2(self.ps.mass)
 
         np.random.set_state(srand)
 
         # set pos
         pos = self.set_pos(np.random.permutation(ilist))
-        self.ps.rx[:] = pos[0]
-        self.ps.ry[:] = pos[1]
-        self.ps.rz[:] = pos[2]
+        self.ps.rx[...] = pos[0]
+        self.ps.ry[...] = pos[1]
+        self.ps.rz[...] = pos[2]
 
         # set phi
         self.ps.set_phi(self.ps)
 
         # set vel
         vel = self.set_vel(self.ps.phi)
-        self.ps.vx[:] = vel[0]
-        self.ps.vy[:] = vel[1]
-        self.ps.vz[:] = vel[2]
+        self.ps.vx[...] = vel[0]
+        self.ps.vy[...] = vel[1]
+        self.ps.vz[...] = vel[2]
 
     def make_model(self):
         self.set_bodies()

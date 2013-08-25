@@ -17,11 +17,6 @@ __all__ = ["SIA"]
 
 logger = logging.getLogger(__name__)
 
-#
-# global variables
-#
-INCLUDE_PN_CORRECTIONS = False
-
 
 #
 # split
@@ -151,7 +146,7 @@ def drift(ips, tau):
     """Drift operator.
 
     """
-    if INCLUDE_PN_CORRECTIONS:
+    if ips.include_pn_corrections:
         return drift_pn(ips, tau)
     return drift_n(ips, tau)
 
@@ -165,7 +160,7 @@ def kick(ips, tau):
 
     """
     ips.set_acc(ips)
-    if INCLUDE_PN_CORRECTIONS:
+    if ips.include_pn_corrections:
         return kick_pn(ips, tau)
     return kick_n(ips, tau)
 
@@ -194,7 +189,7 @@ def sf_kick(slow, fast, tau):
     if slow.n and fast.n:
         slow.set_acc(fast)
         fast.set_acc(slow)
-        if INCLUDE_PN_CORRECTIONS:
+        if slow.include_pn_corrections:
             slow.set_pnacc(fast)
             fast.set_pnacc(slow)
             slow.wx += (slow.ax + slow.pnax) * tau / 2
@@ -998,8 +993,6 @@ class SIA(Base):
         """
         super(SIA, self).__init__(eta, time, ps, **kwargs)
         self.method = method
-        global INCLUDE_PN_CORRECTIONS
-        INCLUDE_PN_CORRECTIONS = self.include_pn_corrections
 
     def initialize(self, t_end):
         """
@@ -1009,13 +1002,13 @@ class SIA(Base):
                     self.method)
 
         ps = self.ps
-        if INCLUDE_PN_CORRECTIONS:
+        if ps.include_pn_corrections:
             ps.register_auxiliary_attribute("wx", ctype.REAL)
             ps.register_auxiliary_attribute("wy", ctype.REAL)
             ps.register_auxiliary_attribute("wz", ctype.REAL)
-            ps.wx[:] = ps.vx
-            ps.wy[:] = ps.vy
-            ps.wz[:] = ps.vz
+            ps.wx[...] = ps.vx
+            ps.wy[...] = ps.vy
+            ps.wz[...] = ps.vz
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)
@@ -1118,7 +1111,7 @@ class SIA(Base):
             type(ps).t_curr += tau
 
         if slow.n:
-            slow.tstep[:] = tau
+            slow.tstep[...] = tau
             slow.time += tau
             slow.nstep += 1
             if self.dumpper:
