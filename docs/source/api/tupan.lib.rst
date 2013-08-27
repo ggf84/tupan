@@ -9,10 +9,18 @@ lib Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`cffi_wrap` Module
------------------------
+:mod:`cffi_backend` Module
+--------------------------
 
-.. automodule:: tupan.lib.cffi_wrap
+.. automodule:: tupan.lib.cffi_backend
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`opencl_backend` Module
+----------------------------
+
+.. automodule:: tupan.lib.opencl_backend
     :members:
     :undoc-members:
     :show-inheritance:

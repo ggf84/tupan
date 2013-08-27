@@ -85,8 +85,8 @@ class Phi(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("phi_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("phi_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -148,8 +148,8 @@ class Acc(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("acc_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("acc_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -223,8 +223,8 @@ class AccJerk(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("acc_jerk_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("acc_jerk_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -277,8 +277,8 @@ class SnapCrackle(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("snap_crackle_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("snap_crackle_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -337,8 +337,8 @@ class Tstep(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("tstep_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("tstep_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -383,8 +383,8 @@ class PNAcc(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("pnacc_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("pnacc_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -437,8 +437,8 @@ class Sakura(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("sakura_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("sakura_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -493,8 +493,8 @@ class NREG_X(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("nreg_Xkernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("nreg_Xkernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -553,8 +553,8 @@ class NREG_V(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("nreg_Vkernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("nreg_Vkernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -600,18 +600,18 @@ class NREG_V(AbstractExtension):
         self.kernel.set_args(self.inargs + self.outargs)
 
 
-exttype = "CL" if "--use_cl" in sys.argv else "C"
+backend = "CL" if "--use_cl" in sys.argv else "C"
 
 clight = Clight()
-phi = Phi(exttype, ctype.prec)
-acc = Acc(exttype, ctype.prec)
-acc_jerk = AccJerk(exttype, ctype.prec)
-snap_crackle = SnapCrackle(exttype, ctype.prec)
-tstep = Tstep(exttype, ctype.prec)
-pnacc = PNAcc(exttype, ctype.prec)
-sakura = Sakura(exttype, ctype.prec)
-nreg_x = NREG_X(exttype, ctype.prec)
-nreg_v = NREG_V(exttype, ctype.prec)
+phi = Phi(backend, ctype.prec)
+acc = Acc(backend, ctype.prec)
+acc_jerk = AccJerk(backend, ctype.prec)
+snap_crackle = SnapCrackle(backend, ctype.prec)
+tstep = Tstep(backend, ctype.prec)
+pnacc = PNAcc(backend, ctype.prec)
+sakura = Sakura(backend, ctype.prec)
+nreg_x = NREG_X(backend, ctype.prec)
+nreg_v = NREG_V(backend, ctype.prec)
 
 
 ########## end of file ##########
