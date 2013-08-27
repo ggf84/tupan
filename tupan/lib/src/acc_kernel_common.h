@@ -26,21 +26,21 @@ inline void acc_kernel_core(
     REAL *iaz)
 {
     REAL rx, ry, rz;
-    rx = irx - jrx;                                                  // 1 FLOPs
-    ry = iry - jry;                                                  // 1 FLOPs
-    rz = irz - jrz;                                                  // 1 FLOPs
-    REAL r2 = rx * rx + ry * ry + rz * rz;                           // 5 FLOPs
+    rx = irx - jrx;                                                             // 1 FLOPs
+    ry = iry - jry;                                                             // 1 FLOPs
+    rz = irz - jrz;                                                             // 1 FLOPs
+    REAL r2 = rx * rx + ry * ry + rz * rz;                                      // 5 FLOPs
 
-    REAL e2 = ie2 + je2;                                             // 1 FLOPs
+    REAL e2 = ie2 + je2;                                                        // 1 FLOPs
 
     REAL inv_r3;
-    smoothed_inv_r3(r2, e2, &inv_r3);                                // 4 FLOPs
+    smoothed_inv_r3(r2, e2, &inv_r3);                                           // 4 FLOPs
 
-    inv_r3 *= jm;                                                    // 1 FLOPs
+    inv_r3 *= jm;                                                               // 1 FLOPs
 
-    *iax -= inv_r3 * rx;                                             // 2 FLOPs
-    *iay -= inv_r3 * ry;                                             // 2 FLOPs
-    *iaz -= inv_r3 * rz;                                             // 2 FLOPs
+    *iax -= inv_r3 * rx;                                                        // 2 FLOPs
+    *iay -= inv_r3 * ry;                                                        // 2 FLOPs
+    *iaz -= inv_r3 * rz;                                                        // 2 FLOPs
 }
 // Total flop count: 20
 

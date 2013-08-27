@@ -18,6 +18,7 @@ from .utils.timing import decallmethods, timings
 __all__ = ["Phi", "phi",
            "Acc", "acc",
            "AccJerk", "acc_jerk",
+           "SnapCrackle", "snap_crackle",
            "Tstep", "tstep",
            "PNAcc", "pnacc",
            "Sakura", "sakura",
@@ -84,8 +85,8 @@ class Phi(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("phi_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("phi_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -147,8 +148,8 @@ class Acc(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("acc_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("acc_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -222,8 +223,8 @@ class AccJerk(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("acc_jerk_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("acc_jerk_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -272,12 +273,72 @@ class AccJerk(AbstractExtension):
 
 
 @decallmethods(timings)
+class SnapCrackle(AbstractExtension):
+    """
+
+    """
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("snap_crackle_kernel", backend, prec)
+        cty = self.kernel.cty
+        argtypes = (cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p,
+                    cty.c_uint,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p)
+        restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        self.argtypes = argtypes
+        self.restypes = restypes
+        lmem = self.kernel.allocate_local_memory(16, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem[:14], start=36)
+
+    def set_args(self, ips, jps):
+        ni = ips.n
+        nj = jps.n
+
+        self.kernel.global_size = ni
+        if not "sx" in ips.__dict__:
+            ips.register_auxiliary_attribute("sx", ctype.REAL)
+        if not "sy" in ips.__dict__:
+            ips.register_auxiliary_attribute("sy", ctype.REAL)
+        if not "sz" in ips.__dict__:
+            ips.register_auxiliary_attribute("sz", ctype.REAL)
+        if not "cx" in ips.__dict__:
+            ips.register_auxiliary_attribute("cx", ctype.REAL)
+        if not "cy" in ips.__dict__:
+            ips.register_auxiliary_attribute("cy", ctype.REAL)
+        if not "cz" in ips.__dict__:
+            ips.register_auxiliary_attribute("cz", ctype.REAL)
+
+        self._inargs = (ni,
+                        ips.mass, ips.rx, ips.ry, ips.rz,
+                        ips.eps2, ips.vx, ips.vy, ips.vz,
+                        ips.ax, ips.ay, ips.az, ips.jx, ips.jy, ips.jz,
+                        nj,
+                        jps.mass, jps.rx, jps.ry, jps.rz,
+                        jps.eps2, jps.vx, jps.vy, jps.vz,
+                        jps.ax, jps.ay, jps.az, jps.jx, jps.jy, jps.jz)
+        self._outargs = (ips.sx, ips.sy, ips.sz,
+                         ips.cx, ips.cy, ips.cz)
+
+        self.inargs = prepare_args(self._inargs, self.argtypes)
+        self.outargs = prepare_args(self._outargs, self.restypes)
+
+        self.kernel.set_args(self.inargs + self.outargs)
+
+
+@decallmethods(timings)
 class Tstep(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("tstep_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("tstep_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -322,8 +383,8 @@ class PNAcc(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("pnacc_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("pnacc_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -376,8 +437,8 @@ class Sakura(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("sakura_kernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("sakura_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -432,8 +493,8 @@ class NREG_X(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("nreg_Xkernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("nreg_Xkernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -492,8 +553,8 @@ class NREG_V(AbstractExtension):
     """
 
     """
-    def __init__(self, exttype, prec):
-        self.kernel = get_kernel("nreg_Vkernel", exttype, prec)
+    def __init__(self, backend, prec):
+        self.kernel = get_kernel("nreg_Vkernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -539,17 +600,18 @@ class NREG_V(AbstractExtension):
         self.kernel.set_args(self.inargs + self.outargs)
 
 
-exttype = "CL" if "--use_cl" in sys.argv else "C"
+backend = "CL" if "--use_cl" in sys.argv else "C"
 
 clight = Clight()
-phi = Phi(exttype, ctype.prec)
-acc = Acc(exttype, ctype.prec)
-acc_jerk = AccJerk(exttype, ctype.prec)
-tstep = Tstep(exttype, ctype.prec)
-pnacc = PNAcc(exttype, ctype.prec)
-sakura = Sakura(exttype, ctype.prec)
-nreg_x = NREG_X(exttype, ctype.prec)
-nreg_v = NREG_V(exttype, ctype.prec)
+phi = Phi(backend, ctype.prec)
+acc = Acc(backend, ctype.prec)
+acc_jerk = AccJerk(backend, ctype.prec)
+snap_crackle = SnapCrackle(backend, ctype.prec)
+tstep = Tstep(backend, ctype.prec)
+pnacc = PNAcc(backend, ctype.prec)
+sakura = Sakura(backend, ctype.prec)
+nreg_x = NREG_X(backend, ctype.prec)
+nreg_v = NREG_V(backend, ctype.prec)
 
 
 ########## end of file ##########

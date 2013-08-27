@@ -25,9 +25,9 @@ def nreg_x(ps, dt):
     """
     mtot = ps.total_mass
     gravity.nreg_x.calc(ps, ps, dt)
-    ps.rx[:] = ps.mrx / mtot
-    ps.ry[:] = ps.mry / mtot
-    ps.rz[:] = ps.mrz / mtot
+    ps.rx[...] = ps.mrx / mtot
+    ps.ry[...] = ps.mry / mtot
+    ps.rz[...] = ps.mrz / mtot
     U = 0.5 * ps.u.sum()
     type(ps).U = U
     type(ps).t_curr += dt
@@ -51,9 +51,9 @@ def nreg_v(ps, dt):
 #                                         + ps.vz * ps.az)).sum()
     mtot = ps.total_mass
     gravity.nreg_v.calc(ps, ps, dt)
-    ps.vx[:] = ps.mvx / mtot
-    ps.vy[:] = ps.mvy / mtot
-    ps.vz[:] = ps.mvz / mtot
+    ps.vx[...] = ps.mvx / mtot
+    ps.vy[...] = ps.mvy / mtot
+    ps.vz[...] = ps.mvz / mtot
     K = 0.25 * ps.mk.sum() / mtot
     type(ps).W = (K - ps.E0)
 #    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
@@ -161,7 +161,7 @@ class NREG(Base):
 
         dt = t1 - t0
 
-        ps.tstep[:] = dt
+        ps.tstep[...] = dt
         ps.time += tau
         ps.nstep += 1
         if self.dumpper:

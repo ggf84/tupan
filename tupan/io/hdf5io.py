@@ -82,7 +82,7 @@ class HDF5IO(object):
         ps = pickle.loads(group.attrs["Class"])()
         for (k, v) in group.items():
             obj = pickle.loads(v.attrs["Class"])(len(v))
-            obj.set_state(v[:])
+            obj.set_state(v[...])
             ps.append(obj)
         return ps
 

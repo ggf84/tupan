@@ -124,19 +124,19 @@ class IO(object):
         a1 = ps1[ps1.id == index]
         a = ps[ps.id == index]
 
-        plt.plot(a0.pos[:, 0], a0.pos[:, 1], label="PBaSS: l=1")
-        plt.plot(a1.pos[:, 0], a1.pos[:, 1], label="PBaSS: l=8")
-        plt.plot(a.pos[:, 0], a.pos[:, 1], label="PBaSS: l=64")
+        plt.plot(a0.pos[..., 0], a0.pos[..., 1], label="PBaSS: l=1")
+        plt.plot(a1.pos[..., 0], a1.pos[..., 1], label="PBaSS: l=8")
+        plt.plot(a.pos[..., 0], a.pos[..., 1], label="PBaSS: l=64")
         plt.legend(loc="best", shadow=True,
                    fancybox=True, borderaxespad=0.75)
         plt.show()
 
         axis = 0
         x = np.linspace(0, 25, 1000000)
-        f = interpolate.UnivariateSpline(a1.time, a1.pos[:, axis], s=0, k=2)
-        plt.plot(a0.time, a0.pos[:, axis], label="PBaSS: l=1")
-        plt.plot(a1.time, a1.pos[:, axis], label="PBaSS: l=8")
-        plt.plot(a.time, a.pos[:, axis], label="PBass: l=64")
+        f = interpolate.UnivariateSpline(a1.time, a1.pos[..., axis], s=0, k=2)
+        plt.plot(a0.time, a0.pos[..., axis], label="PBaSS: l=1")
+        plt.plot(a1.time, a1.pos[..., axis], label="PBaSS: l=8")
+        plt.plot(a.time, a.pos[..., axis], label="PBass: l=64")
         plt.plot(x, f(x), label="interp. function")
         plt.legend(loc="best", shadow=True,
                    fancybox=True, borderaxespad=0.75)
@@ -165,13 +165,13 @@ class IO(object):
                         if attr.ndim > 1:
                             for k in range(attr.shape[1]):
                                 f = interpolate.UnivariateSpline(
-                                    time, attr[:, k], s=0, k=2)
+                                    time, attr[..., k], s=0, k=2)
                                 for t in times:
                                     getattr(getattr(snaps[
                                             t], key), name)[i, k] = f(t)
                         else:
                             f = interpolate.UnivariateSpline(
-                                time, attr[:], s=0, k=2)
+                                time, attr[...], s=0, k=2)
                             for t in times:
                                 getattr(getattr(snaps[t], key), name)[i] = f(t)
 

@@ -29,10 +29,10 @@ def set_particles(n):
     import numpy as np
     from tupan.particles.allparticles import ParticleSystem
     ps = ParticleSystem(n-n//2, n//2)
-    ps.mass[:] = np.random.random((ps.n,))
-    ps.eps2[:] = np.zeros((ps.n,))
-    ps.rx[:], ps.ry[:], ps.rz[:] = np.random.random((ps.n, 3)).T * 10
-    ps.vx[:], ps.vy[:], ps.vz[:] = np.random.random((ps.n, 3)).T * 10
+    ps.mass[...] = np.random.random((ps.n,))
+    ps.eps2[...] = np.zeros((ps.n,))
+    ps.rx[...], ps.ry[...], ps.rz[...] = np.random.random((ps.n, 3)).T * 10
+    ps.vx[...], ps.vy[...], ps.vz[...] = np.random.random((ps.n, 3)).T * 10
     return ps
 
 
@@ -98,27 +98,31 @@ class TestCase1(unittest.TestCase):
 
     def test04(self):
         print("\n---------- test04 ----------")
-        eta = 1.0/64
-        self.compare_result(gravity.Tstep, self.ps, eta)
+        self.compare_result(gravity.SnapCrackle, self.ps)
 
     def test05(self):
         print("\n---------- test05 ----------")
+        eta = 1.0/64
+        self.compare_result(gravity.Tstep, self.ps, eta)
+
+    def test06(self):
+        print("\n---------- test06 ----------")
         gravity.clight.pn_order = 7
         gravity.clight.clight = 128
         self.compare_result(gravity.PNAcc, self.ps)
 
-    def test06(self):
-        print("\n---------- test06 ----------")
-        dt = 1.0/64
-        self.compare_result(gravity.Sakura, self.ps, dt)
-
     def test07(self):
         print("\n---------- test07 ----------")
         dt = 1.0/64
-        self.compare_result(gravity.NREG_X, self.ps, dt)
+        self.compare_result(gravity.Sakura, self.ps, dt)
 
     def test08(self):
         print("\n---------- test08 ----------")
+        dt = 1.0/64
+        self.compare_result(gravity.NREG_X, self.ps, dt)
+
+    def test09(self):
+        print("\n---------- test09 ----------")
         dt = 1.0/64
         self.compare_result(gravity.NREG_V, self.ps, dt)
 
@@ -198,27 +202,31 @@ class TestCase2(unittest.TestCase):
 
     def test04(self):
         print("\n---------- test04 ----------")
-        eta = 1.0/64
-        self.performance(gravity.Tstep, self.pslist, eta)
+        self.performance(gravity.SnapCrackle, self.pslist)
 
     def test05(self):
         print("\n---------- test05 ----------")
+        eta = 1.0/64
+        self.performance(gravity.Tstep, self.pslist, eta)
+
+    def test06(self):
+        print("\n---------- test06 ----------")
         gravity.clight.pn_order = 7
         gravity.clight.clight = 128
         self.performance(gravity.PNAcc, self.pslist)
 
-    def test06(self):
-        print("\n---------- test06 ----------")
-        dt = 1.0/64
-        self.performance(gravity.Sakura, self.pslist, dt)
-
     def test07(self):
         print("\n---------- test07 ----------")
         dt = 1.0/64
-        self.performance(gravity.NREG_X, self.pslist, dt)
+        self.performance(gravity.Sakura, self.pslist, dt)
 
     def test08(self):
         print("\n---------- test08 ----------")
+        dt = 1.0/64
+        self.performance(gravity.NREG_X, self.pslist, dt)
+
+    def test09(self):
+        print("\n---------- test09 ----------")
         dt = 1.0/64
         self.performance(gravity.NREG_V, self.pslist, dt)
 

@@ -17,11 +17,6 @@ __all__ = ["SIA"]
 
 logger = logging.getLogger(__name__)
 
-#
-# global variables
-#
-INCLUDE_PN_CORRECTIONS = False
-
 
 #
 # split
@@ -54,7 +49,7 @@ def join(slow, fast):
         return slow
     if not slow.n:
         return fast
-    ps = slow.copy()
+    ps = slow
     ps.append(fast)
     return ps
 
@@ -67,9 +62,9 @@ def drift_n(ips, tau):
     """Drift operator for Newtonian quantities.
 
     """
-    ips.rx += tau * ips.vx
-    ips.ry += tau * ips.vy
-    ips.rz += tau * ips.vz
+    ips.rx += ips.vx * tau
+    ips.ry += ips.vy * tau
+    ips.rz += ips.vz * tau
     return ips
 
 
@@ -77,14 +72,13 @@ def drift_n(ips, tau):
 # kick_n
 #
 @timings
-def kick_n(ips, jps, tau):
+def kick_n(ips, tau):
     """Kick operator for Newtonian quantities.
 
     """
-    ips.set_acc(jps)
-    ips.vx += tau * ips.ax
-    ips.vy += tau * ips.ay
-    ips.vz += tau * ips.az
+    ips.vx += ips.ax * tau
+    ips.vy += ips.ay * tau
+    ips.vz += ips.az * tau
     return ips
 
 
@@ -96,7 +90,9 @@ def drift_pn(ips, tau):
     """Drift operator for post-Newtonian quantities.
 
     """
-    ips = drift_n(ips, tau)
+    ips.rx += ips.vx * tau
+    ips.ry += ips.vy * tau
+    ips.rz += ips.vz * tau
     ips.pn_drift_rcom(tau)
     return ips
 
@@ -105,13 +101,11 @@ def drift_pn(ips, tau):
 # kick_pn
 #
 @timings
-def kick_pn(ips, jps, tau):
+def kick_pn(ips, tau):
     """Kick operator for post-Newtonian quantities.
 
     """
-    ips.set_acc(jps)
-
-    ips.set_pnacc(jps)
+    ips.set_pnacc(ips)
     ips.wx += (ips.ax + ips.pnax) * tau / 2
     ips.wy += (ips.ay + ips.pnay) * tau / 2
     ips.wz += (ips.az + ips.pnaz) * tau / 2
@@ -119,7 +113,7 @@ def kick_pn(ips, jps, tau):
     ips.vx, ips.wx = ips.wx, ips.vx
     ips.vy, ips.wy = ips.wy, ips.vy
     ips.vz, ips.wz = ips.wz, ips.vz
-    ips.set_pnacc(jps)
+    ips.set_pnacc(ips)
     ips.vx, ips.wx = ips.wx, ips.vx
     ips.vy, ips.wy = ips.wy, ips.vy
     ips.vz, ips.wz = ips.wz, ips.vz
@@ -136,7 +130,7 @@ def kick_pn(ips, jps, tau):
     ips.pn_kick_lmom(tau / 2)
     ips.pn_kick_amom(tau / 2)
 
-    ips.set_pnacc(jps)
+    ips.set_pnacc(ips)
     ips.wx += (ips.ax + ips.pnax) * tau / 2
     ips.wy += (ips.ay + ips.pnay) * tau / 2
     ips.wz += (ips.az + ips.pnaz) * tau / 2
@@ -152,7 +146,7 @@ def drift(ips, tau):
     """Drift operator.
 
     """
-    if INCLUDE_PN_CORRECTIONS:
+    if ips.include_pn_corrections:
         return drift_pn(ips, tau)
     return drift_n(ips, tau)
 
@@ -161,330 +155,813 @@ def drift(ips, tau):
 # kick
 #
 @timings
-def kick(ips, jps, tau, pn):
+def kick(ips, tau):
     """Kick operator.
 
     """
-    if pn and INCLUDE_PN_CORRECTIONS:
-        return kick_pn(ips, jps, tau)
-    return kick_n(ips, jps, tau)
+    ips.set_acc(ips)
+    if ips.include_pn_corrections:
+        return kick_pn(ips, tau)
+    return kick_n(ips, tau)
 
 
 #
-# kick_sf
+# sf_drift
 #
 @timings
-def kick_sf(slow, fast, tau):
-    """Slow<->Fast Kick operator.
+def sf_drift(slow, fast, tau, evolve, recurse, bridge):
+    """Slow<->Fast Drift operator.
 
     """
-    if slow.n and fast.n:
-        slow = kick(slow, fast, tau, pn=True)
-        fast = kick(fast, slow, tau, pn=True)
+    slow = evolve(slow, tau)
+    fast = recurse(fast, tau, evolve, bridge)
     return slow, fast
 
 
 #
-# dkd21 - REF.: Yoshida, Phys. Lett. A 150 (1990)
+# sf_kick
 #
-dkd21_coefs = ([1.0],
-               [0.5])
-
-
 @timings
-def base_dkd21(ips, tau):
-    """Standard dkd21 operator.
+def sf_kick(slow, fast, tau):
+    """Slow<->Fast Kick operator.
 
     """
-    if ips.n == 0:
+    if slow.n and fast.n:
+        slow.set_acc(fast)
+        fast.set_acc(slow)
+        if slow.include_pn_corrections:
+            slow.set_pnacc(fast)
+            fast.set_pnacc(slow)
+            slow.wx += (slow.ax + slow.pnax) * tau / 2
+            slow.wy += (slow.ay + slow.pnay) * tau / 2
+            slow.wz += (slow.az + slow.pnaz) * tau / 2
+            fast.wx += (fast.ax + fast.pnax) * tau / 2
+            fast.wy += (fast.ay + fast.pnay) * tau / 2
+            fast.wz += (fast.az + fast.pnaz) * tau / 2
+
+            slow.vx, slow.wx = slow.wx, slow.vx
+            slow.vy, slow.wy = slow.wy, slow.vy
+            slow.vz, slow.wz = slow.wz, slow.vz
+            fast.vx, fast.wx = fast.wx, fast.vx
+            fast.vy, fast.wy = fast.wy, fast.vy
+            fast.vz, fast.wz = fast.wz, fast.vz
+            slow.set_pnacc(fast)
+            fast.set_pnacc(slow)
+            slow.vx, slow.wx = slow.wx, slow.vx
+            slow.vy, slow.wy = slow.wy, slow.vy
+            slow.vz, slow.wz = slow.wz, slow.vz
+            fast.vx, fast.wx = fast.wx, fast.vx
+            fast.vy, fast.wy = fast.wy, fast.vy
+            fast.vz, fast.wz = fast.wz, fast.vz
+
+            slow.pn_kick_ke(tau / 2)
+            slow.pn_kick_lmom(tau / 2)
+            slow.pn_kick_amom(tau / 2)
+            fast.pn_kick_ke(tau / 2)
+            fast.pn_kick_lmom(tau / 2)
+            fast.pn_kick_amom(tau / 2)
+
+            slow.vx += (slow.ax + slow.pnax) * tau
+            slow.vy += (slow.ay + slow.pnay) * tau
+            slow.vz += (slow.az + slow.pnaz) * tau
+            fast.vx += (fast.ax + fast.pnax) * tau
+            fast.vy += (fast.ay + fast.pnay) * tau
+            fast.vz += (fast.az + fast.pnaz) * tau
+
+            slow.pn_kick_ke(tau / 2)
+            slow.pn_kick_lmom(tau / 2)
+            slow.pn_kick_amom(tau / 2)
+            fast.pn_kick_ke(tau / 2)
+            fast.pn_kick_lmom(tau / 2)
+            fast.pn_kick_amom(tau / 2)
+
+            slow.set_pnacc(fast)
+            fast.set_pnacc(slow)
+            slow.wx += (slow.ax + slow.pnax) * tau / 2
+            slow.wy += (slow.ay + slow.pnay) * tau / 2
+            slow.wz += (slow.az + slow.pnaz) * tau / 2
+            fast.wx += (fast.ax + fast.pnax) * tau / 2
+            fast.wy += (fast.ay + fast.pnay) * tau / 2
+            fast.wz += (fast.az + fast.pnaz) * tau / 2
+        else:
+            slow = kick_n(slow, tau)
+            fast = kick_n(fast, tau)
+    return slow, fast
+
+
+#
+# SIA21
+#
+class SIA21(object):
+    # REF.: Yoshida, Phys. Lett. A 150 (1990)
+    coefs = ([1.0],
+             [0.5])
+
+    @staticmethod
+    @timings
+    def dkd(ips, tau):
+        """Standard SIA21 DKD-type propagator.
+
+        """
+        if ips.n == 0:
+            return ips
+
+        if ips.n == 1:
+            return drift(ips, tau)
+
+        k, d = SIA21.coefs
+
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+
         return ips
 
-    if ips.n == 1:
-        return drift(ips, tau)
+    @staticmethod
+    @timings
+    def kdk(ips, tau):
+        """Standard SIA21 KDK-type propagator.
 
-    k, d = dkd21_coefs
+        """
+        if ips.n == 0:
+            return ips
 
-    ips = drift(ips, d[0] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[0] * tau)
+        if ips.n == 1:
+            return drift(ips, tau)
 
-    return ips
+        d, k = SIA21.coefs
 
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
 
-#
-# dkd22 - REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
-#
-dkd22_coefs = ([0.5],
-               [0.1931833275037836,
-                0.6136333449924328])
-
-
-@timings
-def base_dkd22(ips, tau):
-    """Standard dkd22 operator.
-
-    """
-    if ips.n == 0:
         return ips
 
-    if ips.n == 1:
-        return drift(ips, tau)
+    @staticmethod
+    @timings
+    def bridge_sf(slow, fast, tau, evolve, recurse):
+        """
 
-    k, d = dkd22_coefs
-
-    ips = drift(ips, d[0] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[0] * tau)
-
-    return ips
+        """
+        k, d = SIA21.coefs
+        erb = evolve, recurse, SIA21.bridge_sf
+        #
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        #
+        return slow, fast
 
 
 #
-# dkd43 - REF.: Yoshida, Phys. Lett. A 150 (1990)
+# SIA22
 #
-dkd43_coefs = ([1.3512071919596575,
-                -1.7024143839193150],
-               [0.6756035959798288,
-                -0.17560359597982877])
+class SIA22(object):
+    # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
+    coefs = ([0.5],
+             [0.1931833275037836,
+              0.6136333449924328])
 
+    @staticmethod
+    @timings
+    def dkd(ips, tau):
+        """Standard SIA22 DKD-type propagator.
 
-@timings
-def base_dkd43(ips, tau):
-    """Standard dkd43 operator.
+        """
+        if ips.n == 0:
+            return ips
 
-    """
-    if ips.n == 0:
+        if ips.n == 1:
+            return drift(ips, tau)
+
+        k, d = SIA22.coefs
+
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+
         return ips
 
-    if ips.n == 1:
-        return drift(ips, tau)
+    @staticmethod
+    @timings
+    def kdk(ips, tau):
+        """Standard SIA22 KDK-type propagator.
 
-    k, d = dkd43_coefs
+        """
+        if ips.n == 0:
+            return ips
 
-    ips = drift(ips, d[0] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[1] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[0] * tau)
+        if ips.n == 1:
+            return drift(ips, tau)
 
-    return ips
+        d, k = SIA22.coefs
 
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
 
-#
-# dkd44 - REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
-#
-dkd44_coefs = ([0.7123418310626056,
-                -0.21234183106260562],
-               [0.1786178958448091,
-                -0.06626458266981843,
-                0.7752933736500186])
-
-
-@timings
-def base_dkd44(ips, tau):
-    """Standard dkd44 operator.
-
-    """
-    if ips.n == 0:
         return ips
 
-    if ips.n == 1:
-        return drift(ips, tau)
+    @staticmethod
+    @timings
+    def bridge_sf(slow, fast, tau, evolve, recurse):
+        """
 
-    k, d = dkd44_coefs
-
-    ips = drift(ips, d[0] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[1] * tau, pn=True)
-    ips = drift(ips, d[2] * tau)
-    ips = kick(ips, ips, k[1] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[0] * tau)
-
-    return ips
+        """
+        k, d = SIA22.coefs
+        erb = evolve, recurse, SIA22.bridge_sf
+        #
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        #
+        return slow, fast
 
 
 #
-# dkd45 - REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
+# SIA43
 #
-dkd45_coefs = ([-0.0844296195070715,
-                0.354900057157426,
-                0.459059124699291],
-               [0.2750081212332419,
-                -0.1347950099106792,
-                0.35978688867743724])
+class SIA43(object):
+    # REF.: Yoshida, Phys. Lett. A 150 (1990)
+    coefs = ([1.3512071919596575,
+              -1.7024143839193150],
+             [0.6756035959798288,
+              -0.17560359597982877])
 
+    @staticmethod
+    @timings
+    def dkd(ips, tau):
+        """Standard SIA43 DKD-type propagator.
 
-@timings
-def base_dkd45(ips, tau):
-    """Standard dkd45 operator.
+        """
+        if ips.n == 0:
+            return ips
 
-    """
-    if ips.n == 0:
+        if ips.n == 1:
+            return drift(ips, tau)
+
+        k, d = SIA43.coefs
+
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+
         return ips
 
-    if ips.n == 1:
-        return drift(ips, tau)
+    @staticmethod
+    @timings
+    def kdk(ips, tau):
+        """Standard SIA43 KDK-type propagator.
 
-    k, d = dkd45_coefs
+        """
+        if ips.n == 0:
+            return ips
 
-    ips = drift(ips, d[0] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[1] * tau, pn=True)
-    ips = drift(ips, d[2] * tau)
-    ips = kick(ips, ips, k[2] * tau, pn=True)
-    ips = drift(ips, d[2] * tau)
-    ips = kick(ips, ips, k[1] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[0] * tau)
+        if ips.n == 1:
+            return drift(ips, tau)
 
-    return ips
+        d, k = SIA43.coefs
 
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
 
-#
-# dkd46 - REF.: Blanes & Moan, J. Comp. Appl. Math. 142 (2002)
-#
-dkd46_coefs = ([0.209515106613362,
-                -0.143851773179818,
-                0.434336666566456],
-               [0.0792036964311957,
-                0.353172906049774,
-                -0.0420650803577195,
-                0.21937695575349958])
-
-
-@timings
-def base_dkd46(ips, tau):
-    """Standard dkd46 operator.
-
-    """
-    if ips.n == 0:
         return ips
 
-    if ips.n == 1:
-        return drift(ips, tau)
+    @staticmethod
+    @timings
+    def bridge_sf(slow, fast, tau, evolve, recurse):
+        """
 
-    k, d = dkd46_coefs
-
-    ips = drift(ips, d[0] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[1] * tau, pn=True)
-    ips = drift(ips, d[2] * tau)
-    ips = kick(ips, ips, k[2] * tau, pn=True)
-    ips = drift(ips, d[3] * tau)
-    ips = kick(ips, ips, k[2] * tau, pn=True)
-    ips = drift(ips, d[2] * tau)
-    ips = kick(ips, ips, k[1] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[0] * tau)
-
-    return ips
+        """
+        k, d = SIA43.coefs
+        erb = evolve, recurse, SIA43.bridge_sf
+        #
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        #
+        return slow, fast
 
 
 #
-# dkd67 - REF.: Yoshida, Phys. Lett. A 150 (1990)
+# SIA44
 #
-dkd67_coefs = ([0.7845136104775573,
-                0.23557321335935813,
-                -1.177679984178871,
-                1.3151863206839112],
-               [0.39225680523877865,
-                0.5100434119184577,
-                -0.47105338540975644,
-                0.06875316825252015])
+class SIA44(object):
+    # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
+    coefs = ([0.7123418310626056,
+              -0.21234183106260562],
+             [0.1786178958448091,
+              -0.06626458266981843,
+              0.7752933736500186])
 
+    @staticmethod
+    @timings
+    def dkd(ips, tau):
+        """Standard SIA44 DKD-type propagator.
 
-@timings
-def base_dkd67(ips, tau):
-    """Standard dkd67 operator.
+        """
+        if ips.n == 0:
+            return ips
 
-    """
-    if ips.n == 0:
+        if ips.n == 1:
+            return drift(ips, tau)
+
+        k, d = SIA44.coefs
+
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+
         return ips
 
-    if ips.n == 1:
-        return drift(ips, tau)
+    @staticmethod
+    @timings
+    def kdk(ips, tau):
+        """Standard SIA44 KDK-type propagator.
 
-    k, d = dkd67_coefs
+        """
+        if ips.n == 0:
+            return ips
 
-    ips = drift(ips, d[0] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[1] * tau, pn=True)
-    ips = drift(ips, d[2] * tau)
-    ips = kick(ips, ips, k[2] * tau, pn=True)
-    ips = drift(ips, d[3] * tau)
-    ips = kick(ips, ips, k[3] * tau, pn=True)
-    ips = drift(ips, d[3] * tau)
-    ips = kick(ips, ips, k[2] * tau, pn=True)
-    ips = drift(ips, d[2] * tau)
-    ips = kick(ips, ips, k[1] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[0] * tau)
+        if ips.n == 1:
+            return drift(ips, tau)
 
-    return ips
+        d, k = SIA44.coefs
 
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
 
-#
-# dkd69 - REF.: Kahan & Li, Math. Comput. 66 (1997)
-#
-dkd69_coefs = ([0.39103020330868477,
-                0.334037289611136,
-                -0.7062272811875614,
-                0.08187754964805945,
-                0.7985644772393624],
-               [0.19551510165434238,
-                0.3625337464599104,
-                -0.1860949957882127,
-                -0.31217486576975095,
-                0.44022101344371095])
-
-
-@timings
-def base_dkd69(ips, tau):
-    """Standard dkd69 operator.
-
-    """
-    if ips.n == 0:
         return ips
 
-    if ips.n == 1:
-        return drift(ips, tau)
+    @staticmethod
+    @timings
+    def bridge_sf(slow, fast, tau, evolve, recurse):
+        """
 
-    k, d = dkd69_coefs
+        """
+        k, d = SIA44.coefs
+        erb = evolve, recurse, SIA44.bridge_sf
+        #
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        #
+        return slow, fast
 
-    ips = drift(ips, d[0] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[1] * tau, pn=True)
-    ips = drift(ips, d[2] * tau)
-    ips = kick(ips, ips, k[2] * tau, pn=True)
-    ips = drift(ips, d[3] * tau)
-    ips = kick(ips, ips, k[3] * tau, pn=True)
-    ips = drift(ips, d[4] * tau)
-    ips = kick(ips, ips, k[4] * tau, pn=True)
-    ips = drift(ips, d[4] * tau)
-    ips = kick(ips, ips, k[3] * tau, pn=True)
-    ips = drift(ips, d[3] * tau)
-    ips = kick(ips, ips, k[2] * tau, pn=True)
-    ips = drift(ips, d[2] * tau)
-    ips = kick(ips, ips, k[1] * tau, pn=True)
-    ips = drift(ips, d[1] * tau)
-    ips = kick(ips, ips, k[0] * tau, pn=True)
-    ips = drift(ips, d[0] * tau)
 
-    return ips
+#
+# SIA45
+#
+class SIA45(object):
+    # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
+    coefs = ([-0.0844296195070715,
+              0.354900057157426,
+              0.459059124699291],
+             [0.2750081212332419,
+              -0.1347950099106792,
+              0.35978688867743724])
+
+    @staticmethod
+    @timings
+    def dkd(ips, tau):
+        """Standard SIA45 DKD-type propagator.
+
+        """
+        if ips.n == 0:
+            return ips
+
+        if ips.n == 1:
+            return drift(ips, tau)
+
+        k, d = SIA45.coefs
+
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+
+        return ips
+
+    @staticmethod
+    @timings
+    def kdk(ips, tau):
+        """Standard SIA45 KDK-type propagator.
+
+        """
+        if ips.n == 0:
+            return ips
+
+        if ips.n == 1:
+            return drift(ips, tau)
+
+        d, k = SIA45.coefs
+
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
+
+        return ips
+
+    @staticmethod
+    @timings
+    def bridge_sf(slow, fast, tau, evolve, recurse):
+        """
+
+        """
+        k, d = SIA45.coefs
+        erb = evolve, recurse, SIA45.bridge_sf
+        #
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        #
+        return slow, fast
+
+
+#
+# SIA46
+#
+class SIA46(object):
+    # REF.: Blanes & Moan, J. Comp. Appl. Math. 142 (2002)
+    coefs = ([0.209515106613362,
+              -0.143851773179818,
+              0.434336666566456],
+             [0.0792036964311957,
+              0.353172906049774,
+              -0.0420650803577195,
+              0.21937695575349958])
+
+    @staticmethod
+    @timings
+    def dkd(ips, tau):
+        """Standard SIA46 DKD-type propagator.
+
+        """
+        if ips.n == 0:
+            return ips
+
+        if ips.n == 1:
+            return drift(ips, tau)
+
+        k, d = SIA46.coefs
+
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[3] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+
+        return ips
+
+    @staticmethod
+    @timings
+    def kdk(ips, tau):
+        """Standard SIA46 KDK-type propagator.
+
+        """
+        if ips.n == 0:
+            return ips
+
+        if ips.n == 1:
+            return drift(ips, tau)
+
+        d, k = SIA46.coefs
+
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[3] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
+
+        return ips
+
+    @staticmethod
+    @timings
+    def bridge_sf(slow, fast, tau, evolve, recurse):
+        """
+
+        """
+        k, d = SIA46.coefs
+        erb = evolve, recurse, SIA46.bridge_sf
+        #
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        #
+        return slow, fast
+
+
+#
+# SIA67
+#
+class SIA67(object):
+    # REF.: Yoshida, Phys. Lett. A 150 (1990)
+    coefs = ([0.7845136104775573,
+              0.23557321335935813,
+              -1.177679984178871,
+              1.3151863206839112],
+             [0.39225680523877865,
+              0.5100434119184577,
+              -0.47105338540975644,
+              0.06875316825252015])
+
+    @staticmethod
+    @timings
+    def dkd(ips, tau):
+        """Standard SIA67 DKD-type propagator.
+
+        """
+        if ips.n == 0:
+            return ips
+
+        if ips.n == 1:
+            return drift(ips, tau)
+
+        k, d = SIA67.coefs
+
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[3] * tau)
+        ips = kick(ips, k[3] * tau)
+        ips = drift(ips, d[3] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+
+        return ips
+
+    @staticmethod
+    @timings
+    def kdk(ips, tau):
+        """Standard SIA67 KDK-type propagator.
+
+        """
+        if ips.n == 0:
+            return ips
+
+        if ips.n == 1:
+            return drift(ips, tau)
+
+        d, k = SIA67.coefs
+
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[3] * tau)
+        ips = drift(ips, d[3] * tau)
+        ips = kick(ips, k[3] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
+
+        return ips
+
+    @staticmethod
+    @timings
+    def bridge_sf(slow, fast, tau, evolve, recurse):
+        """
+
+        """
+        k, d = SIA67.coefs
+        erb = evolve, recurse, SIA67.bridge_sf
+        #
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[3] * tau)
+        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        #
+        return slow, fast
+
+
+#
+# SIA69
+#
+class SIA69(object):
+    # REF.: Kahan & Li, Math. Comput. 66 (1997)
+    coefs = ([0.39103020330868477,
+              0.334037289611136,
+              -0.7062272811875614,
+              0.08187754964805945,
+              0.7985644772393624],
+             [0.19551510165434238,
+              0.3625337464599104,
+              -0.1860949957882127,
+              -0.31217486576975095,
+              0.44022101344371095])
+
+    @staticmethod
+    @timings
+    def dkd(ips, tau):
+        """Standard SIA69 DKD-type propagator.
+
+        """
+        if ips.n == 0:
+            return ips
+
+        if ips.n == 1:
+            return drift(ips, tau)
+
+        k, d = SIA69.coefs
+
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[3] * tau)
+        ips = kick(ips, k[3] * tau)
+        ips = drift(ips, d[4] * tau)
+        ips = kick(ips, k[4] * tau)
+        ips = drift(ips, d[4] * tau)
+        ips = kick(ips, k[3] * tau)
+        ips = drift(ips, d[3] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+
+        return ips
+
+    @staticmethod
+    @timings
+    def kdk(ips, tau):
+        """Standard SIA69 KDK-type propagator.
+
+        """
+        if ips.n == 0:
+            return ips
+
+        if ips.n == 1:
+            return drift(ips, tau)
+
+        d, k = SIA69.coefs
+
+        ips = kick(ips, k[0] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[3] * tau)
+        ips = drift(ips, d[3] * tau)
+        ips = kick(ips, k[4] * tau)
+        ips = drift(ips, d[4] * tau)
+        ips = kick(ips, k[4] * tau)
+        ips = drift(ips, d[3] * tau)
+        ips = kick(ips, k[3] * tau)
+        ips = drift(ips, d[2] * tau)
+        ips = kick(ips, k[2] * tau)
+        ips = drift(ips, d[1] * tau)
+        ips = kick(ips, k[1] * tau)
+        ips = drift(ips, d[0] * tau)
+        ips = kick(ips, k[0] * tau)
+
+        return ips
+
+    @staticmethod
+    @timings
+    def bridge_sf(slow, fast, tau, evolve, recurse):
+        """
+
+        """
+        k, d = SIA69.coefs
+        erb = evolve, recurse, SIA69.bridge_sf
+        #
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[3] * tau)
+        slow, fast = sf_drift(slow, fast, d[4] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[4] * tau)
+        slow, fast = sf_drift(slow, fast, d[4] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[3] * tau)
+        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * tau)
+        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * tau)
+        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * tau)
+        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        #
+        return slow, fast
 
 
 @decallmethods(timings)
@@ -492,14 +969,22 @@ class SIA(Base):
     """
 
     """
-    PROVIDED_METHODS = ['sia.dkd21std', 'sia.dkd21shr', 'sia.dkd21hcc',
-                        'sia.dkd22std', 'sia.dkd22shr', 'sia.dkd22hcc',
-                        'sia.dkd43std', 'sia.dkd43shr', 'sia.dkd43hcc',
-                        'sia.dkd44std', 'sia.dkd44shr', 'sia.dkd44hcc',
-                        'sia.dkd45std', 'sia.dkd45shr', 'sia.dkd45hcc',
-                        'sia.dkd46std', 'sia.dkd46shr', 'sia.dkd46hcc',
-                        'sia.dkd67std', 'sia.dkd67shr', 'sia.dkd67hcc',
-                        'sia.dkd69std', 'sia.dkd69shr', 'sia.dkd69hcc',
+    PROVIDED_METHODS = ['sia21s.dkd', 'sia21a.dkd', 'sia21h.dkd',
+                        'sia21s.kdk', 'sia21a.kdk', 'sia21h.kdk',
+                        'sia22s.dkd', 'sia22a.dkd', 'sia22h.dkd',
+                        'sia22s.kdk', 'sia22a.kdk', 'sia22h.kdk',
+                        'sia43s.dkd', 'sia43a.dkd', 'sia43h.dkd',
+                        'sia43s.kdk', 'sia43a.kdk', 'sia43h.kdk',
+                        'sia44s.dkd', 'sia44a.dkd', 'sia44h.dkd',
+                        'sia44s.kdk', 'sia44a.kdk', 'sia44h.kdk',
+                        'sia45s.dkd', 'sia45a.dkd', 'sia45h.dkd',
+                        'sia45s.kdk', 'sia45a.kdk', 'sia45h.kdk',
+                        'sia46s.dkd', 'sia46a.dkd', 'sia46h.dkd',
+                        'sia46s.kdk', 'sia46a.kdk', 'sia46h.kdk',
+                        'sia67s.dkd', 'sia67a.dkd', 'sia67h.dkd',
+                        'sia67s.kdk', 'sia67a.kdk', 'sia67h.kdk',
+                        'sia69s.dkd', 'sia69a.dkd', 'sia69h.dkd',
+                        'sia69s.kdk', 'sia69a.kdk', 'sia69h.kdk',
                         ]
 
     def __init__(self, eta, time, ps, method, **kwargs):
@@ -508,8 +993,6 @@ class SIA(Base):
         """
         super(SIA, self).__init__(eta, time, ps, **kwargs)
         self.method = method
-        global INCLUDE_PN_CORRECTIONS
-        INCLUDE_PN_CORRECTIONS = self.include_pn_corrections
 
     def initialize(self, t_end):
         """
@@ -519,13 +1002,13 @@ class SIA(Base):
                     self.method)
 
         ps = self.ps
-        if INCLUDE_PN_CORRECTIONS:
+        if ps.include_pn_corrections:
             ps.register_auxiliary_attribute("wx", ctype.REAL)
             ps.register_auxiliary_attribute("wy", ctype.REAL)
             ps.register_auxiliary_attribute("wz", ctype.REAL)
-            ps.wx[:] = ps.vx
-            ps.wy[:] = ps.vy
-            ps.wz[:] = ps.vz
+            ps.wx[...] = ps.vx
+            ps.wy[...] = ps.vy
+            ps.wz[...] = ps.vz
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)
@@ -553,42 +1036,64 @@ class SIA(Base):
         """
 
         """
-        if "std" in self.method:
+        if "s." in self.method:
             self.update_tstep = False
             self.shared_tstep = True
-        elif "shr" in self.method:
+        elif "a." in self.method:
             self.update_tstep = True
             self.shared_tstep = True
-        elif "hcc" in self.method:
+        elif "h." in self.method:
             self.update_tstep = True
             self.shared_tstep = False
         else:
             raise ValueError("Unexpected method: {0}".format(self.method))
 
-        if "dkd21" in self.method:
-            return self.recurse(ps, tau, self.sfdkd21)
-        elif "dkd22" in self.method:
-            return self.recurse(ps, tau, self.sfdkd22)
-        elif "dkd43" in self.method:
-            return self.recurse(ps, tau, self.sfdkd43)
-        elif "dkd44" in self.method:
-            return self.recurse(ps, tau, self.sfdkd44)
-        elif "dkd45" in self.method:
-            return self.recurse(ps, tau, self.sfdkd45)
-        elif "dkd46" in self.method:
-            return self.recurse(ps, tau, self.sfdkd46)
-        elif "dkd67" in self.method:
-            return self.recurse(ps, tau, self.sfdkd67)
-        elif "dkd69" in self.method:
-            return self.recurse(ps, tau, self.sfdkd69)
+        if "dkd" in self.method:
+            if "sia21" in self.method:
+                return self.recurse(ps, tau, SIA21.dkd, SIA21.bridge_sf)
+            elif "sia22" in self.method:
+                return self.recurse(ps, tau, SIA22.dkd, SIA22.bridge_sf)
+            elif "sia43" in self.method:
+                return self.recurse(ps, tau, SIA43.dkd, SIA43.bridge_sf)
+            elif "sia44" in self.method:
+                return self.recurse(ps, tau, SIA44.dkd, SIA44.bridge_sf)
+            elif "sia45" in self.method:
+                return self.recurse(ps, tau, SIA45.dkd, SIA45.bridge_sf)
+            elif "sia46" in self.method:
+                return self.recurse(ps, tau, SIA46.dkd, SIA46.bridge_sf)
+            elif "sia67" in self.method:
+                return self.recurse(ps, tau, SIA67.dkd, SIA67.bridge_sf)
+            elif "sia69" in self.method:
+                return self.recurse(ps, tau, SIA69.dkd, SIA69.bridge_sf)
+            else:
+                raise ValueError("Unexpected method: {0}".format(self.method))
+        elif "kdk" in self.method:
+            if "sia21" in self.method:
+                return self.recurse(ps, tau, SIA21.kdk, SIA21.bridge_sf)
+            elif "sia22" in self.method:
+                return self.recurse(ps, tau, SIA22.kdk, SIA22.bridge_sf)
+            elif "sia43" in self.method:
+                return self.recurse(ps, tau, SIA43.kdk, SIA43.bridge_sf)
+            elif "sia44" in self.method:
+                return self.recurse(ps, tau, SIA44.kdk, SIA44.bridge_sf)
+            elif "sia45" in self.method:
+                return self.recurse(ps, tau, SIA45.kdk, SIA45.bridge_sf)
+            elif "sia46" in self.method:
+                return self.recurse(ps, tau, SIA46.kdk, SIA46.bridge_sf)
+            elif "sia67" in self.method:
+                return self.recurse(ps, tau, SIA67.kdk, SIA67.bridge_sf)
+            elif "sia69" in self.method:
+                return self.recurse(ps, tau, SIA69.kdk, SIA69.bridge_sf)
+            else:
+                raise ValueError("Unexpected method: {0}".format(self.method))
         else:
             raise ValueError("Unexpected method: {0}".format(self.method))
 
-    def recurse(self, ps, tau, sfdkdxy):
+    def recurse(self, ps, tau, evolve, bridge_sf):
         """
 
         """
-        if ps.n == 0:
+        if not ps.n:
             return ps
 
         flag = -1
@@ -600,13 +1105,13 @@ class SIA(Base):
 
         slow, fast = split(ps, abs(ps.tstep) > flag*abs(tau))
 
-        slow, fast = sfdkdxy(slow, fast, tau, self.recurse)
+        slow, fast = bridge_sf(slow, fast, tau, evolve, self.recurse)
 
         if fast.n == 0:
             type(ps).t_curr += tau
 
         if slow.n:
-            slow.tstep[:] = tau
+            slow.tstep[...] = tau
             slow.time += tau
             slow.nstep += 1
             if self.dumpper:
@@ -619,348 +1124,6 @@ class SIA(Base):
                     self.viewer.show_event(slow[slc])
 
         return join(slow, fast)
-
-    #
-    # dkd21[std,shr,hcc] method -- D.K.D
-    #
-    def sfdkd21(self, slow, fast, tau, recurse):
-        """
-
-        """
-        k, d = dkd21_coefs
-        #
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd21)
-        slow = base_dkd21(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd21)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd21)
-        slow = base_dkd21(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd21)
-        #
-        return slow, fast
-
-    #
-    # dkd22[std,shr,hcc] method -- D.K.D.K.D
-    #
-    def sfdkd22(self, slow, fast, tau, recurse):
-        """
-
-        """
-        k, d = dkd22_coefs
-        #
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd22)
-        slow = base_dkd22(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd22)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd22)
-        slow = base_dkd22(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd22)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd22)
-        slow = base_dkd22(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd22)
-        #
-        return slow, fast
-
-    #
-    # dkd43[std,shr,hcc] method -- D.K.D.K.D.K.D
-    #
-    def sfdkd43(self, slow, fast, tau, recurse):
-        """
-
-        """
-        k, d = dkd43_coefs
-        #
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd43)
-        slow = base_dkd43(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd43)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd43)
-        slow = base_dkd43(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd43)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd43)
-        slow = base_dkd43(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd43)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd43)
-        slow = base_dkd43(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd43)
-        #
-        return slow, fast
-
-    #
-    # dkd44[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D
-    #
-    def sfdkd44(self, slow, fast, tau, recurse):
-        """
-
-        """
-        k, d = dkd44_coefs
-        #
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd44)
-        slow = base_dkd44(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd44)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd44)
-        slow = base_dkd44(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd44)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd44)
-        slow = base_dkd44(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd44)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd44)
-        slow = base_dkd44(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd44)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd44)
-        slow = base_dkd44(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd44)
-        #
-        return slow, fast
-
-    #
-    # dkd45[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D
-    #
-    def sfdkd45(self, slow, fast, tau, recurse):
-        """
-
-        """
-        k, d = dkd45_coefs
-        #
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd45)
-        slow = base_dkd45(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd45)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd45)
-        slow = base_dkd45(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd45)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd45)
-        slow = base_dkd45(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd45)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd45)
-        slow = base_dkd45(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd45)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd45)
-        slow = base_dkd45(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd45)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd45)
-        slow = base_dkd45(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd45)
-        #
-        return slow, fast
-
-    #
-    # dkd46[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D
-    #
-    def sfdkd46(self, slow, fast, tau, recurse):
-        """
-
-        """
-        k, d = dkd46_coefs
-        #
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd46)
-        slow = base_dkd46(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd46)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd46)
-        slow = base_dkd46(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd46)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd46)
-        slow = base_dkd46(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd46)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[3] * tau / 2, self.sfdkd46)
-        slow = base_dkd46(slow, d[3] * tau)
-        fast = recurse(fast, d[3] * tau / 2, self.sfdkd46)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd46)
-        slow = base_dkd46(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd46)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd46)
-        slow = base_dkd46(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd46)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd46)
-        slow = base_dkd46(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd46)
-        #
-        return slow, fast
-
-    #
-    # dkd67[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
-    #
-    def sfdkd67(self, slow, fast, tau, recurse):
-        """
-
-        """
-        k, d = dkd67_coefs
-        #
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd67)
-        slow = base_dkd67(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd67)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd67)
-        slow = base_dkd67(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd67)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd67)
-        slow = base_dkd67(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd67)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[3] * tau / 2, self.sfdkd67)
-        slow = base_dkd67(slow, d[3] * tau)
-        fast = recurse(fast, d[3] * tau / 2, self.sfdkd67)
-
-        slow, fast = kick_sf(slow, fast, k[3] * tau)
-
-        fast = recurse(fast, d[3] * tau / 2, self.sfdkd67)
-        slow = base_dkd67(slow, d[3] * tau)
-        fast = recurse(fast, d[3] * tau / 2, self.sfdkd67)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd67)
-        slow = base_dkd67(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd67)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd67)
-        slow = base_dkd67(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd67)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd67)
-        slow = base_dkd67(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd67)
-        #
-        return slow, fast
-
-    #
-    # dkd69[std,shr,hcc] method -- D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D.K.D
-    #
-    def sfdkd69(self, slow, fast, tau, recurse):
-        """
-
-        """
-        k, d = dkd69_coefs
-        #
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd69)
-        slow = base_dkd69(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd69)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd69)
-        slow = base_dkd69(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd69)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd69)
-        slow = base_dkd69(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd69)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[3] * tau / 2, self.sfdkd69)
-        slow = base_dkd69(slow, d[3] * tau)
-        fast = recurse(fast, d[3] * tau / 2, self.sfdkd69)
-
-        slow, fast = kick_sf(slow, fast, k[3] * tau)
-
-        fast = recurse(fast, d[4] * tau / 2, self.sfdkd69)
-        slow = base_dkd69(slow, d[4] * tau)
-        fast = recurse(fast, d[4] * tau / 2, self.sfdkd69)
-
-        slow, fast = kick_sf(slow, fast, k[4] * tau)
-
-        fast = recurse(fast, d[4] * tau / 2, self.sfdkd69)
-        slow = base_dkd69(slow, d[4] * tau)
-        fast = recurse(fast, d[4] * tau / 2, self.sfdkd69)
-
-        slow, fast = kick_sf(slow, fast, k[3] * tau)
-
-        fast = recurse(fast, d[3] * tau / 2, self.sfdkd69)
-        slow = base_dkd69(slow, d[3] * tau)
-        fast = recurse(fast, d[3] * tau / 2, self.sfdkd69)
-
-        slow, fast = kick_sf(slow, fast, k[2] * tau)
-
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd69)
-        slow = base_dkd69(slow, d[2] * tau)
-        fast = recurse(fast, d[2] * tau / 2, self.sfdkd69)
-
-        slow, fast = kick_sf(slow, fast, k[1] * tau)
-
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd69)
-        slow = base_dkd69(slow, d[1] * tau)
-        fast = recurse(fast, d[1] * tau / 2, self.sfdkd69)
-
-        slow, fast = kick_sf(slow, fast, k[0] * tau)
-
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd69)
-        slow = base_dkd69(slow, d[0] * tau)
-        fast = recurse(fast, d[0] * tau / 2, self.sfdkd69)
-        #
-        return slow, fast
 
 
 ########## end of file ##########
