@@ -11,7 +11,6 @@ import os
 from distutils.core import setup
 
 from tupan import version
-from tupan.lib import cffi_wrap
 
 
 package_data = {}
@@ -52,7 +51,6 @@ setup(
               'tupan.particles',
               'tupan.tests',
               ],
-    ext_modules=cffi_wrap.get_extensions(),
     package_data=package_data,
     scripts=['bin/tupan'],
     url='http://github.com/GuilhermeFerrari/Tupan',
