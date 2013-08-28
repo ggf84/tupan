@@ -19,7 +19,6 @@ from collections import namedtuple
 
 logger = logging.getLogger(__name__)
 
-
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, "src")
 
@@ -29,12 +28,13 @@ TMPDIR = os.path.join(tempfile.gettempdir(),
                           ".".join(str(i) for i in sys.version_info)))
 
 
-def get_lib(env):
+def make_lib(fptype):
     """
 
     """
+    prec = "single" if fptype == 'float' else "double"
     logger.debug("Building/Loading %s precision C extension module...",
-                 env.prec)
+                 prec)
 
     files = ("smoothing.c",
              "universal_kepler_solver.c",
@@ -52,7 +52,7 @@ def get_lib(env):
     s = []
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
         s.append("typedef unsigned int UINT;")
-        s.append("typedef {} REAL;".format(env.fptype))
+        s.append("typedef {} REAL;".format(fptype))
         s.append(fobj.read())
     source = "\n".join(s)
 
@@ -62,7 +62,7 @@ def get_lib(env):
 
     define_macros = []
     modulename = "libTupanSPcffi"
-    if env.fptype == "double":
+    if fptype == "double":
         define_macros.append(("DOUBLE", 1))
         modulename = modulename.replace("SP", "DP")
 
@@ -81,19 +81,25 @@ def get_lib(env):
     )
 
     logger.debug("done.")
-    return clib
+    return ffi, clib
+
+
+ffi = {}
+lib = {}
+ffi['single'], lib['single'] = make_lib('float')
+ffi['double'], lib['double'] = make_lib('double')
 
 
 class CKernel(object):
 
-    def __init__(self, env, ffi, kernel):
-        self.env = env
-        self.kernel = kernel
+    def __init__(self, prec, name):
+        self.kernel = getattr(lib[prec], name)
+        _ffi = ffi[prec]
 
         from_buffer = ctypes.c_char.from_buffer
         addressof = ctypes.addressof
-        icast = partial(ffi.cast, "UINT *")
-        rcast = partial(ffi.cast, "REAL *")
+        icast = partial(_ffi.cast, "UINT *")
+        rcast = partial(_ffi.cast, "REAL *")
 
         types = namedtuple("Types", ["c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])

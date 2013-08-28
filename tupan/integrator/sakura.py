@@ -9,7 +9,7 @@ TODO.
 from __future__ import print_function, division
 import logging
 from ..integrator import Base
-from ..lib import gravity
+from ..lib import extensions
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -27,7 +27,7 @@ def sakura_step(ps, tau):
     ps.ry += ps.vy * tau / 2
     ps.rz += ps.vz * tau / 2
 
-    gravity.sakura.calc(ps, ps, tau)
+    extensions.sakura.calc(ps, ps, tau)
     ps.rx += ps.drx
     ps.ry += ps.dry
     ps.rz += ps.drz

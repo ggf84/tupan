@@ -6,6 +6,7 @@ TODO.
 """
 
 
+from __future__ import division
 import os
 import logging
 import pyopencl as cl
@@ -17,17 +18,19 @@ from .utils import ctype
 
 logger = logging.getLogger(__name__)
 
-
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, "src")
 
+ctx = cl.create_some_context()
 
-def get_lib(env):
+
+def make_lib(fptype):
     """
 
     """
+    prec = "single" if fptype == 'float' else "double"
     logger.debug("Building/Loading %s precision CL extension module...",
-                 env.prec)
+                 prec)
 
     files = ("smoothing.c",
              "universal_kepler_solver.c",
@@ -51,32 +54,35 @@ def get_lib(env):
 
     # setting options
     options = " -I {path}".format(path=PATH)
-    if env.fptype == "double":
+    if fptype == "double":
         options += " -D DOUBLE"
     options += " -cl-fast-relaxed-math"
 #    options += " -cl-opt-disable"
 
     # building lib
-    env.ctx = cl.create_some_context()
-    program = cl.Program(env.ctx, src)
+    program = cl.Program(ctx, src)
     cllib = program.build(options=options)
 
     logger.debug("done.")
     return cllib
 
 
+lib = {}
+lib['single'] = make_lib('float')
+lib['double'] = make_lib('double')
+
+
 class CLKernel(object):
 
-    def __init__(self, env, kernel):
-        self.env = env
-        self.kernel = kernel
-        self.queue = cl.CommandQueue(self.env.ctx)
+    def __init__(self, prec, name):
+        self.kernel = getattr(lib[prec], name)
+        self.queue = cl.CommandQueue(ctx)
         self._gsize = None
 
         memf = cl.mem_flags
 #        flags = memf.READ_WRITE | memf.USE_HOST_PTR
         flags = memf.READ_WRITE | memf.COPY_HOST_PTR
-        clBuffer = partial(cl.Buffer, self.env.ctx, flags)
+        clBuffer = partial(cl.Buffer, ctx, flags)
 
         types = namedtuple("Types", ["c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])
@@ -102,7 +108,7 @@ class CLKernel(object):
 
     def allocate_local_memory(self, nbufs, dtype):
         itemsize = dtype.itemsize
-        dev = self.env.ctx.devices[0]
+        dev = ctx.devices[0]
 
         size0 = dev.local_mem_size // itemsize
         size1 = dev.max_work_group_size

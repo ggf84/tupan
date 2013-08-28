@@ -10,7 +10,7 @@ from __future__ import print_function
 import sys
 import unittest
 from collections import OrderedDict, defaultdict
-from tupan.lib import gravity
+from tupan.lib import extensions
 from tupan.lib.utils import ctype
 from tupan.lib.utils.timing import Timer
 
@@ -43,7 +43,7 @@ class TestCase1(unittest.TestCase):
         cls.ps = set_particles(128)
 
     def compare_result(self, kernel, ps, *args):
-        msg = ("gravity.{0}: max deviation of results "
+        msg = ("extensions.{0}: max deviation of results "
                "calculated using C(CPU) vs CL(device):")
         print(msg.format(kernel.__name__))
 
@@ -86,45 +86,45 @@ class TestCase1(unittest.TestCase):
 
     def test01(self):
         print("\n---------- test01 ----------")
-        self.compare_result(gravity.Phi, self.ps)
+        self.compare_result(extensions.Phi, self.ps)
 
     def test02(self):
         print("\n---------- test02 ----------")
-        self.compare_result(gravity.Acc, self.ps)
+        self.compare_result(extensions.Acc, self.ps)
 
     def test03(self):
         print("\n---------- test03 ----------")
-        self.compare_result(gravity.AccJerk, self.ps)
+        self.compare_result(extensions.AccJerk, self.ps)
 
     def test04(self):
         print("\n---------- test04 ----------")
-        self.compare_result(gravity.SnapCrackle, self.ps)
+        self.compare_result(extensions.SnapCrackle, self.ps)
 
     def test05(self):
         print("\n---------- test05 ----------")
         eta = 1.0/64
-        self.compare_result(gravity.Tstep, self.ps, eta)
+        self.compare_result(extensions.Tstep, self.ps, eta)
 
     def test06(self):
         print("\n---------- test06 ----------")
-        gravity.clight.pn_order = 7
-        gravity.clight.clight = 128
-        self.compare_result(gravity.PNAcc, self.ps)
+        extensions.clight.pn_order = 7
+        extensions.clight.clight = 128
+        self.compare_result(extensions.PNAcc, self.ps)
 
     def test07(self):
         print("\n---------- test07 ----------")
         dt = 1.0/64
-        self.compare_result(gravity.Sakura, self.ps, dt)
+        self.compare_result(extensions.Sakura, self.ps, dt)
 
     def test08(self):
         print("\n---------- test08 ----------")
         dt = 1.0/64
-        self.compare_result(gravity.NREG_X, self.ps, dt)
+        self.compare_result(extensions.NREG_X, self.ps, dt)
 
     def test09(self):
         print("\n---------- test09 ----------")
         dt = 1.0/64
-        self.compare_result(gravity.NREG_V, self.ps, dt)
+        self.compare_result(extensions.NREG_V, self.ps, dt)
 
 
 highN = True if "--highN" in sys.argv else False
@@ -140,7 +140,7 @@ class TestCase2(unittest.TestCase):
         cls.pslist = [set_particles(2**(i+1)) for i in range(imax)]
 
     def performance(self, kernel, pslist, *args):
-        msg = ("gravity.{0}: performance measurement:")
+        msg = ("extensions.{0}: performance measurement:")
         print(msg.format(kernel.__name__))
 
         krnlC = kernel("C", ctype.prec)
@@ -190,45 +190,45 @@ class TestCase2(unittest.TestCase):
 
     def test01(self):
         print("\n---------- test01 ----------")
-        self.performance(gravity.Phi, self.pslist)
+        self.performance(extensions.Phi, self.pslist)
 
     def test02(self):
         print("\n---------- test02 ----------")
-        self.performance(gravity.Acc, self.pslist)
+        self.performance(extensions.Acc, self.pslist)
 
     def test03(self):
         print("\n---------- test03 ----------")
-        self.performance(gravity.AccJerk, self.pslist)
+        self.performance(extensions.AccJerk, self.pslist)
 
     def test04(self):
         print("\n---------- test04 ----------")
-        self.performance(gravity.SnapCrackle, self.pslist)
+        self.performance(extensions.SnapCrackle, self.pslist)
 
     def test05(self):
         print("\n---------- test05 ----------")
         eta = 1.0/64
-        self.performance(gravity.Tstep, self.pslist, eta)
+        self.performance(extensions.Tstep, self.pslist, eta)
 
     def test06(self):
         print("\n---------- test06 ----------")
-        gravity.clight.pn_order = 7
-        gravity.clight.clight = 128
-        self.performance(gravity.PNAcc, self.pslist)
+        extensions.clight.pn_order = 7
+        extensions.clight.clight = 128
+        self.performance(extensions.PNAcc, self.pslist)
 
     def test07(self):
         print("\n---------- test07 ----------")
         dt = 1.0/64
-        self.performance(gravity.Sakura, self.pslist, dt)
+        self.performance(extensions.Sakura, self.pslist, dt)
 
     def test08(self):
         print("\n---------- test08 ----------")
         dt = 1.0/64
-        self.performance(gravity.NREG_X, self.pslist, dt)
+        self.performance(extensions.NREG_X, self.pslist, dt)
 
     def test09(self):
         print("\n---------- test09 ----------")
         dt = 1.0/64
-        self.performance(gravity.NREG_V, self.pslist, dt)
+        self.performance(extensions.NREG_V, self.pslist, dt)
 
 
 if __name__ == "__main__":

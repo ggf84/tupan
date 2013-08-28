@@ -9,7 +9,7 @@ TODO.
 from __future__ import print_function, division
 import logging
 from ..integrator import Base
-from ..lib import gravity
+from ..lib import extensions
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -24,7 +24,7 @@ def nreg_x(ps, dt):
 
     """
     mtot = ps.total_mass
-    gravity.nreg_x.calc(ps, ps, dt)
+    extensions.nreg_x.calc(ps, ps, dt)
     ps.rx[...] = ps.mrx / mtot
     ps.ry[...] = ps.mry / mtot
     ps.rz[...] = ps.mrz / mtot
@@ -50,7 +50,7 @@ def nreg_v(ps, dt):
 #                                         + ps.vy * ps.ay
 #                                         + ps.vz * ps.az)).sum()
     mtot = ps.total_mass
-    gravity.nreg_v.calc(ps, ps, dt)
+    extensions.nreg_v.calc(ps, ps, dt)
     ps.vx[...] = ps.mvx / mtot
     ps.vy[...] = ps.mvy / mtot
     ps.vz[...] = ps.mvz / mtot
