@@ -30,9 +30,9 @@ class Base(object):
                     "argument 'clight' when using 'pn_order' > 0."
                 )
             else:
-                from ..lib import gravity
-                gravity.clight.pn_order = pn_order
-                gravity.clight.clight = clight
+                from ..lib import extensions
+                extensions.clight.pn_order = pn_order
+                extensions.clight.clight = clight
                 type(ps).include_pn_corrections = True
 
         self.reporter = kwargs.pop("reporter", None)

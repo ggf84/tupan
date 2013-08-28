@@ -33,14 +33,6 @@ lib Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`gravity` Module
----------------------
-
-.. automodule:: tupan.lib.gravity
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Subpackages
 -----------
 

@@ -10,7 +10,7 @@ from __future__ import print_function
 import sys
 import copy
 import numpy as np
-from ..lib import gravity
+from ..lib import extensions
 from ..lib.utils import ctype
 from ..lib.utils.timing import decallmethods, timings
 
@@ -193,33 +193,33 @@ class NbodyMethods(object):
         """Set individual time-steps due to other particles.
 
         """
-        gravity.tstep.calc(self, ps, eta)
+        extensions.tstep.calc(self, ps, eta)
 
     def set_phi(self, ps):
         """Set individual gravitational potential due to other particles.
 
         """
-        gravity.phi.calc(self, ps)
+        extensions.phi.calc(self, ps)
 
     def set_acc(self, ps):
         """Set individual gravitational acceleration due to other particles.
 
         """
-        gravity.acc.calc(self, ps)
+        extensions.acc.calc(self, ps)
 
     def set_acc_jerk(self, ps):
         """Set individual gravitational acceleration and jerk due to other
         particles.
 
         """
-        gravity.acc_jerk.calc(self, ps)
+        extensions.acc_jerk.calc(self, ps)
 
     def set_snap_crackle(self, ps):
         """Set individual gravitational snap and crackle due to other
         particles.
 
         """
-        gravity.snap_crackle.calc(self, ps)
+        extensions.snap_crackle.calc(self, ps)
 
     ### miscellaneous methods
     def min_tstep(self):
@@ -327,7 +327,7 @@ class PNbodyMethods(NbodyMethods):
         other particles.
 
         """
-        gravity.pnacc.calc(self, ps)
+        extensions.pnacc.calc(self, ps)
 
     def pn_kick_ke(self, tau):
         """Kicks kinetic energy due to post-newtonian terms.
