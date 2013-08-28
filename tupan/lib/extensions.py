@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 
-"""
-This module implements a minimal class for gravitational interactions
-between particles in Newtonian and post-Newtonian approach.
+"""This module implements highlevel interfaces for C/CL-extensions.
+
 """
 
 
@@ -78,6 +77,7 @@ def get_kernel(name, backend, prec):
     return Kernel(prec, name)
 
 
+@timings
 def prepare_args(args, argtypes):
     return [argtype(arg) for (arg, argtype) in zip(args, argtypes)]
 
