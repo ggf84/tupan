@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 #
 
-"""
-TODO.
+"""This module implements the OpenCL backend to call CL-extensions.
+
 """
 
 
 from __future__ import division
 import os
+import sys
 import logging
+import getpass
 import pyopencl as cl
 from fractions import gcd
 from functools import partial
@@ -20,6 +22,12 @@ logger = logging.getLogger(__name__)
 
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, "src")
+
+CACHE_DIR = os.path.join(os.path.expanduser('~'),
+                         ".tupan",
+                         "pyopencl-cache-uid{0}-py{1}".format(
+                             getpass.getuser(),
+                             ".".join(str(i) for i in sys.version_info)))
 
 ctx = cl.create_some_context()
 
@@ -61,7 +69,7 @@ def make_lib(fptype):
 
     # building lib
     program = cl.Program(ctx, src)
-    cllib = program.build(options=options)
+    cllib = program.build(options=options, cache_dir=CACHE_DIR)
 
     logger.debug("done.")
     return cllib

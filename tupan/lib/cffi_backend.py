@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 
-"""
-TODO.
+"""This module implements the CFFI backend to call C-extensions.
+
 """
 
 
@@ -12,7 +12,6 @@ import cffi
 import ctypes
 import logging
 import getpass
-import tempfile
 from functools import partial
 from collections import namedtuple
 
@@ -22,10 +21,11 @@ logger = logging.getLogger(__name__)
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, "src")
 
-TMPDIR = os.path.join(tempfile.gettempdir(),
-                      "tupan-cffi-cache-uid{0}-py{1}".format(
-                          getpass.getuser(),
-                          ".".join(str(i) for i in sys.version_info)))
+CACHE_DIR = os.path.join(os.path.expanduser('~'),
+                         ".tupan",
+                         "cffi-cache-uid{0}-py{1}".format(
+                             getpass.getuser(),
+                             ".".join(str(i) for i in sys.version_info)))
 
 
 def make_lib(fptype):
@@ -71,7 +71,7 @@ def make_lib(fptype):
         #include "common.h"
         #include "libtupan.h"
         """,
-        tmpdir=TMPDIR,
+        tmpdir=CACHE_DIR,
         define_macros=define_macros,
         include_dirs=[PATH],
         libraries=["m"],
