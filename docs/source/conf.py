@@ -30,9 +30,9 @@ class Mock(object):
         return Mock()
 
 
-MOCK_MODULES = ["cffi", "cffi.FFI", "cffi.FFI.cdef", "h5py", "matplotlib", "numpy", "pyopencl",
-                "OpenGL", "OpenGL.GL", "OpenGL.GLU", "OpenGL.GLUT", "yaml", "scipy", "pygtk",
-                "gtk", "pygtk.require", "gtk.gtkgl"]
+MOCK_MODULES = ["cffi", "cffi.FFI", "cffi.FFI.cdef",
+                "h5py", "matplotlib", "numpy", "pyopencl",
+                "OpenGL", "OpenGL.GL", "OpenGL.GLUT", "yaml", "scipy"]
 for mod_name in MOCK_MODULES:
     try:
         __import__(mod_name)
@@ -79,7 +79,9 @@ copyright = '2011-%s, Guilherme G. Ferrari' % time.strftime('%Y')
 # built documents.
 #
 ver_dict = {}
-execfile("../../tupan/version.py", ver_dict)
+with open("../../tupan/version.py") as f:
+    code = compile(f.read(), "../../tupan/version.py", 'exec')
+    exec(code, ver_dict)
 # The short X.Y version.
 version = ver_dict["VERSION_SHORT"]
 # The full version, including alpha/beta/rc tags.
