@@ -1,4 +1,5 @@
 include MANIFEST.in
+include README.rst
 include *.txt *.cfg
 global-include *.py *.cl *.c *.h
 recursive-include docs *.rst

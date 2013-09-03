@@ -22,7 +22,7 @@ package_data['tupan.lib'] = [os.path.join('src', '*.c'),
 
 
 long_description = open(os.path.join(
-    os.path.dirname(__file__), 'README.txt')).read()
+    os.path.dirname(__file__), 'README.rst')).read()
 
 
 classifiers = """
