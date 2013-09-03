@@ -31,7 +31,7 @@ class Mock(object):
 
 
 MOCK_MODULES = ["cffi", "cffi.FFI", "cffi.FFI.cdef",
-                "h5py", "matplotlib", "numpy", "pyopencl",
+                "h5py", "matplotlib", "numpy", "pyopencl", "PIL",
                 "OpenGL", "OpenGL.GL", "OpenGL.GLUT", "yaml", "scipy"]
 for mod_name in MOCK_MODULES:
     try:
