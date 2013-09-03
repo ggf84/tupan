@@ -105,30 +105,27 @@ def kick_pn(ips, tau):
     """Kick operator for post-Newtonian quantities.
 
     """
+    def vw_swap(ps):
+        ps.vx, ps.wx = ps.wx, ps.vx
+        ps.vy, ps.wy = ps.wy, ps.vy
+        ps.vz, ps.wz = ps.wz, ps.vz
+        return ps
+
     ips.set_pnacc(ips)
     ips.wx += (ips.ax + ips.pnax) * tau / 2
     ips.wy += (ips.ay + ips.pnay) * tau / 2
     ips.wz += (ips.az + ips.pnaz) * tau / 2
 
-    ips.vx, ips.wx = ips.wx, ips.vx
-    ips.vy, ips.wy = ips.wy, ips.vy
-    ips.vz, ips.wz = ips.wz, ips.vz
+    ips = vw_swap(ips)
     ips.set_pnacc(ips)
-    ips.vx, ips.wx = ips.wx, ips.vx
-    ips.vy, ips.wy = ips.wy, ips.vy
-    ips.vz, ips.wz = ips.wz, ips.vz
-
-    ips.pn_kick_ke(tau / 2)
-    ips.pn_kick_lmom(tau / 2)
-    ips.pn_kick_amom(tau / 2)
+    ips.pn_kick_ke(tau)
+    ips.pn_kick_lmom(tau)
+    ips.pn_kick_amom(tau)
+    ips = vw_swap(ips)
 
     ips.vx += (ips.ax + ips.pnax) * tau
     ips.vy += (ips.ay + ips.pnay) * tau
     ips.vz += (ips.az + ips.pnaz) * tau
-
-    ips.pn_kick_ke(tau / 2)
-    ips.pn_kick_lmom(tau / 2)
-    ips.pn_kick_amom(tau / 2)
 
     ips.set_pnacc(ips)
     ips.wx += (ips.ax + ips.pnax) * tau / 2
@@ -190,6 +187,12 @@ def sf_kick(slow, fast, tau):
         slow.set_acc(fast)
         fast.set_acc(slow)
         if slow.include_pn_corrections:
+            def vw_swap(ps):
+                ps.vx, ps.wx = ps.wx, ps.vx
+                ps.vy, ps.wy = ps.wy, ps.vy
+                ps.vz, ps.wz = ps.wz, ps.vz
+                return ps
+
             slow.set_pnacc(fast)
             fast.set_pnacc(slow)
             slow.wx += (slow.ax + slow.pnax) * tau / 2
@@ -199,27 +202,18 @@ def sf_kick(slow, fast, tau):
             fast.wy += (fast.ay + fast.pnay) * tau / 2
             fast.wz += (fast.az + fast.pnaz) * tau / 2
 
-            slow.vx, slow.wx = slow.wx, slow.vx
-            slow.vy, slow.wy = slow.wy, slow.vy
-            slow.vz, slow.wz = slow.wz, slow.vz
-            fast.vx, fast.wx = fast.wx, fast.vx
-            fast.vy, fast.wy = fast.wy, fast.vy
-            fast.vz, fast.wz = fast.wz, fast.vz
+            slow = vw_swap(slow)
+            fast = vw_swap(fast)
             slow.set_pnacc(fast)
             fast.set_pnacc(slow)
-            slow.vx, slow.wx = slow.wx, slow.vx
-            slow.vy, slow.wy = slow.wy, slow.vy
-            slow.vz, slow.wz = slow.wz, slow.vz
-            fast.vx, fast.wx = fast.wx, fast.vx
-            fast.vy, fast.wy = fast.wy, fast.vy
-            fast.vz, fast.wz = fast.wz, fast.vz
-
-            slow.pn_kick_ke(tau / 2)
-            slow.pn_kick_lmom(tau / 2)
-            slow.pn_kick_amom(tau / 2)
-            fast.pn_kick_ke(tau / 2)
-            fast.pn_kick_lmom(tau / 2)
-            fast.pn_kick_amom(tau / 2)
+            slow.pn_kick_ke(tau)
+            slow.pn_kick_lmom(tau)
+            slow.pn_kick_amom(tau)
+            fast.pn_kick_ke(tau)
+            fast.pn_kick_lmom(tau)
+            fast.pn_kick_amom(tau)
+            slow = vw_swap(slow)
+            fast = vw_swap(fast)
 
             slow.vx += (slow.ax + slow.pnax) * tau
             slow.vy += (slow.ay + slow.pnay) * tau
@@ -227,13 +221,6 @@ def sf_kick(slow, fast, tau):
             fast.vx += (fast.ax + fast.pnax) * tau
             fast.vy += (fast.ay + fast.pnay) * tau
             fast.vz += (fast.az + fast.pnaz) * tau
-
-            slow.pn_kick_ke(tau / 2)
-            slow.pn_kick_lmom(tau / 2)
-            slow.pn_kick_amom(tau / 2)
-            fast.pn_kick_ke(tau / 2)
-            fast.pn_kick_lmom(tau / 2)
-            fast.pn_kick_amom(tau / 2)
 
             slow.set_pnacc(fast)
             fast.set_pnacc(slow)
