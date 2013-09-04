@@ -22,6 +22,8 @@ class NbodyMethods(object):
     """This class holds common methods for particles in n-body systems.
 
     """
+    include_pn_corrections = False
+
     attrs = [  # name, dtype, doc
         ("id", ctype.UINT, "index"),
         ("mass", ctype.REAL, "mass"),
@@ -63,23 +65,33 @@ class NbodyMethods(object):
     def rcom(self):
         """Position of the center-of-mass.
 
+        Post-Newtonian corrections, if enabled, are included.
+
         """
         mtot = self.total_mass
         rcomx = (self.mass * self.rx).sum()
         rcomy = (self.mass * self.ry).sum()
         rcomz = (self.mass * self.rz).sum()
-        return (np.array([rcomx, rcomy, rcomz]) / mtot)
+        rcom = (np.array([rcomx, rcomy, rcomz]) / mtot)
+        if self.include_pn_corrections:
+            rcom += self.pn_get_rcom_correction()
+        return rcom
 
     @property
     def vcom(self):
         """Velocity of the center-of-mass.
+
+        Post-Newtonian corrections, if enabled, are included.
 
         """
         mtot = self.total_mass
         vcomx = (self.mass * self.vx).sum()
         vcomy = (self.mass * self.vy).sum()
         vcomz = (self.mass * self.vz).sum()
-        return (np.array([vcomx, vcomy, vcomz]) / mtot)
+        vcom = (np.array([vcomx, vcomy, vcomz]) / mtot)
+        if self.include_pn_corrections:
+            vcom += self.pn_get_vcom_correction()
+        return vcom
 
     def com_to_origin(self):
         """Moves the center-of-mass to the origin of coordinates.
@@ -111,51 +123,94 @@ class NbodyMethods(object):
     def lm(self):
         """Individual linear momentum.
 
+        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+
         """
-        lmx = (self.mass * self.vx)
-        lmy = (self.mass * self.vy)
-        lmz = (self.mass * self.vz)
+        vcom = self.vcom
+        vx = self.vx - vcom[0]
+        vy = self.vy - vcom[1]
+        vz = self.vz - vcom[2]
+        lmx = (self.mass * vx)
+        lmy = (self.mass * vy)
+        lmz = (self.mass * vz)
         return np.array([lmx, lmy, lmz]).T
 
     @property
     def linear_momentum(self):
         """Total linear momentum.
 
+        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+
+        Post-Newtonian corrections, if enabled, are included.
+
         """
-        return self.lm.sum(0)
+        lmom = self.lm.sum(0)
+        if self.include_pn_corrections:
+            lmom += self.pn_get_lmom_correction()
+        return lmom
 
     ### angular momentum
     @property
     def am(self):
         """Individual angular momentum.
 
+        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+
         """
-        amx = self.mass * ((self.ry * self.vz) - (self.rz * self.vy))
-        amy = self.mass * ((self.rz * self.vx) - (self.rx * self.vz))
-        amz = self.mass * ((self.rx * self.vy) - (self.ry * self.vx))
+        rcom = self.rcom
+        rx = self.rx - rcom[0]
+        ry = self.ry - rcom[1]
+        rz = self.rz - rcom[2]
+        vcom = self.vcom
+        vx = self.vx - vcom[0]
+        vy = self.vy - vcom[1]
+        vz = self.vz - vcom[2]
+        amx = self.mass * ((ry * vz) - (rz * vy))
+        amy = self.mass * ((rz * vx) - (rx * vz))
+        amz = self.mass * ((rx * vy) - (ry * vx))
         return np.array([amx, amy, amz]).T
 
     @property
     def angular_momentum(self):
         """Total angular momentum.
 
+        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+
+        Post-Newtonian corrections, if enabled, are included.
+
         """
-        return self.am.sum(0)
+        amom = self.am.sum(0)
+        if self.include_pn_corrections:
+            amom += self.pn_get_amom_correction()
+        return amom
 
     ### kinetic energy
     @property
     def ke(self):
         """Individual kinetic energy.
 
+        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+
         """
-        return 0.5 * self.mass * (self.vx**2 + self.vy**2 + self.vz**2)
+        vcom = self.vcom
+        vx = self.vx - vcom[0]
+        vy = self.vy - vcom[1]
+        vz = self.vz - vcom[2]
+        return 0.5 * self.mass * (vx**2 + vy**2 + vz**2)
 
     @property
     def kinetic_energy(self):
         """Total kinetic energy.
 
+        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+
+        Post-Newtonian corrections, if enabled, are included.
+
         """
-        return float(self.ke.sum())
+        ke = float(self.ke.sum())
+        if self.include_pn_corrections:
+            ke += self.pn_get_ke_correction()
+        return ke
 
     ### potential energy
     @property
@@ -207,6 +262,13 @@ class NbodyMethods(object):
         """
         extensions.acc.calc(self, ps)
 
+    def set_pnacc(self, ps):
+        """Set individual post-Newtonian gravitational acceleration due to
+        other particles.
+
+        """
+        extensions.pnacc.calc(self, ps)
+
     def set_acc_jerk(self, ps):
         """Set individual gravitational acceleration and jerk due to other
         particles.
@@ -247,6 +309,8 @@ class NbodyMethods(object):
     @property
     def radial_size(self):
         """Radial size of the system (a.k.a. radius of gyration).
+
+        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
 
         """
         rcom = self.rcom
@@ -322,15 +386,10 @@ class PNbodyMethods(NbodyMethods):
 
     """
     ### PN stuff
-    def set_pnacc(self, ps):
-        """Set individual post-newtonian gravitational acceleration due to
-        other particles.
-
-        """
-        extensions.pnacc.calc(self, ps)
+    ### TODO: move these methods to a more appropriate place...
 
     def pn_kick_ke(self, tau):
-        """Kicks kinetic energy due to post-newtonian terms.
+        """Kicks kinetic energy due to post-Newtonian terms.
 
         """
         if not "pn_ke" in self.__dict__:
@@ -345,7 +404,7 @@ class PNbodyMethods(NbodyMethods):
         return float(self.pn_ke.sum())
 
     def pn_drift_rcom(self, tau):
-        """Drifts center of mass position due to post-newtonian terms.
+        """Drifts center of mass position due to post-Newtonian terms.
 
         """
         if not "pn_rcomx" in self.__dict__:
@@ -371,7 +430,7 @@ class PNbodyMethods(NbodyMethods):
         return np.array([rcomx, rcomy, rcomz]) / self.total_mass
 
     def pn_kick_lmom(self, tau):
-        """Kicks linear momentum due to post-newtonian terms.
+        """Kicks linear momentum due to post-Newtonian terms.
 
         """
         if not "pn_lmx" in self.__dict__:
@@ -400,7 +459,7 @@ class PNbodyMethods(NbodyMethods):
         return self.pn_get_lmom_correction() / self.total_mass
 
     def pn_kick_amom(self, tau):
-        """Kicks angular momentum due to post-newtonian terms.
+        """Kicks angular momentum due to post-Newtonian terms.
 
         """
         if not "pn_amx" in self.__dict__:

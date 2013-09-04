@@ -97,24 +97,14 @@ class Diagnostic(object):
         self.time = time
 
         ke = ps.kinetic_energy
-        if self.include_pn_corrections:
-            ke += ps.pn_get_ke_correction()
         pe = ps.potential_energy
         te = ke + pe
         virial = ps.virial_energy
 
         rcom = ps.rcom
-        if self.include_pn_corrections:
-            rcom += ps.pn_get_rcom_correction()
         vcom = ps.vcom
-        if self.include_pn_corrections:
-            vcom += ps.pn_get_vcom_correction()
         lmom = ps.linear_momentum
-        if self.include_pn_corrections:
-            lmom += ps.pn_get_lmom_correction()
         amom = ps.angular_momentum
-        if self.include_pn_corrections:
-            amom += ps.pn_get_amom_correction()
 
         eerr = (te-self.te0)/(-pe)
         self.count += 1
