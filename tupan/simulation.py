@@ -54,8 +54,8 @@ class Diagnostic(object):
         self.pe0 = ps.potential_energy
         self.te0 = self.ke0 + self.pe0
 
-        self.rcom0 = ps.rcom
-        self.vcom0 = ps.vcom
+        self.com_r0 = ps.com_r
+        self.com_v0 = ps.com_v
         self.lmom0 = ps.linear_momentum
         self.amom0 = ps.angular_momentum
 
@@ -81,7 +81,7 @@ class Diagnostic(object):
         myprint(fmt.format('#00:time', '#01:dtime',
                            '#02:ke', '#03:pe', '#04:te',
                            '#05:virial', '#06:eerr', '#07:geerr',
-                           '#08:rcom', '#09:vcom', '#10:lmom',
+                           '#08:com_r', '#09:com_v', '#10:lmom',
                            '#11:amom', '#12:wct'),
                 self.fname, 'w')
 
@@ -101,8 +101,8 @@ class Diagnostic(object):
         te = ke + pe
         virial = ps.virial_energy
 
-        rcom = ps.rcom
-        vcom = ps.vcom
+        com_r = ps.com_r
+        com_v = ps.com_v
         lmom = ps.linear_momentum
         amom = ps.angular_momentum
 
@@ -110,21 +110,21 @@ class Diagnostic(object):
         self.count += 1
         self.ceerr += eerr**2
         geerr = math.sqrt(self.ceerr / self.count)
-        dRcom = (((rcom-self.rcom0)**2).sum())**0.5
-        dVcom = (((vcom-self.vcom0)**2).sum())**0.5
+        com_dr = (((com_r-self.com_r0)**2).sum())**0.5
+        com_dv = (((com_v-self.com_v0)**2).sum())**0.5
         dLmom = (((lmom-self.lmom0)**2).sum())**0.5
         dAmom = (((amom-self.amom0)**2).sum())**0.5
 
         fmt = '{time:< 13.6e} {dtime:< 10.3e} '\
               '{ke:< 10.3e} {pe:< 10.3e} {te:< 15.8e} '\
               '{virial:< 10.3e} {eerr:< 10.3e} {geerr:< 10.3e} '\
-              '{rcom:< 10.3e} {vcom:< 10.3e} {lmom:< 10.3e} '\
+              '{com_r:< 10.3e} {com_v:< 10.3e} {lmom:< 10.3e} '\
               '{amom:< 10.3e} {wct:< 13.6e}'
         myprint(fmt.format(time=time, dtime=dtime,
                            ke=ke, pe=pe,
                            te=te, virial=virial,
-                           eerr=eerr, geerr=geerr, rcom=dRcom,
-                           vcom=dVcom, lmom=dLmom, amom=dAmom,
+                           eerr=eerr, geerr=geerr, com_r=com_dr,
+                           com_v=com_dv, lmom=dLmom, amom=dAmom,
                            wct=self.timer.elapsed()),
                 self.fname, 'a')
 

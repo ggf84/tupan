@@ -53,164 +53,235 @@ class NbodyMethods(object):
     def vel(self):  # XXX: deprecate?
         return np.concatenate((self.vx, self.vy, self.vz,)).reshape(3, -1).T
 
-    ### total mass and center-of-mass
+    @property
+    def px(self):
+        return self.mass * self.vx
+
+    @property
+    def py(self):
+        return self.mass * self.vy
+
+    @property
+    def pz(self):
+        return self.mass * self.vz
+
+    ### total mass and center-of-mass methods
     @property
     def total_mass(self):
-        """Total mass.
+        """Total mass of the system.
 
         """
         return float(self.mass.sum())
 
     @property
-    def rcom(self):
-        """Position of the center-of-mass.
+    def com_r(self):
+        """Center-of-Mass position of the system.
 
-        Post-Newtonian corrections, if enabled, are included.
+        .. note::
+
+            Post-Newtonian corrections, if enabled, are included.
 
         """
-        mtot = self.total_mass
-        rcomx = (self.mass * self.rx).sum()
-        rcomy = (self.mass * self.ry).sum()
-        rcomz = (self.mass * self.rz).sum()
-        rcom = (np.array([rcomx, rcomy, rcomz]) / mtot)
+        mrx = self.mass * self.rx
+        mry = self.mass * self.ry
+        mrz = self.mass * self.rz
         if self.include_pn_corrections:
-            rcom += self.pn_get_rcom_correction()
-        return rcom
+            if not "pn_mrx" in self.__dict__:
+                self.register_auxiliary_attribute("pn_mrx", ctype.REAL)
+            if not "pn_mry" in self.__dict__:
+                self.register_auxiliary_attribute("pn_mry", ctype.REAL)
+            if not "pn_mrz" in self.__dict__:
+                self.register_auxiliary_attribute("pn_mrz", ctype.REAL)
+            mrx += self.pn_mrx
+            mry += self.pn_mry
+            mrz += self.pn_mrz
+        mr = np.array([mrx, mry, mrz]).T
+        return mr.sum(0) / self.total_mass
 
     @property
-    def vcom(self):
-        """Velocity of the center-of-mass.
+    def com_v(self):
+        """Center-of-Mass velocity of the system.
 
-        Post-Newtonian corrections, if enabled, are included.
+        .. note::
+
+            Post-Newtonian corrections, if enabled, are included.
+
+        """
+        mvx, mvy, mvz = self.px, self.py, self.pz
+        if self.include_pn_corrections:
+            if not "pn_mvx" in self.__dict__:
+                self.register_auxiliary_attribute("pn_mvx", ctype.REAL)
+            if not "pn_mvy" in self.__dict__:
+                self.register_auxiliary_attribute("pn_mvy", ctype.REAL)
+            if not "pn_mvz" in self.__dict__:
+                self.register_auxiliary_attribute("pn_mvz", ctype.REAL)
+            mvx += self.pn_mvx
+            mvy += self.pn_mvy
+            mvz += self.pn_mvz
+        mv = np.array([mvx, mvy, mvz]).T
+        return mv.sum(0) / self.total_mass
+
+    @property
+    def com_linear_momentum(self):
+        """Center-of-Mass linear momentum of the system.
 
         """
         mtot = self.total_mass
-        vcomx = (self.mass * self.vx).sum()
-        vcomy = (self.mass * self.vy).sum()
-        vcomz = (self.mass * self.vz).sum()
-        vcom = (np.array([vcomx, vcomy, vcomz]) / mtot)
-        if self.include_pn_corrections:
-            vcom += self.pn_get_vcom_correction()
-        return vcom
+        com_v = self.com_v
+        return mtot * com_v
+
+    @property
+    def com_angular_momentum(self):
+        """Center-of-Mass angular momentum of the system.
+
+        """
+        mtot = self.total_mass
+        com_r = self.com_r
+        com_v = self.com_v
+        return mtot * np.cross(com_r, com_v)
+
+    @property
+    def com_kinetic_energy(self):
+        """Center-of-Mass kinetic energy of the system.
+
+        """
+        mtot = self.total_mass
+        com_v = self.com_v
+        return 0.5 * mtot * (com_v**2).sum()
 
     def com_to_origin(self):
         """Moves the center-of-mass to the origin of coordinates.
 
         """
-        rcom = self.rcom
-        self.rx -= rcom[0]
-        self.ry -= rcom[1]
-        self.rz -= rcom[2]
-        vcom = self.vcom
-        self.vx -= vcom[0]
-        self.vy -= vcom[1]
-        self.vz -= vcom[2]
+        com_r = self.com_r
+        self.rx -= com_r[0]
+        self.ry -= com_r[1]
+        self.rz -= com_r[2]
+        com_v = self.com_v
+        self.vx -= com_v[0]
+        self.vy -= com_v[1]
+        self.vz -= com_v[2]
 
-    def move_com(self, rcom, vcom):
+    def com_move_to(self, com_r, com_v):
         """Moves the center-of-mass to the given coordinates.
 
         """
         self.com_to_origin()
-        self.rx += rcom[0]
-        self.ry += rcom[1]
-        self.rz += rcom[2]
-        self.vx += vcom[0]
-        self.vy += vcom[1]
-        self.vz += vcom[2]
+        self.rx += com_r[0]
+        self.ry += com_r[1]
+        self.rz += com_r[2]
+        self.vx += com_v[0]
+        self.vy += com_v[1]
+        self.vz += com_v[2]
 
     ### linear momentum
     @property
     def lm(self):
         """Individual linear momentum.
 
-        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+        .. note::
+
+            Post-Newtonian corrections, if enabled, are included.
 
         """
-        vcom = self.vcom
-        vx = self.vx - vcom[0]
-        vy = self.vy - vcom[1]
-        vz = self.vz - vcom[2]
-        lmx = (self.mass * vx)
-        lmy = (self.mass * vy)
-        lmz = (self.mass * vz)
+        lmx, lmy, lmz = self.px, self.py, self.pz
+        if self.include_pn_corrections:
+            if not "pn_mvx" in self.__dict__:
+                self.register_auxiliary_attribute("pn_mvx", ctype.REAL)
+            if not "pn_mvy" in self.__dict__:
+                self.register_auxiliary_attribute("pn_mvy", ctype.REAL)
+            if not "pn_mvz" in self.__dict__:
+                self.register_auxiliary_attribute("pn_mvz", ctype.REAL)
+            lmx += self.pn_mvx
+            lmy += self.pn_mvy
+            lmz += self.pn_mvz
         return np.array([lmx, lmy, lmz]).T
 
     @property
     def linear_momentum(self):
-        """Total linear momentum.
+        """Total linear momentum of the system.
 
-        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+        .. note::
 
-        Post-Newtonian corrections, if enabled, are included.
+            This quantity includes a possible linear momentum of the center-of-mass,
+            w.r.t. the origin of coordinates.
+
+            Post-Newtonian corrections, if enabled, are included.
 
         """
-        lmom = self.lm.sum(0)
-        if self.include_pn_corrections:
-            lmom += self.pn_get_lmom_correction()
-        return lmom
+        return self.lm.sum(0)
 
     ### angular momentum
     @property
     def am(self):
         """Individual angular momentum.
 
-        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+        .. note::
+
+            Post-Newtonian corrections, if enabled, are included.
 
         """
-        rcom = self.rcom
-        rx = self.rx - rcom[0]
-        ry = self.ry - rcom[1]
-        rz = self.rz - rcom[2]
-        vcom = self.vcom
-        vx = self.vx - vcom[0]
-        vy = self.vy - vcom[1]
-        vz = self.vz - vcom[2]
-        amx = self.mass * ((ry * vz) - (rz * vy))
-        amy = self.mass * ((rz * vx) - (rx * vz))
-        amz = self.mass * ((rx * vy) - (ry * vx))
+        px, py, pz = self.px, self.py, self.pz
+        amx = (self.ry * pz) - (self.rz * py)
+        amy = (self.rz * px) - (self.rx * pz)
+        amz = (self.rx * py) - (self.ry * px)
+        if self.include_pn_corrections:
+            if not "pn_amx" in self.__dict__:
+                self.register_auxiliary_attribute("pn_amx", ctype.REAL)
+            if not "pn_amy" in self.__dict__:
+                self.register_auxiliary_attribute("pn_amy", ctype.REAL)
+            if not "pn_amz" in self.__dict__:
+                self.register_auxiliary_attribute("pn_amz", ctype.REAL)
+            amx += self.pn_amx
+            amy += self.pn_amy
+            amz += self.pn_amz
         return np.array([amx, amy, amz]).T
+
 
     @property
     def angular_momentum(self):
-        """Total angular momentum.
+        """Total angular momentum of the system.
 
-        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+        .. note::
 
-        Post-Newtonian corrections, if enabled, are included.
+            This quantity includes a possible angular momentum of the center-of-mass,
+            w.r.t. the origin of coordinates.
+
+            Post-Newtonian corrections, if enabled, are included.
 
         """
-        amom = self.am.sum(0)
-        if self.include_pn_corrections:
-            amom += self.pn_get_amom_correction()
-        return amom
+        return self.am.sum(0)
 
     ### kinetic energy
     @property
     def ke(self):
         """Individual kinetic energy.
 
-        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+        .. note::
+
+            Post-Newtonian corrections, if enabled, are included.
 
         """
-        vcom = self.vcom
-        vx = self.vx - vcom[0]
-        vy = self.vy - vcom[1]
-        vz = self.vz - vcom[2]
-        return 0.5 * self.mass * (vx**2 + vy**2 + vz**2)
+        ke = 0.5 * self.mass * (self.vx**2 + self.vy**2 + self.vz**2)
+        if self.include_pn_corrections:
+            if not "pn_ke" in self.__dict__:
+                self.register_auxiliary_attribute("pn_ke", ctype.REAL)
+            ke += self.pn_ke
+        return ke
 
     @property
     def kinetic_energy(self):
-        """Total kinetic energy.
+        """Total kinetic energy of the system.
 
-        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+        .. note::
 
-        Post-Newtonian corrections, if enabled, are included.
+            This quantity includes a possible kinetic energy of the center-of-mass,
+            w.r.t. the origin of coordinates.
+
+            Post-Newtonian corrections, if enabled, are included.
 
         """
-        ke = float(self.ke.sum())
-        if self.include_pn_corrections:
-            ke += self.pn_get_ke_correction()
-        return ke
+        return float(self.ke.sum())
 
     ### potential energy
     @property
@@ -310,13 +381,15 @@ class NbodyMethods(object):
     def radial_size(self):
         """Radial size of the system (a.k.a. radius of gyration).
 
-        This quantity is calculated w.r.t. the center-of-mass of the (sub-)system.
+        .. note::
+
+            This quantity is calculated w.r.t. the center-of-mass of the system.
 
         """
-        rcom = self.rcom
-        rx = self.rx - rcom[0]
-        ry = self.ry - rcom[1]
-        rz = self.rz - rcom[2]
+        com_r = self.com_r
+        rx = self.rx - com_r[0]
+        ry = self.ry - com_r[1]
+        rz = self.rz - com_r[2]
         I = (self.mass * (rx**2 + ry**2 + rz**2)).sum()
         s = (I / self.total_mass)**0.5
         return s
@@ -394,69 +467,41 @@ class PNbodyMethods(NbodyMethods):
         """
         if not "pn_ke" in self.__dict__:
             self.register_auxiliary_attribute("pn_ke", ctype.REAL)
-        self.pn_ke -= self.mass * (self.vx * self.pnax
-                                   + self.vy * self.pnay
-                                   + self.vz * self.pnaz) * tau
+        pnfx = self.mass * self.pnax
+        pnfy = self.mass * self.pnay
+        pnfz = self.mass * self.pnaz
+        self.pn_ke -= (self.vx * pnfx + self.vy * pnfy + self.vz * pnfz) * tau
 
-    def pn_get_ke_correction(self):
-        if not "pn_ke" in self.__dict__:
-            self.register_auxiliary_attribute("pn_ke", ctype.REAL)
-        return float(self.pn_ke.sum())
-
-    def pn_drift_rcom(self, tau):
+    def pn_drift_com_r(self, tau):
         """Drifts center of mass position due to post-Newtonian terms.
 
         """
-        if not "pn_rcomx" in self.__dict__:
-            self.register_auxiliary_attribute("pn_rcomx", ctype.REAL)
-        if not "pn_rcomy" in self.__dict__:
-            self.register_auxiliary_attribute("pn_rcomy", ctype.REAL)
-        if not "pn_rcomz" in self.__dict__:
-            self.register_auxiliary_attribute("pn_rcomz", ctype.REAL)
-        self.pn_rcomx += self.pn_lmx * tau
-        self.pn_rcomy += self.pn_lmy * tau
-        self.pn_rcomz += self.pn_lmz * tau
-
-    def pn_get_rcom_correction(self):
-        if not "pn_rcomx" in self.__dict__:
-            self.register_auxiliary_attribute("pn_rcomx", ctype.REAL)
-        if not "pn_rcomy" in self.__dict__:
-            self.register_auxiliary_attribute("pn_rcomy", ctype.REAL)
-        if not "pn_rcomz" in self.__dict__:
-            self.register_auxiliary_attribute("pn_rcomz", ctype.REAL)
-        rcomx = self.pn_rcomx.sum()
-        rcomy = self.pn_rcomy.sum()
-        rcomz = self.pn_rcomz.sum()
-        return np.array([rcomx, rcomy, rcomz]) / self.total_mass
+        if not "pn_mrx" in self.__dict__:
+            self.register_auxiliary_attribute("pn_mrx", ctype.REAL)
+        if not "pn_mry" in self.__dict__:
+            self.register_auxiliary_attribute("pn_mry", ctype.REAL)
+        if not "pn_mrz" in self.__dict__:
+            self.register_auxiliary_attribute("pn_mrz", ctype.REAL)
+        self.pn_mrx += self.pn_mvx * tau
+        self.pn_mry += self.pn_mvy * tau
+        self.pn_mrz += self.pn_mvz * tau
 
     def pn_kick_lmom(self, tau):
         """Kicks linear momentum due to post-Newtonian terms.
 
         """
-        if not "pn_lmx" in self.__dict__:
-            self.register_auxiliary_attribute("pn_lmx", ctype.REAL)
-        if not "pn_lmy" in self.__dict__:
-            self.register_auxiliary_attribute("pn_lmy", ctype.REAL)
-        if not "pn_lmz" in self.__dict__:
-            self.register_auxiliary_attribute("pn_lmz", ctype.REAL)
-        self.pn_lmx -= self.mass * self.pnax * tau
-        self.pn_lmy -= self.mass * self.pnay * tau
-        self.pn_lmz -= self.mass * self.pnaz * tau
-
-    def pn_get_lmom_correction(self):
-        if not "pn_lmx" in self.__dict__:
-            self.register_auxiliary_attribute("pn_lmx", ctype.REAL)
-        if not "pn_lmy" in self.__dict__:
-            self.register_auxiliary_attribute("pn_lmy", ctype.REAL)
-        if not "pn_lmz" in self.__dict__:
-            self.register_auxiliary_attribute("pn_lmz", ctype.REAL)
-        lmx = self.pn_lmx.sum()
-        lmy = self.pn_lmy.sum()
-        lmz = self.pn_lmz.sum()
-        return np.array([lmx, lmy, lmz])
-
-    def pn_get_vcom_correction(self):
-        return self.pn_get_lmom_correction() / self.total_mass
+        if not "pn_mvx" in self.__dict__:
+            self.register_auxiliary_attribute("pn_mvx", ctype.REAL)
+        if not "pn_mvy" in self.__dict__:
+            self.register_auxiliary_attribute("pn_mvy", ctype.REAL)
+        if not "pn_mvz" in self.__dict__:
+            self.register_auxiliary_attribute("pn_mvz", ctype.REAL)
+        pnfx = self.mass * self.pnax
+        pnfy = self.mass * self.pnay
+        pnfz = self.mass * self.pnaz
+        self.pn_mvx -= pnfx * tau
+        self.pn_mvy -= pnfy * tau
+        self.pn_mvz -= pnfz * tau
 
     def pn_kick_amom(self, tau):
         """Kicks angular momentum due to post-Newtonian terms.
@@ -468,24 +513,12 @@ class PNbodyMethods(NbodyMethods):
             self.register_auxiliary_attribute("pn_amy", ctype.REAL)
         if not "pn_amz" in self.__dict__:
             self.register_auxiliary_attribute("pn_amz", ctype.REAL)
-        self.pn_amx -= self.mass * (self.ry * self.pnaz
-                                    - self.rz * self.pnay) * tau
-        self.pn_amy -= self.mass * (self.rz * self.pnax
-                                    - self.rx * self.pnaz) * tau
-        self.pn_amz -= self.mass * (self.rx * self.pnay
-                                    - self.ry * self.pnax) * tau
-
-    def pn_get_amom_correction(self):
-        if not "pn_amx" in self.__dict__:
-            self.register_auxiliary_attribute("pn_amx", ctype.REAL)
-        if not "pn_amy" in self.__dict__:
-            self.register_auxiliary_attribute("pn_amy", ctype.REAL)
-        if not "pn_amz" in self.__dict__:
-            self.register_auxiliary_attribute("pn_amz", ctype.REAL)
-        amx = self.pn_amx.sum()
-        amy = self.pn_amy.sum()
-        amz = self.pn_amz.sum()
-        return np.array([amx, amy, amz])
+        pnfx = self.mass * self.pnax
+        pnfy = self.mass * self.pnay
+        pnfz = self.mass * self.pnaz
+        self.pn_amx -= (self.ry * pnfz - self.rz * pnfy) * tau
+        self.pn_amy -= (self.rz * pnfx - self.rx * pnfz) * tau
+        self.pn_amz -= (self.rx * pnfy - self.ry * pnfx) * tau
 
 
 AbstractNbodyMethods = NbodyMethods

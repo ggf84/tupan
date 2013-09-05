@@ -93,7 +93,7 @@ def drift_pn(ips, tau):
     ips.rx += ips.vx * tau
     ips.ry += ips.vy * tau
     ips.rz += ips.vz * tau
-    ips.pn_drift_rcom(tau)
+    ips.pn_drift_com_r(tau)
     return ips
 
 
