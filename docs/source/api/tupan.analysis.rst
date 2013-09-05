@@ -7,6 +7,7 @@ analysis Package
 .. automodule:: tupan.analysis
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`glviewer` Module
@@ -15,5 +16,6 @@ analysis Package
 .. automodule:: tupan.analysis.glviewer
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 

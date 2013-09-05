@@ -7,6 +7,7 @@ tupan Package
 .. automodule:: tupan.__init__
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`simulation` Module
@@ -15,6 +16,7 @@ tupan Package
 .. automodule:: tupan.simulation
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`version` Module
@@ -23,6 +25,7 @@ tupan Package
 .. automodule:: tupan.version
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 Subpackages

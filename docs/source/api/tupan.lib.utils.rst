@@ -7,6 +7,7 @@ utils Package
 .. automodule:: tupan.lib.utils
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`ctype` Module
@@ -15,6 +16,7 @@ utils Package
 .. automodule:: tupan.lib.utils.ctype
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`memoize` Module
@@ -23,6 +25,7 @@ utils Package
 .. automodule:: tupan.lib.utils.memoize
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`timing` Module
@@ -31,5 +34,6 @@ utils Package
 .. automodule:: tupan.lib.utils.timing
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 

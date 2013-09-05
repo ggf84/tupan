@@ -7,6 +7,7 @@ integrator Package
 .. automodule:: tupan.integrator
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`sakura` Module
@@ -15,6 +16,7 @@ integrator Package
 .. automodule:: tupan.integrator.sakura
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`hermite` Module
@@ -23,6 +25,7 @@ integrator Package
 .. automodule:: tupan.integrator.hermite
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`nreg` Module
@@ -31,6 +34,7 @@ integrator Package
 .. automodule:: tupan.integrator.nreg
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`sia` Module
@@ -39,5 +43,6 @@ integrator Package
 .. automodule:: tupan.integrator.sia
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 

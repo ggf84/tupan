@@ -203,8 +203,10 @@ class NbodyMethods(object):
 
         .. note::
 
-            This quantity includes a possible linear momentum of the center-of-mass,
-            w.r.t. the origin of coordinates.
+            This quantity possibly includes the linear momentum of the
+            center-of-mass w.r.t. the origin of coordinates.
+
+        .. note::
 
             Post-Newtonian corrections, if enabled, are included.
 
@@ -237,15 +239,16 @@ class NbodyMethods(object):
             amz += self.pn_amz
         return np.array([amx, amy, amz]).T
 
-
     @property
     def angular_momentum(self):
         """Total angular momentum of the system.
 
         .. note::
 
-            This quantity includes a possible angular momentum of the center-of-mass,
-            w.r.t. the origin of coordinates.
+            This quantity possibly includes the angular momentum of the
+            center-of-mass w.r.t. the origin of coordinates.
+
+        .. note::
 
             Post-Newtonian corrections, if enabled, are included.
 
@@ -275,8 +278,10 @@ class NbodyMethods(object):
 
         .. note::
 
-            This quantity includes a possible kinetic energy of the center-of-mass,
-            w.r.t. the origin of coordinates.
+            This quantity possibly includes the kinetic energy of the
+            center-of-mass w.r.t. the origin of coordinates.
+
+        .. note::
 
             Post-Newtonian corrections, if enabled, are included.
 
@@ -383,7 +388,8 @@ class NbodyMethods(object):
 
         .. note::
 
-            This quantity is calculated w.r.t. the center-of-mass of the system.
+            This quantity is calculated w.r.t. the center-of-mass of the
+            system.
 
         """
         com_r = self.com_r

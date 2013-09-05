@@ -7,6 +7,7 @@ particles Package
 .. automodule:: tupan.particles
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`allparticles` Module
@@ -15,6 +16,7 @@ particles Package
 .. automodule:: tupan.particles.allparticles
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`blackhole` Module
@@ -23,6 +25,7 @@ particles Package
 .. automodule:: tupan.particles.blackhole
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`body` Module
@@ -31,6 +34,7 @@ particles Package
 .. automodule:: tupan.particles.body
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`sph` Module
@@ -39,6 +43,7 @@ particles Package
 .. automodule:: tupan.particles.sph
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`star` Module
@@ -47,5 +52,6 @@ particles Package
 .. automodule:: tupan.particles.star
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 

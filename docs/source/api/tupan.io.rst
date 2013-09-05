@@ -7,6 +7,7 @@ io Package
 .. automodule:: tupan.io
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`hdf5io` Module
@@ -15,6 +16,7 @@ io Package
 .. automodule:: tupan.io.hdf5io
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`psdfio` Module
@@ -23,5 +25,6 @@ io Package
 .. automodule:: tupan.io.psdfio
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 

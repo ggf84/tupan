@@ -7,6 +7,7 @@ ics Package
 .. automodule:: tupan.ics
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`fewbody` Module
@@ -15,6 +16,7 @@ ics Package
 .. automodule:: tupan.ics.fewbody
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`hierarchy` Module
@@ -23,6 +25,7 @@ ics Package
 .. automodule:: tupan.ics.hierarchy
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`imf` Module
@@ -31,6 +34,7 @@ ics Package
 .. automodule:: tupan.ics.imf
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`plummer` Module
@@ -39,5 +43,6 @@ ics Package
 .. automodule:: tupan.ics.plummer
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 

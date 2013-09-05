@@ -7,6 +7,7 @@ lib Package
 .. automodule:: tupan.lib
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`cffi_backend` Module
@@ -15,6 +16,7 @@ lib Package
 .. automodule:: tupan.lib.cffi_backend
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`opencl_backend` Module
@@ -23,6 +25,7 @@ lib Package
 .. automodule:: tupan.lib.opencl_backend
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 :mod:`extensions` Module
@@ -31,6 +34,7 @@ lib Package
 .. automodule:: tupan.lib.extensions
     :members:
     :undoc-members:
+    :inherited-members:
     :show-inheritance:
 
 Subpackages
