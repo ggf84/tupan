@@ -105,32 +105,53 @@ def kick_pn(ips, tau):
     """Kick operator for post-Newtonian quantities.
 
     """
-    def vw_swap(ps):
-        ps.vx, ps.wx = ps.wx, ps.vx
-        ps.vy, ps.wy = ps.wy, ps.vy
-        ps.vz, ps.wz = ps.wz, ps.vz
-        return ps
+#    #
+#    def vw_swap(ps):
+#        ps.vx, ps.wx = ps.wx, ps.vx
+#        ps.vy, ps.wy = ps.wy, ps.vy
+#        ps.vz, ps.wz = ps.wz, ps.vz
+#        return ps
+#    ips.set_pnacc(ips)
+#    ips.wx += (ips.ax + ips.pnax) * tau / 2
+#    ips.wy += (ips.ay + ips.pnay) * tau / 2
+#    ips.wz += (ips.az + ips.pnaz) * tau / 2
+#
+#    ips = vw_swap(ips)
+#    ips.set_pnacc(ips)
+#    ips.pn_kick_ke(tau)
+#    ips.pn_kick_lmom(tau)
+#    ips.pn_kick_amom(tau)
+#    ips = vw_swap(ips)
+#
+#    ips.vx += (ips.ax + ips.pnax) * tau
+#    ips.vy += (ips.ay + ips.pnay) * tau
+#    ips.vz += (ips.az + ips.pnaz) * tau
+#
+#    ips.set_pnacc(ips)
+#    ips.wx += (ips.ax + ips.pnax) * tau / 2
+#    ips.wy += (ips.ay + ips.pnay) * tau / 2
+#    ips.wz += (ips.az + ips.pnaz) * tau / 2
+#    #
 
-    ips.set_pnacc(ips)
-    ips.wx += (ips.ax + ips.pnax) * tau / 2
-    ips.wy += (ips.ay + ips.pnay) * tau / 2
-    ips.wz += (ips.az + ips.pnaz) * tau / 2
+#####
 
-    ips = vw_swap(ips)
+    #
+    ips.vx += (ips.ax * tau + ips.wx) / 2
+    ips.vy += (ips.ay * tau + ips.wy) / 2
+    ips.vz += (ips.az * tau + ips.wz) / 2
+
     ips.set_pnacc(ips)
     ips.pn_kick_ke(tau)
     ips.pn_kick_lmom(tau)
     ips.pn_kick_amom(tau)
-    ips = vw_swap(ips)
+    ips.wx[...] = 2 * ips.pnax * tau - ips.wx
+    ips.wy[...] = 2 * ips.pnay * tau - ips.wy
+    ips.wz[...] = 2 * ips.pnaz * tau - ips.wz
 
-    ips.vx += (ips.ax + ips.pnax) * tau
-    ips.vy += (ips.ay + ips.pnay) * tau
-    ips.vz += (ips.az + ips.pnaz) * tau
-
-    ips.set_pnacc(ips)
-    ips.wx += (ips.ax + ips.pnax) * tau / 2
-    ips.wy += (ips.ay + ips.pnay) * tau / 2
-    ips.wz += (ips.az + ips.pnaz) * tau / 2
+    ips.vx += (ips.ax * tau + ips.wx) / 2
+    ips.vy += (ips.ay * tau + ips.wy) / 2
+    ips.vz += (ips.az * tau + ips.wz) / 2
+    #
 
     return ips
 
@@ -187,23 +208,61 @@ def sf_kick(slow, fast, tau):
         slow.set_acc(fast)
         fast.set_acc(slow)
         if slow.include_pn_corrections:
-            def vw_swap(ps):
-                ps.vx, ps.wx = ps.wx, ps.vx
-                ps.vy, ps.wy = ps.wy, ps.vy
-                ps.vz, ps.wz = ps.wz, ps.vz
-                return ps
+#            #
+#            def vw_swap(ps):
+#                ps.vx, ps.wx = ps.wx, ps.vx
+#                ps.vy, ps.wy = ps.wy, ps.vy
+#                ps.vz, ps.wz = ps.wz, ps.vz
+#                return ps
+#            slow.set_pnacc(fast)
+#            fast.set_pnacc(slow)
+#            slow.wx += (slow.ax + slow.pnax) * tau / 2
+#            slow.wy += (slow.ay + slow.pnay) * tau / 2
+#            slow.wz += (slow.az + slow.pnaz) * tau / 2
+#            fast.wx += (fast.ax + fast.pnax) * tau / 2
+#            fast.wy += (fast.ay + fast.pnay) * tau / 2
+#            fast.wz += (fast.az + fast.pnaz) * tau / 2
+#
+#            slow = vw_swap(slow)
+#            fast = vw_swap(fast)
+#            slow.set_pnacc(fast)
+#            fast.set_pnacc(slow)
+#            slow.pn_kick_ke(tau)
+#            slow.pn_kick_lmom(tau)
+#            slow.pn_kick_amom(tau)
+#            fast.pn_kick_ke(tau)
+#            fast.pn_kick_lmom(tau)
+#            fast.pn_kick_amom(tau)
+#            slow = vw_swap(slow)
+#            fast = vw_swap(fast)
+#
+#            slow.vx += (slow.ax + slow.pnax) * tau
+#            slow.vy += (slow.ay + slow.pnay) * tau
+#            slow.vz += (slow.az + slow.pnaz) * tau
+#            fast.vx += (fast.ax + fast.pnax) * tau
+#            fast.vy += (fast.ay + fast.pnay) * tau
+#            fast.vz += (fast.az + fast.pnaz) * tau
+#
+#            slow.set_pnacc(fast)
+#            fast.set_pnacc(slow)
+#            slow.wx += (slow.ax + slow.pnax) * tau / 2
+#            slow.wy += (slow.ay + slow.pnay) * tau / 2
+#            slow.wz += (slow.az + slow.pnaz) * tau / 2
+#            fast.wx += (fast.ax + fast.pnax) * tau / 2
+#            fast.wy += (fast.ay + fast.pnay) * tau / 2
+#            fast.wz += (fast.az + fast.pnaz) * tau / 2
+#            #
 
-            slow.set_pnacc(fast)
-            fast.set_pnacc(slow)
-            slow.wx += (slow.ax + slow.pnax) * tau / 2
-            slow.wy += (slow.ay + slow.pnay) * tau / 2
-            slow.wz += (slow.az + slow.pnaz) * tau / 2
-            fast.wx += (fast.ax + fast.pnax) * tau / 2
-            fast.wy += (fast.ay + fast.pnay) * tau / 2
-            fast.wz += (fast.az + fast.pnaz) * tau / 2
+#############
 
-            slow = vw_swap(slow)
-            fast = vw_swap(fast)
+            #
+            slow.vx += (slow.ax * tau + slow.wx) / 2
+            slow.vy += (slow.ay * tau + slow.wy) / 2
+            slow.vz += (slow.az * tau + slow.wz) / 2
+            fast.vx += (fast.ax * tau + fast.wx) / 2
+            fast.vy += (fast.ay * tau + fast.wy) / 2
+            fast.vz += (fast.az * tau + fast.wz) / 2
+
             slow.set_pnacc(fast)
             fast.set_pnacc(slow)
             slow.pn_kick_ke(tau)
@@ -212,24 +271,20 @@ def sf_kick(slow, fast, tau):
             fast.pn_kick_ke(tau)
             fast.pn_kick_lmom(tau)
             fast.pn_kick_amom(tau)
-            slow = vw_swap(slow)
-            fast = vw_swap(fast)
+            slow.wx[...] = 2 * slow.pnax * tau - slow.wx
+            slow.wy[...] = 2 * slow.pnay * tau - slow.wy
+            slow.wz[...] = 2 * slow.pnaz * tau - slow.wz
+            fast.wx[...] = 2 * fast.pnax * tau - fast.wx
+            fast.wy[...] = 2 * fast.pnay * tau - fast.wy
+            fast.wz[...] = 2 * fast.pnaz * tau - fast.wz
 
-            slow.vx += (slow.ax + slow.pnax) * tau
-            slow.vy += (slow.ay + slow.pnay) * tau
-            slow.vz += (slow.az + slow.pnaz) * tau
-            fast.vx += (fast.ax + fast.pnax) * tau
-            fast.vy += (fast.ay + fast.pnay) * tau
-            fast.vz += (fast.az + fast.pnaz) * tau
-
-            slow.set_pnacc(fast)
-            fast.set_pnacc(slow)
-            slow.wx += (slow.ax + slow.pnax) * tau / 2
-            slow.wy += (slow.ay + slow.pnay) * tau / 2
-            slow.wz += (slow.az + slow.pnaz) * tau / 2
-            fast.wx += (fast.ax + fast.pnax) * tau / 2
-            fast.wy += (fast.ay + fast.pnay) * tau / 2
-            fast.wz += (fast.az + fast.pnaz) * tau / 2
+            slow.vx += (slow.ax * tau + slow.wx) / 2
+            slow.vy += (slow.ay * tau + slow.wy) / 2
+            slow.vz += (slow.az * tau + slow.wz) / 2
+            fast.vx += (fast.ax * tau + fast.wx) / 2
+            fast.vy += (fast.ay * tau + fast.wy) / 2
+            fast.vz += (fast.az * tau + fast.wz) / 2
+            #
         else:
             slow = kick_n(slow, tau)
             fast = kick_n(fast, tau)
@@ -993,9 +1048,9 @@ class SIA(Base):
             ps.register_auxiliary_attribute("wx", ctype.REAL)
             ps.register_auxiliary_attribute("wy", ctype.REAL)
             ps.register_auxiliary_attribute("wz", ctype.REAL)
-            ps.wx[...] = ps.vx
-            ps.wy[...] = ps.vy
-            ps.wz[...] = ps.vz
+#            ps.wx[...] = ps.vx
+#            ps.wy[...] = ps.vy
+#            ps.wz[...] = ps.vz
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)
