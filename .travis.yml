@@ -1,15 +1,16 @@
 language: python
 
-notifications:
-  email: false
-
-virtualenv:
-  system_site_packages: true
-
 python:
   - "3.3"
   - "3.2"
   - "2.7"
+
+virtualenv:
+  system_site_packages: true
+
+before_install:
+ - sudo apt-get install -qq python-numpy python-scipy
+ - sudo apt-get install -qq python3-numpy python3-scipy
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
@@ -18,4 +19,7 @@ install:
 # command to run tests, e.g. python setup.py test
 script:
   - "python -m unittest discover"
+
+notifications:
+  email: false
 
