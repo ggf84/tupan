@@ -1,5 +1,5 @@
-.. |Build Status| image:: https://travis-ci.org/GuilhermeFerrari/tupan.png
-   :target: https://travis-ci.org/GuilhermeFerrari/tupan
+.. |Build Status| image:: https://travis-ci.org/GuilhermeFerrari/Tupan.png
+   :target: https://travis-ci.org/GuilhermeFerrari/Tupan
 
 Tupan
 =====
