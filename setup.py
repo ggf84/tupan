@@ -52,7 +52,7 @@ setup(
               'tupan.tests',
               ],
     package_data=package_data,
-    scripts=['bin/tupan.py'],
+    scripts=['bin/tupan-simulation.py'],
     url='http://github.com/GuilhermeFerrari/Tupan',
     license='MIT License',
     long_description=long_description,
