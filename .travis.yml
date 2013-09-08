@@ -5,6 +5,16 @@ env:
 - TOXENV=py32
 - TOXENV=py33
 
+before_install:
+ - sudo apt-get install -qq python-cffi
+ - sudo apt-get install -qq python-numpy
+ - sudo apt-get install -qq python-scipy
+ - sudo apt-get install -qq python-h5py
+ - sudo apt-get install -qq python-pyopencl
+ - sudo apt-get install -qq python-matplotlib
+ - sudo apt-get install -qq python-opengl
+ - sudo apt-get install -qq python-yaml
+
 install:
 - pip install tox
 
