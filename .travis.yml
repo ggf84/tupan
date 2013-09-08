@@ -1,22 +1,29 @@
 language: python
 
 env:
-- TOXENV=py27
-- TOXENV=py32
-- TOXENV=py33
+ - TOXENV=py27
+# - TOXENV=py33
 
 before_install:
-# - sudo apt-get install -qq python-cffi python3-cffi
- - sudo apt-get install -qq python-numpy python3-numpy
- - sudo apt-get install -qq python-scipy python3-scipy
- - sudo apt-get install -qq python-h5py #python3-h5py
- - sudo apt-get install -qq python-pyopencl #python3-pyopencl
- - sudo apt-get install -qq python-matplotlib #python3-matplotlib
- - sudo apt-get install -qq python-opengl #python3-opengl
- - sudo apt-get install -qq python-yaml #python3-yaml
+# - sudo apt-get install -qq python-cffi
+ - sudo apt-get install -qq python-numpy
+ - sudo apt-get install -qq python-scipy
+ - sudo apt-get install -qq python-h5py
+ - sudo apt-get install -qq python-pyopencl
+ - sudo apt-get install -qq python-matplotlib
+ - sudo apt-get install -qq python-opengl
+ - sudo apt-get install -qq python-yaml
+# - sudo apt-get install -qq python3-cffi
+# - sudo apt-get install -qq python3-numpy
+# - sudo apt-get install -qq python3-scipy
+# - sudo apt-get install -qq python3-h5py
+# - sudo apt-get install -qq python3-pyopencl
+# - sudo apt-get install -qq python3-matplotlib
+# - sudo apt-get install -qq python3-opengl
+# - sudo apt-get install -qq python3-yaml
 
 install:
-- pip install tox
+- pip install tox --use-mirrors
 
 script:
 - tox
