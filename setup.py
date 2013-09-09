@@ -41,6 +41,7 @@ setup(
     author='Guilherme G. Ferrari',
     author_email='gg.ferrari@gmail.com',
     description="A Python Toolkit for Astrophysical N-Body Simulations.",
+    long_description=long_description,
     packages=['tupan',
               'tupan.analysis',
               'tupan.ics',
@@ -55,7 +56,6 @@ setup(
     scripts=['bin/tupan-simulation.py'],
     url='http://github.com/GuilhermeFerrari/Tupan',
     license='MIT License',
-    long_description=long_description,
     classifiers=[c for c in classifiers.split('\n') if c],
 )
 

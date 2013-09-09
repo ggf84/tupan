@@ -16,7 +16,7 @@ the development of Tupan might also take a look at the API documentation.
     ferrari at gmail dot com.
 
 .. toctree::
-    :maxdepth: 4
+    :maxdepth: 1
 
     user/index
     api/index

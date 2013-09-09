@@ -28,5 +28,5 @@ TODO
 License
 -------
 
-See the file ``LICENSE.txt`` for details.
+MIT License. See the file ``LICENSE.txt`` for details.
 
