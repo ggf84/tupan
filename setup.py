@@ -36,7 +36,7 @@ Topic :: Scientific/Engineering
 
 
 setup(
-    name='Tupan',
+    name='tupan',
     version=version.VERSION,
     author='Guilherme G. Ferrari',
     author_email='gg.ferrari@gmail.com',
@@ -54,7 +54,7 @@ setup(
               ],
     package_data=package_data,
     scripts=['bin/tupan-simulation.py'],
-    url='http://github.com/GuilhermeFerrari/Tupan',
+    url='https://github.com/ggf84/tupan',
     license='MIT License',
     classifiers=[c for c in classifiers.split('\n') if c],
 )

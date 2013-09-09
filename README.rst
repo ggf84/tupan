@@ -1,5 +1,5 @@
-.. |Build Status| image:: https://travis-ci.org/GuilhermeFerrari/Tupan.png
-   :target: https://travis-ci.org/GuilhermeFerrari/Tupan
+.. |Build Status| image:: https://travis-ci.org/ggf84/tupan.png
+   :target: https://travis-ci.org/ggf84/tupan
 
 Tupan
 =====
@@ -11,7 +11,7 @@ TODO: write an overview
 Websites
 --------
 
-  * Source code: TODO
+  * Source code: https://github.com/ggf84/tupan
   * Mailing list: TODO
   * Documentation: TODO
 
