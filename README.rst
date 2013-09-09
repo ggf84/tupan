@@ -13,7 +13,7 @@ Websites
 
   * Source code: https://github.com/ggf84/tupan
   * Mailing list: TODO
-  * Documentation: TODO
+  * Documentation: https://tupan.readthedocs.org/
 
 Dependencies
 ------------
