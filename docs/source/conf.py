@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Tupan documentation build configuration file, created by
+# tupan documentation build configuration file, created by
 # sphinx-quickstart on Wed Dec 14 04:53:07 2011.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -73,7 +73,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Tupan'
+project = 'tupan'
 copyright = '2011-%s, Guilherme G. Ferrari' % time.strftime('%Y')
 
 # The version info for the project you're documenting, acts as replacement for
@@ -201,7 +201,7 @@ html_last_updated_fmt = '%b %d, %Y'
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Tupandoc'
+htmlhelp_basename = 'tupandoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -215,7 +215,7 @@ htmlhelp_basename = 'Tupandoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Tupan.tex', u'Tupan Documentation',
+  ('index', 'tupan.tex', u'tupan Documentation',
    u'Guilherme G. Ferrari', 'manual'),
 ]
 
@@ -248,6 +248,6 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'tupan', u'Tupan Documentation',
+    ('index', 'tupan', u'tupan Documentation',
      [u'Guilherme G. Ferrari'], 1)
 ]

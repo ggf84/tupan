@@ -72,7 +72,7 @@ class Stream(yaml.YAMLObject):
         # default attributes
         attributes = {'id': data.id, 'm': data.m, 't': data.t_curr,
                       'r': data.r, 'v': data.v, 'a': data.a}
-        # Tupan's specific attributes
+        # tupan's specific attributes
         if hasattr(data, 'type'):
             attributes['type'] = data.type
         if hasattr(data, 'dt_prev'):
@@ -115,7 +115,7 @@ class Stream(yaml.YAMLObject):
                                 float(obj.acc[2])]
                     if 't_curr' in attributes:
                         od.t_curr = float(obj.t_curr)
-                    # Tupan's specific attributes
+                    # tupan's specific attributes
                     od.type = key
                     if 'dt_prev' in attributes:
                         od.dt_prev = float(obj.dt_prev)

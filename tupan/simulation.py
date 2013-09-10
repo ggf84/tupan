@@ -429,7 +429,7 @@ def parse_args():
 
 
 def main():
-    """The top-level main function of Tupan.
+    """The top-level main function of tupan.
 
     .. note:: You shouldn't be able to call this function from a ipython
         session. Instead you must call tupan's script directly from a unix

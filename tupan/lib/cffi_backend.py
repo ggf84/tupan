@@ -61,10 +61,8 @@ def make_lib(fptype):
     ffi.cdef(source)
 
     define_macros = []
-    modulename = "libTupanSPcffi"
     if fptype == "double":
         define_macros.append(("DOUBLE", 1))
-        modulename = modulename.replace("SP", "DP")
 
     clib = ffi.verify(
         """
@@ -77,7 +75,6 @@ def make_lib(fptype):
         libraries=["m"],
         extra_compile_args=["-O3"],
         sources=[os.path.join(PATH, file) for file in files],
-        modulename=modulename,
     )
 
     logger.debug("done.")

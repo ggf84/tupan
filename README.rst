@@ -1,7 +1,7 @@
 .. |Build Status| image:: https://travis-ci.org/ggf84/tupan.png
    :target: https://travis-ci.org/ggf84/tupan
 
-Tupan
+tupan
 =====
 
 |Build Status|

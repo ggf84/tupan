@@ -1,15 +1,15 @@
-Welcome to Tupan's documentation!
-=================================
+Welcome to **tupan**'s documentation!
+=====================================
 
-Tupan is a toolbox for Astrophysical N-Body Simulations. This guide is
-intended as an introductory overview of Tupan and explains how to install
+**tupan** is a toolbox for Astrophysical N-Body Simulations. This guide is
+intended as an introductory overview of **tupan** and explains how to install
 and make use of its most important features. Those who want to contribute to
-the development of Tupan might also take a look at the API documentation.
+the development of **tupan** might also take a look at the API documentation.
 
 .. warning::
 
     This is still a work in progress; some of the material is not fully
-    organized, and several aspects of Tupan are not yet covered in
+    organized, and several aspects of **tupan** are not yet covered in
     sufficient detail. We are continually working to improve the code as
     well as the documentation and encourage interested parties to contribute.
     For information on how to do so, please send me an email at gg dot
