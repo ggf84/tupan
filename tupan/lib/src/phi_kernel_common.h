@@ -10,17 +10,11 @@ inline void phi_kernel_core(
     const REAL iry,
     const REAL irz,
     const REAL ie2,
-    const REAL ivx,
-    const REAL ivy,
-    const REAL ivz,
     const REAL jm,
     const REAL jrx,
     const REAL jry,
     const REAL jrz,
     const REAL je2,
-    const REAL jvx,
-    const REAL jvy,
-    const REAL jvz,
     REAL *iphi)
 {
     REAL rx, ry, rz;

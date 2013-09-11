@@ -108,15 +108,15 @@ class Phi(AbstractExtension):
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p,
                     cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p)
+                    cty.c_real_p)
         restypes = (cty.c_real_p,)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
-        self.kernel.set_args(lmem, start=19)
+        lmem = self.kernel.allocate_local_memory(5, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem, start=13)
 
     def set_args(self, ips, jps):
         ni = ips.n
@@ -128,10 +128,10 @@ class Phi(AbstractExtension):
 
         self._inargs = (ni,
                         ips.mass, ips.rx, ips.ry, ips.rz,
-                        ips.eps2, ips.vx, ips.vy, ips.vz,
+                        ips.eps2,
                         nj,
                         jps.mass, jps.rx, jps.ry, jps.rz,
-                        jps.eps2, jps.vx, jps.vy, jps.vz)
+                        jps.eps2)
         self._outargs = (ips.phi,)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
@@ -171,15 +171,15 @@ class Acc(AbstractExtension):
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p,
                     cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p)
+                    cty.c_real_p)
         restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
-        self.kernel.set_args(lmem, start=21)
+        lmem = self.kernel.allocate_local_memory(5, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem, start=15)
 
     def set_args(self, ips, jps):
         ni = ips.n
@@ -195,10 +195,10 @@ class Acc(AbstractExtension):
 
         self._inargs = (ni,
                         ips.mass, ips.rx, ips.ry, ips.rz,
-                        ips.eps2, ips.vx, ips.vy, ips.vz,
+                        ips.eps2,
                         nj,
                         jps.mass, jps.rx, jps.ry, jps.rz,
-                        jps.eps2, jps.vx, jps.vy, jps.vz)
+                        jps.eps2)
         self._outargs = (ips.ax, ips.ay, ips.az)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
@@ -312,8 +312,8 @@ class SnapCrackle(AbstractExtension):
                     cty.c_real_p, cty.c_real_p, cty.c_real_p)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(16, np.dtype(ctype.REAL))
-        self.kernel.set_args(lmem[:14], start=36)
+        lmem = self.kernel.allocate_local_memory(14, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem, start=36)
 
     def set_args(self, ips, jps):
         ni = ips.n
@@ -585,8 +585,8 @@ class NREG_V(AbstractExtension):
                     cty.c_real_p)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
-        self.kernel.set_args(lmem[:7], start=21)
+        lmem = self.kernel.allocate_local_memory(7, np.dtype(ctype.REAL))
+        self.kernel.set_args(lmem, start=21)
 
     def set_args(self, ips, jps, dt):
         ni = ips.n

@@ -9,10 +9,10 @@
 from __future__ import division
 import os
 import sys
+import math
 import logging
 import getpass
 import pyopencl as cl
-from fractions import gcd
 from functools import partial
 from collections import namedtuple
 from .utils import ctype
@@ -118,9 +118,10 @@ class CLKernel(object):
         itemsize = dtype.itemsize
         dev = ctx.devices[0]
 
-        size0 = dev.local_mem_size // itemsize
+        size0 = dev.local_mem_size // (itemsize * nbufs)
         size1 = dev.max_work_group_size
-        wgsize = gcd(size0, size1 * nbufs) // nbufs
+        size2 = 2**int(math.log(size0, 2))
+        wgsize = min(size1, size2)
         self.wgsize = wgsize
         lmsize = wgsize * itemsize
 
