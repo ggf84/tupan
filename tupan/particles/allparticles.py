@@ -44,20 +44,22 @@ class ParticleSystem(AbstractNbodyMethods):
     def _rebind_attrs(self):
         attrs = defaultdict(list)
         for (key, obj) in self.members.items():
+            setattr(self, key, obj)
             for attr in obj.__dict__:
                 attrs[attr].append(getattr(obj, attr))
 
         for (attr, seq) in attrs.items():
-            setattr(self, attr, np.concatenate(seq))
+            ary = np.concatenate(seq) if len(seq) > 1 else seq[0]
+            setattr(self, attr, ary)
 
-        ns = 0
-        nf = 0
-        for (key, obj) in self.members.items():
-            setattr(self, key, obj)
-            nf += obj.n
-            for attr in obj.__dict__:
-                setattr(obj, attr, getattr(self, attr)[ns:nf])
-            ns += obj.n
+        if len(self.members) > 1:
+            ns = 0
+            nf = 0
+            for obj in self.members.values():
+                nf += obj.n
+                for attr in obj.__dict__:
+                    setattr(obj, attr, getattr(self, attr)[ns:nf])
+                ns += obj.n
 
     def register_auxiliary_attribute(self, attr, dtype):
         if attr in self.__dict__:
@@ -96,13 +98,10 @@ class ParticleSystem(AbstractNbodyMethods):
     def append(self, obj):
         if obj.n:
             try:
-                for (k, v) in obj.members.items():
-                    try:
-                        self.members[k].append(v)
-                    except:
-                        self.members[k] = v.copy()
+                items = obj.members.items()
             except:
-                k, v = type(obj).__name__.lower(), obj
+                items = [(type(obj).__name__.lower(), obj)]
+            for (k, v) in items:
                 try:
                     self.members[k].append(v)
                 except:
