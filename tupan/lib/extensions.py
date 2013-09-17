@@ -464,15 +464,15 @@ class Sakura(AbstractExtension):
                     cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real)
+                    cty.c_real, cty.c_int)
         restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p)
         self.argtypes = argtypes
         self.restypes = restypes
         lmem = self.kernel.allocate_local_memory(8, np.dtype(ctype.REAL))
-        self.kernel.set_args(lmem, start=25)
+        self.kernel.set_args(lmem, start=26)
 
-    def set_args(self, ips, jps, dt):
+    def set_args(self, ips, jps, dt, flag):
         ni = ips.n
         nj = jps.n
 
@@ -496,7 +496,7 @@ class Sakura(AbstractExtension):
                         nj,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2, jps.vx, jps.vy, jps.vz,
-                        dt)
+                        dt, flag)
         self._outargs = (ips.drx, ips.dry, ips.drz,
                          ips.dvx, ips.dvy, ips.dvz)
 

@@ -2,6 +2,7 @@
 
 inline void sakura_kernel_main_loop(
     const REAL dt,
+    const int flag,
     const REAL im,
     const REAL irx,
     const REAL iry,
@@ -60,7 +61,7 @@ inline void sakura_kernel_main_loop(
             REAL jvx = __jvx[j];
             REAL jvy = __jvy[j];
             REAL jvz = __jvz[j];
-            sakura_kernel_core(dt,
+            sakura_kernel_core(dt, flag,
                                im, irx, iry, irz, ie2, ivx, ivy, ivz,
                                jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
                                &(*idrx), &(*idry), &(*idrz),
@@ -92,6 +93,7 @@ __kernel void sakura_kernel(
     __global const REAL *_jvy,
     __global const REAL *_jvz,
     const REAL dt,
+    const int flag,
     __global REAL *_idrx,
     __global REAL *_idry,
     __global REAL *_idrz,
@@ -126,7 +128,7 @@ __kernel void sakura_kernel(
     REAL idvz = 0;
 
     sakura_kernel_main_loop(
-        dt,
+        dt, flag,
         im, irx, iry, irz, ie2, ivx, ivy, ivz,
         nj,
         _jm, _jrx, _jry, _jrz, _je2, _jvx, _jvy, _jvz,

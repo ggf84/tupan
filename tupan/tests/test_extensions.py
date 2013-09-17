@@ -114,7 +114,7 @@ class TestCase1(unittest.TestCase):
     def test07(self):
         print("\n---------- test07 ----------")
         dt = 1.0/64
-        self.compare_result(extensions.Sakura, self.ps, dt)
+        self.compare_result(extensions.Sakura, self.ps, dt, 0)
 
     def test08(self):
         print("\n---------- test08 ----------")
@@ -218,7 +218,7 @@ class TestCase2(unittest.TestCase):
     def test07(self):
         print("\n---------- test07 ----------")
         dt = 1.0/64
-        self.performance(extensions.Sakura, self.pslist, dt)
+        self.performance(extensions.Sakura, self.pslist, dt, 0)
 
     def test08(self):
         print("\n---------- test08 ----------")
