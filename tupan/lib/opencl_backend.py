@@ -15,7 +15,6 @@ import getpass
 import pyopencl as cl
 from functools import partial
 from collections import namedtuple
-from .utils import ctype
 
 
 logger = logging.getLogger(__name__)
@@ -92,14 +91,15 @@ class CLKernel(object):
         flags = memf.READ_WRITE | memf.COPY_HOST_PTR
         clBuffer = partial(cl.Buffer, ctx, flags)
 
+        from .utils.ctype import ctypedict
         types = namedtuple("Types", ["c_int", "c_int_p",
                                      "c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])
-        self.cty = types(c_int=ctype.INT,
+        self.cty = types(c_int=ctypedict["int"].type,
                          c_int_p=lambda x: clBuffer(hostbuf=x),
-                         c_uint=ctype.UINT,
+                         c_uint=ctypedict["uint"].type,
                          c_uint_p=lambda x: clBuffer(hostbuf=x),
-                         c_real=ctype.REAL,
+                         c_real=ctypedict["real"].type,
                          c_real_p=lambda x: clBuffer(hostbuf=x),
                          )
 
@@ -117,7 +117,10 @@ class CLKernel(object):
 
         self.local_size = (ls0,)
 
-    def allocate_local_memory(self, nbufs, dtype):
+    def allocate_local_memory(self, nbufs, sctype):
+        from .utils.ctype import ctypedict
+        dtype = ctypedict[sctype]
+
         itemsize = dtype.itemsize
         dev = ctx.devices[0]
 

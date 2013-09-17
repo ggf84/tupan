@@ -9,7 +9,6 @@ TODO.
 from __future__ import print_function
 import logging
 from ..integrator import Base
-from ..lib.utils import ctype
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -1045,9 +1044,9 @@ class SIA(Base):
 
         ps = self.ps
         if ps.include_pn_corrections:
-            ps.register_auxiliary_attribute("wx", ctype.REAL)
-            ps.register_auxiliary_attribute("wy", ctype.REAL)
-            ps.register_auxiliary_attribute("wz", ctype.REAL)
+            ps.register_auxiliary_attribute("wx", "real")
+            ps.register_auxiliary_attribute("wy", "real")
+            ps.register_auxiliary_attribute("wz", "real")
 #            ps.wx[...] = ps.vx
 #            ps.wy[...] = ps.vy
 #            ps.wz[...] = ps.vz
