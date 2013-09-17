@@ -92,9 +92,12 @@ class CLKernel(object):
         flags = memf.READ_WRITE | memf.COPY_HOST_PTR
         clBuffer = partial(cl.Buffer, ctx, flags)
 
-        types = namedtuple("Types", ["c_uint", "c_uint_p",
+        types = namedtuple("Types", ["c_int", "c_int_p",
+                                     "c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])
-        self.cty = types(c_uint=ctype.UINT,
+        self.cty = types(c_int=ctype.INT,
+                         c_int_p=lambda x: clBuffer(hostbuf=x),
+                         c_uint=ctype.UINT,
                          c_uint_p=lambda x: clBuffer(hostbuf=x),
                          c_real=ctype.REAL,
                          c_real_p=lambda x: clBuffer(hostbuf=x),

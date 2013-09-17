@@ -220,6 +220,7 @@ void sakura_kernel(
     const REAL *_jvy,
     const REAL *_jvz,
     const REAL dt,
+    const int flag,
     REAL *_idrx,
     REAL *_idry,
     REAL *_idrz,

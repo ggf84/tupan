@@ -51,6 +51,7 @@ def make_lib(fptype):
 
     s = []
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
+        s.append("typedef int INT;")
         s.append("typedef unsigned int UINT;")
         s.append("typedef {} REAL;".format(fptype))
         s.append(fobj.read())
@@ -95,13 +96,17 @@ class CKernel(object):
 
         from_buffer = ctypes.c_char.from_buffer
         addressof = ctypes.addressof
-        icast = partial(_ffi.cast, "UINT *")
+        icast = partial(_ffi.cast, "INT *")
+        uicast = partial(_ffi.cast, "UINT *")
         rcast = partial(_ffi.cast, "REAL *")
 
-        types = namedtuple("Types", ["c_uint", "c_uint_p",
+        types = namedtuple("Types", ["c_int", "c_int_p",
+                                     "c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])
-        self.cty = types(c_uint=lambda x: x,
-                         c_uint_p=lambda x: icast(addressof(from_buffer(x))),
+        self.cty = types(c_int=lambda x: x,
+                         c_int_p=lambda x: icast(addressof(from_buffer(x))),
+                         c_uint=lambda x: x,
+                         c_uint_p=lambda x: uicast(addressof(from_buffer(x))),
                          c_real=lambda x: x,
                          c_real_p=lambda x: rcast(addressof(from_buffer(x))),
                          )

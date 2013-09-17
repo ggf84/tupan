@@ -21,6 +21,7 @@ inline void sakura_kernel(
     const REAL *_jvy,
     const REAL *_jvz,
     const REAL dt,
+    const int flag,
     REAL *_idrx,
     REAL *_idry,
     REAL *_idrz,
@@ -53,7 +54,7 @@ inline void sakura_kernel(
             REAL jvx = _jvx[j];
             REAL jvy = _jvy[j];
             REAL jvz = _jvz[j];
-            sakura_kernel_core(dt,
+            sakura_kernel_core(dt, flag,
                                im, irx, iry, irz, ie2, ivx, ivy, ivz,
                                jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
                                &idrx, &idry, &idrz, &idvx, &idvy, &idvz);
