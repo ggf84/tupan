@@ -122,7 +122,7 @@ class Phi(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.global_size = ni
+        self.kernel.set_gsize(ni)
         if not "phi" in ips.__dict__:
             ips.register_auxiliary_attribute("phi", "real")
 
@@ -261,7 +261,7 @@ class AccJerk(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.global_size = ni
+        self.kernel.set_gsize(ni)
         if not "ax" in ips.__dict__:
             ips.register_auxiliary_attribute("ax", "real")
         if not "ay" in ips.__dict__:
@@ -319,7 +319,7 @@ class SnapCrackle(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.global_size = ni
+        self.kernel.set_gsize(ni)
         if not "sx" in ips.__dict__:
             ips.register_auxiliary_attribute("sx", "real")
         if not "sy" in ips.__dict__:
@@ -375,7 +375,7 @@ class Tstep(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.global_size = ni
+        self.kernel.set_gsize(ni)
         if not "tstep" in ips.__dict__:
             ips.register_auxiliary_attribute("tstep", "real")
         if not "tstepij" in ips.__dict__:
@@ -533,7 +533,7 @@ class NREG_X(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.global_size = ni
+        self.kernel.set_gsize(ni)
         if not "mrx" in ips.__dict__:
             ips.register_auxiliary_attribute("mrx", "real")
         if not "mry" in ips.__dict__:
@@ -592,7 +592,7 @@ class NREG_V(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.global_size = ni
+        self.kernel.set_gsize(ni)
         if not "mvx" in ips.__dict__:
             ips.register_auxiliary_attribute("mvx", "real")
         if not "mvy" in ips.__dict__:

@@ -1,105 +1,33 @@
 #include "nreg_kernels_common.h"
 
-inline void nreg_Xkernel_main_loop(
-    const REAL dt,
-    const REAL im,
-    const REAL irx,
-    const REAL iry,
-    const REAL irz,
-    const REAL ie2,
-    const REAL ivx,
-    const REAL ivy,
-    const REAL ivz,
-    const UINT nj,
-    __global const REAL *_jm,
-    __global const REAL *_jrx,
-    __global const REAL *_jry,
-    __global const REAL *_jrz,
-    __global const REAL *_je2,
-    __global const REAL *_jvx,
-    __global const REAL *_jvy,
-    __global const REAL *_jvz,
-    __local REAL *__jm,
-    __local REAL *__jrx,
-    __local REAL *__jry,
-    __local REAL *__jrz,
-    __local REAL *__je2,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz,
-    REAL *idrx,
-    REAL *idry,
-    REAL *idrz,
-    REAL *iax,
-    REAL *iay,
-    REAL *iaz,
-    REAL *iu)
-{
-    UINT lsize = get_local_size(0);
-    UINT ntiles = (nj - 1)/lsize + 1;
-
-    for (UINT tile = 0; tile < ntiles; ++tile) {
-        UINT nb = min(lsize, (nj - (tile * lsize)));
-
-        event_t e[8];
-        e[0] = async_work_group_copy(__jm,  _jm  + tile * lsize, nb, 0);
-        e[1] = async_work_group_copy(__jrx, _jrx + tile * lsize, nb, 0);
-        e[2] = async_work_group_copy(__jry, _jry + tile * lsize, nb, 0);
-        e[3] = async_work_group_copy(__jrz, _jrz + tile * lsize, nb, 0);
-        e[4] = async_work_group_copy(__je2, _je2 + tile * lsize, nb, 0);
-        e[5] = async_work_group_copy(__jvx, _jvx + tile * lsize, nb, 0);
-        e[6] = async_work_group_copy(__jvy, _jvy + tile * lsize, nb, 0);
-        e[7] = async_work_group_copy(__jvz, _jvz + tile * lsize, nb, 0);
-        wait_group_events(8, e);
-
-        for (UINT j = 0; j < nb; ++j) {
-            REAL jm = __jm[j];
-            REAL jrx = __jrx[j];
-            REAL jry = __jry[j];
-            REAL jrz = __jrz[j];
-            REAL je2 = __je2[j];
-            REAL jvx = __jvx[j];
-            REAL jvy = __jvy[j];
-            REAL jvz = __jvz[j];
-            nreg_Xkernel_core(dt,
-                              im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                              jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-                              &(*idrx), &(*idry), &(*idrz),
-                              &(*iax), &(*iay), &(*iaz), &(*iu));
-        }
-
-        barrier(CLK_LOCAL_MEM_FENCE);
-    }
-}
-
 
 __kernel void nreg_Xkernel(
     const UINT ni,
-    __global const REAL *_im,
-    __global const REAL *_irx,
-    __global const REAL *_iry,
-    __global const REAL *_irz,
-    __global const REAL *_ie2,
-    __global const REAL *_ivx,
-    __global const REAL *_ivy,
-    __global const REAL *_ivz,
+    __global const REAL * restrict _im,
+    __global const REAL * restrict _irx,
+    __global const REAL * restrict _iry,
+    __global const REAL * restrict _irz,
+    __global const REAL * restrict _ie2,
+    __global const REAL * restrict _ivx,
+    __global const REAL * restrict _ivy,
+    __global const REAL * restrict _ivz,
     const UINT nj,
-    __global const REAL *_jm,
-    __global const REAL *_jrx,
-    __global const REAL *_jry,
-    __global const REAL *_jrz,
-    __global const REAL *_je2,
-    __global const REAL *_jvx,
-    __global const REAL *_jvy,
-    __global const REAL *_jvz,
+    __global const REAL * restrict _jm,
+    __global const REAL * restrict _jrx,
+    __global const REAL * restrict _jry,
+    __global const REAL * restrict _jrz,
+    __global const REAL * restrict _je2,
+    __global const REAL * restrict _jvx,
+    __global const REAL * restrict _jvy,
+    __global const REAL * restrict _jvz,
     const REAL dt,
-    __global REAL *_idrx,
-    __global REAL *_idry,
-    __global REAL *_idrz,
-    __global REAL *_iax,
-    __global REAL *_iay,
-    __global REAL *_iaz,
-    __global REAL *_iu,
+    __global REAL * restrict _idrx,
+    __global REAL * restrict _idry,
+    __global REAL * restrict _idrz,
+    __global REAL * restrict _iax,
+    __global REAL * restrict _iay,
+    __global REAL * restrict _iaz,
+    __global REAL * restrict _iu,
     __local REAL *__jm,
     __local REAL *__jrx,
     __local REAL *__jry,
@@ -109,132 +37,75 @@ __kernel void nreg_Xkernel(
     __local REAL *__jvy,
     __local REAL *__jvz)
 {
-    UINT gid = get_global_id(0);
-    UINT i = min(gid, ni-1);
+    UINT i = get_global_id(0);
 
-    REAL im = _im[i];
-    REAL irx = _irx[i];
-    REAL iry = _iry[i];
-    REAL irz = _irz[i];
-    REAL ie2 = _ie2[i];
-    REAL ivx = _ivx[i];
-    REAL ivy = _ivy[i];
-    REAL ivz = _ivz[i];
+    REALn im = vloadn(i, _im);
+    REALn irx = vloadn(i, _irx);
+    REALn iry = vloadn(i, _iry);
+    REALn irz = vloadn(i, _irz);
+    REALn ie2 = vloadn(i, _ie2);
+    REALn ivx = vloadn(i, _ivx);
+    REALn ivy = vloadn(i, _ivy);
+    REALn ivz = vloadn(i, _ivz);
 
-    REAL idrx = 0;
-    REAL idry = 0;
-    REAL idrz = 0;
-    REAL iax = 0;
-    REAL iay = 0;
-    REAL iaz = 0;
-    REAL iu = 0;
+    REALn vdt = (REALn)(dt);
 
-    nreg_Xkernel_main_loop(
-        dt,
-        im, irx, iry, irz, ie2, ivx, ivy, ivz,
-        nj,
-        _jm, _jrx, _jry, _jrz, _je2, _jvx, _jvy, _jvz,
-        __jm, __jrx, __jry, __jrz, __je2, __jvx, __jvy, __jvz,
-        &idrx, &idry, &idrz,
-        &iax, &iay, &iaz, &iu);
+    REALn idrx = (REALn)(0);
+    REALn idry = (REALn)(0);
+    REALn idrz = (REALn)(0);
+    REALn iax = (REALn)(0);
+    REALn iay = (REALn)(0);
+    REALn iaz = (REALn)(0);
+    REALn iu = (REALn)(0);
 
-    _idrx[i] = idrx;
-    _idry[i] = idry;
-    _idrz[i] = idrz;
-    _iax[i] = iax;
-    _iay[i] = iay;
-    _iaz[i] = iaz;
-    _iu[i] = iu;
-}
-
-
-
-inline void nreg_Vkernel_main_loop(
-    const REAL dt,
-    const REAL im,
-    const REAL ivx,
-    const REAL ivy,
-    const REAL ivz,
-    const REAL iax,
-    const REAL iay,
-    const REAL iaz,
-    const UINT nj,
-    __global const REAL *_jm,
-    __global const REAL *_jvx,
-    __global const REAL *_jvy,
-    __global const REAL *_jvz,
-    __global const REAL *_jax,
-    __global const REAL *_jay,
-    __global const REAL *_jaz,
-    __local REAL *__jm,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz,
-    __local REAL *__jax,
-    __local REAL *__jay,
-    __local REAL *__jaz,
-    REAL *idvx,
-    REAL *idvy,
-    REAL *idvz,
-    REAL *ik)
-{
-    UINT lsize = get_local_size(0);
-    UINT ntiles = (nj - 1)/lsize + 1;
-
-    for (UINT tile = 0; tile < ntiles; ++tile) {
-        UINT nb = min(lsize, (nj - (tile * lsize)));
-
-        event_t e[7];
-        e[0] = async_work_group_copy(__jm,  _jm  + tile * lsize, nb, 0);
-        e[1] = async_work_group_copy(__jvx, _jvx + tile * lsize, nb, 0);
-        e[2] = async_work_group_copy(__jvy, _jvy + tile * lsize, nb, 0);
-        e[3] = async_work_group_copy(__jvz, _jvz + tile * lsize, nb, 0);
-        e[4] = async_work_group_copy(__jax, _jax + tile * lsize, nb, 0);
-        e[5] = async_work_group_copy(__jay, _jay + tile * lsize, nb, 0);
-        e[6] = async_work_group_copy(__jaz, _jaz + tile * lsize, nb, 0);
-        wait_group_events(7, e);
-
-        for (UINT j = 0; j < nb; ++j) {
-            REAL jm = __jm[j];
-            REAL jvx = __jvx[j];
-            REAL jvy = __jvy[j];
-            REAL jvz = __jvz[j];
-            REAL jax = __jax[j];
-            REAL jay = __jay[j];
-            REAL jaz = __jaz[j];
-            nreg_Vkernel_core(dt,
-                              im, ivx, ivy, ivz, iax, iay, iaz,
-                              jm, jvx, jvy, jvz, jax, jay, jaz,
-                              &(*idvx), &(*idvy), &(*idvz), &(*ik));
-        }
-
-        barrier(CLK_LOCAL_MEM_FENCE);
+    for (UINT j = 0; j < nj; ++j) {
+        REALn jm = (REALn)(_jm[j]);
+        REALn jrx = (REALn)(_jrx[j]);
+        REALn jry = (REALn)(_jry[j]);
+        REALn jrz = (REALn)(_jrz[j]);
+        REALn je2 = (REALn)(_je2[j]);
+        REALn jvx = (REALn)(_jvx[j]);
+        REALn jvy = (REALn)(_jvy[j]);
+        REALn jvz = (REALn)(_jvz[j]);
+        nreg_Xkernel_core(vdt,
+                          im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                          jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                          &idrx, &idry, &idrz,
+                          &iax, &iay, &iaz, &iu);
     }
+
+    vstoren(idrx, i, _idrx);
+    vstoren(idry, i, _idry);
+    vstoren(idrz, i, _idrz);
+    vstoren(iax, i, _iax);
+    vstoren(iay, i, _iay);
+    vstoren(iaz, i, _iaz);
+    vstoren(iu, i, _iu);
 }
 
 
 __kernel void nreg_Vkernel(
     const UINT ni,
-    __global const REAL *_im,
-    __global const REAL *_ivx,
-    __global const REAL *_ivy,
-    __global const REAL *_ivz,
-    __global const REAL *_iax,
-    __global const REAL *_iay,
-    __global const REAL *_iaz,
+    __global const REAL * restrict _im,
+    __global const REAL * restrict _ivx,
+    __global const REAL * restrict _ivy,
+    __global const REAL * restrict _ivz,
+    __global const REAL * restrict _iax,
+    __global const REAL * restrict _iay,
+    __global const REAL * restrict _iaz,
     const UINT nj,
-    __global const REAL *_jm,
-    __global const REAL *_jvx,
-    __global const REAL *_jvy,
-    __global const REAL *_jvz,
-    __global const REAL *_jax,
-    __global const REAL *_jay,
-    __global const REAL *_jaz,
+    __global const REAL * restrict _jm,
+    __global const REAL * restrict _jvx,
+    __global const REAL * restrict _jvy,
+    __global const REAL * restrict _jvz,
+    __global const REAL * restrict _jax,
+    __global const REAL * restrict _jay,
+    __global const REAL * restrict _jaz,
     const REAL dt,
-    __global REAL *_idvx,
-    __global REAL *_idvy,
-    __global REAL *_idvz,
-    __global REAL *_ik,
+    __global REAL * restrict _idvx,
+    __global REAL * restrict _idvy,
+    __global REAL * restrict _idvz,
+    __global REAL * restrict _ik,
     __local REAL *__jm,
     __local REAL *__jvx,
     __local REAL *__jvy,
@@ -243,33 +114,40 @@ __kernel void nreg_Vkernel(
     __local REAL *__jay,
     __local REAL *__jaz)
 {
-    UINT gid = get_global_id(0);
-    UINT i = min(gid, ni-1);
+    UINT i = get_global_id(0);
 
-    REAL im = _im[i];
-    REAL ivx = _ivx[i];
-    REAL ivy = _ivy[i];
-    REAL ivz = _ivz[i];
-    REAL iax = _iax[i];
-    REAL iay = _iay[i];
-    REAL iaz = _iaz[i];
+    REALn im = vloadn(i, _im);
+    REALn ivx = vloadn(i, _ivx);
+    REALn ivy = vloadn(i, _ivy);
+    REALn ivz = vloadn(i, _ivz);
+    REALn iax = vloadn(i, _iax);
+    REALn iay = vloadn(i, _iay);
+    REALn iaz = vloadn(i, _iaz);
 
-    REAL idvx = 0;
-    REAL idvy = 0;
-    REAL idvz = 0;
-    REAL ik = 0;
+    REALn vdt = (REALn)(dt);
 
-    nreg_Vkernel_main_loop(
-        dt,
-        im, ivx, ivy, ivz, iax, iay, iaz,
-        nj,
-        _jm, _jvx, _jvy, _jvz, _jax, _jay, _jaz,
-        __jm, __jvx, __jvy, __jvz, __jax, __jay, __jaz,
-        &idvx, &idvy, &idvz, &ik);
+    REALn idvx = (REALn)(0);
+    REALn idvy = (REALn)(0);
+    REALn idvz = (REALn)(0);
+    REALn ik = (REALn)(0);
 
-    _idvx[i] = idvx;
-    _idvy[i] = idvy;
-    _idvz[i] = idvz;
-    _ik[i] = ik;
+    for (UINT j = 0; j < nj; ++j) {
+        REALn jm = (REALn)(_jm[j]);
+        REALn jvx = (REALn)(_jvx[j]);
+        REALn jvy = (REALn)(_jvy[j]);
+        REALn jvz = (REALn)(_jvz[j]);
+        REALn jax = (REALn)(_jax[j]);
+        REALn jay = (REALn)(_jay[j]);
+        REALn jaz = (REALn)(_jaz[j]);
+        nreg_Vkernel_core(vdt,
+                          im, ivx, ivy, ivz, iax, iay, iaz,
+                          jm, jvx, jvy, jvz, jax, jay, jaz,
+                          &idvx, &idvy, &idvz, &ik);
+    }
+
+    vstoren(idvx, i, _idvx);
+    vstoren(idvy, i, _idvy);
+    vstoren(idvz, i, _idvz);
+    vstoren(ik, i, _ik);
 }
 

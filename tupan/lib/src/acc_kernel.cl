@@ -1,5 +1,6 @@
 #include "acc_kernel_common.h"
 
+
 __kernel void acc_kernel(
     const UINT ni,
     __global const REAL * restrict _im,
