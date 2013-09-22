@@ -53,7 +53,7 @@ inline void tstep_kernel_core(
     REAL dln_w = gamma * rv * inv_r2;                                           // 2 FLOPs
     w2 -= (eta / sqrt(w2)) * dln_w;                                             // 4 FLOPs
 
-    w2 = (r2 > 0) ? (w2):(0);
+    w2 = select(((REAL)0), w2, (INT)(r2 > 0));
 
     *iw2_a += w2;                                                               // 1 FLOPs
     *iw2_b = max(w2, *iw2_b);

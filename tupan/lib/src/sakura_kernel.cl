@@ -2,7 +2,7 @@
 
 inline void sakura_kernel_main_loop(
     const REAL dt,
-    const int flag,
+    const INT flag,
     const REAL im,
     const REAL irx,
     const REAL iry,
@@ -11,7 +11,7 @@ inline void sakura_kernel_main_loop(
     const REAL ivx,
     const REAL ivy,
     const REAL ivz,
-    const uint nj,
+    const UINT nj,
     __global const REAL *_jm,
     __global const REAL *_jrx,
     __global const REAL *_jry,
@@ -35,11 +35,11 @@ inline void sakura_kernel_main_loop(
     REAL *idvy,
     REAL *idvz)
 {
-    uint lsize = get_local_size(0);
-    uint ntiles = (nj - 1)/lsize + 1;
+    UINT lsize = get_local_size(0);
+    UINT ntiles = (nj - 1)/lsize + 1;
 
-    for (uint tile = 0; tile < ntiles; ++tile) {
-        uint nb = min(lsize, (nj - (tile * lsize)));
+    for (UINT tile = 0; tile < ntiles; ++tile) {
+        UINT nb = min(lsize, (nj - (tile * lsize)));
 
         event_t e[8];
         e[0] = async_work_group_copy(__jm,  _jm  + tile * lsize, nb, 0);
@@ -52,7 +52,7 @@ inline void sakura_kernel_main_loop(
         e[7] = async_work_group_copy(__jvz, _jvz + tile * lsize, nb, 0);
         wait_group_events(8, e);
 
-        for (uint j = 0; j < nb; ++j) {
+        for (UINT j = 0; j < nb; ++j) {
             REAL jm = __jm[j];
             REAL jrx = __jrx[j];
             REAL jry = __jry[j];
@@ -74,7 +74,7 @@ inline void sakura_kernel_main_loop(
 
 
 __kernel void sakura_kernel(
-    const uint ni,
+    const UINT ni,
     __global const REAL *_im,
     __global const REAL *_irx,
     __global const REAL *_iry,
@@ -83,7 +83,7 @@ __kernel void sakura_kernel(
     __global const REAL *_ivx,
     __global const REAL *_ivy,
     __global const REAL *_ivz,
-    const uint nj,
+    const UINT nj,
     __global const REAL *_jm,
     __global const REAL *_jrx,
     __global const REAL *_jry,
@@ -93,7 +93,7 @@ __kernel void sakura_kernel(
     __global const REAL *_jvy,
     __global const REAL *_jvz,
     const REAL dt,
-    const int flag,
+    const INT flag,
     __global REAL *_idrx,
     __global REAL *_idry,
     __global REAL *_idrz,
@@ -109,8 +109,8 @@ __kernel void sakura_kernel(
     __local REAL *__jvy,
     __local REAL *__jvz)
 {
-    uint gid = get_global_id(0);
-    uint i = min(gid, ni-1);
+    UINT gid = get_global_id(0);
+    UINT i = min(gid, ni-1);
 
     REAL im = _im[i];
     REAL irx = _irx[i];

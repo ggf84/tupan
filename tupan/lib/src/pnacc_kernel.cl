@@ -9,7 +9,7 @@ inline void pnacc_kernel_main_loop(
     const REAL ivx,
     const REAL ivy,
     const REAL ivz,
-    const uint nj,
+    const UINT nj,
     __global const REAL *_jm,
     __global const REAL *_jrx,
     __global const REAL *_jry,
@@ -31,11 +31,11 @@ inline void pnacc_kernel_main_loop(
     REAL *ipnay,
     REAL *ipnaz)
 {
-    uint lsize = get_local_size(0);
-    uint ntiles = (nj - 1)/lsize + 1;
+    UINT lsize = get_local_size(0);
+    UINT ntiles = (nj - 1)/lsize + 1;
 
-    for (uint tile = 0; tile < ntiles; ++tile) {
-        uint nb = min(lsize, (nj - (tile * lsize)));
+    for (UINT tile = 0; tile < ntiles; ++tile) {
+        UINT nb = min(lsize, (nj - (tile * lsize)));
 
         event_t e[8];
         e[0] = async_work_group_copy(__jm,  _jm  + tile * lsize, nb, 0);
@@ -48,7 +48,7 @@ inline void pnacc_kernel_main_loop(
         e[7] = async_work_group_copy(__jvz, _jvz + tile * lsize, nb, 0);
         wait_group_events(8, e);
 
-        for (uint j = 0; j < nb; ++j) {
+        for (UINT j = 0; j < nb; ++j) {
             REAL jm = __jm[j];
             REAL jrx = __jrx[j];
             REAL jry = __jry[j];
@@ -69,7 +69,7 @@ inline void pnacc_kernel_main_loop(
 
 
 __kernel void pnacc_kernel(
-    const uint ni,
+    const UINT ni,
     __global const REAL *_im,
     __global const REAL *_irx,
     __global const REAL *_iry,
@@ -78,7 +78,7 @@ __kernel void pnacc_kernel(
     __global const REAL *_ivx,
     __global const REAL *_ivy,
     __global const REAL *_ivz,
-    const uint nj,
+    const UINT nj,
     __global const REAL *_jm,
     __global const REAL *_jrx,
     __global const REAL *_jry,
@@ -87,7 +87,7 @@ __kernel void pnacc_kernel(
     __global const REAL *_jvx,
     __global const REAL *_jvy,
     __global const REAL *_jvz,
-    const uint order,
+    const UINT order,
     const REAL inv1,
     const REAL inv2,
     const REAL inv3,
@@ -107,8 +107,8 @@ __kernel void pnacc_kernel(
     __local REAL *__jvy,
     __local REAL *__jvz)
 {
-    uint gid = get_global_id(0);
-    uint i = min(gid, ni-1);
+    UINT gid = get_global_id(0);
+    UINT i = min(gid, ni-1);
 
     CLIGHT clight = (CLIGHT){.order=order, .inv1=inv1,
                              .inv2=inv2, .inv3=inv3,

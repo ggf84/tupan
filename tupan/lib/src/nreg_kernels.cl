@@ -10,7 +10,7 @@ inline void nreg_Xkernel_main_loop(
     const REAL ivx,
     const REAL ivy,
     const REAL ivz,
-    const uint nj,
+    const UINT nj,
     __global const REAL *_jm,
     __global const REAL *_jrx,
     __global const REAL *_jry,
@@ -35,11 +35,11 @@ inline void nreg_Xkernel_main_loop(
     REAL *iaz,
     REAL *iu)
 {
-    uint lsize = get_local_size(0);
-    uint ntiles = (nj - 1)/lsize + 1;
+    UINT lsize = get_local_size(0);
+    UINT ntiles = (nj - 1)/lsize + 1;
 
-    for (uint tile = 0; tile < ntiles; ++tile) {
-        uint nb = min(lsize, (nj - (tile * lsize)));
+    for (UINT tile = 0; tile < ntiles; ++tile) {
+        UINT nb = min(lsize, (nj - (tile * lsize)));
 
         event_t e[8];
         e[0] = async_work_group_copy(__jm,  _jm  + tile * lsize, nb, 0);
@@ -52,7 +52,7 @@ inline void nreg_Xkernel_main_loop(
         e[7] = async_work_group_copy(__jvz, _jvz + tile * lsize, nb, 0);
         wait_group_events(8, e);
 
-        for (uint j = 0; j < nb; ++j) {
+        for (UINT j = 0; j < nb; ++j) {
             REAL jm = __jm[j];
             REAL jrx = __jrx[j];
             REAL jry = __jry[j];
@@ -74,7 +74,7 @@ inline void nreg_Xkernel_main_loop(
 
 
 __kernel void nreg_Xkernel(
-    const uint ni,
+    const UINT ni,
     __global const REAL *_im,
     __global const REAL *_irx,
     __global const REAL *_iry,
@@ -83,7 +83,7 @@ __kernel void nreg_Xkernel(
     __global const REAL *_ivx,
     __global const REAL *_ivy,
     __global const REAL *_ivz,
-    const uint nj,
+    const UINT nj,
     __global const REAL *_jm,
     __global const REAL *_jrx,
     __global const REAL *_jry,
@@ -109,8 +109,8 @@ __kernel void nreg_Xkernel(
     __local REAL *__jvy,
     __local REAL *__jvz)
 {
-    uint gid = get_global_id(0);
-    uint i = min(gid, ni-1);
+    UINT gid = get_global_id(0);
+    UINT i = min(gid, ni-1);
 
     REAL im = _im[i];
     REAL irx = _irx[i];
@@ -158,7 +158,7 @@ inline void nreg_Vkernel_main_loop(
     const REAL iax,
     const REAL iay,
     const REAL iaz,
-    const uint nj,
+    const UINT nj,
     __global const REAL *_jm,
     __global const REAL *_jvx,
     __global const REAL *_jvy,
@@ -178,11 +178,11 @@ inline void nreg_Vkernel_main_loop(
     REAL *idvz,
     REAL *ik)
 {
-    uint lsize = get_local_size(0);
-    uint ntiles = (nj - 1)/lsize + 1;
+    UINT lsize = get_local_size(0);
+    UINT ntiles = (nj - 1)/lsize + 1;
 
-    for (uint tile = 0; tile < ntiles; ++tile) {
-        uint nb = min(lsize, (nj - (tile * lsize)));
+    for (UINT tile = 0; tile < ntiles; ++tile) {
+        UINT nb = min(lsize, (nj - (tile * lsize)));
 
         event_t e[7];
         e[0] = async_work_group_copy(__jm,  _jm  + tile * lsize, nb, 0);
@@ -194,7 +194,7 @@ inline void nreg_Vkernel_main_loop(
         e[6] = async_work_group_copy(__jaz, _jaz + tile * lsize, nb, 0);
         wait_group_events(7, e);
 
-        for (uint j = 0; j < nb; ++j) {
+        for (UINT j = 0; j < nb; ++j) {
             REAL jm = __jm[j];
             REAL jvx = __jvx[j];
             REAL jvy = __jvy[j];
@@ -214,7 +214,7 @@ inline void nreg_Vkernel_main_loop(
 
 
 __kernel void nreg_Vkernel(
-    const uint ni,
+    const UINT ni,
     __global const REAL *_im,
     __global const REAL *_ivx,
     __global const REAL *_ivy,
@@ -222,7 +222,7 @@ __kernel void nreg_Vkernel(
     __global const REAL *_iax,
     __global const REAL *_iay,
     __global const REAL *_iaz,
-    const uint nj,
+    const UINT nj,
     __global const REAL *_jm,
     __global const REAL *_jvx,
     __global const REAL *_jvy,
@@ -243,8 +243,8 @@ __kernel void nreg_Vkernel(
     __local REAL *__jay,
     __local REAL *__jaz)
 {
-    uint gid = get_global_id(0);
-    uint i = min(gid, ni-1);
+    UINT gid = get_global_id(0);
+    UINT i = min(gid, ni-1);
 
     REAL im = _im[i];
     REAL ivx = _ivx[i];

@@ -103,6 +103,9 @@ class CLKernel(object):
                          c_real_p=lambda x: clBuffer(hostbuf=x),
                          )
 
+    def set_gsize(self, gsize):
+        self._gsize = (gsize,)
+
     @property
     def global_size(self):
         return self._gsize
@@ -160,7 +163,7 @@ class CLKernel(object):
         cl.enqueue_nd_range_kernel(self.queue,
                                    self.kernel,
                                    self.global_size,
-                                   self.local_size,
+                                   None,  # self.local_size,
                                    ).wait()
 
 

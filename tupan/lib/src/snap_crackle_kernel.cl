@@ -15,7 +15,7 @@ inline void snap_crackle_kernel_main_loop(
     const REAL ijx,
     const REAL ijy,
     const REAL ijz,
-    const uint nj,
+    const UINT nj,
     __global const REAL *_jm,
     __global const REAL *_jrx,
     __global const REAL *_jry,
@@ -51,11 +51,11 @@ inline void snap_crackle_kernel_main_loop(
     REAL *icy,
     REAL *icz)
 {
-    uint lsize = get_local_size(0);
-    uint ntiles = (nj - 1)/lsize + 1;
+    UINT lsize = get_local_size(0);
+    UINT ntiles = (nj - 1)/lsize + 1;
 
-    for (uint tile = 0; tile < ntiles; ++tile) {
-        uint nb = min(lsize, (nj - (tile * lsize)));
+    for (UINT tile = 0; tile < ntiles; ++tile) {
+        UINT nb = min(lsize, (nj - (tile * lsize)));
 
         event_t e[14];
         e[0] = async_work_group_copy(__jm,  _jm  + tile * lsize, nb, 0);
@@ -74,7 +74,7 @@ inline void snap_crackle_kernel_main_loop(
         e[13] = async_work_group_copy(__jjz, _jjz + tile * lsize, nb, 0);
         wait_group_events(14, e);
 
-        for (uint j = 0; j < nb; ++j) {
+        for (UINT j = 0; j < nb; ++j) {
             REAL jm = __jm[j];
             REAL jrx = __jrx[j];
             REAL jry = __jry[j];
@@ -105,7 +105,7 @@ inline void snap_crackle_kernel_main_loop(
 
 
 __kernel void snap_crackle_kernel(
-    const uint ni,
+    const UINT ni,
     __global const REAL *_im,
     __global const REAL *_irx,
     __global const REAL *_iry,
@@ -120,7 +120,7 @@ __kernel void snap_crackle_kernel(
     __global const REAL *_ijx,
     __global const REAL *_ijy,
     __global const REAL *_ijz,
-    const uint nj,
+    const UINT nj,
     __global const REAL *_jm,
     __global const REAL *_jrx,
     __global const REAL *_jry,
@@ -156,8 +156,8 @@ __kernel void snap_crackle_kernel(
     __local REAL *__jjy,
     __local REAL *__jjz)
 {
-    uint gid = get_global_id(0);
-    uint i = min(gid, ni-1);
+    UINT gid = get_global_id(0);
+    UINT i = min(gid, ni-1);
 
     REAL im = _im[i];
     REAL irx = _irx[i];

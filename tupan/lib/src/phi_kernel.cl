@@ -6,7 +6,7 @@ inline void phi_kernel_main_loop(
     const REAL iry,
     const REAL irz,
     const REAL ie2,
-    const uint nj,
+    const UINT nj,
     __global const REAL *_jm,
     __global const REAL *_jrx,
     __global const REAL *_jry,
@@ -19,11 +19,11 @@ inline void phi_kernel_main_loop(
     __local REAL *__je2,
     REAL *iphi)
 {
-    uint lsize = get_local_size(0);
-    uint ntiles = (nj - 1)/lsize + 1;
+    UINT lsize = get_local_size(0);
+    UINT ntiles = (nj - 1)/lsize + 1;
 
-    for (uint tile = 0; tile < ntiles; ++tile) {
-        uint nb = min(lsize, (nj - (tile * lsize)));
+    for (UINT tile = 0; tile < ntiles; ++tile) {
+        UINT nb = min(lsize, (nj - (tile * lsize)));
 
         event_t e[5];
         e[0] = async_work_group_copy(__jm,  _jm  + tile * lsize, nb, 0);
@@ -33,7 +33,7 @@ inline void phi_kernel_main_loop(
         e[4] = async_work_group_copy(__je2, _je2 + tile * lsize, nb, 0);
         wait_group_events(5, e);
 
-        for (uint j = 0; j < nb; ++j) {
+        for (UINT j = 0; j < nb; ++j) {
             REAL jm = __jm[j];
             REAL jrx = __jrx[j];
             REAL jry = __jry[j];
@@ -50,13 +50,13 @@ inline void phi_kernel_main_loop(
 
 
 __kernel void phi_kernel(
-    const uint ni,
+    const UINT ni,
     __global const REAL *_im,
     __global const REAL *_irx,
     __global const REAL *_iry,
     __global const REAL *_irz,
     __global const REAL *_ie2,
-    const uint nj,
+    const UINT nj,
     __global const REAL *_jm,
     __global const REAL *_jrx,
     __global const REAL *_jry,
@@ -69,8 +69,8 @@ __kernel void phi_kernel(
     __local REAL *__jrz,
     __local REAL *__je2)
 {
-    uint gid = get_global_id(0);
-    uint i = min(gid, ni-1);
+    UINT gid = get_global_id(0);
+    UINT i = min(gid, ni-1);
 
     REAL im = _im[i];
     REAL irx = _irx[i];
