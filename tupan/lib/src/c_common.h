@@ -42,11 +42,9 @@
     typedef float REAL16;
 #endif
 
-#define WIDTH 1
-
 #define paster(x,y) x##y
 #define concat(x,y) paster(x,y)
-#define vec(x) concat(x, WIDTH)
+#define vec(x) concat(x, 1)
 
 #define INT1 INT
 #define UINT1 UINT

@@ -2,7 +2,7 @@
 
 
 inline void sakura_kernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
@@ -11,7 +11,7 @@ inline void sakura_kernel(
     const REAL *_ivx,
     const REAL *_ivy,
     const REAL *_ivz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -21,7 +21,7 @@ inline void sakura_kernel(
     const REAL *_jvy,
     const REAL *_jvz,
     const REAL dt,
-    const int flag,
+    const INT flag,
     REAL *_idrx,
     REAL *_idry,
     REAL *_idrz,
@@ -29,7 +29,7 @@ inline void sakura_kernel(
     REAL *_idvy,
     REAL *_idvz)
 {
-    unsigned int i, j;
+    UINT i, j;
     for (i = 0; i < ni; ++i) {
         REAL im = _im[i];
         REAL irx = _irx[i];

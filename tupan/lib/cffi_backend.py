@@ -50,9 +50,10 @@ def make_lib(fptype):
              )
 
     s = []
+    cint = "long" if fptype == "double" else "int"
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
-        s.append("typedef int INT;")
-        s.append("typedef unsigned int UINT;")
+        s.append("typedef {} INT;".format(cint))
+        s.append("typedef unsigned {} UINT;".format(cint))
         s.append("typedef {} REAL;".format(fptype))
         s.append(fobj.read())
     source = "\n".join(s)

@@ -28,6 +28,8 @@ CACHE_DIR = os.path.join(os.path.expanduser('~'),
                              getpass.getuser(),
                              ".".join(str(i) for i in sys.version_info)))
 
+VECTOR_WIDTH = 4
+
 ctx = cl.create_some_context()
 
 
@@ -63,6 +65,7 @@ def make_lib(fptype):
     options = " -I {path}".format(path=PATH)
     if fptype == "double":
         options += " -D DOUBLE"
+    options += " -D VECTOR_WIDTH={}".format(VECTOR_WIDTH)
     options += " -cl-fast-relaxed-math"
 #    options += " -cl-opt-disable"
 
@@ -104,7 +107,8 @@ class CLKernel(object):
                          )
 
     def set_gsize(self, gsize):
-        self._gsize = (gsize,)
+        gs = (gsize + VECTOR_WIDTH - 1) // VECTOR_WIDTH
+        self._gsize = (gs,)
 
     @property
     def global_size(self):

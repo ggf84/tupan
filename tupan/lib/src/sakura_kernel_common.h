@@ -123,7 +123,7 @@ inline void twobody_solver(
 
 inline void evolve_twobody(
     const REAL dt,
-    const int flag,
+    const INT flag,
     const REAL m,
     const REAL e2,
     const REAL r0x,
@@ -172,7 +172,7 @@ inline void evolve_twobody(
 
 inline void sakura_kernel_core(
     const REAL dt,
-    const int flag,
+    const INT flag,
     const REAL im,
     const REAL irx,
     const REAL iry,

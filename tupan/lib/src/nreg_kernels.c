@@ -2,7 +2,7 @@
 
 
 inline void nreg_Xkernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
@@ -11,7 +11,7 @@ inline void nreg_Xkernel(
     const REAL *_ivx,
     const REAL *_ivy,
     const REAL *_ivz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -29,7 +29,7 @@ inline void nreg_Xkernel(
     REAL *_iaz,
     REAL *_iu)
 {
-    unsigned int i, j;
+    UINT i, j;
     for (i = 0; i < ni; ++i) {
         REAL im = _im[i];
         REAL irx = _irx[i];
@@ -73,7 +73,7 @@ inline void nreg_Xkernel(
 
 
 inline void nreg_Vkernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_ivx,
     const REAL *_ivy,
@@ -81,7 +81,7 @@ inline void nreg_Vkernel(
     const REAL *_iax,
     const REAL *_iay,
     const REAL *_iaz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jvx,
     const REAL *_jvy,
@@ -95,7 +95,7 @@ inline void nreg_Vkernel(
     REAL *_idvz,
     REAL *_ik)
 {
-    unsigned int i, j;
+    UINT i, j;
     for (i = 0; i < ni; ++i) {
         REAL im = _im[i];
         REAL ivx = _ivx[i];

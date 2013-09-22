@@ -2,7 +2,7 @@
 
 
 inline void acc_jerk_kernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
@@ -11,7 +11,7 @@ inline void acc_jerk_kernel(
     const REAL *_ivx,
     const REAL *_ivy,
     const REAL *_ivz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -27,7 +27,7 @@ inline void acc_jerk_kernel(
     REAL *_ijy,
     REAL *_ijz)
 {
-    unsigned int i, j;
+    UINT i, j;
     for (i = 0; i < ni; ++i) {
         REAL im = _im[i];
         REAL irx = _irx[i];

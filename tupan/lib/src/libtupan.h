@@ -1,12 +1,12 @@
 
 void phi_kernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
     const REAL *_irz,
     const REAL *_ie2,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -15,13 +15,13 @@ void phi_kernel(
     REAL *_iphi);
 
 void acc_kernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
     const REAL *_irz,
     const REAL *_ie2,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -32,7 +32,7 @@ void acc_kernel(
     REAL *_iaz);
 
 void acc_jerk_kernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
@@ -41,7 +41,7 @@ void acc_jerk_kernel(
     const REAL *_ivx,
     const REAL *_ivy,
     const REAL *_ivz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -58,7 +58,7 @@ void acc_jerk_kernel(
     REAL *_ijz);
 
 void snap_crackle_kernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
@@ -73,7 +73,7 @@ void snap_crackle_kernel(
     const REAL *_ijx,
     const REAL *_ijy,
     const REAL *_ijz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -96,7 +96,7 @@ void snap_crackle_kernel(
     REAL *_icz);
 
 void tstep_kernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
@@ -105,7 +105,7 @@ void tstep_kernel(
     const REAL *_ivx,
     const REAL *_ivy,
     const REAL *_ivz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -119,7 +119,7 @@ void tstep_kernel(
     REAL *_idt_b);
 
 void pnacc_kernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
@@ -128,7 +128,7 @@ void pnacc_kernel(
     const REAL *_ivx,
     const REAL *_ivy,
     const REAL *_ivz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -137,7 +137,7 @@ void pnacc_kernel(
     const REAL *_jvx,
     const REAL *_jvy,
     const REAL *_jvz,
-    unsigned int order,
+    UINT order,
     const REAL inv1,
     const REAL inv2,
     const REAL inv3,
@@ -150,7 +150,7 @@ void pnacc_kernel(
     REAL *_ipnaz);
 
 void nreg_Xkernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
@@ -159,7 +159,7 @@ void nreg_Xkernel(
     const REAL *_ivx,
     const REAL *_ivy,
     const REAL *_ivz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -178,7 +178,7 @@ void nreg_Xkernel(
     REAL *_iu);
 
 void nreg_Vkernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_ivx,
     const REAL *_ivy,
@@ -186,7 +186,7 @@ void nreg_Vkernel(
     const REAL *_iax,
     const REAL *_iay,
     const REAL *_iaz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jvx,
     const REAL *_jvy,
@@ -201,7 +201,7 @@ void nreg_Vkernel(
     REAL *_ik);
 
 void sakura_kernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
@@ -210,7 +210,7 @@ void sakura_kernel(
     const REAL *_ivx,
     const REAL *_ivy,
     const REAL *_ivz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -220,7 +220,7 @@ void sakura_kernel(
     const REAL *_jvy,
     const REAL *_jvz,
     const REAL dt,
-    const int flag,
+    const INT flag,
     REAL *_idrx,
     REAL *_idry,
     REAL *_idrz,

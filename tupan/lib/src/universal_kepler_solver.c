@@ -220,12 +220,12 @@ inline REAL fprimeprime(
 
 
 #define ORDER 5
-inline int laguerre(
+inline INT laguerre(
     REAL x0,
     REAL *x,
     REAL *arg)
 {
-    int i = 0;
+    INT i = 0;
     REAL delta;
 
     *x = x0;
@@ -251,12 +251,12 @@ inline int laguerre(
 }
 
 
-inline int halley(
+inline INT halley(
     REAL x0,
     REAL *x,
     REAL *arg)
 {
-    int i = 0;
+    INT i = 0;
     REAL delta;
 
     *x = x0;
@@ -279,12 +279,12 @@ inline int halley(
 }
 
 
-inline int newton(
+inline INT newton(
     REAL x0,
     REAL *x,
     REAL *arg)
 {
-    int i = 0;
+    INT i = 0;
     REAL delta;
 
     *x = x0;
@@ -354,7 +354,7 @@ inline void set_new_pos_vel(
 }
 
 
-inline int _universal_kepler_solver(
+inline INT _universal_kepler_solver(
     const REAL dt,
     const REAL m,
     const REAL e2,
@@ -379,7 +379,7 @@ inline int _universal_kepler_solver(
     REAL vz = v0z;
 
     REAL r2 = rx * rx + ry * ry + rz * rz;
-    int mask = (r2 > 0);
+    INT mask = (r2 > 0);
     if (!mask) {
         *r1x = rx;
         *r1y = ry;
@@ -406,9 +406,9 @@ inline int _universal_kepler_solver(
     arg[3] = m;
     arg[4] = alpha;
 
-//    int err = newton(s0, &s, arg);
-//    int err = halley(s0, &s, arg);
-    int err = laguerre(s0, &s, arg);
+//    INT err = newton(s0, &s, arg);
+//    INT err = halley(s0, &s, arg);
+    INT err = laguerre(s0, &s, arg);
     if (err == 0) {
         set_new_pos_vel(dt, s, r, m, e2, alpha,
                         &rx, &ry, &rz, &vx, &vy, &vz);
@@ -456,7 +456,7 @@ inline void __universal_kepler_solver(
     REAL *v1y,
     REAL *v1z)
 {
-    int i, n = 1;
+    INT i, n = 1;
     REAL rx, ry, rz, vx, vy, vz;
 
 label1:
@@ -467,7 +467,7 @@ label1:
     vy = v0y;
     vz = v0z;
     for (i = 0; i < n; ++i) {
-        int err = _universal_kepler_solver(dt/n, m, e2, rx, ry, rz, vx, vy, vz,
+        INT err = _universal_kepler_solver(dt/n, m, e2, rx, ry, rz, vx, vy, vz,
                                            &rx, &ry, &rz, &vx, &vy, &vz);
         if (err != 0) {
             n *= 2;
@@ -517,7 +517,7 @@ inline void universal_kepler_solver(
     }
 
     REAL r2 = r0x * r0x + r0y * r0y + r0z * r0z;
-    int mask = (r2 > 0);
+    INT mask = (r2 > 0);
     if (!mask) {
         *r1x = r0x;
         *r1y = r0y;
@@ -540,7 +540,7 @@ inline void universal_kepler_solver(
     REAL u1 = 2 * m / r;
     REAL e1 = v2 - u1;
 
-    int n = 1;
+    INT n = 1;
     REAL tol = 64*TOLERANCE;
     REAL err = fabs(e1 - e0);
     if (2*err < tol * (u1+u0)) {
@@ -563,7 +563,7 @@ label1:
     vy = v0y;
     vz = v0z;
 
-    int i;
+    INT i;
     for (i = 0; i < n; ++i) {
         __universal_kepler_solver(dt/n, m, e2, rx, ry, rz, vx, vy, vz,
                                   &rx, &ry, &rz, &vx, &vy, &vz);

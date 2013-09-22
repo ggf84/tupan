@@ -25,7 +25,7 @@ typedef struct clight_struct {
     REAL inv5;
     REAL inv6;
     REAL inv7;
-    unsigned int order;
+    UINT order;
 } CLIGHT, *pCLIGHT;
 
 #endif // __COMMON_H__

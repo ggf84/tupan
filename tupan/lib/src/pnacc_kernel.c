@@ -2,7 +2,7 @@
 
 
 inline void pnacc_kernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
@@ -11,7 +11,7 @@ inline void pnacc_kernel(
     const REAL *_ivx,
     const REAL *_ivy,
     const REAL *_ivz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -20,7 +20,7 @@ inline void pnacc_kernel(
     const REAL *_jvx,
     const REAL *_jvy,
     const REAL *_jvz,
-    unsigned int order,
+    UINT order,
     const REAL inv1,
     const REAL inv2,
     const REAL inv3,
@@ -36,7 +36,7 @@ inline void pnacc_kernel(
                              .inv2=inv2, .inv3=inv3,
                              .inv4=inv4, .inv5=inv5,
                              .inv6=inv6, .inv7=inv7};
-    unsigned int i, j;
+    UINT i, j;
     for (i = 0; i < ni; ++i) {
         REAL im = _im[i];
         REAL irx = _irx[i];

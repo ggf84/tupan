@@ -2,7 +2,7 @@
 
 
 inline void snap_crackle_kernel(
-    const unsigned int ni,
+    const UINT ni,
     const REAL *_im,
     const REAL *_irx,
     const REAL *_iry,
@@ -17,7 +17,7 @@ inline void snap_crackle_kernel(
     const REAL *_ijx,
     const REAL *_ijy,
     const REAL *_ijz,
-    const unsigned int nj,
+    const UINT nj,
     const REAL *_jm,
     const REAL *_jrx,
     const REAL *_jry,
@@ -39,7 +39,7 @@ inline void snap_crackle_kernel(
     REAL *_icy,
     REAL *_icz)
 {
-    unsigned int i, j;
+    UINT i, j;
     for (i = 0; i < ni; ++i) {
         REAL im = _im[i];
         REAL irx = _irx[i];

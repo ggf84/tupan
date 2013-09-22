@@ -45,11 +45,9 @@
     typedef float16 REAL16;
 #endif
 
-#define WIDTH 2
-
 #define paster(x,y) x##y
 #define concat(x,y) paster(x,y)
-#define vec(x) concat(x, WIDTH)
+#define vec(x) concat(x, VECTOR_WIDTH)
 
 #define INT1 INT
 #define UINT1 UINT
@@ -59,8 +57,8 @@
 #define UINTn vec(UINT)
 #define REALn vec(REAL)
 
-#define vload1(offset, p) *(p + (offset * 1))
-#define vstore1(data, offset, p) {*(p + (offset * 1)) = data;}
+#define vload1(offset, p) p[offset]
+#define vstore1(data, offset, p) {p[offset] = data;}
 
 #define vloadn vec(vload)
 #define vstoren vec(vstore)
