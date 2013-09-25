@@ -28,12 +28,13 @@ CACHE_DIR = os.path.join(os.path.expanduser('~'),
                              ".".join(str(i) for i in sys.version_info)))
 
 
-def make_lib(fptype):
+def make_lib(prec):
     """
 
     """
-    prec = "single" if fptype == 'float' else "double"
-    logger.debug("Building/Loading %s precision C extension module...",
+    cint = "int" if prec == "float32" else "long"
+    creal = "float" if prec == 'float32' else "double"
+    logger.debug("Building/Loading %s C extension module...",
                  prec)
 
     files = ("smoothing.c",
@@ -50,11 +51,10 @@ def make_lib(fptype):
              )
 
     s = []
-    cint = "long" if fptype == "double" else "int"
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
         s.append("typedef {} INT;".format(cint))
         s.append("typedef unsigned {} UINT;".format(cint))
-        s.append("typedef {} REAL;".format(fptype))
+        s.append("typedef {} REAL;".format(creal))
         s.append(fobj.read())
     source = "\n".join(s)
 
@@ -63,7 +63,7 @@ def make_lib(fptype):
     ffi.cdef(source)
 
     define_macros = []
-    if fptype == "double":
+    if prec == "float64":
         define_macros.append(("DOUBLE", 1))
 
     clib = ffi.verify(
@@ -85,8 +85,8 @@ def make_lib(fptype):
 
 ffi = {}
 lib = {}
-ffi['single'], lib['single'] = make_lib('float')
-ffi['double'], lib['double'] = make_lib('double')
+ffi['float32'], lib['float32'] = make_lib('float32')
+ffi['float64'], lib['float64'] = make_lib('float64')
 
 
 class CKernel(object):

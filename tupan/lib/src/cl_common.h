@@ -45,6 +45,8 @@
     typedef float16 REAL16;
 #endif
 
+#define LSIZE 256
+
 #define paster(x,y) x##y
 #define concat(x,y) paster(x,y)
 #define vec(x) concat(x, VECTOR_WIDTH)

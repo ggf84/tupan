@@ -31,7 +31,29 @@ __kernel void phi_kernel(
 
     REALn iphi = (REALn)(0);
 
-    for (UINT j = 0; j < nj; ++j) {
+    UINT j = 0;
+    UINT nb = nj / LSIZE;
+    for (; j < nb; j += LSIZE) {
+        event_t e[5];
+        e[0] = async_work_group_copy(__jm,  _jm  + j, LSIZE, 0);
+        e[1] = async_work_group_copy(__jrx,  _jrx  + j, LSIZE, 0);
+        e[2] = async_work_group_copy(__jry,  _jry  + j, LSIZE, 0);
+        e[3] = async_work_group_copy(__jrz,  _jrz  + j, LSIZE, 0);
+        e[4] = async_work_group_copy(__je2,  _je2  + j, LSIZE, 0);
+        wait_group_events(5, e);
+        for (UINT k = 0; k < LSIZE; ++k) {
+            REALn jm = (REALn)(__jm[k]);
+            REALn jrx = (REALn)(__jrx[k]);
+            REALn jry = (REALn)(__jry[k]);
+            REALn jrz = (REALn)(__jrz[k]);
+            REALn je2 = (REALn)(__je2[k]);
+            phi_kernel_core(im, irx, iry, irz, ie2,
+                            jm, jrx, jry, jrz, je2,
+                            &iphi);
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+    for (; j < nj; ++j) {
         REALn jm = (REALn)(_jm[j]);
         REALn jrx = (REALn)(_jrx[j]);
         REALn jry = (REALn)(_jry[j]);

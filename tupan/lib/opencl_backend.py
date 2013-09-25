@@ -28,17 +28,21 @@ CACHE_DIR = os.path.join(os.path.expanduser('~'),
                              getpass.getuser(),
                              ".".join(str(i) for i in sys.version_info)))
 
-VECTOR_WIDTH = 4
-
 ctx = cl.create_some_context()
+dev = ctx.devices[0]
+
+VECTOR_WIDTH = {}
+VECTOR_WIDTH["float32"] = dev.preferred_vector_width_float
+VECTOR_WIDTH["float64"] = dev.preferred_vector_width_double
 
 
-def make_lib(fptype):
+def make_lib(prec):
     """
 
     """
-    prec = "single" if fptype == 'float' else "double"
-    logger.debug("Building/Loading %s precision CL extension module...",
+    cint = "int" if prec == "float32" else "long"
+    creal = "float" if prec == 'float32' else "double"
+    logger.debug("Building/Loading %s CL extension module...",
                  prec)
 
     files = ("smoothing.c",
@@ -63,9 +67,9 @@ def make_lib(fptype):
 
     # setting options
     options = " -I {path}".format(path=PATH)
-    if fptype == "double":
+    if prec == "float64":
         options += " -D DOUBLE"
-    options += " -D VECTOR_WIDTH={}".format(VECTOR_WIDTH)
+    options += " -D VECTOR_WIDTH={}".format(VECTOR_WIDTH[prec])
     options += " -cl-fast-relaxed-math"
 #    options += " -cl-opt-disable"
 
@@ -78,14 +82,15 @@ def make_lib(fptype):
 
 
 lib = {}
-lib['single'] = make_lib('float')
-lib['double'] = make_lib('double')
+lib['float32'] = make_lib('float32')
+lib['float64'] = make_lib('float64')
 
 
 class CLKernel(object):
 
     def __init__(self, prec, name):
         self.kernel = getattr(lib[prec], name)
+        self.vector_width = VECTOR_WIDTH[prec]
         self.queue = cl.CommandQueue(ctx)
         self._gsize = None
 
@@ -107,7 +112,7 @@ class CLKernel(object):
                          )
 
     def set_gsize(self, gsize):
-        gs = (gsize + VECTOR_WIDTH - 1) // VECTOR_WIDTH
+        gs = (gsize + self.vector_width - 1) // self.vector_width
         self._gsize = (gs,)
 
     @property
@@ -167,7 +172,7 @@ class CLKernel(object):
         cl.enqueue_nd_range_kernel(self.queue,
                                    self.kernel,
                                    self.global_size,
-                                   None,  # self.local_size,
+                                   None,
                                    ).wait()
 
 

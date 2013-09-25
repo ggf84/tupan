@@ -40,7 +40,7 @@ class TestCase1(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.ps = set_particles(128)
+        cls.ps = set_particles(256)
 
     def compare_result(self, kernel, ps, *args):
         msg = ("extensions.{0}: max deviation of results "
@@ -134,9 +134,9 @@ class TestCase2(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        imax = 11
+        imax = 12
         if highN:
-            imax = 13
+            imax = 14
         cls.pslist = [set_particles(2**(i+1)) for i in range(imax)]
 
     def performance(self, kernel, pslist, *args):
@@ -157,7 +157,7 @@ class TestCase2(unittest.TestCase):
             best['run']["CL"] = best_of(3, krnlCL.run)
             best['get']["CL"] = best_of(5, krnlCL.get_result)
 
-            if ps.n > 2048:
+            if ps.n > 4096:
                 print("  N={0}:".format(ps.n))
                 for (k, v) in best.items():
                     print("    {k} time (s): 'C': ----------, 'CL': {CL:.4e} "

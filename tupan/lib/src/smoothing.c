@@ -8,8 +8,9 @@ inline void plummer_smoothed_inv_r1(
     REALn h2,
     REALn *inv_r1)
 {
+    INTn mask = (r2 > 0);
     REALn inv_r2 = 1 / (r2 + h2);
-    inv_r2 = select((REALn)(0), inv_r2, (INTn)(r2 > 0));
+    inv_r2 = select((REALn)(0), inv_r2, mask);
     *inv_r1 = sqrt(inv_r2);
 }
 // Total flop count: 3
@@ -30,8 +31,9 @@ inline void plummer_smoothed_inv_r2(
     REALn h2,
     REALn *inv_r2)
 {
+    INTn mask = (r2 > 0);
     *inv_r2 = 1 / (r2 + h2);
-    *inv_r2 = select((REALn)(0), *inv_r2, (INTn)(r2 > 0));
+    *inv_r2 = select((REALn)(0), *inv_r2, mask);
 }
 // Total flop count: 2
 
@@ -51,8 +53,9 @@ inline void plummer_smoothed_inv_r3(
     REALn h2,
     REALn *inv_r3)
 {
+    INTn mask = (r2 > 0);
     REALn inv_r2 = 1 / (r2 + h2);
-    inv_r2 = select((REALn)(0), inv_r2, (INTn)(r2 > 0));
+    inv_r2 = select((REALn)(0), inv_r2, mask);
     REALn inv_r1 = sqrt(inv_r2);
     *inv_r3 = inv_r1 * inv_r2;
 }
@@ -75,8 +78,9 @@ inline void plummer_smoothed_inv_r1r2(
     REALn *inv_r1,
     REALn *inv_r2)
 {
+    INTn mask = (r2 > 0);
     *inv_r2 = 1 / (r2 + h2);
-    *inv_r2 = select((REALn)(0), *inv_r2, (INTn)(r2 > 0));
+    *inv_r2 = select((REALn)(0), *inv_r2, mask);
     *inv_r1 = sqrt(*inv_r2);
 }
 // Total flop count: 3
@@ -99,8 +103,9 @@ inline void plummer_smoothed_inv_r1r3(
     REALn *inv_r1,
     REALn *inv_r3)
 {
+    INTn mask = (r2 > 0);
     REALn inv_r2 = 1 / (r2 + h2);
-    inv_r2 = select((REALn)(0), inv_r2, (INTn)(r2 > 0));
+    inv_r2 = select((REALn)(0), inv_r2, mask);
     *inv_r1 = sqrt(inv_r2);
     *inv_r3 = *inv_r1 * inv_r2;
 }
@@ -124,8 +129,9 @@ inline void plummer_smoothed_inv_r2r3(
     REALn *inv_r2,
     REALn *inv_r3)
 {
+    INTn mask = (r2 > 0);
     *inv_r2 = 1 / (r2 + h2);
-    *inv_r2 = select((REALn)(0), *inv_r2, (INTn)(r2 > 0));
+    *inv_r2 = select((REALn)(0), *inv_r2, mask);
     REALn inv_r1 = sqrt(*inv_r2);
     *inv_r3 = inv_r1 * *inv_r2;
 }
@@ -150,8 +156,9 @@ inline void plummer_smoothed_inv_r1r2r3(
     REALn *inv_r2,
     REALn *inv_r3)
 {
+    INTn mask = (r2 > 0);
     *inv_r2 = 1 / (r2 + h2);
-    *inv_r2 = select((REALn)(0), *inv_r2, (INTn)(r2 > 0));
+    *inv_r2 = select((REALn)(0), *inv_r2, mask);
     *inv_r1 = sqrt(*inv_r2);
     *inv_r3 = *inv_r1 * *inv_r2;
 }
