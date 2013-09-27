@@ -146,7 +146,7 @@ inline void evolve_twobody(
     REAL vy = v0y;
     REAL vz = v0z;
 
-    if (flag == 0) {
+    if (flag == -1) {
         rx -= vx * dt;                                                              // 2 FLOPs
         ry -= vy * dt;                                                              // 2 FLOPs
         rz -= vz * dt;                                                              // 2 FLOPs
@@ -159,6 +159,25 @@ inline void evolve_twobody(
         rx -= vx * dt;                                                              // 2 FLOPs
         ry -= vy * dt;                                                              // 2 FLOPs
         rz -= vz * dt;                                                              // 2 FLOPs
+    }
+    if (flag == -2) {
+        rx -= vx * dt / 2;                                                          // 2 FLOPs
+        ry -= vy * dt / 2;                                                          // 2 FLOPs
+        rz -= vz * dt / 2;                                                          // 2 FLOPs
+        twobody_solver(dt, m, e2, rx, ry, rz, vx, vy, vz,
+                       &rx, &ry, &rz, &vx, &vy, &vz);                               // ? FLOPS
+        rx -= vx * dt / 2;                                                          // 2 FLOPs
+        ry -= vy * dt / 2;                                                          // 2 FLOPs
+        rz -= vz * dt / 2;                                                          // 2 FLOPs
+    }
+    if (flag == 2) {
+        twobody_solver(dt/2, m, e2, rx, ry, rz, vx, vy, vz,
+                       &rx, &ry, &rz, &vx, &vy, &vz);                               // ? FLOPS
+        rx -= vx * dt;                                                              // 2 FLOPs
+        ry -= vy * dt;                                                              // 2 FLOPs
+        rz -= vz * dt;                                                              // 2 FLOPs
+        twobody_solver(dt/2, m, e2, rx, ry, rz, vx, vy, vz,
+                       &rx, &ry, &rz, &vx, &vy, &vz);                               // ? FLOPS
     }
 
     *r1x = rx;
