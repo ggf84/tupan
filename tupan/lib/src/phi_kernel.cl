@@ -32,8 +32,7 @@ __kernel void phi_kernel(
     REALn iphi = (REALn)(0);
 
     UINT j = 0;
-    UINT nb = nj / LSIZE;
-    for (; j < nb; j += LSIZE) {
+    for (; (j + LSIZE) < nj; j += LSIZE) {
         event_t e[5];
         e[0] = async_work_group_copy(__jm,  _jm  + j, LSIZE, 0);
         e[1] = async_work_group_copy(__jrx,  _jrx  + j, LSIZE, 0);
