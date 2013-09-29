@@ -69,13 +69,12 @@ def make_lib(prec):
     clib = ffi.verify(
         """
         #include "common.h"
-        #include "libtupan.h"
         """,
         tmpdir=CACHE_DIR,
         define_macros=define_macros,
         include_dirs=[PATH],
         libraries=["m"],
-        extra_compile_args=["-O3"],
+        extra_compile_args=["-O3", "--std=c99"],
         sources=[os.path.join(PATH, file) for file in files],
     )
 

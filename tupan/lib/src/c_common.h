@@ -58,4 +58,6 @@
 #define max fmax
 #define select(a, b, c) ((c) ? (b):(a))
 
+#include "libtupan.h"
+
 #endif // __C_COMMON_H__

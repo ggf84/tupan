@@ -1,4 +1,5 @@
 #include "common.h"
+#include "universal_kepler_solver.h"
 
 
 #ifdef DOUBLE

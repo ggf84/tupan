@@ -1,4 +1,5 @@
 #include "common.h"
+#include "smoothing.h"
 
 //
 // smoothed inv_r1
