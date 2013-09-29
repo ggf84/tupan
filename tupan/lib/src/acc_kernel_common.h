@@ -19,13 +19,12 @@ inline void acc_kernel_core(
     REALn *iay,
     REALn *iaz)
 {
-    REALn rx, ry, rz;
+    REALn rx, ry, rz, e2;
     rx = irx - jrx;                                                             // 1 FLOPs
     ry = iry - jry;                                                             // 1 FLOPs
     rz = irz - jrz;                                                             // 1 FLOPs
+    e2 = ie2 + je2;                                                             // 1 FLOPs
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
-
-    REALn e2 = ie2 + je2;                                                       // 1 FLOPs
 
     REALn inv_r3;
     smoothed_inv_r3(r2, e2, &inv_r3);                                           // 4 FLOPs

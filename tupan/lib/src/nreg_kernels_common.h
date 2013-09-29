@@ -30,10 +30,11 @@ inline void nreg_Xkernel_core(
     REALn *iaz,
     REALn *iu)
 {
-    REALn rx, ry, rz;
+    REALn rx, ry, rz, e2;
     rx = irx - jrx;                                                             // 1 FLOPs
     ry = iry - jry;                                                             // 1 FLOPs
     rz = irz - jrz;                                                             // 1 FLOPs
+    e2 = ie2 + je2;                                                             // 1 FLOPs
     REALn vx, vy, vz;
     vx = ivx - jvx;                                                             // 1 FLOPs
     vy = ivy - jvy;                                                             // 1 FLOPs
@@ -43,14 +44,11 @@ inline void nreg_Xkernel_core(
     ry += vy * dt;                                                              // 2 FLOPs
     rz += vz * dt;                                                              // 2 FLOPs
 
+    REALn mij = im * jm;                                                        // 1 FLOPs
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
-
-    REALn e2 = ie2 + je2;                                                       // 1 FLOPs
 
     REALn inv_r1, inv_r3;
     smoothed_inv_r1r3(r2, e2, &inv_r1, &inv_r3);                                // 4 FLOPs
-
-    REALn mij = im * jm;                                                        // 1 FLOPs
 
     rx *= jm;                                                                   // 1 FLOPs
     ry *= jm;                                                                   // 1 FLOPs
@@ -100,9 +98,8 @@ inline void nreg_Vkernel_core(
     vy += ay * dt;                                                              // 2 FLOPs
     vz += az * dt;                                                              // 2 FLOPs
 
-    REALn v2 = vx * vx + vy * vy + vz * vz;                                     // 5 FLOPs
-
     REALn mij = im * jm;                                                        // 1 FLOPs
+    REALn v2 = vx * vx + vy * vy + vz * vz;                                     // 5 FLOPs
 
     vx *= jm;                                                                   // 1 FLOPs
     vy *= jm;                                                                   // 1 FLOPs

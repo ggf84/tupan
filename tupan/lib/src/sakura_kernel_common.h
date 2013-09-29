@@ -215,17 +215,16 @@ inline void sakura_kernel_core(
     REAL *idvy,
     REAL *idvz)
 {
-    REAL r0x, r0y, r0z;
+    REAL r0x, r0y, r0z, e2;
     r0x = irx - jrx;                                                            // 1 FLOPs
     r0y = iry - jry;                                                            // 1 FLOPs
     r0z = irz - jrz;                                                            // 1 FLOPs
-    REAL v0x, v0y, v0z;
+    e2 = ie2 + je2;                                                             // 1 FLOPs
+    REAL v0x, v0y, v0z, m;
     v0x = ivx - jvx;                                                            // 1 FLOPs
     v0y = ivy - jvy;                                                            // 1 FLOPs
     v0z = ivz - jvz;                                                            // 1 FLOPs
-
-    REAL m = im + jm;                                                           // 1 FLOPs
-    REAL e2 = ie2 + je2;                                                        // 1 FLOPs
+    m = im + jm;                                                                // 1 FLOPs
 
     REAL r1x, r1y, r1z;
     REAL v1x, v1y, v1z;

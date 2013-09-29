@@ -96,20 +96,20 @@ __kernel void snap_crackle_kernel(
         e[13] = async_work_group_copy(__jjz,  _jjz  + j, LSIZE, 0);
         wait_group_events(14, e);
         for (UINT k = 0; k < LSIZE; ++k) {
-            REALn jm = (REALn)(_jm[k]);
-            REALn jrx = (REALn)(_jrx[k]);
-            REALn jry = (REALn)(_jry[k]);
-            REALn jrz = (REALn)(_jrz[k]);
-            REALn je2 = (REALn)(_je2[k]);
-            REALn jvx = (REALn)(_jvx[k]);
-            REALn jvy = (REALn)(_jvy[k]);
-            REALn jvz = (REALn)(_jvz[k]);
-            REALn jax = (REALn)(_jax[k]);
-            REALn jay = (REALn)(_jay[k]);
-            REALn jaz = (REALn)(_jaz[k]);
-            REALn jjx = (REALn)(_jjx[k]);
-            REALn jjy = (REALn)(_jjy[k]);
-            REALn jjz = (REALn)(_jjz[k]);
+            REALn jm = (REALn)(__jm[k]);
+            REALn jrx = (REALn)(__jrx[k]);
+            REALn jry = (REALn)(__jry[k]);
+            REALn jrz = (REALn)(__jrz[k]);
+            REALn je2 = (REALn)(__je2[k]);
+            REALn jvx = (REALn)(__jvx[k]);
+            REALn jvy = (REALn)(__jvy[k]);
+            REALn jvz = (REALn)(__jvz[k]);
+            REALn jax = (REALn)(__jax[k]);
+            REALn jay = (REALn)(__jay[k]);
+            REALn jaz = (REALn)(__jaz[k]);
+            REALn jjx = (REALn)(__jjx[k]);
+            REALn jjy = (REALn)(__jjy[k]);
+            REALn jjz = (REALn)(__jjz[k]);
             snap_crackle_kernel_core(im, irx, iry, irz,
                                      ie2, ivx, ivy, ivz,
                                      iax, iay, iaz, ijx, ijy, ijz,

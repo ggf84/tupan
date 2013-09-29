@@ -17,13 +17,12 @@ inline void phi_kernel_core(
     const REALn je2,
     REALn *iphi)
 {
-    REALn rx, ry, rz;
+    REALn rx, ry, rz, e2;
     rx = irx - jrx;                                                             // 1 FLOPs
     ry = iry - jry;                                                             // 1 FLOPs
     rz = irz - jrz;                                                             // 1 FLOPs
+    e2 = ie2 + je2;                                                             // 1 FLOPs
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
-
-    REALn e2 = ie2 + je2;                                                       // 1 FLOPs
 
     REALn inv_r1;
     smoothed_inv_r1(r2, e2, &inv_r1);                                           // 3 FLOPs

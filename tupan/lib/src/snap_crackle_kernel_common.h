@@ -36,10 +36,11 @@ inline void snap_crackle_kernel_core(
     REALn *iSx, REALn *iSy, REALn *iSz,
     REALn *iCx, REALn *iCy, REALn *iCz)
 {
-    REALn rx, ry, rz;
+    REALn rx, ry, rz, e2;
     rx = irx - jrx;                                                             // 1 FLOPs
     ry = iry - jry;                                                             // 1 FLOPs
     rz = irz - jrz;                                                             // 1 FLOPs
+    e2 = ie2 + je2;                                                             // 1 FLOPs
     REALn vx, vy, vz;
     vx = ivx - jvx;                                                             // 1 FLOPs
     vy = ivy - jvy;                                                             // 1 FLOPs
@@ -53,21 +54,18 @@ inline void snap_crackle_kernel_core(
     Jy = iJy - jJy;                                                             // 1 FLOPs
     Jz = iJz - jJz;                                                             // 1 FLOPs
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
-    REALn v2 = vx * vx + vy * vy + vz * vz;                                     // 5 FLOPs
     REALn rv = rx * vx + ry * vy + rz * vz;                                     // 5 FLOPs
-    REALn rA = rx * Ax + ry * Ay + rz * Az;                                     // 5 FLOPs
+    REALn v2 = vx * vx + vy * vy + vz * vz;                                     // 5 FLOPs
     REALn rJ = rx * Jx + ry * Jy + rz * Jz;                                     // 5 FLOPs
+    REALn rA = rx * Ax + ry * Ay + rz * Az;                                     // 5 FLOPs
     REALn vA = vx * Ax + vy * Ay + vz * Az;                                     // 5 FLOPs
-
-    REALn e2 = ie2 + je2;                                                       // 1 FLOPs
 
     REALn inv_r2, inv_r3;
     smoothed_inv_r2r3(r2, e2, &inv_r2, &inv_r3);                                // 4 FLOPs
 
     REALn alpha = rv * inv_r2;                                                  // 1 FLOPs
     REALn alpha2 = alpha * alpha;                                               // 1 FLOPs
-    REALn beta = (v2 + rA) * inv_r2 + alpha2;                                   // 3 FLOPs
-    beta *= 3;                                                                  // 1 FLOPs
+    REALn beta = 3 * ((v2 + rA) * inv_r2 + alpha2);                             // 4 FLOPs
     REALn gamma = (3 * vA + rJ) * inv_r2 + alpha * (beta - 4 * alpha2);         // 7 FLOPs
 
     alpha *= 3;                                                                 // 1 FLOPs
