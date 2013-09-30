@@ -80,20 +80,20 @@ __kernel void snap_crackle_kernel(
     UINT j = 0;
     for (; (j + LSIZE) < nj; j += LSIZE) {
         event_t e[14];
-        e[0] = async_work_group_copy(__jm,  _jm  + j, LSIZE, 0);
-        e[1] = async_work_group_copy(__jrx,  _jrx  + j, LSIZE, 0);
-        e[2] = async_work_group_copy(__jry,  _jry  + j, LSIZE, 0);
-        e[3] = async_work_group_copy(__jrz,  _jrz  + j, LSIZE, 0);
-        e[4] = async_work_group_copy(__je2,  _je2  + j, LSIZE, 0);
-        e[5] = async_work_group_copy(__jvx,  _jvx  + j, LSIZE, 0);
-        e[6] = async_work_group_copy(__jvy,  _jvy  + j, LSIZE, 0);
-        e[7] = async_work_group_copy(__jvz,  _jvz  + j, LSIZE, 0);
-        e[8] = async_work_group_copy(__jax,  _jax  + j, LSIZE, 0);
-        e[9] = async_work_group_copy(__jay,  _jay  + j, LSIZE, 0);
-        e[10] = async_work_group_copy(__jaz,  _jaz  + j, LSIZE, 0);
-        e[11] = async_work_group_copy(__jjx,  _jjx  + j, LSIZE, 0);
-        e[12] = async_work_group_copy(__jjy,  _jjy  + j, LSIZE, 0);
-        e[13] = async_work_group_copy(__jjz,  _jjz  + j, LSIZE, 0);
+        e[0] = async_work_group_copy(__jm, _jm + j, LSIZE, 0);
+        e[1] = async_work_group_copy(__jrx, _jrx + j, LSIZE, 0);
+        e[2] = async_work_group_copy(__jry, _jry + j, LSIZE, 0);
+        e[3] = async_work_group_copy(__jrz, _jrz + j, LSIZE, 0);
+        e[4] = async_work_group_copy(__je2, _je2 + j, LSIZE, 0);
+        e[5] = async_work_group_copy(__jvx, _jvx + j, LSIZE, 0);
+        e[6] = async_work_group_copy(__jvy, _jvy + j, LSIZE, 0);
+        e[7] = async_work_group_copy(__jvz, _jvz + j, LSIZE, 0);
+        e[8] = async_work_group_copy(__jax, _jax + j, LSIZE, 0);
+        e[9] = async_work_group_copy(__jay, _jay + j, LSIZE, 0);
+        e[10] = async_work_group_copy(__jaz, _jaz + j, LSIZE, 0);
+        e[11] = async_work_group_copy(__jjx, _jjx + j, LSIZE, 0);
+        e[12] = async_work_group_copy(__jjy, _jjy + j, LSIZE, 0);
+        e[13] = async_work_group_copy(__jjz, _jjz + j, LSIZE, 0);
         wait_group_events(14, e);
         for (UINT k = 0; k < LSIZE; ++k) {
             REALn jm = (REALn)(__jm[k]);

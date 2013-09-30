@@ -69,6 +69,7 @@ def make_lib(prec):
     clib = ffi.verify(
         """
         #include "common.h"
+        #include "libtupan.h"
         """,
         tmpdir=CACHE_DIR,
         define_macros=define_macros,

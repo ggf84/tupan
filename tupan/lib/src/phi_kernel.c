@@ -1,30 +1,30 @@
 #include "phi_kernel_common.h"
+#include "libtupan.h"
 
 
-inline void phi_kernel(
+void phi_kernel(
     const UINT ni,
-    const REAL *_im,
-    const REAL *_irx,
-    const REAL *_iry,
-    const REAL *_irz,
-    const REAL *_ie2,
+    const REAL * restrict _im,
+    const REAL * restrict _irx,
+    const REAL * restrict _iry,
+    const REAL * restrict _irz,
+    const REAL * restrict _ie2,
     const UINT nj,
-    const REAL *_jm,
-    const REAL *_jrx,
-    const REAL *_jry,
-    const REAL *_jrz,
-    const REAL *_je2,
-    REAL *_iphi)
+    const REAL * restrict _jm,
+    const REAL * restrict _jrx,
+    const REAL * restrict _jry,
+    const REAL * restrict _jrz,
+    const REAL * restrict _je2,
+    REAL * restrict _iphi)
 {
-    UINT i, j;
-    for (i = 0; i < ni; ++i) {
+    for (UINT i = 0; i < ni; ++i) {
         REAL im = _im[i];
         REAL irx = _irx[i];
         REAL iry = _iry[i];
         REAL irz = _irz[i];
         REAL ie2 = _ie2[i];
         REAL iphi = 0;
-        for (j = 0; j < nj; ++j) {
+        for (UINT j = 0; j < nj; ++j) {
             REAL jm = _jm[j];
             REAL jrx = _jrx[j];
             REAL jry = _jry[j];

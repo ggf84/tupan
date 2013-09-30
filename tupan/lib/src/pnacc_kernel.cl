@@ -1,5 +1,6 @@
 #include "pnacc_kernel_common.h"
 
+
 inline void pnacc_kernel_main_loop(
     const REAL im,
     const REAL irx,
@@ -38,7 +39,7 @@ inline void pnacc_kernel_main_loop(
         UINT nb = min(lsize, (nj - (tile * lsize)));
 
         event_t e[8];
-        e[0] = async_work_group_copy(__jm,  _jm  + tile * lsize, nb, 0);
+        e[0] = async_work_group_copy(__jm, _jm + tile * lsize, nb, 0);
         e[1] = async_work_group_copy(__jrx, _jrx + tile * lsize, nb, 0);
         e[2] = async_work_group_copy(__jry, _jry + tile * lsize, nb, 0);
         e[3] = async_work_group_copy(__jrz, _jrz + tile * lsize, nb, 0);

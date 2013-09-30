@@ -34,11 +34,11 @@ __kernel void phi_kernel(
     UINT j = 0;
     for (; (j + LSIZE) < nj; j += LSIZE) {
         event_t e[5];
-        e[0] = async_work_group_copy(__jm,  _jm  + j, LSIZE, 0);
-        e[1] = async_work_group_copy(__jrx,  _jrx  + j, LSIZE, 0);
-        e[2] = async_work_group_copy(__jry,  _jry  + j, LSIZE, 0);
-        e[3] = async_work_group_copy(__jrz,  _jrz  + j, LSIZE, 0);
-        e[4] = async_work_group_copy(__je2,  _je2  + j, LSIZE, 0);
+        e[0] = async_work_group_copy(__jm, _jm + j, LSIZE, 0);
+        e[1] = async_work_group_copy(__jrx, _jrx + j, LSIZE, 0);
+        e[2] = async_work_group_copy(__jry, _jry + j, LSIZE, 0);
+        e[3] = async_work_group_copy(__jrz, _jrz + j, LSIZE, 0);
+        e[4] = async_work_group_copy(__je2, _je2 + j, LSIZE, 0);
         wait_group_events(5, e);
         for (UINT k = 0; k < LSIZE; ++k) {
             REALn jm = (REALn)(__jm[k]);
