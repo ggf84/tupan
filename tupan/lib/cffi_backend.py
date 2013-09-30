@@ -37,10 +37,7 @@ def make_lib(prec):
     logger.debug("Building/Loading %s C extension module...",
                  prec)
 
-    files = ("smoothing.c",
-             "universal_kepler_solver.c",
-             #
-             "phi_kernel.c",
+    files = ("phi_kernel.c",
              "acc_kernel.c",
              "acc_jerk_kernel.c",
              "snap_crackle_kernel.c",
@@ -75,7 +72,7 @@ def make_lib(prec):
         define_macros=define_macros,
         include_dirs=[PATH],
         libraries=["m"],
-        extra_compile_args=["-O3", "--std=c99"],
+        extra_compile_args=["-O3", "-std=c99"],
         sources=[os.path.join(PATH, file) for file in files],
     )
 

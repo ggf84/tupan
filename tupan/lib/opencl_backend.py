@@ -45,10 +45,7 @@ def make_lib(prec):
     logger.debug("Building/Loading %s CL extension module...",
                  prec)
 
-    files = ("smoothing.c",
-             "universal_kepler_solver.c",
-             #
-             "phi_kernel.cl",
+    files = ("phi_kernel.cl",
              "acc_kernel.cl",
              "acc_jerk_kernel.cl",
              "snap_crackle_kernel.cl",
