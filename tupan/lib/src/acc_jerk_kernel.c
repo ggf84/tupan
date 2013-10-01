@@ -44,16 +44,9 @@ void acc_jerk_kernel(
         REAL ijy = 0;
         REAL ijz = 0;
         for (UINT j = 0; j < nj; ++j) {
-            REAL jm = _jm[j];
-            REAL jrx = _jrx[j];
-            REAL jry = _jry[j];
-            REAL jrz = _jrz[j];
-            REAL je2 = _je2[j];
-            REAL jvx = _jvx[j];
-            REAL jvy = _jvy[j];
-            REAL jvz = _jvz[j];
             acc_jerk_kernel_core(im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                                 jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                                 _jm[j], _jrx[j], _jry[j], _jrz[j],
+                                 _je2[j], _jvx[j], _jvy[j], _jvz[j],
                                  &iax, &iay, &iaz,
                                  &ijx, &ijy, &ijz);
         }

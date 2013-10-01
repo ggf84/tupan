@@ -96,52 +96,26 @@ __kernel void snap_crackle_kernel(
         e[13] = async_work_group_copy(__jjz, _jjz + j, LSIZE, 0);
         wait_group_events(14, e);
         for (UINT k = 0; k < LSIZE; ++k) {
-            REALn jm = (REALn)(__jm[k]);
-            REALn jrx = (REALn)(__jrx[k]);
-            REALn jry = (REALn)(__jry[k]);
-            REALn jrz = (REALn)(__jrz[k]);
-            REALn je2 = (REALn)(__je2[k]);
-            REALn jvx = (REALn)(__jvx[k]);
-            REALn jvy = (REALn)(__jvy[k]);
-            REALn jvz = (REALn)(__jvz[k]);
-            REALn jax = (REALn)(__jax[k]);
-            REALn jay = (REALn)(__jay[k]);
-            REALn jaz = (REALn)(__jaz[k]);
-            REALn jjx = (REALn)(__jjx[k]);
-            REALn jjy = (REALn)(__jjy[k]);
-            REALn jjz = (REALn)(__jjz[k]);
             snap_crackle_kernel_core(im, irx, iry, irz,
                                      ie2, ivx, ivy, ivz,
                                      iax, iay, iaz, ijx, ijy, ijz,
-                                     jm, jrx, jry, jrz,
-                                     je2, jvx, jvy, jvz,
-                                     jax, jay, jaz, jjx, jjy, jjz,
+                                     __jm[k], __jrx[k], __jry[k], __jrz[k],
+                                     __je2[k], __jvx[k], __jvy[k], __jvz[k],
+                                     __jax[k], __jay[k], __jaz[k],
+                                     __jjx[k], __jjy[k], __jjz[k],
                                      &isx, &isy, &isz,
                                      &icx, &icy, &icz);
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
     for (; j < nj; ++j) {
-        REALn jm = (REALn)(_jm[j]);
-        REALn jrx = (REALn)(_jrx[j]);
-        REALn jry = (REALn)(_jry[j]);
-        REALn jrz = (REALn)(_jrz[j]);
-        REALn je2 = (REALn)(_je2[j]);
-        REALn jvx = (REALn)(_jvx[j]);
-        REALn jvy = (REALn)(_jvy[j]);
-        REALn jvz = (REALn)(_jvz[j]);
-        REALn jax = (REALn)(_jax[j]);
-        REALn jay = (REALn)(_jay[j]);
-        REALn jaz = (REALn)(_jaz[j]);
-        REALn jjx = (REALn)(_jjx[j]);
-        REALn jjy = (REALn)(_jjy[j]);
-        REALn jjz = (REALn)(_jjz[j]);
         snap_crackle_kernel_core(im, irx, iry, irz,
                                  ie2, ivx, ivy, ivz,
                                  iax, iay, iaz, ijx, ijy, ijz,
-                                 jm, jrx, jry, jrz,
-                                 je2, jvx, jvy, jvz,
-                                 jax, jay, jaz, jjx, jjy, jjz,
+                                 _jm[j], _jrx[j], _jry[j], _jrz[j],
+                                 _je2[j], _jvx[j], _jvy[j], _jvz[j],
+                                 _jax[j], _jay[j], _jaz[j],
+                                 _jjx[j], _jjy[j], _jjz[j],
                                  &isx, &isy, &isz,
                                  &icx, &icy, &icz);
     }

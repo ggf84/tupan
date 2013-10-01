@@ -29,13 +29,8 @@ void acc_kernel(
         REAL iay = 0;
         REAL iaz = 0;
         for (UINT j = 0; j < nj; ++j) {
-            REAL jm = _jm[j];
-            REAL jrx = _jrx[j];
-            REAL jry = _jry[j];
-            REAL jrz = _jrz[j];
-            REAL je2 = _je2[j];
             acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm, jrx, jry, jrz, je2,
+                            _jm[j], _jrx[j], _jry[j], _jrz[j], _je2[j],
                             &iax, &iay, &iaz);
         }
         _iax[i] = iax;

@@ -47,17 +47,10 @@ void nreg_Xkernel(
         REAL iaz = 0;
         REAL iu = 0;
         for (UINT j = 0; j < nj; ++j) {
-            REAL jm = _jm[j];
-            REAL jrx = _jrx[j];
-            REAL jry = _jry[j];
-            REAL jrz = _jrz[j];
-            REAL je2 = _je2[j];
-            REAL jvx = _jvx[j];
-            REAL jvy = _jvy[j];
-            REAL jvz = _jvz[j];
             nreg_Xkernel_core(dt,
                               im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                              jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                              _jm[j], _jrx[j], _jry[j], _jrz[j],
+                              _je2[j], _jvx[j], _jvy[j], _jvz[j],
                               &idrx, &idry, &idrz,
                               &iax, &iay, &iaz, &iu);
         }
@@ -108,16 +101,10 @@ void nreg_Vkernel(
         REAL idvz = 0;
         REAL ik = 0;
         for (UINT j = 0; j < nj; ++j) {
-            REAL jm = _jm[j];
-            REAL jvx = _jvx[j];
-            REAL jvy = _jvy[j];
-            REAL jvz = _jvz[j];
-            REAL jax = _jax[j];
-            REAL jay = _jay[j];
-            REAL jaz = _jaz[j];
             nreg_Vkernel_core(dt,
                               im, ivx, ivy, ivz, iax, iay, iaz,
-                              jm, jvx, jvy, jvz, jax, jay, jaz,
+                              _jm[j], _jvx[j], _jvy[j], _jvz[j],
+                              _jax[j], _jay[j], _jaz[j],
                               &idvx, &idvy, &idvz, &ik);
         }
         _idvx[i] = idvx;

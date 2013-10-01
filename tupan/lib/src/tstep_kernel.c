@@ -37,17 +37,10 @@ void tstep_kernel(
         REAL iw2_a = 0;
         REAL iw2_b = 0;
         for (UINT j = 0; j < nj; ++j) {
-            REAL jm = _jm[j];
-            REAL jrx = _jrx[j];
-            REAL jry = _jry[j];
-            REAL jrz = _jrz[j];
-            REAL je2 = _je2[j];
-            REAL jvx = _jvx[j];
-            REAL jvy = _jvy[j];
-            REAL jvz = _jvz[j];
             tstep_kernel_core(eta,
                               im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                              jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                              _jm[j], _jrx[j], _jry[j], _jrz[j],
+                              _je2[j], _jvx[j], _jvy[j], _jvz[j],
                               &iw2_a, &iw2_b);
         }
         _idt_a[i] = eta / sqrt(1 + iw2_a);

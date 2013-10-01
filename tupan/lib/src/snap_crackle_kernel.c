@@ -62,26 +62,13 @@ void snap_crackle_kernel(
         REAL icy = 0;
         REAL icz = 0;
         for (UINT j = 0; j < nj; ++j) {
-            REAL jm = _jm[j];
-            REAL jrx = _jrx[j];
-            REAL jry = _jry[j];
-            REAL jrz = _jrz[j];
-            REAL je2 = _je2[j];
-            REAL jvx = _jvx[j];
-            REAL jvy = _jvy[j];
-            REAL jvz = _jvz[j];
-            REAL jax = _jax[j];
-            REAL jay = _jay[j];
-            REAL jaz = _jaz[j];
-            REAL jjx = _jjx[j];
-            REAL jjy = _jjy[j];
-            REAL jjz = _jjz[j];
             snap_crackle_kernel_core(im, irx, iry, irz,
                                      ie2, ivx, ivy, ivz,
                                      iax, iay, iaz, ijx, ijy, ijz,
-                                     jm, jrx, jry, jrz,
-                                     je2, jvx, jvy, jvz,
-                                     jax, jay, jaz, jjx, jjy, jjz,
+                                     _jm[j], _jrx[j], _jry[j], _jrz[j],
+                                     _je2[j], _jvx[j], _jvy[j], _jvz[j],
+                                     _jax[j], _jay[j], _jaz[j],
+                                     _jjx[j], _jjy[j], _jjz[j],
                                      &isx, &isy, &isz,
                                      &icx, &icy, &icz);
         }

@@ -66,32 +66,18 @@ __kernel void acc_jerk_kernel(
         e[7] = async_work_group_copy(__jvz, _jvz + j, LSIZE, 0);
         wait_group_events(8, e);
         for (UINT k = 0; k < LSIZE; ++k) {
-            REALn jm = (REALn)(__jm[k]);
-            REALn jrx = (REALn)(__jrx[k]);
-            REALn jry = (REALn)(__jry[k]);
-            REALn jrz = (REALn)(__jrz[k]);
-            REALn je2 = (REALn)(__je2[k]);
-            REALn jvx = (REALn)(__jvx[k]);
-            REALn jvy = (REALn)(__jvy[k]);
-            REALn jvz = (REALn)(__jvz[k]);
             acc_jerk_kernel_core(im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                                 jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                                 __jm[k], __jrx[k], __jry[k], __jrz[k],
+                                 __je2[k], __jvx[k], __jvy[k], __jvz[k],
                                  &iax, &iay, &iaz,
                                  &ijx, &ijy, &ijz);
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
     for (; j < nj; ++j) {
-        REALn jm = (REALn)(_jm[j]);
-        REALn jrx = (REALn)(_jrx[j]);
-        REALn jry = (REALn)(_jry[j]);
-        REALn jrz = (REALn)(_jrz[j]);
-        REALn je2 = (REALn)(_je2[j]);
-        REALn jvx = (REALn)(_jvx[j]);
-        REALn jvy = (REALn)(_jvy[j]);
-        REALn jvz = (REALn)(_jvz[j]);
         acc_jerk_kernel_core(im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                             jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                             _jm[j], _jrx[j], _jry[j], _jrz[j],
+                             _je2[j], _jvx[j], _jvy[j], _jvz[j],
                              &iax, &iay, &iaz,
                              &ijx, &ijy, &ijz);
     }
