@@ -60,6 +60,8 @@
 
 #define min fmin
 #define max fmax
+#define any(mask) mask
+#define all(mask) mask
 #define select(a, b, c) ((c) ? (b):(a))
 
 #endif // __C_COMMON_H__

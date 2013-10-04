@@ -424,7 +424,7 @@ class PNAcc(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.global_size = ni
+        self.kernel.set_gsize(ni)
         if not "pnax" in ips.__dict__:
             ips.register_auxiliary_attribute("pnax", "real")
         if not "pnay" in ips.__dict__:

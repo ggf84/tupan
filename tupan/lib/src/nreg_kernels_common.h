@@ -30,15 +30,13 @@ inline void nreg_Xkernel_core(
     REALn *iaz,
     REALn *iu)
 {
-    REALn rx, ry, rz, e2;
-    rx = irx - jrx;                                                             // 1 FLOPs
-    ry = iry - jry;                                                             // 1 FLOPs
-    rz = irz - jrz;                                                             // 1 FLOPs
-    e2 = ie2 + je2;                                                             // 1 FLOPs
-    REALn vx, vy, vz;
-    vx = ivx - jvx;                                                             // 1 FLOPs
-    vy = ivy - jvy;                                                             // 1 FLOPs
-    vz = ivz - jvz;                                                             // 1 FLOPs
+    REALn rx = irx - jrx;                                                       // 1 FLOPs
+    REALn ry = iry - jry;                                                       // 1 FLOPs
+    REALn rz = irz - jrz;                                                       // 1 FLOPs
+    REALn e2 = ie2 + je2;                                                       // 1 FLOPs
+    REALn vx = ivx - jvx;                                                       // 1 FLOPs
+    REALn vy = ivy - jvy;                                                       // 1 FLOPs
+    REALn vz = ivz - jvz;                                                       // 1 FLOPs
 
     rx += vx * dt;                                                              // 2 FLOPs
     ry += vy * dt;                                                              // 2 FLOPs
@@ -85,14 +83,12 @@ inline void nreg_Vkernel_core(
     REALn *idvz,
     REALn *ik)
 {
-    REALn vx, vy, vz;
-    vx = ivx - jvx;                                                             // 1 FLOPs
-    vy = ivy - jvy;                                                             // 1 FLOPs
-    vz = ivz - jvz;                                                             // 1 FLOPs
-    REALn ax, ay, az;
-    ax = iax - jax;                                                             // 1 FLOPs
-    ay = iay - jay;                                                             // 1 FLOPs
-    az = iaz - jaz;                                                             // 1 FLOPs
+    REALn vx = ivx - jvx;                                                       // 1 FLOPs
+    REALn vy = ivy - jvy;                                                       // 1 FLOPs
+    REALn vz = ivz - jvz;                                                       // 1 FLOPs
+    REALn ax = iax - jax;                                                       // 1 FLOPs
+    REALn ay = iay - jay;                                                       // 1 FLOPs
+    REALn az = iaz - jaz;                                                       // 1 FLOPs
 
     vx += ax * dt;                                                              // 2 FLOPs
     vy += ay * dt;                                                              // 2 FLOPs
