@@ -25,6 +25,8 @@
     typedef double4 REAL4;
     typedef double8 REAL8;
     typedef double16 REAL16;
+
+    #define LSIZE 256
 #else
     typedef int INT;
     typedef int2 INT2;
@@ -43,9 +45,10 @@
     typedef float4 REAL4;
     typedef float8 REAL8;
     typedef float16 REAL16;
+
+    #define LSIZE 512
 #endif
 
-#define LSIZE 256
 
 #define paster(x,y) x##y
 #define concat(x,y) paster(x,y)
