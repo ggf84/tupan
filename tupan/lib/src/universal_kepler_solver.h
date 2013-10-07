@@ -14,7 +14,7 @@
 #define SIGN(x) COMPARE(x, 0)
 
 
-inline REAL stumpff_c0(
+static inline REAL stumpff_c0(
 //    const REAL zeta)
     REAL zeta)      // This is because of bug 4775 on old versions of glibc.
                     // That bug has already been fixed in latter versions.
@@ -31,7 +31,7 @@ inline REAL stumpff_c0(
 }
 
 
-inline REAL stumpff_c1(
+static inline REAL stumpff_c1(
 //    const REAL zeta)
     REAL zeta)
 {
@@ -47,7 +47,7 @@ inline REAL stumpff_c1(
 }
 
 
-inline REAL stumpff_c2(
+static inline REAL stumpff_c2(
 //    const REAL zeta)
     REAL zeta)
 {
@@ -63,7 +63,7 @@ inline REAL stumpff_c2(
 }
 
 
-inline REAL stumpff_c3(
+static inline REAL stumpff_c3(
 //    const REAL zeta)
     REAL zeta)
 {
@@ -79,7 +79,7 @@ inline REAL stumpff_c3(
 }
 
 
-inline REAL S0(
+static inline REAL S0(
     const REAL s,
     const REAL alpha)
 {
@@ -89,7 +89,7 @@ inline REAL S0(
 }
 
 
-inline REAL S1(
+static inline REAL S1(
     const REAL s,
     const REAL alpha)
 {
@@ -99,7 +99,7 @@ inline REAL S1(
 }
 
 
-inline REAL S2(
+static inline REAL S2(
     const REAL s,
     const REAL alpha)
 {
@@ -109,7 +109,7 @@ inline REAL S2(
 }
 
 
-inline REAL S3(
+static inline REAL S3(
     const REAL s,
     const REAL alpha)
 {
@@ -120,7 +120,7 @@ inline REAL S3(
 }
 
 
-inline REAL lagrange_f(
+static inline REAL lagrange_f(
     const REAL s,
     const REAL r0,
     const REAL m,
@@ -130,7 +130,7 @@ inline REAL lagrange_f(
 }
 
 
-inline REAL lagrange_dfds(
+static inline REAL lagrange_dfds(
     const REAL s,
     const REAL r0,
     const REAL r1,
@@ -141,7 +141,7 @@ inline REAL lagrange_dfds(
 }
 
 
-inline REAL lagrange_g(
+static inline REAL lagrange_g(
     const REAL s,
     const REAL r0,
     const REAL m,
@@ -152,7 +152,7 @@ inline REAL lagrange_g(
 }
 
 
-inline REAL lagrange_dgds(
+static inline REAL lagrange_dgds(
     const REAL s,
     const REAL r0,
     const REAL r1,
@@ -163,7 +163,7 @@ inline REAL lagrange_dgds(
 }
 
 
-inline REAL universal_kepler(
+static inline REAL universal_kepler(
     const REAL s,
     const REAL r0,
     const REAL r0v0,
@@ -175,7 +175,7 @@ inline REAL universal_kepler(
 }
 
 
-inline REAL universal_kepler_ds(
+static inline REAL universal_kepler_ds(
     const REAL s,
     const REAL r0,
     const REAL r0v0,
@@ -187,7 +187,7 @@ inline REAL universal_kepler_ds(
 }
 
 
-inline REAL universal_kepler_dsds(
+static inline REAL universal_kepler_dsds(
     const REAL s,
     const REAL r0,
     const REAL r0v0,
@@ -198,7 +198,7 @@ inline REAL universal_kepler_dsds(
 }
 
 
-inline REAL f(
+static inline REAL f(
     const REAL s,
     REAL *arg)
 {
@@ -206,7 +206,7 @@ inline REAL f(
 }
 
 
-inline REAL fprime(
+static inline REAL fprime(
     const REAL s,
     REAL *arg)
 {
@@ -214,7 +214,7 @@ inline REAL fprime(
 }
 
 
-inline REAL fprimeprime(
+static inline REAL fprimeprime(
     const REAL s,
     REAL *arg)
 {
@@ -223,7 +223,7 @@ inline REAL fprimeprime(
 
 
 #define ORDER 5
-inline INT laguerre(
+static inline INT laguerre(
     REAL x0,
     REAL *x,
     REAL *arg)
@@ -254,7 +254,7 @@ inline INT laguerre(
 }
 
 
-inline INT halley(
+static inline INT halley(
     REAL x0,
     REAL *x,
     REAL *arg)
@@ -282,7 +282,7 @@ inline INT halley(
 }
 
 
-inline INT newton(
+static inline INT newton(
     REAL x0,
     REAL *x,
     REAL *arg)
@@ -309,7 +309,7 @@ inline INT newton(
 }
 
 
-inline void set_new_pos_vel(
+static inline void set_new_pos_vel(
     const REAL dt,
     const REAL s,
     const REAL r0,
@@ -357,7 +357,7 @@ inline void set_new_pos_vel(
 }
 
 
-inline INT _universal_kepler_solver(
+static inline INT _universal_kepler_solver(
     const REAL dt,
     const REAL m,
     const REAL e2,
@@ -442,7 +442,7 @@ inline INT _universal_kepler_solver(
 }
 
 
-inline void __universal_kepler_solver(
+static inline void __universal_kepler_solver(
     const REAL dt,
     const REAL m,
     const REAL e2,
@@ -486,7 +486,7 @@ label1:
 }
 
 
-inline void universal_kepler_solver(
+static inline void universal_kepler_solver(
     const REAL dt,
     const REAL m,
     const REAL e2,

@@ -1,7 +1,7 @@
 #include "sakura_kernel_common.h"
 
 
-inline void sakura_kernel_main_loop(
+static inline void sakura_kernel_main_loop(
     const REAL dt,
     const INT flag,
     const REAL im,

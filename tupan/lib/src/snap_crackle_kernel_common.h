@@ -4,7 +4,7 @@
 #include "common.h"
 #include "smoothing.h"
 
-inline void snap_crackle_kernel_core(
+static inline void snap_crackle_kernel_core(
     const REALn im,
     const REALn irx,
     const REALn iry,

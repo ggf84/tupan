@@ -1,12 +1,6 @@
 #ifndef __C_COMMON_H__
 #define __C_COMMON_H__
 
-#if __GNUC__ && !__GNUC_STDC_INLINE__
-    #define inline extern inline
-#else
-    #define inline static inline
-#endif
-
 #include <stdio.h>
 #include <tgmath.h>
 

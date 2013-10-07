@@ -123,7 +123,7 @@
 #define _13576_105 (((REALn)(13576))/105)
 
 
-inline void p2p_pn2(
+static inline void p2p_pn2(
     REALn im,
     REALn jm,
     REALn inv_r,
@@ -152,7 +152,7 @@ inline void p2p_pn2(
 }   // 11+3+2 == 16 FLOPs
 
 
-inline void p2p_pn4(
+static inline void p2p_pn4(
     REALn im,
     REALn jm,
     REALn im2,
@@ -213,7 +213,7 @@ inline void p2p_pn4(
 }   // 46+24+2 == 72 FLOPs
 
 
-inline void p2p_pn5(
+static inline void p2p_pn5(
     REALn im,
     REALn jm,
     REALn inv_r,
@@ -237,7 +237,7 @@ inline void p2p_pn5(
 }   // 7+5+4 == 16 FLOPs
 
 
-inline void p2p_pn6(
+static inline void p2p_pn6(
     REALn im,
     REALn jm,
     REALn im2,
@@ -372,7 +372,7 @@ inline void p2p_pn6(
 }   // ??+??+2 == ??? FLOPs
 
 
-inline void p2p_pn7(
+static inline void p2p_pn7(
     REALn im,
     REALn jm,
     REALn im2,
@@ -470,7 +470,7 @@ inline void p2p_pn7(
 }   // ??+??+4 == ??? FLOPs
 
 
-inline void p2p_pnterms(
+static inline void p2p_pnterms(
     REALn im,
     REALn jm,
     REALn rx,

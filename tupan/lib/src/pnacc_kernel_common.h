@@ -5,7 +5,7 @@
 #include "smoothing.h"
 #include "pn_terms.h"
 
-inline void pnacc_kernel_core(
+static inline void pnacc_kernel_core(
     const REALn im,
     const REALn irx,
     const REALn iry,

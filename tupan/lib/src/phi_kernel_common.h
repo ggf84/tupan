@@ -4,7 +4,7 @@
 #include "common.h"
 #include "smoothing.h"
 
-inline void phi_kernel_core(
+static inline void phi_kernel_core(
     const REALn im,
     const REALn irx,
     const REALn iry,

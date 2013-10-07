@@ -5,7 +5,7 @@
 #include "smoothing.h"
 #include "universal_kepler_solver.h"
 
-inline void get_phi(
+static inline void get_phi(
     const REAL m,
     const REAL e2,
     const REAL rx,
@@ -20,7 +20,7 @@ inline void get_phi(
 }
 
 
-inline void get_acc(
+static inline void get_acc(
     const REAL m,
     const REAL e2,
     const REAL rx,
@@ -40,7 +40,7 @@ inline void get_acc(
 }
 
 
-inline void leapfrog(
+static inline void leapfrog(
     const REAL dt,
     const REAL m,
     const REAL e2,
@@ -89,7 +89,7 @@ inline void leapfrog(
 }
 
 
-inline void twobody_solver(
+static inline void twobody_solver(
     const REAL dt,
     const REAL m,
     const REAL e2,
@@ -121,7 +121,7 @@ inline void twobody_solver(
 }
 
 
-inline void evolve_twobody(
+static inline void evolve_twobody(
     const REAL dt,
     const INT flag,
     const REAL m,
@@ -189,7 +189,7 @@ inline void evolve_twobody(
 }
 
 
-inline void sakura_kernel_core(
+static inline void sakura_kernel_core(
     const REAL dt,
     const INT flag,
     const REAL im,
