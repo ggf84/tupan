@@ -22,9 +22,10 @@ static inline void phi_kernel_core(
     REALn rz = irz - jrz;                                                       // 1 FLOPs
     REALn e2 = ie2 + je2;                                                       // 1 FLOPs
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
+    INTn mask = (r2 > 0);
 
     REALn inv_r1;
-    smoothed_inv_r1(r2, e2, &inv_r1);                                           // 3 FLOPs
+    smoothed_inv_r1(r2, e2, mask, &inv_r1);                                     // 3 FLOPs
 
     *iphi -= jm * inv_r1;                                                       // 2 FLOPs
 }

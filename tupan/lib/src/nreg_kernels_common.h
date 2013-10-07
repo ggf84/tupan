@@ -44,9 +44,10 @@ static inline void nreg_Xkernel_core(
 
     REALn mij = im * jm;                                                        // 1 FLOPs
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
+    INTn mask = (r2 > 0);
 
     REALn inv_r1, inv_r3;
-    smoothed_inv_r1r3(r2, e2, &inv_r1, &inv_r3);                                // 4 FLOPs
+    smoothed_inv_r1r3(r2, e2, mask, &inv_r1, &inv_r3);                          // 4 FLOPs
 
     rx *= jm;                                                                   // 1 FLOPs
     ry *= jm;                                                                   // 1 FLOPs

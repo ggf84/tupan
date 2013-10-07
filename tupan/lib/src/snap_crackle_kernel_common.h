@@ -55,9 +55,10 @@ static inline void snap_crackle_kernel_core(
     REALn rJ = rx * Jx + ry * Jy + rz * Jz;                                     // 5 FLOPs
     REALn rA = rx * Ax + ry * Ay + rz * Az;                                     // 5 FLOPs
     REALn vA = vx * Ax + vy * Ay + vz * Az;                                     // 5 FLOPs
+    INTn mask = (r2 > 0);
 
     REALn inv_r2, inv_r3;
-    smoothed_inv_r2r3(r2, e2, &inv_r2, &inv_r3);                                // 4 FLOPs
+    smoothed_inv_r2r3(r2, e2, mask, &inv_r2, &inv_r3);                          // 4 FLOPs
 
     REALn alpha = rv * inv_r2;                                                  // 1 FLOPs
     REALn alpha2 = alpha * alpha;                                               // 1 FLOPs

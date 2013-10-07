@@ -14,8 +14,9 @@ static inline void get_phi(
     REAL *phi)
 {
     REAL r2 = rx * rx + ry * ry + rz * rz;                                      // 5 FLOPs
+    INT mask = (r2 > 0);
     REAL inv_r1;
-    smoothed_inv_r1(r2, e2, &inv_r1);                                           // 3 FLOPs
+    smoothed_inv_r1(r2, e2, mask, &inv_r1);                                     // 3 FLOPs
     *phi = m * inv_r1;                                                          // 1 FLOPs
 }
 
@@ -31,8 +32,9 @@ static inline void get_acc(
     REAL *az)
 {
     REAL r2 = rx * rx + ry * ry + rz * rz;                                      // 5 FLOPs
+    INT mask = (r2 > 0);
     REAL inv_r3;
-    smoothed_inv_r3(r2, e2, &inv_r3);                                           // 4 FLOPs
+    smoothed_inv_r3(r2, e2, mask, &inv_r3);                                     // 4 FLOPs
     REAL m_r3 = m * inv_r3;                                                     // 1 FLOPs
     *ax = -m_r3 * rx;                                                           // 1 FLOPs
     *ay = -m_r3 * ry;                                                           // 1 FLOPs

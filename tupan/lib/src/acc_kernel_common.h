@@ -24,9 +24,10 @@ static inline void acc_kernel_core(
     REALn rz = irz - jrz;                                                       // 1 FLOPs
     REALn e2 = ie2 + je2;                                                       // 1 FLOPs
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
+    INTn mask = (r2 > 0);
 
     REALn inv_r3;
-    smoothed_inv_r3(r2, e2, &inv_r3);                                           // 4 FLOPs
+    smoothed_inv_r3(r2, e2, mask, &inv_r3);                                     // 4 FLOPs
 
     inv_r3 *= jm;                                                               // 1 FLOPs
 

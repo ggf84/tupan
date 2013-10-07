@@ -37,9 +37,10 @@ static inline void pnacc_kernel_core(
 //    REALn m = im + jm;                                                          // 1 FLOPs
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
     REALn v2 = vx * vx + vy * vy + vz * vz;                                     // 5 FLOPs
+    INTn mask = (r2 > 0);
 
     REALn inv_r1, inv_r2, inv_r3;
-    smoothed_inv_r1r2r3(r2, e2, &inv_r1, &inv_r2, &inv_r3);                     // 4 FLOPs
+    smoothed_inv_r1r2r3(r2, e2, mask, &inv_r1, &inv_r2, &inv_r3);               // 4 FLOPs
 
 //    REALn r_sch = 2 * m * clight.inv2;                                          // 2 FLOPs
 //    REALn gamma2_a = r_sch * inv_r1;                                            // 1 FLOPs

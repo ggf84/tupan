@@ -33,9 +33,10 @@ static inline void acc_jerk_kernel_core(
     REALn vz = ivz - jvz;                                                       // 1 FLOPs
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
     REALn rv = rx * vx + ry * vy + rz * vz;                                     // 5 FLOPs
+    INTn mask = (r2 > 0);
 
     REALn inv_r2, inv_r3;
-    smoothed_inv_r2r3(r2, e2, &inv_r2, &inv_r3);                                // 4 FLOPs
+    smoothed_inv_r2r3(r2, e2, mask, &inv_r2, &inv_r3);                          // 4 FLOPs
 
     REALn alpha = 3 * rv * inv_r2;                                              // 2 FLOPs
 
