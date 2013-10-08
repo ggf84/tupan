@@ -115,8 +115,6 @@ class Phi(AbstractExtension):
         restypes = (cty.c_real_p,)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(5, "real")
-        self.kernel.set_args(lmem, start=13)
 
     def set_args(self, ips, jps):
         ni = ips.n
@@ -178,8 +176,6 @@ class Acc(AbstractExtension):
         restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(5, "real")
-        self.kernel.set_args(lmem, start=15)
 
     def set_args(self, ips, jps):
         ni = ips.n
@@ -254,8 +250,6 @@ class AccJerk(AbstractExtension):
                     cty.c_real_p, cty.c_real_p, cty.c_real_p)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(8, "real")
-        self.kernel.set_args(lmem, start=24)
 
     def set_args(self, ips, jps):
         ni = ips.n
@@ -312,8 +306,6 @@ class SnapCrackle(AbstractExtension):
                     cty.c_real_p, cty.c_real_p, cty.c_real_p)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(14, "real")
-        self.kernel.set_args(lmem, start=36)
 
     def set_args(self, ips, jps):
         ni = ips.n
@@ -368,8 +360,6 @@ class Tstep(AbstractExtension):
         restypes = (cty.c_real_p, cty.c_real_p)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(8, "real")
-        self.kernel.set_args(lmem, start=21)
 
     def set_args(self, ips, jps, eta):
         ni = ips.n
@@ -417,8 +407,6 @@ class PNAcc(AbstractExtension):
         restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(8, "real")
-        self.kernel.set_args(lmem, start=29)
 
     def set_args(self, ips, jps):
         ni = ips.n
@@ -526,8 +514,6 @@ class NREG_X(AbstractExtension):
                     cty.c_real_p)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(8, "real")
-        self.kernel.set_args(lmem, start=26)
 
     def set_args(self, ips, jps, dt):
         ni = ips.n
@@ -585,8 +571,6 @@ class NREG_V(AbstractExtension):
                     cty.c_real_p)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(7, "real")
-        self.kernel.set_args(lmem, start=21)
 
     def set_args(self, ips, jps, dt):
         ni = ips.n

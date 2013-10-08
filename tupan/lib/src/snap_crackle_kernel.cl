@@ -37,21 +37,7 @@ __kernel void snap_crackle_kernel(
     __global REAL * restrict _isz,
     __global REAL * restrict _icx,
     __global REAL * restrict _icy,
-    __global REAL * restrict _icz,
-    __local REAL *__jm,
-    __local REAL *__jrx,
-    __local REAL *__jry,
-    __local REAL *__jrz,
-    __local REAL *__je2,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz,
-    __local REAL *__jax,
-    __local REAL *__jay,
-    __local REAL *__jaz,
-    __local REAL *__jjx,
-    __local REAL *__jjy,
-    __local REAL *__jjz)
+    __global REAL * restrict _icz)
 {
     UINT i = get_global_id(0);
 
@@ -78,6 +64,20 @@ __kernel void snap_crackle_kernel(
     REALn icz = (REALn)(0);
 
     UINT j = 0;
+    __local REAL __jm[LSIZE];
+    __local REAL __jrx[LSIZE];
+    __local REAL __jry[LSIZE];
+    __local REAL __jrz[LSIZE];
+    __local REAL __je2[LSIZE];
+    __local REAL __jvx[LSIZE];
+    __local REAL __jvy[LSIZE];
+    __local REAL __jvz[LSIZE];
+    __local REAL __jax[LSIZE];
+    __local REAL __jay[LSIZE];
+    __local REAL __jaz[LSIZE];
+    __local REAL __jjx[LSIZE];
+    __local REAL __jjy[LSIZE];
+    __local REAL __jjz[LSIZE];
     for (; (j + LSIZE) < nj; j += LSIZE) {
         event_t e[14];
         e[0] = async_work_group_copy(__jm, _jm + j, LSIZE, 0);

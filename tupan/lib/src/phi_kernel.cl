@@ -14,12 +14,7 @@ __kernel void phi_kernel(
     __global const REAL * restrict _jry,
     __global const REAL * restrict _jrz,
     __global const REAL * restrict _je2,
-    __global REAL * restrict _iphi,
-    __local REAL *__jm,
-    __local REAL *__jrx,
-    __local REAL *__jry,
-    __local REAL *__jrz,
-    __local REAL *__je2)
+    __global REAL * restrict _iphi)
 {
     UINT i = get_global_id(0);
 
@@ -32,6 +27,11 @@ __kernel void phi_kernel(
     REALn iphi = (REALn)(0);
 
     UINT j = 0;
+    __local REAL __jm[LSIZE];
+    __local REAL __jrx[LSIZE];
+    __local REAL __jry[LSIZE];
+    __local REAL __jrz[LSIZE];
+    __local REAL __je2[LSIZE];
     for (; (j + LSIZE) < nj; j += LSIZE) {
         event_t e[5];
         e[0] = async_work_group_copy(__jm, _jm + j, LSIZE, 0);

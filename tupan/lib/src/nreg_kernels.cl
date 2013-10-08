@@ -27,15 +27,7 @@ __kernel void nreg_Xkernel(
     __global REAL * restrict _iax,
     __global REAL * restrict _iay,
     __global REAL * restrict _iaz,
-    __global REAL * restrict _iu,
-    __local REAL *__jm,
-    __local REAL *__jrx,
-    __local REAL *__jry,
-    __local REAL *__jrz,
-    __local REAL *__je2,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz)
+    __global REAL * restrict _iu)
 {
     UINT i = get_global_id(0);
 
@@ -57,6 +49,14 @@ __kernel void nreg_Xkernel(
     REALn iu = (REALn)(0);
 
     UINT j = 0;
+    __local REAL __jm[LSIZE];
+    __local REAL __jrx[LSIZE];
+    __local REAL __jry[LSIZE];
+    __local REAL __jrz[LSIZE];
+    __local REAL __je2[LSIZE];
+    __local REAL __jvx[LSIZE];
+    __local REAL __jvy[LSIZE];
+    __local REAL __jvz[LSIZE];
     for (; (j + LSIZE) < nj; j += LSIZE) {
         event_t e[8];
         e[0] = async_work_group_copy(__jm, _jm + j, LSIZE, 0);
@@ -118,14 +118,7 @@ __kernel void nreg_Vkernel(
     __global REAL * restrict _idvx,
     __global REAL * restrict _idvy,
     __global REAL * restrict _idvz,
-    __global REAL * restrict _ik,
-    __local REAL *__jm,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz,
-    __local REAL *__jax,
-    __local REAL *__jay,
-    __local REAL *__jaz)
+    __global REAL * restrict _ik)
 {
     UINT i = get_global_id(0);
 
@@ -143,6 +136,13 @@ __kernel void nreg_Vkernel(
     REALn ik = (REALn)(0);
 
     UINT j = 0;
+    __local REAL __jm[LSIZE];
+    __local REAL __jvx[LSIZE];
+    __local REAL __jvy[LSIZE];
+    __local REAL __jvz[LSIZE];
+    __local REAL __jax[LSIZE];
+    __local REAL __jay[LSIZE];
+    __local REAL __jaz[LSIZE];
     for (; (j + LSIZE) < nj; j += LSIZE) {
         event_t e[7];
         e[0] = async_work_group_copy(__jm, _jm + j, LSIZE, 0);

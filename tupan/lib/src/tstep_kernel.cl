@@ -22,15 +22,7 @@ __kernel void tstep_kernel(
     __global const REAL * restrict _jvz,
     const REAL eta,
     __global REAL * restrict _idt_a,
-    __global REAL * restrict _idt_b,
-    __local REAL *__jm,
-    __local REAL *__jrx,
-    __local REAL *__jry,
-    __local REAL *__jrz,
-    __local REAL *__je2,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz)
+    __global REAL * restrict _idt_b)
 {
     UINT i = get_global_id(0);
 
@@ -47,6 +39,14 @@ __kernel void tstep_kernel(
     REALn iw2_b = (REALn)(0);
 
     UINT j = 0;
+    __local REAL __jm[LSIZE];
+    __local REAL __jrx[LSIZE];
+    __local REAL __jry[LSIZE];
+    __local REAL __jrz[LSIZE];
+    __local REAL __je2[LSIZE];
+    __local REAL __jvx[LSIZE];
+    __local REAL __jvy[LSIZE];
+    __local REAL __jvz[LSIZE];
     for (; (j + LSIZE) < nj; j += LSIZE) {
         event_t e[8];
         e[0] = async_work_group_copy(__jm, _jm + j, LSIZE, 0);

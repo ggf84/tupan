@@ -25,15 +25,7 @@ __kernel void acc_jerk_kernel(
     __global REAL * restrict _iaz,
     __global REAL * restrict _ijx,
     __global REAL * restrict _ijy,
-    __global REAL * restrict _ijz,
-    __local REAL *__jm,
-    __local REAL *__jrx,
-    __local REAL *__jry,
-    __local REAL *__jrz,
-    __local REAL *__je2,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz)
+    __global REAL * restrict _ijz)
 {
     UINT i = get_global_id(0);
 
@@ -54,6 +46,14 @@ __kernel void acc_jerk_kernel(
     REALn ijz = (REALn)(0);
 
     UINT j = 0;
+    __local REAL __jm[LSIZE];
+    __local REAL __jrx[LSIZE];
+    __local REAL __jry[LSIZE];
+    __local REAL __jrz[LSIZE];
+    __local REAL __je2[LSIZE];
+    __local REAL __jvx[LSIZE];
+    __local REAL __jvy[LSIZE];
+    __local REAL __jvz[LSIZE];
     for (; (j + LSIZE) < nj; j += LSIZE) {
         event_t e[8];
         e[0] = async_work_group_copy(__jm, _jm + j, LSIZE, 0);
