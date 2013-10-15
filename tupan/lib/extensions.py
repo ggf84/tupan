@@ -457,14 +457,13 @@ class Sakura(AbstractExtension):
                     cty.c_real_p, cty.c_real_p, cty.c_real_p)
         self.argtypes = argtypes
         self.restypes = restypes
-        lmem = self.kernel.allocate_local_memory(8, "real")
-        self.kernel.set_args(lmem, start=26)
 
     def set_args(self, ips, jps, dt, flag):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.global_size = ni
+#        self.kernel.set_gsize(ni)
+        self.kernel._gsize = (ni,)
         if not "drx" in ips.__dict__:
             ips.register_auxiliary_attribute("drx", "real")
         if not "dry" in ips.__dict__:

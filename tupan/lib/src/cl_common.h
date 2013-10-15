@@ -1,13 +1,13 @@
 #ifndef __CL_COMMON_H__
 #define __CL_COMMON_H__
 
-#if __OPENCL_VERSION__ <= CL_VERSION_1_1
-    #ifdef cl_khr_fp64
-        #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-    #endif
-#endif
-
 #ifdef DOUBLE
+    #if __OPENCL_VERSION__ <= CL_VERSION_1_1
+        #ifdef cl_khr_fp64
+            #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+        #endif
+    #endif
+
     typedef long INT;
     typedef long2 INT2;
     typedef long4 INT4;
@@ -63,7 +63,7 @@
 #define REALn vec(REAL)
 
 #define vload1(offset, p) p[offset]
-#define vstore1(data, offset, p) {p[offset] = data;}
+#define vstore1(data, offset, p) do {p[offset] = data;} while(0)
 
 #define vloadn vec(vload)
 #define vstoren vec(vstore)

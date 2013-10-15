@@ -13,8 +13,8 @@ static inline void get_phi(
     const REAL rz,
     REAL *phi)
 {
-    REAL r2 = rx * rx + ry * ry + rz * rz;                                      // 5 FLOPs
-    INT mask = (r2 > 0);
+    REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
+    INTn mask = (r2 > 0);
     REAL inv_r1;
     smoothed_inv_r1(r2, e2, mask, &inv_r1);                                     // 3 FLOPs
     *phi = m * inv_r1;                                                          // 1 FLOPs
@@ -31,8 +31,8 @@ static inline void get_acc(
     REAL *ay,
     REAL *az)
 {
-    REAL r2 = rx * rx + ry * ry + rz * rz;                                      // 5 FLOPs
-    INT mask = (r2 > 0);
+    REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
+    INTn mask = (r2 > 0);
     REAL inv_r3;
     smoothed_inv_r3(r2, e2, mask, &inv_r3);                                     // 4 FLOPs
     REAL m_r3 = m * inv_r3;                                                     // 1 FLOPs
@@ -112,13 +112,13 @@ static inline void twobody_solver(
     REAL v2 = v0x * v0x + v0y * v0y + v0z * v0z;
     REAL R = 64 * (m / v2);
     if (r2 > R*R) {
-    leapfrog(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
-             &(*r1x), &(*r1y), &(*r1z),
-             &(*v1x), &(*v1y), &(*v1z));
+        leapfrog(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
+                 &(*r1x), &(*r1y), &(*r1z),
+                 &(*v1x), &(*v1y), &(*v1z));
     } else {
-    universal_kepler_solver(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
-                            &(*r1x), &(*r1y), &(*r1z),
-                            &(*v1x), &(*v1y), &(*v1z));
+        universal_kepler_solver(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
+                                &(*r1x), &(*r1y), &(*r1z),
+                                &(*v1x), &(*v1y), &(*v1z));
     }
 }
 

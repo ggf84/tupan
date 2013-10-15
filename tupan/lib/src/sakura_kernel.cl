@@ -1,147 +1,96 @@
 #include "sakura_kernel_common.h"
 
 
-static inline void sakura_kernel_main_loop(
-    const REAL dt,
-    const INT flag,
-    const REAL im,
-    const REAL irx,
-    const REAL iry,
-    const REAL irz,
-    const REAL ie2,
-    const REAL ivx,
-    const REAL ivy,
-    const REAL ivz,
-    const UINT nj,
-    __global const REAL *_jm,
-    __global const REAL *_jrx,
-    __global const REAL *_jry,
-    __global const REAL *_jrz,
-    __global const REAL *_je2,
-    __global const REAL *_jvx,
-    __global const REAL *_jvy,
-    __global const REAL *_jvz,
-    __local REAL *__jm,
-    __local REAL *__jrx,
-    __local REAL *__jry,
-    __local REAL *__jrz,
-    __local REAL *__je2,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz,
-    REAL *idrx,
-    REAL *idry,
-    REAL *idrz,
-    REAL *idvx,
-    REAL *idvy,
-    REAL *idvz)
-{
-    UINT lsize = get_local_size(0);
-    UINT ntiles = (nj - 1)/lsize + 1;
-
-    for (UINT tile = 0; tile < ntiles; ++tile) {
-        UINT nb = min(lsize, (nj - (tile * lsize)));
-
-        event_t e[8];
-        e[0] = async_work_group_copy(__jm, _jm + tile * lsize, nb, 0);
-        e[1] = async_work_group_copy(__jrx, _jrx + tile * lsize, nb, 0);
-        e[2] = async_work_group_copy(__jry, _jry + tile * lsize, nb, 0);
-        e[3] = async_work_group_copy(__jrz, _jrz + tile * lsize, nb, 0);
-        e[4] = async_work_group_copy(__je2, _je2 + tile * lsize, nb, 0);
-        e[5] = async_work_group_copy(__jvx, _jvx + tile * lsize, nb, 0);
-        e[6] = async_work_group_copy(__jvy, _jvy + tile * lsize, nb, 0);
-        e[7] = async_work_group_copy(__jvz, _jvz + tile * lsize, nb, 0);
-        wait_group_events(8, e);
-
-        for (UINT j = 0; j < nb; ++j) {
-            REAL jm = __jm[j];
-            REAL jrx = __jrx[j];
-            REAL jry = __jry[j];
-            REAL jrz = __jrz[j];
-            REAL je2 = __je2[j];
-            REAL jvx = __jvx[j];
-            REAL jvy = __jvy[j];
-            REAL jvz = __jvz[j];
-            sakura_kernel_core(dt, flag,
-                               im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                               jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-                               &(*idrx), &(*idry), &(*idrz),
-                               &(*idvx), &(*idvy), &(*idvz));
-        }
-
-        barrier(CLK_LOCAL_MEM_FENCE);
-    }
-}
-
-
 __kernel void sakura_kernel(
     const UINT ni,
-    __global const REAL *_im,
-    __global const REAL *_irx,
-    __global const REAL *_iry,
-    __global const REAL *_irz,
-    __global const REAL *_ie2,
-    __global const REAL *_ivx,
-    __global const REAL *_ivy,
-    __global const REAL *_ivz,
+    __global const REAL * restrict _im,
+    __global const REAL * restrict _irx,
+    __global const REAL * restrict _iry,
+    __global const REAL * restrict _irz,
+    __global const REAL * restrict _ie2,
+    __global const REAL * restrict _ivx,
+    __global const REAL * restrict _ivy,
+    __global const REAL * restrict _ivz,
     const UINT nj,
-    __global const REAL *_jm,
-    __global const REAL *_jrx,
-    __global const REAL *_jry,
-    __global const REAL *_jrz,
-    __global const REAL *_je2,
-    __global const REAL *_jvx,
-    __global const REAL *_jvy,
-    __global const REAL *_jvz,
+    __global const REAL * restrict _jm,
+    __global const REAL * restrict _jrx,
+    __global const REAL * restrict _jry,
+    __global const REAL * restrict _jrz,
+    __global const REAL * restrict _je2,
+    __global const REAL * restrict _jvx,
+    __global const REAL * restrict _jvy,
+    __global const REAL * restrict _jvz,
     const REAL dt,
     const INT flag,
-    __global REAL *_idrx,
-    __global REAL *_idry,
-    __global REAL *_idrz,
-    __global REAL *_idvx,
-    __global REAL *_idvy,
-    __global REAL *_idvz,
-    __local REAL *__jm,
-    __local REAL *__jrx,
-    __local REAL *__jry,
-    __local REAL *__jrz,
-    __local REAL *__je2,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz)
+    __global REAL * restrict _idrx,
+    __global REAL * restrict _idry,
+    __global REAL * restrict _idrz,
+    __global REAL * restrict _idvx,
+    __global REAL * restrict _idvy,
+    __global REAL * restrict _idvz)
 {
-    UINT gid = get_global_id(0);
-    UINT i = min(gid, ni-1);
+    UINT i = get_global_id(0);
 
-    REAL im = _im[i];
-    REAL irx = _irx[i];
-    REAL iry = _iry[i];
-    REAL irz = _irz[i];
-    REAL ie2 = _ie2[i];
-    REAL ivx = _ivx[i];
-    REAL ivy = _ivy[i];
-    REAL ivz = _ivz[i];
-    REAL idrx = 0;
-    REAL idry = 0;
-    REAL idrz = 0;
-    REAL idvx = 0;
-    REAL idvy = 0;
-    REAL idvz = 0;
+    REAL im = vload1(i, _im);
+    REAL irx = vload1(i, _irx);
+    REAL iry = vload1(i, _iry);
+    REAL irz = vload1(i, _irz);
+    REAL ie2 = vload1(i, _ie2);
+    REAL ivx = vload1(i, _ivx);
+    REAL ivy = vload1(i, _ivy);
+    REAL ivz = vload1(i, _ivz);
 
-    sakura_kernel_main_loop(
-        dt, flag,
-        im, irx, iry, irz, ie2, ivx, ivy, ivz,
-        nj,
-        _jm, _jrx, _jry, _jrz, _je2, _jvx, _jvy, _jvz,
-        __jm, __jrx, __jry, __jrz, __je2, __jvx, __jvy, __jvz,
-        &idrx, &idry, &idrz,
-        &idvx, &idvy, &idvz);
+    REAL idrx = (REAL)(0);
+    REAL idry = (REAL)(0);
+    REAL idrz = (REAL)(0);
+    REAL idvx = (REAL)(0);
+    REAL idvy = (REAL)(0);
+    REAL idvz = (REAL)(0);
 
-    _idrx[i] = idrx;
-    _idry[i] = idry;
-    _idrz[i] = idrz;
-    _idvx[i] = idvx;
-    _idvy[i] = idvy;
-    _idvz[i] = idvz;
+    UINT j = 0;
+    __local REAL __jm[LSIZE];
+    __local REAL __jrx[LSIZE];
+    __local REAL __jry[LSIZE];
+    __local REAL __jrz[LSIZE];
+    __local REAL __je2[LSIZE];
+    __local REAL __jvx[LSIZE];
+    __local REAL __jvy[LSIZE];
+    __local REAL __jvz[LSIZE];
+    for (; (j + LSIZE) < nj; j += LSIZE) {
+        event_t e[8];
+        e[0] = async_work_group_copy(__jm, _jm + j, LSIZE, 0);
+        e[1] = async_work_group_copy(__jrx, _jrx + j, LSIZE, 0);
+        e[2] = async_work_group_copy(__jry, _jry + j, LSIZE, 0);
+        e[3] = async_work_group_copy(__jrz, _jrz + j, LSIZE, 0);
+        e[4] = async_work_group_copy(__je2, _je2 + j, LSIZE, 0);
+        e[5] = async_work_group_copy(__jvx, _jvx + j, LSIZE, 0);
+        e[6] = async_work_group_copy(__jvy, _jvy + j, LSIZE, 0);
+        e[7] = async_work_group_copy(__jvz, _jvz + j, LSIZE, 0);
+        wait_group_events(8, e);
+        for (UINT k = 0; k < LSIZE; ++k) {
+            sakura_kernel_core(dt, flag,
+                               im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                               __jm[k], __jrx[k], __jry[k], __jrz[k],
+                               __je2[k], __jvx[k], __jvy[k], __jvz[k],
+                               &idrx, &idry, &idrz,
+                               &idvx, &idvy, &idvz);
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+    for (; j < nj; ++j) {
+        sakura_kernel_core(dt, flag,
+                           im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                           _jm[j], _jrx[j], _jry[j], _jrz[j],
+                           _je2[j], _jvx[j], _jvy[j], _jvz[j],
+                           &idrx, &idry, &idrz,
+                           &idvx, &idvy, &idvz);
+    }
+
+    vstore1(idrx, i, _idrx);
+    vstore1(idry, i, _idry);
+    vstore1(idrz, i, _idrz);
+    vstore1(idvx, i, _idvx);
+    vstore1(idvy, i, _idvy);
+    vstore1(idvz, i, _idvz);
 }
 
