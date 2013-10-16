@@ -56,7 +56,23 @@ __kernel void acc_kernel(
                         _jm[j], _jrx[j], _jry[j], _jrz[j], _je2[j],
                         &iax, &iay, &iaz);
     }
-
+/*
+    UINT lsize = (nj - j);
+    if (lsize > 0) {
+        event_t e[5];
+        e[0] = async_work_group_copy(__jm, _jm + j, lsize, 0);
+        e[1] = async_work_group_copy(__jrx, _jrx + j, lsize, 0);
+        e[2] = async_work_group_copy(__jry, _jry + j, lsize, 0);
+        e[3] = async_work_group_copy(__jrz, _jrz + j, lsize, 0);
+        e[4] = async_work_group_copy(__je2, _je2 + j, lsize, 0);
+        wait_group_events(5, e);
+        for (UINT k = 0; k < lsize; ++k) {
+            acc_kernel_core(im, irx, iry, irz, ie2,
+                            __jm[k], __jrx[k], __jry[k], __jrz[k], __je2[k],
+                            &iax, &iay, &iaz);
+        }
+    }
+*/
     vstoren(iax, i, _iax);
     vstoren(iay, i, _iay);
     vstoren(iaz, i, _iaz);

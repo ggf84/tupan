@@ -9,7 +9,6 @@
 from __future__ import division
 import os
 import sys
-import math
 import logging
 import getpass
 import pyopencl as cl
@@ -89,7 +88,6 @@ class CLKernel(object):
         self.kernel = getattr(lib[prec], name)
         self.vector_width = VECTOR_WIDTH[prec]
         self.queue = cl.CommandQueue(ctx)
-        self._gsize = None
 
         memf = cl.mem_flags
 #        flags = memf.READ_WRITE | memf.USE_HOST_PTR
@@ -110,39 +108,40 @@ class CLKernel(object):
 
     def set_gsize(self, gsize):
         gs = (gsize + self.vector_width - 1) // self.vector_width
-        self._gsize = (gs,)
+        self.global_size = (gs, 1, 1)
 
-    @property
-    def global_size(self):
-        return self._gsize
-
-    @global_size.setter
-    def global_size(self, ni):
-        gs0 = ((ni-1)//2 + 1) * 2
-        self._gsize = (gs0,)
-
-        gs1 = ((ni-1)//self.wgsize + 1) * 2
-        ls0 = gs0 // gs1
-
-        self.local_size = (ls0,)
-
-    def allocate_local_memory(self, nbufs, sctype):
-        from .utils.ctype import ctypedict
-        dtype = ctypedict[sctype]
-
-        itemsize = dtype.itemsize
-        dev = ctx.devices[0]
-
-        size0 = dev.local_mem_size // (itemsize * nbufs)
-        size1 = dev.max_work_group_size
-        size2 = 2**int(math.log(size0, 2))
-        wgsize = min(size1, size2)
-        self.wgsize = wgsize
-        lmsize = wgsize * itemsize
-
-        lmem = [cl.LocalMemory(lmsize) for i in range(nbufs)]
-        self.lmem = lmem    # keep alive!
-        return lmem
+#    @property
+#    def global_size(self):
+#        return self._gsize
+#
+#    @global_size.setter
+#    def global_size(self, ni):
+#        gs0 = ((ni-1)//2 + 1) * 2
+#        self._gsize = (gs0,)
+#
+#        gs1 = ((ni-1)//self.wgsize + 1) * 2
+#        ls0 = gs0 // gs1
+#
+#        self.local_size = (ls0,)
+#
+#    def allocate_local_memory(self, nbufs, sctype):
+#        import math
+#        from .utils.ctype import ctypedict
+#        dtype = ctypedict[sctype]
+#
+#        itemsize = dtype.itemsize
+#        dev = ctx.devices[0]
+#
+#        size0 = dev.local_mem_size // (itemsize * nbufs)
+#        size1 = dev.max_work_group_size
+#        size2 = 2**int(math.log(size0, 2))
+#        wgsize = min(size1, size2)
+#        self.wgsize = wgsize
+#        lmsize = wgsize * itemsize
+#
+#        lmem = [cl.LocalMemory(lmsize) for i in range(nbufs)]
+#        self.lmem = lmem    # keep alive!
+#        return lmem
 
     def set_args(self, args, start=0):
         for (i, arg) in enumerate(args, start):
