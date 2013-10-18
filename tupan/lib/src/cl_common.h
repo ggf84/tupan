@@ -2,7 +2,7 @@
 #define __CL_COMMON_H__
 
 #ifdef CONFIG_USE_DOUBLE
-    #if !(__OPENCL_VERSION__ > __CL_VERSION_1_0)
+    #if (__OPENCL_VERSION__ <= CL_VERSION_1_1)
         #if defined(cl_khr_fp64)
             #pragma OPENCL EXTENSION cl_khr_fp64 : enable
         #else
