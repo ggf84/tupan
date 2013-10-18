@@ -61,7 +61,7 @@ def make_lib(prec):
 
     define_macros = []
     if prec == "float64":
-        define_macros.append(("DOUBLE", 1))
+        define_macros.append(("CONFIG_USE_DOUBLE", 1))
 
     clib = ffi.verify(
         """

@@ -1,13 +1,17 @@
 #ifndef __CL_COMMON_H__
 #define __CL_COMMON_H__
 
-#ifdef DOUBLE
-    #if __OPENCL_VERSION__ <= CL_VERSION_1_1
-        #ifdef cl_khr_fp64
+#ifdef CONFIG_USE_DOUBLE
+    #if !(__OPENCL_VERSION__ > __CL_VERSION_1_0)
+        #if defined(cl_khr_fp64)
             #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+        #else
+            #error "The hardware/OpenCL implementation does not support double precision arithmetic."
         #endif
     #endif
+#endif
 
+#ifdef CONFIG_USE_DOUBLE
     typedef long INT;
     typedef long2 INT2;
     typedef long4 INT4;
@@ -62,8 +66,8 @@
 #define UINTn vec(UINT)
 #define REALn vec(REAL)
 
-#define vload1(offset, p) p[offset]
-#define vstore1(data, offset, p) do {p[offset] = data;} while(0)
+#define vload1(offset, p) (p)[offset]
+#define vstore1(data, offset, p) do {(p)[offset] = data;} while(0)
 
 #define vloadn vec(vload)
 #define vstoren vec(vstore)

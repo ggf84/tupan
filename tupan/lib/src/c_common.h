@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <tgmath.h>
 
-#ifdef DOUBLE
+#ifdef CONFIG_USE_DOUBLE
     typedef long INT;
     typedef long INT2;
     typedef long INT4;
