@@ -1,6 +1,23 @@
 #include "acc_kernel_common.h"
 
 
+#define WIDTH 1
+#define UNROLL 0
+
+#if WIDTH == 2
+    #define MASK MASK2
+#endif
+#if WIDTH == 4
+    #define MASK MASK4
+#endif
+#if WIDTH == 8
+    #define MASK MASK8
+#endif
+#if WIDTH == 16
+    #define MASK MASK16
+#endif
+
+
 __kernel void acc_kernel(
     const UINT ni,
     __global const REAL * restrict _im,
@@ -58,20 +75,15 @@ __kernel void acc_kernel(
     }
 */
 
-#define WIDTH 2
-
     UINT j = 0;
+    UINT lsize = min((UINT)(LSIZE), (UINT)(get_local_size(0) + WIDTH - 1)) / WIDTH;
+    UINT lid = get_local_id(0) % lsize;
     __local concat(REAL, WIDTH) __jm[LSIZE / WIDTH];
     __local concat(REAL, WIDTH) __jrx[LSIZE / WIDTH];
     __local concat(REAL, WIDTH) __jry[LSIZE / WIDTH];
     __local concat(REAL, WIDTH) __jrz[LSIZE / WIDTH];
     __local concat(REAL, WIDTH) __je2[LSIZE / WIDTH];
-
-    UINT lsize = min((UINT)(LSIZE / WIDTH), (UINT)(get_local_size(0)));
-    UINT lid = get_local_id(0) % lsize;
-
     for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
-
         concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
         concat(REAL, WIDTH) jrx = concat(vload, WIDTH)(lid, _jrx + j);
         concat(REAL, WIDTH) jry = concat(vload, WIDTH)(lid, _jry + j);
@@ -84,74 +96,32 @@ __kernel void acc_kernel(
         __jrz[lid] = jrz;
         __je2[lid] = je2;
         barrier(CLK_LOCAL_MEM_FENCE);
-
         for (UINT k = 0; k < lsize; ++k) {
             jm = __jm[k];
             jrx = __jrx[k];
             jry = __jry[k];
             jrz = __jrz[k];
             je2 = __je2[k];
-#if WIDTH == 1
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm, jrx, jry, jrz, je2,
-                            &iax, &iay, &iaz);
-#endif
-#if WIDTH > 1
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
-                            &iax, &iay, &iaz);
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.s1, jrx.s1, jry.s1, jrz.s1, je2.s1,
-                            &iax, &iay, &iaz);
-#endif
-#if WIDTH > 3
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.s2, jrx.s2, jry.s2, jrz.s2, je2.s2,
-                            &iax, &iay, &iaz);
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.s3, jrx.s3, jry.s3, jrz.s3, je2.s3,
-                            &iax, &iay, &iaz);
-#endif
-#if WIDTH > 7
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.s4, jrx.s4, jry.s4, jrz.s4, je2.s4,
-                            &iax, &iay, &iaz);
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.s5, jrx.s5, jry.s5, jrz.s5, je2.s5,
-                            &iax, &iay, &iaz);
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.s6, jrx.s6, jry.s6, jrz.s6, je2.s6,
-                            &iax, &iay, &iaz);
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.s7, jrx.s7, jry.s7, jrz.s7, je2.s7,
-                            &iax, &iay, &iaz);
-#endif
-#if WIDTH > 15
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.s8, jrx.s8, jry.s8, jrz.s8, je2.s8,
-                            &iax, &iay, &iaz);
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.s9, jrx.s9, jry.s9, jrz.s9, je2.s9,
-                            &iax, &iay, &iaz);
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.sA, jrx.sA, jry.sA, jrz.sA, je2.sA,
-                            &iax, &iay, &iaz);
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.sB, jrx.sB, jry.sB, jrz.sB, je2.sB,
-                            &iax, &iay, &iaz);
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.sC, jrx.sC, jry.sC, jrz.sC, je2.sC,
-                            &iax, &iay, &iaz);
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.sD, jrx.sD, jry.sD, jrz.sD, je2.sD,
-                            &iax, &iay, &iaz);
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.sE, jrx.sE, jry.sE, jrz.sE, je2.sE,
-                            &iax, &iay, &iaz);
-            acc_kernel_core(im, irx, iry, irz, ie2,
-                            jm.sF, jrx.sF, jry.sF, jrz.sF, je2.sF,
-                            &iax, &iay, &iaz);
-#endif
+            #if WIDTH == 1
+                acc_kernel_core(im, irx, iry, irz, ie2,
+                                jm, jrx, jry, jrz, je2,
+                                &iax, &iay, &iaz);
+            #else
+                #pragma unroll UNROLL
+                for (UINT l = 0; l < UNROLL; ++l) {
+                    acc_kernel_core(im, irx, iry, irz, ie2,
+                                    jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
+                                    &iax, &iay, &iaz);
+                    jm = shuffle(jm, MASK);
+                    jrx = shuffle(jrx, MASK);
+                    jry = shuffle(jry, MASK);
+                    jrz = shuffle(jrz, MASK);
+                    je2 = shuffle(je2, MASK);
+                }
+                acc_kernel_core(im, irx, iry, irz, ie2,
+                                jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
+                                &iax, &iay, &iaz);
+            #endif
         }
     }
     for (; j < nj; ++j) {

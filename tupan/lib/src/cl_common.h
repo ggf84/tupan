@@ -72,4 +72,9 @@
 #define vloadn vec(vload)
 #define vstoren vec(vstore)
 
+#define MASK2 (UINT2)(1, 0)
+#define MASK4 (UINT4)(1, 2, 3, 0)
+#define MASK8 (UINT8)(1, 2, 3, 4, 5, 6, 7, 0)
+#define MASK16 (UINT16)(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0)
+
 #endif // __CL_COMMON_H__
