@@ -62,8 +62,7 @@ static inline void plummer_smoothed_inv_r3(
 {
     REALn inv_r2 = 1 / (r2 + h2);
     inv_r2 = select((REALn)(0), inv_r2, mask);
-    REALn inv_r1 = sqrt(inv_r2);
-    *inv_r3 = inv_r1 * inv_r2;
+    *inv_r3 = inv_r2 * sqrt(inv_r2);
 }
 // Total flop count: 4
 
@@ -115,7 +114,7 @@ static inline void plummer_smoothed_inv_r1r3(
     REALn inv_r2 = 1 / (r2 + h2);
     inv_r2 = select((REALn)(0), inv_r2, mask);
     *inv_r1 = sqrt(inv_r2);
-    *inv_r3 = *inv_r1 * inv_r2;
+    *inv_r3 = inv_r2 * *inv_r1;
 }
 // Total flop count: 4
 
@@ -141,8 +140,7 @@ static inline void plummer_smoothed_inv_r2r3(
 {
     *inv_r2 = 1 / (r2 + h2);
     *inv_r2 = select((REALn)(0), *inv_r2, mask);
-    REALn inv_r1 = sqrt(*inv_r2);
-    *inv_r3 = inv_r1 * *inv_r2;
+    *inv_r3 = *inv_r2 * sqrt(*inv_r2);
 }
 // Total flop count: 4
 
@@ -170,7 +168,7 @@ static inline void plummer_smoothed_inv_r1r2r3(
     *inv_r2 = 1 / (r2 + h2);
     *inv_r2 = select((REALn)(0), *inv_r2, mask);
     *inv_r1 = sqrt(*inv_r2);
-    *inv_r3 = *inv_r1 * *inv_r2;
+    *inv_r3 = *inv_r2 * *inv_r1;
 }
 // Total flop count: 4
 

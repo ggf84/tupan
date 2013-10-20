@@ -74,7 +74,10 @@
 
 #define WIDTH 2
 
-#if WIDTH == 2
+#if WIDTH == 1
+    #define UNROLL 0
+    #define MASK (UINT)(0)
+#elif WIDTH == 2
     #define UNROLL 1
     #define MASK (UINT2)(1, 0)
 #elif WIDTH == 4
@@ -87,7 +90,7 @@
     #define UNROLL 15
     #define MASK (UINT16)(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0)
 #else
-    #error "WIDTH value should be 2, 4, 8 or 16."
+    #error "WIDTH value should be 1, 2, 4, 8 or 16."
 #endif
 
 #endif // __CL_COMMON_H__

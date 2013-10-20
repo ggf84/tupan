@@ -1,7 +1,7 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#if defined(__OPENCL_VERSION__)
+#ifdef CONFIG_USE_OPENCL
     #include "cl_common.h"
 #else
     #include "c_common.h"

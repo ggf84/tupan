@@ -63,6 +63,7 @@ def make_lib(prec):
 
     # setting options
     options = " -I {path}".format(path=PATH)
+    options += " -D CONFIG_USE_OPENCL"
     if prec == "float64":
         options += " -D CONFIG_USE_DOUBLE"
     options += " -D VECTOR_WIDTH={}".format(VECTOR_WIDTH[prec])
