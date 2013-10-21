@@ -39,7 +39,6 @@ __kernel void nreg_Xkernel(
     REALn ivx = vloadn(i, _ivx);
     REALn ivy = vloadn(i, _ivy);
     REALn ivz = vloadn(i, _ivz);
-
     REALn idrx = (REALn)(0);
     REALn idry = (REALn)(0);
     REALn idrz = (REALn)(0);
@@ -49,38 +48,85 @@ __kernel void nreg_Xkernel(
     REALn iu = (REALn)(0);
 
     UINT j = 0;
-    __local REAL __jm[LSIZE];
-    __local REAL __jrx[LSIZE];
-    __local REAL __jry[LSIZE];
-    __local REAL __jrz[LSIZE];
-    __local REAL __je2[LSIZE];
-    __local REAL __jvx[LSIZE];
-    __local REAL __jvy[LSIZE];
-    __local REAL __jvz[LSIZE];
-    for (; (j + LSIZE) < nj; j += LSIZE) {
-        event_t e[8];
-        e[0] = async_work_group_copy(__jm, _jm + j, LSIZE, 0);
-        e[1] = async_work_group_copy(__jrx, _jrx + j, LSIZE, 0);
-        e[2] = async_work_group_copy(__jry, _jry + j, LSIZE, 0);
-        e[3] = async_work_group_copy(__jrz, _jrz + j, LSIZE, 0);
-        e[4] = async_work_group_copy(__je2, _je2 + j, LSIZE, 0);
-        e[5] = async_work_group_copy(__jvx, _jvx + j, LSIZE, 0);
-        e[6] = async_work_group_copy(__jvy, _jvy + j, LSIZE, 0);
-        e[7] = async_work_group_copy(__jvz, _jvz + j, LSIZE, 0);
-        wait_group_events(8, e);
-        for (UINT k = 0; k < LSIZE; ++k) {
-            nreg_Xkernel_core(dt,
-                              im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                              __jm[k], __jrx[k], __jry[k], __jrz[k],
-                              __je2[k], __jvx[k], __jvy[k], __jvz[k],
-                              &idrx, &idry, &idrz,
-                              &iax, &iay, &iaz, &iu);
-        }
+    UINT lsize = min((UINT)(LSIZE), (UINT)(get_local_size(0) + WIDTH - 1)) / WIDTH;
+    UINT lid = get_local_id(0) % lsize;
+    __local concat(REAL, WIDTH) __jm[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jrx[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jry[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jrz[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __je2[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jvx[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jvy[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jvz[LSIZE / WIDTH];
+    for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
+        concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
+        concat(REAL, WIDTH) jrx = concat(vload, WIDTH)(lid, _jrx + j);
+        concat(REAL, WIDTH) jry = concat(vload, WIDTH)(lid, _jry + j);
+        concat(REAL, WIDTH) jrz = concat(vload, WIDTH)(lid, _jrz + j);
+        concat(REAL, WIDTH) je2 = concat(vload, WIDTH)(lid, _je2 + j);
+        concat(REAL, WIDTH) jvx = concat(vload, WIDTH)(lid, _jvx + j);
+        concat(REAL, WIDTH) jvy = concat(vload, WIDTH)(lid, _jvy + j);
+        concat(REAL, WIDTH) jvz = concat(vload, WIDTH)(lid, _jvz + j);
         barrier(CLK_LOCAL_MEM_FENCE);
+        __jm[lid] = jm;
+        __jrx[lid] = jrx;
+        __jry[lid] = jry;
+        __jrz[lid] = jrz;
+        __je2[lid] = je2;
+        __jvx[lid] = jvx;
+        __jvy[lid] = jvy;
+        __jvz[lid] = jvz;
+        barrier(CLK_LOCAL_MEM_FENCE);
+        for (UINT k = 0; k < lsize; ++k) {
+            jm = __jm[k];
+            jrx = __jrx[k];
+            jry = __jry[k];
+            jrz = __jrz[k];
+            je2 = __je2[k];
+            jvx = __jvx[k];
+            jvy = __jvy[k];
+            jvz = __jvz[k];
+            #if WIDTH == 1
+                nreg_Xkernel_core(dt,
+                                  im, irx, iry, irz,
+                                  ie2, ivx, ivy, ivz,
+                                  jm, jrx, jry, jrz,
+                                  je2, jvx, jvy, jvz,
+                                  &idrx, &idry, &idrz,
+                                  &iax, &iay, &iaz, &iu);
+            #else
+                #pragma unroll
+                for (UINT l = 0; l < UNROLL; ++l) {
+                    nreg_Xkernel_core(dt,
+                                      im, irx, iry, irz,
+                                      ie2, ivx, ivy, ivz,
+                                      jm.s0, jrx.s0, jry.s0, jrz.s0,
+                                      je2.s0, jvx.s0, jvy.s0, jvz.s0,
+                                      &idrx, &idry, &idrz,
+                                      &iax, &iay, &iaz, &iu);
+                    jm = shuffle(jm, MASK);
+                    jrx = shuffle(jrx, MASK);
+                    jry = shuffle(jry, MASK);
+                    jrz = shuffle(jrz, MASK);
+                    je2 = shuffle(je2, MASK);
+                    jvx = shuffle(jvx, MASK);
+                    jvy = shuffle(jvy, MASK);
+                    jvz = shuffle(jvz, MASK);
+                }
+                nreg_Xkernel_core(dt,
+                                  im, irx, iry, irz,
+                                  ie2, ivx, ivy, ivz,
+                                  jm.s0, jrx.s0, jry.s0, jrz.s0,
+                                  je2.s0, jvx.s0, jvy.s0, jvz.s0,
+                                  &idrx, &idry, &idrz,
+                                  &iax, &iay, &iaz, &iu);
+            #endif
+        }
     }
     for (; j < nj; ++j) {
         nreg_Xkernel_core(dt,
-                          im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                          im, irx, iry, irz,
+                          ie2, ivx, ivy, ivz,
                           _jm[j], _jrx[j], _jry[j], _jrz[j],
                           _je2[j], _jvx[j], _jvy[j], _jvz[j],
                           &idrx, &idry, &idrz,
@@ -129,42 +175,83 @@ __kernel void nreg_Vkernel(
     REALn iax = vloadn(i, _iax);
     REALn iay = vloadn(i, _iay);
     REALn iaz = vloadn(i, _iaz);
-
     REALn idvx = (REALn)(0);
     REALn idvy = (REALn)(0);
     REALn idvz = (REALn)(0);
     REALn ik = (REALn)(0);
 
     UINT j = 0;
-    __local REAL __jm[LSIZE];
-    __local REAL __jvx[LSIZE];
-    __local REAL __jvy[LSIZE];
-    __local REAL __jvz[LSIZE];
-    __local REAL __jax[LSIZE];
-    __local REAL __jay[LSIZE];
-    __local REAL __jaz[LSIZE];
-    for (; (j + LSIZE) < nj; j += LSIZE) {
-        event_t e[7];
-        e[0] = async_work_group_copy(__jm, _jm + j, LSIZE, 0);
-        e[1] = async_work_group_copy(__jvx, _jvx + j, LSIZE, 0);
-        e[2] = async_work_group_copy(__jvy, _jvy + j, LSIZE, 0);
-        e[3] = async_work_group_copy(__jvz, _jvz + j, LSIZE, 0);
-        e[4] = async_work_group_copy(__jax, _jax + j, LSIZE, 0);
-        e[5] = async_work_group_copy(__jay, _jay + j, LSIZE, 0);
-        e[6] = async_work_group_copy(__jaz, _jaz + j, LSIZE, 0);
-        wait_group_events(7, e);
-        for (UINT k = 0; k < LSIZE; ++k) {
-            nreg_Vkernel_core(dt,
-                              im, ivx, ivy, ivz, iax, iay, iaz,
-                              __jm[k], __jvx[k], __jvy[k], __jvz[k],
-                              __jax[k], __jay[k], __jaz[k],
-                              &idvx, &idvy, &idvz, &ik);
-        }
+    UINT lsize = min((UINT)(LSIZE), (UINT)(get_local_size(0) + WIDTH - 1)) / WIDTH;
+    UINT lid = get_local_id(0) % lsize;
+    __local concat(REAL, WIDTH) __jm[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jvx[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jvy[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jvz[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jax[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jay[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jaz[LSIZE / WIDTH];
+    for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
+        concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
+        concat(REAL, WIDTH) jvx = concat(vload, WIDTH)(lid, _jvx + j);
+        concat(REAL, WIDTH) jvy = concat(vload, WIDTH)(lid, _jvy + j);
+        concat(REAL, WIDTH) jvz = concat(vload, WIDTH)(lid, _jvz + j);
+        concat(REAL, WIDTH) jax = concat(vload, WIDTH)(lid, _jax + j);
+        concat(REAL, WIDTH) jay = concat(vload, WIDTH)(lid, _jay + j);
+        concat(REAL, WIDTH) jaz = concat(vload, WIDTH)(lid, _jaz + j);
         barrier(CLK_LOCAL_MEM_FENCE);
+        __jm[lid] = jm;
+        __jvx[lid] = jvx;
+        __jvy[lid] = jvy;
+        __jvz[lid] = jvz;
+        __jax[lid] = jax;
+        __jay[lid] = jay;
+        __jaz[lid] = jaz;
+        barrier(CLK_LOCAL_MEM_FENCE);
+        for (UINT k = 0; k < lsize; ++k) {
+            jm = __jm[k];
+            jvx = __jvx[k];
+            jvy = __jvy[k];
+            jvz = __jvz[k];
+            jax = __jax[k];
+            jay = __jay[k];
+            jaz = __jaz[k];
+            #if WIDTH == 1
+                nreg_Vkernel_core(dt,
+                                  im, ivx, ivy, ivz,
+                                  iax, iay, iaz,
+                                  jm, jvx, jvy, jvz,
+                                  jax, jay, jaz,
+                                  &idvx, &idvy, &idvz, &ik);
+            #else
+                #pragma unroll
+                for (UINT l = 0; l < UNROLL; ++l) {
+                    nreg_Vkernel_core(dt,
+                                      im, ivx, ivy, ivz,
+                                      iax, iay, iaz,
+                                      jm.s0, jvx.s0, jvy.s0, jvz.s0,
+                                      jax.s0, jay.s0, jaz.s0,
+                                      &idvx, &idvy, &idvz, &ik);
+                    jm = shuffle(jm, MASK);
+                    jvx = shuffle(jvx, MASK);
+                    jvy = shuffle(jvy, MASK);
+                    jvz = shuffle(jvz, MASK);
+                    jax = shuffle(jax, MASK);
+                    jay = shuffle(jay, MASK);
+                    jaz = shuffle(jaz, MASK);
+                }
+                nreg_Vkernel_core(dt,
+                                  im, ivx, ivy, ivz,
+                                  iax, iay, iaz,
+                                  jm.s0, jvx.s0, jvy.s0, jvz.s0,
+                                  jax.s0, jay.s0, jaz.s0,
+                                  &idvx, &idvy, &idvz, &ik);
+            #endif
+        }
     }
     for (; j < nj; ++j) {
         nreg_Vkernel_core(dt,
-                          im, ivx, ivy, ivz, iax, iay, iaz,
+                          im, ivx, ivy, ivz,
+                          iax, iay, iaz,
                           _jm[j], _jvx[j], _jvy[j], _jvz[j],
                           _jax[j], _jay[j], _jaz[j],
                           &idvx, &idvy, &idvz, &ik);

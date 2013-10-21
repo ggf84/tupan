@@ -55,7 +55,6 @@ __kernel void snap_crackle_kernel(
     REALn ijx = vloadn(i, _ijx);
     REALn ijy = vloadn(i, _ijy);
     REALn ijz = vloadn(i, _ijz);
-
     REALn isx = (REALn)(0);
     REALn isy = (REALn)(0);
     REALn isz = (REALn)(0);
@@ -64,54 +63,125 @@ __kernel void snap_crackle_kernel(
     REALn icz = (REALn)(0);
 
     UINT j = 0;
-    __local REAL __jm[LSIZE];
-    __local REAL __jrx[LSIZE];
-    __local REAL __jry[LSIZE];
-    __local REAL __jrz[LSIZE];
-    __local REAL __je2[LSIZE];
-    __local REAL __jvx[LSIZE];
-    __local REAL __jvy[LSIZE];
-    __local REAL __jvz[LSIZE];
-    __local REAL __jax[LSIZE];
-    __local REAL __jay[LSIZE];
-    __local REAL __jaz[LSIZE];
-    __local REAL __jjx[LSIZE];
-    __local REAL __jjy[LSIZE];
-    __local REAL __jjz[LSIZE];
-    for (; (j + LSIZE) < nj; j += LSIZE) {
-        event_t e[14];
-        e[0] = async_work_group_copy(__jm, _jm + j, LSIZE, 0);
-        e[1] = async_work_group_copy(__jrx, _jrx + j, LSIZE, 0);
-        e[2] = async_work_group_copy(__jry, _jry + j, LSIZE, 0);
-        e[3] = async_work_group_copy(__jrz, _jrz + j, LSIZE, 0);
-        e[4] = async_work_group_copy(__je2, _je2 + j, LSIZE, 0);
-        e[5] = async_work_group_copy(__jvx, _jvx + j, LSIZE, 0);
-        e[6] = async_work_group_copy(__jvy, _jvy + j, LSIZE, 0);
-        e[7] = async_work_group_copy(__jvz, _jvz + j, LSIZE, 0);
-        e[8] = async_work_group_copy(__jax, _jax + j, LSIZE, 0);
-        e[9] = async_work_group_copy(__jay, _jay + j, LSIZE, 0);
-        e[10] = async_work_group_copy(__jaz, _jaz + j, LSIZE, 0);
-        e[11] = async_work_group_copy(__jjx, _jjx + j, LSIZE, 0);
-        e[12] = async_work_group_copy(__jjy, _jjy + j, LSIZE, 0);
-        e[13] = async_work_group_copy(__jjz, _jjz + j, LSIZE, 0);
-        wait_group_events(14, e);
-        for (UINT k = 0; k < LSIZE; ++k) {
-            snap_crackle_kernel_core(im, irx, iry, irz,
-                                     ie2, ivx, ivy, ivz,
-                                     iax, iay, iaz, ijx, ijy, ijz,
-                                     __jm[k], __jrx[k], __jry[k], __jrz[k],
-                                     __je2[k], __jvx[k], __jvy[k], __jvz[k],
-                                     __jax[k], __jay[k], __jaz[k],
-                                     __jjx[k], __jjy[k], __jjz[k],
-                                     &isx, &isy, &isz,
-                                     &icx, &icy, &icz);
-        }
+    UINT lsize = min((UINT)(LSIZE), (UINT)(get_local_size(0) + WIDTH - 1)) / WIDTH;
+    UINT lid = get_local_id(0) % lsize;
+    __local concat(REAL, WIDTH) __jm[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jrx[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jry[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jrz[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __je2[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jvx[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jvy[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jvz[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jax[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jay[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jaz[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jjx[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jjy[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jjz[LSIZE / WIDTH];
+    for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
+        concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
+        concat(REAL, WIDTH) jrx = concat(vload, WIDTH)(lid, _jrx + j);
+        concat(REAL, WIDTH) jry = concat(vload, WIDTH)(lid, _jry + j);
+        concat(REAL, WIDTH) jrz = concat(vload, WIDTH)(lid, _jrz + j);
+        concat(REAL, WIDTH) je2 = concat(vload, WIDTH)(lid, _je2 + j);
+        concat(REAL, WIDTH) jvx = concat(vload, WIDTH)(lid, _jvx + j);
+        concat(REAL, WIDTH) jvy = concat(vload, WIDTH)(lid, _jvy + j);
+        concat(REAL, WIDTH) jvz = concat(vload, WIDTH)(lid, _jvz + j);
+        concat(REAL, WIDTH) jax = concat(vload, WIDTH)(lid, _jax + j);
+        concat(REAL, WIDTH) jay = concat(vload, WIDTH)(lid, _jay + j);
+        concat(REAL, WIDTH) jaz = concat(vload, WIDTH)(lid, _jaz + j);
+        concat(REAL, WIDTH) jjx = concat(vload, WIDTH)(lid, _jjx + j);
+        concat(REAL, WIDTH) jjy = concat(vload, WIDTH)(lid, _jjy + j);
+        concat(REAL, WIDTH) jjz = concat(vload, WIDTH)(lid, _jjz + j);
         barrier(CLK_LOCAL_MEM_FENCE);
+        __jm[lid] = jm;
+        __jrx[lid] = jrx;
+        __jry[lid] = jry;
+        __jrz[lid] = jrz;
+        __je2[lid] = je2;
+        __jvx[lid] = jvx;
+        __jvy[lid] = jvy;
+        __jvz[lid] = jvz;
+        __jax[lid] = jax;
+        __jay[lid] = jay;
+        __jaz[lid] = jaz;
+        __jjx[lid] = jjx;
+        __jjy[lid] = jjy;
+        __jjz[lid] = jjz;
+        barrier(CLK_LOCAL_MEM_FENCE);
+        for (UINT k = 0; k < lsize; ++k) {
+            jm = __jm[k];
+            jrx = __jrx[k];
+            jry = __jry[k];
+            jrz = __jrz[k];
+            je2 = __je2[k];
+            jvx = __jvx[k];
+            jvy = __jvy[k];
+            jvz = __jvz[k];
+            jax = __jax[k];
+            jay = __jay[k];
+            jaz = __jaz[k];
+            jjx = __jjx[k];
+            jjy = __jjy[k];
+            jjz = __jjz[k];
+            #if WIDTH == 1
+                snap_crackle_kernel_core(im, irx, iry, irz,
+                                         ie2, ivx, ivy, ivz,
+                                         iax, iay, iaz,
+                                         ijx, ijy, ijz,
+                                         jm, jrx, jry, jrz,
+                                         je2, jvx, jvy, jvz,
+                                         jax, jay, jaz,
+                                         jjx, jjy, jjz,
+                                         &isx, &isy, &isz,
+                                         &icx, &icy, &icz);
+            #else
+                #pragma unroll
+                for (UINT l = 0; l < UNROLL; ++l) {
+                    snap_crackle_kernel_core(im, irx, iry, irz,
+                                             ie2, ivx, ivy, ivz,
+                                             iax, iay, iaz,
+                                             ijx, ijy, ijz,
+                                             jm.s0, jrx.s0, jry.s0, jrz.s0,
+                                             je2.s0, jvx.s0, jvy.s0, jvz.s0,
+                                             jax.s0, jay.s0, jaz.s0,
+                                             jjx.s0, jjy.s0, jjz.s0,
+                                             &isx, &isy, &isz,
+                                             &icx, &icy, &icz);
+                    jm = shuffle(jm, MASK);
+                    jrx = shuffle(jrx, MASK);
+                    jry = shuffle(jry, MASK);
+                    jrz = shuffle(jrz, MASK);
+                    je2 = shuffle(je2, MASK);
+                    jvx = shuffle(jvx, MASK);
+                    jvy = shuffle(jvy, MASK);
+                    jvz = shuffle(jvz, MASK);
+                    jax = shuffle(jax, MASK);
+                    jay = shuffle(jay, MASK);
+                    jaz = shuffle(jaz, MASK);
+                    jjx = shuffle(jjx, MASK);
+                    jjy = shuffle(jjy, MASK);
+                    jjz = shuffle(jjz, MASK);
+                }
+                snap_crackle_kernel_core(im, irx, iry, irz,
+                                         ie2, ivx, ivy, ivz,
+                                         iax, iay, iaz,
+                                         ijx, ijy, ijz,
+                                         jm.s0, jrx.s0, jry.s0, jrz.s0,
+                                         je2.s0, jvx.s0, jvy.s0, jvz.s0,
+                                         jax.s0, jay.s0, jaz.s0,
+                                         jjx.s0, jjy.s0, jjz.s0,
+                                         &isx, &isy, &isz,
+                                         &icx, &icy, &icz);
+            #endif
+        }
     }
     for (; j < nj; ++j) {
         snap_crackle_kernel_core(im, irx, iry, irz,
                                  ie2, ivx, ivy, ivz,
-                                 iax, iay, iaz, ijx, ijy, ijz,
+                                 iax, iay, iaz,
+                                 ijx, ijy, ijz,
                                  _jm[j], _jrx[j], _jry[j], _jrz[j],
                                  _je2[j], _jvx[j], _jvy[j], _jvz[j],
                                  _jax[j], _jay[j], _jaz[j],
