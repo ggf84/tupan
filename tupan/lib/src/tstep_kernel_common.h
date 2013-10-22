@@ -41,15 +41,16 @@ static inline void tstep_kernel_core(
     REALn inv_r1, inv_r2;
     smoothed_inv_r1r2(r2, e2, mask, &inv_r1, &inv_r2);                          // 3 FLOPs
 
-    REALn a = inv_r2;
-    REALn b = 2 * inv_r2;                                                       // 1 FLOPs
-    REALn c = (a + b / 2);                                                      // 2 FLOPs
+    REALn a = (REALn)(2);
+    REALn b = (1 + a / 2) * inv_r2;                                             // 3 FLOPs
 
+    REALn w2 = inv_r2;
+    REALn gamma = inv_r2;
     REALn phi = m * inv_r1;                                                     // 1 FLOPs
-    REALn w2 = a * v2 + b * phi;                                                // 3 FLOPs
-    REALn gamma = w2 + c * phi;                                                 // 2 FLOPs
-    REALn dln_w = gamma * rv * inv_r2;                                          // 2 FLOPs
-    w2 -= (eta / sqrt(w2)) * dln_w;                                             // 4 FLOPs
+    w2 *= (v2 + a * phi);                                                       // 3 FLOPs
+    gamma *= (w2 + b * phi);                                                    // 3 FLOPs
+    gamma *= (eta / sqrt(w2));                                                  // 3 FLOPs
+    w2 -= gamma * rv;                                                           // 2 FLOPs
 
     w2 = select((REALn)(0), w2, mask);
 

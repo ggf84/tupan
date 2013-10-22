@@ -139,7 +139,7 @@ __kernel void nreg_Xkernel(
     vstoren(iax, i, _iax);
     vstoren(iay, i, _iay);
     vstoren(iaz, i, _iaz);
-    vstoren(iu, i, _iu);
+    vstoren(im * iu, i, _iu);
 }
 
 
@@ -260,6 +260,6 @@ __kernel void nreg_Vkernel(
     vstoren(idvx, i, _idvx);
     vstoren(idvy, i, _idvy);
     vstoren(idvz, i, _idvz);
-    vstoren(ik, i, _ik);
+    vstoren(im * ik, i, _ik);
 }
 

@@ -60,7 +60,7 @@ void nreg_Xkernel(
         _iax[i] = iax;
         _iay[i] = iay;
         _iaz[i] = iaz;
-        _iu[i] = iu;
+        _iu[i] = im * iu;
     }
 }
 
@@ -110,7 +110,7 @@ void nreg_Vkernel(
         _idvx[i] = idvx;
         _idvy[i] = idvy;
         _idvz[i] = idvz;
-        _ik[i] = ik;
+        _ik[i] = im * ik;
     }
 }
 
