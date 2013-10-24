@@ -24,30 +24,30 @@ __kernel void tstep_kernel(
     __global REAL * restrict _idt_a,
     __global REAL * restrict _idt_b)
 {
-    UINT i = get_global_id(0);
+    UINT lid = get_local_id(0);
+    UINT lsize = get_local_size(0);
+    UINT gid = get_global_id(0);
 
-    REALn im = vloadn(i, _im);
-    REALn irx = vloadn(i, _irx);
-    REALn iry = vloadn(i, _iry);
-    REALn irz = vloadn(i, _irz);
-    REALn ie2 = vloadn(i, _ie2);
-    REALn ivx = vloadn(i, _ivx);
-    REALn ivy = vloadn(i, _ivy);
-    REALn ivz = vloadn(i, _ivz);
+    REALn im = vloadn(gid, _im);
+    REALn irx = vloadn(gid, _irx);
+    REALn iry = vloadn(gid, _iry);
+    REALn irz = vloadn(gid, _irz);
+    REALn ie2 = vloadn(gid, _ie2);
+    REALn ivx = vloadn(gid, _ivx);
+    REALn ivy = vloadn(gid, _ivy);
+    REALn ivz = vloadn(gid, _ivz);
     REALn iw2_a = (REALn)(0);
     REALn iw2_b = (REALn)(0);
 
     UINT j = 0;
-    UINT lsize = min((UINT)(LSIZE), (UINT)(get_local_size(0) + WIDTH - 1)) / WIDTH;
-    UINT lid = get_local_id(0) % lsize;
-    __local concat(REAL, WIDTH) __jm[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jrx[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jry[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jrz[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __je2[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jvx[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jvy[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jvz[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jm[LSIZE];
+    __local concat(REAL, WIDTH) __jrx[LSIZE];
+    __local concat(REAL, WIDTH) __jry[LSIZE];
+    __local concat(REAL, WIDTH) __jrz[LSIZE];
+    __local concat(REAL, WIDTH) __je2[LSIZE];
+    __local concat(REAL, WIDTH) __jvx[LSIZE];
+    __local concat(REAL, WIDTH) __jvy[LSIZE];
+    __local concat(REAL, WIDTH) __jvz[LSIZE];
     for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
         concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
         concat(REAL, WIDTH) jrx = concat(vload, WIDTH)(lid, _jrx + j);
@@ -121,7 +121,7 @@ __kernel void tstep_kernel(
 
     REALn idt_a = eta / sqrt(1 + iw2_a);
     REALn idt_b = eta / sqrt(1 + iw2_b);
-    vstoren(idt_a, i, _idt_a);
-    vstoren(idt_b, i, _idt_b);
+    vstoren(idt_a, gid, _idt_a);
+    vstoren(idt_b, gid, _idt_b);
 }
 

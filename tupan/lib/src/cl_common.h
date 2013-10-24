@@ -29,8 +29,6 @@
     typedef double4 REAL4;
     typedef double8 REAL8;
     typedef double16 REAL16;
-
-    #define LSIZE 256
 #else
     typedef int INT;
     typedef int2 INT2;
@@ -49,8 +47,6 @@
     typedef float4 REAL4;
     typedef float8 REAL8;
     typedef float16 REAL16;
-
-    #define LSIZE 512
 #endif
 
 
@@ -71,8 +67,6 @@
 
 #define vloadn vec(vload)
 #define vstoren vec(vstore)
-
-#define WIDTH 2
 
 #if WIDTH == 1
     #define UNROLL 0

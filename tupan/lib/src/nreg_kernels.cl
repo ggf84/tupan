@@ -29,16 +29,18 @@ __kernel void nreg_Xkernel(
     __global REAL * restrict _iaz,
     __global REAL * restrict _iu)
 {
-    UINT i = get_global_id(0);
+    UINT lid = get_local_id(0);
+    UINT lsize = get_local_size(0);
+    UINT gid = get_global_id(0);
 
-    REALn im = vloadn(i, _im);
-    REALn irx = vloadn(i, _irx);
-    REALn iry = vloadn(i, _iry);
-    REALn irz = vloadn(i, _irz);
-    REALn ie2 = vloadn(i, _ie2);
-    REALn ivx = vloadn(i, _ivx);
-    REALn ivy = vloadn(i, _ivy);
-    REALn ivz = vloadn(i, _ivz);
+    REALn im = vloadn(gid, _im);
+    REALn irx = vloadn(gid, _irx);
+    REALn iry = vloadn(gid, _iry);
+    REALn irz = vloadn(gid, _irz);
+    REALn ie2 = vloadn(gid, _ie2);
+    REALn ivx = vloadn(gid, _ivx);
+    REALn ivy = vloadn(gid, _ivy);
+    REALn ivz = vloadn(gid, _ivz);
     REALn idrx = (REALn)(0);
     REALn idry = (REALn)(0);
     REALn idrz = (REALn)(0);
@@ -48,16 +50,14 @@ __kernel void nreg_Xkernel(
     REALn iu = (REALn)(0);
 
     UINT j = 0;
-    UINT lsize = min((UINT)(LSIZE), (UINT)(get_local_size(0) + WIDTH - 1)) / WIDTH;
-    UINT lid = get_local_id(0) % lsize;
-    __local concat(REAL, WIDTH) __jm[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jrx[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jry[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jrz[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __je2[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jvx[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jvy[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jvz[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jm[LSIZE];
+    __local concat(REAL, WIDTH) __jrx[LSIZE];
+    __local concat(REAL, WIDTH) __jry[LSIZE];
+    __local concat(REAL, WIDTH) __jrz[LSIZE];
+    __local concat(REAL, WIDTH) __je2[LSIZE];
+    __local concat(REAL, WIDTH) __jvx[LSIZE];
+    __local concat(REAL, WIDTH) __jvy[LSIZE];
+    __local concat(REAL, WIDTH) __jvz[LSIZE];
     for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
         concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
         concat(REAL, WIDTH) jrx = concat(vload, WIDTH)(lid, _jrx + j);
@@ -133,13 +133,13 @@ __kernel void nreg_Xkernel(
                           &iax, &iay, &iaz, &iu);
     }
 
-    vstoren(idrx, i, _idrx);
-    vstoren(idry, i, _idry);
-    vstoren(idrz, i, _idrz);
-    vstoren(iax, i, _iax);
-    vstoren(iay, i, _iay);
-    vstoren(iaz, i, _iaz);
-    vstoren(im * iu, i, _iu);
+    vstoren(idrx, gid, _idrx);
+    vstoren(idry, gid, _idry);
+    vstoren(idrz, gid, _idrz);
+    vstoren(iax, gid, _iax);
+    vstoren(iay, gid, _iay);
+    vstoren(iaz, gid, _iaz);
+    vstoren(im * iu, gid, _iu);
 }
 
 
@@ -166,30 +166,30 @@ __kernel void nreg_Vkernel(
     __global REAL * restrict _idvz,
     __global REAL * restrict _ik)
 {
-    UINT i = get_global_id(0);
+    UINT lid = get_local_id(0);
+    UINT lsize = get_local_size(0);
+    UINT gid = get_global_id(0);
 
-    REALn im = vloadn(i, _im);
-    REALn ivx = vloadn(i, _ivx);
-    REALn ivy = vloadn(i, _ivy);
-    REALn ivz = vloadn(i, _ivz);
-    REALn iax = vloadn(i, _iax);
-    REALn iay = vloadn(i, _iay);
-    REALn iaz = vloadn(i, _iaz);
+    REALn im = vloadn(gid, _im);
+    REALn ivx = vloadn(gid, _ivx);
+    REALn ivy = vloadn(gid, _ivy);
+    REALn ivz = vloadn(gid, _ivz);
+    REALn iax = vloadn(gid, _iax);
+    REALn iay = vloadn(gid, _iay);
+    REALn iaz = vloadn(gid, _iaz);
     REALn idvx = (REALn)(0);
     REALn idvy = (REALn)(0);
     REALn idvz = (REALn)(0);
     REALn ik = (REALn)(0);
 
     UINT j = 0;
-    UINT lsize = min((UINT)(LSIZE), (UINT)(get_local_size(0) + WIDTH - 1)) / WIDTH;
-    UINT lid = get_local_id(0) % lsize;
-    __local concat(REAL, WIDTH) __jm[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jvx[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jvy[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jvz[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jax[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jay[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jaz[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jm[LSIZE];
+    __local concat(REAL, WIDTH) __jvx[LSIZE];
+    __local concat(REAL, WIDTH) __jvy[LSIZE];
+    __local concat(REAL, WIDTH) __jvz[LSIZE];
+    __local concat(REAL, WIDTH) __jax[LSIZE];
+    __local concat(REAL, WIDTH) __jay[LSIZE];
+    __local concat(REAL, WIDTH) __jaz[LSIZE];
     for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
         concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
         concat(REAL, WIDTH) jvx = concat(vload, WIDTH)(lid, _jvx + j);
@@ -257,9 +257,9 @@ __kernel void nreg_Vkernel(
                           &idvx, &idvy, &idvz, &ik);
     }
 
-    vstoren(idvx, i, _idvx);
-    vstoren(idvy, i, _idvy);
-    vstoren(idvz, i, _idvz);
-    vstoren(im * ik, i, _ik);
+    vstoren(idvx, gid, _idvx);
+    vstoren(idvy, gid, _idvy);
+    vstoren(idvz, gid, _idvz);
+    vstoren(im * ik, gid, _ik);
 }
 

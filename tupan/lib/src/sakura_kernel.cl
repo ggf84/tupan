@@ -29,16 +29,18 @@ __kernel void sakura_kernel(
     __global REAL * restrict _idvy,
     __global REAL * restrict _idvz)
 {
-    UINT i = get_global_id(0);
+    UINT lid = get_local_id(0);
+    UINT lsize = get_local_size(0);
+    UINT gid = get_global_id(0);
 
-    REAL im = vload1(i, _im);
-    REAL irx = vload1(i, _irx);
-    REAL iry = vload1(i, _iry);
-    REAL irz = vload1(i, _irz);
-    REAL ie2 = vload1(i, _ie2);
-    REAL ivx = vload1(i, _ivx);
-    REAL ivy = vload1(i, _ivy);
-    REAL ivz = vload1(i, _ivz);
+    REAL im = vload1(gid, _im);
+    REAL irx = vload1(gid, _irx);
+    REAL iry = vload1(gid, _iry);
+    REAL irz = vload1(gid, _irz);
+    REAL ie2 = vload1(gid, _ie2);
+    REAL ivx = vload1(gid, _ivx);
+    REAL ivy = vload1(gid, _ivy);
+    REAL ivz = vload1(gid, _ivz);
     REAL idrx = (REAL)(0);
     REAL idry = (REAL)(0);
     REAL idrz = (REAL)(0);
@@ -47,16 +49,14 @@ __kernel void sakura_kernel(
     REAL idvz = (REAL)(0);
 
     UINT j = 0;
-    UINT lsize = min((UINT)(LSIZE), (UINT)(get_local_size(0) + WIDTH - 1)) / WIDTH;
-    UINT lid = get_local_id(0) % lsize;
-    __local concat(REAL, WIDTH) __jm[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jrx[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jry[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jrz[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __je2[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jvx[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jvy[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jvz[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jm[LSIZE];
+    __local concat(REAL, WIDTH) __jrx[LSIZE];
+    __local concat(REAL, WIDTH) __jry[LSIZE];
+    __local concat(REAL, WIDTH) __jrz[LSIZE];
+    __local concat(REAL, WIDTH) __je2[LSIZE];
+    __local concat(REAL, WIDTH) __jvx[LSIZE];
+    __local concat(REAL, WIDTH) __jvy[LSIZE];
+    __local concat(REAL, WIDTH) __jvz[LSIZE];
     for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
         concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
         concat(REAL, WIDTH) jrx = concat(vload, WIDTH)(lid, _jrx + j);
@@ -132,11 +132,11 @@ __kernel void sakura_kernel(
                            &idvx, &idvy, &idvz);
     }
 
-    vstore1(idrx, i, _idrx);
-    vstore1(idry, i, _idry);
-    vstore1(idrz, i, _idrz);
-    vstore1(idvx, i, _idvx);
-    vstore1(idvy, i, _idvy);
-    vstore1(idvz, i, _idvz);
+    vstore1(idrx, gid, _idrx);
+    vstore1(idry, gid, _idry);
+    vstore1(idrz, gid, _idrz);
+    vstore1(idvx, gid, _idvx);
+    vstore1(idvy, gid, _idvy);
+    vstore1(idvz, gid, _idvz);
 }
 

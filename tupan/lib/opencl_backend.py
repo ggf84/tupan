@@ -30,6 +30,12 @@ CACHE_DIR = os.path.join(os.path.expanduser('~'),
 ctx = cl.create_some_context()
 dev = ctx.devices[0]
 
+WIDTH = 2
+
+LSIZE = {}
+LSIZE["float32"] = 512 // WIDTH
+LSIZE["float64"] = 256 // WIDTH
+
 VECTOR_WIDTH = {}
 VECTOR_WIDTH["float32"] = dev.preferred_vector_width_float
 VECTOR_WIDTH["float64"] = dev.preferred_vector_width_double
@@ -66,6 +72,8 @@ def make_lib(prec):
     options += " -D CONFIG_USE_OPENCL"
     if prec == "float64":
         options += " -D CONFIG_USE_DOUBLE"
+    options += " -D WIDTH={}".format(WIDTH)
+    options += " -D LSIZE={}".format(LSIZE[prec])
     options += " -D VECTOR_WIDTH={}".format(VECTOR_WIDTH[prec])
     options += " -cl-fast-relaxed-math"
 #    options += " -cl-opt-disable"
@@ -87,8 +95,10 @@ class CLKernel(object):
 
     def __init__(self, prec, name):
         self.kernel = getattr(lib[prec], name)
+        self.lsize = LSIZE[prec]
         self.vector_width = VECTOR_WIDTH[prec]
         self.queue = cl.CommandQueue(ctx)
+        self.local_size = None
 
         memf = cl.mem_flags
 #        flags = memf.READ_WRITE | memf.USE_HOST_PTR
@@ -107,42 +117,16 @@ class CLKernel(object):
                          c_real_p=lambda x: clBuffer(hostbuf=x),
                          )
 
-    def set_gsize(self, gsize):
-        gs = (gsize + self.vector_width - 1) // self.vector_width
-        self.global_size = (gs, 1, 1)
+    def set_gsize(self, gs):
+        q = 16  # why?
+        vw = self.vector_width
+        max_lsize = self.lsize
 
-#    @property
-#    def global_size(self):
-#        return self._gsize
-#
-#    @global_size.setter
-#    def global_size(self, ni):
-#        gs0 = ((ni-1)//2 + 1) * 2
-#        self._gsize = (gs0,)
-#
-#        gs1 = ((ni-1)//self.wgsize + 1) * 2
-#        ls0 = gs0 // gs1
-#
-#        self.local_size = (ls0,)
-#
-#    def allocate_local_memory(self, nbufs, sctype):
-#        import math
-#        from .utils.ctype import ctypedict
-#        dtype = ctypedict[sctype]
-#
-#        itemsize = dtype.itemsize
-#        dev = ctx.devices[0]
-#
-#        size0 = dev.local_mem_size // (itemsize * nbufs)
-#        size1 = dev.max_work_group_size
-#        size2 = 2**int(math.log(size0, 2))
-#        wgsize = min(size1, size2)
-#        self.wgsize = wgsize
-#        lmsize = wgsize * itemsize
-#
-#        lmem = [cl.LocalMemory(lmsize) for i in range(nbufs)]
-#        self.lmem = lmem    # keep alive!
-#        return lmem
+        lsize = (min(max_lsize, ((gs + q - 1) // q)) + vw - 1) // vw
+        gsize = ((gs + vw * lsize - 1) // (vw * lsize)) * lsize
+
+        self.global_size = (gsize, 1, 1)
+        self.local_size = (lsize, 1, 1)
 
     def set_args(self, args, start=0):
         for (i, arg) in enumerate(args, start):
@@ -169,7 +153,7 @@ class CLKernel(object):
         cl.enqueue_nd_range_kernel(self.queue,
                                    self.kernel,
                                    self.global_size,
-                                   None,
+                                   self.local_size,
                                    ).wait()
 
 

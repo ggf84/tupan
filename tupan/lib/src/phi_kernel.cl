@@ -16,23 +16,23 @@ __kernel void phi_kernel(
     __global const REAL * restrict _je2,
     __global REAL * restrict _iphi)
 {
-    UINT i = get_global_id(0);
+    UINT lid = get_local_id(0);
+    UINT lsize = get_local_size(0);
+    UINT gid = get_global_id(0);
 
-    REALn im = vloadn(i, _im);
-    REALn irx = vloadn(i, _irx);
-    REALn iry = vloadn(i, _iry);
-    REALn irz = vloadn(i, _irz);
-    REALn ie2 = vloadn(i, _ie2);
+    REALn im = vloadn(gid, _im);
+    REALn irx = vloadn(gid, _irx);
+    REALn iry = vloadn(gid, _iry);
+    REALn irz = vloadn(gid, _irz);
+    REALn ie2 = vloadn(gid, _ie2);
     REALn iphi = (REALn)(0);
 
     UINT j = 0;
-    UINT lsize = min((UINT)(LSIZE), (UINT)(get_local_size(0) + WIDTH - 1)) / WIDTH;
-    UINT lid = get_local_id(0) % lsize;
-    __local concat(REAL, WIDTH) __jm[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jrx[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jry[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __jrz[LSIZE / WIDTH];
-    __local concat(REAL, WIDTH) __je2[LSIZE / WIDTH];
+    __local concat(REAL, WIDTH) __jm[LSIZE];
+    __local concat(REAL, WIDTH) __jrx[LSIZE];
+    __local concat(REAL, WIDTH) __jry[LSIZE];
+    __local concat(REAL, WIDTH) __jrz[LSIZE];
+    __local concat(REAL, WIDTH) __je2[LSIZE];
     for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
         concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
         concat(REAL, WIDTH) jrx = concat(vload, WIDTH)(lid, _jrx + j);
@@ -80,6 +80,6 @@ __kernel void phi_kernel(
                         &iphi);
     }
 
-    vstoren(iphi, i, _iphi);
+    vstoren(iphi, gid, _iphi);
 }
 
