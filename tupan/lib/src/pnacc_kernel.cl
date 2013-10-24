@@ -32,8 +32,9 @@ __kernel void pnacc_kernel(
     __global REAL * restrict _ipnay,
     __global REAL * restrict _ipnaz)
 {
-    UINT lid = get_local_id(0);
-    UINT lsize = get_local_size(0);
+    UINT lsize = (get_local_size(0) + UNROLL - 1) / UNROLL;
+    lsize = min(lsize, (UINT)(LSIZE));
+    UINT lid = get_local_id(0) % lsize;
     UINT gid = get_global_id(0);
 
     CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3, inv4, inv5, inv6, inv7);
@@ -50,23 +51,23 @@ __kernel void pnacc_kernel(
     REALn ipnaz = (REALn)(0);
 
     UINT j = 0;
-    __local concat(REAL, WIDTH) __jm[LSIZE];
-    __local concat(REAL, WIDTH) __jrx[LSIZE];
-    __local concat(REAL, WIDTH) __jry[LSIZE];
-    __local concat(REAL, WIDTH) __jrz[LSIZE];
-    __local concat(REAL, WIDTH) __je2[LSIZE];
-    __local concat(REAL, WIDTH) __jvx[LSIZE];
-    __local concat(REAL, WIDTH) __jvy[LSIZE];
-    __local concat(REAL, WIDTH) __jvz[LSIZE];
-    for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
-        concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
-        concat(REAL, WIDTH) jrx = concat(vload, WIDTH)(lid, _jrx + j);
-        concat(REAL, WIDTH) jry = concat(vload, WIDTH)(lid, _jry + j);
-        concat(REAL, WIDTH) jrz = concat(vload, WIDTH)(lid, _jrz + j);
-        concat(REAL, WIDTH) je2 = concat(vload, WIDTH)(lid, _je2 + j);
-        concat(REAL, WIDTH) jvx = concat(vload, WIDTH)(lid, _jvx + j);
-        concat(REAL, WIDTH) jvy = concat(vload, WIDTH)(lid, _jvy + j);
-        concat(REAL, WIDTH) jvz = concat(vload, WIDTH)(lid, _jvz + j);
+    __local concat(REAL, UNROLL) __jm[LSIZE];
+    __local concat(REAL, UNROLL) __jrx[LSIZE];
+    __local concat(REAL, UNROLL) __jry[LSIZE];
+    __local concat(REAL, UNROLL) __jrz[LSIZE];
+    __local concat(REAL, UNROLL) __je2[LSIZE];
+    __local concat(REAL, UNROLL) __jvx[LSIZE];
+    __local concat(REAL, UNROLL) __jvy[LSIZE];
+    __local concat(REAL, UNROLL) __jvz[LSIZE];
+    for (; (j + UNROLL * lsize) < nj; j += UNROLL * lsize) {
+        concat(REAL, UNROLL) jm = concat(vload, UNROLL)(lid, _jm + j);
+        concat(REAL, UNROLL) jrx = concat(vload, UNROLL)(lid, _jrx + j);
+        concat(REAL, UNROLL) jry = concat(vload, UNROLL)(lid, _jry + j);
+        concat(REAL, UNROLL) jrz = concat(vload, UNROLL)(lid, _jrz + j);
+        concat(REAL, UNROLL) je2 = concat(vload, UNROLL)(lid, _je2 + j);
+        concat(REAL, UNROLL) jvx = concat(vload, UNROLL)(lid, _jvx + j);
+        concat(REAL, UNROLL) jvy = concat(vload, UNROLL)(lid, _jvy + j);
+        concat(REAL, UNROLL) jvz = concat(vload, UNROLL)(lid, _jvz + j);
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = jm;
         __jrx[lid] = jrx;
@@ -86,7 +87,7 @@ __kernel void pnacc_kernel(
             jvx = __jvx[k];
             jvy = __jvy[k];
             jvz = __jvz[k];
-            #if WIDTH == 1
+            #if UNROLL == 1
                 pnacc_kernel_core(im, irx, iry, irz,
                                   ie2, ivx, ivy, ivz,
                                   jm, jrx, jry, jrz,
@@ -111,12 +112,6 @@ __kernel void pnacc_kernel(
                     jvy = shuffle(jvy, MASK);
                     jvz = shuffle(jvz, MASK);
                 }
-                pnacc_kernel_core(im, irx, iry, irz,
-                                  ie2, ivx, ivy, ivz,
-                                  jm.s0, jrx.s0, jry.s0, jrz.s0,
-                                  je2.s0, jvx.s0, jvy.s0, jvz.s0,
-                                  clight,
-                                  &ipnax, &ipnay, &ipnaz);
             #endif
         }
     }

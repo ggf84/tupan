@@ -30,11 +30,11 @@ CACHE_DIR = os.path.join(os.path.expanduser('~'),
 ctx = cl.create_some_context()
 dev = ctx.devices[0]
 
-WIDTH = 2
+UNROLL = 2
 
 LSIZE = {}
-LSIZE["float32"] = 512 // WIDTH
-LSIZE["float64"] = 256 // WIDTH
+LSIZE["float32"] = 512 // UNROLL
+LSIZE["float64"] = 256 // UNROLL
 
 VECTOR_WIDTH = {}
 VECTOR_WIDTH["float32"] = dev.preferred_vector_width_float
@@ -72,7 +72,7 @@ def make_lib(prec):
     options += " -D CONFIG_USE_OPENCL"
     if prec == "float64":
         options += " -D CONFIG_USE_DOUBLE"
-    options += " -D WIDTH={}".format(WIDTH)
+    options += " -D UNROLL={}".format(UNROLL)
     options += " -D LSIZE={}".format(LSIZE[prec])
     options += " -D VECTOR_WIDTH={}".format(VECTOR_WIDTH[prec])
     options += " -cl-fast-relaxed-math"
@@ -95,7 +95,8 @@ class CLKernel(object):
 
     def __init__(self, prec, name):
         self.kernel = getattr(lib[prec], name)
-        self.lsize = LSIZE[prec]
+        self.unroll = UNROLL
+        self.max_lsize = LSIZE[prec]
         self.vector_width = VECTOR_WIDTH[prec]
         self.queue = cl.CommandQueue(ctx)
         self.local_size = None
@@ -117,16 +118,10 @@ class CLKernel(object):
                          c_real_p=lambda x: clBuffer(hostbuf=x),
                          )
 
-    def set_gsize(self, gs):
-        q = 16  # why?
+    def set_gsize(self, ni):
         vw = self.vector_width
-        max_lsize = self.lsize
-
-        lsize = (min(max_lsize, ((gs + q - 1) // q)) + vw - 1) // vw
-        gsize = ((gs + vw * lsize - 1) // (vw * lsize)) * lsize
-
+        gsize = ((ni + 2 * vw - 1) // (2 * vw)) * 2
         self.global_size = (gsize, 1, 1)
-        self.local_size = (lsize, 1, 1)
 
     def set_args(self, args, start=0):
         for (i, arg) in enumerate(args, start):

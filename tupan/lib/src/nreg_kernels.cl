@@ -29,8 +29,9 @@ __kernel void nreg_Xkernel(
     __global REAL * restrict _iaz,
     __global REAL * restrict _iu)
 {
-    UINT lid = get_local_id(0);
-    UINT lsize = get_local_size(0);
+    UINT lsize = (get_local_size(0) + UNROLL - 1) / UNROLL;
+    lsize = min(lsize, (UINT)(LSIZE));
+    UINT lid = get_local_id(0) % lsize;
     UINT gid = get_global_id(0);
 
     REALn im = vloadn(gid, _im);
@@ -50,23 +51,23 @@ __kernel void nreg_Xkernel(
     REALn iu = (REALn)(0);
 
     UINT j = 0;
-    __local concat(REAL, WIDTH) __jm[LSIZE];
-    __local concat(REAL, WIDTH) __jrx[LSIZE];
-    __local concat(REAL, WIDTH) __jry[LSIZE];
-    __local concat(REAL, WIDTH) __jrz[LSIZE];
-    __local concat(REAL, WIDTH) __je2[LSIZE];
-    __local concat(REAL, WIDTH) __jvx[LSIZE];
-    __local concat(REAL, WIDTH) __jvy[LSIZE];
-    __local concat(REAL, WIDTH) __jvz[LSIZE];
-    for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
-        concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
-        concat(REAL, WIDTH) jrx = concat(vload, WIDTH)(lid, _jrx + j);
-        concat(REAL, WIDTH) jry = concat(vload, WIDTH)(lid, _jry + j);
-        concat(REAL, WIDTH) jrz = concat(vload, WIDTH)(lid, _jrz + j);
-        concat(REAL, WIDTH) je2 = concat(vload, WIDTH)(lid, _je2 + j);
-        concat(REAL, WIDTH) jvx = concat(vload, WIDTH)(lid, _jvx + j);
-        concat(REAL, WIDTH) jvy = concat(vload, WIDTH)(lid, _jvy + j);
-        concat(REAL, WIDTH) jvz = concat(vload, WIDTH)(lid, _jvz + j);
+    __local concat(REAL, UNROLL) __jm[LSIZE];
+    __local concat(REAL, UNROLL) __jrx[LSIZE];
+    __local concat(REAL, UNROLL) __jry[LSIZE];
+    __local concat(REAL, UNROLL) __jrz[LSIZE];
+    __local concat(REAL, UNROLL) __je2[LSIZE];
+    __local concat(REAL, UNROLL) __jvx[LSIZE];
+    __local concat(REAL, UNROLL) __jvy[LSIZE];
+    __local concat(REAL, UNROLL) __jvz[LSIZE];
+    for (; (j + UNROLL * lsize) < nj; j += UNROLL * lsize) {
+        concat(REAL, UNROLL) jm = concat(vload, UNROLL)(lid, _jm + j);
+        concat(REAL, UNROLL) jrx = concat(vload, UNROLL)(lid, _jrx + j);
+        concat(REAL, UNROLL) jry = concat(vload, UNROLL)(lid, _jry + j);
+        concat(REAL, UNROLL) jrz = concat(vload, UNROLL)(lid, _jrz + j);
+        concat(REAL, UNROLL) je2 = concat(vload, UNROLL)(lid, _je2 + j);
+        concat(REAL, UNROLL) jvx = concat(vload, UNROLL)(lid, _jvx + j);
+        concat(REAL, UNROLL) jvy = concat(vload, UNROLL)(lid, _jvy + j);
+        concat(REAL, UNROLL) jvz = concat(vload, UNROLL)(lid, _jvz + j);
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = jm;
         __jrx[lid] = jrx;
@@ -86,7 +87,7 @@ __kernel void nreg_Xkernel(
             jvx = __jvx[k];
             jvy = __jvy[k];
             jvz = __jvz[k];
-            #if WIDTH == 1
+            #if UNROLL == 1
                 nreg_Xkernel_core(dt,
                                   im, irx, iry, irz,
                                   ie2, ivx, ivy, ivz,
@@ -166,8 +167,9 @@ __kernel void nreg_Vkernel(
     __global REAL * restrict _idvz,
     __global REAL * restrict _ik)
 {
-    UINT lid = get_local_id(0);
-    UINT lsize = get_local_size(0);
+    UINT lsize = (get_local_size(0) + UNROLL - 1) / UNROLL;
+    lsize = min(lsize, (UINT)(LSIZE));
+    UINT lid = get_local_id(0) % lsize;
     UINT gid = get_global_id(0);
 
     REALn im = vloadn(gid, _im);
@@ -183,21 +185,21 @@ __kernel void nreg_Vkernel(
     REALn ik = (REALn)(0);
 
     UINT j = 0;
-    __local concat(REAL, WIDTH) __jm[LSIZE];
-    __local concat(REAL, WIDTH) __jvx[LSIZE];
-    __local concat(REAL, WIDTH) __jvy[LSIZE];
-    __local concat(REAL, WIDTH) __jvz[LSIZE];
-    __local concat(REAL, WIDTH) __jax[LSIZE];
-    __local concat(REAL, WIDTH) __jay[LSIZE];
-    __local concat(REAL, WIDTH) __jaz[LSIZE];
-    for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
-        concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
-        concat(REAL, WIDTH) jvx = concat(vload, WIDTH)(lid, _jvx + j);
-        concat(REAL, WIDTH) jvy = concat(vload, WIDTH)(lid, _jvy + j);
-        concat(REAL, WIDTH) jvz = concat(vload, WIDTH)(lid, _jvz + j);
-        concat(REAL, WIDTH) jax = concat(vload, WIDTH)(lid, _jax + j);
-        concat(REAL, WIDTH) jay = concat(vload, WIDTH)(lid, _jay + j);
-        concat(REAL, WIDTH) jaz = concat(vload, WIDTH)(lid, _jaz + j);
+    __local concat(REAL, UNROLL) __jm[LSIZE];
+    __local concat(REAL, UNROLL) __jvx[LSIZE];
+    __local concat(REAL, UNROLL) __jvy[LSIZE];
+    __local concat(REAL, UNROLL) __jvz[LSIZE];
+    __local concat(REAL, UNROLL) __jax[LSIZE];
+    __local concat(REAL, UNROLL) __jay[LSIZE];
+    __local concat(REAL, UNROLL) __jaz[LSIZE];
+    for (; (j + UNROLL * lsize) < nj; j += UNROLL * lsize) {
+        concat(REAL, UNROLL) jm = concat(vload, UNROLL)(lid, _jm + j);
+        concat(REAL, UNROLL) jvx = concat(vload, UNROLL)(lid, _jvx + j);
+        concat(REAL, UNROLL) jvy = concat(vload, UNROLL)(lid, _jvy + j);
+        concat(REAL, UNROLL) jvz = concat(vload, UNROLL)(lid, _jvz + j);
+        concat(REAL, UNROLL) jax = concat(vload, UNROLL)(lid, _jax + j);
+        concat(REAL, UNROLL) jay = concat(vload, UNROLL)(lid, _jay + j);
+        concat(REAL, UNROLL) jaz = concat(vload, UNROLL)(lid, _jaz + j);
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = jm;
         __jvx[lid] = jvx;
@@ -215,7 +217,7 @@ __kernel void nreg_Vkernel(
             jax = __jax[k];
             jay = __jay[k];
             jaz = __jaz[k];
-            #if WIDTH == 1
+            #if UNROLL == 1
                 nreg_Vkernel_core(dt,
                                   im, ivx, ivy, ivz,
                                   iax, iay, iaz,
@@ -239,12 +241,6 @@ __kernel void nreg_Vkernel(
                     jay = shuffle(jay, MASK);
                     jaz = shuffle(jaz, MASK);
                 }
-                nreg_Vkernel_core(dt,
-                                  im, ivx, ivy, ivz,
-                                  iax, iay, iaz,
-                                  jm.s0, jvx.s0, jvy.s0, jvz.s0,
-                                  jax.s0, jay.s0, jaz.s0,
-                                  &idvx, &idvy, &idvz, &ik);
             #endif
         }
     }

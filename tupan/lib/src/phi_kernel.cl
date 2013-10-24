@@ -16,8 +16,9 @@ __kernel void phi_kernel(
     __global const REAL * restrict _je2,
     __global REAL * restrict _iphi)
 {
-    UINT lid = get_local_id(0);
-    UINT lsize = get_local_size(0);
+    UINT lsize = (get_local_size(0) + UNROLL - 1) / UNROLL;
+    lsize = min(lsize, (UINT)(LSIZE));
+    UINT lid = get_local_id(0) % lsize;
     UINT gid = get_global_id(0);
 
     REALn im = vloadn(gid, _im);
@@ -28,17 +29,17 @@ __kernel void phi_kernel(
     REALn iphi = (REALn)(0);
 
     UINT j = 0;
-    __local concat(REAL, WIDTH) __jm[LSIZE];
-    __local concat(REAL, WIDTH) __jrx[LSIZE];
-    __local concat(REAL, WIDTH) __jry[LSIZE];
-    __local concat(REAL, WIDTH) __jrz[LSIZE];
-    __local concat(REAL, WIDTH) __je2[LSIZE];
-    for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
-        concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
-        concat(REAL, WIDTH) jrx = concat(vload, WIDTH)(lid, _jrx + j);
-        concat(REAL, WIDTH) jry = concat(vload, WIDTH)(lid, _jry + j);
-        concat(REAL, WIDTH) jrz = concat(vload, WIDTH)(lid, _jrz + j);
-        concat(REAL, WIDTH) je2 = concat(vload, WIDTH)(lid, _je2 + j);
+    __local concat(REAL, UNROLL) __jm[LSIZE];
+    __local concat(REAL, UNROLL) __jrx[LSIZE];
+    __local concat(REAL, UNROLL) __jry[LSIZE];
+    __local concat(REAL, UNROLL) __jrz[LSIZE];
+    __local concat(REAL, UNROLL) __je2[LSIZE];
+    for (; (j + UNROLL * lsize) < nj; j += UNROLL * lsize) {
+        concat(REAL, UNROLL) jm = concat(vload, UNROLL)(lid, _jm + j);
+        concat(REAL, UNROLL) jrx = concat(vload, UNROLL)(lid, _jrx + j);
+        concat(REAL, UNROLL) jry = concat(vload, UNROLL)(lid, _jry + j);
+        concat(REAL, UNROLL) jrz = concat(vload, UNROLL)(lid, _jrz + j);
+        concat(REAL, UNROLL) je2 = concat(vload, UNROLL)(lid, _je2 + j);
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = jm;
         __jrx[lid] = jrx;
@@ -52,7 +53,7 @@ __kernel void phi_kernel(
             jry = __jry[k];
             jrz = __jrz[k];
             je2 = __je2[k];
-            #if WIDTH == 1
+            #if UNROLL == 1
                 phi_kernel_core(im, irx, iry, irz, ie2,
                                 jm, jrx, jry, jrz, je2,
                                 &iphi);
@@ -68,9 +69,6 @@ __kernel void phi_kernel(
                     jrz = shuffle(jrz, MASK);
                     je2 = shuffle(je2, MASK);
                 }
-                phi_kernel_core(im, irx, iry, irz, ie2,
-                                jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
-                                &iphi);
             #endif
         }
     }

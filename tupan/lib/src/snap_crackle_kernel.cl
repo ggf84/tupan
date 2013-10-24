@@ -39,8 +39,9 @@ __kernel void snap_crackle_kernel(
     __global REAL * restrict _icy,
     __global REAL * restrict _icz)
 {
-    UINT lid = get_local_id(0);
-    UINT lsize = get_local_size(0);
+    UINT lsize = (get_local_size(0) + UNROLL - 1) / UNROLL;
+    lsize = min(lsize, (UINT)(LSIZE));
+    UINT lid = get_local_id(0) % lsize;
     UINT gid = get_global_id(0);
 
     REALn im = vloadn(gid, _im);
@@ -65,35 +66,35 @@ __kernel void snap_crackle_kernel(
     REALn icz = (REALn)(0);
 
     UINT j = 0;
-    __local concat(REAL, WIDTH) __jm[LSIZE];
-    __local concat(REAL, WIDTH) __jrx[LSIZE];
-    __local concat(REAL, WIDTH) __jry[LSIZE];
-    __local concat(REAL, WIDTH) __jrz[LSIZE];
-    __local concat(REAL, WIDTH) __je2[LSIZE];
-    __local concat(REAL, WIDTH) __jvx[LSIZE];
-    __local concat(REAL, WIDTH) __jvy[LSIZE];
-    __local concat(REAL, WIDTH) __jvz[LSIZE];
-    __local concat(REAL, WIDTH) __jax[LSIZE];
-    __local concat(REAL, WIDTH) __jay[LSIZE];
-    __local concat(REAL, WIDTH) __jaz[LSIZE];
-    __local concat(REAL, WIDTH) __jjx[LSIZE];
-    __local concat(REAL, WIDTH) __jjy[LSIZE];
-    __local concat(REAL, WIDTH) __jjz[LSIZE];
-    for (; (j + WIDTH * lsize) < nj; j += WIDTH * lsize) {
-        concat(REAL, WIDTH) jm = concat(vload, WIDTH)(lid, _jm + j);
-        concat(REAL, WIDTH) jrx = concat(vload, WIDTH)(lid, _jrx + j);
-        concat(REAL, WIDTH) jry = concat(vload, WIDTH)(lid, _jry + j);
-        concat(REAL, WIDTH) jrz = concat(vload, WIDTH)(lid, _jrz + j);
-        concat(REAL, WIDTH) je2 = concat(vload, WIDTH)(lid, _je2 + j);
-        concat(REAL, WIDTH) jvx = concat(vload, WIDTH)(lid, _jvx + j);
-        concat(REAL, WIDTH) jvy = concat(vload, WIDTH)(lid, _jvy + j);
-        concat(REAL, WIDTH) jvz = concat(vload, WIDTH)(lid, _jvz + j);
-        concat(REAL, WIDTH) jax = concat(vload, WIDTH)(lid, _jax + j);
-        concat(REAL, WIDTH) jay = concat(vload, WIDTH)(lid, _jay + j);
-        concat(REAL, WIDTH) jaz = concat(vload, WIDTH)(lid, _jaz + j);
-        concat(REAL, WIDTH) jjx = concat(vload, WIDTH)(lid, _jjx + j);
-        concat(REAL, WIDTH) jjy = concat(vload, WIDTH)(lid, _jjy + j);
-        concat(REAL, WIDTH) jjz = concat(vload, WIDTH)(lid, _jjz + j);
+    __local concat(REAL, UNROLL) __jm[LSIZE];
+    __local concat(REAL, UNROLL) __jrx[LSIZE];
+    __local concat(REAL, UNROLL) __jry[LSIZE];
+    __local concat(REAL, UNROLL) __jrz[LSIZE];
+    __local concat(REAL, UNROLL) __je2[LSIZE];
+    __local concat(REAL, UNROLL) __jvx[LSIZE];
+    __local concat(REAL, UNROLL) __jvy[LSIZE];
+    __local concat(REAL, UNROLL) __jvz[LSIZE];
+    __local concat(REAL, UNROLL) __jax[LSIZE];
+    __local concat(REAL, UNROLL) __jay[LSIZE];
+    __local concat(REAL, UNROLL) __jaz[LSIZE];
+    __local concat(REAL, UNROLL) __jjx[LSIZE];
+    __local concat(REAL, UNROLL) __jjy[LSIZE];
+    __local concat(REAL, UNROLL) __jjz[LSIZE];
+    for (; (j + UNROLL * lsize) < nj; j += UNROLL * lsize) {
+        concat(REAL, UNROLL) jm = concat(vload, UNROLL)(lid, _jm + j);
+        concat(REAL, UNROLL) jrx = concat(vload, UNROLL)(lid, _jrx + j);
+        concat(REAL, UNROLL) jry = concat(vload, UNROLL)(lid, _jry + j);
+        concat(REAL, UNROLL) jrz = concat(vload, UNROLL)(lid, _jrz + j);
+        concat(REAL, UNROLL) je2 = concat(vload, UNROLL)(lid, _je2 + j);
+        concat(REAL, UNROLL) jvx = concat(vload, UNROLL)(lid, _jvx + j);
+        concat(REAL, UNROLL) jvy = concat(vload, UNROLL)(lid, _jvy + j);
+        concat(REAL, UNROLL) jvz = concat(vload, UNROLL)(lid, _jvz + j);
+        concat(REAL, UNROLL) jax = concat(vload, UNROLL)(lid, _jax + j);
+        concat(REAL, UNROLL) jay = concat(vload, UNROLL)(lid, _jay + j);
+        concat(REAL, UNROLL) jaz = concat(vload, UNROLL)(lid, _jaz + j);
+        concat(REAL, UNROLL) jjx = concat(vload, UNROLL)(lid, _jjx + j);
+        concat(REAL, UNROLL) jjy = concat(vload, UNROLL)(lid, _jjy + j);
+        concat(REAL, UNROLL) jjz = concat(vload, UNROLL)(lid, _jjz + j);
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = jm;
         __jrx[lid] = jrx;
@@ -125,7 +126,7 @@ __kernel void snap_crackle_kernel(
             jjx = __jjx[k];
             jjy = __jjy[k];
             jjz = __jjz[k];
-            #if WIDTH == 1
+            #if UNROLL == 1
                 snap_crackle_kernel_core(im, irx, iry, irz,
                                          ie2, ivx, ivy, ivz,
                                          iax, iay, iaz,
@@ -164,16 +165,6 @@ __kernel void snap_crackle_kernel(
                     jjy = shuffle(jjy, MASK);
                     jjz = shuffle(jjz, MASK);
                 }
-                snap_crackle_kernel_core(im, irx, iry, irz,
-                                         ie2, ivx, ivy, ivz,
-                                         iax, iay, iaz,
-                                         ijx, ijy, ijz,
-                                         jm.s0, jrx.s0, jry.s0, jrz.s0,
-                                         je2.s0, jvx.s0, jvy.s0, jvz.s0,
-                                         jax.s0, jay.s0, jaz.s0,
-                                         jjx.s0, jjy.s0, jjz.s0,
-                                         &isx, &isy, &isz,
-                                         &icx, &icy, &icz);
             #endif
         }
     }
