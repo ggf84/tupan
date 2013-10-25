@@ -85,14 +85,14 @@ __kernel void tstep_kernel(
                                   je2, jvx, jvy, jvz,
                                   &iw2_a, &iw2_b);
             #else
+                tstep_kernel_core(eta,
+                                  im, irx, iry, irz,
+                                  ie2, ivx, ivy, ivz,
+                                  jm.s0, jrx.s0, jry.s0, jrz.s0,
+                                  je2.s0, jvx.s0, jvy.s0, jvz.s0,
+                                  &iw2_a, &iw2_b);
                 #pragma unroll
-                for (UINT l = 0; l < UNROLL; ++l) {
-                    tstep_kernel_core(eta,
-                                      im, irx, iry, irz,
-                                      ie2, ivx, ivy, ivz,
-                                      jm.s0, jrx.s0, jry.s0, jrz.s0,
-                                      je2.s0, jvx.s0, jvy.s0, jvz.s0,
-                                      &iw2_a, &iw2_b);
+                for (UINT l = 1; l < UNROLL; ++l) {
                     jm = shuffle(jm, MASK);
                     jrx = shuffle(jrx, MASK);
                     jry = shuffle(jry, MASK);
@@ -101,6 +101,12 @@ __kernel void tstep_kernel(
                     jvx = shuffle(jvx, MASK);
                     jvy = shuffle(jvy, MASK);
                     jvz = shuffle(jvz, MASK);
+                    tstep_kernel_core(eta,
+                                      im, irx, iry, irz,
+                                      ie2, ivx, ivy, ivz,
+                                      jm.s0, jrx.s0, jry.s0, jrz.s0,
+                                      je2.s0, jvx.s0, jvy.s0, jvz.s0,
+                                      &iw2_a, &iw2_b);
                 }
             #endif
         }

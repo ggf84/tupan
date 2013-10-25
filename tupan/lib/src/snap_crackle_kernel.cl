@@ -138,18 +138,18 @@ __kernel void snap_crackle_kernel(
                                          &isx, &isy, &isz,
                                          &icx, &icy, &icz);
             #else
+                snap_crackle_kernel_core(im, irx, iry, irz,
+                                         ie2, ivx, ivy, ivz,
+                                         iax, iay, iaz,
+                                         ijx, ijy, ijz,
+                                         jm.s0, jrx.s0, jry.s0, jrz.s0,
+                                         je2.s0, jvx.s0, jvy.s0, jvz.s0,
+                                         jax.s0, jay.s0, jaz.s0,
+                                         jjx.s0, jjy.s0, jjz.s0,
+                                         &isx, &isy, &isz,
+                                         &icx, &icy, &icz);
                 #pragma unroll
-                for (UINT l = 0; l < UNROLL; ++l) {
-                    snap_crackle_kernel_core(im, irx, iry, irz,
-                                             ie2, ivx, ivy, ivz,
-                                             iax, iay, iaz,
-                                             ijx, ijy, ijz,
-                                             jm.s0, jrx.s0, jry.s0, jrz.s0,
-                                             je2.s0, jvx.s0, jvy.s0, jvz.s0,
-                                             jax.s0, jay.s0, jaz.s0,
-                                             jjx.s0, jjy.s0, jjz.s0,
-                                             &isx, &isy, &isz,
-                                             &icx, &icy, &icz);
+                for (UINT l = 1; l < UNROLL; ++l) {
                     jm = shuffle(jm, MASK);
                     jrx = shuffle(jrx, MASK);
                     jry = shuffle(jry, MASK);
@@ -164,6 +164,16 @@ __kernel void snap_crackle_kernel(
                     jjx = shuffle(jjx, MASK);
                     jjy = shuffle(jjy, MASK);
                     jjz = shuffle(jjz, MASK);
+                    snap_crackle_kernel_core(im, irx, iry, irz,
+                                             ie2, ivx, ivy, ivz,
+                                             iax, iay, iaz,
+                                             ijx, ijy, ijz,
+                                             jm.s0, jrx.s0, jry.s0, jrz.s0,
+                                             je2.s0, jvx.s0, jvy.s0, jvz.s0,
+                                             jax.s0, jay.s0, jaz.s0,
+                                             jjx.s0, jjy.s0, jjz.s0,
+                                             &isx, &isy, &isz,
+                                             &icx, &icy, &icz);
                 }
             #endif
         }

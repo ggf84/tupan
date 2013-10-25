@@ -96,15 +96,15 @@ __kernel void nreg_Xkernel(
                                   &idrx, &idry, &idrz,
                                   &iax, &iay, &iaz, &iu);
             #else
+                nreg_Xkernel_core(dt,
+                                  im, irx, iry, irz,
+                                  ie2, ivx, ivy, ivz,
+                                  jm.s0, jrx.s0, jry.s0, jrz.s0,
+                                  je2.s0, jvx.s0, jvy.s0, jvz.s0,
+                                  &idrx, &idry, &idrz,
+                                  &iax, &iay, &iaz, &iu);
                 #pragma unroll
-                for (UINT l = 0; l < UNROLL; ++l) {
-                    nreg_Xkernel_core(dt,
-                                      im, irx, iry, irz,
-                                      ie2, ivx, ivy, ivz,
-                                      jm.s0, jrx.s0, jry.s0, jrz.s0,
-                                      je2.s0, jvx.s0, jvy.s0, jvz.s0,
-                                      &idrx, &idry, &idrz,
-                                      &iax, &iay, &iaz, &iu);
+                for (UINT l = 1; l < UNROLL; ++l) {
                     jm = shuffle(jm, MASK);
                     jrx = shuffle(jrx, MASK);
                     jry = shuffle(jry, MASK);
@@ -113,14 +113,14 @@ __kernel void nreg_Xkernel(
                     jvx = shuffle(jvx, MASK);
                     jvy = shuffle(jvy, MASK);
                     jvz = shuffle(jvz, MASK);
+                    nreg_Xkernel_core(dt,
+                                      im, irx, iry, irz,
+                                      ie2, ivx, ivy, ivz,
+                                      jm.s0, jrx.s0, jry.s0, jrz.s0,
+                                      je2.s0, jvx.s0, jvy.s0, jvz.s0,
+                                      &idrx, &idry, &idrz,
+                                      &iax, &iay, &iaz, &iu);
                 }
-                nreg_Xkernel_core(dt,
-                                  im, irx, iry, irz,
-                                  ie2, ivx, ivy, ivz,
-                                  jm.s0, jrx.s0, jry.s0, jrz.s0,
-                                  je2.s0, jvx.s0, jvy.s0, jvz.s0,
-                                  &idrx, &idry, &idrz,
-                                  &iax, &iay, &iaz, &iu);
             #endif
         }
     }
@@ -225,14 +225,14 @@ __kernel void nreg_Vkernel(
                                   jax, jay, jaz,
                                   &idvx, &idvy, &idvz, &ik);
             #else
+                nreg_Vkernel_core(dt,
+                                  im, ivx, ivy, ivz,
+                                  iax, iay, iaz,
+                                  jm.s0, jvx.s0, jvy.s0, jvz.s0,
+                                  jax.s0, jay.s0, jaz.s0,
+                                  &idvx, &idvy, &idvz, &ik);
                 #pragma unroll
-                for (UINT l = 0; l < UNROLL; ++l) {
-                    nreg_Vkernel_core(dt,
-                                      im, ivx, ivy, ivz,
-                                      iax, iay, iaz,
-                                      jm.s0, jvx.s0, jvy.s0, jvz.s0,
-                                      jax.s0, jay.s0, jaz.s0,
-                                      &idvx, &idvy, &idvz, &ik);
+                for (UINT l = 1; l < UNROLL; ++l) {
                     jm = shuffle(jm, MASK);
                     jvx = shuffle(jvx, MASK);
                     jvy = shuffle(jvy, MASK);
@@ -240,6 +240,12 @@ __kernel void nreg_Vkernel(
                     jax = shuffle(jax, MASK);
                     jay = shuffle(jay, MASK);
                     jaz = shuffle(jaz, MASK);
+                    nreg_Vkernel_core(dt,
+                                      im, ivx, ivy, ivz,
+                                      iax, iay, iaz,
+                                      jm.s0, jvx.s0, jvy.s0, jvz.s0,
+                                      jax.s0, jay.s0, jaz.s0,
+                                      &idvx, &idvy, &idvz, &ik);
                 }
             #endif
         }

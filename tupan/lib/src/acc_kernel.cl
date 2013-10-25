@@ -62,16 +62,19 @@ __kernel void acc_kernel(
                                 jm, jrx, jry, jrz, je2,
                                 &iax, &iay, &iaz);
             #else
+                acc_kernel_core(im, irx, iry, irz, ie2,
+                                jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
+                                &iax, &iay, &iaz);
                 #pragma unroll
-                for (UINT l = 0; l < UNROLL; ++l) {
-                    acc_kernel_core(im, irx, iry, irz, ie2,
-                                    jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
-                                    &iax, &iay, &iaz);
+                for (UINT l = 1; l < UNROLL; ++l) {
                     jm = shuffle(jm, MASK);
                     jrx = shuffle(jrx, MASK);
                     jry = shuffle(jry, MASK);
                     jrz = shuffle(jrz, MASK);
                     je2 = shuffle(je2, MASK);
+                    acc_kernel_core(im, irx, iry, irz, ie2,
+                                    jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
+                                    &iax, &iay, &iaz);
                 }
             #endif
         }

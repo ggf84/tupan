@@ -58,16 +58,19 @@ __kernel void phi_kernel(
                                 jm, jrx, jry, jrz, je2,
                                 &iphi);
             #else
+                phi_kernel_core(im, irx, iry, irz, ie2,
+                                jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
+                                &iphi);
                 #pragma unroll
-                for (UINT l = 0; l < UNROLL; ++l) {
-                    phi_kernel_core(im, irx, iry, irz, ie2,
-                                    jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
-                                    &iphi);
+                for (UINT l = 1; l < UNROLL; ++l) {
                     jm = shuffle(jm, MASK);
                     jrx = shuffle(jrx, MASK);
                     jry = shuffle(jry, MASK);
                     jrz = shuffle(jrz, MASK);
                     je2 = shuffle(je2, MASK);
+                    phi_kernel_core(im, irx, iry, irz, ie2,
+                                    jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
+                                    &iphi);
                 }
             #endif
         }
