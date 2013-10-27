@@ -39,10 +39,10 @@ __kernel void snap_crackle_kernel(
     __global REAL * restrict _icy,
     __global REAL * restrict _icz)
 {
-    UINT lsize = (get_local_size(0) + UNROLL - 1) / UNROLL;
-    lsize = min(lsize, (UINT)(LSIZE));
-    UINT lid = get_local_id(0) % lsize;
+    UINT lsize = get_local_size(0);
+    UINT lid = get_local_id(0);
     UINT gid = get_global_id(0);
+    gid = min(gid, ((ni - 1) + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
 
     REALn im = vloadn(gid, _im);
     REALn irx = vloadn(gid, _irx);

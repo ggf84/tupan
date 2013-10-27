@@ -32,10 +32,10 @@ __kernel void pnacc_kernel(
     __global REAL * restrict _ipnay,
     __global REAL * restrict _ipnaz)
 {
-    UINT lsize = (get_local_size(0) + UNROLL - 1) / UNROLL;
-    lsize = min(lsize, (UINT)(LSIZE));
-    UINT lid = get_local_id(0) % lsize;
+    UINT lsize = get_local_size(0);
+    UINT lid = get_local_id(0);
     UINT gid = get_global_id(0);
+    gid = min(gid, ((ni - 1) + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
 
     CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3, inv4, inv5, inv6, inv7);
     REALn im = vloadn(gid, _im);

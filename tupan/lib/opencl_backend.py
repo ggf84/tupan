@@ -120,8 +120,16 @@ class CLKernel(object):
 
     def set_gsize(self, ni):
         vw = self.vector_width
-        gsize = ((ni + 2 * vw - 1) // (2 * vw)) * 2
+        unroll = self.unroll
+        max_lsize = self.max_lsize
+
+        gs = ((ni + 2 * vw - 1) // (2 * vw)) * 2
+        lsize = (gs + unroll - 1) // unroll
+        lsize = min(lsize, max_lsize)
+
+        gsize = ((gs + lsize - 1) // lsize) * lsize
         self.global_size = (gsize, 1, 1)
+        self.local_size = (lsize, 1, 1)
 
     def set_args(self, args, start=0):
         for (i, arg) in enumerate(args, start):

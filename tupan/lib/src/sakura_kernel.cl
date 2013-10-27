@@ -29,10 +29,11 @@ __kernel void sakura_kernel(
     __global REAL * restrict _idvy,
     __global REAL * restrict _idvz)
 {
-    UINT lsize = (get_local_size(0) + UNROLL - 1) / UNROLL;
-    lsize = min(lsize, (UINT)(LSIZE));
-    UINT lid = get_local_id(0) % lsize;
+    UINT lsize = get_local_size(0);
+    UINT lid = get_local_id(0);
     UINT gid = get_global_id(0);
+//    gid = min(gid, ((ni - 1) + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
+    gid = min(gid, (ni - 1));
 
     REAL im = vload1(gid, _im);
     REAL irx = vload1(gid, _irx);

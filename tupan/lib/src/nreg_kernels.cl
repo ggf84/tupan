@@ -29,10 +29,10 @@ __kernel void nreg_Xkernel(
     __global REAL * restrict _iaz,
     __global REAL * restrict _iu)
 {
-    UINT lsize = (get_local_size(0) + UNROLL - 1) / UNROLL;
-    lsize = min(lsize, (UINT)(LSIZE));
-    UINT lid = get_local_id(0) % lsize;
+    UINT lsize = get_local_size(0);
+    UINT lid = get_local_id(0);
     UINT gid = get_global_id(0);
+    gid = min(gid, ((ni - 1) + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
 
     REALn im = vloadn(gid, _im);
     REALn irx = vloadn(gid, _irx);
@@ -167,10 +167,10 @@ __kernel void nreg_Vkernel(
     __global REAL * restrict _idvz,
     __global REAL * restrict _ik)
 {
-    UINT lsize = (get_local_size(0) + UNROLL - 1) / UNROLL;
-    lsize = min(lsize, (UINT)(LSIZE));
-    UINT lid = get_local_id(0) % lsize;
+    UINT lsize = get_local_size(0);
+    UINT lid = get_local_id(0);
     UINT gid = get_global_id(0);
+    gid = min(gid, ((ni - 1) + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
 
     REALn im = vloadn(gid, _im);
     REALn ivx = vloadn(gid, _ivx);
