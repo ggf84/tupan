@@ -30,11 +30,11 @@ CACHE_DIR = os.path.join(os.path.expanduser('~'),
 ctx = cl.create_some_context()
 dev = ctx.devices[0]
 
-UNROLL = 2
+UNROLL = 32
 
 LSIZE = {}
-LSIZE["float32"] = 512 // UNROLL
-LSIZE["float64"] = 256 // UNROLL
+LSIZE["float32"] = 256
+LSIZE["float64"] = 128
 
 VECTOR_WIDTH = {}
 VECTOR_WIDTH["float32"] = dev.preferred_vector_width_float
@@ -120,14 +120,12 @@ class CLKernel(object):
 
     def set_gsize(self, ni):
         vw = self.vector_width
-        unroll = self.unroll
         max_lsize = self.max_lsize
 
-        gs = ((ni + 2 * vw - 1) // (2 * vw)) * 2
-        lsize = (gs + unroll - 1) // unroll
-        lsize = min(lsize, max_lsize)
+        gs = ((ni + 2 * vw - 1) // (2 * vw))
+        lsize = min(gs, max_lsize)
+        gsize = ((2 * gs + lsize - 1) // lsize) * lsize
 
-        gsize = ((gs + lsize - 1) // lsize) * lsize
         self.global_size = (gsize, 1, 1)
         self.local_size = (lsize, 1, 1)
 

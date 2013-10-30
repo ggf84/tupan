@@ -29,17 +29,17 @@ __kernel void acc_jerk_kernel(
 {
     UINT lsize = get_local_size(0);
     UINT lid = get_local_id(0);
-    UINT gid = get_global_id(0);
-    gid = min(gid, ((ni - 1) + VECTOR_WIDTH - 1) / VECTOR_WIDTH);
+    UINT gid = VECTOR_WIDTH * get_global_id(0);
+    gid = min(gid, (ni - VECTOR_WIDTH));
 
-    REALn im = vloadn(gid, _im);
-    REALn irx = vloadn(gid, _irx);
-    REALn iry = vloadn(gid, _iry);
-    REALn irz = vloadn(gid, _irz);
-    REALn ie2 = vloadn(gid, _ie2);
-    REALn ivx = vloadn(gid, _ivx);
-    REALn ivy = vloadn(gid, _ivy);
-    REALn ivz = vloadn(gid, _ivz);
+    REALn im = vloadn(0, _im + gid);
+    REALn irx = vloadn(0, _irx + gid);
+    REALn iry = vloadn(0, _iry + gid);
+    REALn irz = vloadn(0, _irz + gid);
+    REALn ie2 = vloadn(0, _ie2 + gid);
+    REALn ivx = vloadn(0, _ivx + gid);
+    REALn ivy = vloadn(0, _ivy + gid);
+    REALn ivz = vloadn(0, _ivz + gid);
     REALn iax = (REALn)(0);
     REALn iay = (REALn)(0);
     REALn iaz = (REALn)(0);
@@ -48,74 +48,33 @@ __kernel void acc_jerk_kernel(
     REALn ijz = (REALn)(0);
 
     UINT j = 0;
-    __local concat(REAL, UNROLL) __jm[LSIZE];
-    __local concat(REAL, UNROLL) __jrx[LSIZE];
-    __local concat(REAL, UNROLL) __jry[LSIZE];
-    __local concat(REAL, UNROLL) __jrz[LSIZE];
-    __local concat(REAL, UNROLL) __je2[LSIZE];
-    __local concat(REAL, UNROLL) __jvx[LSIZE];
-    __local concat(REAL, UNROLL) __jvy[LSIZE];
-    __local concat(REAL, UNROLL) __jvz[LSIZE];
-    for (; (j + UNROLL * lsize) < nj; j += UNROLL * lsize) {
-        concat(REAL, UNROLL) jm = concat(vload, UNROLL)(lid, _jm + j);
-        concat(REAL, UNROLL) jrx = concat(vload, UNROLL)(lid, _jrx + j);
-        concat(REAL, UNROLL) jry = concat(vload, UNROLL)(lid, _jry + j);
-        concat(REAL, UNROLL) jrz = concat(vload, UNROLL)(lid, _jrz + j);
-        concat(REAL, UNROLL) je2 = concat(vload, UNROLL)(lid, _je2 + j);
-        concat(REAL, UNROLL) jvx = concat(vload, UNROLL)(lid, _jvx + j);
-        concat(REAL, UNROLL) jvy = concat(vload, UNROLL)(lid, _jvy + j);
-        concat(REAL, UNROLL) jvz = concat(vload, UNROLL)(lid, _jvz + j);
+    __local REAL __jm[LSIZE];
+    __local REAL __jrx[LSIZE];
+    __local REAL __jry[LSIZE];
+    __local REAL __jrz[LSIZE];
+    __local REAL __je2[LSIZE];
+    __local REAL __jvx[LSIZE];
+    __local REAL __jvy[LSIZE];
+    __local REAL __jvz[LSIZE];
+    for (; (j + lsize) < nj; j += lsize) {
         barrier(CLK_LOCAL_MEM_FENCE);
-        __jm[lid] = jm;
-        __jrx[lid] = jrx;
-        __jry[lid] = jry;
-        __jrz[lid] = jrz;
-        __je2[lid] = je2;
-        __jvx[lid] = jvx;
-        __jvy[lid] = jvy;
-        __jvz[lid] = jvz;
+        __jm[lid] = _jm[j + lid];
+        __jrx[lid] = _jrx[j + lid];
+        __jry[lid] = _jry[j + lid];
+        __jrz[lid] = _jrz[j + lid];
+        __je2[lid] = _je2[j + lid];
+        __jvx[lid] = _jvx[j + lid];
+        __jvy[lid] = _jvy[j + lid];
+        __jvz[lid] = _jvz[j + lid];
         barrier(CLK_LOCAL_MEM_FENCE);
+        #pragma unroll UNROLL
         for (UINT k = 0; k < lsize; ++k) {
-            jm = __jm[k];
-            jrx = __jrx[k];
-            jry = __jry[k];
-            jrz = __jrz[k];
-            je2 = __je2[k];
-            jvx = __jvx[k];
-            jvy = __jvy[k];
-            jvz = __jvz[k];
-            #if UNROLL == 1
-                acc_jerk_kernel_core(im, irx, iry, irz,
-                                     ie2, ivx, ivy, ivz,
-                                     jm, jrx, jry, jrz,
-                                     je2, jvx, jvy, jvz,
-                                     &iax, &iay, &iaz,
-                                     &ijx, &ijy, &ijz);
-            #else
-                acc_jerk_kernel_core(im, irx, iry, irz,
-                                     ie2, ivx, ivy, ivz,
-                                     jm.s0, jrx.s0, jry.s0, jrz.s0,
-                                     je2.s0, jvx.s0, jvy.s0, jvz.s0,
-                                     &iax, &iay, &iaz,
-                                     &ijx, &ijy, &ijz);
-                #pragma unroll
-                for (UINT l = 1; l < UNROLL; ++l) {
-                    jm = shuffle(jm, MASK);
-                    jrx = shuffle(jrx, MASK);
-                    jry = shuffle(jry, MASK);
-                    jrz = shuffle(jrz, MASK);
-                    je2 = shuffle(je2, MASK);
-                    jvx = shuffle(jvx, MASK);
-                    jvy = shuffle(jvy, MASK);
-                    jvz = shuffle(jvz, MASK);
-                    acc_jerk_kernel_core(im, irx, iry, irz,
-                                         ie2, ivx, ivy, ivz,
-                                         jm.s0, jrx.s0, jry.s0, jrz.s0,
-                                         je2.s0, jvx.s0, jvy.s0, jvz.s0,
-                                         &iax, &iay, &iaz,
-                                         &ijx, &ijy, &ijz);
-                }
-            #endif
+            acc_jerk_kernel_core(im, irx, iry, irz,
+                                 ie2, ivx, ivy, ivz,
+                                 __jm[k], __jrx[k], __jry[k], __jrz[k],
+                                 __je2[k], __jvx[k], __jvy[k], __jvz[k],
+                                 &iax, &iay, &iaz,
+                                 &ijx, &ijy, &ijz);
         }
     }
     for (; j < nj; ++j) {
@@ -127,11 +86,11 @@ __kernel void acc_jerk_kernel(
                              &ijx, &ijy, &ijz);
     }
 
-    vstoren(iax, gid, _iax);
-    vstoren(iay, gid, _iay);
-    vstoren(iaz, gid, _iaz);
-    vstoren(ijx, gid, _ijx);
-    vstoren(ijy, gid, _ijy);
-    vstoren(ijz, gid, _ijz);
+    vstoren(iax, 0, _iax + gid);
+    vstoren(iay, 0, _iay + gid);
+    vstoren(iaz, 0, _iaz + gid);
+    vstoren(ijx, 0, _ijx + gid);
+    vstoren(ijy, 0, _ijy + gid);
+    vstoren(ijz, 0, _ijz + gid);
 }
 

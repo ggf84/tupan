@@ -68,18 +68,4 @@
 #define vloadn vec(vload)
 #define vstoren vec(vstore)
 
-#if UNROLL == 1
-    #define MASK (UINT)(0)
-#elif UNROLL == 2
-    #define MASK (UINT2)(1, 0)
-#elif UNROLL == 4
-    #define MASK (UINT4)(1, 2, 3, 0)
-#elif UNROLL == 8
-    #define MASK (UINT8)(1, 2, 3, 4, 5, 6, 7, 0)
-#elif UNROLL == 16
-    #define MASK (UINT16)(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0)
-#else
-    #error "UNROLL value should be 1, 2, 4, 8 or 16."
-#endif
-
 #endif // __CL_COMMON_H__

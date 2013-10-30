@@ -462,20 +462,18 @@ class Sakura(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-#        self.kernel.set_gsize(ni)
         if hasattr(self.kernel, "max_lsize"):
             vw = 1
-            unroll = self.kernel.unroll
             max_lsize = self.kernel.max_lsize
 
-            gs = ((ni + 2 * vw - 1) // (2 * vw)) * 2
-            lsize = (gs + unroll - 1) // unroll
-            lsize = min(lsize, max_lsize)
+            gs = ((ni + 2 * vw - 1) // (2 * vw))
+            lsize = min(gs, max_lsize)
+            gsize = ((2 * gs + lsize - 1) // lsize) * lsize
 
-            gsize = ((gs + lsize - 1) // lsize) * lsize
             self.kernel.global_size = (gsize, 1, 1)
             self.kernel.local_size = (lsize, 1, 1)
 
+#        self.kernel.set_gsize(ni)
         if not "drx" in ips.__dict__:
             ips.register_auxiliary_attribute("drx", "real")
         if not "dry" in ips.__dict__:
