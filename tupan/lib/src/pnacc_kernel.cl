@@ -32,12 +32,13 @@ __kernel void pnacc_kernel(
     __global REAL * restrict _ipnay,
     __global REAL * restrict _ipnaz)
 {
+    CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3, inv4, inv5, inv6, inv7);
+
     UINT lsize = get_local_size(0);
     UINT lid = get_local_id(0);
     UINT gid = VECTOR_WIDTH * get_global_id(0);
     gid = min(gid, (ni - VECTOR_WIDTH));
 
-    CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3, inv4, inv5, inv6, inv7);
     REALn im = vloadn(0, _im + gid);
     REALn irx = vloadn(0, _irx + gid);
     REALn iry = vloadn(0, _iry + gid);
@@ -50,7 +51,7 @@ __kernel void pnacc_kernel(
     REALn ipnay = (REALn)(0);
     REALn ipnaz = (REALn)(0);
 
-    UINT j = 0;
+#ifdef FAST_LOCAL_MEM
     __local REAL __jm[LSIZE];
     __local REAL __jrx[LSIZE];
     __local REAL __jry[LSIZE];
@@ -59,7 +60,9 @@ __kernel void pnacc_kernel(
     __local REAL __jvx[LSIZE];
     __local REAL __jvy[LSIZE];
     __local REAL __jvz[LSIZE];
-    for (; (j + lsize) < nj; j += lsize) {
+    for (UINT j = 0; j < nj; j += lsize) {
+        lid = min(lid, (nj - j) - 1);
+        lsize = min(lsize, (nj - j));
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = _jm[j + lid];
         __jrx[lid] = _jrx[j + lid];
@@ -80,7 +83,8 @@ __kernel void pnacc_kernel(
                               &ipnax, &ipnay, &ipnaz);
         }
     }
-    for (; j < nj; ++j) {
+#else
+    for (UINT j = 0; j < nj; ++j) {
         pnacc_kernel_core(im, irx, iry, irz,
                           ie2, ivx, ivy, ivz,
                           _jm[j], _jrx[j], _jry[j], _jrz[j],
@@ -88,6 +92,7 @@ __kernel void pnacc_kernel(
                           clight,
                           &ipnax, &ipnay, &ipnaz);
     }
+#endif
 
     vstoren(ipnax, 0, _ipnax + gid);
     vstoren(ipnay, 0, _ipnay + gid);

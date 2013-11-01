@@ -40,6 +40,8 @@ VECTOR_WIDTH = {}
 VECTOR_WIDTH["float32"] = dev.preferred_vector_width_float
 VECTOR_WIDTH["float64"] = dev.preferred_vector_width_double
 
+FAST_LOCAL_MEM = True
+
 
 def make_lib(prec):
     """
@@ -72,6 +74,8 @@ def make_lib(prec):
     options += " -D CONFIG_USE_OPENCL"
     if prec == "float64":
         options += " -D CONFIG_USE_DOUBLE"
+    if FAST_LOCAL_MEM:
+        options += " -D FAST_LOCAL_MEM"
     options += " -D UNROLL={}".format(UNROLL)
     options += " -D LSIZE={}".format(LSIZE[prec])
     options += " -D VECTOR_WIDTH={}".format(VECTOR_WIDTH[prec])
@@ -118,7 +122,7 @@ class CLKernel(object):
                          c_real_p=lambda x: clBuffer(hostbuf=x),
                          )
 
-    def set_gsize(self, ni):
+    def set_gsize(self, ni, nj):
         vw = self.vector_width
         max_lsize = self.max_lsize
 

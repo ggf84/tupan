@@ -47,7 +47,7 @@ __kernel void acc_jerk_kernel(
     REALn ijy = (REALn)(0);
     REALn ijz = (REALn)(0);
 
-    UINT j = 0;
+#ifdef FAST_LOCAL_MEM
     __local REAL __jm[LSIZE];
     __local REAL __jrx[LSIZE];
     __local REAL __jry[LSIZE];
@@ -56,7 +56,9 @@ __kernel void acc_jerk_kernel(
     __local REAL __jvx[LSIZE];
     __local REAL __jvy[LSIZE];
     __local REAL __jvz[LSIZE];
-    for (; (j + lsize) < nj; j += lsize) {
+    for (UINT j = 0; j < nj; j += lsize) {
+        lid = min(lid, (nj - j) - 1);
+        lsize = min(lsize, (nj - j));
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = _jm[j + lid];
         __jrx[lid] = _jrx[j + lid];
@@ -77,7 +79,8 @@ __kernel void acc_jerk_kernel(
                                  &ijx, &ijy, &ijz);
         }
     }
-    for (; j < nj; ++j) {
+#else
+    for (UINT j = 0; j < nj; ++j) {
         acc_jerk_kernel_core(im, irx, iry, irz,
                              ie2, ivx, ivy, ivz,
                              _jm[j], _jrx[j], _jry[j], _jrz[j],
@@ -85,6 +88,7 @@ __kernel void acc_jerk_kernel(
                              &iax, &iay, &iaz,
                              &ijx, &ijy, &ijz);
     }
+#endif
 
     vstoren(iax, 0, _iax + gid);
     vstoren(iay, 0, _iay + gid);

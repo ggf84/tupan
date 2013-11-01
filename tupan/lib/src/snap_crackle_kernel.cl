@@ -65,7 +65,7 @@ __kernel void snap_crackle_kernel(
     REALn icy = (REALn)(0);
     REALn icz = (REALn)(0);
 
-    UINT j = 0;
+#ifdef FAST_LOCAL_MEM
     __local REAL __jm[LSIZE];
     __local REAL __jrx[LSIZE];
     __local REAL __jry[LSIZE];
@@ -80,7 +80,9 @@ __kernel void snap_crackle_kernel(
     __local REAL __jjx[LSIZE];
     __local REAL __jjy[LSIZE];
     __local REAL __jjz[LSIZE];
-    for (; (j + lsize) < nj; j += lsize) {
+    for (UINT j = 0; j < nj; j += lsize) {
+        lid = min(lid, (nj - j) - 1);
+        lsize = min(lsize, (nj - j));
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = _jm[j + lid];
         __jrx[lid] = _jrx[j + lid];
@@ -111,7 +113,8 @@ __kernel void snap_crackle_kernel(
                                      &icx, &icy, &icz);
         }
     }
-    for (; j < nj; ++j) {
+#else
+    for (UINT j = 0; j < nj; ++j) {
         snap_crackle_kernel_core(im, irx, iry, irz,
                                  ie2, ivx, ivy, ivz,
                                  iax, iay, iaz,
@@ -123,6 +126,7 @@ __kernel void snap_crackle_kernel(
                                  &isx, &isy, &isz,
                                  &icx, &icy, &icz);
     }
+#endif
 
     vstoren(isx, 0, _isx + gid);
     vstoren(isy, 0, _isy + gid);

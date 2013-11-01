@@ -40,7 +40,7 @@ __kernel void tstep_kernel(
     REALn iw2_a = (REALn)(0);
     REALn iw2_b = (REALn)(0);
 
-    UINT j = 0;
+#ifdef FAST_LOCAL_MEM
     __local REAL __jm[LSIZE];
     __local REAL __jrx[LSIZE];
     __local REAL __jry[LSIZE];
@@ -49,7 +49,9 @@ __kernel void tstep_kernel(
     __local REAL __jvx[LSIZE];
     __local REAL __jvy[LSIZE];
     __local REAL __jvz[LSIZE];
-    for (; (j + lsize) < nj; j += lsize) {
+    for (UINT j = 0; j < nj; j += lsize) {
+        lid = min(lid, (nj - j) - 1);
+        lsize = min(lsize, (nj - j));
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = _jm[j + lid];
         __jrx[lid] = _jrx[j + lid];
@@ -70,7 +72,8 @@ __kernel void tstep_kernel(
                               &iw2_a, &iw2_b);
         }
     }
-    for (; j < nj; ++j) {
+#else
+    for (UINT j = 0; j < nj; ++j) {
         tstep_kernel_core(eta,
                           im, irx, iry, irz,
                           ie2, ivx, ivy, ivz,
@@ -78,6 +81,7 @@ __kernel void tstep_kernel(
                           _je2[j], _jvx[j], _jvy[j], _jvz[j],
                           &iw2_a, &iw2_b);
     }
+#endif
 
     REALn idt_a = eta / sqrt(1 + iw2_a);
     REALn idt_b = eta / sqrt(1 + iw2_b);

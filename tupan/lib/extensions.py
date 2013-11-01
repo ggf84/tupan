@@ -120,7 +120,7 @@ class Phi(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni)
+        self.kernel.set_gsize(ni, nj)
         if not "phi" in ips.__dict__:
             ips.register_auxiliary_attribute("phi", "real")
 
@@ -181,7 +181,7 @@ class Acc(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni)
+        self.kernel.set_gsize(ni, nj)
         if not "ax" in ips.__dict__:
             ips.register_auxiliary_attribute("ax", "real")
         if not "ay" in ips.__dict__:
@@ -255,7 +255,7 @@ class AccJerk(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni)
+        self.kernel.set_gsize(ni, nj)
         if not "ax" in ips.__dict__:
             ips.register_auxiliary_attribute("ax", "real")
         if not "ay" in ips.__dict__:
@@ -311,7 +311,7 @@ class SnapCrackle(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni)
+        self.kernel.set_gsize(ni, nj)
         if not "sx" in ips.__dict__:
             ips.register_auxiliary_attribute("sx", "real")
         if not "sy" in ips.__dict__:
@@ -365,7 +365,7 @@ class Tstep(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni)
+        self.kernel.set_gsize(ni, nj)
         if not "tstep" in ips.__dict__:
             ips.register_auxiliary_attribute("tstep", "real")
         if not "tstepij" in ips.__dict__:
@@ -412,7 +412,7 @@ class PNAcc(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni)
+        self.kernel.set_gsize(ni, nj)
         if not "pnax" in ips.__dict__:
             ips.register_auxiliary_attribute("pnax", "real")
         if not "pnay" in ips.__dict__:
@@ -473,7 +473,7 @@ class Sakura(AbstractExtension):
             self.kernel.global_size = (gsize, 1, 1)
             self.kernel.local_size = (lsize, 1, 1)
 
-#        self.kernel.set_gsize(ni)
+#        self.kernel.set_gsize(ni, nj)
         if not "drx" in ips.__dict__:
             ips.register_auxiliary_attribute("drx", "real")
         if not "dry" in ips.__dict__:
@@ -528,7 +528,7 @@ class NREG_X(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni)
+        self.kernel.set_gsize(ni, nj)
         if not "mrx" in ips.__dict__:
             ips.register_auxiliary_attribute("mrx", "real")
         if not "mry" in ips.__dict__:
@@ -585,7 +585,7 @@ class NREG_V(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni)
+        self.kernel.set_gsize(ni, nj)
         if not "mvx" in ips.__dict__:
             ips.register_auxiliary_attribute("mvx", "real")
         if not "mvy" in ips.__dict__:

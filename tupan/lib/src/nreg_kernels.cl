@@ -50,7 +50,7 @@ __kernel void nreg_Xkernel(
     REALn iaz = (REALn)(0);
     REALn iu = (REALn)(0);
 
-    UINT j = 0;
+#ifdef FAST_LOCAL_MEM
     __local REAL __jm[LSIZE];
     __local REAL __jrx[LSIZE];
     __local REAL __jry[LSIZE];
@@ -59,7 +59,9 @@ __kernel void nreg_Xkernel(
     __local REAL __jvx[LSIZE];
     __local REAL __jvy[LSIZE];
     __local REAL __jvz[LSIZE];
-    for (; (j + lsize) < nj; j += lsize) {
+    for (UINT j = 0; j < nj; j += lsize) {
+        lid = min(lid, (nj - j) - 1);
+        lsize = min(lsize, (nj - j));
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = _jm[j + lid];
         __jrx[lid] = _jrx[j + lid];
@@ -81,7 +83,8 @@ __kernel void nreg_Xkernel(
                               &iax, &iay, &iaz, &iu);
         }
     }
-    for (; j < nj; ++j) {
+#else
+    for (UINT j = 0; j < nj; ++j) {
         nreg_Xkernel_core(dt,
                           im, irx, iry, irz,
                           ie2, ivx, ivy, ivz,
@@ -90,6 +93,7 @@ __kernel void nreg_Xkernel(
                           &idrx, &idry, &idrz,
                           &iax, &iay, &iaz, &iu);
     }
+#endif
 
     vstoren(idrx, 0, _idrx + gid);
     vstoren(idry, 0, _idry + gid);
@@ -141,7 +145,7 @@ __kernel void nreg_Vkernel(
     REALn idvz = (REALn)(0);
     REALn ik = (REALn)(0);
 
-    UINT j = 0;
+#ifdef FAST_LOCAL_MEM
     __local REAL __jm[LSIZE];
     __local REAL __jvx[LSIZE];
     __local REAL __jvy[LSIZE];
@@ -149,7 +153,9 @@ __kernel void nreg_Vkernel(
     __local REAL __jax[LSIZE];
     __local REAL __jay[LSIZE];
     __local REAL __jaz[LSIZE];
-    for (; (j + lsize) < nj; j += lsize) {
+    for (UINT j = 0; j < nj; j += lsize) {
+        lid = min(lid, (nj - j) - 1);
+        lsize = min(lsize, (nj - j));
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = _jm[j + lid];
         __jvx[lid] = _jvx[j + lid];
@@ -169,7 +175,8 @@ __kernel void nreg_Vkernel(
                               &idvx, &idvy, &idvz, &ik);
         }
     }
-    for (; j < nj; ++j) {
+#else
+    for (UINT j = 0; j < nj; ++j) {
         nreg_Vkernel_core(dt,
                           im, ivx, ivy, ivz,
                           iax, iay, iaz,
@@ -177,6 +184,7 @@ __kernel void nreg_Vkernel(
                           _jax[j], _jay[j], _jaz[j],
                           &idvx, &idvy, &idvz, &ik);
     }
+#endif
 
     vstoren(idvx, 0, _idvx + gid);
     vstoren(idvy, 0, _idvy + gid);

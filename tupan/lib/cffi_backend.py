@@ -109,7 +109,7 @@ class CKernel(object):
                          c_real_p=lambda x: rcast(addressof(from_buffer(x))),
                          )
 
-    def set_gsize(self, gsize):
+    def set_gsize(self, ni, nj):
         pass
 
     def allocate_local_memory(self, numbufs, sctype):

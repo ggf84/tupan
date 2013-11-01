@@ -51,7 +51,7 @@ __kernel void sakura_kernel(
     REAL idvy = (REAL)(0);
     REAL idvz = (REAL)(0);
 
-    UINT j = 0;
+#ifdef FAST_LOCAL_MEM
     __local REAL __jm[LSIZE];
     __local REAL __jrx[LSIZE];
     __local REAL __jry[LSIZE];
@@ -60,7 +60,9 @@ __kernel void sakura_kernel(
     __local REAL __jvx[LSIZE];
     __local REAL __jvy[LSIZE];
     __local REAL __jvz[LSIZE];
-    for (; (j + lsize) < nj; j += lsize) {
+    for (UINT j = 0; j < nj; j += lsize) {
+        lid = min(lid, (nj - j) - 1);
+        lsize = min(lsize, (nj - j));
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = _jm[j + lid];
         __jrx[lid] = _jrx[j + lid];
@@ -82,7 +84,8 @@ __kernel void sakura_kernel(
                                &idvx, &idvy, &idvz);
         }
     }
-    for (; j < nj; ++j) {
+#else
+    for (UINT j = 0; j < nj; ++j) {
         sakura_kernel_core(dt, flag,
                            im, irx, iry, irz,
                            ie2, ivx, ivy, ivz,
@@ -91,6 +94,7 @@ __kernel void sakura_kernel(
                            &idrx, &idry, &idrz,
                            &idvx, &idvy, &idvz);
     }
+#endif
 
     vstore1(idrx, 0, _idrx + gid);
     vstore1(idry, 0, _idry + gid);
