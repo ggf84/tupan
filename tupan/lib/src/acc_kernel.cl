@@ -20,8 +20,8 @@ __kernel void acc_kernel(
 {
     UINT lsize = get_local_size(0);
     UINT lid = get_local_id(0);
-    UINT gid = VECTOR_WIDTH * get_global_id(0);
-    gid = min(gid, (ni - VECTOR_WIDTH));
+    UINT gid = get_global_id(0);
+    gid = min(VECTOR_WIDTH * gid, (ni - VECTOR_WIDTH));
 
     REALn im = vloadn(0, _im + gid);
     REALn irx = vloadn(0, _irx + gid);
@@ -39,8 +39,8 @@ __kernel void acc_kernel(
     __local REAL __jrz[LSIZE];
     __local REAL __je2[LSIZE];
     for (UINT j = 0; j < nj; j += lsize) {
-        lid = min(lid, (nj - j) - 1);
         lsize = min(lsize, (nj - j));
+        lid = min(lid, lsize - 1);
         barrier(CLK_LOCAL_MEM_FENCE);
         __jm[lid] = _jm[j + lid];
         __jrx[lid] = _jrx[j + lid];
