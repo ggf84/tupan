@@ -80,10 +80,8 @@ __kernel void snap_crackle_kernel(
     __local REAL __jjx[LSIZE];
     __local REAL __jjy[LSIZE];
     __local REAL __jjz[LSIZE];
-    for (UINT j = 0; j < nj; j += lsize) {
-        lsize = min(lsize, (nj - j));
-        lid = min(lid, lsize - 1);
-        barrier(CLK_LOCAL_MEM_FENCE);
+    UINT j = 0;
+    for (; (j + lsize - 1) < nj; j += lsize) {
         __jm[lid] = _jm[j + lid];
         __jrx[lid] = _jrx[j + lid];
         __jry[lid] = _jry[j + lid];
@@ -112,6 +110,36 @@ __kernel void snap_crackle_kernel(
                                      &isx, &isy, &isz,
                                      &icx, &icy, &icz);
         }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+    lsize = min(lsize, (nj - j));
+    lid = min(lid, lsize - 1);
+    __jm[lid] = _jm[j + lid];
+    __jrx[lid] = _jrx[j + lid];
+    __jry[lid] = _jry[j + lid];
+    __jrz[lid] = _jrz[j + lid];
+    __je2[lid] = _je2[j + lid];
+    __jvx[lid] = _jvx[j + lid];
+    __jvy[lid] = _jvy[j + lid];
+    __jvz[lid] = _jvz[j + lid];
+    __jax[lid] = _jax[j + lid];
+    __jay[lid] = _jay[j + lid];
+    __jaz[lid] = _jaz[j + lid];
+    __jjx[lid] = _jjx[j + lid];
+    __jjy[lid] = _jjy[j + lid];
+    __jjz[lid] = _jjz[j + lid];
+    barrier(CLK_LOCAL_MEM_FENCE);
+    for (UINT k = 0; k < lsize; ++k) {
+        snap_crackle_kernel_core(im, irx, iry, irz,
+                                 ie2, ivx, ivy, ivz,
+                                 iax, iay, iaz,
+                                 ijx, ijy, ijz,
+                                 __jm[k], __jrx[k], __jry[k], __jrz[k],
+                                 __je2[k], __jvx[k], __jvy[k], __jvz[k],
+                                 __jax[k], __jay[k], __jaz[k],
+                                 __jjx[k], __jjy[k], __jjz[k],
+                                 &isx, &isy, &isz,
+                                 &icx, &icy, &icz);
     }
 #else
     for (UINT j = 0; j < nj; ++j) {

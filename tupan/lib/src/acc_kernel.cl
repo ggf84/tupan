@@ -38,10 +38,8 @@ __kernel void acc_kernel(
     __local REAL __jry[LSIZE];
     __local REAL __jrz[LSIZE];
     __local REAL __je2[LSIZE];
-    for (UINT j = 0; j < nj; j += lsize) {
-        lsize = min(lsize, (nj - j));
-        lid = min(lid, lsize - 1);
-        barrier(CLK_LOCAL_MEM_FENCE);
+    UINT j = 0;
+    for (; (j + lsize - 1) < nj; j += lsize) {
         __jm[lid] = _jm[j + lid];
         __jrx[lid] = _jrx[j + lid];
         __jry[lid] = _jry[j + lid];
@@ -54,6 +52,20 @@ __kernel void acc_kernel(
                             __jm[k], __jrx[k], __jry[k], __jrz[k], __je2[k],
                             &iax, &iay, &iaz);
         }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+    lsize = min(lsize, (nj - j));
+    lid = min(lid, lsize - 1);
+    __jm[lid] = _jm[j + lid];
+    __jrx[lid] = _jrx[j + lid];
+    __jry[lid] = _jry[j + lid];
+    __jrz[lid] = _jrz[j + lid];
+    __je2[lid] = _je2[j + lid];
+    barrier(CLK_LOCAL_MEM_FENCE);
+    for (UINT k = 0; k < lsize; ++k) {
+        acc_kernel_core(im, irx, iry, irz, ie2,
+                        __jm[k], __jrx[k], __jry[k], __jrz[k], __je2[k],
+                        &iax, &iay, &iaz);
     }
 #else
     for (UINT j = 0; j < nj; ++j) {
