@@ -9,6 +9,7 @@
 from __future__ import division
 import os
 import sys
+import math
 import logging
 import getpass
 import pyopencl as cl
@@ -30,11 +31,11 @@ CACHE_DIR = os.path.join(os.path.expanduser('~'),
 ctx = cl.create_some_context()
 dev = ctx.devices[0]
 
-UNROLL = 32
+UNROLL = 16
 
 LSIZE = {}
-LSIZE["float32"] = 256
-LSIZE["float64"] = 128
+LSIZE["float32"] = 128
+LSIZE["float64"] = 64
 
 VECTOR_WIDTH = {}
 VECTOR_WIDTH["float32"] = dev.preferred_vector_width_float
@@ -126,9 +127,11 @@ class CLKernel(object):
         vw = self.vector_width
         max_lsize = self.max_lsize
 
-        gs = ((ni + 2 * vw - 1) // (2 * vw))
-        lsize = min(gs, max_lsize)
-        gsize = ((2 * gs + lsize - 1) // lsize) * lsize
+        gs = ((ni + 2 - 1) // 2) * 2
+        gs = ((gs + vw - 1) // vw)
+        ls = 2**int(math.log(gs, 2))
+        lsize = min(ls, max_lsize)
+        gsize = ((gs + lsize - 1) // lsize) * lsize
 
         self.global_size = (gsize, 1, 1)
         self.local_size = (lsize, 1, 1)

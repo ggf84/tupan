@@ -9,7 +9,6 @@
 from __future__ import print_function, division
 import sys
 import logging
-import numpy as np
 from .utils import ctype
 from .utils.timing import decallmethods, timings
 
@@ -142,6 +141,7 @@ class Phi(AbstractExtension):
         # and is here only for performance comparisons. It is also
         # likely that only the classes Acc and Phi will have an
         # implementation of this method.
+        import numpy as np
         ni = ips.n
         if not "phi" in ips.__dict__:
             ips.register_auxiliary_attribute("phi", "real")
@@ -207,6 +207,7 @@ class Acc(AbstractExtension):
         # and is here only for performance comparisons. It is also
         # likely that only the classes Acc and Phi will have an
         # implementation of this method.
+        import numpy as np
         ni = ips.n
         if not "ax" in ips.__dict__:
             ips.register_auxiliary_attribute("ax", "real")
@@ -466,9 +467,12 @@ class Sakura(AbstractExtension):
             vw = 1
             max_lsize = self.kernel.max_lsize
 
-            gs = ((ni + 2 * vw - 1) // (2 * vw))
-            lsize = min(gs, max_lsize)
-            gsize = ((2 * gs + lsize - 1) // lsize) * lsize
+            import math
+            gs = ((ni + 2 - 1) // 2) * 2
+            gs = ((gs + vw - 1) // vw)
+            ls = 2**int(math.log(gs, 2))
+            lsize = min(ls, max_lsize)
+            gsize = ((gs + lsize - 1) // lsize) * lsize
 
             self.kernel.global_size = (gsize, 1, 1)
             self.kernel.local_size = (lsize, 1, 1)
