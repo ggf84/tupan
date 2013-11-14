@@ -65,7 +65,7 @@ __kernel void acc_kernel(
                                 jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
                                 &iax, &iay, &iaz);
                 #pragma unroll
-                for (UINT k = 1; k < 4; ++k) {
+                for (UINT l = 1; l < 4; ++l) {
                     jm = jm.s1230;
                     jrx = jrx.s1230;
                     jry = jry.s1230;
