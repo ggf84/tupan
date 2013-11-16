@@ -25,101 +25,91 @@ __kernel void tstep_kernel(
     __global REAL * restrict _idt_b)
 {
     UINT gid = get_global_id(0);
-    gid = min(VECTOR_WIDTH * gid, (ni - VECTOR_WIDTH));
+    gid = min(WPT * VW * gid, (ni - WPT * VW));
 
-    REALn im = vloadn(0, _im + gid);
-    REALn irx = vloadn(0, _irx + gid);
-    REALn iry = vloadn(0, _iry + gid);
-    REALn irz = vloadn(0, _irz + gid);
-    REALn ie2 = vloadn(0, _ie2 + gid);
-    REALn ivx = vloadn(0, _ivx + gid);
-    REALn ivy = vloadn(0, _ivy + gid);
-    REALn ivz = vloadn(0, _ivz + gid);
-    REALn iw2_a = (REALn)(0);
-    REALn iw2_b = (REALn)(0);
+    REALn im[WPT], irx[WPT], iry[WPT], irz[WPT],
+          ie2[WPT], ivx[WPT], ivy[WPT], ivz[WPT];
 
-    UINT j = 0;
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) im[i] = vloadn(i, _im + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) irx[i] = vloadn(i, _irx + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) iry[i] = vloadn(i, _iry + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) irz[i] = vloadn(i, _irz + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) ie2[i] = vloadn(i, _ie2 + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) ivx[i] = vloadn(i, _ivx + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) ivy[i] = vloadn(i, _ivy + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) ivz[i] = vloadn(i, _ivz + gid);
+
+    REALn iw2_a[WPT], iw2_b[WPT];
+
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) iw2_a[i] = (REALn)(0);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) iw2_b[i] = (REALn)(0);
+
 #ifdef FAST_LOCAL_MEM
-    __local REAL4 __jm[LSIZE];
-    __local REAL4 __jrx[LSIZE];
-    __local REAL4 __jry[LSIZE];
-    __local REAL4 __jrz[LSIZE];
-    __local REAL4 __je2[LSIZE];
-    __local REAL4 __jvx[LSIZE];
-    __local REAL4 __jvy[LSIZE];
-    __local REAL4 __jvz[LSIZE];
+    __local REAL __jm[LSIZE];
+    __local REAL __jrx[LSIZE];
+    __local REAL __jry[LSIZE];
+    __local REAL __jrz[LSIZE];
+    __local REAL __je2[LSIZE];
+    __local REAL __jvx[LSIZE];
+    __local REAL __jvy[LSIZE];
+    __local REAL __jvz[LSIZE];
+    UINT j = 0;
     UINT stride = min((UINT)(get_local_size(0)), (UINT)(LSIZE));
     #pragma unroll 4
     for (; stride > 0; stride /= 2) {
         UINT lid = get_local_id(0) % stride;
-        for (; (j + 4 * stride - 1) < nj; j += 4 * stride) {
-            REAL4 jm = vload4(lid, _jm + j);
-            REAL4 jrx = vload4(lid, _jrx + j);
-            REAL4 jry = vload4(lid, _jry + j);
-            REAL4 jrz = vload4(lid, _jrz + j);
-            REAL4 je2 = vload4(lid, _je2 + j);
-            REAL4 jvx = vload4(lid, _jvx + j);
-            REAL4 jvy = vload4(lid, _jvy + j);
-            REAL4 jvz = vload4(lid, _jvz + j);
+        for (; (j + stride - 1) < nj; j += stride) {
             barrier(CLK_LOCAL_MEM_FENCE);
-            __jm[lid] = jm;
-            __jrx[lid] = jrx;
-            __jry[lid] = jry;
-            __jrz[lid] = jrz;
-            __je2[lid] = je2;
-            __jvx[lid] = jvx;
-            __jvy[lid] = jvy;
-            __jvz[lid] = jvz;
+            __jm[lid] = _jm[j + lid];
+            __jrx[lid] = _jrx[j + lid];
+            __jry[lid] = _jry[j + lid];
+            __jrz[lid] = _jrz[j + lid];
+            __je2[lid] = _je2[j + lid];
+            __jvx[lid] = _jvx[j + lid];
+            __jvy[lid] = _jvy[j + lid];
+            __jvz[lid] = _jvz[j + lid];
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll UNROLL
             for (UINT k = 0; k < stride; ++k) {
-                jm = __jm[k];
-                jrx = __jrx[k];
-                jry = __jry[k];
-                jrz = __jrz[k];
-                je2 = __je2[k];
-                jvx = __jvx[k];
-                jvy = __jvy[k];
-                jvz = __jvz[k];
-                tstep_kernel_core(eta,
-                                  im, irx, iry, irz,
-                                  ie2, ivx, ivy, ivz,
-                                  jm.s0, jrx.s0, jry.s0, jrz.s0,
-                                  je2.s0, jvx.s0, jvy.s0, jvz.s0,
-                                  &iw2_a, &iw2_b);
                 #pragma unroll
-                for (UINT l = 1; l < 4; ++l) {
-                    jm = jm.s1230;
-                    jrx = jrx.s1230;
-                    jry = jry.s1230;
-                    jrz = jrz.s1230;
-                    je2 = je2.s1230;
-                    jvx = jvx.s1230;
-                    jvy = jvy.s1230;
-                    jvz = jvz.s1230;
+                for (UINT i = 0; i < WPT; ++i) {
                     tstep_kernel_core(eta,
-                                      im, irx, iry, irz,
-                                      ie2, ivx, ivy, ivz,
-                                      jm.s0, jrx.s0, jry.s0, jrz.s0,
-                                      je2.s0, jvx.s0, jvy.s0, jvz.s0,
-                                      &iw2_a, &iw2_b);
+                                      im[i], irx[i], iry[i], irz[i],
+                                      ie2[i], ivx[i], ivy[i], ivz[i],
+                                      __jm[k], __jrx[k], __jry[k], __jrz[k],
+                                      __je2[k], __jvx[k], __jvy[k], __jvz[k],
+                                      &iw2_a[i], &iw2_b[i]);
                 }
             }
         }
     }
-#endif
-    for (; j < nj; ++j) {
-        tstep_kernel_core(eta,
-                          im, irx, iry, irz,
-                          ie2, ivx, ivy, ivz,
-                          _jm[j], _jrx[j], _jry[j], _jrz[j],
-                          _je2[j], _jvx[j], _jvy[j], _jvz[j],
-                          &iw2_a, &iw2_b);
+#else
+    for (UINT j = 0; j < nj; ++j) {
+        #pragma unroll
+        for (UINT i = 0; i < WPT; ++i) {
+            tstep_kernel_core(eta,
+                              im[i], irx[i], iry[i], irz[i],
+                              ie2[i], ivx[i], ivy[i], ivz[i],
+                              _jm[j], _jrx[j], _jry[j], _jrz[j],
+                              _je2[j], _jvx[j], _jvy[j], _jvz[j],
+                              &iw2_a[i], &iw2_b[i]);
+        }
     }
+#endif
 
-    REALn idt_a = eta / sqrt(1 + iw2_a);
-    REALn idt_b = eta / sqrt(1 + iw2_b);
-    vstoren(idt_a, 0, _idt_a + gid);
-    vstoren(idt_b, 0, _idt_b + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) vstoren(eta / sqrt(1 + iw2_a[i]), i, _idt_a + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) vstoren(eta / sqrt(1 + iw2_b[i]), i, _idt_b + gid);
 }
 

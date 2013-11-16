@@ -465,11 +465,11 @@ class Sakura(AbstractExtension):
 
         if hasattr(self.kernel, "max_lsize"):
             vw = 1
+            wpt = self.kernel.work_per_thread
             max_lsize = self.kernel.max_lsize
 
             import math
-            gs = ((ni + 2 - 1) // 2) * 2
-            gs = ((gs + vw - 1) // vw)
+            gs = (ni + wpt * vw - 1) // (wpt * vw)
             ls = 2**int(math.log(gs, 2))
             lsize = min(ls, max_lsize)
             gsize = ((gs + lsize - 1) // lsize) * lsize

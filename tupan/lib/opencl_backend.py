@@ -34,12 +34,16 @@ dev = ctx.devices[0]
 UNROLL = 16
 
 LSIZE = {}
-LSIZE["float32"] = 128
-LSIZE["float64"] = 64
+LSIZE["float32"] = 256
+LSIZE["float64"] = 128
 
-VECTOR_WIDTH = {}
-VECTOR_WIDTH["float32"] = dev.preferred_vector_width_float
-VECTOR_WIDTH["float64"] = dev.preferred_vector_width_double
+VW = {}
+VW["float32"] = dev.preferred_vector_width_float
+VW["float64"] = dev.preferred_vector_width_double
+
+WPT = {}
+WPT["float32"] = 2
+WPT["float64"] = 2
 
 FAST_LOCAL_MEM = True
 
@@ -79,7 +83,8 @@ def make_lib(prec):
         options += " -D FAST_LOCAL_MEM"
     options += " -D UNROLL={}".format(UNROLL)
     options += " -D LSIZE={}".format(LSIZE[prec])
-    options += " -D VECTOR_WIDTH={}".format(VECTOR_WIDTH[prec])
+    options += " -D VW={}".format(VW[prec])
+    options += " -D WPT={}".format(WPT[prec])
     options += " -cl-fast-relaxed-math"
 #    options += " -cl-opt-disable"
 
@@ -102,7 +107,8 @@ class CLKernel(object):
         self.kernel = getattr(lib[prec], name)
         self.unroll = UNROLL
         self.max_lsize = LSIZE[prec]
-        self.vector_width = VECTOR_WIDTH[prec]
+        self.vector_width = VW[prec]
+        self.work_per_thread = WPT[prec]
         self.queue = cl.CommandQueue(ctx)
         self.local_size = None
 
@@ -125,10 +131,10 @@ class CLKernel(object):
 
     def set_gsize(self, ni, nj):
         vw = self.vector_width
+        wpt = self.work_per_thread
         max_lsize = self.max_lsize
 
-        gs = ((ni + 2 - 1) // 2) * 2
-        gs = ((gs + vw - 1) // vw)
+        gs = (ni + wpt * vw - 1) // (wpt * vw)
         ls = 2**int(math.log(gs, 2))
         lsize = min(ls, max_lsize)
         gsize = ((gs + lsize - 1) // lsize) * lsize

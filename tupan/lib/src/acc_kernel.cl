@@ -19,74 +19,76 @@ __kernel void acc_kernel(
     __global REAL * restrict _iaz)
 {
     UINT gid = get_global_id(0);
-    gid = min(VECTOR_WIDTH * gid, (ni - VECTOR_WIDTH));
+    gid = min(WPT * VW * gid, (ni - WPT * VW));
 
-    REALn im = vloadn(0, _im + gid);
-    REALn irx = vloadn(0, _irx + gid);
-    REALn iry = vloadn(0, _iry + gid);
-    REALn irz = vloadn(0, _irz + gid);
-    REALn ie2 = vloadn(0, _ie2 + gid);
-    REALn iax = (REALn)(0);
-    REALn iay = (REALn)(0);
-    REALn iaz = (REALn)(0);
+    REALn im[WPT], irx[WPT], iry[WPT], irz[WPT], ie2[WPT];
 
-    UINT j = 0;
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) im[i] = vloadn(i, _im + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) irx[i] = vloadn(i, _irx + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) iry[i] = vloadn(i, _iry + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) irz[i] = vloadn(i, _irz + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) ie2[i] = vloadn(i, _ie2 + gid);
+
+    REALn iax[WPT], iay[WPT], iaz[WPT];
+
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) iax[i] = (REALn)(0);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) iay[i] = (REALn)(0);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) iaz[i] = (REALn)(0);
+
 #ifdef FAST_LOCAL_MEM
-    __local REAL4 __jm[LSIZE];
-    __local REAL4 __jrx[LSIZE];
-    __local REAL4 __jry[LSIZE];
-    __local REAL4 __jrz[LSIZE];
-    __local REAL4 __je2[LSIZE];
+    __local REAL __jm[LSIZE];
+    __local REAL __jrx[LSIZE];
+    __local REAL __jry[LSIZE];
+    __local REAL __jrz[LSIZE];
+    __local REAL __je2[LSIZE];
+    UINT j = 0;
     UINT stride = min((UINT)(get_local_size(0)), (UINT)(LSIZE));
     #pragma unroll 4
     for (; stride > 0; stride /= 2) {
         UINT lid = get_local_id(0) % stride;
-        for (; (j + 4 * stride - 1) < nj; j += 4 * stride) {
-            REAL4 jm = vload4(lid, _jm + j);
-            REAL4 jrx = vload4(lid, _jrx + j);
-            REAL4 jry = vload4(lid, _jry + j);
-            REAL4 jrz = vload4(lid, _jrz + j);
-            REAL4 je2 = vload4(lid, _je2 + j);
+        for (; (j + stride - 1) < nj; j += stride) {
             barrier(CLK_LOCAL_MEM_FENCE);
-            __jm[lid] = jm;
-            __jrx[lid] = jrx;
-            __jry[lid] = jry;
-            __jrz[lid] = jrz;
-            __je2[lid] = je2;
+            __jm[lid] = _jm[j + lid];
+            __jrx[lid] = _jrx[j + lid];
+            __jry[lid] = _jry[j + lid];
+            __jrz[lid] = _jrz[j + lid];
+            __je2[lid] = _je2[j + lid];
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll UNROLL
             for (UINT k = 0; k < stride; ++k) {
-                jm = __jm[k];
-                jrx = __jrx[k];
-                jry = __jry[k];
-                jrz = __jrz[k];
-                je2 = __je2[k];
-                acc_kernel_core(im, irx, iry, irz, ie2,
-                                jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
-                                &iax, &iay, &iaz);
                 #pragma unroll
-                for (UINT l = 1; l < 4; ++l) {
-                    jm = jm.s1230;
-                    jrx = jrx.s1230;
-                    jry = jry.s1230;
-                    jrz = jrz.s1230;
-                    je2 = je2.s1230;
-                    acc_kernel_core(im, irx, iry, irz, ie2,
-                                    jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
-                                    &iax, &iay, &iaz);
+                for (UINT i = 0; i < WPT; ++i) {
+                    acc_kernel_core(im[i], irx[i], iry[i], irz[i], ie2[i],
+                                    __jm[k], __jrx[k], __jry[k], __jrz[k], __je2[k],
+                                    &iax[i], &iay[i], &iaz[i]);
                 }
             }
         }
     }
-#endif
-    for (; j < nj; ++j) {
-        acc_kernel_core(im, irx, iry, irz, ie2,
-                        _jm[j], _jrx[j], _jry[j], _jrz[j], _je2[j],
-                        &iax, &iay, &iaz);
+#else
+    for (UINT j = 0; j < nj; ++j) {
+        #pragma unroll
+        for (UINT i = 0; i < WPT; ++i) {
+            acc_kernel_core(im[i], irx[i], iry[i], irz[i], ie2[i],
+                            _jm[j], _jrx[j], _jry[j], _jrz[j], _je2[j],
+                            &iax[i], &iay[i], &iaz[i]);
+        }
     }
+#endif
 
-    vstoren(iax, 0, _iax + gid);
-    vstoren(iay, 0, _iay + gid);
-    vstoren(iaz, 0, _iaz + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) vstoren(iax[i], i, _iax + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) vstoren(iay[i], i, _iay + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i) vstoren(iaz[i], i, _iaz + gid);
 }
 
