@@ -77,7 +77,6 @@ __kernel void pnacc_kernel(
     __local REAL __jvz[LSIZE];
     UINT j = 0;
     UINT stride = min((UINT)(get_local_size(0)), (UINT)(LSIZE));
-    #pragma unroll 4
     for (; stride > 0; stride /= 2) {
         UINT lid = get_local_id(0) % stride;
         for (; (j + stride - 1) < nj; j += stride) {
@@ -106,6 +105,7 @@ __kernel void pnacc_kernel(
         }
     }
 #else
+    #pragma unroll UNROLL
     for (UINT j = 0; j < nj; ++j) {
         #pragma unroll
         for (UINT i = 0; i < WPT; ++i) {
