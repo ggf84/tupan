@@ -44,16 +44,17 @@ __kernel void phi_kernel(
     __local REAL __jrz[LSIZE];
     __local REAL __je2[LSIZE];
     UINT j = 0;
-    UINT stride = min((UINT)(get_local_size(0)), (UINT)(LSIZE));
-    for (; stride > 0; stride /= 2) {
-        UINT lid = get_local_id(0) % stride;
+    UINT lid = get_local_id(0);
+    for (UINT stride = get_local_size(0); stride > 0; stride /= 2) {
+        INT mask = lid < stride;
         for (; (j + stride - 1) < nj; j += stride) {
-            barrier(CLK_LOCAL_MEM_FENCE);
-            __jm[lid] = _jm[j + lid];
-            __jrx[lid] = _jrx[j + lid];
-            __jry[lid] = _jry[j + lid];
-            __jrz[lid] = _jrz[j + lid];
-            __je2[lid] = _je2[j + lid];
+            if (mask) {
+                __jm[lid] = _jm[j + lid];
+                __jrx[lid] = _jrx[j + lid];
+                __jry[lid] = _jry[j + lid];
+                __jrz[lid] = _jrz[j + lid];
+                __je2[lid] = _je2[j + lid];
+            }
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll UNROLL
             for (UINT k = 0; k < stride; ++k) {
@@ -64,6 +65,7 @@ __kernel void phi_kernel(
                                     &iphi[i]);
                 }
             }
+            barrier(CLK_LOCAL_MEM_FENCE);
         }
     }
 #else

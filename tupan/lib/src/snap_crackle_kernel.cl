@@ -108,25 +108,26 @@ __kernel void snap_crackle_kernel(
     __local REAL __jjy[LSIZE];
     __local REAL __jjz[LSIZE];
     UINT j = 0;
-    UINT stride = min((UINT)(get_local_size(0)), (UINT)(LSIZE));
-    for (; stride > 0; stride /= 2) {
-        UINT lid = get_local_id(0) % stride;
+    UINT lid = get_local_id(0);
+    for (UINT stride = get_local_size(0); stride > 0; stride /= 2) {
+        INT mask = lid < stride;
         for (; (j + stride - 1) < nj; j += stride) {
-            barrier(CLK_LOCAL_MEM_FENCE);
-            __jm[lid] = _jm[j + lid];
-            __jrx[lid] = _jrx[j + lid];
-            __jry[lid] = _jry[j + lid];
-            __jrz[lid] = _jrz[j + lid];
-            __je2[lid] = _je2[j + lid];
-            __jvx[lid] = _jvx[j + lid];
-            __jvy[lid] = _jvy[j + lid];
-            __jvz[lid] = _jvz[j + lid];
-            __jax[lid] = _jax[j + lid];
-            __jay[lid] = _jay[j + lid];
-            __jaz[lid] = _jaz[j + lid];
-            __jjx[lid] = _jjx[j + lid];
-            __jjy[lid] = _jjy[j + lid];
-            __jjz[lid] = _jjz[j + lid];
+            if (mask) {
+                __jm[lid] = _jm[j + lid];
+                __jrx[lid] = _jrx[j + lid];
+                __jry[lid] = _jry[j + lid];
+                __jrz[lid] = _jrz[j + lid];
+                __je2[lid] = _je2[j + lid];
+                __jvx[lid] = _jvx[j + lid];
+                __jvy[lid] = _jvy[j + lid];
+                __jvz[lid] = _jvz[j + lid];
+                __jax[lid] = _jax[j + lid];
+                __jay[lid] = _jay[j + lid];
+                __jaz[lid] = _jaz[j + lid];
+                __jjx[lid] = _jjx[j + lid];
+                __jjy[lid] = _jjy[j + lid];
+                __jjz[lid] = _jjz[j + lid];
+            }
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll UNROLL
             for (UINT k = 0; k < stride; ++k) {
@@ -144,6 +145,7 @@ __kernel void snap_crackle_kernel(
                                              &icx[i], &icy[i], &icz[i]);
                 }
             }
+            barrier(CLK_LOCAL_MEM_FENCE);
         }
     }
 #else
