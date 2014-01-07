@@ -27,44 +27,77 @@ __kernel void acc_jerk_kernel(
     __global REAL * restrict _ijy,
     __global REAL * restrict _ijz)
 {
-    UINT gid = get_global_id(0);
-    gid = min(WPT * VW * gid, (ni - WPT * VW));
+    UINT gid = get_global_id(0) * WPT * VW;
+
+    UINT imask[WPT];
+
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        imask[i] = (VW * i + gid) < ni;
 
     REALn im[WPT], irx[WPT], iry[WPT], irz[WPT],
           ie2[WPT], ivx[WPT], ivy[WPT], ivz[WPT];
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) im[i] = vloadn(i, _im + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            im[i] = vloadn(i, _im + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) irx[i] = vloadn(i, _irx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            irx[i] = vloadn(i, _irx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iry[i] = vloadn(i, _iry + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iry[i] = vloadn(i, _iry + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) irz[i] = vloadn(i, _irz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            irz[i] = vloadn(i, _irz + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ie2[i] = vloadn(i, _ie2 + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ie2[i] = vloadn(i, _ie2 + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivx[i] = vloadn(i, _ivx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivx[i] = vloadn(i, _ivx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivy[i] = vloadn(i, _ivy + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivy[i] = vloadn(i, _ivy + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivz[i] = vloadn(i, _ivz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivz[i] = vloadn(i, _ivz + gid);
 
     REALn iax[WPT], iay[WPT], iaz[WPT],
           ijx[WPT], ijy[WPT], ijz[WPT];
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iax[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iax[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iay[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iay[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iaz[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iaz[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ijx[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ijx[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ijy[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ijy[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ijz[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ijz[i] = (REALn)(0);
 
 #ifdef FAST_LOCAL_MEM
     __local REAL __jm[LSIZE];
@@ -122,16 +155,28 @@ __kernel void acc_jerk_kernel(
 #endif
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(iax[i], i, _iax + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(iax[i], i, _iax + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(iay[i], i, _iay + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(iay[i], i, _iay + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(iaz[i], i, _iaz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(iaz[i], i, _iaz + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(ijx[i], i, _ijx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(ijx[i], i, _ijx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(ijy[i], i, _ijy + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(ijy[i], i, _ijy + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(ijz[i], i, _ijz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(ijz[i], i, _ijz + gid);
 }
 

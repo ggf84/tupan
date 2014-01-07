@@ -39,8 +39,13 @@ __kernel void snap_crackle_kernel(
     __global REAL * restrict _icy,
     __global REAL * restrict _icz)
 {
-    UINT gid = get_global_id(0);
-    gid = min(WPT * VW * gid, (ni - WPT * VW));
+    UINT gid = get_global_id(0) * WPT * VW;
+
+    UINT imask[WPT];
+
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        imask[i] = (VW * i + gid) < ni;
 
     REALn im[WPT], irx[WPT], iry[WPT], irz[WPT],
           ie2[WPT], ivx[WPT], ivy[WPT], ivz[WPT],
@@ -48,49 +53,89 @@ __kernel void snap_crackle_kernel(
           ijx[WPT], ijy[WPT], ijz[WPT];
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) im[i] = vloadn(i, _im + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            im[i] = vloadn(i, _im + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) irx[i] = vloadn(i, _irx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            irx[i] = vloadn(i, _irx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iry[i] = vloadn(i, _iry + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iry[i] = vloadn(i, _iry + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) irz[i] = vloadn(i, _irz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            irz[i] = vloadn(i, _irz + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ie2[i] = vloadn(i, _ie2 + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ie2[i] = vloadn(i, _ie2 + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivx[i] = vloadn(i, _ivx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivx[i] = vloadn(i, _ivx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivy[i] = vloadn(i, _ivy + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivy[i] = vloadn(i, _ivy + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivz[i] = vloadn(i, _ivz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivz[i] = vloadn(i, _ivz + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iax[i] = vloadn(i, _iax + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iax[i] = vloadn(i, _iax + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iay[i] = vloadn(i, _iay + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iay[i] = vloadn(i, _iay + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iaz[i] = vloadn(i, _iaz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iaz[i] = vloadn(i, _iaz + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ijx[i] = vloadn(i, _ijx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ijx[i] = vloadn(i, _ijx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ijy[i] = vloadn(i, _ijy + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ijy[i] = vloadn(i, _ijy + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ijz[i] = vloadn(i, _ijz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ijz[i] = vloadn(i, _ijz + gid);
 
     REALn isx[WPT], isy[WPT], isz[WPT],
           icx[WPT], icy[WPT], icz[WPT];
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) isx[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            isx[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) isy[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            isy[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) isz[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            isz[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) icx[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            icx[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) icy[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            icy[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) icz[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            icz[i] = (REALn)(0);
 
 #ifdef FAST_LOCAL_MEM
     __local REAL __jm[LSIZE];
@@ -168,16 +213,28 @@ __kernel void snap_crackle_kernel(
 #endif
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(isx[i], i, _isx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(isx[i], i, _isx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(isy[i], i, _isy + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(isy[i], i, _isy + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(isz[i], i, _isz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(isz[i], i, _isz + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(icx[i], i, _icx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(icx[i], i, _icx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(icy[i], i, _icy + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(icy[i], i, _icy + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(icz[i], i, _icz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(icz[i], i, _icz + gid);
 }
 

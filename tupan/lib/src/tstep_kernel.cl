@@ -24,35 +24,60 @@ __kernel void tstep_kernel(
     __global REAL * restrict _idt_a,
     __global REAL * restrict _idt_b)
 {
-    UINT gid = get_global_id(0);
-    gid = min(WPT * VW * gid, (ni - WPT * VW));
+    UINT gid = get_global_id(0) * WPT * VW;
+
+    UINT imask[WPT];
+
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        imask[i] = (VW * i + gid) < ni;
 
     REALn im[WPT], irx[WPT], iry[WPT], irz[WPT],
           ie2[WPT], ivx[WPT], ivy[WPT], ivz[WPT];
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) im[i] = vloadn(i, _im + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            im[i] = vloadn(i, _im + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) irx[i] = vloadn(i, _irx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            irx[i] = vloadn(i, _irx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iry[i] = vloadn(i, _iry + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iry[i] = vloadn(i, _iry + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) irz[i] = vloadn(i, _irz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            irz[i] = vloadn(i, _irz + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ie2[i] = vloadn(i, _ie2 + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ie2[i] = vloadn(i, _ie2 + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivx[i] = vloadn(i, _ivx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivx[i] = vloadn(i, _ivx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivy[i] = vloadn(i, _ivy + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivy[i] = vloadn(i, _ivy + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivz[i] = vloadn(i, _ivz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivz[i] = vloadn(i, _ivz + gid);
 
     REALn iw2_a[WPT], iw2_b[WPT];
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iw2_a[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iw2_a[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iw2_b[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iw2_b[i] = (REALn)(0);
 
 #ifdef FAST_LOCAL_MEM
     __local REAL __jm[LSIZE];
@@ -110,8 +135,12 @@ __kernel void tstep_kernel(
 #endif
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(eta / sqrt(1 + iw2_a[i]), i, _idt_a + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(eta / sqrt(1 + iw2_a[i]), i, _idt_a + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(eta / sqrt(1 + iw2_b[i]), i, _idt_b + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(eta / sqrt(1 + iw2_b[i]), i, _idt_b + gid);
 }
 

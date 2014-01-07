@@ -32,8 +32,13 @@ __kernel void pnacc_kernel(
     __global REAL * restrict _ipnay,
     __global REAL * restrict _ipnaz)
 {
-    UINT gid = get_global_id(0);
-    gid = min(WPT * VW * gid, (ni - WPT * VW));
+    UINT gid = get_global_id(0) * WPT * VW;
+
+    UINT imask[WPT];
+
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        imask[i] = (VW * i + gid) < ni;
 
     CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3, inv4, inv5, inv6, inv7);
 
@@ -41,30 +46,52 @@ __kernel void pnacc_kernel(
           ie2[WPT], ivx[WPT], ivy[WPT], ivz[WPT];
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) im[i] = vloadn(i, _im + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            im[i] = vloadn(i, _im + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) irx[i] = vloadn(i, _irx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            irx[i] = vloadn(i, _irx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iry[i] = vloadn(i, _iry + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iry[i] = vloadn(i, _iry + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) irz[i] = vloadn(i, _irz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            irz[i] = vloadn(i, _irz + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ie2[i] = vloadn(i, _ie2 + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ie2[i] = vloadn(i, _ie2 + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivx[i] = vloadn(i, _ivx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivx[i] = vloadn(i, _ivx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivy[i] = vloadn(i, _ivy + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivy[i] = vloadn(i, _ivy + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivz[i] = vloadn(i, _ivz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivz[i] = vloadn(i, _ivz + gid);
 
     REALn ipnax[WPT], ipnay[WPT], ipnaz[WPT];
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ipnax[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ipnax[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ipnay[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ipnay[i] = (REALn)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ipnaz[i] = (REALn)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ipnaz[i] = (REALn)(0);
 
 #ifdef FAST_LOCAL_MEM
     __local REAL __jm[LSIZE];
@@ -122,10 +149,16 @@ __kernel void pnacc_kernel(
 #endif
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(ipnax[i], i, _ipnax + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(ipnax[i], i, _ipnax + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(ipnay[i], i, _ipnay + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(ipnay[i], i, _ipnay + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstoren(ipnaz[i], i, _ipnaz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(ipnaz[i], i, _ipnaz + gid);
 }
 

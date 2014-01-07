@@ -29,45 +29,79 @@ __kernel void sakura_kernel(
     __global REAL * restrict _idvy,
     __global REAL * restrict _idvz)
 {
-    UINT gid = get_global_id(0);
-//    gid = min(WPT * VW * gid, (ni - WPT * VW));
-    gid = min(WPT * 1 * gid, (ni - WPT * 1));
+//    UINT gid = get_global_id(0) * WPT * VW;
+    UINT gid = get_global_id(0) * WPT * 1;
+
+    UINT imask[WPT];
+
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+//        imask[i] = (VW * i + gid) < ni;
+        imask[i] = (1 * i + gid) < ni;
 
     REAL im[WPT], irx[WPT], iry[WPT], irz[WPT],
          ie2[WPT], ivx[WPT], ivy[WPT], ivz[WPT];
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) im[i] = vload1(i, _im + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            im[i] = vload1(i, _im + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) irx[i] = vload1(i, _irx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            irx[i] = vload1(i, _irx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) iry[i] = vload1(i, _iry + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iry[i] = vload1(i, _iry + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) irz[i] = vload1(i, _irz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            irz[i] = vload1(i, _irz + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ie2[i] = vload1(i, _ie2 + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ie2[i] = vload1(i, _ie2 + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivx[i] = vload1(i, _ivx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivx[i] = vload1(i, _ivx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivy[i] = vload1(i, _ivy + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivy[i] = vload1(i, _ivy + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) ivz[i] = vload1(i, _ivz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivz[i] = vload1(i, _ivz + gid);
 
     REAL idrx[WPT], idry[WPT], idrz[WPT],
          idvx[WPT], idvy[WPT], idvz[WPT];
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) idrx[i] = (REAL)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            idrx[i] = (REAL)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) idry[i] = (REAL)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            idry[i] = (REAL)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) idrz[i] = (REAL)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            idrz[i] = (REAL)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) idvx[i] = (REAL)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            idvx[i] = (REAL)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) idvy[i] = (REAL)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            idvy[i] = (REAL)(0);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) idvz[i] = (REAL)(0);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            idvz[i] = (REAL)(0);
 
 #ifdef FAST_LOCAL_MEM
     __local REAL __jm[LSIZE];
@@ -127,16 +161,28 @@ __kernel void sakura_kernel(
 #endif
 
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstore1(idrx[i], i, _idrx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstore1(idrx[i], i, _idrx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstore1(idry[i], i, _idry + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstore1(idry[i], i, _idry + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstore1(idrz[i], i, _idrz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstore1(idrz[i], i, _idrz + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstore1(idvx[i], i, _idvx + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstore1(idvx[i], i, _idvx + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstore1(idvy[i], i, _idvy + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstore1(idvy[i], i, _idvy + gid);
     #pragma unroll
-    for (UINT i = 0; i < WPT; ++i) vstore1(idvz[i], i, _idvz + gid);
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstore1(idvz[i], i, _idvz + gid);
 }
 

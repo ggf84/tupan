@@ -34,8 +34,8 @@ dev = ctx.devices[0]
 UNROLL = 16
 
 LSIZE = {}
-LSIZE["float32"] = 256
-LSIZE["float64"] = 128
+LSIZE["float32"] = 64
+LSIZE["float64"] = 64
 
 VW = {}
 VW["float32"] = dev.preferred_vector_width_float
