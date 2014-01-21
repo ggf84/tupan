@@ -9,6 +9,7 @@ TODO.
 from __future__ import print_function
 import logging
 from ..integrator import Base
+from ..lib import extensions                # TODO: move this to kepler_solver.py!
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -16,6 +17,9 @@ __all__ = ["SIA"]
 
 logger = logging.getLogger(__name__)
 
+def kepler_solver(ps, tau):                 # TODO: move this to kepler_solver.py!
+    extensions.kepler.calc(ps, ps, tau)
+    return ps
 
 #
 # split
@@ -310,6 +314,9 @@ class SIA21(object):
         if ips.n == 1:
             return drift(ips, tau)
 
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
+
         k, d = SIA21.coefs
 
         ips = drift(ips, d[0] * tau)
@@ -329,6 +336,9 @@ class SIA21(object):
 
         if ips.n == 1:
             return drift(ips, tau)
+
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
 
         d, k = SIA21.coefs
 
@@ -375,6 +385,9 @@ class SIA22(object):
         if ips.n == 1:
             return drift(ips, tau)
 
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
+
         k, d = SIA22.coefs
 
         ips = drift(ips, d[0] * tau)
@@ -396,6 +409,9 @@ class SIA22(object):
 
         if ips.n == 1:
             return drift(ips, tau)
+
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
 
         d, k = SIA22.coefs
 
@@ -447,6 +463,9 @@ class SIA43(object):
         if ips.n == 1:
             return drift(ips, tau)
 
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
+
         k, d = SIA43.coefs
 
         ips = drift(ips, d[0] * tau)
@@ -470,6 +489,9 @@ class SIA43(object):
 
         if ips.n == 1:
             return drift(ips, tau)
+
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
 
         d, k = SIA43.coefs
 
@@ -526,6 +548,9 @@ class SIA44(object):
         if ips.n == 1:
             return drift(ips, tau)
 
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
+
         k, d = SIA44.coefs
 
         ips = drift(ips, d[0] * tau)
@@ -551,6 +576,9 @@ class SIA44(object):
 
         if ips.n == 1:
             return drift(ips, tau)
+
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
 
         d, k = SIA44.coefs
 
@@ -612,6 +640,9 @@ class SIA45(object):
         if ips.n == 1:
             return drift(ips, tau)
 
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
+
         k, d = SIA45.coefs
 
         ips = drift(ips, d[0] * tau)
@@ -639,6 +670,9 @@ class SIA45(object):
 
         if ips.n == 1:
             return drift(ips, tau)
+
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
 
         d, k = SIA45.coefs
 
@@ -705,6 +739,9 @@ class SIA46(object):
         if ips.n == 1:
             return drift(ips, tau)
 
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
+
         k, d = SIA46.coefs
 
         ips = drift(ips, d[0] * tau)
@@ -734,6 +771,9 @@ class SIA46(object):
 
         if ips.n == 1:
             return drift(ips, tau)
+
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
 
         d, k = SIA46.coefs
 
@@ -805,6 +845,9 @@ class SIA67(object):
         if ips.n == 1:
             return drift(ips, tau)
 
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
+
         k, d = SIA67.coefs
 
         ips = drift(ips, d[0] * tau)
@@ -836,6 +879,9 @@ class SIA67(object):
 
         if ips.n == 1:
             return drift(ips, tau)
+
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
 
         d, k = SIA67.coefs
 
@@ -913,6 +959,9 @@ class SIA69(object):
         if ips.n == 1:
             return drift(ips, tau)
 
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
+
         k, d = SIA69.coefs
 
         ips = drift(ips, d[0] * tau)
@@ -948,6 +997,9 @@ class SIA69(object):
 
         if ips.n == 1:
             return drift(ips, tau)
+
+        if ips.n == 2:
+            return kepler_solver(ips, tau)
 
         d, k = SIA69.coefs
 
@@ -1050,6 +1102,12 @@ class SIA(Base):
 #            ps.wx[...] = ps.vx
 #            ps.wy[...] = ps.vy
 #            ps.wz[...] = ps.vz
+        ps.register_auxiliary_attribute("drx", "real")
+        ps.register_auxiliary_attribute("dry", "real")
+        ps.register_auxiliary_attribute("drz", "real")
+        ps.register_auxiliary_attribute("dvx", "real")
+        ps.register_auxiliary_attribute("dvy", "real")
+        ps.register_auxiliary_attribute("dvz", "real")
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)

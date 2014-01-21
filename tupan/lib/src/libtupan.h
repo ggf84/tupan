@@ -228,3 +228,20 @@ void sakura_kernel(
     REAL * restrict _idvy,
     REAL * restrict _idvz);
 
+void kepler_solver_kernel(
+    const REAL * restrict _im,
+    const REAL * restrict _irx,
+    const REAL * restrict _iry,
+    const REAL * restrict _irz,
+    const REAL * restrict _ie2,
+    const REAL * restrict _ivx,
+    const REAL * restrict _ivy,
+    const REAL * restrict _ivz,
+    const REAL dt,
+    REAL * restrict _ir1x,
+    REAL * restrict _ir1y,
+    REAL * restrict _ir1z,
+    REAL * restrict _iv1x,
+    REAL * restrict _iv1y,
+    REAL * restrict _iv1z);
+

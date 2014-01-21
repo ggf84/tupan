@@ -45,6 +45,7 @@ def make_lib(prec):
              "pnacc_kernel.c",
              "nreg_kernels.c",
              "sakura_kernel.c",
+             "kepler_solver_kernel.c",
              )
 
     s = []

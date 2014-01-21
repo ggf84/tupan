@@ -615,6 +615,42 @@ class NREG_V(AbstractExtension):
         self.kernel.set_args(self.inargs + self.outargs)
 
 
+@decallmethods(timings)
+class Kepler(AbstractExtension):
+    """
+
+    """
+    def __init__(self, backend, prec):
+
+        if backend == "CL":    # No need for CL support.
+            backend = "C"      # C is fast enough!
+
+        self.kernel = get_kernel("kepler_solver_kernel", backend, prec)
+        cty = self.kernel.cty
+        argtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real)
+        restypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        self.argtypes = argtypes
+        self.restypes = restypes
+
+    def set_args(self, ips, jps, dt):
+        ni = ips.n
+        nj = jps.n
+
+        self._inargs = (ips.mass, ips.rx, ips.ry, ips.rz,
+                        ips.eps2, ips.vx, ips.vy, ips.vz,
+                        dt)
+        self._outargs = (ips.rx, ips.ry, ips.rz,
+                         ips.vx, ips.vy, ips.vz)
+
+        self.inargs = prepare_args(self._inargs, self.argtypes)
+        self.outargs = prepare_args(self._outargs, self.restypes)
+
+        self.kernel.set_args(self.inargs + self.outargs)
+
+
 backend = "CL" if "--use_cl" in sys.argv else "C"
 
 clight = Clight()
@@ -627,6 +663,7 @@ pnacc = PNAcc(backend, ctype.prec)
 sakura = Sakura(backend, ctype.prec)
 nreg_x = NREG_X(backend, ctype.prec)
 nreg_v = NREG_V(backend, ctype.prec)
+kepler = Kepler(backend, ctype.prec)
 
 
 ########## end of file ##########
