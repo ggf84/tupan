@@ -9,7 +9,7 @@ TODO.
 from __future__ import print_function
 import logging
 from ..integrator import Base
-from ..lib import extensions                # TODO: move this to kepler_solver.py!
+from .twobody import kepler_solver
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -17,9 +17,6 @@ __all__ = ["SIA"]
 
 logger = logging.getLogger(__name__)
 
-def kepler_solver(ps, tau):                 # TODO: move this to kepler_solver.py!
-    extensions.kepler.calc(ps, ps, tau)
-    return ps
 
 #
 # split
@@ -29,6 +26,9 @@ def split(ps, condition):
     """Splits the particle's system into slow/fast components.
 
     """
+    if ps.n <= 2:       # stop recursion and use a [single/two]-body solver!
+        return ps, type(ps)()
+
     slow = ps[condition]
     fast = ps[~condition]
 
