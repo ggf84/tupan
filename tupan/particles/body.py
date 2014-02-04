@@ -158,30 +158,22 @@ class NbodyMethods(object):
         com_v = self.com_v
         return 0.5 * mtot * (com_v**2).sum()
 
-    def com_to_origin(self):
-        """Moves the center-of-mass to the origin of coordinates.
-
-        """
-        com_r = self.com_r
-        self.rx -= com_r[0]
-        self.ry -= com_r[1]
-        self.rz -= com_r[2]
-        com_v = self.com_v
-        self.vx -= com_v[0]
-        self.vy -= com_v[1]
-        self.vz -= com_v[2]
-
     def com_move_to(self, com_r, com_v):
         """Moves the center-of-mass to the given coordinates.
 
         """
-        self.com_to_origin()
         self.rx += com_r[0]
         self.ry += com_r[1]
         self.rz += com_r[2]
         self.vx += com_v[0]
         self.vy += com_v[1]
         self.vz += com_v[2]
+
+    def com_to_origin(self):
+        """Moves the center-of-mass to the origin of coordinates.
+
+        """
+        self.com_move_to(-self.com_r, -self.com_v)
 
     ### linear momentum
     @property
