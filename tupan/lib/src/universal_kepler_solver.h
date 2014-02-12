@@ -358,7 +358,7 @@ static inline void set_new_pos_vel(
 
 
 static inline INT _universal_kepler_solver(
-    const REAL dt,
+    const REAL dt0,
     const REAL m,
     const REAL e2,
     const REAL r0x,
@@ -399,6 +399,16 @@ static inline INT _universal_kepler_solver(
     REAL rv = rx * vx + ry * vy + rz * vz;
     REAL beta = 2 - (e2 / r2);
     REAL alpha = v2 - beta * m / r;
+
+
+    REAL dt = dt0;
+    if (alpha < 0) {
+        REAL a = m/fabs(alpha);
+        REAL T = 2 * PI * a * sqrt(a / m);
+
+        REAL ratio = dt0 / T;
+        dt = (ratio - (INT)(ratio)) * T;
+    }
 
 
     REAL s0, s, arg[5];
