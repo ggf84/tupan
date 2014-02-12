@@ -113,6 +113,9 @@ class CKernel(object):
     def set_gsize(self, ni, nj):
         pass
 
+    def set_gsize2(self, ni, nj):
+        pass
+
     def allocate_local_memory(self, numbufs, sctype):
         return []
 

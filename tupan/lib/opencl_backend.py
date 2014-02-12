@@ -34,16 +34,16 @@ dev = ctx.devices[0]
 UNROLL = 16
 
 LSIZE = {}
-LSIZE["float32"] = 64
-LSIZE["float64"] = 64
+LSIZE["float32"] = 16
+LSIZE["float64"] = 16
 
 VW = {}
 VW["float32"] = dev.preferred_vector_width_float
-VW["float64"] = dev.preferred_vector_width_double
+VW["float64"] = dev.preferred_vector_width_double*2
 
 WPT = {}
-WPT["float32"] = 2
-WPT["float64"] = 2
+WPT["float32"] = 1
+WPT["float64"] = 1
 
 FAST_LOCAL_MEM = True
 
@@ -134,6 +134,20 @@ class CLKernel(object):
         wpt = self.work_per_thread
         max_lsize = self.max_lsize
 
+        gs = (ni + wpt * vw - 1) // (wpt * vw)
+        ls = 2**int(math.log(gs, 2))
+        lsize = min(ls, max_lsize)
+        gsize = ((gs + lsize - 1) // lsize) * lsize
+
+        self.global_size = (gsize, 1, 1)
+        self.local_size = (lsize, 1, 1)
+
+    def set_gsize2(self, ni, nj):
+        vw = self.vector_width
+        wpt = self.work_per_thread
+        max_lsize = self.max_lsize
+
+#        gs = (ni + wpt - 1) // (wpt)
         gs = (ni + wpt * vw - 1) // (wpt * vw)
         ls = 2**int(math.log(gs, 2))
         lsize = min(ls, max_lsize)
