@@ -400,6 +400,7 @@ static inline INT _universal_kepler_solver(
     REAL beta = 2 - (e2 / r2);
     REAL alpha = v2 - beta * m / r;
 
+    REAL s0, s, arg[5];
 
     REAL dt = dt0;
     if (alpha < 0) {
@@ -410,9 +411,19 @@ static inline INT _universal_kepler_solver(
         dt = (ratio - (INT)(ratio)) * T;
     }
 
-
-    REAL s0, s, arg[5];
     s0 = dt / r;
+
+    if (alpha > 0) {
+        /* first guess for hyperbolic orbits:
+         * adapted from formula 4.5.11 in
+         * fundamentals of astrodynamics (Bate et al. 1971) */
+        REAL salpha = sqrt(alpha);
+        REAL ss = fabs(2 * alpha * dt / (rv + (m + alpha * r) / salpha));
+        if (ss > 1) {
+            s0 = SIGN(dt) * log(ss) / salpha;
+        }
+    }
+
     arg[0] = dt;
     arg[1] = r;
     arg[2] = rv;
