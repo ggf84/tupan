@@ -31,15 +31,15 @@ CACHE_DIR = os.path.join(os.path.expanduser('~'),
 ctx = cl.create_some_context()
 dev = ctx.devices[0]
 
-UNROLL = 16
+UNROLL = 2
 
 LSIZE = {}
-LSIZE["float32"] = 16
-LSIZE["float64"] = 16
+LSIZE["float32"] = 64
+LSIZE["float64"] = 64
 
 VW = {}
 VW["float32"] = dev.preferred_vector_width_float
-VW["float64"] = dev.preferred_vector_width_double*2
+VW["float64"] = dev.preferred_vector_width_double
 
 WPT = {}
 WPT["float32"] = 1
@@ -144,17 +144,11 @@ class CLKernel(object):
 
     def set_gsize2(self, ni, nj):
         vw = self.vector_width
-        wpt = self.work_per_thread
-        max_lsize = self.max_lsize
 
-#        gs = (ni + wpt - 1) // (wpt)
-        gs = (ni + wpt * vw - 1) // (wpt * vw)
-        ls = 2**int(math.log(gs, 2))
-        lsize = min(ls, max_lsize)
-        gsize = ((gs + lsize - 1) // lsize) * lsize
+        gs = ((ni + 2 * vw - 1) // (2 * vw)) * 2
 
-        self.global_size = (gsize, 1, 1)
-        self.local_size = (lsize, 1, 1)
+        self.global_size = (gs, 1, 1)
+        self.local_size = None
 
     def set_args(self, args, start=0):
         for (i, arg) in enumerate(args, start):

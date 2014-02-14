@@ -306,6 +306,9 @@ __kernel void acc_kernel(
 
     concat(REAL, VW) im, irx, iry, irz, ie2;
 
+    #if VW == 1
+    im = _im[i[0]];
+    #else
     #pragma unroll VW
     for (UINT ii = 0; ii < VW; ++ii) {
         im.s0 = _im[i[ii]];
@@ -319,7 +322,11 @@ __kernel void acc_kernel(
         im = im.s123456789abcdef0;
         #endif
     }
+    #endif
 
+    #if VW == 1
+    irx = _irx[i[0]];
+    #else
     #pragma unroll VW
     for (UINT ii = 0; ii < VW; ++ii) {
         irx.s0 = _irx[i[ii]];
@@ -333,7 +340,11 @@ __kernel void acc_kernel(
         irx = irx.s123456789abcdef0;
         #endif
     }
+    #endif
 
+    #if VW == 1
+    iry = _iry[i[0]];
+    #else
     #pragma unroll VW
     for (UINT ii = 0; ii < VW; ++ii) {
         iry.s0 = _iry[i[ii]];
@@ -347,7 +358,11 @@ __kernel void acc_kernel(
         iry = iry.s123456789abcdef0;
         #endif
     }
+    #endif
 
+    #if VW == 1
+    irz = _irz[i[0]];
+    #else
     #pragma unroll VW
     for (UINT ii = 0; ii < VW; ++ii) {
         irz.s0 = _irz[i[ii]];
@@ -361,7 +376,11 @@ __kernel void acc_kernel(
         irz = irz.s123456789abcdef0;
         #endif
     }
+    #endif
 
+    #if VW == 1
+    ie2 = _ie2[i[0]];
+    #else
     #pragma unroll VW
     for (UINT ii = 0; ii < VW; ++ii) {
         ie2.s0 = _ie2[i[ii]];
@@ -375,6 +394,7 @@ __kernel void acc_kernel(
         ie2 = ie2.s123456789abcdef0;
         #endif
     }
+    #endif
 
     concat(REAL, VW) iax = (concat(REAL, VW))(0);
     concat(REAL, VW) iay = (concat(REAL, VW))(0);
@@ -382,10 +402,9 @@ __kernel void acc_kernel(
 
     UINT j = 0;
 
-#define WW 2
+#define WW 16
 
 #if WW > 1
-    #pragma unroll UNROLL
     for (; (j + WW - 1) < nj; j += WW) {
         concat(REAL, WW) jm = concat(vload, WW)(0, _jm + j);
         concat(REAL, WW) jrx = concat(vload, WW)(0, _jrx + j);
@@ -433,6 +452,7 @@ __kernel void acc_kernel(
     }
 #endif
 
+
     #pragma unroll UNROLL
     for (; j < nj; ++j) {
         call(acc_kernel_core, VW)(
@@ -442,6 +462,9 @@ __kernel void acc_kernel(
     }
 
 
+    #if VW == 1
+    _iax[i[0]] = iax;
+    #else
     #pragma unroll VW
     for (UINT ii = 0; ii < VW; ++ii) {
         _iax[i[ii]] = iax.s0;
@@ -455,7 +478,11 @@ __kernel void acc_kernel(
         iax = iax.s123456789abcdef0;
         #endif
     }
+    #endif
 
+    #if VW == 1
+    _iay[i[0]] = iay;
+    #else
     #pragma unroll VW
     for (UINT ii = 0; ii < VW; ++ii) {
         _iay[i[ii]] = iay.s0;
@@ -469,7 +496,11 @@ __kernel void acc_kernel(
         iay = iay.s123456789abcdef0;
         #endif
     }
+    #endif
 
+    #if VW == 1
+    _iaz[i[0]] = iaz;
+    #else
     #pragma unroll VW
     for (UINT ii = 0; ii < VW; ++ii) {
         _iaz[i[ii]] = iaz.s0;
@@ -483,5 +514,6 @@ __kernel void acc_kernel(
         iaz = iaz.s123456789abcdef0;
         #endif
     }
+    #endif
 }
 
