@@ -4,135 +4,135 @@
 #include "common.h"
 
 // defines some fractions used in PN expressions
-#define _1_2 (((REAL)1)/2)
-#define _1_4 (((REAL)1)/4)
-#define _3_2 (((REAL)3)/2)
-#define _3_4 (((REAL)3)/4)
-#define _5_2 (((REAL)5)/2)
-#define _5_4 (((REAL)5)/4)
-#define _8_5 (((REAL)8)/5)
-#define _9_2 (((REAL)9)/2)
-#define _12_5 (((REAL)12)/5)
-#define _13_12 (((REAL)13)/12)
-#define _15_2 (((REAL)15)/2)
-#define _15_4 (((REAL)15)/4)
-#define _15_8 (((REAL)15)/8)
-#define _17_2 (((REAL)17)/2)
-#define _24_5 (((REAL)24)/5)
-#define _24_7 (((REAL)24)/7)
-#define _27_4 (((REAL)27)/4)
-#define _32_5 (((REAL)32)/5)
-#define _35_16 (((REAL)35)/16)
-#define _39_2 (((REAL)39)/2)
-#define _41_16 (((REAL)41)/16)
-#define _43_2 (((REAL)43)/2)
-#define _44_15 (((REAL)44)/15)
-#define _48_35 (((REAL)48)/35)
-#define _52_15 (((REAL)52)/15)
-#define _55_4 (((REAL)55)/4)
-#define _56_15 (((REAL)56)/15)
-#define _57_4 (((REAL)57)/4)
-#define _63_4 (((REAL)63)/4)
-#define _69_2 (((REAL)69)/2)
-#define _81_8 (((REAL)81)/8)
-#define _83_8 (((REAL)83)/8)
-#define _90_7 (((REAL)90)/7)
-#define _91_2 (((REAL)91)/2)
-#define _91_8 (((REAL)91)/8)
-#define _95_12 (((REAL)95)/12)
-#define _123_32 (((REAL)123)/32)
-#define _123_64 (((REAL)123)/64)
-#define _132_35 (((REAL)132)/35)
-#define _137_8 (((REAL)137)/8)
-#define _152_21 (((REAL)152)/21)
-#define _152_35 (((REAL)152)/35)
-#define _171_2 (((REAL)171)/2)
-#define _177_4 (((REAL)177)/4)
-#define _180_7 (((REAL)180)/7)
-#define _184_21 (((REAL)184)/21)
-#define _191_4 (((REAL)191)/4)
-#define _204_35 (((REAL)204)/35)
-#define _205_2 (((REAL)205)/2)
-#define _207_8 (((REAL)207)/8)
-#define _208_15 (((REAL)208)/15)
-#define _225_2 (((REAL)225)/2)
-#define _229_4 (((REAL)229)/4)
-#define _243_4 (((REAL)243)/4)
-#define _246_35 (((REAL)246)/35)
-#define _259_4 (((REAL)259)/4)
-#define _269_4 (((REAL)269)/4)
-#define _283_2 (((REAL)283)/2)
-#define _288_5 (((REAL)288)/5)
-#define _292_35 (((REAL)292)/35)
-#define _307_8 (((REAL)307)/8)
-#define _311_4 (((REAL)311)/4)
-#define _334_35 (((REAL)334)/35)
-#define _348_5 (((REAL)348)/5)
-#define _357_4 (((REAL)357)/4)
-#define _357_8 (((REAL)357)/8)
-#define _372_5 (((REAL)372)/5)
-#define _375_4 (((REAL)375)/4)
-#define _383_2 (((REAL)383)/2)
-#define _415_8 (((REAL)415)/8)
-#define _454_15 (((REAL)454)/15)
-#define _455_8 (((REAL)455)/8)
-#define _471_8 (((REAL)471)/8)
-#define _479_8 (((REAL)479)/8)
-#define _534_35 (((REAL)534)/35)
-#define _545_3 (((REAL)545)/3)
-#define _547_3 (((REAL)547)/3)
-#define _565_4 (((REAL)565)/4)
-#define _582_5 (((REAL)582)/5)
-#define _615_64 (((REAL)615)/64)
-#define _654_35 (((REAL)654)/35)
-#define _684_5 (((REAL)684)/5)
-#define _696_5 (((REAL)696)/5)
-#define _723_4 (((REAL)723)/4)
-#define _732_35 (((REAL)732)/35)
-#define _744_5 (((REAL)744)/5)
-#define _854_15 (((REAL)854)/15)
-#define _939_4 (((REAL)939)/4)
-#define _984_35 (((REAL)984)/35)
-#define _1028_21 (((REAL)1028)/21)
-#define _1068_35 (((REAL)1068)/35)
-#define _1113_8 (((REAL)1113)/8)
-#define _1252_35 (((REAL)1252)/35)
-#define _1308_35 (((REAL)1308)/35)
-#define _1336_35 (((REAL)1336)/35)
-#define _1432_35 (((REAL)1432)/35)
-#define _1746_5 (((REAL)1746)/5)
-#define _1768_105 (((REAL)1768)/105)
-#define _1954_5 (((REAL)1954)/5)
-#define _2069_8 (((REAL)2069)/8)
-#define _2056_21 (((REAL)2056)/21)
-#define _2224_21 (((REAL)2224)/21)
-#define _2864_35 (((REAL)2864)/35)
-#define _2864_105 (((REAL)2864)/105)
-#define _2872_21 (((REAL)2872)/21)
-#define _3172_21 (((REAL)3172)/21)
-#define _3568_105 (((REAL)3568)/105)
-#define _3992_105 (((REAL)3992)/105)
-#define _4328_105 (((REAL)4328)/105)
-#define _4888_105 (((REAL)4888)/105)
-#define _5056_105 (((REAL)5056)/105)
-#define _5752_105 (((REAL)5752)/105)
-#define _5812_105 (((REAL)5812)/105)
-#define _6224_105 (((REAL)6224)/105)
-#define _6388_105 (((REAL)6388)/105)
-#define _10048_105 (((REAL)10048)/105)
-#define _13576_105 (((REAL)13576)/105)
+#define _1_2 (((REAL)(1))/2)
+#define _1_4 (((REAL)(1))/4)
+#define _3_2 (((REAL)(3))/2)
+#define _3_4 (((REAL)(3))/4)
+#define _5_2 (((REAL)(5))/2)
+#define _5_4 (((REAL)(5))/4)
+#define _8_5 (((REAL)(8))/5)
+#define _9_2 (((REAL)(9))/2)
+#define _12_5 (((REAL)(12))/5)
+#define _13_12 (((REAL)(13))/12)
+#define _15_2 (((REAL)(15))/2)
+#define _15_4 (((REAL)(15))/4)
+#define _15_8 (((REAL)(15))/8)
+#define _17_2 (((REAL)(17))/2)
+#define _24_5 (((REAL)(24))/5)
+#define _24_7 (((REAL)(24))/7)
+#define _27_4 (((REAL)(27))/4)
+#define _32_5 (((REAL)(32))/5)
+#define _35_16 (((REAL)(35))/16)
+#define _39_2 (((REAL)(39))/2)
+#define _41_16 (((REAL)(41))/16)
+#define _43_2 (((REAL)(43))/2)
+#define _44_15 (((REAL)(44))/15)
+#define _48_35 (((REAL)(48))/35)
+#define _52_15 (((REAL)(52))/15)
+#define _55_4 (((REAL)(55))/4)
+#define _56_15 (((REAL)(56))/15)
+#define _57_4 (((REAL)(57))/4)
+#define _63_4 (((REAL)(63))/4)
+#define _69_2 (((REAL)(69))/2)
+#define _81_8 (((REAL)(81))/8)
+#define _83_8 (((REAL)(83))/8)
+#define _90_7 (((REAL)(90))/7)
+#define _91_2 (((REAL)(91))/2)
+#define _91_8 (((REAL)(91))/8)
+#define _95_12 (((REAL)(95))/12)
+#define _123_32 (((REAL)(123))/32)
+#define _123_64 (((REAL)(123))/64)
+#define _132_35 (((REAL)(132))/35)
+#define _137_8 (((REAL)(137))/8)
+#define _152_21 (((REAL)(152))/21)
+#define _152_35 (((REAL)(152))/35)
+#define _171_2 (((REAL)(171))/2)
+#define _177_4 (((REAL)(177))/4)
+#define _180_7 (((REAL)(180))/7)
+#define _184_21 (((REAL)(184))/21)
+#define _191_4 (((REAL)(191))/4)
+#define _204_35 (((REAL)(204))/35)
+#define _205_2 (((REAL)(205))/2)
+#define _207_8 (((REAL)(207))/8)
+#define _208_15 (((REAL)(208))/15)
+#define _225_2 (((REAL)(225))/2)
+#define _229_4 (((REAL)(229))/4)
+#define _243_4 (((REAL)(243))/4)
+#define _246_35 (((REAL)(246))/35)
+#define _259_4 (((REAL)(259))/4)
+#define _269_4 (((REAL)(269))/4)
+#define _283_2 (((REAL)(283))/2)
+#define _288_5 (((REAL)(288))/5)
+#define _292_35 (((REAL)(292))/35)
+#define _307_8 (((REAL)(307))/8)
+#define _311_4 (((REAL)(311))/4)
+#define _334_35 (((REAL)(334))/35)
+#define _348_5 (((REAL)(348))/5)
+#define _357_4 (((REAL)(357))/4)
+#define _357_8 (((REAL)(357))/8)
+#define _372_5 (((REAL)(372))/5)
+#define _375_4 (((REAL)(375))/4)
+#define _383_2 (((REAL)(383))/2)
+#define _415_8 (((REAL)(415))/8)
+#define _454_15 (((REAL)(454))/15)
+#define _455_8 (((REAL)(455))/8)
+#define _471_8 (((REAL)(471))/8)
+#define _479_8 (((REAL)(479))/8)
+#define _534_35 (((REAL)(534))/35)
+#define _545_3 (((REAL)(545))/3)
+#define _547_3 (((REAL)(547))/3)
+#define _565_4 (((REAL)(565))/4)
+#define _582_5 (((REAL)(582))/5)
+#define _615_64 (((REAL)(615))/64)
+#define _654_35 (((REAL)(654))/35)
+#define _684_5 (((REAL)(684))/5)
+#define _696_5 (((REAL)(696))/5)
+#define _723_4 (((REAL)(723))/4)
+#define _732_35 (((REAL)(732))/35)
+#define _744_5 (((REAL)(744))/5)
+#define _854_15 (((REAL)(854))/15)
+#define _939_4 (((REAL)(939))/4)
+#define _984_35 (((REAL)(984))/35)
+#define _1028_21 (((REAL)(1028))/21)
+#define _1068_35 (((REAL)(1068))/35)
+#define _1113_8 (((REAL)(1113))/8)
+#define _1252_35 (((REAL)(1252))/35)
+#define _1308_35 (((REAL)(1308))/35)
+#define _1336_35 (((REAL)(1336))/35)
+#define _1432_35 (((REAL)(1432))/35)
+#define _1746_5 (((REAL)(1746))/5)
+#define _1768_105 (((REAL)(1768))/105)
+#define _1954_5 (((REAL)(1954))/5)
+#define _2069_8 (((REAL)(2069))/8)
+#define _2056_21 (((REAL)(2056))/21)
+#define _2224_21 (((REAL)(2224))/21)
+#define _2864_35 (((REAL)(2864))/35)
+#define _2864_105 (((REAL)(2864))/105)
+#define _2872_21 (((REAL)(2872))/21)
+#define _3172_21 (((REAL)(3172))/21)
+#define _3568_105 (((REAL)(3568))/105)
+#define _3992_105 (((REAL)(3992))/105)
+#define _4328_105 (((REAL)(4328))/105)
+#define _4888_105 (((REAL)(4888))/105)
+#define _5056_105 (((REAL)(5056))/105)
+#define _5752_105 (((REAL)(5752))/105)
+#define _5812_105 (((REAL)(5812))/105)
+#define _6224_105 (((REAL)(6224))/105)
+#define _6388_105 (((REAL)(6388))/105)
+#define _10048_105 (((REAL)(10048))/105)
+#define _13576_105 (((REAL)(13576))/105)
 
 
-inline void p2p_pn2(
-    REAL im,
-    REAL jm,
-    REAL inv_r,
-    REAL iv2,
-    REAL jv2,
-    REAL ivjv,
-    REAL niv,
-    REAL njv,
-    REAL njv2,
+static inline void p2p_pn2(
+    REALn im,
+    REALn jm,
+    REALn inv_r,
+    REALn iv2,
+    REALn jv2,
+    REALn ivjv,
+    REALn niv,
+    REALn njv,
+    REALn njv2,
     CLIGHT clight,
     PN *pn2)
 {
@@ -152,25 +152,25 @@ inline void p2p_pn2(
 }   // 11+3+2 == 16 FLOPs
 
 
-inline void p2p_pn4(
-    REAL im,
-    REAL jm,
-    REAL im2,
-    REAL jm2,
-    REAL imjm,
-    REAL inv_r,
-    REAL inv_r2,
-    REAL iv2,
-    REAL jv2,
-    REAL jv4,
-    REAL ivjv,
-    REAL ivjvivjv,
-    REAL nv,
-    REAL niv,
-    REAL njv,
-    REAL niv2,
-    REAL njv2,
-    REAL nivnjv,
+static inline void p2p_pn4(
+    REALn im,
+    REALn jm,
+    REALn im2,
+    REALn jm2,
+    REALn imjm,
+    REALn inv_r,
+    REALn inv_r2,
+    REALn iv2,
+    REALn jv2,
+    REALn jv4,
+    REALn ivjv,
+    REALn ivjvivjv,
+    REALn nv,
+    REALn niv,
+    REALn njv,
+    REALn niv2,
+    REALn njv2,
+    REALn nivnjv,
     CLIGHT clight,
     PN *pn4)
 {
@@ -213,12 +213,12 @@ inline void p2p_pn4(
 }   // 46+24+2 == 72 FLOPs
 
 
-inline void p2p_pn5(
-    REAL im,
-    REAL jm,
-    REAL inv_r,
-    REAL v2,
-    REAL nv,
+static inline void p2p_pn5(
+    REALn im,
+    REALn jm,
+    REALn inv_r,
+    REALn v2,
+    REALn nv,
     CLIGHT clight,
     PN *pn5)
 {
@@ -231,33 +231,33 @@ inline void p2p_pn5(
              + inv_r * ( + _8_5 * im
                          - _32_5 * jm );
 
-    REAL m_c5r = (im * inv_r) * clight.inv5;
+    REALn m_c5r = (im * inv_r) * clight.inv5;
     pn5->a *= m_c5r;
     pn5->b *= m_c5r;
 }   // 7+5+4 == 16 FLOPs
 
 
-inline void p2p_pn6(
-    REAL im,
-    REAL jm,
-    REAL im2,
-    REAL jm2,
-    REAL imjm,
-    REAL inv_r,
-    REAL inv_r2,
-    REAL v2,
-    REAL iv2,
-    REAL jv2,
-    REAL jv4,
-    REAL ivjv,
-    REAL ivjvivjv,
-    REAL nv,
-    REAL nvnv,
-    REAL niv,
-    REAL njv,
-    REAL niv2,
-    REAL njv2,
-    REAL nivnjv,
+static inline void p2p_pn6(
+    REALn im,
+    REALn jm,
+    REALn im2,
+    REALn jm2,
+    REALn imjm,
+    REALn inv_r,
+    REALn inv_r2,
+    REALn v2,
+    REALn iv2,
+    REALn jv2,
+    REALn jv4,
+    REALn ivjv,
+    REALn ivjvivjv,
+    REALn nv,
+    REALn nvnv,
+    REALn niv,
+    REALn njv,
+    REALn niv2,
+    REALn njv2,
+    REALn nivnjv,
     CLIGHT clight,
     PN *pn6)
 {
@@ -372,27 +372,27 @@ inline void p2p_pn6(
 }   // ??+??+2 == ??? FLOPs
 
 
-inline void p2p_pn7(
-    REAL im,
-    REAL jm,
-    REAL im2,
-    REAL jm2,
-    REAL imjm,
-    REAL inv_r,
-    REAL inv_r2,
-    REAL v2,
-    REAL iv2,
-    REAL jv2,
-    REAL iv4,
-    REAL jv4,
-    REAL ivjv,
-    REAL nv,
-    REAL nvnv,
-    REAL niv,
-    REAL njv,
-    REAL niv2,
-    REAL njv2,
-    REAL nivnjv,
+static inline void p2p_pn7(
+    REALn im,
+    REALn jm,
+    REALn im2,
+    REALn jm2,
+    REALn imjm,
+    REALn inv_r,
+    REALn inv_r2,
+    REALn v2,
+    REALn iv2,
+    REALn jv2,
+    REALn iv4,
+    REALn jv4,
+    REALn ivjv,
+    REALn nv,
+    REALn nvnv,
+    REALn niv,
+    REALn njv,
+    REALn niv2,
+    REALn njv2,
+    REALn nivnjv,
     CLIGHT clight,
     PN *pn7)
 {
@@ -464,56 +464,55 @@ inline void p2p_pn7(
                  + _654_35 * iv2 * jv2
                  + _292_35 * jv4 );
 
-    REAL m_c7r = (im * inv_r) * clight.inv7;
+    REALn m_c7r = (im * inv_r) * clight.inv7;
     pn7->a *= m_c7r;
     pn7->b *= m_c7r;
 }   // ??+??+4 == ??? FLOPs
 
 
-inline void p2p_pnterms(
-    REAL im,
-    REAL jm,
-    REAL rx,
-    REAL ry,
-    REAL rz,
-    REAL vx,
-    REAL vy,
-    REAL vz,
-    REAL v2,
-    REAL ivx,
-    REAL ivy,
-    REAL ivz,
-    REAL jvx,
-    REAL jvy,
-    REAL jvz,
-    REAL inv_r,
-    REAL inv_r2,
-    REAL inv_r3,
+static inline void p2p_pnterms(
+    REALn im,
+    REALn jm,
+    REALn rx,
+    REALn ry,
+    REALn rz,
+    REALn vx,
+    REALn vy,
+    REALn vz,
+    REALn v2,
+    REALn ivx,
+    REALn ivy,
+    REALn ivz,
+    REALn jvx,
+    REALn jvy,
+    REALn jvz,
+    REALn inv_r,
+    REALn inv_r2,
+    REALn inv_r3,
     CLIGHT clight,
     PN *pn)
 {
-    PN pn1 = {0, 0};
-    PN pn2 = {0, 0};
-    PN pn3 = {0, 0};
-    PN pn4 = {0, 0};
-    PN pn5 = {0, 0};
-    PN pn6 = {0, 0};
-    PN pn7 = {0, 0};
+    PN pn1 = PN_Init(0, 0);
+    PN pn2 = PN_Init(0, 0);
+    PN pn3 = PN_Init(0, 0);
+    PN pn4 = PN_Init(0, 0);
+    PN pn5 = PN_Init(0, 0);
+    PN pn6 = PN_Init(0, 0);
+    PN pn7 = PN_Init(0, 0);
 
-    REAL nx, ny, nz;
-    nx = rx * inv_r;                                                            // 1 FLOPs
-    ny = ry * inv_r;                                                            // 1 FLOPs
-    nz = rz * inv_r;                                                            // 1 FLOPs
-    REAL iv2 = ivx * ivx + ivy * ivy + ivz * ivz;                               // 5 FLOPs
-    REAL jv2 = jvx * jvx + jvy * jvy + jvz * jvz;                               // 5 FLOPs
+    REALn nx = rx * inv_r;                                                      // 1 FLOPs
+    REALn ny = ry * inv_r;                                                      // 1 FLOPs
+    REALn nz = rz * inv_r;                                                      // 1 FLOPs
+    REALn iv2 = ivx * ivx + ivy * ivy + ivz * ivz;                              // 5 FLOPs
+    REALn jv2 = jvx * jvx + jvy * jvy + jvz * jvz;                              // 5 FLOPs
 
     if (clight.order > 0) {
         // XXX: not implemented.
         if (clight.order > 1) {
-            REAL niv = nx * ivx + ny * ivy + nz * ivz;                          // 5 FLOPs
-            REAL njv = nx * jvx + ny * jvy + nz * jvz;                          // 5 FLOPs
-            REAL njv2 = njv * njv;                                              // 1 FLOPs
-            REAL ivjv = ivx * jvx + ivy * jvy + ivz * jvz;                      // 5 FLOPs
+            REALn niv = nx * ivx + ny * ivy + nz * ivz;                         // 5 FLOPs
+            REALn njv = nx * jvx + ny * jvy + nz * jvz;                         // 5 FLOPs
+            REALn njv2 = njv * njv;                                             // 1 FLOPs
+            REALn ivjv = ivx * jvx + ivy * jvy + ivz * jvz;                     // 5 FLOPs
             p2p_pn2(im, jm, inv_r,
                     iv2, jv2, ivjv,
                     niv, njv, njv2,
@@ -521,17 +520,17 @@ inline void p2p_pnterms(
             if (clight.order > 2) {
                 // XXX: not implemented.
                 if (clight.order > 3) {
-                    REAL im2 = im * im;                                         // 1 FLOPs
-                    REAL jm2 = jm * jm;                                         // 1 FLOPs
-                    REAL imjm = im * jm;                                        // 1 FLOPs
-                    REAL jv4 = jv2 * jv2;                                       // 1 FLOPs
-                    REAL ivjvivjv = ivjv * ivjv;                                // 1 FLOPs
-                    REAL nv = nx * vx + ny * vy + nz * vz;                      // 5 FLOPs
-                    REAL niv = nx * ivx + ny * ivy + nz * ivz;                  // 5 FLOPs
-                    REAL njv = nx * jvx + ny * jvy + nz * jvz;                  // 5 FLOPs
-                    REAL niv2 = niv * niv;                                      // 1 FLOPs
-                    REAL njv2 = njv * njv;                                      // 1 FLOPs
-                    REAL nivnjv = niv * njv;                                    // 1 FLOPs
+                    REALn im2 = im * im;                                        // 1 FLOPs
+                    REALn jm2 = jm * jm;                                        // 1 FLOPs
+                    REALn imjm = im * jm;                                       // 1 FLOPs
+                    REALn jv4 = jv2 * jv2;                                      // 1 FLOPs
+                    REALn ivjvivjv = ivjv * ivjv;                               // 1 FLOPs
+                    REALn nv = nx * vx + ny * vy + nz * vz;                     // 5 FLOPs
+                    REALn niv = nx * ivx + ny * ivy + nz * ivz;                 // 5 FLOPs
+                    REALn njv = nx * jvx + ny * jvy + nz * jvz;                 // 5 FLOPs
+                    REALn niv2 = niv * niv;                                     // 1 FLOPs
+                    REALn njv2 = njv * njv;                                     // 1 FLOPs
+                    REALn nivnjv = niv * njv;                                   // 1 FLOPs
                     p2p_pn4(im, jm, im2, jm2, imjm, inv_r, inv_r2,
                             iv2, jv2, jv4, ivjv, ivjvivjv,
                             nv, niv, njv, niv2, njv2, nivnjv,
@@ -539,13 +538,13 @@ inline void p2p_pnterms(
                     if (clight.order > 4) {
                         p2p_pn5(im, jm, inv_r, v2, nv, clight, &pn5);           // 16 FLOPs
                         if (clight.order > 5) {
-                            REAL nvnv = nv * nv;                                // 1 FLOPs
+                            REALn nvnv = nv * nv;                               // 1 FLOPs
                             p2p_pn6(im, jm, im2, jm2, imjm, inv_r, inv_r2,
                                     v2, iv2, jv2, jv4, ivjv, ivjvivjv,
                                     nv, nvnv, niv, njv, niv2, njv2, nivnjv,
                                     clight, &pn6);                              // ??? FLOPs
                             if (clight.order > 6) {
-                                REAL iv4 = iv2 * iv2;                           // 1 FLOPs
+                                REALn iv4 = iv2 * iv2;                          // 1 FLOPs
                                 p2p_pn7(im, jm, im2, jm2, imjm, inv_r, inv_r2,
                                         v2, iv2, jv2, iv4, jv4, ivjv,
                                         nv, nvnv, niv, njv, niv2, njv2, nivnjv,
@@ -563,10 +562,8 @@ inline void p2p_pnterms(
     pn->a += ((((((pn7.a + pn6.a) + pn5.a) + pn4.a) + pn3.a) + pn2.a) + pn1.a); // 7 FLOPs
     pn->b += ((((((pn7.b + pn6.b) + pn5.b) + pn4.b) + pn3.b) + pn2.b) + pn1.b); // 7 FLOPs
 
-    REAL gm_r3 = jm * inv_r3;                                                   // 1 FLOPs
-    REAL gm_r2 = jm * inv_r2;                                                   // 1 FLOPs
-    pn->a *= gm_r3;                                                             // 1 FLOPs
-    pn->b *= gm_r2;                                                             // 1 FLOPs
+    pn->a *= jm * inv_r3;                                                       // 2 FLOPs
+    pn->b *= jm * inv_r2;                                                       // 2 FLOPs
 }   // ??+??+?? == ??? FLOPs
 
 #endif  // __PN_TERMS_H__

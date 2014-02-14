@@ -9,7 +9,7 @@ TODO.
 from __future__ import print_function
 import logging
 from ..integrator import Base
-from ..lib.utils import ctype
+from .fewbody import FewBody
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -26,6 +26,9 @@ def split(ps, condition):
     """Splits the particle's system into slow/fast components.
 
     """
+    if ps.n <= 2:       # stop recursion and use a few-body solver!
+        return ps, type(ps)()
+
     slow = ps[condition]
     fast = ps[~condition]
 
@@ -305,11 +308,8 @@ class SIA21(object):
         """Standard SIA21 DKD-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         k, d = SIA21.coefs
 
@@ -325,11 +325,8 @@ class SIA21(object):
         """Standard SIA21 KDK-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         d, k = SIA21.coefs
 
@@ -370,11 +367,8 @@ class SIA22(object):
         """Standard SIA22 DKD-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         k, d = SIA22.coefs
 
@@ -392,11 +386,8 @@ class SIA22(object):
         """Standard SIA22 KDK-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         d, k = SIA22.coefs
 
@@ -442,11 +433,8 @@ class SIA43(object):
         """Standard SIA43 DKD-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         k, d = SIA43.coefs
 
@@ -466,11 +454,8 @@ class SIA43(object):
         """Standard SIA43 KDK-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         d, k = SIA43.coefs
 
@@ -521,11 +506,8 @@ class SIA44(object):
         """Standard SIA44 DKD-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         k, d = SIA44.coefs
 
@@ -547,11 +529,8 @@ class SIA44(object):
         """Standard SIA44 KDK-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         d, k = SIA44.coefs
 
@@ -607,11 +586,8 @@ class SIA45(object):
         """Standard SIA45 DKD-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         k, d = SIA45.coefs
 
@@ -635,11 +611,8 @@ class SIA45(object):
         """Standard SIA45 KDK-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         d, k = SIA45.coefs
 
@@ -700,11 +673,8 @@ class SIA46(object):
         """Standard SIA46 DKD-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         k, d = SIA46.coefs
 
@@ -730,11 +700,8 @@ class SIA46(object):
         """Standard SIA46 KDK-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         d, k = SIA46.coefs
 
@@ -800,11 +767,8 @@ class SIA67(object):
         """Standard SIA67 DKD-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         k, d = SIA67.coefs
 
@@ -832,11 +796,8 @@ class SIA67(object):
         """Standard SIA67 KDK-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         d, k = SIA67.coefs
 
@@ -908,11 +869,8 @@ class SIA69(object):
         """Standard SIA69 DKD-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         k, d = SIA69.coefs
 
@@ -944,11 +902,8 @@ class SIA69(object):
         """Standard SIA69 KDK-type propagator.
 
         """
-        if ips.n == 0:
-            return ips
-
-        if ips.n == 1:
-            return drift(ips, tau)
+        if ips.n <= 2:
+            return FewBody.evolve(ips, tau)
 
         d, k = SIA69.coefs
 
@@ -1045,9 +1000,9 @@ class SIA(Base):
 
         ps = self.ps
         if ps.include_pn_corrections:
-            ps.register_auxiliary_attribute("wx", ctype.REAL)
-            ps.register_auxiliary_attribute("wy", ctype.REAL)
-            ps.register_auxiliary_attribute("wz", ctype.REAL)
+            ps.register_auxiliary_attribute("wx", "real")
+            ps.register_auxiliary_attribute("wy", "real")
+            ps.register_auxiliary_attribute("wz", "real")
 #            ps.wx[...] = ps.vx
 #            ps.wy[...] = ps.vy
 #            ps.wz[...] = ps.vz

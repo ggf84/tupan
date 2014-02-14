@@ -9,13 +9,12 @@
 from __future__ import division
 import os
 import sys
+import math
 import logging
 import getpass
 import pyopencl as cl
-from fractions import gcd
 from functools import partial
 from collections import namedtuple
-from .utils import ctype
 
 
 logger = logging.getLogger(__name__)
@@ -30,20 +29,35 @@ CACHE_DIR = os.path.join(os.path.expanduser('~'),
                              ".".join(str(i) for i in sys.version_info)))
 
 ctx = cl.create_some_context()
+dev = ctx.devices[0]
+
+UNROLL = 16
+
+LSIZE = {}
+LSIZE["float32"] = 64
+LSIZE["float64"] = 64
+
+VW = {}
+VW["float32"] = dev.preferred_vector_width_float
+VW["float64"] = dev.preferred_vector_width_double
+
+WPT = {}
+WPT["float32"] = 2
+WPT["float64"] = 2
+
+FAST_LOCAL_MEM = True
 
 
-def make_lib(fptype):
+def make_lib(prec):
     """
 
     """
-    prec = "single" if fptype == 'float' else "double"
-    logger.debug("Building/Loading %s precision CL extension module...",
+    cint = "int" if prec == "float32" else "long"
+    creal = "float" if prec == 'float32' else "double"
+    logger.debug("Building/Loading %s CL extension module...",
                  prec)
 
-    files = ("smoothing.c",
-             "universal_kepler_solver.c",
-             #
-             "phi_kernel.cl",
+    files = ("phi_kernel.cl",
              "acc_kernel.cl",
              "acc_jerk_kernel.cl",
              "snap_crackle_kernel.cl",
@@ -62,8 +76,15 @@ def make_lib(fptype):
 
     # setting options
     options = " -I {path}".format(path=PATH)
-    if fptype == "double":
-        options += " -D DOUBLE"
+    options += " -D CONFIG_USE_OPENCL"
+    if prec == "float64":
+        options += " -D CONFIG_USE_DOUBLE"
+    if FAST_LOCAL_MEM:
+        options += " -D FAST_LOCAL_MEM"
+    options += " -D UNROLL={}".format(UNROLL)
+    options += " -D LSIZE={}".format(LSIZE[prec])
+    options += " -D VW={}".format(VW[prec])
+    options += " -D WPT={}".format(WPT[prec])
     options += " -cl-fast-relaxed-math"
 #    options += " -cl-opt-disable"
 
@@ -76,57 +97,50 @@ def make_lib(fptype):
 
 
 lib = {}
-lib['single'] = make_lib('float')
-lib['double'] = make_lib('double')
+lib['float32'] = make_lib('float32')
+lib['float64'] = make_lib('float64')
 
 
 class CLKernel(object):
 
     def __init__(self, prec, name):
         self.kernel = getattr(lib[prec], name)
+        self.unroll = UNROLL
+        self.max_lsize = LSIZE[prec]
+        self.vector_width = VW[prec]
+        self.work_per_thread = WPT[prec]
         self.queue = cl.CommandQueue(ctx)
-        self._gsize = None
+        self.local_size = None
 
         memf = cl.mem_flags
 #        flags = memf.READ_WRITE | memf.USE_HOST_PTR
         flags = memf.READ_WRITE | memf.COPY_HOST_PTR
         clBuffer = partial(cl.Buffer, ctx, flags)
 
-        types = namedtuple("Types", ["c_uint", "c_uint_p",
+        from .utils.ctype import ctypedict
+        types = namedtuple("Types", ["c_int", "c_int_p",
+                                     "c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])
-        self.cty = types(c_uint=ctype.UINT,
+        self.cty = types(c_int=ctypedict["int"].type,
+                         c_int_p=lambda x: clBuffer(hostbuf=x),
+                         c_uint=ctypedict["uint"].type,
                          c_uint_p=lambda x: clBuffer(hostbuf=x),
-                         c_real=ctype.REAL,
+                         c_real=ctypedict["real"].type,
                          c_real_p=lambda x: clBuffer(hostbuf=x),
                          )
 
-    @property
-    def global_size(self):
-        return self._gsize
+    def set_gsize(self, ni, nj):
+        vw = self.vector_width
+        wpt = self.work_per_thread
+        max_lsize = self.max_lsize
 
-    @global_size.setter
-    def global_size(self, ni):
-        gs0 = ((ni-1)//2 + 1) * 2
-        self._gsize = (gs0,)
+        gs = (ni + wpt * vw - 1) // (wpt * vw)
+        ls = 2**int(math.log(gs, 2))
+        lsize = min(ls, max_lsize)
+        gsize = ((gs + lsize - 1) // lsize) * lsize
 
-        gs1 = ((ni-1)//self.wgsize + 1) * 2
-        ls0 = gs0 // gs1
-
-        self.local_size = (ls0,)
-
-    def allocate_local_memory(self, nbufs, dtype):
-        itemsize = dtype.itemsize
-        dev = ctx.devices[0]
-
-        size0 = dev.local_mem_size // itemsize
-        size1 = dev.max_work_group_size
-        wgsize = gcd(size0, size1 * nbufs) // nbufs
-        self.wgsize = wgsize
-        lmsize = wgsize * itemsize
-
-        lmem = [cl.LocalMemory(lmsize) for i in range(nbufs)]
-        self.lmem = lmem    # keep alive!
-        return lmem
+        self.global_size = (gsize, 1, 1)
+        self.local_size = (lsize, 1, 1)
 
     def set_args(self, args, start=0):
         for (i, arg) in enumerate(args, start):

@@ -4,35 +4,28 @@
 #include "common.h"
 #include "smoothing.h"
 
-inline void phi_kernel_core(
-    const REAL im,
-    const REAL irx,
-    const REAL iry,
-    const REAL irz,
-    const REAL ie2,
-    const REAL ivx,
-    const REAL ivy,
-    const REAL ivz,
-    const REAL jm,
-    const REAL jrx,
-    const REAL jry,
-    const REAL jrz,
-    const REAL je2,
-    const REAL jvx,
-    const REAL jvy,
-    const REAL jvz,
-    REAL *iphi)
+static inline void phi_kernel_core(
+    const REALn im,
+    const REALn irx,
+    const REALn iry,
+    const REALn irz,
+    const REALn ie2,
+    const REALn jm,
+    const REALn jrx,
+    const REALn jry,
+    const REALn jrz,
+    const REALn je2,
+    REALn *iphi)
 {
-    REAL rx, ry, rz;
-    rx = irx - jrx;                                                             // 1 FLOPs
-    ry = iry - jry;                                                             // 1 FLOPs
-    rz = irz - jrz;                                                             // 1 FLOPs
-    REAL r2 = rx * rx + ry * ry + rz * rz;                                      // 5 FLOPs
+    REALn rx = irx - jrx;                                                       // 1 FLOPs
+    REALn ry = iry - jry;                                                       // 1 FLOPs
+    REALn rz = irz - jrz;                                                       // 1 FLOPs
+    REALn e2 = ie2 + je2;                                                       // 1 FLOPs
+    REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
+    INTn mask = (r2 > 0);
 
-    REAL e2 = ie2 + je2;                                                        // 1 FLOPs
-
-    REAL inv_r1;
-    smoothed_inv_r1(r2, e2, &inv_r1);                                           // 3 FLOPs
+    REALn inv_r1;
+    smoothed_inv_r1(r2, e2, mask, &inv_r1);                                     // 3 FLOPs
 
     *iphi -= jm * inv_r1;                                                       // 2 FLOPs
 }

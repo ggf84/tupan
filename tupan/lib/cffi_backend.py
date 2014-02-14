@@ -28,18 +28,16 @@ CACHE_DIR = os.path.join(os.path.expanduser('~'),
                              ".".join(str(i) for i in sys.version_info)))
 
 
-def make_lib(fptype):
+def make_lib(prec):
     """
 
     """
-    prec = "single" if fptype == 'float' else "double"
-    logger.debug("Building/Loading %s precision C extension module...",
+    cint = "int" if prec == "float32" else "long"
+    creal = "float" if prec == 'float32' else "double"
+    logger.debug("Building/Loading %s C extension module...",
                  prec)
 
-    files = ("smoothing.c",
-             "universal_kepler_solver.c",
-             #
-             "phi_kernel.c",
+    files = ("phi_kernel.c",
              "acc_kernel.c",
              "acc_jerk_kernel.c",
              "snap_crackle_kernel.c",
@@ -47,12 +45,14 @@ def make_lib(fptype):
              "pnacc_kernel.c",
              "nreg_kernels.c",
              "sakura_kernel.c",
+             "kepler_solver_kernel.c",
              )
 
     s = []
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
-        s.append("typedef unsigned int UINT;")
-        s.append("typedef {} REAL;".format(fptype))
+        s.append("typedef {} INT;".format(cint))
+        s.append("typedef unsigned {} UINT;".format(cint))
+        s.append("typedef {} REAL;".format(creal))
         s.append(fobj.read())
     source = "\n".join(s)
 
@@ -61,8 +61,8 @@ def make_lib(fptype):
     ffi.cdef(source)
 
     define_macros = []
-    if fptype == "double":
-        define_macros.append(("DOUBLE", 1))
+    if prec == "float64":
+        define_macros.append(("CONFIG_USE_DOUBLE", 1))
 
     clib = ffi.verify(
         """
@@ -73,7 +73,7 @@ def make_lib(fptype):
         define_macros=define_macros,
         include_dirs=[PATH],
         libraries=["m"],
-        extra_compile_args=["-O3"],
+        extra_compile_args=["-O3", "-std=c99"],
         sources=[os.path.join(PATH, file) for file in files],
     )
 
@@ -83,8 +83,8 @@ def make_lib(fptype):
 
 ffi = {}
 lib = {}
-ffi['single'], lib['single'] = make_lib('float')
-ffi['double'], lib['double'] = make_lib('double')
+ffi['float32'], lib['float32'] = make_lib('float32')
+ffi['float64'], lib['float64'] = make_lib('float64')
 
 
 class CKernel(object):
@@ -95,18 +95,25 @@ class CKernel(object):
 
         from_buffer = ctypes.c_char.from_buffer
         addressof = ctypes.addressof
-        icast = partial(_ffi.cast, "UINT *")
+        icast = partial(_ffi.cast, "INT *")
+        uicast = partial(_ffi.cast, "UINT *")
         rcast = partial(_ffi.cast, "REAL *")
 
-        types = namedtuple("Types", ["c_uint", "c_uint_p",
+        types = namedtuple("Types", ["c_int", "c_int_p",
+                                     "c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])
-        self.cty = types(c_uint=lambda x: x,
-                         c_uint_p=lambda x: icast(addressof(from_buffer(x))),
+        self.cty = types(c_int=lambda x: x,
+                         c_int_p=lambda x: icast(addressof(from_buffer(x))),
+                         c_uint=lambda x: x,
+                         c_uint_p=lambda x: uicast(addressof(from_buffer(x))),
                          c_real=lambda x: x,
                          c_real_p=lambda x: rcast(addressof(from_buffer(x))),
                          )
 
-    def allocate_local_memory(self, numbufs, dtype):
+    def set_gsize(self, ni, nj):
+        pass
+
+    def allocate_local_memory(self, numbufs, sctype):
         return []
 
     def set_args(self, args, start=0):

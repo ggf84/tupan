@@ -1,26 +1,27 @@
 #include "pnacc_kernel_common.h"
+#include "libtupan.h"
 
 
-inline void pnacc_kernel(
-    const unsigned int ni,
-    const REAL *_im,
-    const REAL *_irx,
-    const REAL *_iry,
-    const REAL *_irz,
-    const REAL *_ie2,
-    const REAL *_ivx,
-    const REAL *_ivy,
-    const REAL *_ivz,
-    const unsigned int nj,
-    const REAL *_jm,
-    const REAL *_jrx,
-    const REAL *_jry,
-    const REAL *_jrz,
-    const REAL *_je2,
-    const REAL *_jvx,
-    const REAL *_jvy,
-    const REAL *_jvz,
-    unsigned int order,
+void pnacc_kernel(
+    const UINT ni,
+    const REAL * restrict _im,
+    const REAL * restrict _irx,
+    const REAL * restrict _iry,
+    const REAL * restrict _irz,
+    const REAL * restrict _ie2,
+    const REAL * restrict _ivx,
+    const REAL * restrict _ivy,
+    const REAL * restrict _ivz,
+    const UINT nj,
+    const REAL * restrict _jm,
+    const REAL * restrict _jrx,
+    const REAL * restrict _jry,
+    const REAL * restrict _jrz,
+    const REAL * restrict _je2,
+    const REAL * restrict _jvx,
+    const REAL * restrict _jvy,
+    const REAL * restrict _jvz,
+    UINT order,
     const REAL inv1,
     const REAL inv2,
     const REAL inv3,
@@ -28,16 +29,12 @@ inline void pnacc_kernel(
     const REAL inv5,
     const REAL inv6,
     const REAL inv7,
-    REAL *_ipnax,
-    REAL *_ipnay,
-    REAL *_ipnaz)
+    REAL * restrict _ipnax,
+    REAL * restrict _ipnay,
+    REAL * restrict _ipnaz)
 {
-    CLIGHT clight = (CLIGHT){.order=order, .inv1=inv1,
-                             .inv2=inv2, .inv3=inv3,
-                             .inv4=inv4, .inv5=inv5,
-                             .inv6=inv6, .inv7=inv7};
-    unsigned int i, j;
-    for (i = 0; i < ni; ++i) {
+    CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3, inv4, inv5, inv6, inv7);
+    for (UINT i = 0; i < ni; ++i) {
         REAL im = _im[i];
         REAL irx = _irx[i];
         REAL iry = _iry[i];
@@ -49,17 +46,10 @@ inline void pnacc_kernel(
         REAL ipnax = 0;
         REAL ipnay = 0;
         REAL ipnaz = 0;
-        for (j = 0; j < nj; ++j) {
-            REAL jm = _jm[j];
-            REAL jrx = _jrx[j];
-            REAL jry = _jry[j];
-            REAL jrz = _jrz[j];
-            REAL je2 = _je2[j];
-            REAL jvx = _jvx[j];
-            REAL jvy = _jvy[j];
-            REAL jvz = _jvz[j];
+        for (UINT j = 0; j < nj; ++j) {
             pnacc_kernel_core(im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                              jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                              _jm[j], _jrx[j], _jry[j], _jrz[j],
+                              _je2[j], _jvx[j], _jvy[j], _jvz[j],
                               clight,
                               &ipnax, &ipnay, &ipnaz);
         }

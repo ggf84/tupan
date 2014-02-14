@@ -27,7 +27,15 @@ def sakura_step(ps, tau):
     ps.ry += ps.vy * tau / 2
     ps.rz += ps.vz * tau / 2
 
-    extensions.sakura.calc(ps, ps, tau)
+    extensions.sakura.calc(ps, ps, tau/2, -1)
+    ps.rx += ps.drx
+    ps.ry += ps.dry
+    ps.rz += ps.drz
+    ps.vx += ps.dvx
+    ps.vy += ps.dvy
+    ps.vz += ps.dvz
+
+    extensions.sakura.calc(ps, ps, tau/2, 1)
     ps.rx += ps.drx
     ps.ry += ps.dry
     ps.rz += ps.drz

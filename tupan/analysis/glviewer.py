@@ -634,7 +634,7 @@ class GLviewer(object):
 
         ix = image.size[0]
         iy = image.size[1]
-        image = image.tostring('raw', 'RGBA', 0, -1)
+        image = image.tobytes('raw', 'RGBA', 0, -1)
 
         # Create Texture
         text_id = gl.glGenTextures(1)

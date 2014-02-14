@@ -11,7 +11,6 @@ import sys
 import copy
 import numpy as np
 from ..lib import extensions
-from ..lib.utils import ctype
 from ..lib.utils.timing import decallmethods, timings
 
 
@@ -24,26 +23,36 @@ class NbodyMethods(object):
     """
     include_pn_corrections = False
 
-    attrs = [  # name, dtype, doc
-        ("id", ctype.UINT, "index"),
-        ("mass", ctype.REAL, "mass"),
-        ("eps2", ctype.REAL, "squared softening"),
-        ("rx", ctype.REAL, "x-position"),
-        ("ry", ctype.REAL, "y-position"),
-        ("rz", ctype.REAL, "z-position"),
-        ("vx", ctype.REAL, "x-velocity"),
-        ("vy", ctype.REAL, "y-velocity"),
-        ("vz", ctype.REAL, "z-velocity"),
-        ("time", ctype.REAL, "current time"),
-        ("nstep", ctype.UINT, "step number"),
-        ("tstep", ctype.REAL, "time step"),
+    attrs = [  # name, sctype, doc
+        ("id", 'uint', "index"),
+        ("mass", 'real', "mass"),
+        ("eps2", 'real', "squared softening"),
+        ("rx", 'real', "x-position"),
+        ("ry", 'real', "y-position"),
+        ("rz", 'real', "z-position"),
+        ("vx", 'real', "x-velocity"),
+        ("vy", 'real', "y-velocity"),
+        ("vz", 'real', "z-velocity"),
+        ("time", 'real', "current time"),
+        ("nstep", 'uint', "step number"),
+        ("tstep", 'real', "time step"),
     ]
-    dtype = [(_[0], _[1]) for _ in attrs]
 
-    special_attrs = [  # name, dtype, doc
+    special_attrs = [  # name, sctype, doc
 
     ]
-    special_dtype = [(_[0], _[1]) for _ in special_attrs]
+
+    @property       # TODO: @classproperty ???
+    def dtype(self):
+        from ..lib.utils.ctype import ctypedict
+        return [(name, ctypedict[sctype])
+                for name, sctype, _ in self.attrs]
+
+    @property       # TODO: @classproperty ???
+    def special_dtype(self):
+        from ..lib.utils.ctype import ctypedict
+        return [(name, ctypedict[sctype])
+                for name, sctype, _ in self.special_attrs]
 
     @property
     def pos(self):  # XXX: deprecate?
@@ -87,11 +96,11 @@ class NbodyMethods(object):
         mrz = self.mass * self.rz
         if self.include_pn_corrections:
             if not "pn_mrx" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mrx", ctype.REAL)
+                self.register_auxiliary_attribute("pn_mrx", "real")
             if not "pn_mry" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mry", ctype.REAL)
+                self.register_auxiliary_attribute("pn_mry", "real")
             if not "pn_mrz" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mrz", ctype.REAL)
+                self.register_auxiliary_attribute("pn_mrz", "real")
             mrx += self.pn_mrx
             mry += self.pn_mry
             mrz += self.pn_mrz
@@ -110,11 +119,11 @@ class NbodyMethods(object):
         mvx, mvy, mvz = self.px, self.py, self.pz
         if self.include_pn_corrections:
             if not "pn_mvx" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mvx", ctype.REAL)
+                self.register_auxiliary_attribute("pn_mvx", "real")
             if not "pn_mvy" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mvy", ctype.REAL)
+                self.register_auxiliary_attribute("pn_mvy", "real")
             if not "pn_mvz" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mvz", ctype.REAL)
+                self.register_auxiliary_attribute("pn_mvz", "real")
             mvx += self.pn_mvx
             mvy += self.pn_mvy
             mvz += self.pn_mvz
@@ -149,30 +158,22 @@ class NbodyMethods(object):
         com_v = self.com_v
         return 0.5 * mtot * (com_v**2).sum()
 
-    def com_to_origin(self):
-        """Moves the center-of-mass to the origin of coordinates.
-
-        """
-        com_r = self.com_r
-        self.rx -= com_r[0]
-        self.ry -= com_r[1]
-        self.rz -= com_r[2]
-        com_v = self.com_v
-        self.vx -= com_v[0]
-        self.vy -= com_v[1]
-        self.vz -= com_v[2]
-
     def com_move_to(self, com_r, com_v):
         """Moves the center-of-mass to the given coordinates.
 
         """
-        self.com_to_origin()
         self.rx += com_r[0]
         self.ry += com_r[1]
         self.rz += com_r[2]
         self.vx += com_v[0]
         self.vy += com_v[1]
         self.vz += com_v[2]
+
+    def com_to_origin(self):
+        """Moves the center-of-mass to the origin of coordinates.
+
+        """
+        self.com_move_to(-self.com_r, -self.com_v)
 
     ### linear momentum
     @property
@@ -187,11 +188,11 @@ class NbodyMethods(object):
         lmx, lmy, lmz = self.px, self.py, self.pz
         if self.include_pn_corrections:
             if not "pn_mvx" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mvx", ctype.REAL)
+                self.register_auxiliary_attribute("pn_mvx", "real")
             if not "pn_mvy" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mvy", ctype.REAL)
+                self.register_auxiliary_attribute("pn_mvy", "real")
             if not "pn_mvz" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mvz", ctype.REAL)
+                self.register_auxiliary_attribute("pn_mvz", "real")
             lmx += self.pn_mvx
             lmy += self.pn_mvy
             lmz += self.pn_mvz
@@ -229,11 +230,11 @@ class NbodyMethods(object):
         amz = (self.rx * py) - (self.ry * px)
         if self.include_pn_corrections:
             if not "pn_amx" in self.__dict__:
-                self.register_auxiliary_attribute("pn_amx", ctype.REAL)
+                self.register_auxiliary_attribute("pn_amx", "real")
             if not "pn_amy" in self.__dict__:
-                self.register_auxiliary_attribute("pn_amy", ctype.REAL)
+                self.register_auxiliary_attribute("pn_amy", "real")
             if not "pn_amz" in self.__dict__:
-                self.register_auxiliary_attribute("pn_amz", ctype.REAL)
+                self.register_auxiliary_attribute("pn_amz", "real")
             amx += self.pn_amx
             amy += self.pn_amy
             amz += self.pn_amz
@@ -268,7 +269,7 @@ class NbodyMethods(object):
         ke = 0.5 * self.mass * (self.vx**2 + self.vy**2 + self.vz**2)
         if self.include_pn_corrections:
             if not "pn_ke" in self.__dict__:
-                self.register_auxiliary_attribute("pn_ke", ctype.REAL)
+                self.register_auxiliary_attribute("pn_ke", "real")
             ke += self.pn_ke
         return ke
 
@@ -472,7 +473,7 @@ class PNbodyMethods(NbodyMethods):
 
         """
         if not "pn_ke" in self.__dict__:
-            self.register_auxiliary_attribute("pn_ke", ctype.REAL)
+            self.register_auxiliary_attribute("pn_ke", "real")
         pnfx = self.mass * self.pnax
         pnfy = self.mass * self.pnay
         pnfz = self.mass * self.pnaz
@@ -483,11 +484,11 @@ class PNbodyMethods(NbodyMethods):
 
         """
         if not "pn_mrx" in self.__dict__:
-            self.register_auxiliary_attribute("pn_mrx", ctype.REAL)
+            self.register_auxiliary_attribute("pn_mrx", "real")
         if not "pn_mry" in self.__dict__:
-            self.register_auxiliary_attribute("pn_mry", ctype.REAL)
+            self.register_auxiliary_attribute("pn_mry", "real")
         if not "pn_mrz" in self.__dict__:
-            self.register_auxiliary_attribute("pn_mrz", ctype.REAL)
+            self.register_auxiliary_attribute("pn_mrz", "real")
         self.pn_mrx += self.pn_mvx * tau
         self.pn_mry += self.pn_mvy * tau
         self.pn_mrz += self.pn_mvz * tau
@@ -497,11 +498,11 @@ class PNbodyMethods(NbodyMethods):
 
         """
         if not "pn_mvx" in self.__dict__:
-            self.register_auxiliary_attribute("pn_mvx", ctype.REAL)
+            self.register_auxiliary_attribute("pn_mvx", "real")
         if not "pn_mvy" in self.__dict__:
-            self.register_auxiliary_attribute("pn_mvy", ctype.REAL)
+            self.register_auxiliary_attribute("pn_mvy", "real")
         if not "pn_mvz" in self.__dict__:
-            self.register_auxiliary_attribute("pn_mvz", ctype.REAL)
+            self.register_auxiliary_attribute("pn_mvz", "real")
         pnfx = self.mass * self.pnax
         pnfy = self.mass * self.pnay
         pnfz = self.mass * self.pnaz
@@ -514,11 +515,11 @@ class PNbodyMethods(NbodyMethods):
 
         """
         if not "pn_amx" in self.__dict__:
-            self.register_auxiliary_attribute("pn_amx", ctype.REAL)
+            self.register_auxiliary_attribute("pn_amx", "real")
         if not "pn_amy" in self.__dict__:
-            self.register_auxiliary_attribute("pn_amy", ctype.REAL)
+            self.register_auxiliary_attribute("pn_amy", "real")
         if not "pn_amz" in self.__dict__:
-            self.register_auxiliary_attribute("pn_amz", ctype.REAL)
+            self.register_auxiliary_attribute("pn_amz", "real")
         pnfx = self.mass * self.pnax
         pnfy = self.mass * self.pnay
         pnfz = self.mass * self.pnaz
@@ -605,9 +606,10 @@ class Bodies(AbstractNbodyMethods):
     """
     def __init__(self, n=0, items=None):
         if items is None:
-            for (name, dtype) in self.dtype+self.special_dtype:
+            for (name, dtype) in self.dtype[:1]:
+                self.__dict__[name] = np.arange(n, dtype=dtype)
+            for (name, dtype) in self.dtype[1:]+self.special_dtype:
                 self.__dict__[name] = np.zeros(n, dtype=dtype)
-            self.id[...] = np.arange(n, dtype=ctype.UINT)
         else:
             self.__dict__.update(items)
 

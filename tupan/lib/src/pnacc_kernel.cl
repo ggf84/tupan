@@ -1,93 +1,26 @@
 #include "pnacc_kernel_common.h"
 
-inline void pnacc_kernel_main_loop(
-    const REAL im,
-    const REAL irx,
-    const REAL iry,
-    const REAL irz,
-    const REAL ie2,
-    const REAL ivx,
-    const REAL ivy,
-    const REAL ivz,
-    const uint nj,
-    __global const REAL *_jm,
-    __global const REAL *_jrx,
-    __global const REAL *_jry,
-    __global const REAL *_jrz,
-    __global const REAL *_je2,
-    __global const REAL *_jvx,
-    __global const REAL *_jvy,
-    __global const REAL *_jvz,
-    __local REAL *__jm,
-    __local REAL *__jrx,
-    __local REAL *__jry,
-    __local REAL *__jrz,
-    __local REAL *__je2,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz,
-    const CLIGHT clight,
-    REAL *ipnax,
-    REAL *ipnay,
-    REAL *ipnaz)
-{
-    uint lsize = get_local_size(0);
-    uint ntiles = (nj - 1)/lsize + 1;
-
-    for (uint tile = 0; tile < ntiles; ++tile) {
-        uint nb = min(lsize, (nj - (tile * lsize)));
-
-        event_t e[8];
-        e[0] = async_work_group_copy(__jm,  _jm  + tile * lsize, nb, 0);
-        e[1] = async_work_group_copy(__jrx, _jrx + tile * lsize, nb, 0);
-        e[2] = async_work_group_copy(__jry, _jry + tile * lsize, nb, 0);
-        e[3] = async_work_group_copy(__jrz, _jrz + tile * lsize, nb, 0);
-        e[4] = async_work_group_copy(__je2, _je2 + tile * lsize, nb, 0);
-        e[5] = async_work_group_copy(__jvx, _jvx + tile * lsize, nb, 0);
-        e[6] = async_work_group_copy(__jvy, _jvy + tile * lsize, nb, 0);
-        e[7] = async_work_group_copy(__jvz, _jvz + tile * lsize, nb, 0);
-        wait_group_events(8, e);
-
-        for (uint j = 0; j < nb; ++j) {
-            REAL jm = __jm[j];
-            REAL jrx = __jrx[j];
-            REAL jry = __jry[j];
-            REAL jrz = __jrz[j];
-            REAL je2 = __je2[j];
-            REAL jvx = __jvx[j];
-            REAL jvy = __jvy[j];
-            REAL jvz = __jvz[j];
-            pnacc_kernel_core(im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                              jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-                              clight,
-                              &(*ipnax), &(*ipnay), &(*ipnaz));
-        }
-
-        barrier(CLK_LOCAL_MEM_FENCE);
-    }
-}
-
 
 __kernel void pnacc_kernel(
-    const uint ni,
-    __global const REAL *_im,
-    __global const REAL *_irx,
-    __global const REAL *_iry,
-    __global const REAL *_irz,
-    __global const REAL *_ie2,
-    __global const REAL *_ivx,
-    __global const REAL *_ivy,
-    __global const REAL *_ivz,
-    const uint nj,
-    __global const REAL *_jm,
-    __global const REAL *_jrx,
-    __global const REAL *_jry,
-    __global const REAL *_jrz,
-    __global const REAL *_je2,
-    __global const REAL *_jvx,
-    __global const REAL *_jvy,
-    __global const REAL *_jvz,
-    const uint order,
+    const UINT ni,
+    __global const REAL * restrict _im,
+    __global const REAL * restrict _irx,
+    __global const REAL * restrict _iry,
+    __global const REAL * restrict _irz,
+    __global const REAL * restrict _ie2,
+    __global const REAL * restrict _ivx,
+    __global const REAL * restrict _ivy,
+    __global const REAL * restrict _ivz,
+    const UINT nj,
+    __global const REAL * restrict _jm,
+    __global const REAL * restrict _jrx,
+    __global const REAL * restrict _jry,
+    __global const REAL * restrict _jrz,
+    __global const REAL * restrict _je2,
+    __global const REAL * restrict _jvx,
+    __global const REAL * restrict _jvy,
+    __global const REAL * restrict _jvz,
+    const UINT order,
     const REAL inv1,
     const REAL inv2,
     const REAL inv3,
@@ -95,49 +28,137 @@ __kernel void pnacc_kernel(
     const REAL inv5,
     const REAL inv6,
     const REAL inv7,
-    __global REAL *_ipnax,
-    __global REAL *_ipnay,
-    __global REAL *_ipnaz,
-    __local REAL *__jm,
-    __local REAL *__jrx,
-    __local REAL *__jry,
-    __local REAL *__jrz,
-    __local REAL *__je2,
-    __local REAL *__jvx,
-    __local REAL *__jvy,
-    __local REAL *__jvz)
+    __global REAL * restrict _ipnax,
+    __global REAL * restrict _ipnay,
+    __global REAL * restrict _ipnaz)
 {
-    uint gid = get_global_id(0);
-    uint i = min(gid, ni-1);
+    UINT gid = get_global_id(0) * WPT * VW;
 
-    CLIGHT clight = (CLIGHT){.order=order, .inv1=inv1,
-                             .inv2=inv2, .inv3=inv3,
-                             .inv4=inv4, .inv5=inv5,
-                             .inv6=inv6, .inv7=inv7};
+    UINT imask[WPT];
 
-    REAL im = _im[i];
-    REAL irx = _irx[i];
-    REAL iry = _iry[i];
-    REAL irz = _irz[i];
-    REAL ie2 = _ie2[i];
-    REAL ivx = _ivx[i];
-    REAL ivy = _ivy[i];
-    REAL ivz = _ivz[i];
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        imask[i] = (VW * i + gid) < ni;
 
-    REAL ipnax = 0;
-    REAL ipnay = 0;
-    REAL ipnaz = 0;
+    CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3, inv4, inv5, inv6, inv7);
 
-    pnacc_kernel_main_loop(
-        im, irx, iry, irz, ie2, ivx, ivy, ivz,
-        nj,
-        _jm, _jrx, _jry, _jrz, _je2, _jvx, _jvy, _jvz,
-        __jm, __jrx, __jry, __jrz, __je2, __jvx, __jvy, __jvz,
-        clight,
-        &ipnax, &ipnay, &ipnaz);
+    REALn im[WPT], irx[WPT], iry[WPT], irz[WPT],
+          ie2[WPT], ivx[WPT], ivy[WPT], ivz[WPT];
 
-    _ipnax[i] = ipnax;
-    _ipnay[i] = ipnay;
-    _ipnaz[i] = ipnaz;
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            im[i] = vloadn(i, _im + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            irx[i] = vloadn(i, _irx + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            iry[i] = vloadn(i, _iry + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            irz[i] = vloadn(i, _irz + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ie2[i] = vloadn(i, _ie2 + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivx[i] = vloadn(i, _ivx + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivy[i] = vloadn(i, _ivy + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ivz[i] = vloadn(i, _ivz + gid);
+
+    REALn ipnax[WPT], ipnay[WPT], ipnaz[WPT];
+
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ipnax[i] = (REALn)(0);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ipnay[i] = (REALn)(0);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            ipnaz[i] = (REALn)(0);
+
+#ifdef FAST_LOCAL_MEM
+    __local REAL __jm[LSIZE];
+    __local REAL __jrx[LSIZE];
+    __local REAL __jry[LSIZE];
+    __local REAL __jrz[LSIZE];
+    __local REAL __je2[LSIZE];
+    __local REAL __jvx[LSIZE];
+    __local REAL __jvy[LSIZE];
+    __local REAL __jvz[LSIZE];
+    UINT j = 0;
+    UINT lid = get_local_id(0);
+    for (UINT stride = get_local_size(0); stride > 0; stride /= 2) {
+        INT mask = lid < stride;
+        for (; (j + stride - 1) < nj; j += stride) {
+            if (mask) {
+                __jm[lid] = _jm[j + lid];
+                __jrx[lid] = _jrx[j + lid];
+                __jry[lid] = _jry[j + lid];
+                __jrz[lid] = _jrz[j + lid];
+                __je2[lid] = _je2[j + lid];
+                __jvx[lid] = _jvx[j + lid];
+                __jvy[lid] = _jvy[j + lid];
+                __jvz[lid] = _jvz[j + lid];
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            #pragma unroll UNROLL
+            for (UINT k = 0; k < stride; ++k) {
+                #pragma unroll
+                for (UINT i = 0; i < WPT; ++i) {
+                    pnacc_kernel_core(im[i], irx[i], iry[i], irz[i],
+                                      ie2[i], ivx[i], ivy[i], ivz[i],
+                                      __jm[k], __jrx[k], __jry[k], __jrz[k],
+                                      __je2[k], __jvx[k], __jvy[k], __jvz[k],
+                                      clight,
+                                      &ipnax[i], &ipnay[i], &ipnaz[i]);
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+        }
+    }
+#else
+    #pragma unroll UNROLL
+    for (UINT j = 0; j < nj; ++j) {
+        #pragma unroll
+        for (UINT i = 0; i < WPT; ++i) {
+            pnacc_kernel_core(im[i], irx[i], iry[i], irz[i],
+                              ie2[i], ivx[i], ivy[i], ivz[i],
+                              _jm[j], _jrx[j], _jry[j], _jrz[j],
+                              _je2[j], _jvx[j], _jvy[j], _jvz[j],
+                              clight,
+                              &ipnax[i], &ipnay[i], &ipnaz[i]);
+        }
+    }
+#endif
+
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(ipnax[i], i, _ipnax + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(ipnay[i], i, _ipnay + gid);
+    #pragma unroll
+    for (UINT i = 0; i < WPT; ++i)
+        if (imask[i])
+            vstoren(ipnaz[i], i, _ipnaz + gid);
 }
 

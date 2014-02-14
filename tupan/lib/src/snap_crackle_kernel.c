@@ -1,46 +1,46 @@
 #include "snap_crackle_kernel_common.h"
+#include "libtupan.h"
 
 
-inline void snap_crackle_kernel(
-    const unsigned int ni,
-    const REAL *_im,
-    const REAL *_irx,
-    const REAL *_iry,
-    const REAL *_irz,
-    const REAL *_ie2,
-    const REAL *_ivx,
-    const REAL *_ivy,
-    const REAL *_ivz,
-    const REAL *_iax,
-    const REAL *_iay,
-    const REAL *_iaz,
-    const REAL *_ijx,
-    const REAL *_ijy,
-    const REAL *_ijz,
-    const unsigned int nj,
-    const REAL *_jm,
-    const REAL *_jrx,
-    const REAL *_jry,
-    const REAL *_jrz,
-    const REAL *_je2,
-    const REAL *_jvx,
-    const REAL *_jvy,
-    const REAL *_jvz,
-    const REAL *_jax,
-    const REAL *_jay,
-    const REAL *_jaz,
-    const REAL *_jjx,
-    const REAL *_jjy,
-    const REAL *_jjz,
-    REAL *_isx,
-    REAL *_isy,
-    REAL *_isz,
-    REAL *_icx,
-    REAL *_icy,
-    REAL *_icz)
+void snap_crackle_kernel(
+    const UINT ni,
+    const REAL * restrict _im,
+    const REAL * restrict _irx,
+    const REAL * restrict _iry,
+    const REAL * restrict _irz,
+    const REAL * restrict _ie2,
+    const REAL * restrict _ivx,
+    const REAL * restrict _ivy,
+    const REAL * restrict _ivz,
+    const REAL * restrict _iax,
+    const REAL * restrict _iay,
+    const REAL * restrict _iaz,
+    const REAL * restrict _ijx,
+    const REAL * restrict _ijy,
+    const REAL * restrict _ijz,
+    const UINT nj,
+    const REAL * restrict _jm,
+    const REAL * restrict _jrx,
+    const REAL * restrict _jry,
+    const REAL * restrict _jrz,
+    const REAL * restrict _je2,
+    const REAL * restrict _jvx,
+    const REAL * restrict _jvy,
+    const REAL * restrict _jvz,
+    const REAL * restrict _jax,
+    const REAL * restrict _jay,
+    const REAL * restrict _jaz,
+    const REAL * restrict _jjx,
+    const REAL * restrict _jjy,
+    const REAL * restrict _jjz,
+    REAL * restrict _isx,
+    REAL * restrict _isy,
+    REAL * restrict _isz,
+    REAL * restrict _icx,
+    REAL * restrict _icy,
+    REAL * restrict _icz)
 {
-    unsigned int i, j;
-    for (i = 0; i < ni; ++i) {
+    for (UINT i = 0; i < ni; ++i) {
         REAL im = _im[i];
         REAL irx = _irx[i];
         REAL iry = _iry[i];
@@ -61,27 +61,14 @@ inline void snap_crackle_kernel(
         REAL icx = 0;
         REAL icy = 0;
         REAL icz = 0;
-        for (j = 0; j < nj; ++j) {
-            REAL jm = _jm[j];
-            REAL jrx = _jrx[j];
-            REAL jry = _jry[j];
-            REAL jrz = _jrz[j];
-            REAL je2 = _je2[j];
-            REAL jvx = _jvx[j];
-            REAL jvy = _jvy[j];
-            REAL jvz = _jvz[j];
-            REAL jax = _jax[j];
-            REAL jay = _jay[j];
-            REAL jaz = _jaz[j];
-            REAL jjx = _jjx[j];
-            REAL jjy = _jjy[j];
-            REAL jjz = _jjz[j];
+        for (UINT j = 0; j < nj; ++j) {
             snap_crackle_kernel_core(im, irx, iry, irz,
                                      ie2, ivx, ivy, ivz,
                                      iax, iay, iaz, ijx, ijy, ijz,
-                                     jm, jrx, jry, jrz,
-                                     je2, jvx, jvy, jvz,
-                                     jax, jay, jaz, jjx, jjy, jjz,
+                                     _jm[j], _jrx[j], _jry[j], _jrz[j],
+                                     _je2[j], _jvx[j], _jvy[j], _jvz[j],
+                                     _jax[j], _jay[j], _jaz[j],
+                                     _jjx[j], _jjy[j], _jjz[j],
                                      &isx, &isy, &isz,
                                      &icx, &icy, &icz);
         }
