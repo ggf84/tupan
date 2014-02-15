@@ -293,227 +293,253 @@ __kernel void acc_kernel(
     __global REAL * restrict _iay,
     __global REAL * restrict _iaz)
 {
-    UINT gid = get_global_id(0);
+    for (UINT gid = get_global_id(0); gid * VW < ni; gid += get_global_size(0)) {
 
-    UINT i[VW];
-    i[0] = gid * VW;
-    i[0] = min(i[0], ni - 1);
-    #pragma unroll VW
-    for (UINT ii = 1; ii < VW; ++ii) {
-        i[ii] = i[ii-1] + 1;
-        i[ii] = min(i[ii], ni - 1);
-    }
+        UINT i[VW];
+        i[0] = gid * VW;
+        i[0] = min(i[0], ni - 1);
+        #pragma unroll VW
+        for (UINT ii = 1; ii < VW; ++ii) {
+            i[ii] = i[ii-1] + 1;
+            i[ii] = min(i[ii], ni - 1);
+        }
 
-    concat(REAL, VW) im, irx, iry, irz, ie2;
+        concat(REAL, VW) im, irx, iry, irz, ie2;
 
-    #if VW == 1
-    im = _im[i[0]];
-    #else
-    #pragma unroll VW
-    for (UINT ii = 0; ii < VW; ++ii) {
-        im.s0 = _im[i[ii]];
-        #if VW == 2
-        im = im.s10;
-        #elif VW == 4
-        im = im.s1230;
-        #elif VW == 8
-        im = im.s12345670;
-        #elif VW == 16
-        im = im.s123456789abcdef0;
-        #endif
-    }
-    #endif
-
-    #if VW == 1
-    irx = _irx[i[0]];
-    #else
-    #pragma unroll VW
-    for (UINT ii = 0; ii < VW; ++ii) {
-        irx.s0 = _irx[i[ii]];
-        #if VW == 2
-        irx = irx.s10;
-        #elif VW == 4
-        irx = irx.s1230;
-        #elif VW == 8
-        irx = irx.s12345670;
-        #elif VW == 16
-        irx = irx.s123456789abcdef0;
-        #endif
-    }
-    #endif
-
-    #if VW == 1
-    iry = _iry[i[0]];
-    #else
-    #pragma unroll VW
-    for (UINT ii = 0; ii < VW; ++ii) {
-        iry.s0 = _iry[i[ii]];
-        #if VW == 2
-        iry = iry.s10;
-        #elif VW == 4
-        iry = iry.s1230;
-        #elif VW == 8
-        iry = iry.s12345670;
-        #elif VW == 16
-        iry = iry.s123456789abcdef0;
-        #endif
-    }
-    #endif
-
-    #if VW == 1
-    irz = _irz[i[0]];
-    #else
-    #pragma unroll VW
-    for (UINT ii = 0; ii < VW; ++ii) {
-        irz.s0 = _irz[i[ii]];
-        #if VW == 2
-        irz = irz.s10;
-        #elif VW == 4
-        irz = irz.s1230;
-        #elif VW == 8
-        irz = irz.s12345670;
-        #elif VW == 16
-        irz = irz.s123456789abcdef0;
-        #endif
-    }
-    #endif
-
-    #if VW == 1
-    ie2 = _ie2[i[0]];
-    #else
-    #pragma unroll VW
-    for (UINT ii = 0; ii < VW; ++ii) {
-        ie2.s0 = _ie2[i[ii]];
-        #if VW == 2
-        ie2 = ie2.s10;
-        #elif VW == 4
-        ie2 = ie2.s1230;
-        #elif VW == 8
-        ie2 = ie2.s12345670;
-        #elif VW == 16
-        ie2 = ie2.s123456789abcdef0;
-        #endif
-    }
-    #endif
-
-    concat(REAL, VW) iax = (concat(REAL, VW))(0);
-    concat(REAL, VW) iay = (concat(REAL, VW))(0);
-    concat(REAL, VW) iaz = (concat(REAL, VW))(0);
-
-    UINT j = 0;
-
-#define WW 16
-
-#if WW > 1
-    for (; (j + WW - 1) < nj; j += WW) {
-        concat(REAL, WW) jm = concat(vload, WW)(0, _jm + j);
-        concat(REAL, WW) jrx = concat(vload, WW)(0, _jrx + j);
-        concat(REAL, WW) jry = concat(vload, WW)(0, _jry + j);
-        concat(REAL, WW) jrz = concat(vload, WW)(0, _jrz + j);
-        concat(REAL, WW) je2 = concat(vload, WW)(0, _je2 + j);
-
-        call(acc_kernel_core, VW)(
-            im, irx, iry, irz, ie2,
-            jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
-            &iax, &iay, &iaz);
-
-        #pragma unroll WW
-        for (UINT i = 1; i < WW; ++i) {
-            #if WW == 2
-            jm = jm.s10;
-            jrx = jrx.s10;
-            jry = jry.s10;
-            jrz = jrz.s10;
-            je2 = je2.s10;
-            #elif WW == 4
-            jm = jm.s1230;
-            jrx = jrx.s1230;
-            jry = jry.s1230;
-            jrz = jrz.s1230;
-            je2 = je2.s1230;
-            #elif WW == 8
-            jm = jm.s12345670;
-            jrx = jrx.s12345670;
-            jry = jry.s12345670;
-            jrz = jrz.s12345670;
-            je2 = je2.s12345670;
-            #elif WW == 16
-            jm = jm.s123456789abcdef0;
-            jrx = jrx.s123456789abcdef0;
-            jry = jry.s123456789abcdef0;
-            jrz = jrz.s123456789abcdef0;
-            je2 = je2.s123456789abcdef0;
+        #if VW == 1
+        im = _im[i[0]];
+        #else
+        #pragma unroll VW
+        for (UINT ii = 0; ii < VW; ++ii) {
+            im.s0 = _im[i[ii]];
+            #if VW == 2
+            im = im.s10;
+            #elif VW == 4
+            im = im.s1230;
+            #elif VW == 8
+            im = im.s12345670;
+            #elif VW == 16
+            im = im.s123456789abcdef0;
             #endif
+        }
+        #endif
+
+        #if VW == 1
+        irx = _irx[i[0]];
+        #else
+        #pragma unroll VW
+        for (UINT ii = 0; ii < VW; ++ii) {
+            irx.s0 = _irx[i[ii]];
+            #if VW == 2
+            irx = irx.s10;
+            #elif VW == 4
+            irx = irx.s1230;
+            #elif VW == 8
+            irx = irx.s12345670;
+            #elif VW == 16
+            irx = irx.s123456789abcdef0;
+            #endif
+        }
+        #endif
+
+        #if VW == 1
+        iry = _iry[i[0]];
+        #else
+        #pragma unroll VW
+        for (UINT ii = 0; ii < VW; ++ii) {
+            iry.s0 = _iry[i[ii]];
+            #if VW == 2
+            iry = iry.s10;
+            #elif VW == 4
+            iry = iry.s1230;
+            #elif VW == 8
+            iry = iry.s12345670;
+            #elif VW == 16
+            iry = iry.s123456789abcdef0;
+            #endif
+        }
+        #endif
+
+        #if VW == 1
+        irz = _irz[i[0]];
+        #else
+        #pragma unroll VW
+        for (UINT ii = 0; ii < VW; ++ii) {
+            irz.s0 = _irz[i[ii]];
+            #if VW == 2
+            irz = irz.s10;
+            #elif VW == 4
+            irz = irz.s1230;
+            #elif VW == 8
+            irz = irz.s12345670;
+            #elif VW == 16
+            irz = irz.s123456789abcdef0;
+            #endif
+        }
+        #endif
+
+        #if VW == 1
+        ie2 = _ie2[i[0]];
+        #else
+        #pragma unroll VW
+        for (UINT ii = 0; ii < VW; ++ii) {
+            ie2.s0 = _ie2[i[ii]];
+            #if VW == 2
+            ie2 = ie2.s10;
+            #elif VW == 4
+            ie2 = ie2.s1230;
+            #elif VW == 8
+            ie2 = ie2.s12345670;
+            #elif VW == 16
+            ie2 = ie2.s123456789abcdef0;
+            #endif
+        }
+        #endif
+
+        concat(REAL, VW) iax = (concat(REAL, VW))(0);
+        concat(REAL, VW) iay = (concat(REAL, VW))(0);
+        concat(REAL, VW) iaz = (concat(REAL, VW))(0);
+
+        UINT j = 0;
+
+    #define WW 4
+
+        #if WW > 1
+        for (; (j + WW - 1) < nj; j += WW) {
+            concat(REAL, WW) jm = concat(vload, WW)(0, _jm + j);
+            concat(REAL, WW) jrx = concat(vload, WW)(0, _jrx + j);
+            concat(REAL, WW) jry = concat(vload, WW)(0, _jry + j);
+            concat(REAL, WW) jrz = concat(vload, WW)(0, _jrz + j);
+            concat(REAL, WW) je2 = concat(vload, WW)(0, _je2 + j);
+
             call(acc_kernel_core, VW)(
                 im, irx, iry, irz, ie2,
                 jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
                 &iax, &iay, &iaz);
+
+            #pragma unroll WW
+            for (UINT i = 1; i < WW; ++i) {
+                #if WW == 2
+                jm = jm.s10;
+                #elif WW == 4
+                jm = jm.s1230;
+                #elif WW == 8
+                jm = jm.s12345670;
+                #elif WW == 16
+                jm = jm.s123456789abcdef0;
+                #endif
+
+                #if WW == 2
+                jrx = jrx.s10;
+                #elif WW == 4
+                jrx = jrx.s1230;
+                #elif WW == 8
+                jrx = jrx.s12345670;
+                #elif WW == 16
+                jrx = jrx.s123456789abcdef0;
+                #endif
+
+                #if WW == 2
+                jry = jry.s10;
+                #elif WW == 4
+                jry = jry.s1230;
+                #elif WW == 8
+                jry = jry.s12345670;
+                #elif WW == 16
+                jry = jry.s123456789abcdef0;
+                #endif
+
+                #if WW == 2
+                jrz = jrz.s10;
+                #elif WW == 4
+                jrz = jrz.s1230;
+                #elif WW == 8
+                jrz = jrz.s12345670;
+                #elif WW == 16
+                jrz = jrz.s123456789abcdef0;
+                #endif
+
+                #if WW == 2
+                je2 = je2.s10;
+                #elif WW == 4
+                je2 = je2.s1230;
+                #elif WW == 8
+                je2 = je2.s12345670;
+                #elif WW == 16
+                je2 = je2.s123456789abcdef0;
+                #endif
+
+                call(acc_kernel_core, VW)(
+                    im, irx, iry, irz, ie2,
+                    jm.s0, jrx.s0, jry.s0, jrz.s0, je2.s0,
+                    &iax, &iay, &iaz);
+            }
         }
-    }
-#endif
+        #endif
 
 
-    #pragma unroll UNROLL
-    for (; j < nj; ++j) {
-        call(acc_kernel_core, VW)(
-            im, irx, iry, irz, ie2,
-            _jm[j], _jrx[j], _jry[j], _jrz[j], _je2[j],
-            &iax, &iay, &iaz);
-    }
+        #pragma unroll UNROLL
+        for (; j < nj; ++j) {
+            call(acc_kernel_core, VW)(
+                im, irx, iry, irz, ie2,
+                _jm[j], _jrx[j], _jry[j], _jrz[j], _je2[j],
+                &iax, &iay, &iaz);
+        }
 
 
-    #if VW == 1
-    _iax[i[0]] = iax;
-    #else
-    #pragma unroll VW
-    for (UINT ii = 0; ii < VW; ++ii) {
-        _iax[i[ii]] = iax.s0;
-        #if VW == 2
-        iax = iax.s10;
-        #elif VW == 4
-        iax = iax.s1230;
-        #elif VW == 8
-        iax = iax.s12345670;
-        #elif VW == 16
-        iax = iax.s123456789abcdef0;
+        #if VW == 1
+        _iax[i[0]] = iax;
+        #else
+        #pragma unroll VW
+        for (UINT ii = 0; ii < VW; ++ii) {
+            _iax[i[ii]] = iax.s0;
+            #if VW == 2
+            iax = iax.s10;
+            #elif VW == 4
+            iax = iax.s1230;
+            #elif VW == 8
+            iax = iax.s12345670;
+            #elif VW == 16
+            iax = iax.s123456789abcdef0;
+            #endif
+        }
+        #endif
+
+        #if VW == 1
+        _iay[i[0]] = iay;
+        #else
+        #pragma unroll VW
+        for (UINT ii = 0; ii < VW; ++ii) {
+            _iay[i[ii]] = iay.s0;
+            #if VW == 2
+            iay = iay.s10;
+            #elif VW == 4
+            iay = iay.s1230;
+            #elif VW == 8
+            iay = iay.s12345670;
+            #elif VW == 16
+            iay = iay.s123456789abcdef0;
+            #endif
+        }
+        #endif
+
+        #if VW == 1
+        _iaz[i[0]] = iaz;
+        #else
+        #pragma unroll VW
+        for (UINT ii = 0; ii < VW; ++ii) {
+            _iaz[i[ii]] = iaz.s0;
+            #if VW == 2
+            iaz = iaz.s10;
+            #elif VW == 4
+            iaz = iaz.s1230;
+            #elif VW == 8
+            iaz = iaz.s12345670;
+            #elif VW == 16
+            iaz = iaz.s123456789abcdef0;
+            #endif
+        }
         #endif
     }
-    #endif
-
-    #if VW == 1
-    _iay[i[0]] = iay;
-    #else
-    #pragma unroll VW
-    for (UINT ii = 0; ii < VW; ++ii) {
-        _iay[i[ii]] = iay.s0;
-        #if VW == 2
-        iay = iay.s10;
-        #elif VW == 4
-        iay = iay.s1230;
-        #elif VW == 8
-        iay = iay.s12345670;
-        #elif VW == 16
-        iay = iay.s123456789abcdef0;
-        #endif
-    }
-    #endif
-
-    #if VW == 1
-    _iaz[i[0]] = iaz;
-    #else
-    #pragma unroll VW
-    for (UINT ii = 0; ii < VW; ++ii) {
-        _iaz[i[ii]] = iaz.s0;
-        #if VW == 2
-        iaz = iaz.s10;
-        #elif VW == 4
-        iaz = iaz.s1230;
-        #elif VW == 8
-        iaz = iaz.s12345670;
-        #elif VW == 16
-        iaz = iaz.s123456789abcdef0;
-        #endif
-    }
-    #endif
 }
 

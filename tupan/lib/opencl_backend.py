@@ -144,10 +144,10 @@ class CLKernel(object):
 
     def set_gsize2(self, ni, nj):
         vw = self.vector_width
+        gs = (ni + vw - 1) // vw
+        gsize = 2**int(math.log(gs, 2))
 
-        gs = ((ni + 2 * vw - 1) // (2 * vw)) * 2
-
-        self.global_size = (gs, 1, 1)
+        self.global_size = (gsize, 1, 1)
         self.local_size = None
 
     def set_args(self, args, start=0):
