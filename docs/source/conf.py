@@ -29,6 +29,9 @@ class Mock(object):
     def __getattr__(self, name):
         return Mock()
 
+    def __getitem__(self, index):
+        return Mock()
+
 
 MOCK_MODULES = ["cffi", "cffi.FFI", "cffi.FFI.cdef", "h5py",
                 "matplotlib", "numpy", "pyopencl", "PIL", "PIL.Image",
