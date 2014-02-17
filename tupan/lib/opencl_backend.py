@@ -31,11 +31,11 @@ CACHE_DIR = os.path.join(os.path.expanduser('~'),
 ctx = cl.create_some_context()
 dev = ctx.devices[0]
 
-UNROLL = 2
+UNROLL = 4
 
 LSIZE = {}
-LSIZE["float32"] = 64
-LSIZE["float64"] = 64
+LSIZE["float32"] = 384
+LSIZE["float64"] = 384
 
 VW = {}
 VW["float32"] = dev.preferred_vector_width_float
@@ -134,7 +134,7 @@ class CLKernel(object):
         max_lsize = self.max_lsize
 
         gs = (ni + vw - 1) // vw
-        ls = 2**int(math.log(gs, 2))
+        ls = (gs + 7) // 8
         lsize = min(ls, max_lsize)
         gsize = ((gs + lsize - 1) // lsize) * lsize
 
