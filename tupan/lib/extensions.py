@@ -181,7 +181,7 @@ class Acc(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize2(ni, nj)
+        self.kernel.set_gsize(ni, nj)
         if not "ax" in ips.__dict__:
             ips.register_auxiliary_attribute("ax", "real")
         if not "ay" in ips.__dict__:

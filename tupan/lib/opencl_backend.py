@@ -42,8 +42,8 @@ VW["float32"] = dev.preferred_vector_width_float
 VW["float64"] = dev.preferred_vector_width_double
 
 WPT = {}
-WPT["float32"] = 1
-WPT["float64"] = 1
+WPT["float32"] = 1  # XXX: del
+WPT["float64"] = 1  # XXX: del
 
 FAST_LOCAL_MEM = True
 
@@ -131,24 +131,15 @@ class CLKernel(object):
 
     def set_gsize(self, ni, nj):
         vw = self.vector_width
-        wpt = self.work_per_thread
         max_lsize = self.max_lsize
 
-        gs = (ni + wpt * vw - 1) // (wpt * vw)
+        gs = (ni + vw - 1) // vw
         ls = 2**int(math.log(gs, 2))
         lsize = min(ls, max_lsize)
         gsize = ((gs + lsize - 1) // lsize) * lsize
 
         self.global_size = (gsize, 1, 1)
         self.local_size = (lsize, 1, 1)
-
-    def set_gsize2(self, ni, nj):
-        vw = self.vector_width
-        gs = (ni + vw - 1) // vw
-        gsize = 2**int(math.log(gs, 2))
-
-        self.global_size = (gsize, 1, 1)
-        self.local_size = None
 
     def set_args(self, args, start=0):
         for (i, arg) in enumerate(args, start):
