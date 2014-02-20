@@ -44,6 +44,16 @@ static inline REAL stumpff_c1(
         return sinh(sz) / sz;
     }
     return ((REAL)1);
+/*
+    REAL z = zeta;
+    REAL z2 = z * z;
+    REAL z4 = z2 * z2;
+    REAL z6 = z2 * z4;
+    REAL z8 = z4 * z4;
+    REAL z10 = z4 * z6;
+
+    return ((REAL)1) + z2 / 6 + z4 / 120 + z6 / 5040 + z8 / 362880 + z10 / 39916800;
+*/
 }
 
 
@@ -51,15 +61,20 @@ static inline REAL stumpff_c2(
 //    const REAL zeta)
     REAL zeta)
 {
-    if (zeta < 0) {
+    if (zeta < -0.1) {
         REAL sz = sqrt(-zeta);
         return (cos(sz) - 1) / zeta;
     }
-    if (zeta > 0) {
+    if (zeta > 0.1) {
         REAL sz = sqrt(zeta);
         return (cosh(sz) - 1) / zeta;
     }
-    return 1/((REAL)2);
+//    return 1/((REAL)2);
+
+    REAL z = zeta;
+    return (1 + z * (1 + z * (1 + z * (1 + z * (1 + z * (1 + z / 182) / 132) / 90) / 56) / 30) / 12) / 2;
+
+//    return 1 / ((REAL)2) + z / 24 + z*z / 720 + z*z*z / 40320 + z*z*z*z / 3628800 + z*z*z*z*z / 479001600 + z*z*z*z*z*z / 87178291200;
 }
 
 
@@ -67,15 +82,20 @@ static inline REAL stumpff_c3(
 //    const REAL zeta)
     REAL zeta)
 {
-    if (zeta < 0) {
+    if (zeta < -0.1) {
         REAL sz = sqrt(-zeta);
         return (sin(sz) / sz - 1) / zeta;
     }
-    if (zeta > 0) {
+    if (zeta > 0.1) {
         REAL sz = sqrt(zeta);
         return (sinh(sz) / sz - 1) / zeta;
     }
-    return 1/((REAL)6);
+//    return 1/((REAL)6);
+
+    REAL z = zeta;
+    return (1 + z * (1 + z * (1 + z * (1 + z * (1 + z * (1 + z / 210) / 156) / 110) / 72) / 42) / 20) / 6;
+
+//  return 1 / ((REAL)6) + z / 120 + z*z / 5040 + z*z*z / 362880 + z*z*z*z / 39916800 + z*z*z*z*z / 6227020800 + z*z*z*z*z*z / 1307674368000;
 }
 
 
@@ -403,25 +423,27 @@ static inline INT _universal_kepler_solver(
     REAL s0, s, arg[5];
 
     REAL dt = dt0;
-    if (alpha < 0) {
-        REAL a = m/fabs(alpha);
-        REAL T = 2 * PI * a * sqrt(a / m);
 
-        REAL ratio = dt0 / T;
-        dt = (ratio - (INT)(ratio)) * T;
-    }
+    /* First guess for hyperbolic orbits:
+     * adapted from formula 4.5.11 in
+     * fundamentals of astrodynamics (Bate et al. 1971) */
+    REAL ss = (2 * alpha * dt0 / (rv + (m + alpha * r) / sqrt(alpha)));
+    if (ss > 1) {
+        s0 = SIGN(dt0) * log(ss) / sqrt(alpha);
+    } else {
+        /* For eliptical orbits:
+	 * reduce the time-step to a
+	 * fraction of the orbital period. */
+        if (alpha < 0) {
+            REAL a = m / fabs(alpha);
+            REAL T = 2 * PI * a * sqrt(a / m);
 
-    s0 = dt / r;
-
-    if (alpha > 0) {
-        /* first guess for hyperbolic orbits:
-         * adapted from formula 4.5.11 in
-         * fundamentals of astrodynamics (Bate et al. 1971) */
-        REAL salpha = sqrt(alpha);
-        REAL ss = fabs(2 * alpha * dt / (rv + (m + alpha * r) / salpha));
-        if (ss > 1) {
-            s0 = SIGN(dt) * log(ss) / salpha;
+            REAL ratio = dt0 / T;
+            dt = (ratio - (INT)(ratio)) * T;
         }
+//        s0 = dt / r;          // s0 = dt * ((beta * m) / r) / (beta * m);
+//        s0 = dt * v2 / (beta * m);
+        s0 = dt * fabs(alpha) / (beta * m);
     }
 
     arg[0] = dt;
