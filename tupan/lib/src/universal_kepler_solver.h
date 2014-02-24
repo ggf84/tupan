@@ -19,15 +19,18 @@ static inline REAL stumpff_c0(
     REAL zeta)      // This is because of bug 4775 on old versions of glibc.
                     // That bug has already been fixed in latter versions.
 {
+    REAL abs_zeta = fabs(zeta);
+    if (abs_zeta < (REAL)(0.25)) {
+        REAL z = zeta;
+        // 1 + z / 2 + z*z / 24 + z*z*z / 720 + ...
+        return (1 + z * (1 + z * (1 + z * (1 + z * (1 + z * (1 + z * (1 + z / 182) / 132) / 90) / 56) / 30) / 12) / 2);
+    }
+
+    REAL sz = sqrt(abs_zeta);
     if (zeta < 0) {
-        REAL sz = sqrt(-zeta);
         return cos(sz);
     }
-    if (zeta > 0) {
-        REAL sz = sqrt(zeta);
-        return cosh(sz);
-    }
-    return ((REAL)1);
+    return cosh(sz);
 }
 
 
@@ -35,25 +38,18 @@ static inline REAL stumpff_c1(
 //    const REAL zeta)
     REAL zeta)
 {
+    REAL abs_zeta = fabs(zeta);
+    if (abs_zeta < (REAL)(0.25)) {
+        REAL z = zeta;
+        // 1 + z / 6 + z*z / 120 + z*z*z / 5040 + ...
+        return (1 + z * (1 + z * (1 + z * (1 + z * (1 + z * (1 + z * (1 + z / 210) / 156) / 110) / 72) / 42) / 20) / 6);
+    }
+
+    REAL sz = sqrt(abs_zeta);
     if (zeta < 0) {
-        REAL sz = sqrt(-zeta);
         return sin(sz) / sz;
     }
-    if (zeta > 0) {
-        REAL sz = sqrt(zeta);
-        return sinh(sz) / sz;
-    }
-    return ((REAL)1);
-/*
-    REAL z = zeta;
-    REAL z2 = z * z;
-    REAL z4 = z2 * z2;
-    REAL z6 = z2 * z4;
-    REAL z8 = z4 * z4;
-    REAL z10 = z4 * z6;
-
-    return ((REAL)1) + z2 / 6 + z4 / 120 + z6 / 5040 + z8 / 362880 + z10 / 39916800;
-*/
+    return sinh(sz) / sz;
 }
 
 
@@ -61,20 +57,18 @@ static inline REAL stumpff_c2(
 //    const REAL zeta)
     REAL zeta)
 {
-    if (zeta < -0.1) {
-        REAL sz = sqrt(-zeta);
+    REAL abs_zeta = fabs(zeta);
+    if (abs_zeta < (REAL)(0.25)) {
+        REAL z = zeta;
+        // 1 / 2 + z / 24 + z*z / 720 + z*z*z / 40320 + ...
+        return (1 + z * (1 + z * (1 + z * (1 + z * (1 + z * (1 + z / 182) / 132) / 90) / 56) / 30) / 12) / 2;
+    }
+
+    REAL sz = sqrt(abs_zeta);
+    if (zeta < 0) {
         return (cos(sz) - 1) / zeta;
     }
-    if (zeta > 0.1) {
-        REAL sz = sqrt(zeta);
-        return (cosh(sz) - 1) / zeta;
-    }
-//    return 1/((REAL)2);
-
-    REAL z = zeta;
-    return (1 + z * (1 + z * (1 + z * (1 + z * (1 + z * (1 + z / 182) / 132) / 90) / 56) / 30) / 12) / 2;
-
-//    return 1 / ((REAL)2) + z / 24 + z*z / 720 + z*z*z / 40320 + z*z*z*z / 3628800 + z*z*z*z*z / 479001600 + z*z*z*z*z*z / 87178291200;
+    return (cosh(sz) - 1) / zeta;
 }
 
 
@@ -82,20 +76,18 @@ static inline REAL stumpff_c3(
 //    const REAL zeta)
     REAL zeta)
 {
-    if (zeta < -0.1) {
-        REAL sz = sqrt(-zeta);
+    REAL abs_zeta = fabs(zeta);
+    if (abs_zeta < (REAL)(0.25)) {
+        REAL z = zeta;
+        // 1 / 6 + z / 120 + z*z / 5040 + z*z*z / 362880 + ...
+        return (1 + z * (1 + z * (1 + z * (1 + z * (1 + z * (1 + z / 210) / 156) / 110) / 72) / 42) / 20) / 6;
+    }
+
+    REAL sz = sqrt(abs_zeta);
+    if (zeta < 0) {
         return (sin(sz) / sz - 1) / zeta;
     }
-    if (zeta > 0.1) {
-        REAL sz = sqrt(zeta);
-        return (sinh(sz) / sz - 1) / zeta;
-    }
-//    return 1/((REAL)6);
-
-    REAL z = zeta;
-    return (1 + z * (1 + z * (1 + z * (1 + z * (1 + z * (1 + z / 210) / 156) / 110) / 72) / 42) / 20) / 6;
-
-//  return 1 / ((REAL)6) + z / 120 + z*z / 5040 + z*z*z / 362880 + z*z*z*z / 39916800 + z*z*z*z*z / 6227020800 + z*z*z*z*z*z / 1307674368000;
+    return (sinh(sz) / sz - 1) / zeta;
 }
 
 
@@ -243,88 +235,86 @@ static inline REAL fprimeprime(
 
 
 #define ORDER 5
-static inline INT laguerre(
-    REAL x0,
-    REAL *x,
+static inline REAL laguerre(
+    const REAL s,
     REAL *arg)
 {
-    INT i = 0;
-    REAL delta;
+    REAL fv = f(s, arg);
+    REAL dfv = fprime(s, arg);
+    REAL ddfv = fprimeprime(s, arg);
+    REAL a = dfv;
+    REAL a2 = a * a;
+    REAL b = a2 - fv * ddfv;
+    REAL g = ORDER * fv;
+    REAL h = a + SIGN(a) * sqrt(fabs((ORDER - 1) * (ORDER * b - a2)));
 
-    *x = x0;
-    do {
-        REAL fv = f(*x, arg);
-        REAL dfv = fprime(*x, arg);
-        REAL ddfv = fprimeprime(*x, arg);
-
-        REAL a = dfv;
-        REAL a2 = a * a;
-        REAL b = a2 - fv * ddfv;
-        REAL g = ORDER * fv;
-        REAL h = a + SIGN(a) * sqrt(fabs((ORDER - 1) * (ORDER * b - a2)));
-        if (h == 0) return -1;
-        delta = -g / h;
-
-        (*x) += delta;
-        i += 1;
-        if (i > MAXITER) return -2;
-    } while (fabs(delta) > TOLERANCE);
-    if (SIGN((*x)) != SIGN(x0)) return -3;
-    return 0;
+    return -g / h;
 }
 
 
-static inline INT halley(
-    REAL x0,
-    REAL *x,
+static inline REAL halley(
+    const REAL s,
     REAL *arg)
 {
-    INT i = 0;
-    REAL delta;
+    REAL fv = f(s, arg);
+    REAL dfv = fprime(s, arg);
+    REAL ddfv = fprimeprime(s, arg);
+    REAL g = 2 * fv * dfv;
+    REAL h = (2 * dfv * dfv - fv * ddfv);
 
-    *x = x0;
-    do {
-        REAL fv = f(*x, arg);
-        REAL dfv = fprime(*x, arg);
-        REAL ddfv = fprimeprime(*x, arg);
-
-        REAL g = 2 * fv * dfv;
-        REAL h = (2 * dfv * dfv - fv * ddfv);
-        if (h == 0) return -1;
-        delta = -g / h;
-
-        (*x) += delta;
-        i += 1;
-        if (i > MAXITER) return -2;
-    } while (fabs(delta) > TOLERANCE);
-    if (SIGN((*x)) != SIGN(x0)) return -3;
-    return 0;
+    return -g / h;
 }
 
 
-static inline INT newton(
+static inline REAL newton(
+    const REAL s,
+    REAL *arg)
+{
+    REAL fv = f(s, arg);
+    REAL dfv = fprime(s, arg);
+    REAL g = fv;
+    REAL h = dfv;
+
+    return -g / h;
+}
+
+
+static inline REAL fdelta(
+    const REAL s,
+    REAL *arg)
+{
+//    return newton(s, arg);
+//    return halley(s, arg);
+    return laguerre(s, arg);
+}
+
+
+static inline INT findroot(
     REAL x0,
     REAL *x,
     REAL *arg)
 {
     INT i = 0;
-    REAL delta;
+    REAL err, a, b;
 
     *x = x0;
     do {
-        REAL fv = f(*x, arg);
-        REAL dfv = fprime(*x, arg);
+        if (i > MAXITER) return -1;
+        REAL delta = fdelta(*x, arg);
+        if (fabs(delta / (*x)) > 1)
+            delta = SIGN(delta) * fabs((*x)/4);
 
-        REAL g = fv;
-        REAL h = dfv;
-        if (h == 0) return -1;
-        delta = -g / h;
-
-        (*x) += delta;
         i += 1;
-        if (i > MAXITER) return -2;
-    } while (fabs(delta) > TOLERANCE);
-    if (SIGN((*x)) != SIGN(x0)) return -3;
+        a = (*x);
+        (*x) += delta;
+        if (SIGN((*x)) != SIGN(x0)) {
+            (*x) = -(*x);
+            i = 0;
+        }
+        b = (*x);
+        err = fabs(2 * (b - a) / (a + b));
+    } while (err > TOLERANCE);
+
     return 0;
 }
 
@@ -361,8 +351,9 @@ static inline void set_new_pos_vel(
     REAL r1 = sqrt(r1sqr+e2);   // XXX: +e2
 
     REAL ldf = lagrange_dfds(s, r0, r1, m, alpha);
-//    REAL ldg = lagrange_dgds(s, r0, r1, m, alpha);
-    REAL ldg = (1 + lg * ldf) / lf;
+    REAL ldg = lagrange_dgds(s, r0, r1, m, alpha);
+//    REAL ldg = (1 + lg * ldf) / lf;
+//    REAL ldf = (lf * ldg - 1) / lg;
     REAL v1x, v1y, v1z;
     v1x = r0x * ldf + v0x * ldg;
     v1y = r0y * ldf + v0y * ldg;
@@ -419,31 +410,38 @@ static inline INT _universal_kepler_solver(
     REAL rv = rx * vx + ry * vy + rz * vz;
     REAL beta = 2 - (e2 / r2);
     REAL alpha = v2 - beta * m / r;
+    REAL abs_alpha = fabs(alpha);
 
     REAL s0, s, arg[5];
 
     REAL dt = dt0;
 
-    /* First guess for hyperbolic orbits:
-     * adapted from formula 4.5.11 in
-     * fundamentals of astrodynamics (Bate et al. 1971) */
-    REAL ss = (2 * alpha * dt0 / (rv + (m + alpha * r) / sqrt(alpha)));
+    /* First guess for highly hyperbolic orbits:
+     * adapted from formula 4.5.11 in fundamentals
+     * of astrodynamics (Bate et al. 1971).
+     */
+    REAL ss = (2 * alpha * fabs(dt0 / (rv + (m + alpha * r) / sqrt(abs_alpha))));
     if (ss > 1) {
-        s0 = SIGN(dt0) * log(ss) / sqrt(alpha);
+        s0 = SIGN(dt0) * log(ss) / sqrt(abs_alpha);
     } else {
-        /* For eliptical orbits:
-	 * reduce the time-step to a
-	 * fraction of the orbital period. */
+        /* For elliptical orbits: reduce the time
+         * step to a fraction of the orbital period.
+         */
         if (alpha < 0) {
-            REAL a = m / fabs(alpha);
+            REAL a = m / abs_alpha;
             REAL T = 2 * PI * a * sqrt(a / m);
-
             REAL ratio = dt0 / T;
             dt = (ratio - (INT)(ratio)) * T;
         }
-//        s0 = dt / r;          // s0 = dt * ((beta * m) / r) / (beta * m);
-//        s0 = dt * v2 / (beta * m);
-        s0 = dt * fabs(alpha) / (beta * m);
+        /* This seems to work well for both
+         * elliptical and nearly parabolical
+         * orbits.
+         */
+        s0 = dt * abs_alpha / (beta * m);
+
+        REAL s01 = dt / r;
+        if (fabs(alpha * s01 * s01) < 1)
+            s0 = s01;
     }
 
     arg[0] = dt;
@@ -452,14 +450,22 @@ static inline INT _universal_kepler_solver(
     arg[3] = m;
     arg[4] = alpha;
 
-//    INT err = newton(s0, &s, arg);
-//    INT err = halley(s0, &s, arg);
-    INT err = laguerre(s0, &s, arg);
+    INT err = findroot(s0, &s, arg);
     if (err == 0) {
         set_new_pos_vel(dt, s, r, m, e2, alpha,
                         &rx, &ry, &rz, &vx, &vy, &vz);
-/*
     } else {
+        #ifndef CONFIG_USE_OPENCL
+        fprintf(stderr,
+            "# err: %ld, dt0: %e, dt: %e, r: %e,"
+            " rv: %e, m: %e, alpha: %e, s0: %e,"
+            " s: %e, ss: %e\n",
+            (long)(err), (double)(dt0), (double)(dt), (double)(r),
+            (double)(rv), (double)(m), (double)(alpha), (double)(s0),
+            (double)(s), (double)(ss));
+        #endif
+
+/*
         rx = r0x;
         ry = r0y;
         rz = r0z;
