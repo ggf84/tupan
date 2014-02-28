@@ -108,18 +108,19 @@ static inline void twobody_solver(
     REAL *v1y,
     REAL *v1z)
 {
-    REAL r2 = r0x * r0x + r0y * r0y + r0z * r0z;
-    REAL v2 = v0x * v0x + v0y * v0y + v0z * v0z;
-    REAL R = 64 * (m / v2);
-    if (r2 > R*R) {
-        leapfrog(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
-                 &(*r1x), &(*r1y), &(*r1z),
-                 &(*v1x), &(*v1y), &(*v1z));
-    } else {
-        universal_kepler_solver(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
-                                &(*r1x), &(*r1y), &(*r1z),
-                                &(*v1x), &(*v1y), &(*v1z));
-    }
+//    REAL r2 = r0x * r0x + r0y * r0y + r0z * r0z;
+//    REAL v2 = v0x * v0x + v0y * v0y + v0z * v0z;
+//    REAL R = 64 * (m / v2);
+//    if (r2 > R*R) {
+//        leapfrog(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
+//                 &(*r1x), &(*r1y), &(*r1z),
+//                 &(*v1x), &(*v1y), &(*v1z));
+//        return;
+//    }
+    universal_kepler_solver(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
+                            &(*r1x), &(*r1y), &(*r1z),
+                            &(*v1x), &(*v1y), &(*v1z));
+    return;
 }
 
 
