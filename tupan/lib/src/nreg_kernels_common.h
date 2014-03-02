@@ -45,18 +45,16 @@ static inline void nreg_Xkernel_core(
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
     INTn mask = (r2 > 0);
 
-    REALn inv_r1, inv_r3;
-    smoothed_inv_r1r3(r2, e2, mask, &inv_r1, &inv_r3);                          // 4 FLOPs
-
-    inv_r3 *= jm;                                                               // 1 FLOPs
+    REALn m_r1;
+    REALn m_r3 = smoothed_m_r3_m_r1(jm, r2, e2, mask, &m_r1);                   // 5 FLOPs
 
     *idrx += jm * rx;                                                           // 2 FLOPs
     *idry += jm * ry;                                                           // 2 FLOPs
     *idrz += jm * rz;                                                           // 2 FLOPs
-    *iax -= inv_r3 * rx;                                                        // 2 FLOPs
-    *iay -= inv_r3 * ry;                                                        // 2 FLOPs
-    *iaz -= inv_r3 * rz;                                                        // 2 FLOPs
-    *iu += jm * inv_r1;                                                         // 2 FLOPs
+    *iax -= m_r3 * rx;                                                          // 2 FLOPs
+    *iay -= m_r3 * ry;                                                          // 2 FLOPs
+    *iaz -= m_r3 * rz;                                                          // 2 FLOPs
+    *iu += m_r1;                                                                // 1 FLOPs
 }
 // Total flop count: 37
 

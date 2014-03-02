@@ -21,15 +21,15 @@ __kernel void acc_kernel(
     UINT gid = get_global_id(0);
     gid = min(VW * gid, ni - VW);
 
-    concat(REAL, VW) im = concat(vload, VW)(0, _im + gid);
-    concat(REAL, VW) irx = concat(vload, VW)(0, _irx + gid);
-    concat(REAL, VW) iry = concat(vload, VW)(0, _iry + gid);
-    concat(REAL, VW) irz = concat(vload, VW)(0, _irz + gid);
-    concat(REAL, VW) ie2 = concat(vload, VW)(0, _ie2 + gid);
+    REALn im = vloadn(0, _im + gid);
+    REALn irx = vloadn(0, _irx + gid);
+    REALn iry = vloadn(0, _iry + gid);
+    REALn irz = vloadn(0, _irz + gid);
+    REALn ie2 = vloadn(0, _ie2 + gid);
 
-    concat(REAL, VW) iax = (concat(REAL, VW))(0);
-    concat(REAL, VW) iay = (concat(REAL, VW))(0);
-    concat(REAL, VW) iaz = (concat(REAL, VW))(0);
+    REALn iax = (REALn)(0);
+    REALn iay = (REALn)(0);
+    REALn iaz = (REALn)(0);
 
     UINT j = 0;
 
@@ -50,7 +50,7 @@ __kernel void acc_kernel(
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll UNROLL
             for (UINT k = 0; k < lsize; ++k) {
-                call(acc_kernel_core, VW)(
+                acc_kernel_core(
                     im, irx, iry, irz, ie2,
                     __jm[k], __jrx[k], __jry[k], __jrz[k], __je2[k],
                     &iax, &iay, &iaz);
@@ -61,14 +61,14 @@ __kernel void acc_kernel(
 
     #pragma unroll UNROLL
     for (; j < nj; ++j) {
-        call(acc_kernel_core, VW)(
+        acc_kernel_core(
             im, irx, iry, irz, ie2,
             _jm[j], _jrx[j], _jry[j], _jrz[j], _je2[j],
             &iax, &iay, &iaz);
     }
 
-    concat(vstore, VW)(iax, 0, _iax + gid);
-    concat(vstore, VW)(iay, 0, _iay + gid);
-    concat(vstore, VW)(iaz, 0, _iaz + gid);
+    vstoren(iax, 0, _iax + gid);
+    vstoren(iay, 0, _iay + gid);
+    vstoren(iaz, 0, _iaz + gid);
 }
 

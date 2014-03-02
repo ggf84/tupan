@@ -39,202 +39,104 @@ __kernel void snap_crackle_kernel(
     __global REAL * restrict _icy,
     __global REAL * restrict _icz)
 {
-    UINT gid = get_global_id(0) * WPT * VW;
+    UINT gid = get_global_id(0);
+    gid = min(VW * gid, ni - VW);
 
-    UINT imask[WPT];
+    REALn im = vloadn(0, _im + gid);
+    REALn irx = vloadn(0, _irx + gid);
+    REALn iry = vloadn(0, _iry + gid);
+    REALn irz = vloadn(0, _irz + gid);
+    REALn ie2 = vloadn(0, _ie2 + gid);
+    REALn ivx = vloadn(0, _ivx + gid);
+    REALn ivy = vloadn(0, _ivy + gid);
+    REALn ivz = vloadn(0, _ivz + gid);
+    REALn iax = vloadn(0, _iax + gid);
+    REALn iay = vloadn(0, _iay + gid);
+    REALn iaz = vloadn(0, _iaz + gid);
+    REALn ijx = vloadn(0, _ijx + gid);
+    REALn ijy = vloadn(0, _ijy + gid);
+    REALn ijz = vloadn(0, _ijz + gid);
 
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        imask[i] = (VW * i + gid) < ni;
+    REALn isx = (REALn)(0);
+    REALn isy = (REALn)(0);
+    REALn isz = (REALn)(0);
+    REALn icx = (REALn)(0);
+    REALn icy = (REALn)(0);
+    REALn icz = (REALn)(0);
 
-    REALn im[WPT], irx[WPT], iry[WPT], irz[WPT],
-          ie2[WPT], ivx[WPT], ivy[WPT], ivz[WPT],
-          iax[WPT], iay[WPT], iaz[WPT],
-          ijx[WPT], ijy[WPT], ijz[WPT];
-
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            im[i] = vloadn(i, _im + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            irx[i] = vloadn(i, _irx + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            iry[i] = vloadn(i, _iry + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            irz[i] = vloadn(i, _irz + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ie2[i] = vloadn(i, _ie2 + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ivx[i] = vloadn(i, _ivx + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ivy[i] = vloadn(i, _ivy + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ivz[i] = vloadn(i, _ivz + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            iax[i] = vloadn(i, _iax + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            iay[i] = vloadn(i, _iay + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            iaz[i] = vloadn(i, _iaz + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ijx[i] = vloadn(i, _ijx + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ijy[i] = vloadn(i, _ijy + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ijz[i] = vloadn(i, _ijz + gid);
-
-    REALn isx[WPT], isy[WPT], isz[WPT],
-          icx[WPT], icy[WPT], icz[WPT];
-
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            isx[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            isy[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            isz[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            icx[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            icy[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            icz[i] = (REALn)(0);
-
-#ifdef FAST_LOCAL_MEM
-    __local REAL __jm[LSIZE];
-    __local REAL __jrx[LSIZE];
-    __local REAL __jry[LSIZE];
-    __local REAL __jrz[LSIZE];
-    __local REAL __je2[LSIZE];
-    __local REAL __jvx[LSIZE];
-    __local REAL __jvy[LSIZE];
-    __local REAL __jvz[LSIZE];
-    __local REAL __jax[LSIZE];
-    __local REAL __jay[LSIZE];
-    __local REAL __jaz[LSIZE];
-    __local REAL __jjx[LSIZE];
-    __local REAL __jjy[LSIZE];
-    __local REAL __jjz[LSIZE];
     UINT j = 0;
-    UINT lid = get_local_id(0);
-    for (UINT stride = get_local_size(0); stride > 0; stride /= 2) {
-        INT mask = lid < stride;
-        for (; (j + stride - 1) < nj; j += stride) {
-            if (mask) {
-                __jm[lid] = _jm[j + lid];
-                __jrx[lid] = _jrx[j + lid];
-                __jry[lid] = _jry[j + lid];
-                __jrz[lid] = _jrz[j + lid];
-                __je2[lid] = _je2[j + lid];
-                __jvx[lid] = _jvx[j + lid];
-                __jvy[lid] = _jvy[j + lid];
-                __jvz[lid] = _jvz[j + lid];
-                __jax[lid] = _jax[j + lid];
-                __jay[lid] = _jay[j + lid];
-                __jaz[lid] = _jaz[j + lid];
-                __jjx[lid] = _jjx[j + lid];
-                __jjy[lid] = _jjy[j + lid];
-                __jjz[lid] = _jjz[j + lid];
-            }
+
+    #ifdef FAST_LOCAL_MEM
+        __local REAL __jm[LSIZE];
+        __local REAL __jrx[LSIZE];
+        __local REAL __jry[LSIZE];
+        __local REAL __jrz[LSIZE];
+        __local REAL __je2[LSIZE];
+        __local REAL __jvx[LSIZE];
+        __local REAL __jvy[LSIZE];
+        __local REAL __jvz[LSIZE];
+        __local REAL __jax[LSIZE];
+        __local REAL __jay[LSIZE];
+        __local REAL __jaz[LSIZE];
+        __local REAL __jjx[LSIZE];
+        __local REAL __jjy[LSIZE];
+        __local REAL __jjz[LSIZE];
+        UINT lid = get_local_id(0);
+        UINT lsize = get_local_size(0);
+        for (; (j + lsize - 1) < nj; j += lsize) {
+            __jm[lid] = _jm[j + lid];
+            __jrx[lid] = _jrx[j + lid];
+            __jry[lid] = _jry[j + lid];
+            __jrz[lid] = _jrz[j + lid];
+            __je2[lid] = _je2[j + lid];
+            __jvx[lid] = _jvx[j + lid];
+            __jvy[lid] = _jvy[j + lid];
+            __jvz[lid] = _jvz[j + lid];
+            __jax[lid] = _jax[j + lid];
+            __jay[lid] = _jay[j + lid];
+            __jaz[lid] = _jaz[j + lid];
+            __jjx[lid] = _jjx[j + lid];
+            __jjy[lid] = _jjy[j + lid];
+            __jjz[lid] = _jjz[j + lid];
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll UNROLL
-            for (UINT k = 0; k < stride; ++k) {
-                #pragma unroll
-                for (UINT i = 0; i < WPT; ++i) {
-                    snap_crackle_kernel_core(im[i], irx[i], iry[i], irz[i],
-                                             ie2[i], ivx[i], ivy[i], ivz[i],
-                                             iax[i], iay[i], iaz[i],
-                                             ijx[i], ijy[i], ijz[i],
-                                             __jm[k], __jrx[k], __jry[k], __jrz[k],
-                                             __je2[k], __jvx[k], __jvy[k], __jvz[k],
-                                             __jax[k], __jay[k], __jaz[k],
-                                             __jjx[k], __jjy[k], __jjz[k],
-                                             &isx[i], &isy[i], &isz[i],
-                                             &icx[i], &icy[i], &icz[i]);
-                }
+            for (UINT k = 0; k < lsize; ++k) {
+                snap_crackle_kernel_core(
+                    im, irx, iry, irz,
+                    ie2, ivx, ivy, ivz,
+                    iax, iay, iaz,
+                    ijx, ijy, ijz,
+                    __jm[k], __jrx[k], __jry[k], __jrz[k],
+                    __je2[k], __jvx[k], __jvy[k], __jvz[k],
+                    __jax[k], __jay[k], __jaz[k],
+                    __jjx[k], __jjy[k], __jjz[k],
+                    &isx, &isy, &isz,
+                    &icx, &icy, &icz);
             }
             barrier(CLK_LOCAL_MEM_FENCE);
         }
-    }
-#else
-    #pragma unroll UNROLL
-    for (UINT j = 0; j < nj; ++j) {
-        #pragma unroll
-        for (UINT i = 0; i < WPT; ++i) {
-            snap_crackle_kernel_core(im[i], irx[i], iry[i], irz[i],
-                                     ie2[i], ivx[i], ivy[i], ivz[i],
-                                     iax[i], iay[i], iaz[i],
-                                     ijx[i], ijy[i], ijz[i],
-                                     _jm[j], _jrx[j], _jry[j], _jrz[j],
-                                     _je2[j], _jvx[j], _jvy[j], _jvz[j],
-                                     _jax[j], _jay[j], _jaz[j],
-                                     _jjx[j], _jjy[j], _jjz[j],
-                                     &isx[i], &isy[i], &isz[i],
-                                     &icx[i], &icy[i], &icz[i]);
-        }
-    }
-#endif
+    #endif
 
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(isx[i], i, _isx + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(isy[i], i, _isy + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(isz[i], i, _isz + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(icx[i], i, _icx + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(icy[i], i, _icy + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(icz[i], i, _icz + gid);
+    #pragma unroll UNROLL
+    for (; j < nj; ++j) {
+        snap_crackle_kernel_core(
+            im, irx, iry, irz,
+            ie2, ivx, ivy, ivz,
+            iax, iay, iaz,
+            ijx, ijy, ijz,
+            _jm[j], _jrx[j], _jry[j], _jrz[j],
+            _je2[j], _jvx[j], _jvy[j], _jvz[j],
+            _jax[j], _jay[j], _jaz[j],
+            _jjx[j], _jjy[j], _jjz[j],
+            &isx, &isy, &isz,
+            &icx, &icy, &icz);
+    }
+
+    vstoren(isx, 0, _isx + gid);
+    vstoren(isy, 0, _isy + gid);
+    vstoren(isz, 0, _isz + gid);
+    vstoren(icx, 0, _icx + gid);
+    vstoren(icy, 0, _icy + gid);
+    vstoren(icz, 0, _icz + gid);
 }
 

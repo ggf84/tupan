@@ -24,10 +24,9 @@ static inline void phi_kernel_core(
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
     INTn mask = (r2 > 0);
 
-    REALn inv_r1;
-    smoothed_inv_r1(r2, e2, mask, &inv_r1);                                     // 3 FLOPs
+    REALn m_r1 = smoothed_m_r1(jm, r2, e2, mask);                               // 4 FLOPs
 
-    *iphi -= jm * inv_r1;                                                       // 2 FLOPs
+    *iphi -= m_r1;                                                              // 1 FLOPs
 }
 // Total flop count: 14
 

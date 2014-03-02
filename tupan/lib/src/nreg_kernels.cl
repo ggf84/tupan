@@ -29,167 +29,83 @@ __kernel void nreg_Xkernel(
     __global REAL * restrict _iaz,
     __global REAL * restrict _iu)
 {
-    UINT gid = get_global_id(0) * WPT * VW;
+    UINT gid = get_global_id(0);
+    gid = min(VW * gid, ni - VW);
 
-    UINT imask[WPT];
+    REALn im = vloadn(0, _im + gid);
+    REALn irx = vloadn(0, _irx + gid);
+    REALn iry = vloadn(0, _iry + gid);
+    REALn irz = vloadn(0, _irz + gid);
+    REALn ie2 = vloadn(0, _ie2 + gid);
+    REALn ivx = vloadn(0, _ivx + gid);
+    REALn ivy = vloadn(0, _ivy + gid);
+    REALn ivz = vloadn(0, _ivz + gid);
 
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        imask[i] = (VW * i + gid) < ni;
+    REALn idrx = (REALn)(0);
+    REALn idry = (REALn)(0);
+    REALn idrz = (REALn)(0);
+    REALn iax = (REALn)(0);
+    REALn iay = (REALn)(0);
+    REALn iaz = (REALn)(0);
+    REALn iu = (REALn)(0);
 
-    REALn im[WPT], irx[WPT], iry[WPT], irz[WPT],
-          ie2[WPT], ivx[WPT], ivy[WPT], ivz[WPT];
-
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            im[i] = vloadn(i, _im + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            irx[i] = vloadn(i, _irx + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            iry[i] = vloadn(i, _iry + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            irz[i] = vloadn(i, _irz + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ie2[i] = vloadn(i, _ie2 + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ivx[i] = vloadn(i, _ivx + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ivy[i] = vloadn(i, _ivy + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ivz[i] = vloadn(i, _ivz + gid);
-
-    REALn idrx[WPT], idry[WPT], idrz[WPT],
-          iax[WPT], iay[WPT], iaz[WPT], iu[WPT];
-
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            idrx[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            idry[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            idrz[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            iax[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            iay[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            iaz[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            iu[i] = (REALn)(0);
-
-#ifdef FAST_LOCAL_MEM
-    __local REAL __jm[LSIZE];
-    __local REAL __jrx[LSIZE];
-    __local REAL __jry[LSIZE];
-    __local REAL __jrz[LSIZE];
-    __local REAL __je2[LSIZE];
-    __local REAL __jvx[LSIZE];
-    __local REAL __jvy[LSIZE];
-    __local REAL __jvz[LSIZE];
     UINT j = 0;
-    UINT lid = get_local_id(0);
-    for (UINT stride = get_local_size(0); stride > 0; stride /= 2) {
-        INT mask = lid < stride;
-        for (; (j + stride - 1) < nj; j += stride) {
-            if (mask) {
-                __jm[lid] = _jm[j + lid];
-                __jrx[lid] = _jrx[j + lid];
-                __jry[lid] = _jry[j + lid];
-                __jrz[lid] = _jrz[j + lid];
-                __je2[lid] = _je2[j + lid];
-                __jvx[lid] = _jvx[j + lid];
-                __jvy[lid] = _jvy[j + lid];
-                __jvz[lid] = _jvz[j + lid];
-            }
+
+    #ifdef FAST_LOCAL_MEM
+        __local REAL __jm[LSIZE];
+        __local REAL __jrx[LSIZE];
+        __local REAL __jry[LSIZE];
+        __local REAL __jrz[LSIZE];
+        __local REAL __je2[LSIZE];
+        __local REAL __jvx[LSIZE];
+        __local REAL __jvy[LSIZE];
+        __local REAL __jvz[LSIZE];
+        UINT lid = get_local_id(0);
+        UINT lsize = get_local_size(0);
+        for (; (j + lsize - 1) < nj; j += lsize) {
+            __jm[lid] = _jm[j + lid];
+            __jrx[lid] = _jrx[j + lid];
+            __jry[lid] = _jry[j + lid];
+            __jrz[lid] = _jrz[j + lid];
+            __je2[lid] = _je2[j + lid];
+            __jvx[lid] = _jvx[j + lid];
+            __jvy[lid] = _jvy[j + lid];
+            __jvz[lid] = _jvz[j + lid];
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll UNROLL
-            for (UINT k = 0; k < stride; ++k) {
-                #pragma unroll
-                for (UINT i = 0; i < WPT; ++i) {
-                    nreg_Xkernel_core(dt,
-                                      im[i], irx[i], iry[i], irz[i],
-                                      ie2[i], ivx[i], ivy[i], ivz[i],
-                                      __jm[k], __jrx[k], __jry[k], __jrz[k],
-                                      __je2[k], __jvx[k], __jvy[k], __jvz[k],
-                                      &idrx[i], &idry[i], &idrz[i],
-                                      &iax[i], &iay[i], &iaz[i], &iu[i]);
-                }
+            for (UINT k = 0; k < lsize; ++k) {
+                nreg_Xkernel_core(
+                    dt,
+                    im, irx, iry, irz,
+                    ie2, ivx, ivy, ivz,
+                    __jm[k], __jrx[k], __jry[k], __jrz[k],
+                    __je2[k], __jvx[k], __jvy[k], __jvz[k],
+                    &idrx, &idry, &idrz,
+                    &iax, &iay, &iaz, &iu);
             }
             barrier(CLK_LOCAL_MEM_FENCE);
         }
-    }
-#else
-    #pragma unroll UNROLL
-    for (UINT j = 0; j < nj; ++j) {
-        #pragma unroll
-        for (UINT i = 0; i < WPT; ++i) {
-            nreg_Xkernel_core(dt,
-                              im[i], irx[i], iry[i], irz[i],
-                              ie2[i], ivx[i], ivy[i], ivz[i],
-                              _jm[j], _jrx[j], _jry[j], _jrz[j],
-                              _je2[j], _jvx[j], _jvy[j], _jvz[j],
-                              &idrx[i], &idry[i], &idrz[i],
-                              &iax[i], &iay[i], &iaz[i], &iu[i]);
-        }
-    }
-#endif
+    #endif
 
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(idrx[i], i, _idrx + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(idry[i], i, _idry + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(idrz[i], i, _idrz + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(iax[i], i, _iax + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(iay[i], i, _iay + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(iaz[i], i, _iaz + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(im[i] * iu[i], i, _iu + gid);
+    #pragma unroll UNROLL
+    for (; j < nj; ++j) {
+        nreg_Xkernel_core(
+            dt,
+            im, irx, iry, irz,
+            ie2, ivx, ivy, ivz,
+            _jm[j], _jrx[j], _jry[j], _jrz[j],
+            _je2[j], _jvx[j], _jvy[j], _jvz[j],
+            &idrx, &idry, &idrz,
+            &iax, &iay, &iaz, &iu);
+    }
+
+    vstoren(idrx, 0, _idrx + gid);
+    vstoren(idry, 0, _idry + gid);
+    vstoren(idrz, 0, _idrz + gid);
+    vstoren(iax, 0, _iax + gid);
+    vstoren(iay, 0, _iay + gid);
+    vstoren(iaz, 0, _iaz + gid);
+    vstoren(im * iu, 0, _iu + gid);
 }
 
 
@@ -216,133 +132,71 @@ __kernel void nreg_Vkernel(
     __global REAL * restrict _idvz,
     __global REAL * restrict _ik)
 {
-    UINT gid = get_global_id(0) * WPT * VW;
+    UINT gid = get_global_id(0);
+    gid = min(VW * gid, ni - VW);
 
-    UINT imask[WPT];
+    REALn im = vloadn(0, _im + gid);
+    REALn ivx = vloadn(0, _ivx + gid);
+    REALn ivy = vloadn(0, _ivy + gid);
+    REALn ivz = vloadn(0, _ivz + gid);
+    REALn iax = vloadn(0, _iax + gid);
+    REALn iay = vloadn(0, _iay + gid);
+    REALn iaz = vloadn(0, _iaz + gid);
 
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        imask[i] = (VW * i + gid) < ni;
+    REALn idvx = (REALn)(0);
+    REALn idvy = (REALn)(0);
+    REALn idvz = (REALn)(0);
+    REALn ik = (REALn)(0);
 
-    REALn im[WPT], ivx[WPT], ivy[WPT], ivz[WPT],
-          iax[WPT], iay[WPT], iaz[WPT];
-
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            im[i] = vloadn(i, _im + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ivx[i] = vloadn(i, _ivx + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ivy[i] = vloadn(i, _ivy + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ivz[i] = vloadn(i, _ivz + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            iax[i] = vloadn(i, _iax + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            iay[i] = vloadn(i, _iay + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            iaz[i] = vloadn(i, _iaz + gid);
-
-    REALn idvx[WPT], idvy[WPT], idvz[WPT], ik[WPT];
-
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            idvx[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            idvy[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            idvz[i] = (REALn)(0);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            ik[i] = (REALn)(0);
-
-#ifdef FAST_LOCAL_MEM
-    __local REAL __jm[LSIZE];
-    __local REAL __jvx[LSIZE];
-    __local REAL __jvy[LSIZE];
-    __local REAL __jvz[LSIZE];
-    __local REAL __jax[LSIZE];
-    __local REAL __jay[LSIZE];
-    __local REAL __jaz[LSIZE];
     UINT j = 0;
-    UINT lid = get_local_id(0);
-    for (UINT stride = get_local_size(0); stride > 0; stride /= 2) {
-        INT mask = lid < stride;
-        for (; (j + stride - 1) < nj; j += stride) {
-            if (mask) {
-                __jm[lid] = _jm[j + lid];
-                __jvx[lid] = _jvx[j + lid];
-                __jvy[lid] = _jvy[j + lid];
-                __jvz[lid] = _jvz[j + lid];
-                __jax[lid] = _jax[j + lid];
-                __jay[lid] = _jay[j + lid];
-                __jaz[lid] = _jaz[j + lid];
-            }
+
+    #ifdef FAST_LOCAL_MEM
+        __local REAL __jm[LSIZE];
+        __local REAL __jvx[LSIZE];
+        __local REAL __jvy[LSIZE];
+        __local REAL __jvz[LSIZE];
+        __local REAL __jax[LSIZE];
+        __local REAL __jay[LSIZE];
+        __local REAL __jaz[LSIZE];
+        UINT lid = get_local_id(0);
+        UINT lsize = get_local_size(0);
+        for (; (j + lsize - 1) < nj; j += lsize) {
+            __jm[lid] = _jm[j + lid];
+            __jvx[lid] = _jvx[j + lid];
+            __jvy[lid] = _jvy[j + lid];
+            __jvz[lid] = _jvz[j + lid];
+            __jax[lid] = _jax[j + lid];
+            __jay[lid] = _jay[j + lid];
+            __jaz[lid] = _jaz[j + lid];
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll UNROLL
-            for (UINT k = 0; k < stride; ++k) {
-                #pragma unroll
-                for (UINT i = 0; i < WPT; ++i) {
-                    nreg_Vkernel_core(dt,
-                                      im[i], ivx[i], ivy[i], ivz[i],
-                                      iax[i], iay[i], iaz[i],
-                                      __jm[k], __jvx[k], __jvy[k], __jvz[k],
-                                      __jax[k], __jay[k], __jaz[k],
-                                      &idvx[i], &idvy[i], &idvz[i], &ik[i]);
-                }
+            for (UINT k = 0; k < lsize; ++k) {
+                nreg_Vkernel_core(
+                    dt,
+                    im, ivx, ivy, ivz,
+                    iax, iay, iaz,
+                    __jm[k], __jvx[k], __jvy[k], __jvz[k],
+                    __jax[k], __jay[k], __jaz[k],
+                    &idvx, &idvy, &idvz, &ik);
             }
             barrier(CLK_LOCAL_MEM_FENCE);
         }
-    }
-#else
-    #pragma unroll UNROLL
-    for (UINT j = 0; j < nj; ++j) {
-        #pragma unroll
-        for (UINT i = 0; i < WPT; ++i) {
-            nreg_Vkernel_core(dt,
-                              im[i], ivx[i], ivy[i], ivz[i],
-                              iax[i], iay[i], iaz[i],
-                              _jm[j], _jvx[j], _jvy[j], _jvz[j],
-                              _jax[j], _jay[j], _jaz[j],
-                              &idvx[i], &idvy[i], &idvz[i], &ik[i]);
-        }
-    }
-#endif
+    #endif
 
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(idvx[i], i, _idvx + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(idvy[i], i, _idvy + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(idvz[i], i, _idvz + gid);
-    #pragma unroll
-    for (UINT i = 0; i < WPT; ++i)
-        if (imask[i])
-            vstoren(im[i] * ik[i], i, _ik + gid);
+    #pragma unroll UNROLL
+    for (; j < nj; ++j) {
+        nreg_Vkernel_core(
+            dt,
+            im, ivx, ivy, ivz,
+            iax, iay, iaz,
+            _jm[j], _jvx[j], _jvy[j], _jvz[j],
+            _jax[j], _jay[j], _jaz[j],
+            &idvx, &idvy, &idvz, &ik);
+    }
+
+    vstoren(idvx, 0, _idvx + gid);
+    vstoren(idvy, 0, _idvy + gid);
+    vstoren(idvz, 0, _idvz + gid);
+    vstoren(im * ik, 0, _ik + gid);
 }
 
