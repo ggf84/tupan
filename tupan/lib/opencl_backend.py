@@ -33,16 +33,12 @@ dev = ctx.devices[0]
 UNROLL = 4
 
 LSIZE = {}
-LSIZE["float32"] = 384
-LSIZE["float64"] = 384
+LSIZE["float32"] = 64
+LSIZE["float64"] = 64
 
 VW = {}
 VW["float32"] = dev.preferred_vector_width_float
 VW["float64"] = dev.preferred_vector_width_double
-
-WPT = {}
-WPT["float32"] = 1  # XXX: del
-WPT["float64"] = 1  # XXX: del
 
 FAST_LOCAL_MEM = True
 
@@ -83,7 +79,6 @@ def make_lib(prec):
     options += " -D UNROLL={}".format(UNROLL)
     options += " -D LSIZE={}".format(LSIZE[prec])
     options += " -D VW={}".format(VW[prec])
-    options += " -D WPT={}".format(WPT[prec])
     options += " -cl-fast-relaxed-math"
 #    options += " -cl-opt-disable"
 
@@ -107,7 +102,6 @@ class CLKernel(object):
         self.unroll = UNROLL
         self.max_lsize = LSIZE[prec]
         self.vector_width = VW[prec]
-        self.work_per_thread = WPT[prec]
         self.queue = cl.CommandQueue(ctx)
         self.local_size = None
 
@@ -133,8 +127,7 @@ class CLKernel(object):
         max_lsize = self.max_lsize
 
         gs = (ni + vw - 1) // vw
-        ls = (gs + 7) // 8
-        lsize = min(ls, max_lsize)
+        lsize = min(gs, max_lsize)
         gsize = ((gs + lsize - 1) // lsize) * lsize
 
         self.global_size = (gsize, 1, 1)
