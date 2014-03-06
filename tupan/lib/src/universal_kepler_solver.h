@@ -392,13 +392,16 @@ static inline void set_new_pos_vel(
     r1y = r0y * lf + v0y * lg;
     r1z = r0z * lf + v0z * lg;
 
-//    REAL r1 = sqrt(e2 + r1x * r1x + r1y * r1y + r1z * r1z);
-    REAL r1 = universal_kepler_ds(s, r0, r0v0, m, alpha);
+    REAL ldf = lagrange_dfds(s, r0, m, alpha);
+    REAL ldg = lagrange_dgds(s, r0, r0v0, alpha);
 
-    REAL ldf = lagrange_dfds(s, r0, m, alpha) / r1;
-    REAL ldg = lagrange_dgds(s, r0, r0v0, alpha) / r1;
-//    REAL ldg = (1 + lg * ldf) / lf;
-//    REAL ldf = (lf * ldg - 1) / lg;
+//    REAL r1 = sqrt(e2 + r1x * r1x + r1y * r1y + r1z * r1z);
+//    REAL r1 = universal_kepler_ds(s, r0, r0v0, m, alpha);
+    REAL r1 = lf * ldg - lg * ldf;
+
+    ldf /= r1;
+    ldg /= r1;
+
     REAL v1x, v1y, v1z;
     v1x = r0x * ldf + v0x * ldg;
     v1y = r0y * ldf + v0y * ldg;
@@ -438,8 +441,7 @@ static inline INT _universal_kepler_solver(
     REAL vz = v0z;
 
     REAL r2 = rx * rx + ry * ry + rz * rz;
-    INT mask = (r2 > 0);
-    if (!mask) {
+    if (!(r2 > 0)) {
         *r1x = rx;
         *r1y = ry;
         *r1z = rz;
@@ -482,7 +484,7 @@ static inline INT _universal_kepler_solver(
          * elliptical and nearly parabolical
          * orbits.
          */
-        s0 = dt * abs_alpha / (beta * m);
+        s0 = dt * abs_alpha / m;
 
         REAL s01 = dt / r;
         if (fabs(alpha * s01 * s01) < 1)
@@ -620,8 +622,7 @@ static inline void universal_kepler_solver(
     }
 
     REAL r2 = r0x * r0x + r0y * r0y + r0z * r0z;
-    INT mask = (r2 > 0);
-    if (!mask) {
+    if (!(r2 > 0)) {
         *r1x = r0x;
         *r1y = r0y;
         *r1z = r0z;
