@@ -126,9 +126,11 @@ class CLKernel(object):
         vw = self.vector_width
         max_lsize = self.max_lsize
 
-        gs = (ni + vw - 1) // vw
-        lsize = min(gs, max_lsize)
-        gsize = ((gs + lsize - 1) // lsize) * lsize
+        ls = (ni + vw - 1) // vw
+
+        lsize = min(ls, max_lsize)
+        ngroups = (ni + (vw * lsize) - 1) // (vw * lsize)
+        gsize = lsize * ngroups
 
         self.global_size = (gsize, 1, 1)
         self.local_size = (lsize, 1, 1)

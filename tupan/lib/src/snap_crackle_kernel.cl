@@ -39,23 +39,28 @@ __kernel void snap_crackle_kernel(
     __global REAL * restrict _icy,
     __global REAL * restrict _icz)
 {
-    UINT gid = get_global_id(0);
-    gid = min(VW * gid, ni - VW);
+    UINT lid = get_local_id(0);
+    UINT lsize = get_local_size(0);
+    UINT i = VW * lsize * get_group_id(0);
 
-    REALn im = vloadn(0, _im + gid);
-    REALn irx = vloadn(0, _irx + gid);
-    REALn iry = vloadn(0, _iry + gid);
-    REALn irz = vloadn(0, _irz + gid);
-    REALn ie2 = vloadn(0, _ie2 + gid);
-    REALn ivx = vloadn(0, _ivx + gid);
-    REALn ivy = vloadn(0, _ivy + gid);
-    REALn ivz = vloadn(0, _ivz + gid);
-    REALn iax = vloadn(0, _iax + gid);
-    REALn iay = vloadn(0, _iay + gid);
-    REALn iaz = vloadn(0, _iaz + gid);
-    REALn ijx = vloadn(0, _ijx + gid);
-    REALn ijy = vloadn(0, _ijy + gid);
-    REALn ijz = vloadn(0, _ijz + gid);
+    if ((i + VW * lid) >= ni) {
+        i -= VW * lid;
+    }
+
+    REALn im = vloadn(lid, _im + i);
+    REALn irx = vloadn(lid, _irx + i);
+    REALn iry = vloadn(lid, _iry + i);
+    REALn irz = vloadn(lid, _irz + i);
+    REALn ie2 = vloadn(lid, _ie2 + i);
+    REALn ivx = vloadn(lid, _ivx + i);
+    REALn ivy = vloadn(lid, _ivy + i);
+    REALn ivz = vloadn(lid, _ivz + i);
+    REALn iax = vloadn(lid, _iax + i);
+    REALn iay = vloadn(lid, _iay + i);
+    REALn iaz = vloadn(lid, _iaz + i);
+    REALn ijx = vloadn(lid, _ijx + i);
+    REALn ijy = vloadn(lid, _ijy + i);
+    REALn ijz = vloadn(lid, _ijz + i);
 
     REALn isx = (REALn)(0);
     REALn isy = (REALn)(0);
@@ -81,8 +86,6 @@ __kernel void snap_crackle_kernel(
         __local REAL __jjx[LSIZE];
         __local REAL __jjy[LSIZE];
         __local REAL __jjz[LSIZE];
-        UINT lid = get_local_id(0);
-        UINT lsize = get_local_size(0);
         for (; (j + lsize - 1) < nj; j += lsize) {
             __jm[lid] = _jm[j + lid];
             __jrx[lid] = _jrx[j + lid];
@@ -132,11 +135,11 @@ __kernel void snap_crackle_kernel(
             &icx, &icy, &icz);
     }
 
-    vstoren(isx, 0, _isx + gid);
-    vstoren(isy, 0, _isy + gid);
-    vstoren(isz, 0, _isz + gid);
-    vstoren(icx, 0, _icx + gid);
-    vstoren(icy, 0, _icy + gid);
-    vstoren(icz, 0, _icz + gid);
+    vstoren(isx, lid, _isx + i);
+    vstoren(isy, lid, _isy + i);
+    vstoren(isz, lid, _isz + i);
+    vstoren(icx, lid, _icx + i);
+    vstoren(icy, lid, _icy + i);
+    vstoren(icz, lid, _icz + i);
 }
 

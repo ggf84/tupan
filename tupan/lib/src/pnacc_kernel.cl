@@ -32,19 +32,24 @@ __kernel void pnacc_kernel(
     __global REAL * restrict _ipnay,
     __global REAL * restrict _ipnaz)
 {
-    UINT gid = get_global_id(0);
-    gid = min(VW * gid, ni - VW);
+    UINT lid = get_local_id(0);
+    UINT lsize = get_local_size(0);
+    UINT i = VW * lsize * get_group_id(0);
+
+    if ((i + VW * lid) >= ni) {
+        i -= VW * lid;
+    }
 
     CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3, inv4, inv5, inv6, inv7);
 
-    REALn im = vloadn(0, _im + gid);
-    REALn irx = vloadn(0, _irx + gid);
-    REALn iry = vloadn(0, _iry + gid);
-    REALn irz = vloadn(0, _irz + gid);
-    REALn ie2 = vloadn(0, _ie2 + gid);
-    REALn ivx = vloadn(0, _ivx + gid);
-    REALn ivy = vloadn(0, _ivy + gid);
-    REALn ivz = vloadn(0, _ivz + gid);
+    REALn im = vloadn(lid, _im + i);
+    REALn irx = vloadn(lid, _irx + i);
+    REALn iry = vloadn(lid, _iry + i);
+    REALn irz = vloadn(lid, _irz + i);
+    REALn ie2 = vloadn(lid, _ie2 + i);
+    REALn ivx = vloadn(lid, _ivx + i);
+    REALn ivy = vloadn(lid, _ivy + i);
+    REALn ivz = vloadn(lid, _ivz + i);
 
     REALn ipnax = (REALn)(0);
     REALn ipnay = (REALn)(0);
@@ -61,8 +66,6 @@ __kernel void pnacc_kernel(
         __local REAL __jvx[LSIZE];
         __local REAL __jvy[LSIZE];
         __local REAL __jvz[LSIZE];
-        UINT lid = get_local_id(0);
-        UINT lsize = get_local_size(0);
         for (; (j + lsize - 1) < nj; j += lsize) {
             __jm[lid] = _jm[j + lid];
             __jrx[lid] = _jrx[j + lid];
@@ -98,8 +101,8 @@ __kernel void pnacc_kernel(
             &ipnax, &ipnay, &ipnaz);
     }
 
-    vstoren(ipnax, 0, _ipnax + gid);
-    vstoren(ipnay, 0, _ipnay + gid);
-    vstoren(ipnaz, 0, _ipnaz + gid);
+    vstoren(ipnax, lid, _ipnax + i);
+    vstoren(ipnay, lid, _ipnay + i);
+    vstoren(ipnaz, lid, _ipnaz + i);
 }
 

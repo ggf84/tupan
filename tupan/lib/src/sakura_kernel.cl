@@ -29,18 +29,26 @@ __kernel void sakura_kernel(
     __global REAL * restrict _idvy,
     __global REAL * restrict _idvz)
 {
-    UINT gid = get_global_id(0);
-//    gid = min(VW * gid, ni - VW);
-    gid = min(1 * gid, ni - 1);
+    UINT lid = get_local_id(0);
+    UINT lsize = get_local_size(0);
+//    UINT i = VW * lsize * get_group_id(0);
+    UINT i = 1 * lsize * get_group_id(0);
 
-    REAL im = vload1(0, _im + gid);
-    REAL irx = vload1(0, _irx + gid);
-    REAL iry = vload1(0, _iry + gid);
-    REAL irz = vload1(0, _irz + gid);
-    REAL ie2 = vload1(0, _ie2 + gid);
-    REAL ivx = vload1(0, _ivx + gid);
-    REAL ivy = vload1(0, _ivy + gid);
-    REAL ivz = vload1(0, _ivz + gid);
+//    if ((i + VW * lid) >= ni) {
+//        i -= VW * lid;
+//    }
+    if ((i + 1 * lid) >= ni) {
+        i -= 1 * lid;
+    }
+
+    REAL im = vload1(lid, _im + i);
+    REAL irx = vload1(lid, _irx + i);
+    REAL iry = vload1(lid, _iry + i);
+    REAL irz = vload1(lid, _irz + i);
+    REAL ie2 = vload1(lid, _ie2 + i);
+    REAL ivx = vload1(lid, _ivx + i);
+    REAL ivy = vload1(lid, _ivy + i);
+    REAL ivz = vload1(lid, _ivz + i);
 
     REAL idrx = (REAL)(0);
     REAL idry = (REAL)(0);
@@ -60,8 +68,6 @@ __kernel void sakura_kernel(
         __local REAL __jvx[LSIZE];
         __local REAL __jvy[LSIZE];
         __local REAL __jvz[LSIZE];
-        UINT lid = get_local_id(0);
-        UINT lsize = get_local_size(0);
         for (; (j + lsize - 1) < nj; j += lsize) {
             __jm[lid] = _jm[j + lid];
             __jrx[lid] = _jrx[j + lid];
@@ -99,11 +105,11 @@ __kernel void sakura_kernel(
             &idvx, &idvy, &idvz);
     }
 
-    vstore1(idrx, 0, _idrx + gid);
-    vstore1(idry, 0, _idry + gid);
-    vstore1(idrz, 0, _idrz + gid);
-    vstore1(idvx, 0, _idvx + gid);
-    vstore1(idvy, 0, _idvy + gid);
-    vstore1(idvz, 0, _idvz + gid);
+    vstore1(idrx, lid, _idrx + i);
+    vstore1(idry, lid, _idry + i);
+    vstore1(idrz, lid, _idrz + i);
+    vstore1(idvx, lid, _idvx + i);
+    vstore1(idvy, lid, _idvy + i);
+    vstore1(idvz, lid, _idvz + i);
 }
 

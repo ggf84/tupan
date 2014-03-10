@@ -24,17 +24,22 @@ __kernel void tstep_kernel(
     __global REAL * restrict _idt_a,
     __global REAL * restrict _idt_b)
 {
-    UINT gid = get_global_id(0);
-    gid = min(VW * gid, ni - VW);
+    UINT lid = get_local_id(0);
+    UINT lsize = get_local_size(0);
+    UINT i = VW * lsize * get_group_id(0);
 
-    REALn im = vloadn(0, _im + gid);
-    REALn irx = vloadn(0, _irx + gid);
-    REALn iry = vloadn(0, _iry + gid);
-    REALn irz = vloadn(0, _irz + gid);
-    REALn ie2 = vloadn(0, _ie2 + gid);
-    REALn ivx = vloadn(0, _ivx + gid);
-    REALn ivy = vloadn(0, _ivy + gid);
-    REALn ivz = vloadn(0, _ivz + gid);
+    if ((i + VW * lid) >= ni) {
+        i -= VW * lid;
+    }
+
+    REALn im = vloadn(lid, _im + i);
+    REALn irx = vloadn(lid, _irx + i);
+    REALn iry = vloadn(lid, _iry + i);
+    REALn irz = vloadn(lid, _irz + i);
+    REALn ie2 = vloadn(lid, _ie2 + i);
+    REALn ivx = vloadn(lid, _ivx + i);
+    REALn ivy = vloadn(lid, _ivy + i);
+    REALn ivz = vloadn(lid, _ivz + i);
 
     REALn iw2_a = (REALn)(0);
     REALn iw2_b = (REALn)(0);
@@ -50,8 +55,6 @@ __kernel void tstep_kernel(
         __local REAL __jvx[LSIZE];
         __local REAL __jvy[LSIZE];
         __local REAL __jvz[LSIZE];
-        UINT lid = get_local_id(0);
-        UINT lsize = get_local_size(0);
         for (; (j + lsize - 1) < nj; j += lsize) {
             __jm[lid] = _jm[j + lid];
             __jrx[lid] = _jrx[j + lid];
@@ -87,7 +90,7 @@ __kernel void tstep_kernel(
             &iw2_a, &iw2_b);
     }
 
-    vstoren(eta / sqrt(1 + iw2_a), 0, _idt_a + gid);
-    vstoren(eta / sqrt(1 + iw2_b), 0, _idt_b + gid);
+    vstoren(eta / sqrt(1 + iw2_a), lid, _idt_a + i);
+    vstoren(eta / sqrt(1 + iw2_b), lid, _idt_b + i);
 }
 
