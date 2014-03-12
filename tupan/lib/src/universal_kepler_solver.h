@@ -370,7 +370,7 @@ static inline void set_new_pos_vel(
     const REAL r0v0,
     const REAL m,
     const REAL e2,
-    const REAL alpha,
+    const REAL alpha0,
     REAL *rx,
     REAL *ry,
     REAL *rz,
@@ -384,6 +384,13 @@ static inline void set_new_pos_vel(
     REAL v0x = *vx;
     REAL v0y = *vy;
     REAL v0z = *vz;
+
+    REAL alpha = alpha0;
+    if (e2 > 0) {
+        alpha += m * e2 / (r0 * r0 * r0);
+        REAL dfv = universal_kepler_ds(s/4, r0, r0v0, m, alpha);
+        alpha = alpha0 + m * e2 / (dfv * dfv * dfv);
+    }
 
     REAL lf = lagrange_f(s, r0, m, alpha);
     REAL lg = lagrange_g(s, r0, r0v0, alpha);
@@ -455,8 +462,7 @@ static inline INT _universal_kepler_solver(
 
     REAL v2 = vx * vx + vy * vy + vz * vz;
     REAL rv = rx * vx + ry * vy + rz * vz;
-    REAL beta = 2 - (e2 / r2);
-    REAL alpha = v2 - beta * m / r;
+    REAL alpha = v2 - 2 * m / r;
     REAL abs_alpha = fabs(alpha);
 
     REAL s0, s, arg[5];
@@ -611,7 +617,7 @@ static inline void universal_kepler_solver(
                               r0x, r0y, r0z, v0x, v0y, v0z,
                               &rx, &ry, &rz, &vx, &vy, &vz);
 
-    if (e2 == 0) {
+    if (!(e2 > 0)) {
         *r1x = rx;
         *r1y = ry;
         *r1z = rz;
@@ -645,9 +651,9 @@ static inline void universal_kepler_solver(
     REAL e1 = v2 - u1;
 
     INT n = 1;
-    REAL tol = 64*TOLERANCE;
+    REAL tol = 16 * TOLERANCE;
     REAL err = fabs(e1 - e0);
-    if (2*err < tol * (u1+u0)) {
+    if (2 * err < tol * (u1 + u0)) {
         *r1x = rx;
         *r1y = ry;
         *r1z = rz;
@@ -680,7 +686,7 @@ label1:
         e1 = v2 - u1;
 
         err = fabs(e1 - e0);
-        if (2*err > tol * (u1+u0)) {
+        if (2 * err > tol * (u1 + u0)) {
             goto label1;
         }
     }
