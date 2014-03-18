@@ -481,8 +481,9 @@ static inline INT _universal_kepler_solver(
          * step to a fraction of the orbital period.
          */
         if (alpha < 0) {
-            REAL a = m / abs_alpha;
-            REAL T = 2 * PI * a * sqrt(a / m);
+//            REAL a = m / abs_alpha;
+//            REAL T = 2 * PI * a * sqrt(a / m);
+            REAL T = 2 * PI * m / (abs_alpha * sqrt(abs_alpha));
             REAL ratio = dt0 / T;
             dt = (ratio - (INT)(ratio)) * T;
         }
