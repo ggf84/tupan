@@ -13,6 +13,16 @@
 #define FOURPI ((REAL)(12.566370614359172))
 #define THREE_FOURPI ((REAL)(0.238732414637843))
 
+#ifdef CONFIG_USE_DOUBLE
+    #define TOLERANCE ((REAL)(2.2737367544323205948e-13))     // 2^(-42)
+#else
+    #define TOLERANCE ((REAL)(1.52587890625e-5))              // (2^-16)
+#endif
+#define MAXITER 64
+#define COMPARE(x, y) (((x) > (y)) - ((x) < (y)))
+#define SIGN(x) COMPARE(x, 0)
+
+
 typedef struct clight_struct {
     REAL inv1;
     REAL inv2;

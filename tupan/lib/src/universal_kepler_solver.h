@@ -4,16 +4,6 @@
 #include "common.h"
 
 
-#ifdef CONFIG_USE_DOUBLE
-    #define TOLERANCE ((REAL)(2.2737367544323205948e-13))     // 2^(-42)
-#else
-    #define TOLERANCE ((REAL)(1.52587890625e-5))              // (2^-16)
-#endif
-#define MAXITER 64
-#define COMPARE(x, y) (((x) > (y)) - ((x) < (y)))
-#define SIGN(x) COMPARE(x, 0)
-
-
 static inline REAL stumpff_c0(
 //    const REAL zeta)
     REAL zeta)      // This is because of bug 4775 on old versions of glibc.
@@ -459,10 +449,11 @@ static inline INT _universal_kepler_solver(
     }
     r2 += e2;
     REAL r = sqrt(r2);
+    REAL inv_r = sqrt(1/r2);
 
     REAL v2 = vx * vx + vy * vy + vz * vz;
     REAL rv = rx * vx + ry * vy + rz * vz;
-    REAL alpha = v2 - 2 * m / r;
+    REAL alpha = v2 - 2 * m * inv_r;
     REAL abs_alpha = fabs(alpha);
 
     REAL s0, s, arg[5];
