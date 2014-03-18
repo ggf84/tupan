@@ -449,11 +449,17 @@ static inline INT _universal_kepler_solver(
     }
     r2 += e2;
     REAL r = sqrt(r2);
-    REAL inv_r = sqrt(1/r2);
 
-    REAL v2 = vx * vx + vy * vy + vz * vz;
     REAL rv = rx * vx + ry * vy + rz * vz;
-    REAL alpha = v2 - 2 * m * inv_r;
+    REAL v2 = vx * vx + vy * vy + vz * vz;
+    REAL u2 = 2 * m / r;
+    REAL u = sqrt(u2);
+    REAL v = sqrt(v2);
+//    REAL alpha = v2 - u2;
+    REAL alpha = ((v - u) * (v + u));
+
+//    printf("r: %1.20e, v2: %1.20e, alpha: %1.20e\n", r, v2, alpha);
+
     REAL abs_alpha = fabs(alpha);
 
     REAL s0, s, arg[5];
