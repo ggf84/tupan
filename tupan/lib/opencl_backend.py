@@ -8,9 +8,7 @@
 
 from __future__ import division
 import os
-import sys
 import logging
-import getpass
 import pyopencl as cl
 from functools import partial
 from collections import namedtuple
@@ -20,12 +18,6 @@ logger = logging.getLogger(__name__)
 
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, "src")
-
-CACHE_DIR = os.path.join(os.path.expanduser('~'),
-                         ".tupan",
-                         "pyopencl-cache-uid{0}-py{1}".format(
-                             getpass.getuser(),
-                             ".".join(str(i) for i in sys.version_info)))
 
 ctx = cl.create_some_context()
 dev = ctx.devices[0]
@@ -84,6 +76,7 @@ def make_lib(prec):
 
     # building lib
     program = cl.Program(ctx, src)
+    from tupan import CACHE_DIR
     cllib = program.build(options=options, cache_dir=CACHE_DIR)
 
     logger.debug("done.")

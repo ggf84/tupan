@@ -7,11 +7,9 @@
 
 
 import os
-import sys
 import cffi
 import ctypes
 import logging
-import getpass
 from functools import partial
 from collections import namedtuple
 
@@ -20,12 +18,6 @@ logger = logging.getLogger(__name__)
 
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, "src")
-
-CACHE_DIR = os.path.join(os.path.expanduser('~'),
-                         ".tupan",
-                         "cffi-cache-uid{0}-py{1}".format(
-                             getpass.getuser(),
-                             ".".join(str(i) for i in sys.version_info)))
 
 
 def make_lib(prec):
@@ -64,6 +56,7 @@ def make_lib(prec):
     if prec == "float64":
         define_macros.append(("CONFIG_USE_DOUBLE", 1))
 
+    from tupan import CACHE_DIR
     clib = ffi.verify(
         """
         #include "common.h"

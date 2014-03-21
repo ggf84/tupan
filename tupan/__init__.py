@@ -6,12 +6,27 @@ A Python Toolkit for Astrophysical N-Body Simulations.
 """
 
 
+from __future__ import print_function
 import os
+import sys
 import logging
-import tempfile
+import getpass
+#import tempfile
+
+print("# PID: {0}".format(os.getpid()), file=sys.stderr)
+
+CACHE_DIR = os.path.join(os.path.expanduser('~'),
+#CACHE_DIR = os.path.join(tempfile.gettempdir(),
+                         "tupan-cache-uid{0}-py{1}".format(
+                             getpass.getuser(),
+                             ".".join(str(i) for i in sys.version_info)))
+try:
+    os.makedirs(CACHE_DIR)
+except OSError:
+    pass
 
 # set up logging to file
-LOG_FILENAME = os.path.join(tempfile.gettempdir(), "tupan.log")
+LOG_FILENAME = os.path.join(CACHE_DIR, "tupan-{0}.log".format(os.getpid()))
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(level=logging.DEBUG,
                     format=LOG_FORMAT,
