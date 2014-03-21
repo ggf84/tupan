@@ -61,8 +61,11 @@ static inline void kepler_solver_kernel_core(
 
     REAL r1x, r1y, r1z;
     REAL v1x, v1y, v1z;
-    universal_kepler_solver(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
-                            &r1x, &r1y, &r1z, &v1x, &v1y, &v1z);                // ? FLOPs
+    universal_kepler_solver(dt, m, e2,
+                            r0x, r0y, r0z,
+                            v0x, v0y, v0z,
+                            &r1x, &r1y, &r1z,
+                            &v1x, &v1y, &v1z);                                  // ? FLOPs
 
     *ir1x = rcmx + jmu * r1x;                                                   // 2 FLOPs
     *ir1y = rcmy + jmu * r1y;                                                   // 2 FLOPs

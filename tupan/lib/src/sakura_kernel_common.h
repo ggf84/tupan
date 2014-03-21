@@ -23,10 +23,11 @@ static inline void twobody_solver(
     REAL *v1y,
     REAL *v1z)
 {
-    universal_kepler_solver(dt, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
+    universal_kepler_solver(dt, m, e2,
+                            r0x, r0y, r0z,
+                            v0x, v0y, v0z,
                             &(*r1x), &(*r1y), &(*r1z),
                             &(*v1x), &(*v1y), &(*v1z));
-    return;
 }
 
 

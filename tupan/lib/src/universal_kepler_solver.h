@@ -334,20 +334,21 @@ static inline INT findroot(
     REAL *x,
     REAL *arg)
 {
-    INT i = 0;
+    INT n = 0;
     REAL a, b;
 
     *x = x0;
     do {
-        if (i > MAXITER) return -1;
         REAL delta = fdelta(*x, arg);
         if (fabs(delta) > fabs(*x))
             delta = SIGN(delta) * fabs((*x)/2);
 
-        i += 1;
         a = (*x);
         (*x) += delta;
         b = (*x);
+
+        if (n > MAXITER) return -1;
+        n += 1;
     } while (2 * fabs(b - a) > TOLERANCE * fabs(a + b));
 
     return 0;
@@ -360,60 +361,42 @@ static inline void set_new_pos_vel(
     const REAL r0v0,
     const REAL m,
     const REAL e2,
-    const REAL alpha0,
-    REAL *rx,
-    REAL *ry,
-    REAL *rz,
-    REAL *vx,
-    REAL *vy,
-    REAL *vz)
+    const REAL alpha,
+    const REAL r0x,
+    const REAL r0y,
+    const REAL r0z,
+    const REAL v0x,
+    const REAL v0y,
+    const REAL v0z,
+    REAL *r1x,
+    REAL *r1y,
+    REAL *r1z,
+    REAL *v1x,
+    REAL *v1y,
+    REAL *v1z)
 {
-    REAL r0x = *rx;
-    REAL r0y = *ry;
-    REAL r0z = *rz;
-    REAL v0x = *vx;
-    REAL v0y = *vy;
-    REAL v0z = *vz;
-
-    REAL alpha = alpha0;
-    if (e2 > 0) {
-        alpha += m * e2 / (r0 * r0 * r0);
-        REAL dfv = universal_kepler_ds(s/4, r0, r0v0, m, alpha);
-        alpha = alpha0 + m * e2 / (dfv * dfv * dfv);
-    }
-
     REAL lf = lagrange_f(s, r0, m, alpha);
     REAL lg = lagrange_g(s, r0, r0v0, alpha);
-    REAL r1x, r1y, r1z;
-    r1x = r0x * lf + v0x * lg;
-    r1y = r0y * lf + v0y * lg;
-    r1z = r0z * lf + v0z * lg;
+
+    *r1x = r0x * lf + v0x * lg;
+    *r1y = r0y * lf + v0y * lg;
+    *r1z = r0z * lf + v0z * lg;
 
     REAL ldf = lagrange_dfds(s, r0, m, alpha);
     REAL ldg = lagrange_dgds(s, r0, r0v0, alpha);
 
-//    REAL r1 = sqrt(e2 + r1x * r1x + r1y * r1y + r1z * r1z);
-//    REAL r1 = universal_kepler_ds(s, r0, r0v0, m, alpha);
     REAL r1 = lf * ldg - lg * ldf;
 
     ldf /= r1;
     ldg /= r1;
 
-    REAL v1x, v1y, v1z;
-    v1x = r0x * ldf + v0x * ldg;
-    v1y = r0y * ldf + v0y * ldg;
-    v1z = r0z * ldf + v0z * ldg;
-
-    *rx = r1x;
-    *ry = r1y;
-    *rz = r1z;
-    *vx = v1x;
-    *vy = v1y;
-    *vz = v1z;
+    *v1x = r0x * ldf + v0x * ldg;
+    *v1y = r0y * ldf + v0y * ldg;
+    *v1z = r0z * ldf + v0z * ldg;
 }
 
 
-static inline INT _universal_kepler_solver(
+static inline INT __universal_kepler_solver(
     const REAL dt0,
     const REAL m,
     const REAL e2,
@@ -430,37 +413,48 @@ static inline INT _universal_kepler_solver(
     REAL *v1y,
     REAL *v1z)
 {
-    REAL rx = r0x;
-    REAL ry = r0y;
-    REAL rz = r0z;
-    REAL vx = v0x;
-    REAL vy = v0y;
-    REAL vz = v0z;
+    *r1x = r0x;
+    *r1y = r0y;
+    *r1z = r0z;
+    *v1x = v0x;
+    *v1y = v0y;
+    *v1z = v0z;
 
-    REAL r2 = rx * rx + ry * ry + rz * rz;
-    if (!(r2 > 0)) {
-        *r1x = rx;
-        *r1y = ry;
-        *r1z = rz;
-        *v1x = vx;
-        *v1y = vy;
-        *v1z = vz;
-        return 0;
+    REAL r0sqr = r0x * r0x + r0y * r0y + r0z * r0z;
+    if (!(r0sqr > 0)) return 0;
+
+    r0sqr += e2;
+    REAL r0 = sqrt(r0sqr);
+
+    REAL r0v0 = r0x * v0x + r0y * v0y + r0z * v0z;
+    REAL v0sqr = v0x * v0x + v0y * v0y + v0z * v0z;
+    REAL u0sqr = 2 * m / r0;
+    REAL u = sqrt(u0sqr);
+    REAL v = sqrt(v0sqr);
+//    REAL alpha0 = v0sqr - u0sqr;
+    REAL alpha0 = ((v - u) * (v + u));
+    REAL lagr0 = v0sqr + u0sqr;
+    REAL abs_alpha0 = fabs(alpha0);
+
+    #ifndef CONFIG_USE_OPENCL
+    if (abs_alpha0 < TOLERANCE * lagr0) {
+        fprintf(stderr, "#---WARNING: floating point precision "
+                        "used may be lower than required!\n");
+        fprintf(stderr, "#---err flag: None\n");
+        fprintf(stderr,
+            "#   dt0: %a, m: %a, e2: %a,"
+            " r0x: %a, r0y: %a, r0z: %a,"
+            " v0x: %a, v0y: %a, v0z: %a\n"
+            "#   r0: %a, r0v0: %a, v0sqr: %a,"
+            " u0sqr: %a, alpha0: %a\n",
+            dt0, m, e2,
+            r0x, r0y, r0z,
+            v0x, v0y, v0z,
+            r0, r0v0, v0sqr,
+            u0sqr, alpha0);
+        fprintf(stderr, "#---\n");
     }
-    r2 += e2;
-    REAL r = sqrt(r2);
-
-    REAL rv = rx * vx + ry * vy + rz * vz;
-    REAL v2 = vx * vx + vy * vy + vz * vz;
-    REAL u2 = 2 * m / r;
-    REAL u = sqrt(u2);
-    REAL v = sqrt(v2);
-//    REAL alpha = v2 - u2;
-    REAL alpha = ((v - u) * (v + u));
-
-//    printf("r: %1.20e, v2: %1.20e, alpha: %1.20e\n", r, v2, alpha);
-
-    REAL abs_alpha = fabs(alpha);
+    #endif
 
     REAL s0, s, arg[5];
 
@@ -470,17 +464,15 @@ static inline INT _universal_kepler_solver(
      * adapted from formula 4.5.11 in fundamentals
      * of astrodynamics (Bate et al. 1971).
      */
-    REAL ss = (2 * alpha * fabs(dt0 / (rv + (m + alpha * r) / sqrt(abs_alpha))));
+    REAL ss = (2 * alpha0 * fabs(dt0 / (r0v0 + (m + alpha0 * r0) / sqrt(abs_alpha0))));
     if (ss > 1) {
-        s0 = SIGN(dt0) * log(ss) / sqrt(abs_alpha);
+        s0 = SIGN(dt0) * log(ss) / sqrt(abs_alpha0);
     } else {
         /* For elliptical orbits: reduce the time
          * step to a fraction of the orbital period.
          */
-        if (alpha < 0) {
-//            REAL a = m / abs_alpha;
-//            REAL T = 2 * PI * a * sqrt(a / m);
-            REAL T = 2 * PI * m / (abs_alpha * sqrt(abs_alpha));
+        if (alpha0 < 0) {
+            REAL T = 2 * PI * m / (abs_alpha0 * sqrt(abs_alpha0));
             REAL ratio = dt0 / T;
             dt = (ratio - (INT)(ratio)) * T;
         }
@@ -488,67 +480,73 @@ static inline INT _universal_kepler_solver(
          * elliptical and nearly parabolical
          * orbits.
          */
-        s0 = dt * abs_alpha / m;
+        s0 = dt * abs_alpha0 / m;
 
-        REAL s01 = dt / r;
-        if (fabs(alpha * s01 * s01) < 1)
+        REAL s01 = dt / r0;
+        if (fabs(alpha0 * s01 * s01) < 1)
             s0 = s01;
     }
 
     arg[0] = dt;
-    arg[1] = r;
-    arg[2] = rv;
+    arg[1] = r0;
+    arg[2] = r0v0;
     arg[3] = m;
-    arg[4] = alpha;
+    arg[4] = alpha0;
 
     INT err = findroot(s0, &s, arg);
-    if (err == 0) {
-        set_new_pos_vel(s, r, rv, m, e2, alpha,
-                        &rx, &ry, &rz, &vx, &vy, &vz);
-    } else {
+    if (err != 0) {
         #ifndef CONFIG_USE_OPENCL
-        fprintf(stderr, "#---err: %ld\n", (long)(err));
+        fprintf(stderr, "#---ERROR: maximum iteration steps "
+                        "reached in 'findroot' function. "
+                        "Trying again with two steps of dt0/2.\n");
+        fprintf(stderr, "#---err flag: %ld\n", (long)(err));
         fprintf(stderr,
-            "#   dt0: %e, m: %e, e2: %e,"
-            " r0x: %e, r0y: %e, r0z: %e,"
-            " v0x: %e, v0y: %e, v0z: %e\n"
-            "#   dt: %e, r: %e, rv: %e,"
-            " alpha: %e, s0: %e, s: %e, ss: %e\n",
-            (double)(dt0), (double)(m), (double)(e2),
-            (double)(r0x), (double)(r0y), (double)(r0z),
-            (double)(v0x), (double)(v0y), (double)(v0z),
-            (double)(dt), (double)(r), (double)(rv),
-            (double)(alpha), (double)(s0), (double)(s), (double)(ss));
+            "#   dt0: %a, m: %a, e2: %a,"
+            " r0x: %a, r0y: %a, r0z: %a,"
+            " v0x: %a, v0y: %a, v0z: %a\n"
+            "#   dt: %a, r0: %a, r0v0: %a, v0sqr: %a, u0sqr: %a,"
+            " alpha0: %a, s0: %a, s: %a, ss: %a\n",
+            dt0, m, e2,
+            r0x, r0y, r0z,
+            v0x, v0y, v0z,
+            dt, r0, r0v0, v0sqr, u0sqr,
+            alpha0, s0, s, ss);
         fprintf(stderr, "#---\n");
         #endif
-
-/*
-        rx = r0x;
-        ry = r0y;
-        rz = r0z;
-        vx = v0x;
-        vy = v0y;
-        vz = v0z;
-        __universal_kepler_solver(dt/2, m, e2,
-                                  rx, ry, rz, vx, vy, vz,
-                                  &rx, &ry, &rz, &vx, &vy, &vz);
-        __universal_kepler_solver(dt/2, m, e2,
-                                  rx, ry, rz, vx, vy, vz,
-                                  &rx, &ry, &rz, &vx, &vy, &vz);
-*/
+        return err;
     }
 
-    *r1x = rx;
-    *r1y = ry;
-    *r1z = rz;
-    *v1x = vx;
-    *v1y = vy;
-    *v1z = vz;
+    REAL alpha = alpha0;
+    if (e2 > 0) {
+        REAL r1 = universal_kepler_ds(s, r0, r0v0, m, alpha);
+        REAL inv_r = (1 / r0 + 1 / r1) / 2;
+        alpha = alpha0 + m * e2 * inv_r * inv_r * inv_r;
+        r1 = universal_kepler_ds(s, r0, r0v0, m, alpha);
+        inv_r = (1 / r0 + 1 / r1) / 2;
+        alpha = alpha0 + m * e2 * inv_r * inv_r * inv_r;
+    }
+
+    set_new_pos_vel(s, r0, r0v0, m, e2, alpha,
+                    r0x, r0y, r0z, v0x, v0y, v0z,
+                    &(*r1x), &(*r1y), &(*r1z),
+                    &(*v1x), &(*v1y), &(*v1z));
+
+    if (e2 > 0) {
+        REAL r1sqr = *r1x * *r1x + *r1y * *r1y + *r1z * *r1z;
+        r1sqr += e2;
+        REAL r1 = sqrt(r1sqr);
+        REAL v1sqr = *v1x * *v1x + *v1y * *v1y + *v1z * *v1z;
+        REAL u1sqr = 2 * m / r1;
+        REAL lagr1 = v1sqr + u1sqr;
+        REAL alpha1 = v1sqr - u1sqr;
+        if (2 * fabs(alpha1 - alpha0) > TOLERANCE * fabs(lagr1 + lagr0)) return -11;
+    }
+
     return err;
 }
 
 
-static inline void __universal_kepler_solver(
+static inline INT _universal_kepler_solver(
     const REAL dt,
     const REAL m,
     const REAL e2,
@@ -565,136 +563,77 @@ static inline void __universal_kepler_solver(
     REAL *v1y,
     REAL *v1z)
 {
-    INT i, n = 1;
-    REAL rx, ry, rz, vx, vy, vz;
+    INT err = __universal_kepler_solver(dt, m, e2,
+                                        r0x, r0y, r0z,
+                                        v0x, v0y, v0z,
+                                        &(*r1x), &(*r1y), &(*r1z),
+                                        &(*v1x), &(*v1y), &(*v1z));
+    if (err == 0) return err;
 
-label1:
-    rx = r0x;
-    ry = r0y;
-    rz = r0z;
-    vx = v0x;
-    vy = v0y;
-    vz = v0z;
-    for (i = 0; i < n; ++i) {
-        INT err = _universal_kepler_solver(dt/n, m, e2, rx, ry, rz, vx, vy, vz,
-                                           &rx, &ry, &rz, &vx, &vy, &vz);
-        if (err != 0) {
-            n *= 2;
-            goto label1;
-        }
-    }
-    *r1x = rx;
-    *r1y = ry;
-    *r1z = rz;
-    *v1x = vx;
-    *v1y = vy;
-    *v1z = vz;
-}
-
-
-static inline void universal_kepler_solver(
-    const REAL dt,
-    const REAL m,
-    const REAL e2,
-    const REAL r0x,
-    const REAL r0y,
-    const REAL r0z,
-    const REAL v0x,
-    const REAL v0y,
-    const REAL v0z,
-    REAL *r1x,
-    REAL *r1y,
-    REAL *r1z,
-    REAL *v1x,
-    REAL *v1y,
-    REAL *v1z)
-{
-    REAL rx, ry, rz, vx, vy, vz;
-
-    __universal_kepler_solver(dt, m, e2,
-                              r0x, r0y, r0z, v0x, v0y, v0z,
-                              &rx, &ry, &rz, &vx, &vy, &vz);
-
-    if (!(e2 > 0)) {
-        *r1x = rx;
-        *r1y = ry;
-        *r1z = rz;
-        *v1x = vx;
-        *v1y = vy;
-        *v1z = vz;
-        return;
-    }
-
-    REAL r2 = r0x * r0x + r0y * r0y + r0z * r0z;
-    if (!(r2 > 0)) {
+    INT n = 2;
+    do {
+        err = 0;
         *r1x = r0x;
         *r1y = r0y;
         *r1z = r0z;
         *v1x = v0x;
         *v1y = v0y;
         *v1z = v0z;
-        return;
-    }
-    r2 += e2;
-    REAL r = sqrt(r2);
-    REAL v2 = v0x * v0x + v0y * v0y + v0z * v0z;
-    REAL u0 = 2 * m / r;
-    REAL e0 = v2 - u0;
-
-    r2 = rx * rx + ry * ry + rz * rz;
-    r2 += e2;
-    r = sqrt(r2);
-    v2 = vx * vx + vy * vy + vz * vz;
-    REAL u1 = 2 * m / r;
-    REAL e1 = v2 - u1;
-
-    INT n = 1;
-    REAL tol = 16 * TOLERANCE;
-    REAL err = fabs(e1 - e0);
-    if (2 * err < tol * (u1 + u0)) {
-        *r1x = rx;
-        *r1y = ry;
-        *r1z = rz;
-        *v1x = vx;
-        *v1y = vy;
-        *v1z = vz;
-        return;
-    }
-
-label1:
-
-    n *= 2;
-    rx = r0x;
-    ry = r0y;
-    rz = r0z;
-    vx = v0x;
-    vy = v0y;
-    vz = v0z;
-
-    INT i;
-    for (i = 0; i < n; ++i) {
-        __universal_kepler_solver(dt/n, m, e2, rx, ry, rz, vx, vy, vz,
-                                  &rx, &ry, &rz, &vx, &vy, &vz);
-
-        r2 = rx * rx + ry * ry + rz * rz;
-        r2 += e2;
-        r = sqrt(r2);
-        v2 = vx * vx + vy * vy + vz * vz;
-        u1 = 2 * m / r;
-        e1 = v2 - u1;
-
-        err = fabs(e1 - e0);
-        if (2 * err > tol * (u1 + u0)) {
-            goto label1;
+        for (INT i = 0; i < n; ++i) {
+            err |= __universal_kepler_solver(dt/n, m, e2,
+                                             *r1x, *r1y, *r1z,
+                                             *v1x, *v1y, *v1z,
+                                             &(*r1x), &(*r1y), &(*r1z),
+                                             &(*v1x), &(*v1y), &(*v1z));
         }
-    }
+        if (n > MAXITER * MAXITER) return err;
+        n *= 2;
+    } while (err != 0);
 
-    *r1x = rx;
-    *r1y = ry;
-    *r1z = rz;
-    *v1x = vx;
-    *v1y = vy;
-    *v1z = vz;
+    return err;
+}
+
+
+static inline INT universal_kepler_solver(
+    const REAL dt,
+    const REAL m,
+    const REAL e2,
+    const REAL r0x,
+    const REAL r0y,
+    const REAL r0z,
+    const REAL v0x,
+    const REAL v0y,
+    const REAL v0z,
+    REAL *r1x,
+    REAL *r1y,
+    REAL *r1z,
+    REAL *v1x,
+    REAL *v1y,
+    REAL *v1z)
+{
+    INT err = _universal_kepler_solver(dt, m, e2,
+                                       r0x, r0y, r0z,
+                                       v0x, v0y, v0z,
+                                       &(*r1x), &(*r1y), &(*r1z),
+                                       &(*v1x), &(*v1y), &(*v1z));
+    #ifndef CONFIG_USE_OPENCL
+    if (err != 0) {
+        fprintf(stderr, "#---CRITICAL ERROR: maximum iteration steps "
+                        "reached in '_universal_kepler_solver' function. "
+                        "The solution may not have converged!\n");
+        fprintf(stderr, "#---err flag: %ld\n", (long)(err));
+        fprintf(stderr,
+            "#   dt: %a, m: %a, e2: %a,"
+            " r0x: %a, r0y: %a, r0z: %a,"
+            " v0x: %a, v0y: %a, v0z: %a\n",
+            dt, m, e2,
+            r0x, r0y, r0z,
+            v0x, v0y, v0z);
+        fprintf(stderr, "#---\n");
+    }
+    #endif
+
+    return err;
 }
 
 #endif  // __UNIVERSAL_KEPLER_SOLVER_H__
