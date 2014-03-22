@@ -432,14 +432,14 @@ static inline INT __universal_kepler_solver(
     REAL u = sqrt(u0sqr);
     REAL v = sqrt(v0sqr);
 //    REAL alpha0 = v0sqr - u0sqr;
-    REAL alpha0 = ((v - u) * (v + u));
+    REAL alpha0 = (v - u) * (v + u);
     REAL lagr0 = v0sqr + u0sqr;
     REAL abs_alpha0 = fabs(alpha0);
 
     #ifndef CONFIG_USE_OPENCL
-    if (abs_alpha0 < TOLERANCE * lagr0) {
-        fprintf(stderr, "#---WARNING: floating point precision "
-                        "used may be lower than required!\n");
+    if (r0 * abs_alpha0 < 32 * sqrt(TOLERANCE) * m) {
+        fprintf(stderr, "#---WARNING: Floating point precision "
+                        "used may be lower than required.\n");
         fprintf(stderr, "#---err flag: None\n");
         fprintf(stderr,
             "#   dt0: %a, m: %a, e2: %a,"
@@ -496,9 +496,9 @@ static inline INT __universal_kepler_solver(
     INT err = findroot(s0, &s, arg);
     if (err != 0) {
         #ifndef CONFIG_USE_OPENCL
-        fprintf(stderr, "#---ERROR: maximum iteration steps "
-                        "reached in 'findroot' function. "
-                        "Trying again with two steps of dt0/2.\n");
+        fprintf(stderr, "#---WARNING: Maximum iteration steps "
+                        "reached in 'findroot' function. Trying "
+                        "again with two steps of size dt0/2.\n");
         fprintf(stderr, "#---err flag: %ld\n", (long)(err));
         fprintf(stderr,
             "#   dt0: %a, m: %a, e2: %a,"
@@ -618,9 +618,8 @@ static inline INT universal_kepler_solver(
                                        &(*v1x), &(*v1y), &(*v1z));
     #ifndef CONFIG_USE_OPENCL
     if (err != 0) {
-        fprintf(stderr, "#---CRITICAL ERROR: maximum iteration steps "
-                        "reached in '_universal_kepler_solver' function. "
-                        "The solution may not have converged!\n");
+        fprintf(stderr, "#---ERROR: The solution "
+                        "may not have converged.\n");
         fprintf(stderr, "#---err flag: %ld\n", (long)(err));
         fprintf(stderr,
             "#   dt: %a, m: %a, e2: %a,"
