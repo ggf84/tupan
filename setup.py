@@ -14,6 +14,7 @@ from tupan import version
 
 
 package_data = {}
+package_data['tupan'] = ['tupan.cfg']
 package_data['tupan.analysis'] = [os.path.join('textures', '*.png')]
 package_data['tupan.lib'] = [os.path.join('src', '*.c'),
                              os.path.join('src', '*.h'),
