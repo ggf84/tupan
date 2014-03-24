@@ -11,15 +11,21 @@ import os
 import sys
 import logging
 import getpass
-#import tempfile
+from .config import cfg
 
 print("# PID: {0}".format(os.getpid()), file=sys.stderr)
 
-CACHE_DIR = os.path.join(os.path.expanduser('~'),
-#CACHE_DIR = os.path.join(tempfile.gettempdir(),
-                         "tupan-cache-uid{0}-py{1}".format(
-                             getpass.getuser(),
-                             ".".join(str(i) for i in sys.version_info)))
+CACHE_DIR = os.path.abspath(
+                os.path.join(
+                    os.path.expanduser(
+                        cfg['cache']['prefix']
+                    ),
+                    cfg['cache']['base'] + "-uid{0}-py{1}".format(
+                        getpass.getuser(),
+                        ".".join(str(i) for i in sys.version_info)
+                    )
+                )
+            )
 try:
     os.makedirs(CACHE_DIR)
 except OSError:
