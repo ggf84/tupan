@@ -56,7 +56,7 @@ def make_lib(prec):
     if prec == "float64":
         define_macros.append(("CONFIG_USE_DOUBLE", 1))
 
-    from tupan import CACHE_DIR
+    from ..config import CACHE_DIR
     clib = ffi.verify(
         """
         #include "common.h"

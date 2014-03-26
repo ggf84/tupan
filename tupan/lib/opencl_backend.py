@@ -76,7 +76,7 @@ def make_lib(prec):
 
     # building lib
     program = cl.Program(ctx, src)
-    from tupan import CACHE_DIR
+    from ..config import CACHE_DIR
     cllib = program.build(options=options, cache_dir=CACHE_DIR)
 
     logger.debug("done.")
