@@ -27,6 +27,7 @@ for section in config.sections():
 
 CACHE_DIR = os.path.abspath(
                 os.path.join(
+                    PATH,
                     os.path.expanduser(
                         cfg['cache']['prefix']
                     ),
