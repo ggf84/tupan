@@ -198,6 +198,7 @@ class Simulation(object):
 
         # Finalize the integrator
         self.integrator.finalize(self.args.t_end)
+        self.dump_restart_file()
 
 
 # ------------------------------------------------------------------------
@@ -228,9 +229,10 @@ def _main_restart(args):
         fobj.close()
 
     # update args
+    type(mysim.integrator.integrator.ps).t_curr = mysim.args.t_end
     mysim.args.t_end = args.t_end
     if args.eta is not None:
-        mysim.integrator._meth.eta = args.eta
+        mysim.integrator.integrator.eta = args.eta
 
     mysim.evolve()
     return 0
