@@ -85,7 +85,7 @@ class ParticleSystem(AbstractNbodyMethods):
     def __str__(self):
         fmt = type(self).__name__+"(["
         if self.n:
-            for (key, obj) in self.members.items():
+            for obj in self.members.values():
                 fmt += "\n\t{0},".format('\n\t'.join(str(obj).split('\n')))
             fmt += "\n"
         fmt += "])"

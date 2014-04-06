@@ -32,7 +32,7 @@ class FewBody(object):
     def kepler_solver(ips, tau):
         """
 
-	"""
+        """
         if ips.include_pn_corrections:
             raise NotImplementedError("The current version of the "
                                       "Kepler-solver does not include "
@@ -46,7 +46,7 @@ class FewBody(object):
     def evolve(ips, tau):
         """
 
-	"""
+        """
         if ips.n == 0:
             return ips
 

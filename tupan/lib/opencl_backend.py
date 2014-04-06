@@ -41,23 +41,21 @@ def make_lib(prec):
     """
     cint = "int" if prec == "float32" else "long"
     creal = "float" if prec == 'float32' else "double"
-    logger.debug("Building/Loading %s CL extension module...",
-                 prec)
+    logger.debug("Building/Loading %s CL extension module.", prec)
 
-    files = ("phi_kernel.cl",
-             "acc_kernel.cl",
-             "acc_jerk_kernel.cl",
-             "snap_crackle_kernel.cl",
-             "tstep_kernel.cl",
-             "pnacc_kernel.cl",
-             "nreg_kernels.cl",
-             "sakura_kernel.cl",
-             )
+    fnames = ("phi_kernel.cl",
+              "acc_kernel.cl",
+              "acc_jerk_kernel.cl",
+              "snap_crackle_kernel.cl",
+              "tstep_kernel.cl",
+              "pnacc_kernel.cl",
+              "nreg_kernels.cl",
+              "sakura_kernel.cl",
+              )
 
     sources = []
-    for file in files:
-        fname = os.path.join(PATH, file)
-        with open(fname, 'r') as fobj:
+    for fname in fnames:
+        with open(os.path.join(PATH, fname), 'r') as fobj:
             sources.append(fobj.read())
     src = "\n\n".join(sources)
 
@@ -79,7 +77,9 @@ def make_lib(prec):
     from ..config import CACHE_DIR
     cllib = program.build(options=options, cache_dir=CACHE_DIR)
 
-    logger.debug("done.")
+    logger.debug("CL extension module loaded: "
+                 "(U)INT is (u)%s, REAL is %s.",
+                 cint, creal)
     return cllib
 
 

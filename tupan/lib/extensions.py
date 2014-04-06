@@ -82,7 +82,7 @@ def prepare_args(args, argtypes):
 
 
 class AbstractExtension(object):
-    def set_args(self, *args):
+    def set_args(self, ips, jps, *args):
         raise NotImplementedError
 
     def run(self):
@@ -91,8 +91,8 @@ class AbstractExtension(object):
     def get_result(self):
         return self.kernel.map_buffers(self._outargs, self.outargs)
 
-    def calc(self, *args):
-        self.set_args(*args)
+    def calc(self, ips, jps, *args):
+        self.set_args(ips, jps, *args)
         self.run()
         return self.get_result()
 

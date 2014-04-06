@@ -41,7 +41,7 @@ class Diagnostic(object):
     """
 
     """
-    def __init__(self, fname, time, ps, report_freq=4, pn_order=0):
+    def __init__(self, fname, time, report_freq=4, pn_order=0):
         self.fname = fname
         self.time = time
         self.report_freq = report_freq
@@ -153,7 +153,6 @@ class Simulation(object):
         # Initializes the diagnostic report of the simulation
         self.dia = Diagnostic(self.args.log_file,
                               self.args.t_begin,
-                              ps,
                               report_freq=self.args.report_freq,
                               pn_order=self.args.pn_order,
                               )
@@ -230,7 +229,7 @@ def _main_restart(args):
 
     # update args
     mysim.args.t_end = args.t_end
-    if not args.eta is None:
+    if args.eta is not None:
         mysim.integrator._meth.eta = args.eta
 
     mysim.evolve()

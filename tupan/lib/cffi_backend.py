@@ -26,19 +26,18 @@ def make_lib(prec):
     """
     cint = "int" if prec == "float32" else "long"
     creal = "float" if prec == 'float32' else "double"
-    logger.debug("Building/Loading %s C extension module...",
-                 prec)
+    logger.debug("Building/Loading %s C extension module.", prec)
 
-    files = ("phi_kernel.c",
-             "acc_kernel.c",
-             "acc_jerk_kernel.c",
-             "snap_crackle_kernel.c",
-             "tstep_kernel.c",
-             "pnacc_kernel.c",
-             "nreg_kernels.c",
-             "sakura_kernel.c",
-             "kepler_solver_kernel.c",
-             )
+    fnames = ("phi_kernel.c",
+              "acc_kernel.c",
+              "acc_jerk_kernel.c",
+              "snap_crackle_kernel.c",
+              "tstep_kernel.c",
+              "pnacc_kernel.c",
+              "nreg_kernels.c",
+              "sakura_kernel.c",
+              "kepler_solver_kernel.c",
+              )
 
     s = []
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
@@ -67,10 +66,12 @@ def make_lib(prec):
         include_dirs=[PATH],
         libraries=["m"],
         extra_compile_args=["-O3", "-std=c99"],
-        sources=[os.path.join(PATH, file) for file in files],
+        sources=[os.path.join(PATH, fname) for fname in fnames],
     )
 
-    logger.debug("done.")
+    logger.debug("C extension module loaded: "
+                 "(U)INT is (u)%s, REAL is %s.",
+                 cint, creal)
     return ffi, clib
 
 
@@ -105,9 +106,6 @@ class CKernel(object):
 
     def set_gsize(self, ni, nj):
         pass
-
-    def allocate_local_memory(self, numbufs, sctype):
-        return []
 
     def set_args(self, args, start=0):
         self.args = args

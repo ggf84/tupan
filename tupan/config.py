@@ -8,7 +8,7 @@ import getpass
 from collections import defaultdict
 try:
     import ConfigParser as configparser     # Py2
-except:
+except ImportError:
     import configparser                     # Py3
 
 

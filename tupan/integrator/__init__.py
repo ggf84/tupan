@@ -77,6 +77,24 @@ class Base(object):
 
         return min_bts
 
+    def initialize(self, t_end):
+        """
+
+        """
+        raise NotImplementedError
+
+    def finalize(self, t_end):
+        """
+
+        """
+        raise NotImplementedError
+
+    def do_step(self, ps, tau):
+        """
+
+        """
+        raise NotImplementedError
+
     def evolve_step(self, t_end):
         """
 

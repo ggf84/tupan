@@ -30,7 +30,7 @@ class IMFSample(object):
                              ' [{0}:{1}].'.format(min_mlow, max_mhigh))
 
         intarg = lambda m: imf_func(m)/m
-        (norm, err) = quad(intarg, min_mlow, max_mhigh)
+        norm, _ = quad(intarg, min_mlow, max_mhigh)
         imf_func_normed = lambda m: imf_func(m)/norm
         mpeak = float(fminbound(lambda m: -imf_func_normed(m),
                                 min_mlow, max_mhigh,

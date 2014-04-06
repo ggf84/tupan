@@ -23,7 +23,7 @@ def cache(func):
         key = hash(key)
         try:
             result = cache[key]
-        except:
+        except KeyError:
             if len(cache) > 100:
                 cache.clear()
             result = func(*args, **kwargs)
@@ -47,7 +47,7 @@ def cache_arg(index):
             key = hash(key)
             try:
                 result = cache[key]
-            except:
+            except KeyError:
                 if len(cache) > 100:
                     cache.clear()
                 result = func(*args, **kwargs)
