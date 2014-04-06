@@ -5,11 +5,16 @@
    :target: https://requires.io/github/ggf84/tupan/requirements/?branch=dev
    :alt: Requirements Status
 
+.. |Code Quality Status| image:: https://landscape.io/github/ggf84/tupan/dev/landscape.png
+   :target: https://landscape.io/github/ggf84/tupan/dev
+   :alt: Code Quality Status
+
 tupan
 =====
 
 |Build Status|
 |Requirements Status|
+|Code Quality Status|
 
 TODO: write an overview
 
