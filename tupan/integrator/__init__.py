@@ -56,7 +56,7 @@ class Base(object):
         dt = max(dt, abs(t_end)*(2*sys.float_info.epsilon))
         return math.copysign(dt, self.eta)
 
-    def get_min_block_tstep(self, ps, tau):
+    def get_min_block_tstep(self, ps, dt):
         """
 
         """
@@ -70,10 +70,10 @@ class Base(object):
         while t_next % min_bts != 0:
             min_bts /= 2
 
-        min_bts = math.copysign(min_bts, tau)
+        min_bts = math.copysign(min_bts, dt)
 
-        if abs(min_bts) > abs(tau):
-            min_bts = tau
+        if abs(min_bts) > abs(dt):
+            min_bts = dt
 
         return min_bts
 
@@ -89,7 +89,7 @@ class Base(object):
         """
         raise NotImplementedError
 
-    def do_step(self, ps, tau):
+    def do_step(self, ps, dt):
         """
 
         """
@@ -105,9 +105,9 @@ class Base(object):
         ps = self.ps
 
         self.wl = type(ps)()
-        tau = self.get_base_tstep(t_end)
+        dt = self.get_base_tstep(t_end)
 
-        ps = self.do_step(ps, tau)
+        ps = self.do_step(ps, dt)
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)

@@ -19,15 +19,15 @@ __all__ = ["Sakura"]
 logger = logging.getLogger(__name__)
 
 
-def sakura_step(ps, tau):
+def sakura_step(ps, dt):
     """
 
     """
-    ps.rx += ps.vx * tau / 2
-    ps.ry += ps.vy * tau / 2
-    ps.rz += ps.vz * tau / 2
+    ps.rx += ps.vx * dt / 2
+    ps.ry += ps.vy * dt / 2
+    ps.rz += ps.vz * dt / 2
 
-    extensions.sakura.calc(ps, ps, tau/2, -1)
+    extensions.sakura.calc(ps, ps, dt=dt/2, flag=-1)
     ps.rx += ps.drx
     ps.ry += ps.dry
     ps.rz += ps.drz
@@ -35,7 +35,7 @@ def sakura_step(ps, tau):
     ps.vy += ps.dvy
     ps.vz += ps.dvz
 
-    extensions.sakura.calc(ps, ps, tau/2, 1)
+    extensions.sakura.calc(ps, ps, dt=dt/2, flag=+1)
     ps.rx += ps.drx
     ps.ry += ps.dry
     ps.rz += ps.drz
@@ -43,9 +43,9 @@ def sakura_step(ps, tau):
     ps.vy += ps.dvy
     ps.vz += ps.dvz
 
-    ps.rx += ps.vx * tau / 2
-    ps.ry += ps.vy * tau / 2
-    ps.rz += ps.vz * tau / 2
+    ps.rx += ps.vx * dt / 2
+    ps.ry += ps.vy * dt / 2
+    ps.rz += ps.vz * dt / 2
 
     return ps
 
@@ -97,7 +97,7 @@ class Sakura(Base):
             self.viewer.show_event(ps)
             self.viewer.enter_main_loop()
 
-    def get_sakura_tstep(self, ps, eta, tau):
+    def get_sakura_tstep(self, ps, eta, dt):
         """
 
         """
@@ -113,10 +113,10 @@ class Sakura(Base):
 
         ps.tstep[...] = dt_sakura
 
-        min_bts = self.get_min_block_tstep(ps, tau)
+        min_bts = self.get_min_block_tstep(ps, dt)
         return min_bts
 
-    def do_step(self, ps, tau):
+    def do_step(self, ps, dt):
         """
 
         """
@@ -124,12 +124,12 @@ class Sakura(Base):
 #        if self.e0 is None:
 #            self.e0 = p0.kinetic_energy + p0.potential_energy
 #        de = [1]
-#        tol = tau**2
+#        tol = dt**2
 #        nsteps = 1
 #
 #        while abs(de[0]) > tol:
 #            p = p0.copy()
-#            dt = tau / nsteps
+#            dt = dt / nsteps
 #            for i in range(nsteps):
 #                p = sakura_step(p, dt)
 #                e1 = p.kinetic_energy + p.potential_energy
@@ -141,19 +141,19 @@ class Sakura(Base):
 #                    break
 
         if "asakura" in self.method:
-            tau = self.get_sakura_tstep(ps, self.eta, tau)
-        ps = sakura_step(ps, tau)
+            dt = self.get_sakura_tstep(ps, self.eta, dt)
+        ps = sakura_step(ps, dt)
 
-        type(ps).t_curr += tau
-        ps.tstep[...] = tau
-        ps.time += tau
+        type(ps).t_curr += dt
+        ps.tstep[...] = dt
+        ps.time += dt
         ps.nstep += 1
         if self.dumpper:
-            slc = ps.time % (self.dump_freq * tau) == 0
+            slc = ps.time % (self.dump_freq * dt) == 0
             if any(slc):
                 self.wl.append(ps[slc])
         if self.viewer:
-            slc = ps.time % (self.gl_freq * tau) == 0
+            slc = ps.time % (self.gl_freq * dt) == 0
             if any(slc):
                 self.viewer.show_event(ps[slc])
         return ps

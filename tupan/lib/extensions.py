@@ -82,7 +82,7 @@ def prepare_args(args, argtypes):
 
 
 class AbstractExtension(object):
-    def set_args(self, ips, jps, *args):
+    def set_args(self, ips, jps, **kwargs):
         raise NotImplementedError
 
     def run(self):
@@ -91,8 +91,8 @@ class AbstractExtension(object):
     def get_result(self):
         return self.kernel.map_buffers(self._outargs, self.outargs)
 
-    def calc(self, ips, jps, *args):
-        self.set_args(ips, jps, *args)
+    def calc(self, ips, jps, **kwargs):
+        self.set_args(ips, jps, **kwargs)
         self.run()
         return self.get_result()
 
@@ -115,7 +115,7 @@ class Phi(AbstractExtension):
         self.argtypes = argtypes
         self.restypes = restypes
 
-    def set_args(self, ips, jps):
+    def set_args(self, ips, jps, **kwargs):
         ni = ips.n
         nj = jps.n
 
@@ -136,7 +136,7 @@ class Phi(AbstractExtension):
 
         self.kernel.set_args(self.inargs + self.outargs)
 
-    def _pycalc(self, ips, jps):
+    def _pycalc(self, ips, jps, **kwargs):
         # Never use this method for production runs. It is very slow
         # and is here only for performance comparisons. It is also
         # likely that only the classes Acc and Phi will have an
@@ -177,7 +177,7 @@ class Acc(AbstractExtension):
         self.argtypes = argtypes
         self.restypes = restypes
 
-    def set_args(self, ips, jps):
+    def set_args(self, ips, jps, **kwargs):
         ni = ips.n
         nj = jps.n
 
@@ -202,7 +202,7 @@ class Acc(AbstractExtension):
 
         self.kernel.set_args(self.inargs + self.outargs)
 
-    def _pycalc(self, ips, jps):
+    def _pycalc(self, ips, jps, **kwargs):
         # Never use this method for production runs. It is very slow
         # and is here only for performance comparisons. It is also
         # likely that only the classes Acc and Phi will have an
@@ -252,7 +252,7 @@ class AccJerk(AbstractExtension):
         self.argtypes = argtypes
         self.restypes = restypes
 
-    def set_args(self, ips, jps):
+    def set_args(self, ips, jps, **kwargs):
         ni = ips.n
         nj = jps.n
 
@@ -308,7 +308,7 @@ class SnapCrackle(AbstractExtension):
         self.argtypes = argtypes
         self.restypes = restypes
 
-    def set_args(self, ips, jps):
+    def set_args(self, ips, jps, **kwargs):
         ni = ips.n
         nj = jps.n
 
@@ -362,7 +362,7 @@ class Tstep(AbstractExtension):
         self.argtypes = argtypes
         self.restypes = restypes
 
-    def set_args(self, ips, jps, eta):
+    def set_args(self, ips, jps, **kwargs):
         ni = ips.n
         nj = jps.n
 
@@ -378,7 +378,7 @@ class Tstep(AbstractExtension):
                         nj,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2, jps.vx, jps.vy, jps.vz,
-                        eta)
+                        kwargs['eta'])
         self._outargs = (ips.tstep, ips.tstepij)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
@@ -409,7 +409,7 @@ class PNAcc(AbstractExtension):
         self.argtypes = argtypes
         self.restypes = restypes
 
-    def set_args(self, ips, jps):
+    def set_args(self, ips, jps, **kwargs):
         ni = ips.n
         nj = jps.n
 
@@ -459,7 +459,7 @@ class Sakura(AbstractExtension):
         self.argtypes = argtypes
         self.restypes = restypes
 
-    def set_args(self, ips, jps, dt, flag):
+    def set_args(self, ips, jps, **kwargs):
         ni = ips.n
         nj = jps.n
 
@@ -494,7 +494,7 @@ class Sakura(AbstractExtension):
                         nj,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2, jps.vx, jps.vy, jps.vz,
-                        dt, flag)
+                        kwargs['dt'], kwargs['flag'])
         self._outargs = (ips.drx, ips.dry, ips.drz,
                          ips.dvx, ips.dvy, ips.dvz)
 
@@ -525,7 +525,7 @@ class NREG_X(AbstractExtension):
         self.argtypes = argtypes
         self.restypes = restypes
 
-    def set_args(self, ips, jps, dt):
+    def set_args(self, ips, jps, **kwargs):
         ni = ips.n
         nj = jps.n
 
@@ -551,7 +551,7 @@ class NREG_X(AbstractExtension):
                         nj,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2, jps.vx, jps.vy, jps.vz,
-                        dt)
+                        kwargs['dt'])
         self._outargs = (ips.mrx, ips.mry, ips.mrz,
                          ips.ax, ips.ay, ips.az,
                          ips.u)
@@ -582,7 +582,7 @@ class NREG_V(AbstractExtension):
         self.argtypes = argtypes
         self.restypes = restypes
 
-    def set_args(self, ips, jps, dt):
+    def set_args(self, ips, jps, **kwargs):
         ni = ips.n
         nj = jps.n
 
@@ -602,7 +602,7 @@ class NREG_V(AbstractExtension):
                         nj,
                         jps.mass, jps.vx, jps.vy, jps.vz,
                         jps.ax, jps.ay, jps.az,
-                        dt)
+                        kwargs['dt'])
         self._outargs = (ips.mvx, ips.mvy, ips.mvz,
                          ips.mk)
 
@@ -632,13 +632,13 @@ class Kepler(AbstractExtension):
         self.argtypes = argtypes
         self.restypes = restypes
 
-    def set_args(self, ips, jps, dt):
+    def set_args(self, ips, jps, **kwargs):
         ni = ips.n
         nj = jps.n
 
         self._inargs = (ips.mass, ips.rx, ips.ry, ips.rz,
                         ips.eps2, ips.vx, ips.vy, ips.vz,
-                        dt)
+                        kwargs['dt'])
         self._outargs = (ips.rx, ips.ry, ips.rz,
                          ips.vx, ips.vy, ips.vz)
 

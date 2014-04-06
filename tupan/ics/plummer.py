@@ -141,14 +141,14 @@ class Plummer(object):
 
         ###################################
 
-        (hist, bins) = np.histogram(np.log10(mass), bins=nbins)
+        hist, bins = np.histogram(np.log10(mass), bins=nbins)
         linbins = np.power(10.0, bins)
         selection = np.where(hist > 0)
 
         fitfunc = lambda k, m: k * self.imf.func(m)
         errfunc = lambda k, m, y: fitfunc(k, m)[selection] - y[selection]
         k0 = 1.0
-        k1, success = optimize.leastsq(errfunc, k0, args=(linbins[:-1], hist))
+        k1, _ = optimize.leastsq(errfunc, k0, args=(linbins[:-1], hist))
         x = np.logspace(np.log10(self.imf.min_mlow),
                         np.log10(self.imf.max_mhigh),
                         num=128, base=10.0)

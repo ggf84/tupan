@@ -42,7 +42,7 @@ class TestCase1(unittest.TestCase):
     def setUpClass(cls):
         cls.ps = set_particles(256)
 
-    def compare_result(self, kernel, ps, *args):
+    def compare_result(self, kernel, ps, **kwargs):
         msg = ("extensions.{0}: max deviation of results "
                "calculated using C(CPU) vs CL(device):")
         print(msg.format(kernel.__name__))
@@ -61,10 +61,10 @@ class TestCase1(unittest.TestCase):
             jobj = ps[:jdx]
 
             # calculating using C on CPU
-            res["C"] = krnlC.calc(iobj, jobj, *args)
+            res["C"] = krnlC.calc(iobj, jobj, **kwargs)
 
             # calculating using CL on device
-            res["CL"] = krnlCL.calc(iobj, jobj, *args)
+            res["CL"] = krnlCL.calc(iobj, jobj, **kwargs)
 
             # estimate deviation
             deviation = max(abs(c_res-cl_res).max()
@@ -72,10 +72,10 @@ class TestCase1(unittest.TestCase):
             deviations.append(deviation)
 
             # calculating using C on CPU
-            res["C"] = krnlC.calc(jobj, iobj, *args)
+            res["C"] = krnlC.calc(jobj, iobj, **kwargs)
 
             # calculating using CL on device
-            res["CL"] = krnlCL.calc(jobj, iobj, *args)
+            res["CL"] = krnlCL.calc(jobj, iobj, **kwargs)
 
             # estimate deviation
             deviation = max(abs(resC - resCL).max()
@@ -103,7 +103,7 @@ class TestCase1(unittest.TestCase):
     def test05(self):
         print("\n---------- test05 ----------")
         eta = 1.0/64
-        self.compare_result(extensions.Tstep, self.ps, eta)
+        self.compare_result(extensions.Tstep, self.ps, eta=eta)
 
     def test06(self):
         print("\n---------- test06 ----------")
@@ -114,17 +114,17 @@ class TestCase1(unittest.TestCase):
     def test07(self):
         print("\n---------- test07 ----------")
         dt = 1.0/64
-        self.compare_result(extensions.Sakura, self.ps, dt, 0)
+        self.compare_result(extensions.Sakura, self.ps, dt=dt, flag=0)
 
     def test08(self):
         print("\n---------- test08 ----------")
         dt = 1.0/64
-        self.compare_result(extensions.NREG_X, self.ps, dt)
+        self.compare_result(extensions.NREG_X, self.ps, dt=dt)
 
     def test09(self):
         print("\n---------- test09 ----------")
         dt = 1.0/64
-        self.compare_result(extensions.NREG_V, self.ps, dt)
+        self.compare_result(extensions.NREG_V, self.ps, dt=dt)
 
 
 highN = True if "--highN" in sys.argv else False
@@ -139,7 +139,7 @@ class TestCase2(unittest.TestCase):
             imax = 14
         cls.pslist = [set_particles(2**(i+1)) for i in range(imax)]
 
-    def performance(self, kernel, pslist, *args):
+    def performance(self, kernel, pslist, **kwargs):
         msg = ("extensions.{0}: performance measurement:")
         print(msg.format(kernel.__name__))
 
@@ -153,7 +153,7 @@ class TestCase2(unittest.TestCase):
             best["run"] = defaultdict(float)
 
             # calculating using CL on device
-            best['set']["CL"] = best_of(5, krnlCL.set_args, ps, ps, *args)
+            best['set']["CL"] = best_of(5, krnlCL.set_args, ps, ps, **kwargs)
             best['run']["CL"] = best_of(3, krnlCL.run)
             best['get']["CL"] = best_of(5, krnlCL.get_result)
 
@@ -171,7 +171,7 @@ class TestCase2(unittest.TestCase):
                       "'CL': {CL:.4e}".format(CL=overhead["CL"]))
             else:
                 # calculating using C on CPU
-                best['set']["C"] = best_of(5, krnlC.set_args, ps, ps, *args)
+                best['set']["C"] = best_of(5, krnlC.set_args, ps, ps, **kwargs)
                 best['run']["C"] = best_of(3, krnlC.run)
                 best['get']["C"] = best_of(5, krnlC.get_result)
 
@@ -207,7 +207,7 @@ class TestCase2(unittest.TestCase):
     def test05(self):
         print("\n---------- test05 ----------")
         eta = 1.0/64
-        self.performance(extensions.Tstep, self.pslist, eta)
+        self.performance(extensions.Tstep, self.pslist, eta=eta)
 
     def test06(self):
         print("\n---------- test06 ----------")
@@ -218,17 +218,17 @@ class TestCase2(unittest.TestCase):
     def test07(self):
         print("\n---------- test07 ----------")
         dt = 1.0/64
-        self.performance(extensions.Sakura, self.pslist, dt, 0)
+        self.performance(extensions.Sakura, self.pslist, dt=dt, flag=0)
 
     def test08(self):
         print("\n---------- test08 ----------")
         dt = 1.0/64
-        self.performance(extensions.NREG_X, self.pslist, dt)
+        self.performance(extensions.NREG_X, self.pslist, dt=dt)
 
     def test09(self):
         print("\n---------- test09 ----------")
         dt = 1.0/64
-        self.performance(extensions.NREG_V, self.pslist, dt)
+        self.performance(extensions.NREG_V, self.pslist, dt=dt)
 
 
 if __name__ == "__main__":

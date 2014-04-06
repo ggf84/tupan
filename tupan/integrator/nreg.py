@@ -24,7 +24,7 @@ def nreg_x(ps, dt):
 
     """
     mtot = ps.total_mass
-    extensions.nreg_x.calc(ps, ps, dt)
+    extensions.nreg_x.calc(ps, ps, dt=dt)
     ps.rx[...] = ps.mrx / mtot
     ps.ry[...] = ps.mry / mtot
     ps.rz[...] = ps.mrz / mtot
@@ -50,7 +50,7 @@ def nreg_v(ps, dt):
 #                                         + ps.vy * ps.ay
 #                                         + ps.vz * ps.az)).sum()
     mtot = ps.total_mass
-    extensions.nreg_v.calc(ps, ps, dt)
+    extensions.nreg_v.calc(ps, ps, dt=dt)
     ps.vx[...] = ps.mvx / mtot
     ps.vy[...] = ps.mvy / mtot
     ps.vz[...] = ps.mvz / mtot
@@ -147,30 +147,30 @@ class NREG(Base):
             self.viewer.show_event(ps)
             self.viewer.enter_main_loop()
 
-    def do_step(self, ps, tau):
+    def do_step(self, ps, dt):
         """
 
         """
         if "anreg" in self.method:
             t0 = ps.t_curr
-            ps = anreg_step(ps, tau/2)
+            ps = anreg_step(ps, dt/2)
             t1 = ps.t_curr
         else:
             t0 = ps.t_curr
-            ps = nreg_step(ps, tau)
+            ps = nreg_step(ps, dt)
             t1 = ps.t_curr
 
-        dt = t1 - t0
+        DT = t1 - t0
 
-        ps.tstep[...] = dt
-        ps.time += tau
+        ps.tstep[...] = DT
+        ps.time += dt
         ps.nstep += 1
         if self.dumpper:
-            slc = ps.time % (self.dump_freq * tau) == 0
+            slc = ps.time % (self.dump_freq * dt) == 0
             if any(slc):
                 self.wl.append(ps[slc])
         if self.viewer:
-            slc = ps.time % (self.gl_freq * tau) == 0
+            slc = ps.time % (self.gl_freq * dt) == 0
             if any(slc):
                 self.viewer.show_event(ps[slc])
         return ps

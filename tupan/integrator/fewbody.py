@@ -16,20 +16,20 @@ class FewBody(object):
     """
     @staticmethod
     @timings
-    def drift(ips, tau):
+    def drift(ips, dt):
         """Drift operator for post-Newtonian quantities.
 
         """
-        ips.rx += ips.vx * tau
-        ips.ry += ips.vy * tau
-        ips.rz += ips.vz * tau
+        ips.rx += ips.vx * dt
+        ips.ry += ips.vy * dt
+        ips.rz += ips.vz * dt
         if ips.include_pn_corrections:
-            ips.pn_drift_com_r(tau)
+            ips.pn_drift_com_r(dt)
         return ips
 
     @staticmethod
     @timings
-    def kepler_solver(ips, tau):
+    def kepler_solver(ips, dt):
         """
 
         """
@@ -38,12 +38,12 @@ class FewBody(object):
                                       "Kepler-solver does not include "
                                       "post-Newtonian corrections.")
         else:
-            extensions.kepler.calc(ips, ips, tau)
+            extensions.kepler.calc(ips, ips, dt=dt)
         return ips
 
     @staticmethod
     @timings
-    def evolve(ips, tau):
+    def evolve(ips, dt):
         """
 
         """
@@ -51,10 +51,10 @@ class FewBody(object):
             return ips
 
         if ips.n == 1:
-            return FewBody.drift(ips, tau)
+            return FewBody.drift(ips, dt)
 
         # if ips.n == 2:
-        return FewBody.kepler_solver(ips, tau)
+        return FewBody.kepler_solver(ips, dt)
 
 
 # -- End of File --

@@ -74,7 +74,7 @@ class NbodyMethods(object):
     def pz(self):
         return self.mass * self.vz
 
-    ### total mass and center-of-mass methods
+    # -- total mass and center-of-mass methods
     @property
     def total_mass(self):
         """Total mass of the system.
@@ -95,11 +95,11 @@ class NbodyMethods(object):
         mry = self.mass * self.ry
         mrz = self.mass * self.rz
         if self.include_pn_corrections:
-            if not "pn_mrx" in self.__dict__:
+            if "pn_mrx" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_mrx", "real")
-            if not "pn_mry" in self.__dict__:
+            if "pn_mry" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_mry", "real")
-            if not "pn_mrz" in self.__dict__:
+            if "pn_mrz" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_mrz", "real")
             mrx += self.pn_mrx
             mry += self.pn_mry
@@ -118,11 +118,11 @@ class NbodyMethods(object):
         """
         mvx, mvy, mvz = self.px, self.py, self.pz
         if self.include_pn_corrections:
-            if not "pn_mvx" in self.__dict__:
+            if "pn_mvx" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_mvx", "real")
-            if not "pn_mvy" in self.__dict__:
+            if "pn_mvy" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_mvy", "real")
-            if not "pn_mvz" in self.__dict__:
+            if "pn_mvz" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_mvz", "real")
             mvx += self.pn_mvx
             mvy += self.pn_mvy
@@ -175,7 +175,7 @@ class NbodyMethods(object):
         """
         self.com_move_to(-self.com_r, -self.com_v)
 
-    ### linear momentum
+    # -- linear momentum
     @property
     def lm(self):
         """Individual linear momentum.
@@ -187,11 +187,11 @@ class NbodyMethods(object):
         """
         lmx, lmy, lmz = self.px, self.py, self.pz
         if self.include_pn_corrections:
-            if not "pn_mvx" in self.__dict__:
+            if "pn_mvx" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_mvx", "real")
-            if not "pn_mvy" in self.__dict__:
+            if "pn_mvy" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_mvy", "real")
-            if not "pn_mvz" in self.__dict__:
+            if "pn_mvz" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_mvz", "real")
             lmx += self.pn_mvx
             lmy += self.pn_mvy
@@ -214,7 +214,7 @@ class NbodyMethods(object):
         """
         return self.lm.sum(0)
 
-    ### angular momentum
+    # -- angular momentum
     @property
     def am(self):
         """Individual angular momentum.
@@ -229,11 +229,11 @@ class NbodyMethods(object):
         amy = (self.rz * px) - (self.rx * pz)
         amz = (self.rx * py) - (self.ry * px)
         if self.include_pn_corrections:
-            if not "pn_amx" in self.__dict__:
+            if "pn_amx" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_amx", "real")
-            if not "pn_amy" in self.__dict__:
+            if "pn_amy" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_amy", "real")
-            if not "pn_amz" in self.__dict__:
+            if "pn_amz" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_amz", "real")
             amx += self.pn_amx
             amy += self.pn_amy
@@ -256,7 +256,7 @@ class NbodyMethods(object):
         """
         return self.am.sum(0)
 
-    ### kinetic energy
+    # -- kinetic energy
     @property
     def ke(self):
         """Individual kinetic energy.
@@ -268,7 +268,7 @@ class NbodyMethods(object):
         """
         ke = 0.5 * self.mass * (self.vx**2 + self.vy**2 + self.vz**2)
         if self.include_pn_corrections:
-            if not "pn_ke" in self.__dict__:
+            if "pn_ke" not in self.__dict__:
                 self.register_auxiliary_attribute("pn_ke", "real")
             ke += self.pn_ke
         return ke
@@ -289,7 +289,7 @@ class NbodyMethods(object):
         """
         return float(self.ke.sum())
 
-    ### potential energy
+    # -- potential energy
     @property
     def pe(self):
         """Individual potential energy.
@@ -305,7 +305,7 @@ class NbodyMethods(object):
         """
         return 0.5 * float(self.pe.sum())
 
-    ### virial energy
+    # -- virial energy
     @property
     def ve(self):
         """Individual virial energy.
@@ -320,12 +320,12 @@ class NbodyMethods(object):
         """
         return 2 * self.kinetic_energy + self.potential_energy
 
-    ### gravity
+    # -- gravity
     def set_tstep(self, ps, eta):
         """Set individual time-steps due to other particles.
 
         """
-        extensions.tstep.calc(self, ps, eta)
+        extensions.tstep.calc(self, ps, eta=eta)
 
     def set_phi(self, ps):
         """Set individual gravitational potential due to other particles.
@@ -360,7 +360,7 @@ class NbodyMethods(object):
         """
         extensions.snap_crackle.calc(self, ps)
 
-    ### miscellaneous methods
+    # -- miscellaneous methods
     def min_tstep(self):
         """Minimum absolute value of tstep.
 
@@ -373,7 +373,7 @@ class NbodyMethods(object):
         """
         return abs(self.tstep).max()
 
-    ### lenght scales
+    # -- lenght scales
     @property
     def virial_radius(self):
         """Virial radius of the system.
@@ -401,7 +401,7 @@ class NbodyMethods(object):
         s = (I / self.total_mass)**0.5
         return s
 
-    ### rescaling methods
+    # -- rescaling methods
     def dynrescale_total_mass(self, total_mass):
         """Rescales the total mass of the system while maintaining its
         dynamics unchanged.
@@ -465,67 +465,67 @@ class PNbodyMethods(NbodyMethods):
     """This class holds some post-Newtonian methods.
 
     """
-    ### PN stuff
-    ### TODO: move these methods to a more appropriate place...
+    # -- PN stuff
+    # -- TODO: move these methods to a more appropriate place...
 
-    def pn_kick_ke(self, tau):
+    def pn_kick_ke(self, dt):
         """Kicks kinetic energy due to post-Newtonian terms.
 
         """
-        if not "pn_ke" in self.__dict__:
+        if "pn_ke" not in self.__dict__:
             self.register_auxiliary_attribute("pn_ke", "real")
         pnfx = self.mass * self.pnax
         pnfy = self.mass * self.pnay
         pnfz = self.mass * self.pnaz
-        self.pn_ke -= (self.vx * pnfx + self.vy * pnfy + self.vz * pnfz) * tau
+        self.pn_ke -= (self.vx * pnfx + self.vy * pnfy + self.vz * pnfz) * dt
 
-    def pn_drift_com_r(self, tau):
+    def pn_drift_com_r(self, dt):
         """Drifts center of mass position due to post-Newtonian terms.
 
         """
-        if not "pn_mrx" in self.__dict__:
+        if "pn_mrx" not in self.__dict__:
             self.register_auxiliary_attribute("pn_mrx", "real")
-        if not "pn_mry" in self.__dict__:
+        if "pn_mry" not in self.__dict__:
             self.register_auxiliary_attribute("pn_mry", "real")
-        if not "pn_mrz" in self.__dict__:
+        if "pn_mrz" not in self.__dict__:
             self.register_auxiliary_attribute("pn_mrz", "real")
-        self.pn_mrx += self.pn_mvx * tau
-        self.pn_mry += self.pn_mvy * tau
-        self.pn_mrz += self.pn_mvz * tau
+        self.pn_mrx += self.pn_mvx * dt
+        self.pn_mry += self.pn_mvy * dt
+        self.pn_mrz += self.pn_mvz * dt
 
-    def pn_kick_lmom(self, tau):
+    def pn_kick_lmom(self, dt):
         """Kicks linear momentum due to post-Newtonian terms.
 
         """
-        if not "pn_mvx" in self.__dict__:
+        if "pn_mvx" not in self.__dict__:
             self.register_auxiliary_attribute("pn_mvx", "real")
-        if not "pn_mvy" in self.__dict__:
+        if "pn_mvy" not in self.__dict__:
             self.register_auxiliary_attribute("pn_mvy", "real")
-        if not "pn_mvz" in self.__dict__:
+        if "pn_mvz" not in self.__dict__:
             self.register_auxiliary_attribute("pn_mvz", "real")
         pnfx = self.mass * self.pnax
         pnfy = self.mass * self.pnay
         pnfz = self.mass * self.pnaz
-        self.pn_mvx -= pnfx * tau
-        self.pn_mvy -= pnfy * tau
-        self.pn_mvz -= pnfz * tau
+        self.pn_mvx -= pnfx * dt
+        self.pn_mvy -= pnfy * dt
+        self.pn_mvz -= pnfz * dt
 
-    def pn_kick_amom(self, tau):
+    def pn_kick_amom(self, dt):
         """Kicks angular momentum due to post-Newtonian terms.
 
         """
-        if not "pn_amx" in self.__dict__:
+        if "pn_amx" not in self.__dict__:
             self.register_auxiliary_attribute("pn_amx", "real")
-        if not "pn_amy" in self.__dict__:
+        if "pn_amy" not in self.__dict__:
             self.register_auxiliary_attribute("pn_amy", "real")
-        if not "pn_amz" in self.__dict__:
+        if "pn_amz" not in self.__dict__:
             self.register_auxiliary_attribute("pn_amz", "real")
         pnfx = self.mass * self.pnax
         pnfy = self.mass * self.pnay
         pnfz = self.mass * self.pnaz
-        self.pn_amx -= (self.ry * pnfz - self.rz * pnfy) * tau
-        self.pn_amy -= (self.rz * pnfx - self.rx * pnfz) * tau
-        self.pn_amz -= (self.rx * pnfy - self.ry * pnfx) * tau
+        self.pn_amx -= (self.ry * pnfz - self.rz * pnfy) * dt
+        self.pn_amy -= (self.rz * pnfx - self.rx * pnfz) * dt
+        self.pn_amz -= (self.rx * pnfy - self.ry * pnfx) * dt
 
 
 AbstractNbodyMethods = NbodyMethods
