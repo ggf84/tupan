@@ -62,7 +62,7 @@ class H2(object):
 
         """
         (ps1, ps0) = cls.epredict(ps, tau)
-        for i in range(n):
+        for _ in range(n):
             ps1 = cls.ecorrect(ps1, ps0, tau)
         return ps1
 
@@ -313,10 +313,10 @@ class Hermite(Base):
         """
 
         """
-        logger.info("Initializing '%s' integrator.",
-                    self.method)
-
         ps = self.ps
+        logger.info("Initializing '%s' integrator at "
+                    "t_curr = %g and t_end = %g.",
+                    self.method, ps.t_curr, t_end)
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)
@@ -331,10 +331,10 @@ class Hermite(Base):
         """
 
         """
-        logger.info("Finalizing '%s' integrator.",
-                    self.method)
-
         ps = self.ps
+        logger.info("Finalizing '%s' integrator at "
+                    "t_curr = %g and t_end = %g.",
+                    self.method, ps.t_curr, t_end)
 
         if self.viewer:
             self.viewer.show_event(ps)
@@ -410,4 +410,4 @@ class Hermite(Base):
         return ps
 
 
-########## end of file ##########
+# -- End of File --

@@ -20,4 +20,4 @@ REAL = np.dtype(np.float32) if use_sp else np.dtype(np.float64)
 ctypedict = {'int': INT, 'uint': UINT, 'real': REAL}
 
 
-########## end of file ##########
+# -- End of File --

@@ -81,7 +81,7 @@ class Plummer(object):
         while count < n:
             r1 = np.random.random()
             r2 = np.random.random()
-            if (r2 < r1):
+            if r2 < r1:
                 rnd[count] = r2
                 count += 1
         velocity = np.sqrt(-2 * rnd * pot)
@@ -221,4 +221,4 @@ def make_plummer(n, eps, imf, seed=None, mfrac=0.999, softening_type=0):
     return p.ps
 
 
-########## end of file ##########
+# -- End of File --

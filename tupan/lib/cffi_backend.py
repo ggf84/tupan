@@ -119,4 +119,4 @@ class CKernel(object):
         self.kernel(*self.args)
 
 
-########## end of file ##########
+# -- End of File --

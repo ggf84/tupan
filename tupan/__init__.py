@@ -33,4 +33,4 @@ A Python Toolkit for Astrophysical N-Body Simulations.
 #logging.getLogger("").addHandler(console)
 
 
-########## end of file ##########
+# -- End of File --

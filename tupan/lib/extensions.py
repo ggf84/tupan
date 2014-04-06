@@ -82,8 +82,8 @@ def prepare_args(args, argtypes):
 
 
 class AbstractExtension(object):
-    def set_args(self, ips, jps, *args):
-        raise NotImplemented
+    def set_args(self, *args):
+        raise NotImplementedError
 
     def run(self):
         self.kernel.run()
@@ -91,8 +91,8 @@ class AbstractExtension(object):
     def get_result(self):
         return self.kernel.map_buffers(self._outargs, self.outargs)
 
-    def calc(self, ips, jps, *args):
-        self.set_args(ips, jps, *args)
+    def calc(self, *args):
+        self.set_args(*args)
         self.run()
         return self.get_result()
 
@@ -120,7 +120,7 @@ class Phi(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not "phi" in ips.__dict__:
+        if "phi" not in ips.__dict__:
             ips.register_auxiliary_attribute("phi", "real")
 
         self._inargs = (ni,
@@ -143,7 +143,7 @@ class Phi(AbstractExtension):
         # implementation of this method.
         import numpy as np
         ni = ips.n
-        if not "phi" in ips.__dict__:
+        if "phi" not in ips.__dict__:
             ips.register_auxiliary_attribute("phi", "real")
         for i in range(ni):
             rx = ips.rx[i] - jps.rx
@@ -182,11 +182,11 @@ class Acc(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not "ax" in ips.__dict__:
+        if "ax" not in ips.__dict__:
             ips.register_auxiliary_attribute("ax", "real")
-        if not "ay" in ips.__dict__:
+        if "ay" not in ips.__dict__:
             ips.register_auxiliary_attribute("ay", "real")
-        if not "az" in ips.__dict__:
+        if "az" not in ips.__dict__:
             ips.register_auxiliary_attribute("az", "real")
 
         self._inargs = (ni,
@@ -209,11 +209,11 @@ class Acc(AbstractExtension):
         # implementation of this method.
         import numpy as np
         ni = ips.n
-        if not "ax" in ips.__dict__:
+        if "ax" not in ips.__dict__:
             ips.register_auxiliary_attribute("ax", "real")
-        if not "ay" in ips.__dict__:
+        if "ay" not in ips.__dict__:
             ips.register_auxiliary_attribute("ay", "real")
-        if not "az" in ips.__dict__:
+        if "az" not in ips.__dict__:
             ips.register_auxiliary_attribute("az", "real")
         for i in range(ni):
             rx = ips.rx[i] - jps.rx
@@ -257,17 +257,17 @@ class AccJerk(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not "ax" in ips.__dict__:
+        if "ax" not in ips.__dict__:
             ips.register_auxiliary_attribute("ax", "real")
-        if not "ay" in ips.__dict__:
+        if "ay" not in ips.__dict__:
             ips.register_auxiliary_attribute("ay", "real")
-        if not "az" in ips.__dict__:
+        if "az" not in ips.__dict__:
             ips.register_auxiliary_attribute("az", "real")
-        if not "jx" in ips.__dict__:
+        if "jx" not in ips.__dict__:
             ips.register_auxiliary_attribute("jx", "real")
-        if not "jy" in ips.__dict__:
+        if "jy" not in ips.__dict__:
             ips.register_auxiliary_attribute("jy", "real")
-        if not "jz" in ips.__dict__:
+        if "jz" not in ips.__dict__:
             ips.register_auxiliary_attribute("jz", "real")
 
         self._inargs = (ni,
@@ -313,17 +313,17 @@ class SnapCrackle(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not "sx" in ips.__dict__:
+        if "sx" not in ips.__dict__:
             ips.register_auxiliary_attribute("sx", "real")
-        if not "sy" in ips.__dict__:
+        if "sy" not in ips.__dict__:
             ips.register_auxiliary_attribute("sy", "real")
-        if not "sz" in ips.__dict__:
+        if "sz" not in ips.__dict__:
             ips.register_auxiliary_attribute("sz", "real")
-        if not "cx" in ips.__dict__:
+        if "cx" not in ips.__dict__:
             ips.register_auxiliary_attribute("cx", "real")
-        if not "cy" in ips.__dict__:
+        if "cy" not in ips.__dict__:
             ips.register_auxiliary_attribute("cy", "real")
-        if not "cz" in ips.__dict__:
+        if "cz" not in ips.__dict__:
             ips.register_auxiliary_attribute("cz", "real")
 
         self._inargs = (ni,
@@ -367,9 +367,9 @@ class Tstep(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not "tstep" in ips.__dict__:
+        if "tstep" not in ips.__dict__:
             ips.register_auxiliary_attribute("tstep", "real")
-        if not "tstepij" in ips.__dict__:
+        if "tstepij" not in ips.__dict__:
             ips.register_auxiliary_attribute("tstepij", "real")
 
         self._inargs = (ni,
@@ -414,11 +414,11 @@ class PNAcc(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not "pnax" in ips.__dict__:
+        if "pnax" not in ips.__dict__:
             ips.register_auxiliary_attribute("pnax", "real")
-        if not "pnay" in ips.__dict__:
+        if "pnay" not in ips.__dict__:
             ips.register_auxiliary_attribute("pnay", "real")
-        if not "pnaz" in ips.__dict__:
+        if "pnaz" not in ips.__dict__:
             ips.register_auxiliary_attribute("pnaz", "real")
 
         self._inargs = (ni,
@@ -475,17 +475,17 @@ class Sakura(AbstractExtension):
             self.kernel.local_size = (lsize, 1, 1)
 
 #        self.kernel.set_gsize(ni, nj)
-        if not "drx" in ips.__dict__:
+        if "drx" not in ips.__dict__:
             ips.register_auxiliary_attribute("drx", "real")
-        if not "dry" in ips.__dict__:
+        if "dry" not in ips.__dict__:
             ips.register_auxiliary_attribute("dry", "real")
-        if not "drz" in ips.__dict__:
+        if "drz" not in ips.__dict__:
             ips.register_auxiliary_attribute("drz", "real")
-        if not "dvx" in ips.__dict__:
+        if "dvx" not in ips.__dict__:
             ips.register_auxiliary_attribute("dvx", "real")
-        if not "dvy" in ips.__dict__:
+        if "dvy" not in ips.__dict__:
             ips.register_auxiliary_attribute("dvy", "real")
-        if not "dvz" in ips.__dict__:
+        if "dvz" not in ips.__dict__:
             ips.register_auxiliary_attribute("dvz", "real")
 
         self._inargs = (ni,
@@ -530,19 +530,19 @@ class NREG_X(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not "mrx" in ips.__dict__:
+        if "mrx" not in ips.__dict__:
             ips.register_auxiliary_attribute("mrx", "real")
-        if not "mry" in ips.__dict__:
+        if "mry" not in ips.__dict__:
             ips.register_auxiliary_attribute("mry", "real")
-        if not "mrz" in ips.__dict__:
+        if "mrz" not in ips.__dict__:
             ips.register_auxiliary_attribute("mrz", "real")
-        if not "ax" in ips.__dict__:
+        if "ax" not in ips.__dict__:
             ips.register_auxiliary_attribute("ax", "real")
-        if not "ay" in ips.__dict__:
+        if "ay" not in ips.__dict__:
             ips.register_auxiliary_attribute("ay", "real")
-        if not "az" in ips.__dict__:
+        if "az" not in ips.__dict__:
             ips.register_auxiliary_attribute("az", "real")
-        if not "u" in ips.__dict__:
+        if "u" not in ips.__dict__:
             ips.register_auxiliary_attribute("u", "real")
 
         self._inargs = (ni,
@@ -587,13 +587,13 @@ class NREG_V(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not "mvx" in ips.__dict__:
+        if "mvx" not in ips.__dict__:
             ips.register_auxiliary_attribute("mvx", "real")
-        if not "mvy" in ips.__dict__:
+        if "mvy" not in ips.__dict__:
             ips.register_auxiliary_attribute("mvy", "real")
-        if not "mvz" in ips.__dict__:
+        if "mvz" not in ips.__dict__:
             ips.register_auxiliary_attribute("mvz", "real")
-        if not "mk" in ips.__dict__:
+        if "mk" not in ips.__dict__:
             ips.register_auxiliary_attribute("mk", "real")
 
         self._inargs = (ni,
@@ -663,4 +663,4 @@ nreg_v = NREG_V(backend, ctype.prec)
 kepler = Kepler(backend, ctype.prec)
 
 
-########## end of file ##########
+# -- End of File --

@@ -188,7 +188,7 @@ class Simulation(object):
         """
 
         """
-        while (abs(self.integrator.time) < self.args.t_end):
+        while abs(self.integrator.time) < self.args.t_end:
             # evolve a single time-step
             self.integrator.evolve_step(self.args.t_end)
 
@@ -439,4 +439,4 @@ def main():
     args.func(args)
 
 
-########## end of file ##########
+# -- End of File --

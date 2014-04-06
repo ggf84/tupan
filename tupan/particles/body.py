@@ -673,4 +673,4 @@ class Bodies(AbstractNbodyMethods):
                 self.__dict__[name][...] = array[name]
 
 
-########## end of file ##########
+# -- End of File --

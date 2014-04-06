@@ -206,4 +206,4 @@ class ParticleSystem(AbstractNbodyMethods):
             return
 
 
-########## end of file ##########
+# -- End of File --

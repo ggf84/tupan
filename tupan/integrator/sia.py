@@ -995,10 +995,11 @@ class SIA(Base):
         """
 
         """
-        logger.info("Initializing '%s' integrator.",
-                    self.method)
-
         ps = self.ps
+        logger.info("Initializing '%s' integrator at "
+                    "t_curr = %g and t_end = %g.",
+                    self.method, ps.t_curr, t_end)
+
         if ps.include_pn_corrections:
             ps.register_auxiliary_attribute("wx", "real")
             ps.register_auxiliary_attribute("wy", "real")
@@ -1020,10 +1021,10 @@ class SIA(Base):
         """
 
         """
-        logger.info("Finalizing '%s' integrator.",
-                    self.method)
-
         ps = self.ps
+        logger.info("Finalizing '%s' integrator at "
+                    "t_curr = %g and t_end = %g.",
+                    self.method, ps.t_curr, t_end)
 
         if self.viewer:
             self.viewer.show_event(ps)
@@ -1123,4 +1124,4 @@ class SIA(Base):
         return join(slow, fast)
 
 
-########## end of file ##########
+# -- End of File --

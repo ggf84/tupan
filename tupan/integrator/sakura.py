@@ -70,10 +70,10 @@ class Sakura(Base):
         """
 
         """
-        logger.info("Initializing '%s' integrator.",
-                    self.method)
-
         ps = self.ps
+        logger.info("Initializing '%s' integrator at "
+                    "t_curr = %g and t_end = %g.",
+                    self.method, ps.t_curr, t_end)
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)
@@ -88,10 +88,10 @@ class Sakura(Base):
         """
 
         """
-        logger.info("Finalizing '%s' integrator.",
-                    self.method)
-
         ps = self.ps
+        logger.info("Finalizing '%s' integrator at "
+                    "t_curr = %g and t_end = %g.",
+                    self.method, ps.t_curr, t_end)
 
         if self.viewer:
             self.viewer.show_event(ps)
@@ -159,4 +159,4 @@ class Sakura(Base):
         return ps
 
 
-########## end of file ##########
+# -- End of File --

@@ -12,4 +12,4 @@ VERSION_SHORT = '.'.join(str(x) for x in VERSION_TUPLE)
 VERSION = '.'.join(str(x) for x in VERSION_TUPLE) + VERSION_STATUS
 
 
-########## end of file ##########
+# -- End of File --

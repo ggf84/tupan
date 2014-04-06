@@ -115,10 +115,11 @@ class NREG(Base):
         """
 
         """
-        logger.info("Initializing '%s' integrator.",
-                    self.method)
-
         ps = self.ps
+        logger.info("Initializing '%s' integrator at "
+                    "t_curr = %g and t_end = %g.",
+                    self.method, ps.t_curr, t_end)
+
         type(ps).E0 = ps.kinetic_energy + ps.potential_energy
         type(ps).W = -ps.potential_energy
         type(ps).U = -ps.potential_energy
@@ -137,10 +138,10 @@ class NREG(Base):
         """
 
         """
-        logger.info("Finalizing '%s' integrator.",
-                    self.method)
-
         ps = self.ps
+        logger.info("Finalizing '%s' integrator at "
+                    "t_curr = %g and t_end = %g.",
+                    self.method, ps.t_curr, t_end)
 
         if self.viewer:
             self.viewer.show_event(ps)
@@ -175,4 +176,4 @@ class NREG(Base):
         return ps
 
 
-########## end of file ##########
+# -- End of File --

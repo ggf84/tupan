@@ -215,4 +215,4 @@ class Stream(yaml.YAMLObject):
         return ps
 
 
-########## end of file ##########
+# -- End of File --

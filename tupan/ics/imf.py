@@ -21,9 +21,6 @@ class IMFSample(object):
     """
 
     """
-    def __new__(cls, *args):
-        return object.__new__(cls)
-
     def __init__(self, imf_func, min_mlow, max_mhigh, mlow, mhigh):
         """
 
@@ -68,9 +65,6 @@ class IMF(object):
     """
 
     """
-    def __new__(cls):
-        return object.__new__(cls)
-
     @classmethod
     def equalmass(self):
         imf_func = lambda m: (1.0+m)-m
@@ -112,4 +106,4 @@ class IMF(object):
         return imf
 
 
-########## end of file ##########
+# -- End of File --

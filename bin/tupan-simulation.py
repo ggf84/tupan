@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 
 """
 Use this script to perform a new N-body simulation,
@@ -15,9 +16,8 @@ For details about command line arguments:
 
 
 if __name__ == "__main__":
-    from tupan.simulation import main
+    from tupan import simulation
+    simulation.main()
 
-    main()
 
-
-########## end of file ##########
+# -- End of File --
