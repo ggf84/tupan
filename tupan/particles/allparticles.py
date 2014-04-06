@@ -100,13 +100,13 @@ class ParticleSystem(AbstractNbodyMethods):
     def append(self, obj):
         if obj.n:
             try:
-                items = obj.members.items()
-            except:
-                items = [(type(obj).__name__.lower(), obj)]
-            for (k, v) in items:
+                members = obj.members
+            except AttributeError:
+                members = dict([(type(obj).__name__.lower(), obj)])
+            for (k, v) in members.items():
                 try:
                     self.members[k].append(v)
-                except:
+                except KeyError:
                     self.members[k] = v.copy()
             self.n = len(self)
             self._rebind_attrs()

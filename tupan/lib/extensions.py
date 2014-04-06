@@ -136,7 +136,7 @@ class Phi(AbstractExtension):
 
         self.kernel.set_args(self.inargs + self.outargs)
 
-    def _pycalc(self, ips, jps, **kwargs):
+    def _pycalc(self, ips, jps):
         # Never use this method for production runs. It is very slow
         # and is here only for performance comparisons. It is also
         # likely that only the classes Acc and Phi will have an
@@ -202,7 +202,7 @@ class Acc(AbstractExtension):
 
         self.kernel.set_args(self.inargs + self.outargs)
 
-    def _pycalc(self, ips, jps, **kwargs):
+    def _pycalc(self, ips, jps):
         # Never use this method for production runs. It is very slow
         # and is here only for performance comparisons. It is also
         # likely that only the classes Acc and Phi will have an
