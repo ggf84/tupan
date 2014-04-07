@@ -137,13 +137,15 @@ class CLKernel(object):
 #        flags = mapf.READ | mapf.WRITE
 #        queue = self.queue
 #        for (ary, buf) in zip(arrays, buffers):
-#            (pointer, ev) = cl.enqueue_map_buffer(queue,
-#                                                  buf,
-#                                                  flags,
-#                                                  0,
-#                                                  ary.shape,
-#                                                  ary.dtype,
-#                                                  "C")
+#            pointer, ev = cl.enqueue_map_buffer(
+#                              queue,
+#                              buf,
+#                              flags,
+#                              0,
+#                              ary.shape,
+#                              ary.dtype,
+#                              "C"
+#                          )
 #            ev.wait()
         for (ary, buf) in zip(arrays, buffers):
             cl.enqueue_copy(self.queue, ary, buf)

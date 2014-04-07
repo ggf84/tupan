@@ -533,69 +533,69 @@ if "--pn_order" in sys.argv:
     AbstractNbodyMethods = PNbodyMethods
 
 
-#@decallmethods(timings)
-#@make_attrs
-# class Body(AbstractNbodyMethods):
-#    """
-#    The most basic particle type.
-#    """
-#    attrs = AbstractNbodyMethods.attrs + AbstractNbodyMethods.special_attrs
-#    names = AbstractNbodyMethods.names + AbstractNbodyMethods.special_names
-#    dtype = [(_[0], _[1]) for _ in attrs]
-#    data0 = np.zeros(0, dtype)
+# @decallmethods(timings)
+# @make_attrs
+#  class Body(AbstractNbodyMethods):
+#     """
+#     The most basic particle type.
+#     """
+#     attrs = AbstractNbodyMethods.attrs + AbstractNbodyMethods.special_attrs
+#     names = AbstractNbodyMethods.names + AbstractNbodyMethods.special_names
+#     dtype = [(_[0], _[1]) for _ in attrs]
+#     data0 = np.zeros(0, dtype)
 #
-#    def __init__(self, n=0, data=None):
-#        """
-#        Initializer
-#        """
-#        if data is None:
-#            if n: data = np.zeros(n, self.dtype)
-#            else: data = self.data0
-#        self.data = data
-#        self.n = len(self)
+#     def __init__(self, n=0, data=None):
+#         """
+#         Initializer
+#         """
+#         if data is None:
+#             if n: data = np.zeros(n, self.dtype)
+#             else: data = self.data0
+#         self.data = data
+#         self.n = len(self)
 #
-#    #
-#    # miscellaneous methods
-#    #
-#
-#
-#    def append(self, obj):
-#        if obj.n:
-#            self.data = np.concatenate((self.data, obj.data))
-#            self.n = len(self)
+#     #
+#     # miscellaneous methods
+#     #
 #
 #
-#    def remove(self, id):
-#        slc = np.where(self.id == id)
-#        self.data = np.delete(self.data, slc, 0)
-#        self.n = len(self)
+#     def append(self, obj):
+#         if obj.n:
+#             self.data = np.concatenate((self.data, obj.data))
+#             self.n = len(self)
 #
 #
-#    def insert(self, id, obj):
-#        index = np.where(self.id == id)[0]
-#        v = obj.data
-#        self.data = np.insert(self.data, index*np.ones(len(v)), v, 0)
-#        self.n = len(self)
+#     def remove(self, id):
+#         slc = np.where(self.id == id)
+#         self.data = np.delete(self.data, slc, 0)
+#         self.n = len(self)
 #
 #
-#    def pop(self, id=None):
-#        if id is None:
-#            index = -1
-#            id = self.id[-1]
-#        else:
-#            index = np.where(self.id == id)[0]
-#        obj = self[index]
-#        self.remove(id)
-#        return obj
+#     def insert(self, id, obj):
+#         index = np.where(self.id == id)[0]
+#         v = obj.data
+#         self.data = np.insert(self.data, index*np.ones(len(v)), v, 0)
+#         self.n = len(self)
 #
 #
-#    def get_state(self):
-#        return self.data
+#     def pop(self, id=None):
+#         if id is None:
+#             index = -1
+#             id = self.id[-1]
+#         else:
+#             index = np.where(self.id == id)[0]
+#         obj = self[index]
+#         self.remove(id)
+#         return obj
 #
 #
-#    def set_state(self, array):
-#        self.data[...] = array
-#        self.n = len(self)
+#     def get_state(self):
+#         return self.data
+#
+#
+#     def set_state(self, array):
+#         self.data[...] = array
+#         self.n = len(self)
 
 
 ###############################################################################
@@ -625,8 +625,8 @@ class Bodies(AbstractNbodyMethods):
         fmt += "])"
         return fmt
 
-    def __contains__(self, id):
-        return id in self.id
+    def __contains__(self, idx):
+        return idx in self.id
 
     def __len__(self):
         return len(self.id)
