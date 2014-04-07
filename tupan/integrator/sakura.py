@@ -135,9 +135,9 @@ class Sakura(Base):
 #                e1 = p.kinetic_energy + p.potential_energy
 #                de[0] = e1/self.e0 - 1
 #                if abs(de[0]) > tol:
-##                    nsteps += (nsteps+1)//2
+# #                   nsteps += (nsteps+1)//2
 #                    nsteps *= 2
-##                    print(nsteps, de, tol)
+# #                   print(nsteps, de, tol)
 #                    break
 
         if "asakura" in self.method:

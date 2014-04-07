@@ -61,17 +61,17 @@ def nreg_v(ps, dt):
 #                                         + ps.vz * ps.az)).sum()
     return ps
 
-##    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
-##                                         + ps.vy * ps.ay
-##                                         + ps.vz * ps.az)).sum()
-#    ps.vx += dt * ps.ax
-#    ps.vy += dt * ps.ay
-#    ps.vz += dt * ps.az
-#    type(ps).W = (ps.kinetic_energy - ps.E0)
-##    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
-##                                         + ps.vy * ps.ay
-##                                         + ps.vz * ps.az)).sum()
-#    return ps
+# #    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
+# #                                         + ps.vy * ps.ay
+# #                                         + ps.vz * ps.az)).sum()
+#     ps.vx += dt * ps.ax
+#     ps.vy += dt * ps.ay
+#     ps.vz += dt * ps.az
+#     type(ps).W = (ps.kinetic_energy - ps.E0)
+# #    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
+# #                                         + ps.vy * ps.ay
+# #                                         + ps.vz * ps.az)).sum()
+    return ps
 
 
 def anreg_step(ps, h):

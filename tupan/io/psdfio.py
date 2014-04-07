@@ -52,12 +52,12 @@ class PSDFIO(object):
         try:
             ps = self.load_snapshot()
             stream.dump_snapshot(ps)
-        except:
+        except Exception:
             ps = self.load_worldline()
             stream.dump_worldline(ps)
 
 
-#@decallmethods(timings)
+# @decallmethods(timings)
 class Stream(yaml.YAMLObject):
     """
 
@@ -142,7 +142,7 @@ class Stream(yaml.YAMLObject):
 
     @classmethod
     def from_loader(cls, data):
-        from tupan.particles.allparticles import System
+        from tupan.particles.allparticles import ParticleSystem
         from tupan.particles.sph import Sphs
         from tupan.particles.star import Stars
         from tupan.particles.blackhole import Blackholes
@@ -168,7 +168,7 @@ class Stream(yaml.YAMLObject):
             if 's' in item:
                 obj.spin[index] = item['s']
 
-        ps = System()
+        ps = ParticleSystem()
 
         for item in data:
             if 'type' in item:

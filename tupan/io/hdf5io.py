@@ -80,7 +80,7 @@ class HDF5IO(object):
             base_name += "_"+str(snap_number).zfill(6)
         group = list(fobj[base_name].values())[0]
         ps = pickle.loads(group.attrs["Class"])()
-        for (k, v) in group.items():
+        for v in group.values():
             obj = pickle.loads(v.attrs["Class"])(len(v))
             obj.set_state(v[...])
             ps.append(obj)
@@ -138,7 +138,7 @@ class HDF5IO(object):
         try:
             ps = self.load_snapshot()
             stream.dump_snapshot(ps)
-        except:
+        except Exception:
             ps = self.load_worldline()
             stream.dump_worldline(ps)
 
