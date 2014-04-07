@@ -40,6 +40,10 @@ class Timer(object):
             self.toc = timeit.default_timer()
         return self.toc - self.tic
 
+    def reset_at(self, time):
+        self.stopped = False
+        self.tic += timeit.default_timer() - time
+
 
 class Timing(object):
     """

@@ -175,13 +175,8 @@ class Simulation(object):
         self.res_steps = 0
 
     def dump_restart_file(self):
-        if sys.version_info >= (2, 7):
-            with open(self.args.restart_file, 'wb') as fobj:
-                pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
-        else:
-            fobj = open(self.args.restart_file, 'wb')
+        with open(self.args.restart_file, 'wb') as fobj:
             pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
-            fobj.close()
 
     def evolve(self):
         """
@@ -198,7 +193,6 @@ class Simulation(object):
 
         # Finalize the integrator
         self.integrator.finalize(self.args.t_end)
-        self.dump_restart_file()
 
 
 # ------------------------------------------------------------------------
@@ -220,19 +214,19 @@ def _main_newrun(args):
 
 
 def _main_restart(args):
-    if sys.version_info >= (2, 7):
-        with open(args.restart_file, "rb") as fobj:
-            mysim = pickle.load(fobj)
-    else:
-        fobj = open(args.restart_file, "rb")
+    with open(args.restart_file, "rb") as fobj:
         mysim = pickle.load(fobj)
-        fobj.close()
 
     # update args
     type(mysim.integrator.integrator.ps).t_curr = mysim.args.t_end
-    mysim.args.t_end = args.t_end
     if args.eta is not None:
         mysim.integrator.integrator.eta = args.eta
+
+    # reset t_end
+    mysim.args.t_end = args.t_end
+
+    # reset timer
+    mysim.dia.timer.reset_at(mysim.dia.timer.toc)
 
     mysim.evolve()
     return 0
@@ -343,9 +337,9 @@ def parse_args():
     newrun.add_argument(
         "--restart_freq",
         type=int,
-        default=128,
+        default=1,
         help="Number of time-steps between rewrites of the restart file "
-             "(type: int, default: 128)."
+             "(type: int, default: 1)."
     )
     newrun.add_argument(
         "--use_cl",
