@@ -31,8 +31,8 @@ class Base(object):
                 )
             else:
                 from ..lib import extensions
-                extensions.clight.pn_order = pn_order
-                extensions.clight.clight = clight
+                extensions.pn.order = pn_order
+                extensions.pn.clight = clight
                 type(ps).include_pn_corrections = True
 
         self.reporter = kwargs.pop("reporter", None)

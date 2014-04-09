@@ -24,25 +24,25 @@ __all__ = ["Phi", "phi",
            "NREG_V", "nreg_v",
            ]
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 @decallmethods(timings)
-class Clight(object):
-    """This class holds the values of the PN-order, the speed of light and
-    some of its inverse powers.
+class PN(object):
+    """This class holds the values of the PN parameters.
+
     """
     def __init__(self):
-        self._pn_order = 0
+        self._order = 0
         self._clight = None
 
     @property
-    def pn_order(self):
-        return self._pn_order
+    def order(self):
+        return self._order
 
-    @pn_order.setter
-    def pn_order(self, value):
-        self._pn_order = int(value)
+    @order.setter
+    def order(self, value):
+        self._order = int(value)
 
     @property
     def clight(self):
@@ -51,13 +51,6 @@ class Clight(object):
     @clight.setter
     def clight(self, value):
         self._clight = float(value)
-        self.inv1 = 1.0/self._clight
-        self.inv2 = self.inv1**2
-        self.inv3 = self.inv1**3
-        self.inv4 = self.inv1**4
-        self.inv5 = self.inv1**5
-        self.inv6 = self.inv1**6
-        self.inv7 = self.inv1**7
 
 
 @timings
@@ -69,7 +62,7 @@ def get_kernel(name, backend, prec):
     else:
         msg = "Inappropriate 'backend': {}. Supported values: ['C', 'CL']"
         raise ValueError(msg.format(backend))
-    logger.debug(
+    LOGGER.debug(
         "Using '%s' from %s precision %s extension module.",
         name, prec, backend
     )
@@ -82,6 +75,14 @@ def prepare_args(args, argtypes):
 
 
 class AbstractExtension(object):
+
+    def __init__(self, name, backend, prec):
+        self.kernel = get_kernel(name, backend, prec)
+        self.inargs = None
+        self._inargs = None
+        self.outargs = None
+        self._outargs = None
+
     def set_args(self, ips, jps, **kwargs):
         raise NotImplementedError
 
@@ -103,7 +104,7 @@ class Phi(AbstractExtension):
 
     """
     def __init__(self, backend, prec):
-        self.kernel = get_kernel("phi_kernel", backend, prec)
+        super(Phi, self).__init__("phi_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -165,7 +166,7 @@ class Acc(AbstractExtension):
 
     """
     def __init__(self, backend, prec):
-        self.kernel = get_kernel("acc_kernel", backend, prec)
+        super(Acc, self).__init__("acc_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -239,7 +240,7 @@ class AccJerk(AbstractExtension):
 
     """
     def __init__(self, backend, prec):
-        self.kernel = get_kernel("acc_jerk_kernel", backend, prec)
+        super(AccJerk, self).__init__("acc_jerk_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -291,7 +292,7 @@ class SnapCrackle(AbstractExtension):
 
     """
     def __init__(self, backend, prec):
-        self.kernel = get_kernel("snap_crackle_kernel", backend, prec)
+        super(SnapCrackle, self).__init__("snap_crackle_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -349,7 +350,7 @@ class Tstep(AbstractExtension):
 
     """
     def __init__(self, backend, prec):
-        self.kernel = get_kernel("tstep_kernel", backend, prec)
+        super(Tstep, self).__init__("tstep_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -393,7 +394,7 @@ class PNAcc(AbstractExtension):
 
     """
     def __init__(self, backend, prec):
-        self.kernel = get_kernel("pnacc_kernel", backend, prec)
+        super(PNAcc, self).__init__("pnacc_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -427,10 +428,10 @@ class PNAcc(AbstractExtension):
                         nj,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2, jps.vx, jps.vy, jps.vz,
-                        clight.pn_order, clight.inv1,
-                        clight.inv2, clight.inv3,
-                        clight.inv4, clight.inv5,
-                        clight.inv6, clight.inv7)
+                        pn.order, pn.clight**(-1),
+                        pn.clight**(-2), pn.clight**(-3),
+                        pn.clight**(-4), pn.clight**(-5),
+                        pn.clight**(-6), pn.clight**(-7))
         self._outargs = (ips.pnax, ips.pnay, ips.pnaz)
 
         self.inargs = prepare_args(self._inargs, self.argtypes)
@@ -445,7 +446,7 @@ class Sakura(AbstractExtension):
 
     """
     def __init__(self, backend, prec):
-        self.kernel = get_kernel("sakura_kernel", backend, prec)
+        super(Sakura, self).__init__("sakura_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -510,7 +511,7 @@ class NREG_X(AbstractExtension):
 
     """
     def __init__(self, backend, prec):
-        self.kernel = get_kernel("nreg_Xkernel", backend, prec)
+        super(NREG_X, self).__init__("nreg_Xkernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -568,7 +569,7 @@ class NREG_V(AbstractExtension):
 
     """
     def __init__(self, backend, prec):
-        self.kernel = get_kernel("nreg_Vkernel", backend, prec)
+        super(NREG_V, self).__init__("nreg_Vkernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -622,7 +623,7 @@ class Kepler(AbstractExtension):
         if backend == "CL":    # No need for CL support.
             backend = "C"      # C is fast enough!
 
-        self.kernel = get_kernel("kepler_solver_kernel", backend, prec)
+        super(Kepler, self).__init__("kepler_solver_kernel", backend, prec)
         cty = self.kernel.cty
         argtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -648,19 +649,19 @@ class Kepler(AbstractExtension):
         self.kernel.set_args(self.inargs + self.outargs)
 
 
-backend = "CL" if "--use_cl" in sys.argv else "C"
+BACKEND = "CL" if "--use_cl" in sys.argv else "C"
 
-clight = Clight()
-phi = Phi(backend, ctype.prec)
-acc = Acc(backend, ctype.prec)
-acc_jerk = AccJerk(backend, ctype.prec)
-snap_crackle = SnapCrackle(backend, ctype.prec)
-tstep = Tstep(backend, ctype.prec)
-pnacc = PNAcc(backend, ctype.prec)
-sakura = Sakura(backend, ctype.prec)
-nreg_x = NREG_X(backend, ctype.prec)
-nreg_v = NREG_V(backend, ctype.prec)
-kepler = Kepler(backend, ctype.prec)
+pn = PN()
+phi = Phi(BACKEND, ctype.prec)
+acc = Acc(BACKEND, ctype.prec)
+acc_jerk = AccJerk(BACKEND, ctype.prec)
+snap_crackle = SnapCrackle(BACKEND, ctype.prec)
+tstep = Tstep(BACKEND, ctype.prec)
+pnacc = PNAcc(BACKEND, ctype.prec)
+sakura = Sakura(BACKEND, ctype.prec)
+nreg_x = NREG_X(BACKEND, ctype.prec)
+nreg_v = NREG_V(BACKEND, ctype.prec)
+kepler = Kepler(BACKEND, ctype.prec)
 
 
 # -- End of File --
