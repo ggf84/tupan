@@ -75,23 +75,29 @@ def make_lib(prec):
     return ffi, clib
 
 
-ffi = {}
-lib = {}
-ffi['float32'], lib['float32'] = make_lib('float32')
-ffi['float64'], lib['float64'] = make_lib('float64')
+FFI = {}
+LIB = {}
+FFI['float32'], LIB['float32'] = make_lib('float32')
+FFI['float64'], LIB['float64'] = make_lib('float64')
 
 
 class CKernel(object):
 
     def __init__(self, prec, name):
-        self.kernel = getattr(lib[prec], name)
-        _ffi = ffi[prec]
+        self.kernel = getattr(LIB[prec], name)
+        self._args = None
+        self._argtypes = None
 
-        from_buffer = ctypes.c_char.from_buffer
+        ffi = FFI[prec]
+
+#        from_buffer = ctypes.c_char.from_buffer
+#        from_buffer = ctypes.POINTER(ctypes.c_char).from_buffer
+        from_buffer = (ctypes.c_char * 0).from_buffer
+
         addressof = ctypes.addressof
-        icast = partial(_ffi.cast, "INT *")
-        uicast = partial(_ffi.cast, "UINT *")
-        rcast = partial(_ffi.cast, "REAL *")
+        icast = partial(ffi.cast, "INT *")
+        uicast = partial(ffi.cast, "UINT *")
+        rcast = partial(ffi.cast, "REAL *")
 
         types = namedtuple("Types", ["c_int", "c_int_p",
                                      "c_uint", "c_uint_p",
@@ -107,11 +113,25 @@ class CKernel(object):
     def set_gsize(self, ni, nj):
         pass
 
-    def set_args(self, args, start=0):
-        self.args = args
+    @property
+    def argtypes(self):
+        return self._argtypes
 
-    def map_buffers(self, arrays, buffers):
-        return arrays
+    @argtypes.setter
+    def argtypes(self, types):
+        self._argtypes = types
+
+    @property
+    def args(self):
+        return self._args
+
+    @args.setter
+    def args(self, args):
+        argtypes = self.argtypes
+        self._args = [argtype(arg) for (arg, argtype) in zip(args, argtypes)]
+
+    def map_buffers(self, **kwargs):
+        return kwargs['outargs']
 
     def run(self):
         self.kernel(*self.args)

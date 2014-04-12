@@ -83,20 +83,21 @@ def make_lib(prec):
     return cllib
 
 
-lib = {}
-lib['float32'] = make_lib('float32')
-lib['float64'] = make_lib('float64')
+LIB = {}
+LIB['float32'] = make_lib('float32')
+LIB['float64'] = make_lib('float64')
 
 
 class CLKernel(object):
 
     def __init__(self, prec, name):
-        self.kernel = getattr(lib[prec], name)
-        self.unroll = UNROLL
+        self.kernel = getattr(LIB[prec], name)
+        self._args = None
+        self._argtypes = None
+
         self.max_lsize = LSIZE[prec]
         self.vector_width = VW[prec]
         self.queue = cl.CommandQueue(ctx)
-        self.local_size = None
 
         memf = cl.mem_flags
 #        flags = memf.READ_WRITE | memf.USE_HOST_PTR
@@ -128,11 +129,29 @@ class CLKernel(object):
         self.global_size = (gsize, 1, 1)
         self.local_size = (lsize, 1, 1)
 
-    def set_args(self, args, start=0):
-        for (i, arg) in enumerate(args, start):
+    @property
+    def argtypes(self):
+        return self._argtypes
+
+    @argtypes.setter
+    def argtypes(self, types):
+        self._argtypes = types
+
+    @property
+    def args(self):
+        return self._args
+
+    @args.setter
+    def args(self, args):
+        argtypes = self.argtypes
+        self._args = [argtype(arg) for (arg, argtype) in zip(args, argtypes)]
+        for (i, arg) in enumerate(self._args):
             self.kernel.set_arg(i, arg)
 
-    def map_buffers(self, arrays, buffers):
+    def map_buffers(self, **kwargs):
+        arrays = kwargs['outargs']
+        buffers = self.args[len(kwargs['inpargs']):]
+
 #        mapf = cl.map_flags
 #        flags = mapf.READ | mapf.WRITE
 #        queue = self.queue
