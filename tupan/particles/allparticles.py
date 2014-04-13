@@ -62,8 +62,8 @@ class ParticleSystem(AbstractNbodyMethods):
                 ns += obj.n
 
     def register_auxiliary_attribute(self, attr, sctype):
-        from ..lib.utils.ctype import ctypedict
-        dtype = ctypedict[sctype]
+        from ..lib.utils.ctype import Ctype
+        dtype = vars(Ctype)[sctype]
         if attr in self.__dict__:
             raise ValueError("'{0}' is already a registered "
                              "attribute.".format(attr))

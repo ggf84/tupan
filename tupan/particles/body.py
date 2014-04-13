@@ -44,14 +44,14 @@ class NbodyMethods(object):
 
     @property       # TODO: @classproperty ???
     def dtype(self):
-        from ..lib.utils.ctype import ctypedict
-        return [(name, ctypedict[sctype])
+        from ..lib.utils.ctype import Ctype
+        return [(name, vars(Ctype)[sctype])
                 for name, sctype, _ in self.attrs]
 
     @property       # TODO: @classproperty ???
     def special_dtype(self):
-        from ..lib.utils.ctype import ctypedict
-        return [(name, ctypedict[sctype])
+        from ..lib.utils.ctype import Ctype
+        return [(name, vars(Ctype)[sctype])
                 for name, sctype, _ in self.special_attrs]
 
     @property

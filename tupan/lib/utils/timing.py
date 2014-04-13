@@ -50,9 +50,12 @@ class Timing(object):
 
     """
     def __init__(self, profile):
-        d = lambda: defaultdict(int)
-        dd = lambda: defaultdict(d)
-        self.timings = defaultdict(dd)
+        def make_tree(depth, basetype):
+            if depth == 0:
+                return defaultdict(basetype)
+            return defaultdict(lambda: make_tree(depth-1, basetype))
+
+        self.timings = make_tree(2, int)
         self.profile = profile
 
     def __call__(self, func):

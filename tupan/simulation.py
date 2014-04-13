@@ -19,7 +19,7 @@ from .analysis.glviewer import GLviewer
 from .lib.utils.timing import decallmethods, timings, Timer
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 __all__ = ['Simulation']

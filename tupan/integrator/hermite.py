@@ -14,7 +14,7 @@ from ..lib.utils.timing import decallmethods, timings
 
 __all__ = ["Hermite"]
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class H2(object):
@@ -314,7 +314,7 @@ class Hermite(Base):
 
         """
         ps = self.ps
-        logger.info("Initializing '%s' integrator at "
+        LOGGER.info("Initializing '%s' integrator at "
                     "t_curr = %g and t_end = %g.",
                     self.method, ps.t_curr, t_end)
 
@@ -332,7 +332,7 @@ class Hermite(Base):
 
         """
         ps = self.ps
-        logger.info("Finalizing '%s' integrator at "
+        LOGGER.info("Finalizing '%s' integrator at "
                     "t_curr = %g and t_end = %g.",
                     self.method, ps.t_curr, t_end)
 

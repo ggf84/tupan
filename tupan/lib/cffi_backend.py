@@ -14,19 +14,19 @@ from functools import partial
 from collections import namedtuple
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, "src")
 
 
-def make_lib(prec):
+def make_lib(fpwidth):
     """
 
     """
-    cint = "int" if prec == "float32" else "long"
-    creal = "float" if prec == 'float32' else "double"
-    logger.debug("Building/Loading %s C extension module.", prec)
+    cint = "int" if fpwidth == "fp32" else "long"
+    creal = "float" if fpwidth == 'fp32' else "double"
+    LOGGER.debug("Building/Loading %s C extension module.", fpwidth)
 
     fnames = ("phi_kernel.c",
               "acc_kernel.c",
@@ -39,20 +39,20 @@ def make_lib(prec):
               "kepler_solver_kernel.c",
               )
 
-    s = []
+    src = []
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
-        s.append("typedef {} INT;".format(cint))
-        s.append("typedef unsigned {} UINT;".format(cint))
-        s.append("typedef {} REAL;".format(creal))
-        s.append(fobj.read())
-    source = "\n".join(s)
+        src.append("typedef {} INT;".format(cint))
+        src.append("typedef unsigned {} UINT;".format(cint))
+        src.append("typedef {} REAL;".format(creal))
+        src.append(fobj.read())
+    source = "\n".join(src)
 
     ffi = cffi.FFI()
 
     ffi.cdef(source)
 
     define_macros = []
-    if prec == "float64":
+    if fpwidth == "fp64":
         define_macros.append(("CONFIG_USE_DOUBLE", 1))
 
     from ..config import CACHE_DIR
@@ -69,7 +69,7 @@ def make_lib(prec):
         sources=[os.path.join(PATH, fname) for fname in fnames],
     )
 
-    logger.debug("C extension module loaded: "
+    LOGGER.debug("C extension module loaded: "
                  "(U)INT is (u)%s, REAL is %s.",
                  cint, creal)
     return ffi, clib
@@ -77,18 +77,18 @@ def make_lib(prec):
 
 FFI = {}
 LIB = {}
-FFI['float32'], LIB['float32'] = make_lib('float32')
-FFI['float64'], LIB['float64'] = make_lib('float64')
+FFI['fp32'], LIB['fp32'] = make_lib('fp32')
+FFI['fp64'], LIB['fp64'] = make_lib('fp64')
 
 
 class CKernel(object):
 
-    def __init__(self, prec, name):
-        self.kernel = getattr(LIB[prec], name)
+    def __init__(self, fpwidth, name):
+        self.kernel = getattr(LIB[fpwidth], name)
         self._args = None
         self._argtypes = None
 
-        ffi = FFI[prec]
+        ffi = FFI[fpwidth]
 
 #        from_buffer = ctypes.c_char.from_buffer
 #        from_buffer = ctypes.POINTER(ctypes.c_char).from_buffer

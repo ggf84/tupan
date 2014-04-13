@@ -16,7 +16,7 @@ from ..lib.utils.timing import decallmethods, timings
 __all__ = ["NREG"]
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def nreg_x(ps, dt):
@@ -116,7 +116,7 @@ class NREG(Base):
 
         """
         ps = self.ps
-        logger.info("Initializing '%s' integrator at "
+        LOGGER.info("Initializing '%s' integrator at "
                     "t_curr = %g and t_end = %g.",
                     self.method, ps.t_curr, t_end)
 
@@ -139,7 +139,7 @@ class NREG(Base):
 
         """
         ps = self.ps
-        logger.info("Finalizing '%s' integrator at "
+        LOGGER.info("Finalizing '%s' integrator at "
                     "t_curr = %g and t_end = %g.",
                     self.method, ps.t_curr, t_end)
 

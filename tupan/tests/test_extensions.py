@@ -11,7 +11,7 @@ import sys
 import unittest
 from collections import OrderedDict, defaultdict
 from tupan.lib import extensions
-from tupan.lib.utils import ctype
+from tupan.lib.utils.ctype import Ctype
 from tupan.lib.utils.timing import Timer
 
 
@@ -50,8 +50,8 @@ class TestCase1(unittest.TestCase):
         n = ps.n
         deviations = []
 
-        krnlC = kernel("C", ctype.prec)
-        krnlCL = kernel("CL", ctype.prec)
+        krnlC = kernel("C", Ctype.fpwidth)
+        krnlCL = kernel("CL", Ctype.fpwidth)
 
         iobj = ps
         for jdx in range(1, n+1):
@@ -143,8 +143,8 @@ class TestCase2(unittest.TestCase):
         msg = ("extensions.{0}: performance measurement:")
         print(msg.format(kernel.__name__))
 
-        krnlC = kernel("C", ctype.prec)
-        krnlCL = kernel("CL", ctype.prec)
+        krnlC = kernel("C", Ctype.fpwidth)
+        krnlCL = kernel("CL", Ctype.fpwidth)
 
         for ps in pslist:
             best = OrderedDict()

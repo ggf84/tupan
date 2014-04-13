@@ -15,7 +15,7 @@ from ..lib.utils.timing import decallmethods, timings
 
 __all__ = ["SIA"]
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 #
@@ -33,7 +33,7 @@ def split(ps, condition):
     fast = ps[~condition]
 
     if slow.n + fast.n != ps.n:
-        logger.error(
+        LOGGER.error(
             "slow.n + fast.n != ps.n: %d, %d, %d.",
             slow.n, fast.n, ps.n)
 
@@ -996,7 +996,7 @@ class SIA(Base):
 
         """
         ps = self.ps
-        logger.info("Initializing '%s' integrator at "
+        LOGGER.info("Initializing '%s' integrator at "
                     "t_curr = %g and t_end = %g.",
                     self.method, ps.t_curr, t_end)
 
@@ -1022,7 +1022,7 @@ class SIA(Base):
 
         """
         ps = self.ps
-        logger.info("Finalizing '%s' integrator at "
+        LOGGER.info("Finalizing '%s' integrator at "
                     "t_curr = %g and t_end = %g.",
                     self.method, ps.t_curr, t_end)
 

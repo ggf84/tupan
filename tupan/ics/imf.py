@@ -66,7 +66,7 @@ class IMF(object):
 
     """
     @classmethod
-    def equalmass(self):
+    def equalmass(cls):
         imf_func = lambda m: (1.0+m)-m
         min_mlow = 0.1
         max_mhigh = 10.0
@@ -76,7 +76,7 @@ class IMF(object):
         return imf
 
     @classmethod
-    def salpeter1955(self, mlow, mhigh):
+    def salpeter1955(cls, mlow, mhigh):
         imf_func = lambda m: m**(-1.35)
         min_mlow = 0.4
         max_mhigh = 120.0
@@ -84,7 +84,7 @@ class IMF(object):
         return imf
 
     @classmethod
-    def padoan2007(self, mlow, mhigh):
+    def padoan2007(cls, mlow, mhigh):
         from scipy.special import erf
         Gamma = 1.4
         m_ch = 1.0
@@ -97,7 +97,7 @@ class IMF(object):
         return imf
 
     @classmethod
-    def parravano2011(self, mlow, mhigh):
+    def parravano2011(cls, mlow, mhigh):
         imf_func = lambda m: (m**(-1.35))*(
             1.0 - np.exp(-(m/0.35)**(0.51+1.35)))
         min_mlow = 0.004

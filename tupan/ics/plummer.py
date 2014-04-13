@@ -15,7 +15,7 @@ from ..lib.utils.timing import decallmethods, timings
 
 __all__ = ['Plummer']
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 @decallmethods(timings)
@@ -49,7 +49,7 @@ class Plummer(object):
             # eps2 ~ (1/(m*n^2))^2 ~ 1/n^2 if m ~ 1/n
             eps2 = (1.0 / (mass * n**2))**2
         else:
-            logger.critical(
+            LOGGER.critical(
                 "Unexpected value for softening_type: %d.",
                 self.softening_type)
             raise ValueError(

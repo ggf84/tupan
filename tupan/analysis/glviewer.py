@@ -16,7 +16,7 @@ from matplotlib import cm
 from ..lib.utils.timing import Timer, decallmethods, timings
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 try:
@@ -25,7 +25,7 @@ try:
     HAS_GL = True
 except Exception as exc:
     HAS_GL = False
-    logger.exception(str(exc))
+    LOGGER.exception(str(exc))
     import warnings
     warnings.warn(
         """
@@ -40,8 +40,8 @@ except Exception as exc:
 __all__ = ['GLviewer']
 
 
-path = os.path.dirname(__file__)
-texture_path = os.path.join(path, 'textures')
+PATH = os.path.dirname(__file__)
+TEXTURE_PATH = os.path.join(PATH, 'textures')
 
 
 ESCAPE = '\033'
@@ -378,11 +378,11 @@ class GLviewer(object):
         gl.glColorMask(gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE)
 
         self.textures['star'] = self.load_texture(
-            os.path.join(texture_path, 'star.png'))
+            os.path.join(TEXTURE_PATH, 'star.png'))
         self.textures['sph'] = self.load_texture(
-            os.path.join(texture_path, 'sph.png'))
+            os.path.join(TEXTURE_PATH, 'sph.png'))
         self.textures['blackhole'] = self.load_texture(
-            os.path.join(texture_path, 'blackhole.png'))
+            os.path.join(TEXTURE_PATH, 'blackhole.png'))
 
         self.adjust_zoom()
 

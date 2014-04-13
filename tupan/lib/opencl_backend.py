@@ -14,34 +14,34 @@ from functools import partial
 from collections import namedtuple
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, "src")
 
-ctx = cl.create_some_context()
-dev = ctx.devices[0]
+CTX = cl.create_some_context()
+DEV = CTX.devices[0]
 
 UNROLL = 4
 
 LSIZE = {}
-LSIZE["float32"] = 64
-LSIZE["float64"] = 64
+LSIZE["fp32"] = 64
+LSIZE["fp64"] = 64
 
 VW = {}
-VW["float32"] = dev.preferred_vector_width_float
-VW["float64"] = dev.preferred_vector_width_double
+VW["fp32"] = DEV.preferred_vector_width_float
+VW["fp64"] = DEV.preferred_vector_width_double
 
 FAST_LOCAL_MEM = True
 
 
-def make_lib(prec):
+def make_lib(fpwidth):
     """
 
     """
-    cint = "int" if prec == "float32" else "long"
-    creal = "float" if prec == 'float32' else "double"
-    logger.debug("Building/Loading %s CL extension module.", prec)
+    cint = "int" if fpwidth == "fp32" else "long"
+    creal = "float" if fpwidth == 'fp32' else "double"
+    LOGGER.debug("Building/Loading %s CL extension module.", fpwidth)
 
     fnames = ("phi_kernel.cl",
               "acc_kernel.cl",
@@ -62,57 +62,57 @@ def make_lib(prec):
     # setting options
     options = " -I {path}".format(path=PATH)
     options += " -D CONFIG_USE_OPENCL"
-    if prec == "float64":
+    if fpwidth == "fp64":
         options += " -D CONFIG_USE_DOUBLE"
     if FAST_LOCAL_MEM:
         options += " -D FAST_LOCAL_MEM"
     options += " -D UNROLL={}".format(UNROLL)
-    options += " -D LSIZE={}".format(LSIZE[prec])
-    options += " -D VW={}".format(VW[prec])
+    options += " -D LSIZE={}".format(LSIZE[fpwidth])
+    options += " -D VW={}".format(VW[fpwidth])
     options += " -cl-fast-relaxed-math"
 #    options += " -cl-opt-disable"
 
     # building lib
-    program = cl.Program(ctx, src)
+    program = cl.Program(CTX, src)
     from ..config import CACHE_DIR
     cllib = program.build(options=options, cache_dir=CACHE_DIR)
 
-    logger.debug("CL extension module loaded: "
+    LOGGER.debug("CL extension module loaded: "
                  "(U)INT is (u)%s, REAL is %s.",
                  cint, creal)
     return cllib
 
 
 LIB = {}
-LIB['float32'] = make_lib('float32')
-LIB['float64'] = make_lib('float64')
+LIB['fp32'] = make_lib('fp32')
+LIB['fp64'] = make_lib('fp64')
 
 
 class CLKernel(object):
 
-    def __init__(self, prec, name):
-        self.kernel = getattr(LIB[prec], name)
+    def __init__(self, fpwidth, name):
+        self.kernel = getattr(LIB[fpwidth], name)
         self._args = None
         self._argtypes = None
 
-        self.max_lsize = LSIZE[prec]
-        self.vector_width = VW[prec]
-        self.queue = cl.CommandQueue(ctx)
+        self.max_lsize = LSIZE[fpwidth]
+        self.vector_width = VW[fpwidth]
+        self.queue = cl.CommandQueue(CTX)
 
         memf = cl.mem_flags
 #        flags = memf.READ_WRITE | memf.USE_HOST_PTR
         flags = memf.READ_WRITE | memf.COPY_HOST_PTR
-        clBuffer = partial(cl.Buffer, ctx, flags)
+        clBuffer = partial(cl.Buffer, CTX, flags)
 
-        from .utils.ctype import ctypedict
+        from .utils.ctype import Ctype
         types = namedtuple("Types", ["c_int", "c_int_p",
                                      "c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])
-        self.cty = types(c_int=ctypedict["int"].type,
+        self.cty = types(c_int=vars(Ctype)["int"].type,
                          c_int_p=lambda x: clBuffer(hostbuf=x),
-                         c_uint=ctypedict["uint"].type,
+                         c_uint=vars(Ctype)["uint"].type,
                          c_uint_p=lambda x: clBuffer(hostbuf=x),
-                         c_real=ctypedict["real"].type,
+                         c_real=vars(Ctype)["real"].type,
                          c_real_p=lambda x: clBuffer(hostbuf=x),
                          )
 
