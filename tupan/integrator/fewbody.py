@@ -7,15 +7,15 @@ TODO.
 
 
 from ..lib import extensions
-from ..lib.utils.timing import timings
+from ..lib.utils.timing import timings, bind_all
 
 
+@bind_all(timings)
 class FewBody(object):
     """
 
     """
     @staticmethod
-    @timings
     def drift(ips, dt):
         """Drift operator for post-Newtonian quantities.
 
@@ -28,7 +28,6 @@ class FewBody(object):
         return ips
 
     @staticmethod
-    @timings
     def kepler_solver(ips, dt):
         """
 
@@ -38,12 +37,11 @@ class FewBody(object):
                                       "Kepler-solver does not include "
                                       "post-Newtonian corrections.")
         else:
-            extensions.kepler.calc(ips, ips, dt=dt)
+            extensions.kepler(ips, ips, dt=dt)
         return ips
 
-    @staticmethod
-    @timings
-    def evolve(ips, dt):
+    @classmethod
+    def evolve(cls, ips, dt):
         """
 
         """
@@ -51,10 +49,10 @@ class FewBody(object):
             return ips
 
         if ips.n == 1:
-            return FewBody.drift(ips, dt)
+            return cls.drift(ips, dt)
 
         # if ips.n == 2:
-        return FewBody.kepler_solver(ips, dt)
+        return cls.kepler_solver(ips, dt)
 
 
 # -- End of File --

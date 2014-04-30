@@ -8,13 +8,13 @@ TODO.
 
 from __future__ import print_function
 import yaml
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
 
 
 __all__ = ['PSDFIO']
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class PSDFIO(object):
     """
 
@@ -57,7 +57,7 @@ class PSDFIO(object):
             stream.dump_worldline(ps)
 
 
-# @decallmethods(timings)
+@bind_all(timings)
 class Stream(yaml.YAMLObject):
     """
 

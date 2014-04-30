@@ -8,8 +8,10 @@ known numerical solutions.
 
 from __future__ import division
 from ..particles.allparticles import ParticleSystem
+from ..lib.utils.timing import timings
 
 
+@timings
 def make_binary(m1, m2, a, e):
     """
     Returns initial conditions for a binary system.
@@ -50,6 +52,7 @@ def make_binary(m1, m2, a, e):
     return ps
 
 
+@timings
 def make_pythagorean():
     """
     Returns initial conditions for the pythagorean 3-body system.
@@ -70,6 +73,7 @@ def make_pythagorean():
     return ps
 
 
+@timings
 def make_circular3():
     """
     Returns initial conditions for a 3-body system in a circular orbit.
@@ -90,6 +94,7 @@ def make_circular3():
     return ps
 
 
+@timings
 def make_figure83():
     """
     Returns initial conditions for a 3-body system in a 8-shaped orbit.
@@ -110,6 +115,7 @@ def make_figure83():
     return ps
 
 
+@timings
 def make_figure84():
     """
     Returns initial conditions for a 4-body system in a 8-shaped orbit.
@@ -130,6 +136,7 @@ def make_figure84():
     return ps
 
 
+@timings
 def make_solar_system():
     """
     Returns initial conditions for the 10-body solar system.

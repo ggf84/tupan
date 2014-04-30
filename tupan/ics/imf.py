@@ -10,13 +10,13 @@ from __future__ import print_function
 import numpy as np
 from scipy.integrate import quad
 from scipy.optimize import fminbound
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
 
 
 __all__ = ['IMF']
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class IMFSample(object):
     """
 
@@ -61,12 +61,13 @@ class IMFSample(object):
         return self._sample
 
 
+@bind_all(timings)
 class IMF(object):
     """
 
     """
-    @classmethod
-    def equalmass(cls):
+    @staticmethod
+    def equalmass():
         imf_func = lambda m: (1.0+m)-m
         min_mlow = 0.1
         max_mhigh = 10.0
@@ -75,16 +76,16 @@ class IMF(object):
         imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
         return imf
 
-    @classmethod
-    def salpeter1955(cls, mlow, mhigh):
+    @staticmethod
+    def salpeter1955(mlow, mhigh):
         imf_func = lambda m: m**(-1.35)
         min_mlow = 0.4
         max_mhigh = 120.0
         imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
         return imf
 
-    @classmethod
-    def padoan2007(cls, mlow, mhigh):
+    @staticmethod
+    def padoan2007(mlow, mhigh):
         from scipy.special import erf
         Gamma = 1.4
         m_ch = 1.0
@@ -96,8 +97,8 @@ class IMF(object):
         imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
         return imf
 
-    @classmethod
-    def parravano2011(cls, mlow, mhigh):
+    @staticmethod
+    def parravano2011(mlow, mhigh):
         imf_func = lambda m: (m**(-1.35))*(
             1.0 - np.exp(-(m/0.35)**(0.51+1.35)))
         min_mlow = 0.004

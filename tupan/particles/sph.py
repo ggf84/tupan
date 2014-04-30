@@ -6,18 +6,24 @@ TODO.
 """
 
 
+import numpy as np
 from .body import Bodies
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
+from ..lib.utils import typed_property
+from ..lib.utils.ctype import Ctype
 
 
 __all__ = ["Sphs"]
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Sphs(Bodies):
     """
 
     """
+    density = typed_property('density',
+                             lambda self: np.zeros(self.n, dtype=Ctype.real))
+
     attrs = Bodies.attrs + [
         ('density', "real", "density"),
     ]

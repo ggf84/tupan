@@ -12,6 +12,7 @@ import logging
 import pyopencl as cl
 from functools import partial
 from collections import namedtuple
+from .utils.timing import timings, bind_all
 
 
 LOGGER = logging.getLogger(__name__)
@@ -35,6 +36,7 @@ VW["fp64"] = DEV.preferred_vector_width_double
 FAST_LOCAL_MEM = True
 
 
+@timings
 def make_lib(fpwidth):
     """
 
@@ -88,6 +90,7 @@ LIB['fp32'] = make_lib('fp32')
 LIB['fp64'] = make_lib('fp64')
 
 
+@bind_all(timings)
 class CLKernel(object):
 
     def __init__(self, fpwidth, name):

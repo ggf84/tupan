@@ -10,7 +10,7 @@ from __future__ import print_function
 import logging
 from ..integrator import Base
 from .fewbody import FewBody
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
 
 
 __all__ = ["SIA"]
@@ -297,21 +297,21 @@ def sf_kick(slow, fast, dt):
 #
 # SIA21
 #
+@bind_all(timings)
 class SIA21(object):
     # REF.: Yoshida, Phys. Lett. A 150 (1990)
     coefs = ([1.0],
              [0.5])
 
-    @staticmethod
-    @timings
-    def dkd(ips, dt):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA21 DKD-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        k, d = SIA21.coefs
+        k, d = cls.coefs
 
         ips = drift(ips, d[0] * dt)
         ips = kick(ips, k[0] * dt)
@@ -319,16 +319,15 @@ class SIA21(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, dt):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA21 KDK-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        d, k = SIA21.coefs
+        d, k = cls.coefs
 
         ips = kick(ips, k[0] * dt)
         ips = drift(ips, d[0] * dt)
@@ -336,14 +335,13 @@ class SIA21(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, dt, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA21.coefs
-        erb = evolve, recurse, SIA21.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
         slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         slow, fast = sf_kick(slow, fast, k[0] * dt)
@@ -355,22 +353,22 @@ class SIA21(object):
 #
 # SIA22
 #
+@bind_all(timings)
 class SIA22(object):
     # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
     coefs = ([0.5],
              [0.1931833275037836,
               0.6136333449924328])
 
-    @staticmethod
-    @timings
-    def dkd(ips, dt):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA22 DKD-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        k, d = SIA22.coefs
+        k, d = cls.coefs
 
         ips = drift(ips, d[0] * dt)
         ips = kick(ips, k[0] * dt)
@@ -380,16 +378,15 @@ class SIA22(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, dt):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA22 KDK-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        d, k = SIA22.coefs
+        d, k = cls.coefs
 
         ips = kick(ips, k[0] * dt)
         ips = drift(ips, d[0] * dt)
@@ -399,14 +396,13 @@ class SIA22(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, dt, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA22.coefs
-        erb = evolve, recurse, SIA22.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
         slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         slow, fast = sf_kick(slow, fast, k[0] * dt)
@@ -420,6 +416,7 @@ class SIA22(object):
 #
 # SIA43
 #
+@bind_all(timings)
 class SIA43(object):
     # REF.: Yoshida, Phys. Lett. A 150 (1990)
     coefs = ([1.3512071919596575,
@@ -427,16 +424,15 @@ class SIA43(object):
              [0.6756035959798288,
               -0.17560359597982877])
 
-    @staticmethod
-    @timings
-    def dkd(ips, dt):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA43 DKD-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        k, d = SIA43.coefs
+        k, d = cls.coefs
 
         ips = drift(ips, d[0] * dt)
         ips = kick(ips, k[0] * dt)
@@ -448,16 +444,15 @@ class SIA43(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, dt):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA43 KDK-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        d, k = SIA43.coefs
+        d, k = cls.coefs
 
         ips = kick(ips, k[0] * dt)
         ips = drift(ips, d[0] * dt)
@@ -469,14 +464,13 @@ class SIA43(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, dt, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA43.coefs
-        erb = evolve, recurse, SIA43.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
         slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         slow, fast = sf_kick(slow, fast, k[0] * dt)
@@ -492,6 +486,7 @@ class SIA43(object):
 #
 # SIA44
 #
+@bind_all(timings)
 class SIA44(object):
     # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
     coefs = ([0.7123418310626056,
@@ -500,16 +495,15 @@ class SIA44(object):
               -0.06626458266981843,
               0.7752933736500186])
 
-    @staticmethod
-    @timings
-    def dkd(ips, dt):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA44 DKD-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        k, d = SIA44.coefs
+        k, d = cls.coefs
 
         ips = drift(ips, d[0] * dt)
         ips = kick(ips, k[0] * dt)
@@ -523,16 +517,15 @@ class SIA44(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, dt):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA44 KDK-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        d, k = SIA44.coefs
+        d, k = cls.coefs
 
         ips = kick(ips, k[0] * dt)
         ips = drift(ips, d[0] * dt)
@@ -546,14 +539,13 @@ class SIA44(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, dt, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA44.coefs
-        erb = evolve, recurse, SIA44.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
         slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         slow, fast = sf_kick(slow, fast, k[0] * dt)
@@ -571,6 +563,7 @@ class SIA44(object):
 #
 # SIA45
 #
+@bind_all(timings)
 class SIA45(object):
     # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
     coefs = ([-0.0844296195070715,
@@ -580,16 +573,15 @@ class SIA45(object):
               -0.1347950099106792,
               0.35978688867743724])
 
-    @staticmethod
-    @timings
-    def dkd(ips, dt):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA45 DKD-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        k, d = SIA45.coefs
+        k, d = cls.coefs
 
         ips = drift(ips, d[0] * dt)
         ips = kick(ips, k[0] * dt)
@@ -605,16 +597,15 @@ class SIA45(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, dt):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA45 KDK-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        d, k = SIA45.coefs
+        d, k = cls.coefs
 
         ips = kick(ips, k[0] * dt)
         ips = drift(ips, d[0] * dt)
@@ -630,14 +621,13 @@ class SIA45(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, dt, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA45.coefs
-        erb = evolve, recurse, SIA45.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
         slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         slow, fast = sf_kick(slow, fast, k[0] * dt)
@@ -657,6 +647,7 @@ class SIA45(object):
 #
 # SIA46
 #
+@bind_all(timings)
 class SIA46(object):
     # REF.: Blanes & Moan, J. Comp. Appl. Math. 142 (2002)
     coefs = ([0.209515106613362,
@@ -667,16 +658,15 @@ class SIA46(object):
               -0.0420650803577195,
               0.21937695575349958])
 
-    @staticmethod
-    @timings
-    def dkd(ips, dt):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA46 DKD-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        k, d = SIA46.coefs
+        k, d = cls.coefs
 
         ips = drift(ips, d[0] * dt)
         ips = kick(ips, k[0] * dt)
@@ -694,16 +684,15 @@ class SIA46(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, dt):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA46 KDK-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        d, k = SIA46.coefs
+        d, k = cls.coefs
 
         ips = kick(ips, k[0] * dt)
         ips = drift(ips, d[0] * dt)
@@ -721,14 +710,13 @@ class SIA46(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, dt, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA46.coefs
-        erb = evolve, recurse, SIA46.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
         slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         slow, fast = sf_kick(slow, fast, k[0] * dt)
@@ -750,6 +738,7 @@ class SIA46(object):
 #
 # SIA67
 #
+@bind_all(timings)
 class SIA67(object):
     # REF.: Yoshida, Phys. Lett. A 150 (1990)
     coefs = ([0.7845136104775573,
@@ -761,16 +750,15 @@ class SIA67(object):
               -0.47105338540975644,
               0.06875316825252015])
 
-    @staticmethod
-    @timings
-    def dkd(ips, dt):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA67 DKD-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        k, d = SIA67.coefs
+        k, d = cls.coefs
 
         ips = drift(ips, d[0] * dt)
         ips = kick(ips, k[0] * dt)
@@ -790,16 +778,15 @@ class SIA67(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, dt):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA67 KDK-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        d, k = SIA67.coefs
+        d, k = cls.coefs
 
         ips = kick(ips, k[0] * dt)
         ips = drift(ips, d[0] * dt)
@@ -819,14 +806,13 @@ class SIA67(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, dt, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA67.coefs
-        erb = evolve, recurse, SIA67.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
         slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         slow, fast = sf_kick(slow, fast, k[0] * dt)
@@ -850,6 +836,7 @@ class SIA67(object):
 #
 # SIA69
 #
+@bind_all(timings)
 class SIA69(object):
     # REF.: Kahan & Li, Math. Comput. 66 (1997)
     coefs = ([0.39103020330868477,
@@ -863,16 +850,15 @@ class SIA69(object):
               -0.31217486576975095,
               0.44022101344371095])
 
-    @staticmethod
-    @timings
-    def dkd(ips, dt):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA69 DKD-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        k, d = SIA69.coefs
+        k, d = cls.coefs
 
         ips = drift(ips, d[0] * dt)
         ips = kick(ips, k[0] * dt)
@@ -896,16 +882,15 @@ class SIA69(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, dt):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA69 KDK-type propagator.
 
         """
         if ips.n <= 2:
             return FewBody.evolve(ips, dt)
 
-        d, k = SIA69.coefs
+        d, k = cls.coefs
 
         ips = kick(ips, k[0] * dt)
         ips = drift(ips, d[0] * dt)
@@ -929,14 +914,13 @@ class SIA69(object):
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, dt, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA69.coefs
-        erb = evolve, recurse, SIA69.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
         slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         slow, fast = sf_kick(slow, fast, k[0] * dt)
@@ -961,7 +945,7 @@ class SIA69(object):
         return slow, fast
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class SIA(Base):
     """
 
@@ -1001,9 +985,9 @@ class SIA(Base):
                     self.method, ps.t_curr, t_end)
 
         if ps.include_pn_corrections:
-            ps.register_auxiliary_attribute("wx", "real")
-            ps.register_auxiliary_attribute("wy", "real")
-            ps.register_auxiliary_attribute("wz", "real")
+            ps.register_attribute("wx", "real")
+            ps.register_attribute("wy", "real")
+            ps.register_attribute("wz", "real")
 #            ps.wx[...] = ps.vx
 #            ps.wy[...] = ps.vy
 #            ps.wz[...] = ps.vz

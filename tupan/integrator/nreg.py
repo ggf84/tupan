@@ -10,7 +10,7 @@ from __future__ import print_function, division
 import logging
 from ..integrator import Base
 from ..lib import extensions
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
 
 
 __all__ = ["NREG"]
@@ -19,12 +19,13 @@ __all__ = ["NREG"]
 LOGGER = logging.getLogger(__name__)
 
 
+@timings
 def nreg_x(ps, dt):
     """
 
     """
     mtot = ps.total_mass
-    extensions.nreg_x.calc(ps, ps, dt=dt)
+    extensions.nreg_x(ps, ps, dt=dt)
     ps.rx[...] = ps.mrx / mtot
     ps.ry[...] = ps.mry / mtot
     ps.rz[...] = ps.mrz / mtot
@@ -42,6 +43,7 @@ def nreg_x(ps, dt):
 #    return ps
 
 
+@timings
 def nreg_v(ps, dt):
     """
 
@@ -50,7 +52,7 @@ def nreg_v(ps, dt):
 #                                         + ps.vy * ps.ay
 #                                         + ps.vz * ps.az)).sum()
     mtot = ps.total_mass
-    extensions.nreg_v.calc(ps, ps, dt=dt)
+    extensions.nreg_v(ps, ps, dt=dt)
     ps.vx[...] = ps.mvx / mtot
     ps.vy[...] = ps.mvy / mtot
     ps.vz[...] = ps.mvz / mtot
@@ -74,6 +76,7 @@ def nreg_v(ps, dt):
 #     return ps
 
 
+@timings
 def anreg_step(ps, h):
     """
 
@@ -85,6 +88,7 @@ def anreg_step(ps, h):
     return ps
 
 
+@timings
 def nreg_step(ps, h):
     """
 
@@ -96,7 +100,7 @@ def nreg_step(ps, h):
     return ps
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class NREG(Base):
     """
 

@@ -61,10 +61,10 @@ class TestCase1(unittest.TestCase):
             jobj = ps[:jdx]
 
             # calculating using C on CPU
-            res["C"] = krnlC.calc(iobj, jobj, **kwargs)
+            res["C"] = krnlC(iobj, jobj, **kwargs)
 
             # calculating using CL on device
-            res["CL"] = krnlCL.calc(iobj, jobj, **kwargs)
+            res["CL"] = krnlCL(iobj, jobj, **kwargs)
 
             # estimate deviation
             deviation = max(abs(c_res-cl_res).max()
@@ -72,10 +72,10 @@ class TestCase1(unittest.TestCase):
             deviations.append(deviation)
 
             # calculating using C on CPU
-            res["C"] = krnlC.calc(jobj, iobj, **kwargs)
+            res["C"] = krnlC(jobj, iobj, **kwargs)
 
             # calculating using CL on device
-            res["CL"] = krnlCL.calc(jobj, iobj, **kwargs)
+            res["CL"] = krnlCL(jobj, iobj, **kwargs)
 
             # estimate deviation
             deviation = max(abs(resC - resCL).max()

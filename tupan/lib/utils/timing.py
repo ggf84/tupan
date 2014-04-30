@@ -15,7 +15,7 @@ import functools
 from collections import defaultdict
 
 
-__all__ = ["Timer", "decallmethods", "timings"]
+__all__ = ["timings", "bind_all", "Timer"]
 
 
 class Timer(object):
@@ -45,84 +45,94 @@ class Timer(object):
         self.tic += timeit.default_timer() - time
 
 
-class Timing(object):
-    """
-
-    """
-    def __init__(self, profile):
-        def make_tree(depth, basetype):
-            if depth == 0:
-                return defaultdict(basetype)
-            return defaultdict(lambda: make_tree(depth-1, basetype))
-
-        self.timings = make_tree(2, int)
-        self.profile = profile
-
-    def __call__(self, func):
-        if not self.profile:
-            return func
-        if func.func_code.co_name == "wrapper":
-            return func
-        timer = Timer()
-
-        @functools.wraps(func)
-        def wrapper(that, *args, **kwargs):
-            timer.start()
-            ret = func(that, *args, **kwargs)
-            timer.stop()
-            cls = that.__class__
-            name = func.__name__
-            module = func.__module__
-            if name in cls.__dict__:
-                name = cls.__name__ + '.' + name
-                module = cls.__module__
-            self.timings[module][name]["count"] += 1
-            self.timings[module][name]["total"] += timer.elapsed()
-            return ret
-        return wrapper
-
-    def __str__(self):
-        mcount = 0
-        mark = "+-"
-        indent = " "
-        mfmt = mark*2 + "{0:s}:"
-        nfmt = mark + \
-            "{0:s}: [count: {1} | total: {2:.4e} s | average: {3:.4e} s]"
-        _str = ""
-        for mkey in sorted(self.timings.keys()):
-            mcount += 1
-            mindent = " " + indent
-            _str += "\n" + mindent
-            _str += "|\n" + mindent
-            _str += mfmt.format(mkey)
-            for key in sorted(self.timings[mkey].keys()):
-                count = self.timings[mkey][key]["count"]
-                total = self.timings[mkey][key]["total"]
-                if mcount < len(self.timings):
-                    _str += "\n" + mindent + "|" + indent + "|"
-                    _str += "\n" + mindent + "|" + indent
-                else:
-                    _str += "\n" + mindent + " " + indent + "|"
-                    _str += "\n" + mindent + " " + indent
-                _str += nfmt.format(key, count, total, total / count)
-        return mark*2 + "Timings:{0}".format(_str)
+class MyDefaultdict(defaultdict):
+    def __repr__(self):
+        import json
+        return json.dumps(self, indent=4)
 
 
-def decallmethods(decorator, prefix=''):
+def tree():
+    return MyDefaultdict(tree)
+
+DTREE = tree()
+
+
+def timings(meth, cls=None):
+    cname = ''
+    fname = meth.__name__
+    module = meth.__module__
+    if cls:
+        cname = cls.__name__
+        module = cls.__module__
+
+    timer = Timer()
+    if cname:
+        if '.fget' in fname:
+            gname = fname.replace('.fget', '')
+            dtree = DTREE[module][cname][gname]['.fget'] = MyDefaultdict(int)
+        elif '.fset' in fname:
+            sname = fname.replace('.fset', '')
+            dtree = DTREE[module][cname][sname]['.fset'] = MyDefaultdict(int)
+        elif '.fdel' in fname:
+            dname = fname.replace('.fdel', '')
+            dtree = DTREE[module][cname][dname]['.fdel'] = MyDefaultdict(int)
+        else:
+            dtree = DTREE[module][cname][fname] = MyDefaultdict(int)
+    else:
+        dtree = DTREE[module][fname] = MyDefaultdict(int)
+
+    @functools.wraps(meth)
+    def wrapper(*args, **kwargs):
+        timer.start()
+        ret = meth(*args, **kwargs)
+        timer.stop()
+        dtree["count"] += 1
+        dtree["total"] += timer.elapsed()
+        dtree["average"] = dtree["total"] / dtree["count"]
+        return ret
+    return wrapper
+
+
+def bind_all(decorator):
     def wrapper(cls):
-        for name, meth in inspect.getmembers(cls, inspect.ismethod):
-            if name.startswith(prefix):
-                setattr(cls, name, decorator(meth))
+        for name, meth in inspect.getmembers(cls):
+            if inspect.ismethod(meth):
+                if inspect.isclass(meth.im_self):
+                    # meth is a classmethod
+                    meth = meth.im_func
+                    setattr(cls, name, classmethod(decorator(meth, cls)))
+                else:
+                    # meth is a regular method
+                    setattr(cls, name, decorator(meth, cls))
+            elif inspect.isfunction(meth):
+                # meth is a staticmethod
+                setattr(cls, name, staticmethod(decorator(meth, cls)))
+            elif isinstance(meth, property):
+                fget = None
+                if meth.fget is not None:
+                    meth.fget.__name__ = meth.fget.__name__ + '.fget'
+                    fget = decorator(meth.fget, cls)
+                fset = None
+                if meth.fset is not None:
+                    meth.fset.__name__ = meth.fset.__name__ + '.fset'
+                    fset = decorator(meth.fset, cls)
+                fdel = None
+                if meth.fdel is not None:
+                    meth.fdel.__name__ = meth.fdel.__name__ + '.fdel'
+                    fdel = decorator(meth.fdel, cls)
+                doc = meth.__doc__
+                setattr(cls, name, property(fget, fset, fdel, doc))
         return cls
     return wrapper
 
 
 profile = True if "--profile" in sys.argv else False
 
-timings = Timing(profile)
+timings = timings if profile else lambda meth, cls=None: meth
+bind_all = bind_all if profile else lambda decor: lambda meth, cls=None: meth
 
 if profile:
-    atexit.register(print, timings, file=sys.stderr)
+    atexit.register(print, DTREE, file=sys.stderr)
 
 
 # -- End of File --

@@ -12,6 +12,7 @@ import ctypes
 import logging
 from functools import partial
 from collections import namedtuple
+from .utils.timing import timings, bind_all
 
 
 LOGGER = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, "src")
 
 
+@timings
 def make_lib(fpwidth):
     """
 
@@ -81,6 +83,7 @@ FFI['fp32'], LIB['fp32'] = make_lib('fp32')
 FFI['fp64'], LIB['fp64'] = make_lib('fp64')
 
 
+@bind_all(timings)
 class CKernel(object):
 
     def __init__(self, fpwidth, name):

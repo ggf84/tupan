@@ -9,7 +9,7 @@ TODO.
 from __future__ import print_function
 import logging
 from ..integrator import Base
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
 
 
 __all__ = ["Hermite"]
@@ -17,6 +17,7 @@ __all__ = ["Hermite"]
 LOGGER = logging.getLogger(__name__)
 
 
+@bind_all(timings)
 class H2(object):
     """
 
@@ -67,6 +68,7 @@ class H2(object):
         return ps1
 
 
+@bind_all(timings)
 class H4(H2):
     """
 
@@ -119,6 +121,7 @@ class H4(H2):
         return ps1
 
 
+@bind_all(timings)
 class H6(H4):
     """
 
@@ -195,6 +198,7 @@ class H6(H4):
         return ps1
 
 
+@bind_all(timings)
 class H8(H6):
     """
 
@@ -283,7 +287,7 @@ class H8(H6):
         return ps1
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Hermite(Base):
     """
 

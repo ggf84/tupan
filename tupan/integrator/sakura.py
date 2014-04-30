@@ -10,7 +10,7 @@ from __future__ import print_function, division
 import logging
 from ..integrator import Base
 from ..lib import extensions
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
 
 
 __all__ = ["Sakura"]
@@ -19,6 +19,7 @@ __all__ = ["Sakura"]
 LOGGER = logging.getLogger(__name__)
 
 
+@timings
 def sakura_step(ps, dt):
     """
 
@@ -27,7 +28,7 @@ def sakura_step(ps, dt):
     ps.ry += ps.vy * dt / 2
     ps.rz += ps.vz * dt / 2
 
-    extensions.sakura.calc(ps, ps, dt=dt/2, flag=-1)
+    extensions.sakura(ps, ps, dt=dt/2, flag=-1)
     ps.rx += ps.drx
     ps.ry += ps.dry
     ps.rz += ps.drz
@@ -35,7 +36,7 @@ def sakura_step(ps, dt):
     ps.vy += ps.dvy
     ps.vz += ps.dvz
 
-    extensions.sakura.calc(ps, ps, dt=dt/2, flag=+1)
+    extensions.sakura(ps, ps, dt=dt/2, flag=+1)
     ps.rx += ps.drx
     ps.ry += ps.dry
     ps.rz += ps.drz
@@ -50,7 +51,7 @@ def sakura_step(ps, dt):
     return ps
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Sakura(Base):
     """
 

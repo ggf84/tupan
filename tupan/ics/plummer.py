@@ -10,7 +10,7 @@ from __future__ import (print_function, division)
 import logging
 import numpy as np
 from ..particles.allparticles import ParticleSystem
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
 
 
 __all__ = ['Plummer']
@@ -18,7 +18,7 @@ __all__ = ['Plummer']
 LOGGER = logging.getLogger(__name__)
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Plummer(object):
     """  """
 
@@ -210,6 +210,7 @@ class Plummer(object):
         plt.close()
 
 
+@timings
 def make_plummer(n, eps, imf, seed=None, mfrac=0.999, softening_type=0):
     if n < 2:
         n = 2

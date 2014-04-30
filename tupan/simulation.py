@@ -16,7 +16,7 @@ from pprint import pprint
 from .io import IO
 from .integrator import Integrator
 from .analysis.glviewer import GLviewer
-from .lib.utils.timing import decallmethods, timings, Timer
+from .lib.utils.timing import timings, bind_all, Timer
 
 
 LOGGER = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ def myprint(data, fname, fmode):
             print(data, file=fobj)
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Diagnostic(object):
     """
 
@@ -129,7 +129,7 @@ class Diagnostic(object):
                 self.fname, 'a')
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Simulation(object):
     """
     The Simulation class is the top level class for N-body simulations.
@@ -198,6 +198,7 @@ class Simulation(object):
 # ------------------------------------------------------------------------
 
 
+@timings
 def _main_newrun(args):
     if args.log_file == sys.stdout:
         args.log_file = sys.stdout.name
@@ -213,6 +214,7 @@ def _main_newrun(args):
     return 0
 
 
+@timings
 def _main_restart(args):
     with open(args.restart_file, "rb") as fobj:
         mysim = pickle.load(fobj)
@@ -232,6 +234,7 @@ def _main_restart(args):
     return 0
 
 
+@timings
 def parse_args():
     """Here we process the command line arguments to run a new N-body
     simulation or restart from a previous run.
@@ -423,6 +426,7 @@ def parse_args():
     return parser.parse_args()
 
 
+@timings
 def main():
     """The top-level main function of tupan.
 

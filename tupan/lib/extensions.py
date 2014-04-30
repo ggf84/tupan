@@ -10,7 +10,7 @@ from __future__ import print_function, division
 import sys
 import logging
 from .utils.ctype import Ctype
-from .utils.timing import decallmethods, timings
+from .utils.timing import timings, bind_all
 
 
 __all__ = ["Phi", "phi",
@@ -28,7 +28,7 @@ __all__ = ["Phi", "phi",
 LOGGER = logging.getLogger(__name__)
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class PN(object):
     """This class holds the values of the PN parameters.
 
@@ -87,13 +87,13 @@ class AbstractExtension(object):
         return self.kernel.map_buffers(inpargs=self.inpargs,
                                        outargs=self.outargs)
 
-    def calc(self, ips, jps, **kwargs):
+    def __call__(self, ips, jps, **kwargs):
         self.set_args(ips, jps, **kwargs)
         self.run()
         return self.get_result()
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Phi(AbstractExtension):
     """
 
@@ -115,8 +115,8 @@ class Phi(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if "phi" not in ips.__dict__:
-            ips.register_auxiliary_attribute("phi", "real")
+        if not hasattr(ips, '_phi'):
+            ips.register_attribute('phi', 'real')
 
         self.inpargs = (ni,
                         ips.mass, ips.rx, ips.ry, ips.rz,
@@ -135,8 +135,8 @@ class Phi(AbstractExtension):
         # implementation of this method.
         import numpy as np
         ni = ips.n
-        if "phi" not in ips.__dict__:
-            ips.register_auxiliary_attribute("phi", "real")
+        if not hasattr(ips, '_phi'):
+            ips.register_attribute('phi', 'real')
         for i in range(ni):
             rx = ips.rx[i] - jps.rx
             ry = ips.ry[i] - jps.ry
@@ -151,7 +151,7 @@ class Phi(AbstractExtension):
 #    calc = _pycalc
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Acc(AbstractExtension):
     """
 
@@ -173,12 +173,12 @@ class Acc(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if "ax" not in ips.__dict__:
-            ips.register_auxiliary_attribute("ax", "real")
-        if "ay" not in ips.__dict__:
-            ips.register_auxiliary_attribute("ay", "real")
-        if "az" not in ips.__dict__:
-            ips.register_auxiliary_attribute("az", "real")
+        if not hasattr(ips, '_ax'):
+            ips.register_attribute('ax', 'real')
+        if not hasattr(ips, '_ay'):
+            ips.register_attribute('ay', 'real')
+        if not hasattr(ips, '_az'):
+            ips.register_attribute('az', 'real')
 
         self.inpargs = (ni,
                         ips.mass, ips.rx, ips.ry, ips.rz,
@@ -197,12 +197,12 @@ class Acc(AbstractExtension):
         # implementation of this method.
         import numpy as np
         ni = ips.n
-        if "ax" not in ips.__dict__:
-            ips.register_auxiliary_attribute("ax", "real")
-        if "ay" not in ips.__dict__:
-            ips.register_auxiliary_attribute("ay", "real")
-        if "az" not in ips.__dict__:
-            ips.register_auxiliary_attribute("az", "real")
+        if not hasattr(ips, '_ax'):
+            ips.register_attribute('ax', 'real')
+        if not hasattr(ips, '_ay'):
+            ips.register_attribute('ay', 'real')
+        if not hasattr(ips, '_az'):
+            ips.register_attribute('az', 'real')
         for i in range(ni):
             rx = ips.rx[i] - jps.rx
             ry = ips.ry[i] - jps.ry
@@ -221,7 +221,7 @@ class Acc(AbstractExtension):
 #    calc = _pycalc
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class AccJerk(AbstractExtension):
     """
 
@@ -244,18 +244,18 @@ class AccJerk(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if "ax" not in ips.__dict__:
-            ips.register_auxiliary_attribute("ax", "real")
-        if "ay" not in ips.__dict__:
-            ips.register_auxiliary_attribute("ay", "real")
-        if "az" not in ips.__dict__:
-            ips.register_auxiliary_attribute("az", "real")
-        if "jx" not in ips.__dict__:
-            ips.register_auxiliary_attribute("jx", "real")
-        if "jy" not in ips.__dict__:
-            ips.register_auxiliary_attribute("jy", "real")
-        if "jz" not in ips.__dict__:
-            ips.register_auxiliary_attribute("jz", "real")
+        if not hasattr(ips, '_ax'):
+            ips.register_attribute('ax', 'real')
+        if not hasattr(ips, '_ay'):
+            ips.register_attribute('ay', 'real')
+        if not hasattr(ips, '_az'):
+            ips.register_attribute('az', 'real')
+        if not hasattr(ips, '_jx'):
+            ips.register_attribute('jx', 'real')
+        if not hasattr(ips, '_jy'):
+            ips.register_attribute('jy', 'real')
+        if not hasattr(ips, '_jz'):
+            ips.register_attribute('jz', 'real')
 
         self.inpargs = (ni,
                         ips.mass, ips.rx, ips.ry, ips.rz,
@@ -269,7 +269,7 @@ class AccJerk(AbstractExtension):
         self.kernel.args = self.inpargs + self.outargs
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class SnapCrackle(AbstractExtension):
     """
 
@@ -297,18 +297,18 @@ class SnapCrackle(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if "sx" not in ips.__dict__:
-            ips.register_auxiliary_attribute("sx", "real")
-        if "sy" not in ips.__dict__:
-            ips.register_auxiliary_attribute("sy", "real")
-        if "sz" not in ips.__dict__:
-            ips.register_auxiliary_attribute("sz", "real")
-        if "cx" not in ips.__dict__:
-            ips.register_auxiliary_attribute("cx", "real")
-        if "cy" not in ips.__dict__:
-            ips.register_auxiliary_attribute("cy", "real")
-        if "cz" not in ips.__dict__:
-            ips.register_auxiliary_attribute("cz", "real")
+        if not hasattr(ips, '_sx'):
+            ips.register_attribute('sx', 'real')
+        if not hasattr(ips, '_sy'):
+            ips.register_attribute('sy', 'real')
+        if not hasattr(ips, '_sz'):
+            ips.register_attribute('sz', 'real')
+        if not hasattr(ips, '_cx'):
+            ips.register_attribute('cx', 'real')
+        if not hasattr(ips, '_cy'):
+            ips.register_attribute('cy', 'real')
+        if not hasattr(ips, '_cz'):
+            ips.register_attribute('cz', 'real')
 
         self.inpargs = (ni,
                         ips.mass, ips.rx, ips.ry, ips.rz,
@@ -324,7 +324,7 @@ class SnapCrackle(AbstractExtension):
         self.kernel.args = self.inpargs + self.outargs
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Tstep(AbstractExtension):
     """
 
@@ -347,10 +347,10 @@ class Tstep(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if "tstep" not in ips.__dict__:
-            ips.register_auxiliary_attribute("tstep", "real")
-        if "tstepij" not in ips.__dict__:
-            ips.register_auxiliary_attribute("tstepij", "real")
+        if not hasattr(ips, '_tstep'):
+            ips.register_attribute('tstep', 'real')
+        if not hasattr(ips, '_tstepij'):
+            ips.register_attribute('tstepij', 'real')
 
         self.inpargs = (ni,
                         ips.mass, ips.rx, ips.ry, ips.rz,
@@ -364,7 +364,7 @@ class Tstep(AbstractExtension):
         self.kernel.args = self.inpargs + self.outargs
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class PNAcc(AbstractExtension):
     """
 
@@ -390,12 +390,12 @@ class PNAcc(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if "pnax" not in ips.__dict__:
-            ips.register_auxiliary_attribute("pnax", "real")
-        if "pnay" not in ips.__dict__:
-            ips.register_auxiliary_attribute("pnay", "real")
-        if "pnaz" not in ips.__dict__:
-            ips.register_auxiliary_attribute("pnaz", "real")
+        if not hasattr(ips, '_pnax'):
+            ips.register_attribute('pnax', 'real')
+        if not hasattr(ips, '_pnay'):
+            ips.register_attribute('pnay', 'real')
+        if not hasattr(ips, '_pnaz'):
+            ips.register_attribute('pnaz', 'real')
 
         self.inpargs = (ni,
                         ips.mass, ips.rx, ips.ry, ips.rz,
@@ -412,7 +412,7 @@ class PNAcc(AbstractExtension):
         self.kernel.args = self.inpargs + self.outargs
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Sakura(AbstractExtension):
     """
 
@@ -437,18 +437,18 @@ class Sakura(AbstractExtension):
 
         self.kernel.vector_width = 1
         self.kernel.set_gsize(ni, nj)
-        if "drx" not in ips.__dict__:
-            ips.register_auxiliary_attribute("drx", "real")
-        if "dry" not in ips.__dict__:
-            ips.register_auxiliary_attribute("dry", "real")
-        if "drz" not in ips.__dict__:
-            ips.register_auxiliary_attribute("drz", "real")
-        if "dvx" not in ips.__dict__:
-            ips.register_auxiliary_attribute("dvx", "real")
-        if "dvy" not in ips.__dict__:
-            ips.register_auxiliary_attribute("dvy", "real")
-        if "dvz" not in ips.__dict__:
-            ips.register_auxiliary_attribute("dvz", "real")
+        if not hasattr(ips, '_drx'):
+            ips.register_attribute('drx', 'real')
+        if not hasattr(ips, '_dry'):
+            ips.register_attribute('dry', 'real')
+        if not hasattr(ips, '_drz'):
+            ips.register_attribute('drz', 'real')
+        if not hasattr(ips, '_dvx'):
+            ips.register_attribute('dvx', 'real')
+        if not hasattr(ips, '_dvy'):
+            ips.register_attribute('dvy', 'real')
+        if not hasattr(ips, '_dvz'):
+            ips.register_attribute('dvz', 'real')
 
         self.inpargs = (ni,
                         ips.mass, ips.rx, ips.ry, ips.rz,
@@ -463,7 +463,7 @@ class Sakura(AbstractExtension):
         self.kernel.args = self.inpargs + self.outargs
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class NREG_X(AbstractExtension):
     """
 
@@ -488,20 +488,20 @@ class NREG_X(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if "mrx" not in ips.__dict__:
-            ips.register_auxiliary_attribute("mrx", "real")
-        if "mry" not in ips.__dict__:
-            ips.register_auxiliary_attribute("mry", "real")
-        if "mrz" not in ips.__dict__:
-            ips.register_auxiliary_attribute("mrz", "real")
-        if "ax" not in ips.__dict__:
-            ips.register_auxiliary_attribute("ax", "real")
-        if "ay" not in ips.__dict__:
-            ips.register_auxiliary_attribute("ay", "real")
-        if "az" not in ips.__dict__:
-            ips.register_auxiliary_attribute("az", "real")
-        if "u" not in ips.__dict__:
-            ips.register_auxiliary_attribute("u", "real")
+        if not hasattr(ips, '_mrx'):
+            ips.register_attribute('mrx', 'real')
+        if not hasattr(ips, '_mry'):
+            ips.register_attribute('mry', 'real')
+        if not hasattr(ips, '_mrz'):
+            ips.register_attribute('mrz', 'real')
+        if not hasattr(ips, '_ax'):
+            ips.register_attribute('ax', 'real')
+        if not hasattr(ips, '_ay'):
+            ips.register_attribute('ay', 'real')
+        if not hasattr(ips, '_az'):
+            ips.register_attribute('az', 'real')
+        if not hasattr(ips, '_u'):
+            ips.register_attribute('u', 'real')
 
         self.inpargs = (ni,
                         ips.mass, ips.rx, ips.ry, ips.rz,
@@ -517,7 +517,7 @@ class NREG_X(AbstractExtension):
         self.kernel.args = self.inpargs + self.outargs
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class NREG_V(AbstractExtension):
     """
 
@@ -541,14 +541,14 @@ class NREG_V(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if "mvx" not in ips.__dict__:
-            ips.register_auxiliary_attribute("mvx", "real")
-        if "mvy" not in ips.__dict__:
-            ips.register_auxiliary_attribute("mvy", "real")
-        if "mvz" not in ips.__dict__:
-            ips.register_auxiliary_attribute("mvz", "real")
-        if "mk" not in ips.__dict__:
-            ips.register_auxiliary_attribute("mk", "real")
+        if not hasattr(ips, '_mvx'):
+            ips.register_attribute('mvx', 'real')
+        if not hasattr(ips, '_mvy'):
+            ips.register_attribute('mvy', 'real')
+        if not hasattr(ips, '_mvz'):
+            ips.register_attribute('mvz', 'real')
+        if not hasattr(ips, '_mk'):
+            ips.register_attribute('mk', 'real')
 
         self.inpargs = (ni,
                         ips.mass, ips.vx, ips.vy, ips.vz,
@@ -562,7 +562,7 @@ class NREG_V(AbstractExtension):
         self.kernel.args = self.inpargs + self.outargs
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Kepler(AbstractExtension):
     """
 

@@ -7,11 +7,9 @@ TODO.
 
 
 import functools
-from .timing import timings
 
 
 def cache(func):
-    func = timings(func)
     cache = dict()
     kwmark = object()   # separates positional and keyword args
 
@@ -35,7 +33,6 @@ def cache(func):
 
 def cache_arg(index):
     def cache(func):
-        func = timings(func)
         cache = dict()
         kwmark = object()   # separates positional and keyword args
 
