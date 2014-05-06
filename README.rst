@@ -1,29 +1,44 @@
-.. |Build Status| image:: https://travis-ci.org/ggf84/tupan.png
-   :target: https://travis-ci.org/ggf84/tupan
-
-.. |Requirements Status| image:: https://requires.io/github/ggf84/tupan/requirements.png?branch=dev
-   :target: https://requires.io/github/ggf84/tupan/requirements/?branch=dev
-   :alt: Requirements Status
-
-.. |Code Quality Status| image:: https://landscape.io/github/ggf84/tupan/dev/landscape.png
-   :target: https://landscape.io/github/ggf84/tupan/dev
-   :alt: Code Quality Status
-
 tupan
 =====
 
-|Build Status|
-|Requirements Status|
-|Code Quality Status|
+Status
+------
 
-TODO: write an overview
+Stable (`master`_)
+^^^^^^^^^^^^^^^^^^
+
+|Build Status| |Requirements Status| |Code Quality Status|
+
+.. |Build Status| image:: https://travis-ci.org/ggf84/tupan.png?branch=master
+   :target: https://travis-ci.org/ggf84/tupan
+.. |Requirements Status| image:: https://requires.io/github/ggf84/tupan/requirements.png?branch=master
+   :target: https://requires.io/github/ggf84/tupan/requirements/?branch=master
+.. |Code Quality Status| image:: https://landscape.io/github/ggf84/tupan/master/landscape.png
+   :target: https://landscape.io/github/ggf84/tupan/master
+
+Development (`dev`_)
+^^^^^^^^^^^^^^^^^^^^
+
+|Build Status| |Requirements Status| |Code Quality Status|
+
+.. |Build Status| image:: https://travis-ci.org/ggf84/tupan.png?branch=dev
+   :target: https://travis-ci.org/ggf84/tupan
+.. |Requirements Status| image:: https://requires.io/github/ggf84/tupan/requirements.png?branch=dev
+   :target: https://requires.io/github/ggf84/tupan/requirements/?branch=dev
+.. |Code Quality Status| image:: https://landscape.io/github/ggf84/tupan/dev/landscape.png
+   :target: https://landscape.io/github/ggf84/tupan/dev
+
+About
+-----
+
+TODO
 
 Websites
 --------
 
-  * Source code: https://github.com/ggf84/tupan
-  * Mailing list: TODO
-  * Documentation: https://tupan.readthedocs.org/
+- Source code: https://github.com/ggf84/tupan
+- Mailing list: TODO
+- Documentation: https://tupan.readthedocs.org/
 
 Dependencies
 ------------
