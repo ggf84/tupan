@@ -57,8 +57,8 @@ static inline void snap_crackle_kernel_core(
     REALn vA = vx * Ax + vy * Ay + vz * Az;                                     // 5 FLOPs
     INTn mask = (r2 > 0);
 
-    REALn inv_r2, inv_r3;
-    smoothed_inv_r2r3(r2, e2, mask, &inv_r2, &inv_r3);                          // 4 FLOPs
+    REALn inv_r2;
+    REALn m_r3 = smoothed_m_r3_inv_r2(jm, r2, e2, mask, &inv_r2);               // 5 FLOPs
 
     REALn alpha = rv * inv_r2;                                                  // 1 FLOPs
     REALn alpha2 = alpha * alpha;                                               // 1 FLOPs
@@ -83,14 +83,12 @@ static inline void snap_crackle_kernel_core(
     Jy -= alpha * Ay + beta * vy + gamma * ry;                                  // 6 FLOPs
     Jz -= alpha * Az + beta * vz + gamma * rz;                                  // 6 FLOPs
 
-    inv_r3 *= jm;                                                               // 1 FLOPs
-
-    *iSx -= inv_r3 * Ax;                                                        // 2 FLOPs
-    *iSy -= inv_r3 * Ay;                                                        // 2 FLOPs
-    *iSz -= inv_r3 * Az;                                                        // 2 FLOPs
-    *iCx -= inv_r3 * Jx;                                                        // 2 FLOPs
-    *iCy -= inv_r3 * Jy;                                                        // 2 FLOPs
-    *iCz -= inv_r3 * Jz;                                                        // 2 FLOPs
+    *iSx -= m_r3 * Ax;                                                          // 2 FLOPs
+    *iSy -= m_r3 * Ay;                                                          // 2 FLOPs
+    *iSz -= m_r3 * Az;                                                          // 2 FLOPs
+    *iCx -= m_r3 * Jx;                                                          // 2 FLOPs
+    *iCy -= m_r3 * Jy;                                                          // 2 FLOPs
+    *iCz -= m_r3 * Jz;                                                          // 2 FLOPs
 }
 // Total flop count: 114
 

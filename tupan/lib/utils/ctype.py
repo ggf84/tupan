@@ -10,14 +10,32 @@ import sys
 import numpy as np
 
 
-use_sp = True if "--use_sp" in sys.argv else False
-prec = "float32" if use_sp else "float64"
+class Ctype(object):
+    fpwidth = 'fp32' if "--use_sp" in sys.argv else 'fp64'
 
-INT = np.dtype(np.int32) if use_sp else np.dtype(np.int64)
-UINT = np.dtype(np.uint32) if use_sp else np.dtype(np.uint64)
-REAL = np.dtype(np.float32) if use_sp else np.dtype(np.float64)
+    int = (np.dtype(np.int32)
+           if fpwidth == 'fp32'
+           else (np.dtype(np.int64)
+                 if fpwidth == 'fp64'
+                 else np.dtype(np.int64)
+                 )
+           )
 
-ctypedict = {'int': INT, 'uint': UINT, 'real': REAL}
+    uint = (np.dtype(np.uint32)
+            if fpwidth == 'fp32'
+            else (np.dtype(np.uint64)
+                  if fpwidth == 'fp64'
+                  else np.dtype(np.uint64)
+                  )
+            )
+
+    real = (np.dtype(np.float32)
+            if fpwidth == 'fp32'
+            else (np.dtype(np.float64)
+                  if fpwidth == 'fp64'
+                  else np.dtype(np.float64)
+                  )
+            )
 
 
-########## end of file ##########
+# -- End of File --

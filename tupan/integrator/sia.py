@@ -10,12 +10,12 @@ from __future__ import print_function
 import logging
 from ..integrator import Base
 from .fewbody import FewBody
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
 
 
 __all__ = ["SIA"]
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 #
@@ -33,7 +33,7 @@ def split(ps, condition):
     fast = ps[~condition]
 
     if slow.n + fast.n != ps.n:
-        logger.error(
+        LOGGER.error(
             "slow.n + fast.n != ps.n: %d, %d, %d.",
             slow.n, fast.n, ps.n)
 
@@ -61,13 +61,13 @@ def join(slow, fast):
 # drift_n
 #
 @timings
-def drift_n(ips, tau):
+def drift_n(ips, dt):
     """Drift operator for Newtonian quantities.
 
     """
-    ips.rx += ips.vx * tau
-    ips.ry += ips.vy * tau
-    ips.rz += ips.vz * tau
+    ips.rx += ips.vx * dt
+    ips.ry += ips.vy * dt
+    ips.rz += ips.vz * dt
     return ips
 
 
@@ -75,13 +75,13 @@ def drift_n(ips, tau):
 # kick_n
 #
 @timings
-def kick_n(ips, tau):
+def kick_n(ips, dt):
     """Kick operator for Newtonian quantities.
 
     """
-    ips.vx += ips.ax * tau
-    ips.vy += ips.ay * tau
-    ips.vz += ips.az * tau
+    ips.vx += ips.ax * dt
+    ips.vy += ips.ay * dt
+    ips.vz += ips.az * dt
     return ips
 
 
@@ -89,14 +89,14 @@ def kick_n(ips, tau):
 # drift_pn
 #
 @timings
-def drift_pn(ips, tau):
+def drift_pn(ips, dt):
     """Drift operator for post-Newtonian quantities.
 
     """
-    ips.rx += ips.vx * tau
-    ips.ry += ips.vy * tau
-    ips.rz += ips.vz * tau
-    ips.pn_drift_com_r(tau)
+    ips.rx += ips.vx * dt
+    ips.ry += ips.vy * dt
+    ips.rz += ips.vz * dt
+    ips.pn_drift_com_r(dt)
     return ips
 
 
@@ -104,7 +104,7 @@ def drift_pn(ips, tau):
 # kick_pn
 #
 @timings
-def kick_pn(ips, tau):
+def kick_pn(ips, dt):
     """Kick operator for post-Newtonian quantities.
 
     """
@@ -115,45 +115,45 @@ def kick_pn(ips, tau):
 #        ps.vz, ps.wz = ps.wz, ps.vz
 #        return ps
 #    ips.set_pnacc(ips)
-#    ips.wx += (ips.ax + ips.pnax) * tau / 2
-#    ips.wy += (ips.ay + ips.pnay) * tau / 2
-#    ips.wz += (ips.az + ips.pnaz) * tau / 2
+#    ips.wx += (ips.ax + ips.pnax) * dt / 2
+#    ips.wy += (ips.ay + ips.pnay) * dt / 2
+#    ips.wz += (ips.az + ips.pnaz) * dt / 2
 #
 #    ips = vw_swap(ips)
 #    ips.set_pnacc(ips)
-#    ips.pn_kick_ke(tau)
-#    ips.pn_kick_lmom(tau)
-#    ips.pn_kick_amom(tau)
+#    ips.pn_kick_ke(dt)
+#    ips.pn_kick_lmom(dt)
+#    ips.pn_kick_amom(dt)
 #    ips = vw_swap(ips)
 #
-#    ips.vx += (ips.ax + ips.pnax) * tau
-#    ips.vy += (ips.ay + ips.pnay) * tau
-#    ips.vz += (ips.az + ips.pnaz) * tau
+#    ips.vx += (ips.ax + ips.pnax) * dt
+#    ips.vy += (ips.ay + ips.pnay) * dt
+#    ips.vz += (ips.az + ips.pnaz) * dt
 #
 #    ips.set_pnacc(ips)
-#    ips.wx += (ips.ax + ips.pnax) * tau / 2
-#    ips.wy += (ips.ay + ips.pnay) * tau / 2
-#    ips.wz += (ips.az + ips.pnaz) * tau / 2
+#    ips.wx += (ips.ax + ips.pnax) * dt / 2
+#    ips.wy += (ips.ay + ips.pnay) * dt / 2
+#    ips.wz += (ips.az + ips.pnaz) * dt / 2
 #    #
 
 #####
 
     #
-    ips.vx += (ips.ax * tau + ips.wx) / 2
-    ips.vy += (ips.ay * tau + ips.wy) / 2
-    ips.vz += (ips.az * tau + ips.wz) / 2
+    ips.vx += (ips.ax * dt + ips.wx) / 2
+    ips.vy += (ips.ay * dt + ips.wy) / 2
+    ips.vz += (ips.az * dt + ips.wz) / 2
 
     ips.set_pnacc(ips)
-    ips.pn_kick_ke(tau)
-    ips.pn_kick_lmom(tau)
-    ips.pn_kick_amom(tau)
-    ips.wx[...] = 2 * ips.pnax * tau - ips.wx
-    ips.wy[...] = 2 * ips.pnay * tau - ips.wy
-    ips.wz[...] = 2 * ips.pnaz * tau - ips.wz
+    ips.pn_kick_ke(dt)
+    ips.pn_kick_lmom(dt)
+    ips.pn_kick_amom(dt)
+    ips.wx[...] = 2 * ips.pnax * dt - ips.wx
+    ips.wy[...] = 2 * ips.pnay * dt - ips.wy
+    ips.wz[...] = 2 * ips.pnaz * dt - ips.wz
 
-    ips.vx += (ips.ax * tau + ips.wx) / 2
-    ips.vy += (ips.ay * tau + ips.wy) / 2
-    ips.vz += (ips.az * tau + ips.wz) / 2
+    ips.vx += (ips.ax * dt + ips.wx) / 2
+    ips.vy += (ips.ay * dt + ips.wy) / 2
+    ips.vz += (ips.az * dt + ips.wz) / 2
     #
 
     return ips
@@ -163,39 +163,39 @@ def kick_pn(ips, tau):
 # drift
 #
 @timings
-def drift(ips, tau):
+def drift(ips, dt):
     """Drift operator.
 
     """
     if ips.include_pn_corrections:
-        return drift_pn(ips, tau)
-    return drift_n(ips, tau)
+        return drift_pn(ips, dt)
+    return drift_n(ips, dt)
 
 
 #
 # kick
 #
 @timings
-def kick(ips, tau):
+def kick(ips, dt):
     """Kick operator.
 
     """
     ips.set_acc(ips)
     if ips.include_pn_corrections:
-        return kick_pn(ips, tau)
-    return kick_n(ips, tau)
+        return kick_pn(ips, dt)
+    return kick_n(ips, dt)
 
 
 #
 # sf_drift
 #
 @timings
-def sf_drift(slow, fast, tau, evolve, recurse, bridge):
+def sf_drift(slow, fast, dt, evolve, recurse, bridge):
     """Slow<->Fast Drift operator.
 
     """
-    slow = evolve(slow, tau)
-    fast = recurse(fast, tau, evolve, bridge)
+    slow = evolve(slow, dt)
+    fast = recurse(fast, dt, evolve, bridge)
     return slow, fast
 
 
@@ -203,7 +203,7 @@ def sf_drift(slow, fast, tau, evolve, recurse, bridge):
 # sf_kick
 #
 @timings
-def sf_kick(slow, fast, tau):
+def sf_kick(slow, fast, dt):
     """Slow<->Fast Kick operator.
 
     """
@@ -219,135 +219,133 @@ def sf_kick(slow, fast, tau):
 #                return ps
 #            slow.set_pnacc(fast)
 #            fast.set_pnacc(slow)
-#            slow.wx += (slow.ax + slow.pnax) * tau / 2
-#            slow.wy += (slow.ay + slow.pnay) * tau / 2
-#            slow.wz += (slow.az + slow.pnaz) * tau / 2
-#            fast.wx += (fast.ax + fast.pnax) * tau / 2
-#            fast.wy += (fast.ay + fast.pnay) * tau / 2
-#            fast.wz += (fast.az + fast.pnaz) * tau / 2
+#            slow.wx += (slow.ax + slow.pnax) * dt / 2
+#            slow.wy += (slow.ay + slow.pnay) * dt / 2
+#            slow.wz += (slow.az + slow.pnaz) * dt / 2
+#            fast.wx += (fast.ax + fast.pnax) * dt / 2
+#            fast.wy += (fast.ay + fast.pnay) * dt / 2
+#            fast.wz += (fast.az + fast.pnaz) * dt / 2
 #
 #            slow = vw_swap(slow)
 #            fast = vw_swap(fast)
 #            slow.set_pnacc(fast)
 #            fast.set_pnacc(slow)
-#            slow.pn_kick_ke(tau)
-#            slow.pn_kick_lmom(tau)
-#            slow.pn_kick_amom(tau)
-#            fast.pn_kick_ke(tau)
-#            fast.pn_kick_lmom(tau)
-#            fast.pn_kick_amom(tau)
+#            slow.pn_kick_ke(dt)
+#            slow.pn_kick_lmom(dt)
+#            slow.pn_kick_amom(dt)
+#            fast.pn_kick_ke(dt)
+#            fast.pn_kick_lmom(dt)
+#            fast.pn_kick_amom(dt)
 #            slow = vw_swap(slow)
 #            fast = vw_swap(fast)
 #
-#            slow.vx += (slow.ax + slow.pnax) * tau
-#            slow.vy += (slow.ay + slow.pnay) * tau
-#            slow.vz += (slow.az + slow.pnaz) * tau
-#            fast.vx += (fast.ax + fast.pnax) * tau
-#            fast.vy += (fast.ay + fast.pnay) * tau
-#            fast.vz += (fast.az + fast.pnaz) * tau
+#            slow.vx += (slow.ax + slow.pnax) * dt
+#            slow.vy += (slow.ay + slow.pnay) * dt
+#            slow.vz += (slow.az + slow.pnaz) * dt
+#            fast.vx += (fast.ax + fast.pnax) * dt
+#            fast.vy += (fast.ay + fast.pnay) * dt
+#            fast.vz += (fast.az + fast.pnaz) * dt
 #
 #            slow.set_pnacc(fast)
 #            fast.set_pnacc(slow)
-#            slow.wx += (slow.ax + slow.pnax) * tau / 2
-#            slow.wy += (slow.ay + slow.pnay) * tau / 2
-#            slow.wz += (slow.az + slow.pnaz) * tau / 2
-#            fast.wx += (fast.ax + fast.pnax) * tau / 2
-#            fast.wy += (fast.ay + fast.pnay) * tau / 2
-#            fast.wz += (fast.az + fast.pnaz) * tau / 2
+#            slow.wx += (slow.ax + slow.pnax) * dt / 2
+#            slow.wy += (slow.ay + slow.pnay) * dt / 2
+#            slow.wz += (slow.az + slow.pnaz) * dt / 2
+#            fast.wx += (fast.ax + fast.pnax) * dt / 2
+#            fast.wy += (fast.ay + fast.pnay) * dt / 2
+#            fast.wz += (fast.az + fast.pnaz) * dt / 2
 #            #
 
 #############
 
             #
-            slow.vx += (slow.ax * tau + slow.wx) / 2
-            slow.vy += (slow.ay * tau + slow.wy) / 2
-            slow.vz += (slow.az * tau + slow.wz) / 2
-            fast.vx += (fast.ax * tau + fast.wx) / 2
-            fast.vy += (fast.ay * tau + fast.wy) / 2
-            fast.vz += (fast.az * tau + fast.wz) / 2
+            slow.vx += (slow.ax * dt + slow.wx) / 2
+            slow.vy += (slow.ay * dt + slow.wy) / 2
+            slow.vz += (slow.az * dt + slow.wz) / 2
+            fast.vx += (fast.ax * dt + fast.wx) / 2
+            fast.vy += (fast.ay * dt + fast.wy) / 2
+            fast.vz += (fast.az * dt + fast.wz) / 2
 
             slow.set_pnacc(fast)
             fast.set_pnacc(slow)
-            slow.pn_kick_ke(tau)
-            slow.pn_kick_lmom(tau)
-            slow.pn_kick_amom(tau)
-            fast.pn_kick_ke(tau)
-            fast.pn_kick_lmom(tau)
-            fast.pn_kick_amom(tau)
-            slow.wx[...] = 2 * slow.pnax * tau - slow.wx
-            slow.wy[...] = 2 * slow.pnay * tau - slow.wy
-            slow.wz[...] = 2 * slow.pnaz * tau - slow.wz
-            fast.wx[...] = 2 * fast.pnax * tau - fast.wx
-            fast.wy[...] = 2 * fast.pnay * tau - fast.wy
-            fast.wz[...] = 2 * fast.pnaz * tau - fast.wz
+            slow.pn_kick_ke(dt)
+            slow.pn_kick_lmom(dt)
+            slow.pn_kick_amom(dt)
+            fast.pn_kick_ke(dt)
+            fast.pn_kick_lmom(dt)
+            fast.pn_kick_amom(dt)
+            slow.wx[...] = 2 * slow.pnax * dt - slow.wx
+            slow.wy[...] = 2 * slow.pnay * dt - slow.wy
+            slow.wz[...] = 2 * slow.pnaz * dt - slow.wz
+            fast.wx[...] = 2 * fast.pnax * dt - fast.wx
+            fast.wy[...] = 2 * fast.pnay * dt - fast.wy
+            fast.wz[...] = 2 * fast.pnaz * dt - fast.wz
 
-            slow.vx += (slow.ax * tau + slow.wx) / 2
-            slow.vy += (slow.ay * tau + slow.wy) / 2
-            slow.vz += (slow.az * tau + slow.wz) / 2
-            fast.vx += (fast.ax * tau + fast.wx) / 2
-            fast.vy += (fast.ay * tau + fast.wy) / 2
-            fast.vz += (fast.az * tau + fast.wz) / 2
+            slow.vx += (slow.ax * dt + slow.wx) / 2
+            slow.vy += (slow.ay * dt + slow.wy) / 2
+            slow.vz += (slow.az * dt + slow.wz) / 2
+            fast.vx += (fast.ax * dt + fast.wx) / 2
+            fast.vy += (fast.ay * dt + fast.wy) / 2
+            fast.vz += (fast.az * dt + fast.wz) / 2
             #
         else:
-            slow = kick_n(slow, tau)
-            fast = kick_n(fast, tau)
+            slow = kick_n(slow, dt)
+            fast = kick_n(fast, dt)
     return slow, fast
 
 
 #
 # SIA21
 #
+@bind_all(timings)
 class SIA21(object):
     # REF.: Yoshida, Phys. Lett. A 150 (1990)
     coefs = ([1.0],
              [0.5])
 
-    @staticmethod
-    @timings
-    def dkd(ips, tau):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA21 DKD-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        k, d = SIA21.coefs
+        k, d = cls.coefs
 
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, tau):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA21 KDK-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        d, k = SIA21.coefs
+        d, k = cls.coefs
 
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, tau, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA21.coefs
-        erb = evolve, recurse, SIA21.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         #
         return slow, fast
 
@@ -355,64 +353,62 @@ class SIA21(object):
 #
 # SIA22
 #
+@bind_all(timings)
 class SIA22(object):
     # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
     coefs = ([0.5],
              [0.1931833275037836,
               0.6136333449924328])
 
-    @staticmethod
-    @timings
-    def dkd(ips, tau):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA22 DKD-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        k, d = SIA22.coefs
+        k, d = cls.coefs
 
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, tau):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA22 KDK-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        d, k = SIA22.coefs
+        d, k = cls.coefs
 
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, tau, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA22.coefs
-        erb = evolve, recurse, SIA22.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         #
         return slow, fast
 
@@ -420,6 +416,7 @@ class SIA22(object):
 #
 # SIA43
 #
+@bind_all(timings)
 class SIA43(object):
     # REF.: Yoshida, Phys. Lett. A 150 (1990)
     coefs = ([1.3512071919596575,
@@ -427,64 +424,61 @@ class SIA43(object):
              [0.6756035959798288,
               -0.17560359597982877])
 
-    @staticmethod
-    @timings
-    def dkd(ips, tau):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA43 DKD-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        k, d = SIA43.coefs
+        k, d = cls.coefs
 
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, tau):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA43 KDK-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        d, k = SIA43.coefs
+        d, k = cls.coefs
 
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, tau, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA43.coefs
-        erb = evolve, recurse, SIA43.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[1] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         #
         return slow, fast
 
@@ -492,6 +486,7 @@ class SIA43(object):
 #
 # SIA44
 #
+@bind_all(timings)
 class SIA44(object):
     # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
     coefs = ([0.7123418310626056,
@@ -500,70 +495,67 @@ class SIA44(object):
               -0.06626458266981843,
               0.7752933736500186])
 
-    @staticmethod
-    @timings
-    def dkd(ips, tau):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA44 DKD-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        k, d = SIA44.coefs
+        k, d = cls.coefs
 
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, tau):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA44 KDK-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        d, k = SIA44.coefs
+        d, k = cls.coefs
 
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, tau, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA44.coefs
-        erb = evolve, recurse, SIA44.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[1] * tau)
-        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[1] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * dt)
+        slow, fast = sf_drift(slow, fast, d[2] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         #
         return slow, fast
 
@@ -571,6 +563,7 @@ class SIA44(object):
 #
 # SIA45
 #
+@bind_all(timings)
 class SIA45(object):
     # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
     coefs = ([-0.0844296195070715,
@@ -580,76 +573,73 @@ class SIA45(object):
               -0.1347950099106792,
               0.35978688867743724])
 
-    @staticmethod
-    @timings
-    def dkd(ips, tau):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA45 DKD-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        k, d = SIA45.coefs
+        k, d = cls.coefs
 
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, tau):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA45 KDK-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        d, k = SIA45.coefs
+        d, k = cls.coefs
 
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, tau, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA45.coefs
-        erb = evolve, recurse, SIA45.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[1] * tau)
-        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[2] * tau)
-        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[1] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * dt)
+        slow, fast = sf_drift(slow, fast, d[2] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * dt)
+        slow, fast = sf_drift(slow, fast, d[2] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         #
         return slow, fast
 
@@ -657,6 +647,7 @@ class SIA45(object):
 #
 # SIA46
 #
+@bind_all(timings)
 class SIA46(object):
     # REF.: Blanes & Moan, J. Comp. Appl. Math. 142 (2002)
     coefs = ([0.209515106613362,
@@ -667,82 +658,79 @@ class SIA46(object):
               -0.0420650803577195,
               0.21937695575349958])
 
-    @staticmethod
-    @timings
-    def dkd(ips, tau):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA46 DKD-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        k, d = SIA46.coefs
+        k, d = cls.coefs
 
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[3] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[3] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, tau):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA46 KDK-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        d, k = SIA46.coefs
+        d, k = cls.coefs
 
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[3] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[3] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, tau, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA46.coefs
-        erb = evolve, recurse, SIA46.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[1] * tau)
-        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[2] * tau)
-        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[2] * tau)
-        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[1] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * dt)
+        slow, fast = sf_drift(slow, fast, d[2] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * dt)
+        slow, fast = sf_drift(slow, fast, d[3] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * dt)
+        slow, fast = sf_drift(slow, fast, d[2] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         #
         return slow, fast
 
@@ -750,6 +738,7 @@ class SIA46(object):
 #
 # SIA67
 #
+@bind_all(timings)
 class SIA67(object):
     # REF.: Yoshida, Phys. Lett. A 150 (1990)
     coefs = ([0.7845136104775573,
@@ -761,88 +750,85 @@ class SIA67(object):
               -0.47105338540975644,
               0.06875316825252015])
 
-    @staticmethod
-    @timings
-    def dkd(ips, tau):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA67 DKD-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        k, d = SIA67.coefs
+        k, d = cls.coefs
 
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[3] * tau)
-        ips = kick(ips, k[3] * tau)
-        ips = drift(ips, d[3] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[3] * dt)
+        ips = kick(ips, k[3] * dt)
+        ips = drift(ips, d[3] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, tau):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA67 KDK-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        d, k = SIA67.coefs
+        d, k = cls.coefs
 
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[3] * tau)
-        ips = drift(ips, d[3] * tau)
-        ips = kick(ips, k[3] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[3] * dt)
+        ips = drift(ips, d[3] * dt)
+        ips = kick(ips, k[3] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, tau, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA67.coefs
-        erb = evolve, recurse, SIA67.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[1] * tau)
-        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[2] * tau)
-        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[3] * tau)
-        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[2] * tau)
-        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[1] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * dt)
+        slow, fast = sf_drift(slow, fast, d[2] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * dt)
+        slow, fast = sf_drift(slow, fast, d[3] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[3] * dt)
+        slow, fast = sf_drift(slow, fast, d[3] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * dt)
+        slow, fast = sf_drift(slow, fast, d[2] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         #
         return slow, fast
 
@@ -850,6 +836,7 @@ class SIA67(object):
 #
 # SIA69
 #
+@bind_all(timings)
 class SIA69(object):
     # REF.: Kahan & Li, Math. Comput. 66 (1997)
     coefs = ([0.39103020330868477,
@@ -863,105 +850,102 @@ class SIA69(object):
               -0.31217486576975095,
               0.44022101344371095])
 
-    @staticmethod
-    @timings
-    def dkd(ips, tau):
+    @classmethod
+    def dkd(cls, ips, dt):
         """Standard SIA69 DKD-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        k, d = SIA69.coefs
+        k, d = cls.coefs
 
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[3] * tau)
-        ips = kick(ips, k[3] * tau)
-        ips = drift(ips, d[4] * tau)
-        ips = kick(ips, k[4] * tau)
-        ips = drift(ips, d[4] * tau)
-        ips = kick(ips, k[3] * tau)
-        ips = drift(ips, d[3] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[3] * dt)
+        ips = kick(ips, k[3] * dt)
+        ips = drift(ips, d[4] * dt)
+        ips = kick(ips, k[4] * dt)
+        ips = drift(ips, d[4] * dt)
+        ips = kick(ips, k[3] * dt)
+        ips = drift(ips, d[3] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def kdk(ips, tau):
+    @classmethod
+    def kdk(cls, ips, dt):
         """Standard SIA69 KDK-type propagator.
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, tau)
+            return FewBody.evolve(ips, dt)
 
-        d, k = SIA69.coefs
+        d, k = cls.coefs
 
-        ips = kick(ips, k[0] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[3] * tau)
-        ips = drift(ips, d[3] * tau)
-        ips = kick(ips, k[4] * tau)
-        ips = drift(ips, d[4] * tau)
-        ips = kick(ips, k[4] * tau)
-        ips = drift(ips, d[3] * tau)
-        ips = kick(ips, k[3] * tau)
-        ips = drift(ips, d[2] * tau)
-        ips = kick(ips, k[2] * tau)
-        ips = drift(ips, d[1] * tau)
-        ips = kick(ips, k[1] * tau)
-        ips = drift(ips, d[0] * tau)
-        ips = kick(ips, k[0] * tau)
+        ips = kick(ips, k[0] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[3] * dt)
+        ips = drift(ips, d[3] * dt)
+        ips = kick(ips, k[4] * dt)
+        ips = drift(ips, d[4] * dt)
+        ips = kick(ips, k[4] * dt)
+        ips = drift(ips, d[3] * dt)
+        ips = kick(ips, k[3] * dt)
+        ips = drift(ips, d[2] * dt)
+        ips = kick(ips, k[2] * dt)
+        ips = drift(ips, d[1] * dt)
+        ips = kick(ips, k[1] * dt)
+        ips = drift(ips, d[0] * dt)
+        ips = kick(ips, k[0] * dt)
 
         return ips
 
-    @staticmethod
-    @timings
-    def bridge_sf(slow, fast, tau, evolve, recurse):
+    @classmethod
+    def bridge_sf(cls, slow, fast, dt, evolve, recurse):
         """
 
         """
-        k, d = SIA69.coefs
-        erb = evolve, recurse, SIA69.bridge_sf
+        k, d = cls.coefs
+        erb = evolve, recurse, cls.bridge_sf
         #
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[1] * tau)
-        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[2] * tau)
-        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[3] * tau)
-        slow, fast = sf_drift(slow, fast, d[4] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[4] * tau)
-        slow, fast = sf_drift(slow, fast, d[4] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[3] * tau)
-        slow, fast = sf_drift(slow, fast, d[3] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[2] * tau)
-        slow, fast = sf_drift(slow, fast, d[2] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[1] * tau)
-        slow, fast = sf_drift(slow, fast, d[1] * tau, *erb)
-        slow, fast = sf_kick(slow, fast, k[0] * tau)
-        slow, fast = sf_drift(slow, fast, d[0] * tau, *erb)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * dt)
+        slow, fast = sf_drift(slow, fast, d[2] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * dt)
+        slow, fast = sf_drift(slow, fast, d[3] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[3] * dt)
+        slow, fast = sf_drift(slow, fast, d[4] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[4] * dt)
+        slow, fast = sf_drift(slow, fast, d[4] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[3] * dt)
+        slow, fast = sf_drift(slow, fast, d[3] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[2] * dt)
+        slow, fast = sf_drift(slow, fast, d[2] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[1] * dt)
+        slow, fast = sf_drift(slow, fast, d[1] * dt, *erb)
+        slow, fast = sf_kick(slow, fast, k[0] * dt)
+        slow, fast = sf_drift(slow, fast, d[0] * dt, *erb)
         #
         return slow, fast
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class SIA(Base):
     """
 
@@ -995,14 +979,15 @@ class SIA(Base):
         """
 
         """
-        logger.info("Initializing '%s' integrator.",
-                    self.method)
-
         ps = self.ps
+        LOGGER.info("Initializing '%s' integrator at "
+                    "t_curr = %g and t_end = %g.",
+                    self.method, ps.t_curr, t_end)
+
         if ps.include_pn_corrections:
-            ps.register_auxiliary_attribute("wx", "real")
-            ps.register_auxiliary_attribute("wy", "real")
-            ps.register_auxiliary_attribute("wz", "real")
+            ps.register_attribute("wx", "real")
+            ps.register_attribute("wy", "real")
+            ps.register_attribute("wz", "real")
 #            ps.wx[...] = ps.vx
 #            ps.wy[...] = ps.vy
 #            ps.wz[...] = ps.vz
@@ -1020,16 +1005,16 @@ class SIA(Base):
         """
 
         """
-        logger.info("Finalizing '%s' integrator.",
-                    self.method)
-
         ps = self.ps
+        LOGGER.info("Finalizing '%s' integrator at "
+                    "t_curr = %g and t_end = %g.",
+                    self.method, ps.t_curr, t_end)
 
         if self.viewer:
             self.viewer.show_event(ps)
             self.viewer.enter_main_loop()
 
-    def do_step(self, ps, tau):
+    def do_step(self, ps, dt):
         """
 
         """
@@ -1047,46 +1032,46 @@ class SIA(Base):
 
         if "dkd" in self.method:
             if "sia21" in self.method:
-                return self.recurse(ps, tau, SIA21.dkd, SIA21.bridge_sf)
+                return self.recurse(ps, dt, SIA21.dkd, SIA21.bridge_sf)
             elif "sia22" in self.method:
-                return self.recurse(ps, tau, SIA22.dkd, SIA22.bridge_sf)
+                return self.recurse(ps, dt, SIA22.dkd, SIA22.bridge_sf)
             elif "sia43" in self.method:
-                return self.recurse(ps, tau, SIA43.dkd, SIA43.bridge_sf)
+                return self.recurse(ps, dt, SIA43.dkd, SIA43.bridge_sf)
             elif "sia44" in self.method:
-                return self.recurse(ps, tau, SIA44.dkd, SIA44.bridge_sf)
+                return self.recurse(ps, dt, SIA44.dkd, SIA44.bridge_sf)
             elif "sia45" in self.method:
-                return self.recurse(ps, tau, SIA45.dkd, SIA45.bridge_sf)
+                return self.recurse(ps, dt, SIA45.dkd, SIA45.bridge_sf)
             elif "sia46" in self.method:
-                return self.recurse(ps, tau, SIA46.dkd, SIA46.bridge_sf)
+                return self.recurse(ps, dt, SIA46.dkd, SIA46.bridge_sf)
             elif "sia67" in self.method:
-                return self.recurse(ps, tau, SIA67.dkd, SIA67.bridge_sf)
+                return self.recurse(ps, dt, SIA67.dkd, SIA67.bridge_sf)
             elif "sia69" in self.method:
-                return self.recurse(ps, tau, SIA69.dkd, SIA69.bridge_sf)
+                return self.recurse(ps, dt, SIA69.dkd, SIA69.bridge_sf)
             else:
                 raise ValueError("Unexpected method: {0}".format(self.method))
         elif "kdk" in self.method:
             if "sia21" in self.method:
-                return self.recurse(ps, tau, SIA21.kdk, SIA21.bridge_sf)
+                return self.recurse(ps, dt, SIA21.kdk, SIA21.bridge_sf)
             elif "sia22" in self.method:
-                return self.recurse(ps, tau, SIA22.kdk, SIA22.bridge_sf)
+                return self.recurse(ps, dt, SIA22.kdk, SIA22.bridge_sf)
             elif "sia43" in self.method:
-                return self.recurse(ps, tau, SIA43.kdk, SIA43.bridge_sf)
+                return self.recurse(ps, dt, SIA43.kdk, SIA43.bridge_sf)
             elif "sia44" in self.method:
-                return self.recurse(ps, tau, SIA44.kdk, SIA44.bridge_sf)
+                return self.recurse(ps, dt, SIA44.kdk, SIA44.bridge_sf)
             elif "sia45" in self.method:
-                return self.recurse(ps, tau, SIA45.kdk, SIA45.bridge_sf)
+                return self.recurse(ps, dt, SIA45.kdk, SIA45.bridge_sf)
             elif "sia46" in self.method:
-                return self.recurse(ps, tau, SIA46.kdk, SIA46.bridge_sf)
+                return self.recurse(ps, dt, SIA46.kdk, SIA46.bridge_sf)
             elif "sia67" in self.method:
-                return self.recurse(ps, tau, SIA67.kdk, SIA67.bridge_sf)
+                return self.recurse(ps, dt, SIA67.kdk, SIA67.bridge_sf)
             elif "sia69" in self.method:
-                return self.recurse(ps, tau, SIA69.kdk, SIA69.bridge_sf)
+                return self.recurse(ps, dt, SIA69.kdk, SIA69.bridge_sf)
             else:
                 raise ValueError("Unexpected method: {0}".format(self.method))
         else:
             raise ValueError("Unexpected method: {0}".format(self.method))
 
-    def recurse(self, ps, tau, evolve, bridge_sf):
+    def recurse(self, ps, dt, evolve, bridge_sf):
         """
 
         """
@@ -1098,29 +1083,29 @@ class SIA(Base):
             flag = 1
             ps.set_tstep(ps, self.eta)
             if self.shared_tstep:
-                tau = self.get_min_block_tstep(ps, tau)
+                dt = self.get_min_block_tstep(ps, dt)
 
-        slow, fast = split(ps, abs(ps.tstep) > flag*abs(tau))
+        slow, fast = split(ps, abs(ps.tstep) > flag*abs(dt))
 
-        slow, fast = bridge_sf(slow, fast, tau, evolve, self.recurse)
+        slow, fast = bridge_sf(slow, fast, dt, evolve, self.recurse)
 
         if fast.n == 0:
-            type(ps).t_curr += tau
+            type(ps).t_curr += dt
 
         if slow.n:
-            slow.tstep[...] = tau
-            slow.time += tau
+            slow.tstep[...] = dt
+            slow.time += dt
             slow.nstep += 1
             if self.dumpper:
-                slc = slow.time % (self.dump_freq * tau) == 0
+                slc = slow.time % (self.dump_freq * dt) == 0
                 if any(slc):
                     self.wl.append(slow[slc])
             if self.viewer:
-                slc = slow.time % (self.gl_freq * tau) == 0
+                slc = slow.time % (self.gl_freq * dt) == 0
                 if any(slc):
                     self.viewer.show_event(slow[slc])
 
         return join(slow, fast)
 
 
-########## end of file ##########
+# -- End of File --

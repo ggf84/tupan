@@ -7,21 +7,19 @@ TODO.
 
 
 from __future__ import print_function
-import copy
 import numpy as np
-from collections import defaultdict
 from .body import Bodies
 from .sph import Sphs
 from .star import Stars
 from .blackhole import Blackholes
 from .body import AbstractNbodyMethods
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
 
 
 __all__ = ["ParticleSystem"]
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class ParticleSystem(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
@@ -38,42 +36,12 @@ class ParticleSystem(AbstractNbodyMethods):
                                         (nsphs, Sphs)] if n}
         self.members = members
         self.n = len(self)
-        if self.n:
-            self._rebind_attrs()
 
-    def _rebind_attrs(self):
-        attrs = defaultdict(list)
-        for (key, obj) in self.members.items():
-            setattr(self, key, obj)
-            for attr in obj.__dict__:
-                attrs[attr].append(getattr(obj, attr))
+    def register_attribute(self, attr, sctype, doc=''):
+        for member in self.members.values():
+            member.register_attribute(attr, sctype, doc)
 
-        for (attr, seq) in attrs.items():
-            ary = np.concatenate(seq) if len(seq) > 1 else seq[0]
-            setattr(self, attr, ary)
-
-        if len(self.members) > 1:
-            ns = 0
-            nf = 0
-            for obj in self.members.values():
-                nf += obj.n
-                for attr in obj.__dict__:
-                    setattr(obj, attr, getattr(self, attr)[ns:nf])
-                ns += obj.n
-
-    def register_auxiliary_attribute(self, attr, sctype):
-        from ..lib.utils.ctype import ctypedict
-        dtype = ctypedict[sctype]
-        if attr in self.__dict__:
-            raise ValueError("'{0}' is already a registered "
-                             "attribute.".format(attr))
-        setattr(self, attr, np.zeros(self.n, dtype))
-        ns = 0
-        nf = 0
-        for obj in self.members.values():
-            nf += obj.n
-            setattr(obj, attr, getattr(self, attr)[ns:nf])
-            ns += obj.n
+        super(ParticleSystem, self).register_attribute(attr, sctype, doc)
 
     #
     # miscellaneous methods
@@ -85,31 +53,30 @@ class ParticleSystem(AbstractNbodyMethods):
     def __str__(self):
         fmt = type(self).__name__+"(["
         if self.n:
-            for (key, obj) in self.members.items():
-                fmt += "\n\t{0},".format('\n\t'.join(str(obj).split('\n')))
+            for member in self.members.values():
+                fmt += "\n\t{0},".format('\n\t'.join(str(member).split('\n')))
             fmt += "\n"
         fmt += "])"
         return fmt
 
     def __len__(self):
-        return sum(len(obj) for obj in self.members.values())
-
-    def copy(self):
-        return copy.deepcopy(self)
+        return sum(len(member) for member in self.members.values())
 
     def append(self, obj):
         if obj.n:
             try:
-                items = obj.members.items()
-            except:
-                items = [(type(obj).__name__.lower(), obj)]
-            for (k, v) in items:
+                members = obj.members
+            except AttributeError:
+                members = dict([(type(obj).__name__.lower(), obj)])
+            for (k, v) in members.items():
                 try:
                     self.members[k].append(v)
-                except:
+                except KeyError:
                     self.members[k] = v.copy()
             self.n = len(self)
-            self._rebind_attrs()
+            for attr in list(self.__dict__):
+                if attr not in ('n', 'members'):
+                    delattr(self, attr)
 
     def __getitem__(self, slc):
         if isinstance(slc, np.ndarray):
@@ -164,9 +131,8 @@ class ParticleSystem(AbstractNbodyMethods):
             nf = 0
             for (key, obj) in self.members.items():
                 nf += obj.n
-                obj[slc[ns:nf]] = getattr(values, key)
+                obj[slc[ns:nf]] = values.members[key]
                 ns += obj.n
-            self._rebind_attrs()
             return
 
         if isinstance(slc, int):
@@ -179,9 +145,8 @@ class ParticleSystem(AbstractNbodyMethods):
             for (key, obj) in self.members.items():
                 i = slc - n
                 if 0 <= i < obj.n:
-                    obj[i] = getattr(values, key)
+                    obj[i] = values.members[key]
                 n += obj.n
-            self._rebind_attrs()
             return
 
         if isinstance(slc, slice):
@@ -199,11 +164,10 @@ class ParticleSystem(AbstractNbodyMethods):
                 if obj.n:
                     if stop >= 0:
                         if start < obj.n:
-                            obj[start-obj.n:stop] = getattr(values, key)
+                            obj[start-obj.n:stop] = values.members[key]
                     start -= obj.n
                     stop -= obj.n
-            self._rebind_attrs()
             return
 
 
-########## end of file ##########
+# -- End of File --

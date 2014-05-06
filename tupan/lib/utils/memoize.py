@@ -7,11 +7,9 @@ TODO.
 
 
 import functools
-from .timing import timings
 
 
 def cache(func):
-    func = timings(func)
     cache = dict()
     kwmark = object()   # separates positional and keyword args
 
@@ -23,7 +21,7 @@ def cache(func):
         key = hash(key)
         try:
             result = cache[key]
-        except:
+        except KeyError:
             if len(cache) > 100:
                 cache.clear()
             result = func(*args, **kwargs)
@@ -35,7 +33,6 @@ def cache(func):
 
 def cache_arg(index):
     def cache(func):
-        func = timings(func)
         cache = dict()
         kwmark = object()   # separates positional and keyword args
 
@@ -47,7 +44,7 @@ def cache_arg(index):
             key = hash(key)
             try:
                 result = cache[key]
-            except:
+            except KeyError:
                 if len(cache) > 100:
                     cache.clear()
                 result = func(*args, **kwargs)
@@ -60,4 +57,4 @@ def cache_arg(index):
 # cache = cache_arg(slice(None, None, None))
 
 
-########## end of file ##########
+# -- End of File --

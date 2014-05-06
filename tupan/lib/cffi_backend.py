@@ -7,63 +7,57 @@
 
 
 import os
-import sys
 import cffi
 import ctypes
 import logging
-import getpass
 from functools import partial
 from collections import namedtuple
+from .utils.timing import timings, bind_all
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, "src")
 
-CACHE_DIR = os.path.join(os.path.expanduser('~'),
-                         ".tupan",
-                         "cffi-cache-uid{0}-py{1}".format(
-                             getpass.getuser(),
-                             ".".join(str(i) for i in sys.version_info)))
 
-
-def make_lib(prec):
+@timings
+def make_lib(fpwidth):
     """
 
     """
-    cint = "int" if prec == "float32" else "long"
-    creal = "float" if prec == 'float32' else "double"
-    logger.debug("Building/Loading %s C extension module...",
-                 prec)
+    cint = "int" if fpwidth == "fp32" else "long"
+    creal = "float" if fpwidth == 'fp32' else "double"
+    LOGGER.debug("Building/Loading %s C extension module.", fpwidth)
 
-    files = ("phi_kernel.c",
-             "acc_kernel.c",
-             "acc_jerk_kernel.c",
-             "snap_crackle_kernel.c",
-             "tstep_kernel.c",
-             "pnacc_kernel.c",
-             "nreg_kernels.c",
-             "sakura_kernel.c",
-             "kepler_solver_kernel.c",
-             )
+    fnames = ("phi_kernel.c",
+              "acc_kernel.c",
+              "acc_jerk_kernel.c",
+              "snap_crackle_kernel.c",
+              "tstep_kernel.c",
+              "pnacc_kernel.c",
+              "nreg_kernels.c",
+              "sakura_kernel.c",
+              "kepler_solver_kernel.c",
+              )
 
-    s = []
+    src = []
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
-        s.append("typedef {} INT;".format(cint))
-        s.append("typedef unsigned {} UINT;".format(cint))
-        s.append("typedef {} REAL;".format(creal))
-        s.append(fobj.read())
-    source = "\n".join(s)
+        src.append("typedef {} INT;".format(cint))
+        src.append("typedef unsigned {} UINT;".format(cint))
+        src.append("typedef {} REAL;".format(creal))
+        src.append(fobj.read())
+    source = "\n".join(src)
 
     ffi = cffi.FFI()
 
     ffi.cdef(source)
 
     define_macros = []
-    if prec == "float64":
+    if fpwidth == "fp64":
         define_macros.append(("CONFIG_USE_DOUBLE", 1))
 
+    from ..config import CACHE_DIR
     clib = ffi.verify(
         """
         #include "common.h"
@@ -74,30 +68,39 @@ def make_lib(prec):
         include_dirs=[PATH],
         libraries=["m"],
         extra_compile_args=["-O3", "-std=c99"],
-        sources=[os.path.join(PATH, file) for file in files],
+        sources=[os.path.join(PATH, fname) for fname in fnames],
     )
 
-    logger.debug("done.")
+    LOGGER.debug("C extension module loaded: "
+                 "(U)INT is (u)%s, REAL is %s.",
+                 cint, creal)
     return ffi, clib
 
 
-ffi = {}
-lib = {}
-ffi['float32'], lib['float32'] = make_lib('float32')
-ffi['float64'], lib['float64'] = make_lib('float64')
+FFI = {}
+LIB = {}
+FFI['fp32'], LIB['fp32'] = make_lib('fp32')
+FFI['fp64'], LIB['fp64'] = make_lib('fp64')
 
 
+@bind_all(timings)
 class CKernel(object):
 
-    def __init__(self, prec, name):
-        self.kernel = getattr(lib[prec], name)
-        _ffi = ffi[prec]
+    def __init__(self, fpwidth, name):
+        self.kernel = getattr(LIB[fpwidth], name)
+        self._args = None
+        self._argtypes = None
 
-        from_buffer = ctypes.c_char.from_buffer
+        ffi = FFI[fpwidth]
+
+#        from_buffer = ctypes.c_char.from_buffer
+#        from_buffer = ctypes.POINTER(ctypes.c_char).from_buffer
+        from_buffer = (ctypes.c_char * 0).from_buffer
+
         addressof = ctypes.addressof
-        icast = partial(_ffi.cast, "INT *")
-        uicast = partial(_ffi.cast, "UINT *")
-        rcast = partial(_ffi.cast, "REAL *")
+        icast = partial(ffi.cast, "INT *")
+        uicast = partial(ffi.cast, "UINT *")
+        rcast = partial(ffi.cast, "REAL *")
 
         types = namedtuple("Types", ["c_int", "c_int_p",
                                      "c_uint", "c_uint_p",
@@ -113,17 +116,28 @@ class CKernel(object):
     def set_gsize(self, ni, nj):
         pass
 
-    def allocate_local_memory(self, numbufs, sctype):
-        return []
+    @property
+    def argtypes(self):
+        return self._argtypes
 
-    def set_args(self, args, start=0):
-        self.args = args
+    @argtypes.setter
+    def argtypes(self, types):
+        self._argtypes = types
 
-    def map_buffers(self, arrays, buffers):
-        return arrays
+    @property
+    def args(self):
+        return self._args
+
+    @args.setter
+    def args(self, args):
+        argtypes = self.argtypes
+        self._args = [argtype(arg) for (arg, argtype) in zip(args, argtypes)]
+
+    def map_buffers(self, **kwargs):
+        return kwargs['outargs']
 
     def run(self):
         self.kernel(*self.args)
 
 
-########## end of file ##########
+# -- End of File --

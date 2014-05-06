@@ -11,16 +11,88 @@ import sys
 import copy
 import numpy as np
 from ..lib import extensions
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
+from ..lib.utils.ctype import Ctype
 
 
 __all__ = ["Bodies"]
+
+
+def typed_property(name, expected_type,
+                   doc=None, can_get=True,
+                   can_set=True, can_del=False):
+    storage_name = '_' + name
+
+    def fget(self):
+        value = getattr(self, storage_name, None)
+        if value is None:
+            def get_value(self):
+                if hasattr(self, 'members'):
+                    arrays = [getattr(member, name)
+                              for member in self.members.values()]
+                    return np.concatenate(arrays)
+                return expected_type(self)
+            value = get_value(self)
+            setattr(self, name, value)
+            return value
+        return value
+
+    def fset(self, value):
+        if hasattr(self, 'members'):
+            if not hasattr(self, storage_name):
+                ns = 0
+                nf = 0
+                for member in self.members.values():
+                    nf += member.n
+                    setattr(member, name, value[ns:nf])
+                    ns += member.n
+        setattr(self, storage_name, value)
+
+    def fdel(self):
+        if hasattr(self, storage_name):
+            delattr(self, storage_name)
+        if hasattr(self, 'members'):
+            for member in self.members.values():
+                delattr(member, name)
+
+    fget.__name__ = name
+    fset.__name__ = name
+    fdel.__name__ = name
+    return property(fget if can_get else None,
+                    fset if can_set else None,
+                    fdel if can_del else None,
+                    doc)
 
 
 class NbodyMethods(object):
     """This class holds common methods for particles in n-body systems.
 
     """
+    id = typed_property('id',
+                        lambda self: np.arange(self.n, dtype=Ctype.uint))
+    mass = typed_property('mass',
+                          lambda self: np.zeros(self.n, dtype=Ctype.real))
+    eps2 = typed_property('eps2',
+                          lambda self: np.zeros(self.n, dtype=Ctype.real))
+    rx = typed_property('rx',
+                        lambda self: np.zeros(self.n, dtype=Ctype.real))
+    ry = typed_property('ry',
+                        lambda self: np.zeros(self.n, dtype=Ctype.real))
+    rz = typed_property('rz',
+                        lambda self: np.zeros(self.n, dtype=Ctype.real))
+    vx = typed_property('vx',
+                        lambda self: np.zeros(self.n, dtype=Ctype.real))
+    vy = typed_property('vy',
+                        lambda self: np.zeros(self.n, dtype=Ctype.real))
+    vz = typed_property('vz',
+                        lambda self: np.zeros(self.n, dtype=Ctype.real))
+    time = typed_property('time',
+                          lambda self: np.zeros(self.n, dtype=Ctype.real))
+    nstep = typed_property('nstep',
+                           lambda self: np.zeros(self.n, dtype=Ctype.uint))
+    tstep = typed_property('tstep',
+                           lambda self: np.zeros(self.n, dtype=Ctype.real))
+
     include_pn_corrections = False
 
     attrs = [  # name, sctype, doc
@@ -38,21 +110,20 @@ class NbodyMethods(object):
         ("tstep", 'real', "time step"),
     ]
 
-    special_attrs = [  # name, sctype, doc
+    def copy(self):
+        return copy.deepcopy(self)
 
-    ]
+    def register_attribute(self, attr, sctype, doc=''):
+        dtype = vars(Ctype)[sctype]
+        setattr(type(self), attr,
+                typed_property(attr,
+                               lambda x: np.zeros(x.n, dtype=dtype),
+                               can_del=True))
 
     @property       # TODO: @classproperty ???
     def dtype(self):
-        from ..lib.utils.ctype import ctypedict
-        return [(name, ctypedict[sctype])
+        return [(name, vars(Ctype)[sctype])
                 for name, sctype, _ in self.attrs]
-
-    @property       # TODO: @classproperty ???
-    def special_dtype(self):
-        from ..lib.utils.ctype import ctypedict
-        return [(name, ctypedict[sctype])
-                for name, sctype, _ in self.special_attrs]
 
     @property
     def pos(self):  # XXX: deprecate?
@@ -74,7 +145,7 @@ class NbodyMethods(object):
     def pz(self):
         return self.mass * self.vz
 
-    ### total mass and center-of-mass methods
+    # -- total mass and center-of-mass methods
     @property
     def total_mass(self):
         """Total mass of the system.
@@ -94,16 +165,6 @@ class NbodyMethods(object):
         mrx = self.mass * self.rx
         mry = self.mass * self.ry
         mrz = self.mass * self.rz
-        if self.include_pn_corrections:
-            if not "pn_mrx" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mrx", "real")
-            if not "pn_mry" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mry", "real")
-            if not "pn_mrz" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mrz", "real")
-            mrx += self.pn_mrx
-            mry += self.pn_mry
-            mrz += self.pn_mrz
         mr = np.array([mrx, mry, mrz]).T
         return mr.sum(0) / self.total_mass
 
@@ -116,17 +177,9 @@ class NbodyMethods(object):
             Post-Newtonian corrections, if enabled, are included.
 
         """
-        mvx, mvy, mvz = self.px, self.py, self.pz
-        if self.include_pn_corrections:
-            if not "pn_mvx" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mvx", "real")
-            if not "pn_mvy" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mvy", "real")
-            if not "pn_mvz" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mvz", "real")
-            mvx += self.pn_mvx
-            mvy += self.pn_mvy
-            mvz += self.pn_mvz
+        mvx = self.mass * self.vx
+        mvy = self.mass * self.vy
+        mvz = self.mass * self.vz
         mv = np.array([mvx, mvy, mvz]).T
         return mv.sum(0) / self.total_mass
 
@@ -175,7 +228,7 @@ class NbodyMethods(object):
         """
         self.com_move_to(-self.com_r, -self.com_v)
 
-    ### linear momentum
+    # -- linear momentum
     @property
     def lm(self):
         """Individual linear momentum.
@@ -185,18 +238,10 @@ class NbodyMethods(object):
             Post-Newtonian corrections, if enabled, are included.
 
         """
-        lmx, lmy, lmz = self.px, self.py, self.pz
-        if self.include_pn_corrections:
-            if not "pn_mvx" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mvx", "real")
-            if not "pn_mvy" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mvy", "real")
-            if not "pn_mvz" in self.__dict__:
-                self.register_auxiliary_attribute("pn_mvz", "real")
-            lmx += self.pn_mvx
-            lmy += self.pn_mvy
-            lmz += self.pn_mvz
-        return np.array([lmx, lmy, lmz]).T
+        mvx = self.mass * self.vx
+        mvy = self.mass * self.vy
+        mvz = self.mass * self.vz
+        return np.array([mvx, mvy, mvz]).T
 
     @property
     def linear_momentum(self):
@@ -214,7 +259,7 @@ class NbodyMethods(object):
         """
         return self.lm.sum(0)
 
-    ### angular momentum
+    # -- angular momentum
     @property
     def am(self):
         """Individual angular momentum.
@@ -224,20 +269,12 @@ class NbodyMethods(object):
             Post-Newtonian corrections, if enabled, are included.
 
         """
-        px, py, pz = self.px, self.py, self.pz
-        amx = (self.ry * pz) - (self.rz * py)
-        amy = (self.rz * px) - (self.rx * pz)
-        amz = (self.rx * py) - (self.ry * px)
-        if self.include_pn_corrections:
-            if not "pn_amx" in self.__dict__:
-                self.register_auxiliary_attribute("pn_amx", "real")
-            if not "pn_amy" in self.__dict__:
-                self.register_auxiliary_attribute("pn_amy", "real")
-            if not "pn_amz" in self.__dict__:
-                self.register_auxiliary_attribute("pn_amz", "real")
-            amx += self.pn_amx
-            amy += self.pn_amy
-            amz += self.pn_amz
+        mvx = self.mass * self.vx
+        mvy = self.mass * self.vy
+        mvz = self.mass * self.vz
+        amx = (self.ry * mvz) - (self.rz * mvy)
+        amy = (self.rz * mvx) - (self.rx * mvz)
+        amz = (self.rx * mvy) - (self.ry * mvx)
         return np.array([amx, amy, amz]).T
 
     @property
@@ -256,7 +293,7 @@ class NbodyMethods(object):
         """
         return self.am.sum(0)
 
-    ### kinetic energy
+    # -- kinetic energy
     @property
     def ke(self):
         """Individual kinetic energy.
@@ -267,10 +304,6 @@ class NbodyMethods(object):
 
         """
         ke = 0.5 * self.mass * (self.vx**2 + self.vy**2 + self.vz**2)
-        if self.include_pn_corrections:
-            if not "pn_ke" in self.__dict__:
-                self.register_auxiliary_attribute("pn_ke", "real")
-            ke += self.pn_ke
         return ke
 
     @property
@@ -289,7 +322,7 @@ class NbodyMethods(object):
         """
         return float(self.ke.sum())
 
-    ### potential energy
+    # -- potential energy
     @property
     def pe(self):
         """Individual potential energy.
@@ -305,7 +338,7 @@ class NbodyMethods(object):
         """
         return 0.5 * float(self.pe.sum())
 
-    ### virial energy
+    # -- virial energy
     @property
     def ve(self):
         """Individual virial energy.
@@ -320,47 +353,47 @@ class NbodyMethods(object):
         """
         return 2 * self.kinetic_energy + self.potential_energy
 
-    ### gravity
+    # -- gravity
     def set_tstep(self, ps, eta):
         """Set individual time-steps due to other particles.
 
         """
-        extensions.tstep.calc(self, ps, eta)
+        extensions.tstep(self, ps, eta=eta)
 
     def set_phi(self, ps):
         """Set individual gravitational potential due to other particles.
 
         """
-        extensions.phi.calc(self, ps)
+        extensions.phi(self, ps)
 
     def set_acc(self, ps):
         """Set individual gravitational acceleration due to other particles.
 
         """
-        extensions.acc.calc(self, ps)
+        extensions.acc(self, ps)
 
     def set_pnacc(self, ps):
         """Set individual post-Newtonian gravitational acceleration due to
         other particles.
 
         """
-        extensions.pnacc.calc(self, ps)
+        extensions.pnacc(self, ps)
 
     def set_acc_jerk(self, ps):
         """Set individual gravitational acceleration and jerk due to other
         particles.
 
         """
-        extensions.acc_jerk.calc(self, ps)
+        extensions.acc_jerk(self, ps)
 
     def set_snap_crackle(self, ps):
         """Set individual gravitational snap and crackle due to other
         particles.
 
         """
-        extensions.snap_crackle.calc(self, ps)
+        extensions.snap_crackle(self, ps)
 
-    ### miscellaneous methods
+    # -- miscellaneous methods
     def min_tstep(self):
         """Minimum absolute value of tstep.
 
@@ -373,7 +406,7 @@ class NbodyMethods(object):
         """
         return abs(self.tstep).max()
 
-    ### lenght scales
+    # -- lenght scales
     @property
     def virial_radius(self):
         """Virial radius of the system.
@@ -401,7 +434,7 @@ class NbodyMethods(object):
         s = (I / self.total_mass)**0.5
         return s
 
-    ### rescaling methods
+    # -- rescaling methods
     def dynrescale_total_mass(self, total_mass):
         """Rescales the total mass of the system while maintaining its
         dynamics unchanged.
@@ -465,67 +498,150 @@ class PNbodyMethods(NbodyMethods):
     """This class holds some post-Newtonian methods.
 
     """
-    ### PN stuff
-    ### TODO: move these methods to a more appropriate place...
+    include_pn_corrections = True
 
-    def pn_kick_ke(self, tau):
+    # -- PN stuff
+    # -- TODO: move these methods to a more appropriate place...
+
+    pn_ke = typed_property('pn_ke',
+                           lambda self: np.zeros(self.n, dtype=Ctype.real))
+    pn_mrx = typed_property('pn_mrx',
+                            lambda self: np.zeros(self.n, dtype=Ctype.real))
+    pn_mry = typed_property('pn_mry',
+                            lambda self: np.zeros(self.n, dtype=Ctype.real))
+    pn_mrz = typed_property('pn_mrz',
+                            lambda self: np.zeros(self.n, dtype=Ctype.real))
+    pn_mvx = typed_property('pn_mvx',
+                            lambda self: np.zeros(self.n, dtype=Ctype.real))
+    pn_mvy = typed_property('pn_mvy',
+                            lambda self: np.zeros(self.n, dtype=Ctype.real))
+    pn_mvz = typed_property('pn_mvz',
+                            lambda self: np.zeros(self.n, dtype=Ctype.real))
+    pn_amx = typed_property('pn_amx',
+                            lambda self: np.zeros(self.n, dtype=Ctype.real))
+    pn_amy = typed_property('pn_amy',
+                            lambda self: np.zeros(self.n, dtype=Ctype.real))
+    pn_amz = typed_property('pn_amz',
+                            lambda self: np.zeros(self.n, dtype=Ctype.real))
+
+    pn_attrs = [  # name, sctype, doc
+        ("pn_ke", 'real', "post-newtonian correction for kinectic energy."),
+        ("pn_mrx", 'real', "post-newtonian correction for x-com_r"),
+        ("pn_mry", 'real', "post-newtonian correction for y-com_r"),
+        ("pn_mrz", 'real', "post-newtonian correction for z-com_r"),
+        ("pn_mvx", 'real', "post-newtonian correction for x-com_v"),
+        ("pn_mvy", 'real', "post-newtonian correction for y-com_v"),
+        ("pn_mvz", 'real', "post-newtonian correction for z-com_v"),
+        ("pn_amx", 'real', "post-newtonian correction for x-angular momentum"),
+        ("pn_amy", 'real', "post-newtonian correction for y-angular momentum"),
+        ("pn_amz", 'real', "post-newtonian correction for z-angular momentum"),
+    ]
+
+    @property
+    def com_r(self):
+        """Center-of-Mass position of the system.
+
+        .. note::
+
+            Post-Newtonian corrections, if enabled, are included.
+
+        """
+        rcom = super(PNbodyMethods, self).com_r
+        pn_mr = np.array([self.pn_mrx, self.pn_mry, self.pn_mrz]).T
+        pn_rcom = pn_mr.sum(0) / self.total_mass
+        return rcom + pn_rcom
+
+    @property
+    def com_v(self):
+        """Center-of-Mass velocity of the system.
+
+        .. note::
+
+            Post-Newtonian corrections, if enabled, are included.
+
+        """
+        vcom = super(PNbodyMethods, self).com_v
+        pn_mv = np.array([self.pn_mvx, self.pn_mvy, self.pn_mvz]).T
+        pn_vcom = pn_mv.sum(0) / self.total_mass
+        return vcom + pn_vcom
+
+    @property
+    def lm(self):
+        """Individual linear momentum.
+
+        .. note::
+
+            Post-Newtonian corrections, if enabled, are included.
+
+        """
+        lm = super(PNbodyMethods, self).lm
+        pn_lm = np.array([self.pn_mvx, self.pn_mvy, self.pn_mvz]).T
+        return lm + pn_lm
+
+    @property
+    def am(self):
+        """Individual angular momentum.
+
+        .. note::
+
+            Post-Newtonian corrections, if enabled, are included.
+
+        """
+        am = super(PNbodyMethods, self).am
+        pn_am = np.array([self.pn_amx, self.pn_amy, self.pn_amz]).T
+        return am + pn_am
+
+    @property
+    def ke(self):
+        """Individual kinetic energy.
+
+        .. note::
+
+            Post-Newtonian corrections, if enabled, are included.
+
+        """
+        ke = super(PNbodyMethods, self).ke
+        pn_ke = self.pn_ke
+        return ke + pn_ke
+
+    def pn_kick_ke(self, dt):
         """Kicks kinetic energy due to post-Newtonian terms.
 
         """
-        if not "pn_ke" in self.__dict__:
-            self.register_auxiliary_attribute("pn_ke", "real")
         pnfx = self.mass * self.pnax
         pnfy = self.mass * self.pnay
         pnfz = self.mass * self.pnaz
-        self.pn_ke -= (self.vx * pnfx + self.vy * pnfy + self.vz * pnfz) * tau
+        self.pn_ke -= (self.vx * pnfx + self.vy * pnfy + self.vz * pnfz) * dt
 
-    def pn_drift_com_r(self, tau):
+    def pn_drift_com_r(self, dt):
         """Drifts center of mass position due to post-Newtonian terms.
 
         """
-        if not "pn_mrx" in self.__dict__:
-            self.register_auxiliary_attribute("pn_mrx", "real")
-        if not "pn_mry" in self.__dict__:
-            self.register_auxiliary_attribute("pn_mry", "real")
-        if not "pn_mrz" in self.__dict__:
-            self.register_auxiliary_attribute("pn_mrz", "real")
-        self.pn_mrx += self.pn_mvx * tau
-        self.pn_mry += self.pn_mvy * tau
-        self.pn_mrz += self.pn_mvz * tau
+        self.pn_mrx += self.pn_mvx * dt
+        self.pn_mry += self.pn_mvy * dt
+        self.pn_mrz += self.pn_mvz * dt
 
-    def pn_kick_lmom(self, tau):
+    def pn_kick_lmom(self, dt):
         """Kicks linear momentum due to post-Newtonian terms.
 
         """
-        if not "pn_mvx" in self.__dict__:
-            self.register_auxiliary_attribute("pn_mvx", "real")
-        if not "pn_mvy" in self.__dict__:
-            self.register_auxiliary_attribute("pn_mvy", "real")
-        if not "pn_mvz" in self.__dict__:
-            self.register_auxiliary_attribute("pn_mvz", "real")
         pnfx = self.mass * self.pnax
         pnfy = self.mass * self.pnay
         pnfz = self.mass * self.pnaz
-        self.pn_mvx -= pnfx * tau
-        self.pn_mvy -= pnfy * tau
-        self.pn_mvz -= pnfz * tau
+        self.pn_mvx -= pnfx * dt
+        self.pn_mvy -= pnfy * dt
+        self.pn_mvz -= pnfz * dt
 
-    def pn_kick_amom(self, tau):
+    def pn_kick_amom(self, dt):
         """Kicks angular momentum due to post-Newtonian terms.
 
         """
-        if not "pn_amx" in self.__dict__:
-            self.register_auxiliary_attribute("pn_amx", "real")
-        if not "pn_amy" in self.__dict__:
-            self.register_auxiliary_attribute("pn_amy", "real")
-        if not "pn_amz" in self.__dict__:
-            self.register_auxiliary_attribute("pn_amz", "real")
         pnfx = self.mass * self.pnax
         pnfy = self.mass * self.pnay
         pnfz = self.mass * self.pnaz
-        self.pn_amx -= (self.ry * pnfz - self.rz * pnfy) * tau
-        self.pn_amy -= (self.rz * pnfx - self.rx * pnfz) * tau
-        self.pn_amz -= (self.rx * pnfy - self.ry * pnfx) * tau
+        self.pn_amx -= (self.ry * pnfz - self.rz * pnfy) * dt
+        self.pn_amy -= (self.rz * pnfx - self.rx * pnfz) * dt
+        self.pn_amz -= (self.rx * pnfy - self.ry * pnfx) * dt
 
 
 AbstractNbodyMethods = NbodyMethods
@@ -533,144 +649,137 @@ if "--pn_order" in sys.argv:
     AbstractNbodyMethods = PNbodyMethods
 
 
-#@decallmethods(timings)
-#@make_attrs
-# class Body(AbstractNbodyMethods):
-#    """
-#    The most basic particle type.
-#    """
-#    attrs = AbstractNbodyMethods.attrs + AbstractNbodyMethods.special_attrs
-#    names = AbstractNbodyMethods.names + AbstractNbodyMethods.special_names
-#    dtype = [(_[0], _[1]) for _ in attrs]
-#    data0 = np.zeros(0, dtype)
+# @bind_all(timings)
+# @make_attrs
+#  class Body(AbstractNbodyMethods):
+#     """
+#     The most basic particle type.
+#     """
+#     attrs = AbstractNbodyMethods.attrs + AbstractNbodyMethods.special_attrs
+#     names = AbstractNbodyMethods.names + AbstractNbodyMethods.special_names
+#     dtype = [(_[0], _[1]) for _ in attrs]
+#     data0 = np.zeros(0, dtype)
 #
-#    def __init__(self, n=0, data=None):
-#        """
-#        Initializer
-#        """
-#        if data is None:
-#            if n: data = np.zeros(n, self.dtype)
-#            else: data = self.data0
-#        self.data = data
-#        self.n = len(self)
+#     def __init__(self, n=0, data=None):
+#         """
+#         Initializer
+#         """
+#         if data is None:
+#             if n: data = np.zeros(n, self.dtype)
+#             else: data = self.data0
+#         self.data = data
+#         self.n = len(self)
 #
-#    #
-#    # miscellaneous methods
-#    #
-#
-#
-#    def append(self, obj):
-#        if obj.n:
-#            self.data = np.concatenate((self.data, obj.data))
-#            self.n = len(self)
+#     #
+#     # miscellaneous methods
+#     #
 #
 #
-#    def remove(self, id):
-#        slc = np.where(self.id == id)
-#        self.data = np.delete(self.data, slc, 0)
-#        self.n = len(self)
+#     def append(self, obj):
+#         if obj.n:
+#             self.data = np.concatenate((self.data, obj.data))
+#             self.n = len(self)
 #
 #
-#    def insert(self, id, obj):
-#        index = np.where(self.id == id)[0]
-#        v = obj.data
-#        self.data = np.insert(self.data, index*np.ones(len(v)), v, 0)
-#        self.n = len(self)
+#     def remove(self, id):
+#         slc = np.where(self.id == id)
+#         self.data = np.delete(self.data, slc, 0)
+#         self.n = len(self)
 #
 #
-#    def pop(self, id=None):
-#        if id is None:
-#            index = -1
-#            id = self.id[-1]
-#        else:
-#            index = np.where(self.id == id)[0]
-#        obj = self[index]
-#        self.remove(id)
-#        return obj
+#     def insert(self, id, obj):
+#         index = np.where(self.id == id)[0]
+#         v = obj.data
+#         self.data = np.insert(self.data, index*np.ones(len(v)), v, 0)
+#         self.n = len(self)
 #
 #
-#    def get_state(self):
-#        return self.data
-#
-#
-#    def set_state(self, array):
-#        self.data[...] = array
-#        self.n = len(self)
+#     def pop(self, id=None):
+#         if id is None:
+#             index = -1
+#             id = self.id[-1]
+#         else:
+#             index = np.where(self.id == id)[0]
+#         obj = self[index]
+#         self.remove(id)
+#         return obj
 
 
 ###############################################################################
-@decallmethods(timings)
+@bind_all(timings)
 class Bodies(AbstractNbodyMethods):
     """
 
     """
     def __init__(self, n=0, items=None):
         if items is None:
-            for (name, dtype) in self.dtype[:1]:
-                self.__dict__[name] = np.arange(n, dtype=dtype)
-            for (name, dtype) in self.dtype[1:]+self.special_dtype:
-                self.__dict__[name] = np.zeros(n, dtype=dtype)
+            self.n = n
+
+            # allocate attrs for the first time.
+            attrs = self.attrs[:]
+            if hasattr(self, 'pn_attrs'):
+                attrs += self.pn_attrs
+            for (attr, sctype, doc) in attrs:
+                getattr(self, attr)
         else:
             self.__dict__.update(items)
+            self.n = len(self.id)
+
+    @property
+    def attributes(self):
+        return ((k, v) for (k, v) in self.__dict__.items()
+                if k not in ('n',))
 
     def __repr__(self):
-        return repr(self.__dict__)
+        return repr(dict(self.attributes))
 
     def __str__(self):
         fmt = type(self).__name__+"(["
         if self.n:
-            for (k, v) in self.__dict__.items():
+            for (k, v) in self.attributes:
                 fmt += "\n\t{0}: {1},".format(k, v)
             fmt += "\n"
         fmt += "])"
         return fmt
 
-    def __contains__(self, id):
-        return id in self.id
+    def __contains__(self, idx):
+        return idx in self.id
 
     def __len__(self):
-        return len(self.id)
-
-    @property
-    def n(self):
-        return len(self)
-
-    def copy(self):
-        return copy.deepcopy(self)
+        return self.n
 
     def append(self, obj):
         if obj.n:
             items = {k: np.concatenate((getattr(self, k), v))
-                     for (k, v) in obj.__dict__.items()}
+                     for (k, v) in obj.attributes}
             self.__dict__.update(items)
+            self.n = len(self.id)
 
     def __getitem__(self, slc):
-        if isinstance(slc, int):
-            slc = [slc]
-        items = {k: v[slc] for (k, v) in self.__dict__.items()}
+        idx = [slc] if isinstance(slc, int) else slc
+        items = {k: v[idx] for (k, v) in self.attributes}
         return type(self)(items=items)
 
     def __setitem__(self, slc, values):
-        for (k, v) in self.__dict__.items():
+        for (k, v) in self.attributes:
             v[slc] = getattr(values, k)
 
     def astype(self, cls):
-        newobj = cls()
-        tmp = cls(self.n)
-        tmp.set_state(self.get_state())
-        newobj.append(tmp)
+        newobj = cls(self.n)
+        newobj.set_state(self.get_state())
         return newobj
 
     def get_state(self):
         array = np.zeros(self.n, dtype=self.dtype)
         for name in array.dtype.names:
-            array[name] = getattr(self, name)
+            if hasattr(self, name):
+                array[name] = getattr(self, name)
         return array
 
     def set_state(self, array):
         for name in array.dtype.names:
-            if name in self.__dict__:
-                self.__dict__[name][...] = array[name]
+            if hasattr(self, name):
+                setattr(self, name, array[name])
 
 
-########## end of file ##########
+# -- End of File --

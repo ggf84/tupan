@@ -16,10 +16,10 @@ from pprint import pprint
 from .io import IO
 from .integrator import Integrator
 from .analysis.glviewer import GLviewer
-from .lib.utils.timing import decallmethods, timings, Timer
+from .lib.utils.timing import timings, bind_all, Timer
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 __all__ = ['Simulation']
@@ -36,12 +36,12 @@ def myprint(data, fname, fmode):
             print(data, file=fobj)
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Diagnostic(object):
     """
 
     """
-    def __init__(self, fname, time, ps, report_freq=4, pn_order=0):
+    def __init__(self, fname, time, report_freq=4, pn_order=0):
         self.fname = fname
         self.time = time
         self.report_freq = report_freq
@@ -129,7 +129,7 @@ class Diagnostic(object):
                 self.fname, 'a')
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Simulation(object):
     """
     The Simulation class is the top level class for N-body simulations.
@@ -153,7 +153,6 @@ class Simulation(object):
         # Initializes the diagnostic report of the simulation
         self.dia = Diagnostic(self.args.log_file,
                               self.args.t_begin,
-                              ps,
                               report_freq=self.args.report_freq,
                               pn_order=self.args.pn_order,
                               )
@@ -176,19 +175,14 @@ class Simulation(object):
         self.res_steps = 0
 
     def dump_restart_file(self):
-        if sys.version_info >= (2, 7):
-            with open(self.args.restart_file, 'wb') as fobj:
-                pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
-        else:
-            fobj = open(self.args.restart_file, 'wb')
+        with open(self.args.restart_file, 'wb') as fobj:
             pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
-            fobj.close()
 
     def evolve(self):
         """
 
         """
-        while (abs(self.integrator.time) < self.args.t_end):
+        while abs(self.integrator.time) < self.args.t_end:
             # evolve a single time-step
             self.integrator.evolve_step(self.args.t_end)
 
@@ -204,6 +198,7 @@ class Simulation(object):
 # ------------------------------------------------------------------------
 
 
+@timings
 def _main_newrun(args):
     if args.log_file == sys.stdout:
         args.log_file = sys.stdout.name
@@ -219,24 +214,27 @@ def _main_newrun(args):
     return 0
 
 
+@timings
 def _main_restart(args):
-    if sys.version_info >= (2, 7):
-        with open(args.restart_file, "rb") as fobj:
-            mysim = pickle.load(fobj)
-    else:
-        fobj = open(args.restart_file, "rb")
+    with open(args.restart_file, "rb") as fobj:
         mysim = pickle.load(fobj)
-        fobj.close()
 
     # update args
+    type(mysim.integrator.integrator.ps).t_curr = mysim.args.t_end
+    if args.eta is not None:
+        mysim.integrator.integrator.eta = args.eta
+
+    # reset t_end
     mysim.args.t_end = args.t_end
-    if not args.eta is None:
-        mysim.integrator._meth.eta = args.eta
+
+    # reset timer
+    mysim.dia.timer.reset_at(mysim.dia.timer.toc)
 
     mysim.evolve()
     return 0
 
 
+@timings
 def parse_args():
     """Here we process the command line arguments to run a new N-body
     simulation or restart from a previous run.
@@ -342,9 +340,9 @@ def parse_args():
     newrun.add_argument(
         "--restart_freq",
         type=int,
-        default=128,
+        default=1,
         help="Number of time-steps between rewrites of the restart file "
-             "(type: int, default: 128)."
+             "(type: int, default: 1)."
     )
     newrun.add_argument(
         "--use_cl",
@@ -428,6 +426,7 @@ def parse_args():
     return parser.parse_args()
 
 
+@timings
 def main():
     """The top-level main function of tupan.
 
@@ -439,4 +438,4 @@ def main():
     args.func(args)
 
 
-########## end of file ##########
+# -- End of File --

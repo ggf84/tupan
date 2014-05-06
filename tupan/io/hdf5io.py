@@ -10,7 +10,7 @@ from __future__ import print_function
 import sys
 import pickle
 import h5py
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
 
 
 __all__ = ["HDF5IO"]
@@ -19,7 +19,7 @@ IS_PY3K = True if sys.version_info.major > 2 else False
 PICKLE_PROTOCOL = 0  # ensures backward compatibility with Python 2.x
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class HDF5IO(object):
     """
 
@@ -80,7 +80,7 @@ class HDF5IO(object):
             base_name += "_"+str(snap_number).zfill(6)
         group = list(fobj[base_name].values())[0]
         ps = pickle.loads(group.attrs["Class"])()
-        for (k, v) in group.items():
+        for v in group.values():
             obj = pickle.loads(v.attrs["Class"])(len(v))
             obj.set_state(v[...])
             ps.append(obj)
@@ -138,9 +138,9 @@ class HDF5IO(object):
         try:
             ps = self.load_snapshot()
             stream.dump_snapshot(ps)
-        except:
+        except Exception:
             ps = self.load_worldline()
             stream.dump_worldline(ps)
 
 
-########## end of file ##########
+# -- End of File --

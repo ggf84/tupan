@@ -37,19 +37,19 @@ class IO(object):
     def load_snapshot(self, *args, **kwargs):
         import os
         import sys
-        import logging
-        logger = logging.getLogger(__name__)
         from warnings import warn
         fname = self.fname
         fmode = self.fmode
         if not os.path.exists(fname):
             warn("No such file or directory: '{}'".format(fname), stacklevel=2)
             sys.exit()
-        loaders = (psdfio.PSDFIO, hdf5io.HDF5IO,)
+        loaders = (hdf5io.HDF5IO, psdfio.PSDFIO,)
         for loader in loaders:
             try:
                 return loader(fname, fmode).load_snapshot(*args, **kwargs)
             except Exception as exc:
+                import logging
+                logger = logging.getLogger(__name__)
                 logger.exception(str(exc))
         raise ValueError("File not in a supported format.")
 
@@ -70,8 +70,6 @@ class IO(object):
     def load_worldline(self, *args, **kwargs):
         import os
         import sys
-        import logging
-        logger = logging.getLogger(__name__)
         from warnings import warn
         fname = self.fname
         fmode = self.fmode
@@ -83,6 +81,8 @@ class IO(object):
             try:
                 return loader(fname, fmode).load_worldline(*args, **kwargs)
             except Exception as exc:
+                import logging
+                logger = logging.getLogger(__name__)
                 logger.exception(str(exc))
         raise ValueError("File not in a supported format.")
 
@@ -178,8 +178,4 @@ class IO(object):
         return snaps.values()
 
 
-
-
-
-
-########## end of file ##########
+# -- End of File --

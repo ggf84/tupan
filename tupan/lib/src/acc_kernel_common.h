@@ -26,14 +26,11 @@ static inline void acc_kernel_core(
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
     INTn mask = (r2 > 0);
 
-    REALn inv_r3;
-    smoothed_inv_r3(r2, e2, mask, &inv_r3);                                     // 4 FLOPs
+    REALn m_r3 = smoothed_m_r3(jm, r2, e2, mask);                               // 5 FLOPs
 
-    inv_r3 *= jm;                                                               // 1 FLOPs
-
-    *iax -= inv_r3 * rx;                                                        // 2 FLOPs
-    *iay -= inv_r3 * ry;                                                        // 2 FLOPs
-    *iaz -= inv_r3 * rz;                                                        // 2 FLOPs
+    *iax -= m_r3 * rx;                                                          // 2 FLOPs
+    *iay -= m_r3 * ry;                                                          // 2 FLOPs
+    *iaz -= m_r3 * rz;                                                          // 2 FLOPs
 }
 // Total flop count: 20
 

@@ -7,54 +7,52 @@ TODO.
 
 
 from ..lib import extensions
-from ..lib.utils.timing import timings
+from ..lib.utils.timing import timings, bind_all
 
 
+@bind_all(timings)
 class FewBody(object):
     """
 
     """
     @staticmethod
-    @timings
-    def drift(ips, tau):
+    def drift(ips, dt):
         """Drift operator for post-Newtonian quantities.
 
         """
-        ips.rx += ips.vx * tau
-        ips.ry += ips.vy * tau
-        ips.rz += ips.vz * tau
+        ips.rx += ips.vx * dt
+        ips.ry += ips.vy * dt
+        ips.rz += ips.vz * dt
         if ips.include_pn_corrections:
-            ips.pn_drift_com_r(tau)
+            ips.pn_drift_com_r(dt)
         return ips
 
     @staticmethod
-    @timings
-    def kepler_solver(ips, tau):
+    def kepler_solver(ips, dt):
         """
 
-	"""
+        """
         if ips.include_pn_corrections:
             raise NotImplementedError("The current version of the "
                                       "Kepler-solver does not include "
                                       "post-Newtonian corrections.")
         else:
-            extensions.kepler.calc(ips, ips, tau)
+            extensions.kepler(ips, ips, dt=dt)
         return ips
 
-    @staticmethod
-    @timings
-    def evolve(ips, tau):
+    @classmethod
+    def evolve(cls, ips, dt):
         """
 
-	"""
+        """
         if ips.n == 0:
             return ips
 
         if ips.n == 1:
-            return FewBody.drift(ips, tau)
+            return cls.drift(ips, dt)
 
         # if ips.n == 2:
-        return FewBody.kepler_solver(ips, tau)
+        return cls.kepler_solver(ips, dt)
 
 
-########## end of file ##########
+# -- End of File --

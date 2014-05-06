@@ -6,4 +6,4 @@ This package implements base classes for particle types in the simulation.
 """
 
 
-########## end of file ##########
+# -- End of File --

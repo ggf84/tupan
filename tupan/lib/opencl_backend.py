@@ -8,156 +8,166 @@
 
 from __future__ import division
 import os
-import sys
-import math
 import logging
-import getpass
 import pyopencl as cl
 from functools import partial
 from collections import namedtuple
+from .utils.timing import timings, bind_all
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, "src")
 
-CACHE_DIR = os.path.join(os.path.expanduser('~'),
-                         ".tupan",
-                         "pyopencl-cache-uid{0}-py{1}".format(
-                             getpass.getuser(),
-                             ".".join(str(i) for i in sys.version_info)))
+CTX = cl.create_some_context()
+DEV = CTX.devices[0]
 
-ctx = cl.create_some_context()
-dev = ctx.devices[0]
-
-UNROLL = 16
+UNROLL = 4
 
 LSIZE = {}
-LSIZE["float32"] = 64
-LSIZE["float64"] = 64
+LSIZE["fp32"] = 64
+LSIZE["fp64"] = 64
 
 VW = {}
-VW["float32"] = dev.preferred_vector_width_float
-VW["float64"] = dev.preferred_vector_width_double
-
-WPT = {}
-WPT["float32"] = 2
-WPT["float64"] = 2
+VW["fp32"] = DEV.preferred_vector_width_float
+VW["fp64"] = DEV.preferred_vector_width_double
 
 FAST_LOCAL_MEM = True
 
 
-def make_lib(prec):
+@timings
+def make_lib(fpwidth):
     """
 
     """
-    cint = "int" if prec == "float32" else "long"
-    creal = "float" if prec == 'float32' else "double"
-    logger.debug("Building/Loading %s CL extension module...",
-                 prec)
+    cint = "int" if fpwidth == "fp32" else "long"
+    creal = "float" if fpwidth == 'fp32' else "double"
+    LOGGER.debug("Building/Loading %s CL extension module.", fpwidth)
 
-    files = ("phi_kernel.cl",
-             "acc_kernel.cl",
-             "acc_jerk_kernel.cl",
-             "snap_crackle_kernel.cl",
-             "tstep_kernel.cl",
-             "pnacc_kernel.cl",
-             "nreg_kernels.cl",
-             "sakura_kernel.cl",
-             )
+    fnames = ("phi_kernel.cl",
+              "acc_kernel.cl",
+              "acc_jerk_kernel.cl",
+              "snap_crackle_kernel.cl",
+              "tstep_kernel.cl",
+              "pnacc_kernel.cl",
+              "nreg_kernels.cl",
+              "sakura_kernel.cl",
+              )
 
     sources = []
-    for file in files:
-        fname = os.path.join(PATH, file)
-        with open(fname, 'r') as fobj:
+    for fname in fnames:
+        with open(os.path.join(PATH, fname), 'r') as fobj:
             sources.append(fobj.read())
     src = "\n\n".join(sources)
 
     # setting options
     options = " -I {path}".format(path=PATH)
     options += " -D CONFIG_USE_OPENCL"
-    if prec == "float64":
+    if fpwidth == "fp64":
         options += " -D CONFIG_USE_DOUBLE"
     if FAST_LOCAL_MEM:
         options += " -D FAST_LOCAL_MEM"
     options += " -D UNROLL={}".format(UNROLL)
-    options += " -D LSIZE={}".format(LSIZE[prec])
-    options += " -D VW={}".format(VW[prec])
-    options += " -D WPT={}".format(WPT[prec])
+    options += " -D LSIZE={}".format(LSIZE[fpwidth])
+    options += " -D VW={}".format(VW[fpwidth])
     options += " -cl-fast-relaxed-math"
 #    options += " -cl-opt-disable"
 
     # building lib
-    program = cl.Program(ctx, src)
+    program = cl.Program(CTX, src)
+    from ..config import CACHE_DIR
     cllib = program.build(options=options, cache_dir=CACHE_DIR)
 
-    logger.debug("done.")
+    LOGGER.debug("CL extension module loaded: "
+                 "(U)INT is (u)%s, REAL is %s.",
+                 cint, creal)
     return cllib
 
 
-lib = {}
-lib['float32'] = make_lib('float32')
-lib['float64'] = make_lib('float64')
+LIB = {}
+LIB['fp32'] = make_lib('fp32')
+LIB['fp64'] = make_lib('fp64')
 
 
+@bind_all(timings)
 class CLKernel(object):
 
-    def __init__(self, prec, name):
-        self.kernel = getattr(lib[prec], name)
-        self.unroll = UNROLL
-        self.max_lsize = LSIZE[prec]
-        self.vector_width = VW[prec]
-        self.work_per_thread = WPT[prec]
-        self.queue = cl.CommandQueue(ctx)
-        self.local_size = None
+    def __init__(self, fpwidth, name):
+        self.kernel = getattr(LIB[fpwidth], name)
+        self._args = None
+        self._argtypes = None
+
+        self.max_lsize = LSIZE[fpwidth]
+        self.vector_width = VW[fpwidth]
+        self.queue = cl.CommandQueue(CTX)
 
         memf = cl.mem_flags
 #        flags = memf.READ_WRITE | memf.USE_HOST_PTR
         flags = memf.READ_WRITE | memf.COPY_HOST_PTR
-        clBuffer = partial(cl.Buffer, ctx, flags)
+        clBuffer = partial(cl.Buffer, CTX, flags)
 
-        from .utils.ctype import ctypedict
+        from .utils.ctype import Ctype
         types = namedtuple("Types", ["c_int", "c_int_p",
                                      "c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])
-        self.cty = types(c_int=ctypedict["int"].type,
+        self.cty = types(c_int=vars(Ctype)["int"].type,
                          c_int_p=lambda x: clBuffer(hostbuf=x),
-                         c_uint=ctypedict["uint"].type,
+                         c_uint=vars(Ctype)["uint"].type,
                          c_uint_p=lambda x: clBuffer(hostbuf=x),
-                         c_real=ctypedict["real"].type,
+                         c_real=vars(Ctype)["real"].type,
                          c_real_p=lambda x: clBuffer(hostbuf=x),
                          )
 
     def set_gsize(self, ni, nj):
         vw = self.vector_width
-        wpt = self.work_per_thread
         max_lsize = self.max_lsize
 
-        gs = (ni + wpt * vw - 1) // (wpt * vw)
-        ls = 2**int(math.log(gs, 2))
+        ls = (ni + vw - 1) // vw
+
         lsize = min(ls, max_lsize)
-        gsize = ((gs + lsize - 1) // lsize) * lsize
+        ngroups = (ni + (vw * lsize) - 1) // (vw * lsize)
+        gsize = lsize * ngroups
 
         self.global_size = (gsize, 1, 1)
         self.local_size = (lsize, 1, 1)
 
-    def set_args(self, args, start=0):
-        for (i, arg) in enumerate(args, start):
+    @property
+    def argtypes(self):
+        return self._argtypes
+
+    @argtypes.setter
+    def argtypes(self, types):
+        self._argtypes = types
+
+    @property
+    def args(self):
+        return self._args
+
+    @args.setter
+    def args(self, args):
+        argtypes = self.argtypes
+        self._args = [argtype(arg) for (arg, argtype) in zip(args, argtypes)]
+        for (i, arg) in enumerate(self._args):
             self.kernel.set_arg(i, arg)
 
-    def map_buffers(self, arrays, buffers):
+    def map_buffers(self, **kwargs):
+        arrays = kwargs['outargs']
+        buffers = self.args[len(kwargs['inpargs']):]
+
 #        mapf = cl.map_flags
 #        flags = mapf.READ | mapf.WRITE
 #        queue = self.queue
 #        for (ary, buf) in zip(arrays, buffers):
-#            (pointer, ev) = cl.enqueue_map_buffer(queue,
-#                                                  buf,
-#                                                  flags,
-#                                                  0,
-#                                                  ary.shape,
-#                                                  ary.dtype,
-#                                                  "C")
+#            pointer, ev = cl.enqueue_map_buffer(
+#                              queue,
+#                              buf,
+#                              flags,
+#                              0,
+#                              ary.shape,
+#                              ary.dtype,
+#                              "C"
+#                          )
 #            ev.wait()
         for (ary, buf) in zip(arrays, buffers):
             cl.enqueue_copy(self.queue, ary, buf)
@@ -171,4 +181,4 @@ class CLKernel(object):
                                    ).wait()
 
 
-########## end of file ##########
+# -- End of File --

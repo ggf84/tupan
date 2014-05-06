@@ -7,8 +7,10 @@ TODO.
 
 
 from ..particles.allparticles import ParticleSystem
+from ..lib.utils.timing import timings
 
 
+@timings
 def make_hierarchy(parent_ps, relative_size, make_subsys, *args, **kwargs):
     """
 
@@ -29,4 +31,4 @@ def make_hierarchy(parent_ps, relative_size, make_subsys, *args, **kwargs):
     return ps
 
 
-########## end of file ##########
+# -- End of File --

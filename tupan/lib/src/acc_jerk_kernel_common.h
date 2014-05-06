@@ -35,8 +35,8 @@ static inline void acc_jerk_kernel_core(
     REALn rv = rx * vx + ry * vy + rz * vz;                                     // 5 FLOPs
     INTn mask = (r2 > 0);
 
-    REALn inv_r2, inv_r3;
-    smoothed_inv_r2r3(r2, e2, mask, &inv_r2, &inv_r3);                          // 4 FLOPs
+    REALn inv_r2;
+    REALn m_r3 = smoothed_m_r3_inv_r2(jm, r2, e2, mask, &inv_r2);               // 5 FLOPs
 
     REALn alpha = 3 * rv * inv_r2;                                              // 2 FLOPs
 
@@ -44,14 +44,12 @@ static inline void acc_jerk_kernel_core(
     vy -= alpha * ry;                                                           // 2 FLOPs
     vz -= alpha * rz;                                                           // 2 FLOPs
 
-    inv_r3 *= jm;                                                               // 1 FLOPs
-
-    *iAx -= inv_r3 * rx;                                                        // 2 FLOPs
-    *iAy -= inv_r3 * ry;                                                        // 2 FLOPs
-    *iAz -= inv_r3 * rz;                                                        // 2 FLOPs
-    *iJx -= inv_r3 * vx;                                                        // 2 FLOPs
-    *iJy -= inv_r3 * vy;                                                        // 2 FLOPs
-    *iJz -= inv_r3 * vz;                                                        // 2 FLOPs
+    *iAx -= m_r3 * rx;                                                          // 2 FLOPs
+    *iAy -= m_r3 * ry;                                                          // 2 FLOPs
+    *iAz -= m_r3 * rz;                                                          // 2 FLOPs
+    *iJx -= m_r3 * vx;                                                          // 2 FLOPs
+    *iJy -= m_r3 * vy;                                                          // 2 FLOPs
+    *iJz -= m_r3 * vz;                                                          // 2 FLOPs
 }
 // Total flop count: 42
 

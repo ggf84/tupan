@@ -13,10 +13,10 @@ import subprocess
 import numpy as np
 from PIL import Image
 from matplotlib import cm
-from ..lib.utils.timing import Timer, decallmethods, timings
+from ..lib.utils.timing import timings, bind_all, Timer
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 try:
@@ -25,7 +25,7 @@ try:
     HAS_GL = True
 except Exception as exc:
     HAS_GL = False
-    logger.exception(str(exc))
+    LOGGER.exception(str(exc))
     import warnings
     warnings.warn(
         """
@@ -40,8 +40,8 @@ except Exception as exc:
 __all__ = ['GLviewer']
 
 
-path = os.path.dirname(__file__)
-texture_path = os.path.join(path, 'textures')
+PATH = os.path.dirname(__file__)
+TEXTURE_PATH = os.path.join(PATH, 'textures')
 
 
 ESCAPE = '\033'
@@ -62,7 +62,7 @@ TRACEORBITS = False
 COLORMASK = {'r': False, 'g': False, 'b': False}
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class GLviewer(object):
     """
 
@@ -139,7 +139,7 @@ class GLviewer(object):
                                    self.frame_count / elapsed_time,
                                    self.window_width, self.window_height)
             glut.glutSetWindow(self.window_handle)
-            glut.glutSetWindowTitle(win_title)
+            glut.glutSetWindowTitle(win_title.encode('utf-8'))
             self.frame_count = 0
             self.timer.start()
 
@@ -193,6 +193,9 @@ class GLviewer(object):
         global TRACEORBITS
         global ZOOM_FACTOR
         (ps_min, ps_max) = gl.glGetFloatv(gl.GL_ALIASED_POINT_SIZE_RANGE)
+
+        key = key.decode('utf-8')
+
         if key == ' ':
             self.rotate['x'] = 0
             self.rotate['y'] = 0
@@ -362,7 +365,8 @@ class GLviewer(object):
             glut.GLUT_ACTION_CONTINUE_EXECUTION
         )
         glut.glutInitWindowSize(self.window_width, self.window_height)
-        self.window_handle = glut.glutCreateWindow(WINDOW_TITLE_PREFIX)
+        win_title = WINDOW_TITLE_PREFIX.encode('utf-8')
+        self.window_handle = glut.glutCreateWindow(win_title)
         glut.glutDisplayFunc(self.render_func)
         glut.glutReshapeFunc(self.resize_func)
         glut.glutMouseFunc(self.mouse)
@@ -378,11 +382,11 @@ class GLviewer(object):
         gl.glColorMask(gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE)
 
         self.textures['star'] = self.load_texture(
-            os.path.join(texture_path, 'star.png'))
+            os.path.join(TEXTURE_PATH, 'star.png'))
         self.textures['sph'] = self.load_texture(
-            os.path.join(texture_path, 'sph.png'))
+            os.path.join(TEXTURE_PATH, 'sph.png'))
         self.textures['blackhole'] = self.load_texture(
-            os.path.join(texture_path, 'blackhole.png'))
+            os.path.join(TEXTURE_PATH, 'blackhole.png'))
 
         self.adjust_zoom()
 
@@ -500,27 +504,27 @@ class GLviewer(object):
 
     def draw_system(self):
 
-##        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ZERO)
-#        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
-##        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_SRC_COLOR)
-##        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_COLOR)
-##        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_DST_COLOR)
-#        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_DST_COLOR)
-##        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_SRC_ALPHA)
-#        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-#        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_DST_ALPHA)
-#        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_DST_ALPHA)
-##        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_CONSTANT_COLOR)
-#        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_CONSTANT_COLOR)
-##        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_CONSTANT_ALPHA)
-#        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_CONSTANT_ALPHA)
+# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ZERO)
+#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_SRC_COLOR)
+# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_COLOR)
+# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_DST_COLOR)
+#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_DST_COLOR)
+# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_SRC_ALPHA)
+#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_DST_ALPHA)
+#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_DST_ALPHA)
+# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_CONSTANT_COLOR)
+#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_CONSTANT_COLOR)
+# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_CONSTANT_ALPHA)
+#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_CONSTANT_ALPHA)
 
         gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_MODULATE)
 
         Ntot = self.ps.n
 
-        if "bodies" in self.ps.members:
-            bodies = self.ps.bodies
+        if 'bodies' in self.ps.members:
+            bodies = self.ps.members['bodies']
             if bodies.n:
                 points = bodies.pos
                 colors = self.get_colors(bodies.mass)
@@ -532,8 +536,8 @@ class GLviewer(object):
                 self.draw_points(points, colors, sizes, self.textures['star'])
                 gl.glDisable(gl.GL_BLEND)
 
-        if "blackholes" in self.ps.members:
-            blackholes = self.ps.blackholes
+        if 'blackholes' in self.ps.members:
+            blackholes = self.ps.members['blackholes']
             if blackholes.n:
                 points = blackholes.pos
                 colors = self.get_colors(blackholes.mass)
@@ -553,8 +557,8 @@ class GLviewer(object):
                 gl.glDepthMask(gl.GL_FALSE)
 #                gl.glAlphaFunc(gl.GL_GREATER, 0)
 
-        if "stars" in self.ps.members:
-            stars = self.ps.stars
+        if 'stars' in self.ps.members:
+            stars = self.ps.members['stars']
             if stars.n:
                 points = stars.pos
                 colors = self.get_colors(stars.mass)
@@ -566,8 +570,8 @@ class GLviewer(object):
                 self.draw_points(points, colors, sizes, self.textures['star'])
                 gl.glDisable(gl.GL_BLEND)
 
-        if "sphs" in self.ps.members:
-            sph = self.ps.sphs
+        if 'sphs' in self.ps.members:
+            sph = self.ps.members['sphs']
             if sph.n:
                 points = sph.pos
                 colors = self.get_colors(sph.mass)
@@ -660,4 +664,4 @@ class GLviewer(object):
         return text_id
 
 
-########## end of file ##########
+# -- End of File --

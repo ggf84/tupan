@@ -10,15 +10,15 @@ from __future__ import (print_function, division)
 import logging
 import numpy as np
 from ..particles.allparticles import ParticleSystem
-from ..lib.utils.timing import decallmethods, timings
+from ..lib.utils.timing import timings, bind_all
 
 
 __all__ = ['Plummer']
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
-@decallmethods(timings)
+@bind_all(timings)
 class Plummer(object):
     """  """
 
@@ -49,7 +49,7 @@ class Plummer(object):
             # eps2 ~ (1/(m*n^2))^2 ~ 1/n^2 if m ~ 1/n
             eps2 = (1.0 / (mass * n**2))**2
         else:
-            logger.critical(
+            LOGGER.critical(
                 "Unexpected value for softening_type: %d.",
                 self.softening_type)
             raise ValueError(
@@ -81,7 +81,7 @@ class Plummer(object):
         while count < n:
             r1 = np.random.random()
             r2 = np.random.random()
-            if (r2 < r1):
+            if r2 < r1:
                 rnd[count] = r2
                 count += 1
         velocity = np.sqrt(-2 * rnd * pot)
@@ -141,14 +141,14 @@ class Plummer(object):
 
         ###################################
 
-        (hist, bins) = np.histogram(np.log10(mass), bins=nbins)
+        hist, bins = np.histogram(np.log10(mass), bins=nbins)
         linbins = np.power(10.0, bins)
         selection = np.where(hist > 0)
 
         fitfunc = lambda k, m: k * self.imf.func(m)
         errfunc = lambda k, m, y: fitfunc(k, m)[selection] - y[selection]
         k0 = 1.0
-        k1, success = optimize.leastsq(errfunc, k0, args=(linbins[:-1], hist))
+        k1, _ = optimize.leastsq(errfunc, k0, args=(linbins[:-1], hist))
         x = np.logspace(np.log10(self.imf.min_mlow),
                         np.log10(self.imf.max_mhigh),
                         num=128, base=10.0)
@@ -210,6 +210,7 @@ class Plummer(object):
         plt.close()
 
 
+@timings
 def make_plummer(n, eps, imf, seed=None, mfrac=0.999, softening_type=0):
     if n < 2:
         n = 2
@@ -221,4 +222,4 @@ def make_plummer(n, eps, imf, seed=None, mfrac=0.999, softening_type=0):
     return p.ps
 
 
-########## end of file ##########
+# -- End of File --

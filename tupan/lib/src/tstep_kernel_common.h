@@ -38,24 +38,21 @@ static inline void tstep_kernel_core(
     REALn v2 = vx * vx + vy * vy + vz * vz;                                     // 5 FLOPs
     INTn mask = (r2 > 0);
 
-    REALn inv_r1, inv_r2;
-    smoothed_inv_r1r2(r2, e2, mask, &inv_r1, &inv_r2);                          // 3 FLOPs
+    REALn inv_r2;
+    REALn m_r1 = smoothed_m_r1_inv_r2(m, r2, e2, mask, &inv_r2);                // 4 FLOPs
 
     REALn a = (REALn)(2);
     REALn b = (1 + a / 2) * inv_r2;                                             // 3 FLOPs
 
-    REALn w2 = inv_r2;
-    REALn gamma = inv_r2;
-    REALn phi = m * inv_r1;                                                     // 1 FLOPs
-    w2 *= (v2 + a * phi);                                                       // 3 FLOPs
-    gamma *= (w2 + b * phi);                                                    // 3 FLOPs
+    REALn w2 = (v2 + a * m_r1) * inv_r2;                                        // 3 FLOPs
+    REALn gamma = (w2 + b * m_r1) * inv_r2;                                     // 3 FLOPs
     gamma *= (eta / sqrt(w2));                                                  // 3 FLOPs
     w2 -= gamma * rv;                                                           // 2 FLOPs
 
     w2 = select((REALn)(0), w2, mask);
 
     *iw2_a += w2;                                                               // 1 FLOPs
-    *iw2_b = max(w2, *iw2_b);
+    *iw2_b = fmax(w2, *iw2_b);
 }
 // Total flop count: 42
 
