@@ -7,9 +7,7 @@ TODO.
 
 
 from __future__ import print_function
-import copy
 import numpy as np
-from collections import defaultdict
 from .body import Bodies
 from .sph import Sphs
 from .star import Stars
@@ -38,26 +36,6 @@ class ParticleSystem(AbstractNbodyMethods):
                                         (nsphs, Sphs)] if n}
         self.members = members
         self.n = len(self)
-        if self.n:
-            self._rebind_attrs()
-
-    def _rebind_attrs(self):
-        attrs = defaultdict(list)
-        for member in self.members.values():
-            for (attr, _) in member.attributes:
-                attrs[attr].append(getattr(member, attr))
-
-        for (attr, arrays) in attrs.items():
-            value = np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
-            setattr(self, attr, value)
-
-        ns = 0
-        nf = 0
-        for member in self.members.values():
-            nf += member.n
-            for (attr, _) in member.attributes:
-                setattr(member, attr, getattr(self, attr)[ns:nf])
-            ns += member.n
 
     def register_attribute(self, attr, sctype, doc=''):
         for member in self.members.values():
@@ -83,9 +61,6 @@ class ParticleSystem(AbstractNbodyMethods):
 
     def __len__(self):
         return sum(len(member) for member in self.members.values())
-
-    def copy(self):
-        return copy.deepcopy(self)
 
     def append(self, obj):
         if obj.n:
@@ -158,8 +133,6 @@ class ParticleSystem(AbstractNbodyMethods):
                 nf += obj.n
                 obj[slc[ns:nf]] = values.members[key]
                 ns += obj.n
-            if self.n:
-                self._rebind_attrs()
             return
 
         if isinstance(slc, int):
@@ -174,8 +147,6 @@ class ParticleSystem(AbstractNbodyMethods):
                 if 0 <= i < obj.n:
                     obj[i] = values.members[key]
                 n += obj.n
-            if self.n:
-                self._rebind_attrs()
             return
 
         if isinstance(slc, slice):
@@ -196,8 +167,6 @@ class ParticleSystem(AbstractNbodyMethods):
                             obj[start-obj.n:stop] = values.members[key]
                     start -= obj.n
                     stop -= obj.n
-            if self.n:
-                self._rebind_attrs()
             return
 
 

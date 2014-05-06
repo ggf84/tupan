@@ -43,7 +43,7 @@ class IO(object):
         if not os.path.exists(fname):
             warn("No such file or directory: '{}'".format(fname), stacklevel=2)
             sys.exit()
-        loaders = (psdfio.PSDFIO, hdf5io.HDF5IO,)
+        loaders = (hdf5io.HDF5IO, psdfio.PSDFIO,)
         for loader in loaders:
             try:
                 return loader(fname, fmode).load_snapshot(*args, **kwargs)

@@ -7,9 +7,8 @@ TODO.
 
 
 import numpy as np
-from .body import Bodies
+from .body import Bodies, typed_property
 from ..lib.utils.timing import timings, bind_all
-from ..lib.utils import typed_property
 from ..lib.utils.ctype import Ctype
 
 

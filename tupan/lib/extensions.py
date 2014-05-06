@@ -115,7 +115,7 @@ class Phi(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not hasattr(ips, '_phi'):
+        if not hasattr(ips, 'phi'):
             ips.register_attribute('phi', 'real')
 
         self.inpargs = (ni,
@@ -135,7 +135,7 @@ class Phi(AbstractExtension):
         # implementation of this method.
         import numpy as np
         ni = ips.n
-        if not hasattr(ips, '_phi'):
+        if not hasattr(ips, 'phi'):
             ips.register_attribute('phi', 'real')
         for i in range(ni):
             rx = ips.rx[i] - jps.rx
@@ -173,11 +173,11 @@ class Acc(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not hasattr(ips, '_ax'):
+        if not hasattr(ips, 'ax'):
             ips.register_attribute('ax', 'real')
-        if not hasattr(ips, '_ay'):
+        if not hasattr(ips, 'ay'):
             ips.register_attribute('ay', 'real')
-        if not hasattr(ips, '_az'):
+        if not hasattr(ips, 'az'):
             ips.register_attribute('az', 'real')
 
         self.inpargs = (ni,
@@ -197,11 +197,11 @@ class Acc(AbstractExtension):
         # implementation of this method.
         import numpy as np
         ni = ips.n
-        if not hasattr(ips, '_ax'):
+        if not hasattr(ips, 'ax'):
             ips.register_attribute('ax', 'real')
-        if not hasattr(ips, '_ay'):
+        if not hasattr(ips, 'ay'):
             ips.register_attribute('ay', 'real')
-        if not hasattr(ips, '_az'):
+        if not hasattr(ips, 'az'):
             ips.register_attribute('az', 'real')
         for i in range(ni):
             rx = ips.rx[i] - jps.rx
@@ -244,17 +244,17 @@ class AccJerk(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not hasattr(ips, '_ax'):
+        if not hasattr(ips, 'ax'):
             ips.register_attribute('ax', 'real')
-        if not hasattr(ips, '_ay'):
+        if not hasattr(ips, 'ay'):
             ips.register_attribute('ay', 'real')
-        if not hasattr(ips, '_az'):
+        if not hasattr(ips, 'az'):
             ips.register_attribute('az', 'real')
-        if not hasattr(ips, '_jx'):
+        if not hasattr(ips, 'jx'):
             ips.register_attribute('jx', 'real')
-        if not hasattr(ips, '_jy'):
+        if not hasattr(ips, 'jy'):
             ips.register_attribute('jy', 'real')
-        if not hasattr(ips, '_jz'):
+        if not hasattr(ips, 'jz'):
             ips.register_attribute('jz', 'real')
 
         self.inpargs = (ni,
@@ -297,17 +297,17 @@ class SnapCrackle(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not hasattr(ips, '_sx'):
+        if not hasattr(ips, 'sx'):
             ips.register_attribute('sx', 'real')
-        if not hasattr(ips, '_sy'):
+        if not hasattr(ips, 'sy'):
             ips.register_attribute('sy', 'real')
-        if not hasattr(ips, '_sz'):
+        if not hasattr(ips, 'sz'):
             ips.register_attribute('sz', 'real')
-        if not hasattr(ips, '_cx'):
+        if not hasattr(ips, 'cx'):
             ips.register_attribute('cx', 'real')
-        if not hasattr(ips, '_cy'):
+        if not hasattr(ips, 'cy'):
             ips.register_attribute('cy', 'real')
-        if not hasattr(ips, '_cz'):
+        if not hasattr(ips, 'cz'):
             ips.register_attribute('cz', 'real')
 
         self.inpargs = (ni,
@@ -347,9 +347,9 @@ class Tstep(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not hasattr(ips, '_tstep'):
+        if not hasattr(ips, 'tstep'):
             ips.register_attribute('tstep', 'real')
-        if not hasattr(ips, '_tstepij'):
+        if not hasattr(ips, 'tstepij'):
             ips.register_attribute('tstepij', 'real')
 
         self.inpargs = (ni,
@@ -390,11 +390,11 @@ class PNAcc(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not hasattr(ips, '_pnax'):
+        if not hasattr(ips, 'pnax'):
             ips.register_attribute('pnax', 'real')
-        if not hasattr(ips, '_pnay'):
+        if not hasattr(ips, 'pnay'):
             ips.register_attribute('pnay', 'real')
-        if not hasattr(ips, '_pnaz'):
+        if not hasattr(ips, 'pnaz'):
             ips.register_attribute('pnaz', 'real')
 
         self.inpargs = (ni,
@@ -437,17 +437,17 @@ class Sakura(AbstractExtension):
 
         self.kernel.vector_width = 1
         self.kernel.set_gsize(ni, nj)
-        if not hasattr(ips, '_drx'):
+        if not hasattr(ips, 'drx'):
             ips.register_attribute('drx', 'real')
-        if not hasattr(ips, '_dry'):
+        if not hasattr(ips, 'dry'):
             ips.register_attribute('dry', 'real')
-        if not hasattr(ips, '_drz'):
+        if not hasattr(ips, 'drz'):
             ips.register_attribute('drz', 'real')
-        if not hasattr(ips, '_dvx'):
+        if not hasattr(ips, 'dvx'):
             ips.register_attribute('dvx', 'real')
-        if not hasattr(ips, '_dvy'):
+        if not hasattr(ips, 'dvy'):
             ips.register_attribute('dvy', 'real')
-        if not hasattr(ips, '_dvz'):
+        if not hasattr(ips, 'dvz'):
             ips.register_attribute('dvz', 'real')
 
         self.inpargs = (ni,
@@ -488,19 +488,19 @@ class NREG_X(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not hasattr(ips, '_mrx'):
+        if not hasattr(ips, 'mrx'):
             ips.register_attribute('mrx', 'real')
-        if not hasattr(ips, '_mry'):
+        if not hasattr(ips, 'mry'):
             ips.register_attribute('mry', 'real')
-        if not hasattr(ips, '_mrz'):
+        if not hasattr(ips, 'mrz'):
             ips.register_attribute('mrz', 'real')
-        if not hasattr(ips, '_ax'):
+        if not hasattr(ips, 'ax'):
             ips.register_attribute('ax', 'real')
-        if not hasattr(ips, '_ay'):
+        if not hasattr(ips, 'ay'):
             ips.register_attribute('ay', 'real')
-        if not hasattr(ips, '_az'):
+        if not hasattr(ips, 'az'):
             ips.register_attribute('az', 'real')
-        if not hasattr(ips, '_u'):
+        if not hasattr(ips, 'u'):
             ips.register_attribute('u', 'real')
 
         self.inpargs = (ni,
@@ -541,13 +541,13 @@ class NREG_V(AbstractExtension):
         nj = jps.n
 
         self.kernel.set_gsize(ni, nj)
-        if not hasattr(ips, '_mvx'):
+        if not hasattr(ips, 'mvx'):
             ips.register_attribute('mvx', 'real')
-        if not hasattr(ips, '_mvy'):
+        if not hasattr(ips, 'mvy'):
             ips.register_attribute('mvy', 'real')
-        if not hasattr(ips, '_mvz'):
+        if not hasattr(ips, 'mvz'):
             ips.register_attribute('mvz', 'real')
-        if not hasattr(ips, '_mk'):
+        if not hasattr(ips, 'mk'):
             ips.register_attribute('mk', 'real')
 
         self.inpargs = (ni,
