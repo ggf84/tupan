@@ -112,8 +112,8 @@ class Diagnostic(object):
         geerr = math.sqrt(self.ceerr / self.count)
         com_dr = (((com_r-self.com_r0)**2).sum())**0.5
         com_dv = (((com_v-self.com_v0)**2).sum())**0.5
-        dLmom = (((lmom-self.lmom0)**2).sum())**0.5
-        dAmom = (((amom-self.amom0)**2).sum())**0.5
+        dlmom = (((lmom-self.lmom0)**2).sum())**0.5
+        damom = (((amom-self.amom0)**2).sum())**0.5
 
         fmt = '{time:< 13.6e} {dtime:< 10.3e} '\
               '{ke:< 10.3e} {pe:< 10.3e} {te:< 15.8e} '\
@@ -124,7 +124,7 @@ class Diagnostic(object):
                            ke=ke, pe=pe,
                            te=te, virial=virial,
                            eerr=eerr, geerr=geerr, com_r=com_dr,
-                           com_v=com_dv, lmom=dLmom, amom=dAmom,
+                           com_v=com_dv, lmom=dlmom, amom=damom,
                            wct=self.timer.elapsed()),
                 self.fname, 'a')
 
@@ -417,8 +417,8 @@ def parse_args():
         "--restart_file",
         type=str,
         default="restart.pkl",
-        help="The name of the restart file which must be read from "
-             "(type: str, default: 'restart.pkl')."
+        help=("The name of the restart file which must be read from "
+              "(type: str, default: 'restart.pkl').")
     )
     restart.set_defaults(func=_main_restart)
 

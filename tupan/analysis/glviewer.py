@@ -20,8 +20,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 try:
-    from OpenGL import GL as gl
-    from OpenGL import GLUT as glut
+    from OpenGL import GL
+    from OpenGL import GLUT
     HAS_GL = True
 except Exception as exc:
     HAS_GL = False
@@ -103,16 +103,16 @@ class GLviewer(object):
 
     def enter_main_loop(self):
         if not self.exitgl:
-            glut.glutMainLoop()
+            GLUT.glutMainLoop()
 
     def show_event(self, ps):
         if not self.exitgl:
             if not self.is_initialized:
                 self.initialize()
             self.set_particle_system(ps)
-            glut.glutMainLoopEvent()
-            glut.glutSetWindow(self.window_handle)
-            glut.glutPostRedisplay()
+            GLUT.glutMainLoopEvent()
+            GLUT.glutSetWindow(self.window_handle)
+            GLUT.glutPostRedisplay()
 
     def initialize(self):
         self.init_window()
@@ -120,14 +120,14 @@ class GLviewer(object):
         self.is_initialized = True
 
     def idle(self):
-        glut.glutPostRedisplay()
+        GLUT.glutPostRedisplay()
 
     def resize_func(self, width, height):
         if height == 0:
             height = 1
         self.window_width = width
         self.window_height = height
-        gl.glViewport(0, 0, width, height)
+        GL.glViewport(0, 0, width, height)
 
     def show_fps(self, secs=0.0):
         elapsed_time = self.timer.elapsed()
@@ -138,8 +138,8 @@ class GLviewer(object):
             win_title = fmt.format(WINDOW_TITLE_PREFIX,
                                    self.frame_count / elapsed_time,
                                    self.window_width, self.window_height)
-            glut.glutSetWindow(self.window_handle)
-            glut.glutSetWindowTitle(win_title.encode('utf-8'))
+            GLUT.glutSetWindow(self.window_handle)
+            GLUT.glutSetWindowTitle(win_title.encode('utf-8'))
             self.frame_count = 0
             self.timer.start()
 
@@ -153,10 +153,10 @@ class GLviewer(object):
         near = -0.1
         far = -200.0
 
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        gl.glOrtho(left, right, bottom, top, near, far)
-        gl.glMatrixMode(gl.GL_MODELVIEW)
+        GL.glMatrixMode(GL.GL_PROJECTION)
+        GL.glLoadIdentity()
+        GL.glOrtho(left, right, bottom, top, near, far)
+        GL.glMatrixMode(GL.GL_MODELVIEW)
 
     def adjust_rotation(self, sign=1):
         self.rot['x'] += self.rotate['x'] * ROTINC
@@ -175,13 +175,13 @@ class GLviewer(object):
         elif self.rot['z'] < 0:
             self.rot['z'] += 360
         if sign > 0:
-            gl.glRotatef(self.rot['x'], 1.0, 0.0, 0.0)
-            gl.glRotatef(self.rot['y'], 0.0, 1.0, 0.0)
-            gl.glRotatef(self.rot['z'], 0.0, 0.0, 1.0)
+            GL.glRotatef(self.rot['x'], 1.0, 0.0, 0.0)
+            GL.glRotatef(self.rot['y'], 0.0, 1.0, 0.0)
+            GL.glRotatef(self.rot['z'], 0.0, 0.0, 1.0)
         if sign < 0:
-            gl.glRotatef(-self.rot['z'], 0.0, 0.0, 1.0)
-            gl.glRotatef(-self.rot['y'], 0.0, 1.0, 0.0)
-            gl.glRotatef(-self.rot['x'], 1.0, 0.0, 0.0)
+            GL.glRotatef(-self.rot['z'], 0.0, 0.0, 1.0)
+            GL.glRotatef(-self.rot['y'], 0.0, 1.0, 0.0)
+            GL.glRotatef(-self.rot['x'], 1.0, 0.0, 0.0)
 
     def keyboard(self, key, x, y):
         global ALPHA
@@ -192,7 +192,7 @@ class GLviewer(object):
         global RECORDSCREEN
         global TRACEORBITS
         global ZOOM_FACTOR
-        (ps_min, ps_max) = gl.glGetFloatv(gl.GL_ALIASED_POINT_SIZE_RANGE)
+        (ps_min, ps_max) = GL.glGetFloatv(GL.GL_ALIASED_POINT_SIZE_RANGE)
 
         key = key.decode('utf-8')
 
@@ -262,10 +262,10 @@ class GLviewer(object):
                 TRACEORBITS = False
         elif key == 'f' or key == 'F':
             if not FULLSCREEN:
-                glut.glutFullScreen()
+                GLUT.glutFullScreen()
                 FULLSCREEN = True
             else:
-                glut.glutReshapeWindow(WINDOW_WIDTH, WINDOW_HEIGHT)
+                GLUT.glutReshapeWindow(WINDOW_WIDTH, WINDOW_HEIGHT)
                 FULLSCREEN = False
         elif key == 's' or key == 'S':
             if not RECORDSCREEN:
@@ -274,33 +274,33 @@ class GLviewer(object):
                 RECORDSCREEN = False
         elif key == ESCAPE:
             self.exitgl = True
-            glut.glutLeaveMainLoop()
-            glut.glutHideWindow()
+            GLUT.glutLeaveMainLoop()
+            GLUT.glutHideWindow()
 
-        glut.glutSetWindow(self.window_handle)
-        glut.glutPostRedisplay()
+        GLUT.glutSetWindow(self.window_handle)
+        GLUT.glutPostRedisplay()
 
     def keyboard_s(self, key, x, y):
-        mkey = glut.glutGetModifiers()
-        if mkey == glut.GLUT_ACTIVE_CTRL:
+        mkey = GLUT.glutGetModifiers()
+        if mkey == GLUT.GLUT_ACTIVE_CTRL:
             pass
-        elif mkey == glut.GLUT_ACTIVE_ALT:
+        elif mkey == GLUT.GLUT_ACTIVE_ALT:
             pass
         else:
-            if key == glut.GLUT_KEY_UP:
+            if key == GLUT.GLUT_KEY_UP:
                 self.rotate['x'] += 1
-            elif key == glut.GLUT_KEY_DOWN:
+            elif key == GLUT.GLUT_KEY_DOWN:
                 self.rotate['x'] -= 1
-            elif key == glut.GLUT_KEY_LEFT:
+            elif key == GLUT.GLUT_KEY_LEFT:
                 self.rotate['y'] -= 1
-            elif key == glut.GLUT_KEY_RIGHT:
+            elif key == GLUT.GLUT_KEY_RIGHT:
                 self.rotate['y'] += 1
-        glut.glutSetWindow(self.window_handle)
-        glut.glutPostRedisplay()
+        GLUT.glutSetWindow(self.window_handle)
+        GLUT.glutPostRedisplay()
 
     def mouse(self, button, state, x, y):
         global ZOOM_FACTOR
-        glut.glutSetWindow(self.window_handle)
+        GLUT.glutSetWindow(self.window_handle)
 
         self.mouse_button = button
         self.mouse_state = state
@@ -309,13 +309,13 @@ class GLviewer(object):
 
         if button == 3:
             ZOOM_FACTOR /= 1.03125
-            glut.glutPostRedisplay()
+            GLUT.glutPostRedisplay()
         if button == 4:
             ZOOM_FACTOR *= 1.03125
-            glut.glutPostRedisplay()
+            GLUT.glutPostRedisplay()
 
     def mouse_motion(self, x, y):
-        glut.glutSetWindow(self.window_handle)
+        GLUT.glutSetWindow(self.window_handle)
 
         old_x = self.mouse_x
         old_y = self.mouse_y
@@ -323,63 +323,63 @@ class GLviewer(object):
         dy = 2 * (old_y - y) / self.window_height
         aspect_ratio = self.window_width / self.window_height
 
-        if self.mouse_button == glut.GLUT_LEFT_BUTTON:
-            if self.mouse_state == glut.GLUT_DOWN:
+        if self.mouse_button == GLUT.GLUT_LEFT_BUTTON:
+            if self.mouse_state == GLUT.GLUT_DOWN:
                 self.trans['x'] += dx * ZOOM_FACTOR * aspect_ratio
                 self.trans['y'] += dy * ZOOM_FACTOR
-                glut.glutPostRedisplay()
-            if self.mouse_state == glut.GLUT_UP:
+                GLUT.glutPostRedisplay()
+            if self.mouse_state == GLUT.GLUT_UP:
                 pass
 
-        if self.mouse_button == glut.GLUT_RIGHT_BUTTON:
-            if self.mouse_state == glut.GLUT_DOWN:
+        if self.mouse_button == GLUT.GLUT_RIGHT_BUTTON:
+            if self.mouse_state == GLUT.GLUT_DOWN:
                 self.rot['y'] -= 90 * dx
                 self.rot['x'] -= 90 * dy
 #                self.rotate['y'] -= 5 * dx
 #                self.rotate['x'] -= 5 * dy
-                glut.glutPostRedisplay()
-            if self.mouse_state == glut.GLUT_UP:
+                GLUT.glutPostRedisplay()
+            if self.mouse_state == GLUT.GLUT_UP:
                 pass
 
-        if self.mouse_button == glut.GLUT_MIDDLE_BUTTON:
-            if self.mouse_state == glut.GLUT_DOWN:
+        if self.mouse_button == GLUT.GLUT_MIDDLE_BUTTON:
+            if self.mouse_state == GLUT.GLUT_DOWN:
                 pass
-            if self.mouse_state == glut.GLUT_UP:
+            if self.mouse_state == GLUT.GLUT_UP:
                 pass
 
         self.mouse_x = x
         self.mouse_y = y
 
     def init_window(self):
-        glut.glutInit(sys.argv)
-        glut.glutInitDisplayMode(
-            glut.GLUT_DOUBLE | glut.GLUT_RGBA |
-            glut.GLUT_ALPHA | glut.GLUT_DEPTH
+        GLUT.glutInit(sys.argv)
+        GLUT.glutInitDisplayMode(
+            GLUT.GLUT_DOUBLE | GLUT.GLUT_RGBA |
+            GLUT.GLUT_ALPHA | GLUT.GLUT_DEPTH
         )
-        glut.glutInitWindowPosition(
-            (glut.glutGet(glut.GLUT_SCREEN_WIDTH) - self.window_width) // 2,
-            (glut.glutGet(glut.GLUT_SCREEN_HEIGHT) - self.window_height) // 2
+        GLUT.glutInitWindowPosition(
+            (GLUT.glutGet(GLUT.GLUT_SCREEN_WIDTH) - self.window_width) // 2,
+            (GLUT.glutGet(GLUT.GLUT_SCREEN_HEIGHT) - self.window_height) // 2
         )
-        glut.glutSetOption(
-            glut.GLUT_ACTION_ON_WINDOW_CLOSE,
-            glut.GLUT_ACTION_CONTINUE_EXECUTION
+        GLUT.glutSetOption(
+            GLUT.GLUT_ACTION_ON_WINDOW_CLOSE,
+            GLUT.GLUT_ACTION_CONTINUE_EXECUTION
         )
-        glut.glutInitWindowSize(self.window_width, self.window_height)
+        GLUT.glutInitWindowSize(self.window_width, self.window_height)
         win_title = WINDOW_TITLE_PREFIX.encode('utf-8')
-        self.window_handle = glut.glutCreateWindow(win_title)
-        glut.glutDisplayFunc(self.render_func)
-        glut.glutReshapeFunc(self.resize_func)
-        glut.glutMouseFunc(self.mouse)
-        glut.glutMotionFunc(self.mouse_motion)
-        glut.glutKeyboardFunc(self.keyboard)
-        glut.glutSpecialFunc(self.keyboard_s)
-#        glut.glutIdleFunc(self.idle)
+        self.window_handle = GLUT.glutCreateWindow(win_title)
+        GLUT.glutDisplayFunc(self.render_func)
+        GLUT.glutReshapeFunc(self.resize_func)
+        GLUT.glutMouseFunc(self.mouse)
+        GLUT.glutMotionFunc(self.mouse_motion)
+        GLUT.glutKeyboardFunc(self.keyboard)
+        GLUT.glutSpecialFunc(self.keyboard_s)
+#        GLUT.glutIdleFunc(self.idle)
 
     def init_gl(self):
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_ALPHA_TEST)
-        gl.glClearColor(0.0, 0.0, 0.0, 1.0)
-        gl.glColorMask(gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE)
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glEnable(GL.GL_ALPHA_TEST)
+        GL.glClearColor(0.0, 0.0, 0.0, 1.0)
+        GL.glColorMask(GL.GL_TRUE, GL.GL_TRUE, GL.GL_TRUE, GL.GL_TRUE)
 
         self.textures['star'] = self.load_texture(
             os.path.join(TEXTURE_PATH, 'star.png'))
@@ -424,9 +424,9 @@ class GLviewer(object):
 #                                             stdout=open(os.devnull, 'w'),
 #                                             stderr=subprocess.STDOUT)
 
-        gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 8)
-        screenshot = gl.glReadPixels(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
-                                     gl.GL_RGBA, gl.GL_UNSIGNED_BYTE)
+        GL.glPixelStorei(GL.GL_PACK_ALIGNMENT, 8)
+        screenshot = GL.glReadPixels(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
+                                     GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
         im = Image.frombuffer('RGBA', (WINDOW_WIDTH, WINDOW_HEIGHT),
                               screenshot, 'raw', 'RGBA', 0, 1)
         im = im.transpose(Image.FLIP_TOP_BOTTOM)
@@ -435,45 +435,45 @@ class GLviewer(object):
 
     def render_func(self):
         if not TRACEORBITS:
-            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+            GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         else:
-            gl.glClear(gl.GL_DEPTH_BUFFER_BIT)
+            GL.glClear(GL.GL_DEPTH_BUFFER_BIT)
         if COLORMASK['r']:
-            gl.glColorMask(gl.GL_TRUE, gl.GL_FALSE, gl.GL_FALSE, gl.GL_TRUE)
+            GL.glColorMask(GL.GL_TRUE, GL.GL_FALSE, GL.GL_FALSE, GL.GL_TRUE)
         elif COLORMASK['g']:
-            gl.glColorMask(gl.GL_FALSE, gl.GL_TRUE, gl.GL_FALSE, gl.GL_TRUE)
+            GL.glColorMask(GL.GL_FALSE, GL.GL_TRUE, GL.GL_FALSE, GL.GL_TRUE)
         elif COLORMASK['b']:
-            gl.glColorMask(gl.GL_FALSE, gl.GL_FALSE, gl.GL_TRUE, gl.GL_TRUE)
+            GL.glColorMask(GL.GL_FALSE, GL.GL_FALSE, GL.GL_TRUE, GL.GL_TRUE)
         else:
-            gl.glColorMask(gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE, gl.GL_TRUE)
+            GL.glColorMask(GL.GL_TRUE, GL.GL_TRUE, GL.GL_TRUE, GL.GL_TRUE)
 
-        gl.glAlphaFunc(gl.GL_GREATER, 0)
+        GL.glAlphaFunc(GL.GL_GREATER, 0)
 
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glLoadIdentity()
+        GL.glMatrixMode(GL.GL_MODELVIEW)
+        GL.glLoadIdentity()
 
-        gl.glTranslatef(self.trans['x'],
+        GL.glTranslatef(self.trans['x'],
                         self.trans['y'],
                         self.trans['z'])
 
         self.adjust_zoom()
         self.adjust_rotation(1)
 
-        gl.glDepthMask(gl.GL_FALSE)
+        GL.glDepthMask(GL.GL_FALSE)
         self.draw_system()
-        gl.glDepthMask(gl.GL_TRUE)
+        GL.glDepthMask(GL.GL_TRUE)
 
         if RECORDSCREEN:
             self.record_screen()
 
         self.show_fps(1.0)
 
-        glut.glutSwapBuffers()
+        GLUT.glutSwapBuffers()
 
         if (self.rotate['x'] != 0
                 or self.rotate['y'] != 0
                 or self.rotate['z'] != 0):
-            glut.glutPostRedisplay()
+            GLUT.glutPostRedisplay()
 
     def get_colors(self, qty):
 
@@ -504,37 +504,37 @@ class GLviewer(object):
 
     def draw_system(self):
 
-# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ZERO)
-#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
-# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_SRC_COLOR)
-# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_COLOR)
-# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_DST_COLOR)
-#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_DST_COLOR)
-# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_SRC_ALPHA)
-#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_DST_ALPHA)
-#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_DST_ALPHA)
-# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_CONSTANT_COLOR)
-#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_CONSTANT_COLOR)
-# #        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_CONSTANT_ALPHA)
-#         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_CONSTANT_ALPHA)
+# #        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ZERO)
+#         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE)
+# #        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_SRC_COLOR)
+# #        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_COLOR)
+# #        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_DST_COLOR)
+#         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_DST_COLOR)
+# #        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_SRC_ALPHA)
+#         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+#         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_DST_ALPHA)
+#         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_DST_ALPHA)
+# #        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_CONSTANT_COLOR)
+#         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_CONSTANT_COLOR)
+# #        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_CONSTANT_ALPHA)
+#         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_CONSTANT_ALPHA)
 
-        gl.glTexEnvf(gl.GL_TEXTURE_ENV, gl.GL_TEXTURE_ENV_MODE, gl.GL_MODULATE)
+        GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_MODULATE)
 
-        Ntot = self.ps.n
+        ntot = self.ps.n
 
         if 'bodies' in self.ps.members:
             bodies = self.ps.members['bodies']
             if bodies.n:
                 points = bodies.pos
                 colors = self.get_colors(bodies.mass)
-                sizes = np.sqrt(bodies.eps2 * Ntot)
+                sizes = np.sqrt(bodies.eps2 * ntot)
 
-                gl.glEnable(gl.GL_BLEND)
-#                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+                GL.glEnable(GL.GL_BLEND)
+#                GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+                GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE)
                 self.draw_points(points, colors, sizes, self.textures['star'])
-                gl.glDisable(gl.GL_BLEND)
+                GL.glDisable(GL.GL_BLEND)
 
         if 'blackholes' in self.ps.members:
             blackholes = self.ps.members['blackholes']
@@ -545,90 +545,90 @@ class GLviewer(object):
                 colors[..., 1].fill(1)
                 colors[..., 2].fill(0)
                 colors[..., 3].fill(1)
-                sizes = np.sqrt(blackholes.mass * Ntot)
+                sizes = np.sqrt(blackholes.mass * ntot)
 
-#                gl.glAlphaFunc(gl.GL_EQUAL, 1)
-                gl.glDepthMask(gl.GL_TRUE)
-                gl.glEnable(gl.GL_BLEND)
-                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ZERO)
+#                GL.glAlphaFunc(GL.GL_EQUAL, 1)
+                GL.glDepthMask(GL.GL_TRUE)
+                GL.glEnable(GL.GL_BLEND)
+                GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ZERO)
                 self.draw_points(
                     points, colors, sizes, self.textures['blackhole'])
-                gl.glDisable(gl.GL_BLEND)
-                gl.glDepthMask(gl.GL_FALSE)
-#                gl.glAlphaFunc(gl.GL_GREATER, 0)
+                GL.glDisable(GL.GL_BLEND)
+                GL.glDepthMask(GL.GL_FALSE)
+#                GL.glAlphaFunc(GL.GL_GREATER, 0)
 
         if 'stars' in self.ps.members:
             stars = self.ps.members['stars']
             if stars.n:
                 points = stars.pos
                 colors = self.get_colors(stars.mass)
-                sizes = np.sqrt(stars.eps2 * Ntot)
+                sizes = np.sqrt(stars.eps2 * ntot)
 
-                gl.glEnable(gl.GL_BLEND)
-#                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+                GL.glEnable(GL.GL_BLEND)
+#                GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+                GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE)
                 self.draw_points(points, colors, sizes, self.textures['star'])
-                gl.glDisable(gl.GL_BLEND)
+                GL.glDisable(GL.GL_BLEND)
 
         if 'sphs' in self.ps.members:
             sph = self.ps.members['sphs']
             if sph.n:
                 points = sph.pos
                 colors = self.get_colors(sph.mass)
-                sizes = np.sqrt(sph.eps2 * Ntot)
+                sizes = np.sqrt(sph.eps2 * ntot)
 
-                gl.glEnable(gl.GL_BLEND)
-                gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE)
+                GL.glEnable(GL.GL_BLEND)
+                GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE)
                 self.draw_points(points, colors, sizes, self.textures['sph'])
-                gl.glDisable(gl.GL_BLEND)
+                GL.glDisable(GL.GL_BLEND)
 
     def draw_points(self, points, colors, sizes, texture):
-        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
-        gl.glVertexPointerd(points)
-        gl.glEnableClientState(gl.GL_COLOR_ARRAY)
-        gl.glColorPointerd(colors)
+        GL.glEnableClientState(GL.GL_VERTEX_ARRAY)
+        GL.glVertexPointerd(points)
+        GL.glEnableClientState(GL.GL_COLOR_ARRAY)
+        GL.glColorPointerd(colors)
 
         fade_size = 60.0
         att_param = [0.0, 0.0, 0.01]
-        (ps_min, ps_max) = gl.glGetFloatv(gl.GL_ALIASED_POINT_SIZE_RANGE)
+        (ps_min, ps_max) = GL.glGetFloatv(GL.GL_ALIASED_POINT_SIZE_RANGE)
 
-        gl.glEnable(gl.GL_TEXTURE_2D)
-        gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
+        GL.glEnable(GL.GL_TEXTURE_2D)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, texture)
 
-        gl.glEnable(gl.GL_POINT_SPRITE)
+        GL.glEnable(GL.GL_POINT_SPRITE)
 
-        gl.glPointSize(POINT_SIZE)
-        gl.glTexEnvf(gl.GL_POINT_SPRITE, gl.GL_COORD_REPLACE, gl.GL_TRUE)
-        gl.glPointParameterfv(gl.GL_POINT_DISTANCE_ATTENUATION, att_param)
-        gl.glPointParameterf(gl.GL_POINT_SIZE_MAX, ps_max)
-        gl.glPointParameterf(gl.GL_POINT_SIZE_MIN, ps_min)
-        gl.glPointParameterf(gl.GL_POINT_FADE_THRESHOLD_SIZE, fade_size)
+        GL.glPointSize(POINT_SIZE)
+        GL.glTexEnvf(GL.GL_POINT_SPRITE, GL.GL_COORD_REPLACE, GL.GL_TRUE)
+        GL.glPointParameterfv(GL.GL_POINT_DISTANCE_ATTENUATION, att_param)
+        GL.glPointParameterf(GL.GL_POINT_SIZE_MAX, ps_max)
+        GL.glPointParameterf(GL.GL_POINT_SIZE_MIN, ps_min)
+        GL.glPointParameterf(GL.GL_POINT_FADE_THRESHOLD_SIZE, fade_size)
 
         ####
         self.draw_arrays(points, colors, sizes, False)
         ####
 
-        gl.glDisable(gl.GL_POINT_SPRITE)
-        gl.glDisable(gl.GL_TEXTURE_2D)
-        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
-        gl.glDisableClientState(gl.GL_COLOR_ARRAY)
+        GL.glDisable(GL.GL_POINT_SPRITE)
+        GL.glDisable(GL.GL_TEXTURE_2D)
+        GL.glDisableClientState(GL.GL_VERTEX_ARRAY)
+        GL.glDisableClientState(GL.GL_COLOR_ARRAY)
 
     def draw_arrays(self, points, colors, sizes, individual_sizes):
         if not individual_sizes:
-            gl.glDrawArrays(gl.GL_POINTS, 0, len(points))
+            GL.glDrawArrays(GL.GL_POINTS, 0, len(points))
         else:
-            (ps_min, ps_max) = gl.glGetFloatv(gl.GL_ALIASED_POINT_SIZE_RANGE)
+            (ps_min, ps_max) = GL.glGetFloatv(GL.GL_ALIASED_POINT_SIZE_RANGE)
             for point, color, size in zip(points, colors, sizes):
                 vsize = size * POINT_SIZE
                 if vsize < ps_min:
                     vsize = ps_min
                 if vsize > ps_max:
                     vsize = ps_max
-                gl.glPointSize(vsize)
-                gl.glBegin(gl.GL_POINTS)
-                gl.glColor4d(color[0], color[1], color[2], color[3])
-                gl.glVertex3d(point[0], point[1], point[2])
-                gl.glEnd()
+                GL.glPointSize(vsize)
+                GL.glBegin(GL.GL_POINTS)
+                GL.glColor4d(color[0], color[1], color[2], color[3])
+                GL.glVertex3d(point[0], point[1], point[2])
+                GL.glEnd()
 
     def load_texture(self, name):
         try:
@@ -641,25 +641,25 @@ class GLviewer(object):
         image = image.tobytes('raw', 'RGBA', 0, -1)
 
         # Create Texture
-        text_id = gl.glGenTextures(1)
-        gl.glBindTexture(gl.GL_TEXTURE_2D, text_id)
+        text_id = GL.glGenTextures(1)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, text_id)
 
-        gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                           gl.GL_TEXTURE_MAG_FILTER,
-                           gl.GL_LINEAR)
-        gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                           gl.GL_TEXTURE_MIN_FILTER,
-                           gl.GL_LINEAR)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D,
+                           GL.GL_TEXTURE_MAG_FILTER,
+                           GL.GL_LINEAR)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D,
+                           GL.GL_TEXTURE_MIN_FILTER,
+                           GL.GL_LINEAR)
 
-        gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                           gl.GL_TEXTURE_WRAP_S,
-                           gl.GL_CLAMP_TO_EDGE)
-        gl.glTexParameteri(gl.GL_TEXTURE_2D,
-                           gl.GL_TEXTURE_WRAP_T,
-                           gl.GL_CLAMP_TO_EDGE)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D,
+                           GL.GL_TEXTURE_WRAP_S,
+                           GL.GL_CLAMP_TO_EDGE)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D,
+                           GL.GL_TEXTURE_WRAP_T,
+                           GL.GL_CLAMP_TO_EDGE)
 
-        gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, ix, iy, 0,
-                        gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, image)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, ix, iy, 0,
+                        GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, image)
 
         return text_id
 

@@ -20,8 +20,8 @@ __all__ = ["Phi", "phi",
            "Tstep", "tstep",
            "PNAcc", "pnacc",
            "Sakura", "sakura",
-           "NREG_X", "nreg_x",
-           "NREG_V", "nreg_v",
+           "NregX", "nreg_x",
+           "NregV", "nreg_v",
            "Kepler", "kepler",
            ]
 
@@ -464,12 +464,12 @@ class Sakura(AbstractExtension):
 
 
 @bind_all(timings)
-class NREG_X(AbstractExtension):
+class NregX(AbstractExtension):
     """
 
     """
     def __init__(self, backend, fpwidth):
-        super(NREG_X, self).__init__("nreg_Xkernel", backend, fpwidth)
+        super(NregX, self).__init__("nreg_Xkernel", backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -518,12 +518,12 @@ class NREG_X(AbstractExtension):
 
 
 @bind_all(timings)
-class NREG_V(AbstractExtension):
+class NregV(AbstractExtension):
     """
 
     """
     def __init__(self, backend, fpwidth):
-        super(NREG_V, self).__init__("nreg_Vkernel", backend, fpwidth)
+        super(NregV, self).__init__("nreg_Vkernel", backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -612,8 +612,8 @@ snap_crackle = SnapCrackle(BACKEND, Ctype.fpwidth)
 tstep = Tstep(BACKEND, Ctype.fpwidth)
 pnacc = PNAcc(BACKEND, Ctype.fpwidth)
 sakura = Sakura(BACKEND, Ctype.fpwidth)
-nreg_x = NREG_X(BACKEND, Ctype.fpwidth)
-nreg_v = NREG_V(BACKEND, Ctype.fpwidth)
+nreg_x = NregX(BACKEND, Ctype.fpwidth)
+nreg_v = NregV(BACKEND, Ctype.fpwidth)
 kepler = Kepler(BACKEND, Ctype.fpwidth)
 
 

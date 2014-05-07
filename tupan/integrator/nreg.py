@@ -29,8 +29,8 @@ def nreg_x(ps, dt):
     ps.rx[...] = ps.mrx / mtot
     ps.ry[...] = ps.mry / mtot
     ps.rz[...] = ps.mrz / mtot
-    U = 0.5 * ps.u.sum()
-    type(ps).U = U
+    pe = 0.5 * ps.u.sum()
+    type(ps).U = pe
     type(ps).t_curr += dt
     return ps
 
@@ -56,8 +56,8 @@ def nreg_v(ps, dt):
     ps.vx[...] = ps.mvx / mtot
     ps.vy[...] = ps.mvy / mtot
     ps.vz[...] = ps.mvz / mtot
-    K = 0.25 * ps.mk.sum() / mtot
-    type(ps).W = (K - ps.E0)
+    ke = 0.25 * ps.mk.sum() / mtot
+    type(ps).W = (ke - ps.E0)
 #    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
 #                                         + ps.vy * ps.ay
 #                                         + ps.vz * ps.az)).sum()
@@ -164,9 +164,7 @@ class NREG(Base):
             ps = nreg_step(ps, dt)
             t1 = ps.t_curr
 
-        DT = t1 - t0
-
-        ps.tstep[...] = DT
+        ps.tstep[...] = t1 - t0
         ps.time += dt
         ps.nstep += 1
         if self.dumpper:

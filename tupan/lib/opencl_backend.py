@@ -105,18 +105,18 @@ class CLKernel(object):
         memf = cl.mem_flags
 #        flags = memf.READ_WRITE | memf.USE_HOST_PTR
         flags = memf.READ_WRITE | memf.COPY_HOST_PTR
-        clBuffer = partial(cl.Buffer, CTX, flags)
+        cl_buffer = partial(cl.Buffer, CTX, flags)
 
         from .utils.ctype import Ctype
         types = namedtuple("Types", ["c_int", "c_int_p",
                                      "c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])
         self.cty = types(c_int=vars(Ctype)["int"].type,
-                         c_int_p=lambda x: clBuffer(hostbuf=x),
+                         c_int_p=lambda x: cl_buffer(hostbuf=x),
                          c_uint=vars(Ctype)["uint"].type,
-                         c_uint_p=lambda x: clBuffer(hostbuf=x),
+                         c_uint_p=lambda x: cl_buffer(hostbuf=x),
                          c_real=vars(Ctype)["real"].type,
-                         c_real_p=lambda x: clBuffer(hostbuf=x),
+                         c_real_p=lambda x: cl_buffer(hostbuf=x),
                          )
 
     def set_gsize(self, ni, nj):

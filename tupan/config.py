@@ -25,18 +25,19 @@ for section in CONFIG.sections():
         CFG[section][option] = CONFIG.get(section, option)
 
 
-CACHE_DIR = os.path.abspath(
-                os.path.join(
-                    PATH,
-                    os.path.expanduser(
-                        CFG['cache']['prefix']
-                    ),
-                    CFG['cache']['base'] + "-uid{0}-py{1}".format(
-                        getpass.getuser(),
-                        ".".join(str(i) for i in sys.version_info)
-                    )
-                )
+CACHE_DIR = \
+    os.path.abspath(
+        os.path.join(
+            PATH,
+            os.path.expanduser(
+                CFG['cache']['prefix']
+            ),
+            CFG['cache']['base'] + "-uid{0}-py{1}".format(
+                getpass.getuser(),
+                ".".join(str(i) for i in sys.version_info)
             )
+        )
+    )
 try:
     os.makedirs(CACHE_DIR)
 except OSError:

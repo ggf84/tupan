@@ -119,12 +119,12 @@ class TestCase1(unittest.TestCase):
     def test08(self):
         print("\n---------- test08 ----------")
         dt = 1.0/64
-        self.compare_result(extensions.NREG_X, self.ps, dt=dt)
+        self.compare_result(extensions.NregX, self.ps, dt=dt)
 
     def test09(self):
         print("\n---------- test09 ----------")
         dt = 1.0/64
-        self.compare_result(extensions.NREG_V, self.ps, dt=dt)
+        self.compare_result(extensions.NregV, self.ps, dt=dt)
 
 
 highN = True if "--highN" in sys.argv else False
@@ -223,12 +223,12 @@ class TestCase2(unittest.TestCase):
     def test08(self):
         print("\n---------- test08 ----------")
         dt = 1.0/64
-        self.performance(extensions.NREG_X, self.pslist, dt=dt)
+        self.performance(extensions.NregX, self.pslist, dt=dt)
 
     def test09(self):
         print("\n---------- test09 ----------")
         dt = 1.0/64
-        self.performance(extensions.NREG_V, self.pslist, dt=dt)
+        self.performance(extensions.NregV, self.pslist, dt=dt)
 
 
 if __name__ == "__main__":

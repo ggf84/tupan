@@ -430,8 +430,8 @@ class NbodyMethods(object):
         rx = self.rx - com_r[0]
         ry = self.ry - com_r[1]
         rz = self.rz - com_r[2]
-        I = (self.mass * (rx**2 + ry**2 + rz**2)).sum()
-        s = (I / self.total_mass)**0.5
+        mom_inertia = (self.mass * (rx**2 + ry**2 + rz**2)).sum()
+        s = (mom_inertia / self.total_mass)**0.5
         return s
 
     # -- rescaling methods

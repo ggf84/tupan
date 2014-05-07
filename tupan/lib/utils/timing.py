@@ -48,7 +48,7 @@ class Timer(object):
 class MyDefaultdict(defaultdict):
     def __repr__(self):
         import json
-        return json.dumps(self, indent=4)
+        return json.dumps(self, indent=4, sort_keys=True)
 
 
 def tree():

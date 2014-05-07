@@ -26,7 +26,8 @@ A Python Toolkit for Astrophysical N-Body Simulations.
 # console.setLevel(logging.DEBUG)
 #
 # # set a simpler format for console use
-# formatter = logging.Formatter("# %(asctime)s - %(name)s - %(levelname)s - %(message)s")
+# fmt = "# %(asctime)s - %(name)s - %(levelname)s - %(message)s"
+# formatter = logging.Formatter(fmt)
 # console.setFormatter(formatter)
 #
 # # add the handler to the root logger

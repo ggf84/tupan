@@ -87,10 +87,10 @@ class IMF(object):
     @staticmethod
     def padoan2007(mlow, mhigh):
         from scipy.special import erf
-        Gamma = 1.4
+        gamma = 1.4
         m_ch = 1.0
         sigma = 1.8
-        imf_func = lambda m: ((m**(-Gamma)) * (1.0 + erf((
+        imf_func = lambda m: ((m**(-gamma)) * (1.0 + erf((
             4.0 * np.log(m/m_ch) + sigma**2) / (np.sqrt(8.0) * sigma))))
         min_mlow = 0.004
         max_mhigh = 120.0
