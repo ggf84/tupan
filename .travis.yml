@@ -27,7 +27,7 @@ before_install:
 # - sudo apt-get install -qq python3-yaml
 
 install:
-- pip install tox --use-mirrors
+- pip install tox
 
 script:
 - tox
