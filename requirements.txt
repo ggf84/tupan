@@ -7,4 +7,3 @@ matplotlib
 PyOpenGL
 PyYAML
 Pillow
-#PIL
