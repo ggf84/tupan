@@ -1,11 +1,25 @@
 language: python
 
+install:
+- pip install tox
+
+script:
+- tox
+
 env:
  - TOXENV=py27
-# - TOXENV=py32
-# - TOXENV=py33
+ - TOXENV=py32
+ - TOXENV=py33
  - TOXENV=py34
  - TOXENV=docs
+
+branches:
+  only:
+    - master
+    - dev
+
+notifications:
+  email: false
 
 before_install:
  - sudo apt-get update -qq
@@ -25,19 +39,4 @@ before_install:
 # - sudo apt-get install -qq python3-matplotlib
 # - sudo apt-get install -qq python3-opengl
 # - sudo apt-get install -qq python3-yaml
-
-install:
-- pip install tox
-- pip install -r requirements.txt
-
-script:
-- tox
-
-branches:
-  only:
-    - master
-    - dev
-
-notifications:
-  email: false
 
