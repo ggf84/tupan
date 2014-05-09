@@ -17,25 +17,19 @@ class Ctype(object):
            if fpwidth == 'fp32'
            else (np.dtype(np.int64)
                  if fpwidth == 'fp64'
-                 else np.dtype(np.int64)
-                 )
-           )
+                 else np.dtype(np.int64)))
 
     uint = (np.dtype(np.uint32)
             if fpwidth == 'fp32'
             else (np.dtype(np.uint64)
                   if fpwidth == 'fp64'
-                  else np.dtype(np.uint64)
-                  )
-            )
+                  else np.dtype(np.uint64)))
 
     real = (np.dtype(np.float32)
             if fpwidth == 'fp32'
             else (np.dtype(np.float64)
                   if fpwidth == 'fp64'
-                  else np.dtype(np.float64)
-                  )
-            )
+                  else np.dtype(np.float64)))
 
 
 # -- End of File --

@@ -99,23 +99,23 @@ class H4(H2):
         ps1.set_acc_jerk(ps1)
 
         ps1.vx[...] = (((ps0.jx - ps1.jx) * dt / 6
-                       + (ps0.ax + ps1.ax)) * dt / 2
+                        + (ps0.ax + ps1.ax)) * dt / 2
                        + ps0.vx)
         ps1.vy[...] = (((ps0.jy - ps1.jy) * dt / 6
-                       + (ps0.ay + ps1.ay)) * dt / 2
+                        + (ps0.ay + ps1.ay)) * dt / 2
                        + ps0.vy)
         ps1.vz[...] = (((ps0.jz - ps1.jz) * dt / 6
-                       + (ps0.az + ps1.az)) * dt / 2
+                        + (ps0.az + ps1.az)) * dt / 2
                        + ps0.vz)
 
         ps1.rx[...] = (((ps0.ax - ps1.ax) * dt / 6
-                       + (ps0.vx + ps1.vx)) * dt / 2
+                        + (ps0.vx + ps1.vx)) * dt / 2
                        + ps0.rx)
         ps1.ry[...] = (((ps0.ay - ps1.ay) * dt / 6
-                       + (ps0.vy + ps1.vy)) * dt / 2
+                        + (ps0.vy + ps1.vy)) * dt / 2
                        + ps0.ry)
         ps1.rz[...] = (((ps0.az - ps1.az) * dt / 6
-                       + (ps0.vz + ps1.vz)) * dt / 2
+                        + (ps0.vz + ps1.vz)) * dt / 2
                        + ps0.rz)
 
         return ps1
@@ -137,26 +137,26 @@ class H6(H4):
         ps1 = ps
 
         ps1.rx += (((ps0.sx * dt / 4
-                   + ps0.jx) * dt / 3
-                   + ps0.ax) * dt / 2
+                     + ps0.jx) * dt / 3
+                    + ps0.ax) * dt / 2
                    + ps0.vx) * dt
         ps1.ry += (((ps0.sy * dt / 4
-                   + ps0.jy) * dt / 3
-                   + ps0.ay) * dt / 2
+                     + ps0.jy) * dt / 3
+                    + ps0.ay) * dt / 2
                    + ps0.vy) * dt
         ps1.rz += (((ps0.sz * dt / 4
-                   + ps0.jz) * dt / 3
-                   + ps0.az) * dt / 2
+                     + ps0.jz) * dt / 3
+                    + ps0.az) * dt / 2
                    + ps0.vz) * dt
 
         ps1.vx += ((ps0.sx * dt / 3
-                   + ps0.jx) * dt / 2
+                    + ps0.jx) * dt / 2
                    + ps0.ax) * dt
         ps1.vy += ((ps0.sy * dt / 3
-                   + ps0.jy) * dt / 2
+                    + ps0.jy) * dt / 2
                    + ps0.ay) * dt
         ps1.vz += ((ps0.sz * dt / 3
-                   + ps0.jz) * dt / 2
+                    + ps0.jz) * dt / 2
                    + ps0.az) * dt
 
         return ps1, ps0
@@ -170,29 +170,29 @@ class H6(H4):
         ps1.set_snap_crackle(ps1)
 
         ps1.vx[...] = ((((ps0.sx + ps1.sx) * dt / 12
-                       + (ps0.jx - ps1.jx)) * dt / 5
-                       + (ps0.ax + ps1.ax)) * dt / 2
+                         + (ps0.jx - ps1.jx)) * dt / 5
+                        + (ps0.ax + ps1.ax)) * dt / 2
                        + ps0.vx)
         ps1.vy[...] = ((((ps0.sy + ps1.sy) * dt / 12
-                       + (ps0.jy - ps1.jy)) * dt / 5
-                       + (ps0.ay + ps1.ay)) * dt / 2
+                         + (ps0.jy - ps1.jy)) * dt / 5
+                        + (ps0.ay + ps1.ay)) * dt / 2
                        + ps0.vy)
         ps1.vz[...] = ((((ps0.sz + ps1.sz) * dt / 12
-                       + (ps0.jz - ps1.jz)) * dt / 5
-                       + (ps0.az + ps1.az)) * dt / 2
+                         + (ps0.jz - ps1.jz)) * dt / 5
+                        + (ps0.az + ps1.az)) * dt / 2
                        + ps0.vz)
 
         ps1.rx[...] = ((((ps0.jx + ps1.jx) * dt / 12
-                       + (ps0.ax - ps1.ax)) * dt / 5
-                       + (ps0.vx + ps1.vx)) * dt / 2
+                         + (ps0.ax - ps1.ax)) * dt / 5
+                        + (ps0.vx + ps1.vx)) * dt / 2
                        + ps0.rx)
         ps1.ry[...] = ((((ps0.jy + ps1.jy) * dt / 12
-                       + (ps0.ay - ps1.ay)) * dt / 5
-                       + (ps0.vy + ps1.vy)) * dt / 2
+                         + (ps0.ay - ps1.ay)) * dt / 5
+                        + (ps0.vy + ps1.vy)) * dt / 2
                        + ps0.ry)
         ps1.rz[...] = ((((ps0.jz + ps1.jz) * dt / 12
-                       + (ps0.az - ps1.az)) * dt / 5
-                       + (ps0.vz + ps1.vz)) * dt / 2
+                         + (ps0.az - ps1.az)) * dt / 5
+                        + (ps0.vz + ps1.vz)) * dt / 2
                        + ps0.rz)
 
         return ps1
@@ -214,32 +214,32 @@ class H8(H6):
         ps1 = ps
 
         ps1.rx += ((((ps0.cx * dt / 5
-                   + ps0.sx) * dt / 4
-                   + ps0.jx) * dt / 3
-                   + ps0.ax) * dt / 2
+                      + ps0.sx) * dt / 4
+                     + ps0.jx) * dt / 3
+                    + ps0.ax) * dt / 2
                    + ps0.vx) * dt
         ps1.ry += ((((ps0.cy * dt / 5
-                   + ps0.sy) * dt / 4
-                   + ps0.jy) * dt / 3
-                   + ps0.ay) * dt / 2
+                      + ps0.sy) * dt / 4
+                     + ps0.jy) * dt / 3
+                    + ps0.ay) * dt / 2
                    + ps0.vy) * dt
         ps1.rz += ((((ps0.cz * dt / 5
-                   + ps0.sz) * dt / 4
-                   + ps0.jz) * dt / 3
-                   + ps0.az) * dt / 2
+                      + ps0.sz) * dt / 4
+                     + ps0.jz) * dt / 3
+                    + ps0.az) * dt / 2
                    + ps0.vz) * dt
 
         ps1.vx += (((ps0.cx * dt / 4
-                   + ps0.sx) * dt / 3
-                   + ps0.jx) * dt / 2
+                     + ps0.sx) * dt / 3
+                    + ps0.jx) * dt / 2
                    + ps0.ax) * dt
         ps1.vy += (((ps0.cy * dt / 4
-                   + ps0.sy) * dt / 3
-                   + ps0.jy) * dt / 2
+                     + ps0.sy) * dt / 3
+                    + ps0.jy) * dt / 2
                    + ps0.ay) * dt
         ps1.vz += (((ps0.cz * dt / 4
-                   + ps0.sz) * dt / 3
-                   + ps0.jz) * dt / 2
+                     + ps0.sz) * dt / 3
+                    + ps0.jz) * dt / 2
                    + ps0.az) * dt
 
         return ps1, ps0
@@ -253,35 +253,35 @@ class H8(H6):
         ps1.set_snap_crackle(ps1)
 
         ps1.vx[...] = (((((ps0.cx - ps1.cx) * dt / 20
-                       + (ps0.sx + ps1.sx)) * dt / 3
-                       + 3 * (ps0.jx - ps1.jx)) * dt / 14
-                       + (ps0.ax + ps1.ax)) * dt / 2
+                          + (ps0.sx + ps1.sx)) * dt / 3
+                         + 3 * (ps0.jx - ps1.jx)) * dt / 14
+                        + (ps0.ax + ps1.ax)) * dt / 2
                        + ps0.vx)
         ps1.vy[...] = (((((ps0.cy - ps1.cy) * dt / 20
-                       + (ps0.sy + ps1.sy)) * dt / 3
-                       + 3 * (ps0.jy - ps1.jy)) * dt / 14
-                       + (ps0.ay + ps1.ay)) * dt / 2
+                          + (ps0.sy + ps1.sy)) * dt / 3
+                         + 3 * (ps0.jy - ps1.jy)) * dt / 14
+                        + (ps0.ay + ps1.ay)) * dt / 2
                        + ps0.vy)
         ps1.vz[...] = (((((ps0.cz - ps1.cz) * dt / 20
-                       + (ps0.sz + ps1.sz)) * dt / 3
-                       + 3 * (ps0.jz - ps1.jz)) * dt / 14
-                       + (ps0.az + ps1.az)) * dt / 2
+                          + (ps0.sz + ps1.sz)) * dt / 3
+                         + 3 * (ps0.jz - ps1.jz)) * dt / 14
+                        + (ps0.az + ps1.az)) * dt / 2
                        + ps0.vz)
 
         ps1.rx[...] = (((((ps0.sx - ps1.sx) * dt / 20
-                       + (ps0.jx + ps1.jx)) * dt / 3
-                       + 3 * (ps0.ax - ps1.ax)) * dt / 14
-                       + (ps0.vx + ps1.vx)) * dt / 2
+                          + (ps0.jx + ps1.jx)) * dt / 3
+                         + 3 * (ps0.ax - ps1.ax)) * dt / 14
+                        + (ps0.vx + ps1.vx)) * dt / 2
                        + ps0.rx)
         ps1.ry[...] = (((((ps0.sy - ps1.sy) * dt / 20
-                       + (ps0.jy + ps1.jy)) * dt / 3
-                       + 3 * (ps0.ay - ps1.ay)) * dt / 14
-                       + (ps0.vy + ps1.vy)) * dt / 2
+                          + (ps0.jy + ps1.jy)) * dt / 3
+                         + 3 * (ps0.ay - ps1.ay)) * dt / 14
+                        + (ps0.vy + ps1.vy)) * dt / 2
                        + ps0.ry)
         ps1.rz[...] = (((((ps0.sz - ps1.sz) * dt / 20
-                       + (ps0.jz + ps1.jz)) * dt / 3
-                       + 3 * (ps0.az - ps1.az)) * dt / 14
-                       + (ps0.vz + ps1.vz)) * dt / 2
+                          + (ps0.jz + ps1.jz)) * dt / 3
+                         + 3 * (ps0.az - ps1.az)) * dt / 14
+                        + (ps0.vz + ps1.vz)) * dt / 2
                        + ps0.rz)
 
         return ps1
@@ -295,8 +295,7 @@ class Hermite(Base):
     PROVIDED_METHODS = ['hermite2', 'ahermite2',
                         'hermite4', 'ahermite4',
                         'hermite6', 'ahermite6',
-                        'hermite8', 'ahermite8',
-                        ]
+                        'hermite8', 'ahermite8', ]
 
     def __init__(self, eta, time, ps, method, **kwargs):
         """

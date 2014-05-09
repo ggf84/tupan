@@ -105,8 +105,7 @@ class NREG(Base):
     """
 
     """
-    PROVIDED_METHODS = ['nreg', 'anreg'
-                        ]
+    PROVIDED_METHODS = ['nreg', 'anreg', ]
 
     def __init__(self, eta, time, ps, method, **kwargs):
         """

@@ -38,8 +38,7 @@ def make_lib(fpwidth):
               "pnacc_kernel.c",
               "nreg_kernels.c",
               "sakura_kernel.c",
-              "kepler_solver_kernel.c",
-              )
+              "kepler_solver_kernel.c", )
 
     src = []
     with open(os.path.join(PATH, "libtupan.h"), "r") as fobj:
@@ -105,13 +104,14 @@ class CKernel(object):
         types = namedtuple("Types", ["c_int", "c_int_p",
                                      "c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])
-        self.cty = types(c_int=lambda x: x,
-                         c_int_p=lambda x: icast(addressof(from_buffer(x))),
-                         c_uint=lambda x: x,
-                         c_uint_p=lambda x: uicast(addressof(from_buffer(x))),
-                         c_real=lambda x: x,
-                         c_real_p=lambda x: rcast(addressof(from_buffer(x))),
-                         )
+        self.cty = types(
+            c_int=lambda x: x,
+            c_int_p=lambda x: icast(addressof(from_buffer(x))),
+            c_uint=lambda x: x,
+            c_uint_p=lambda x: uicast(addressof(from_buffer(x))),
+            c_real=lambda x: x,
+            c_real_p=lambda x: rcast(addressof(from_buffer(x))),
+            )
 
     def set_gsize(self, ni, nj):
         pass

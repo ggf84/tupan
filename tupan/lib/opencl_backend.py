@@ -52,8 +52,7 @@ def make_lib(fpwidth):
               "tstep_kernel.cl",
               "pnacc_kernel.cl",
               "nreg_kernels.cl",
-              "sakura_kernel.cl",
-              )
+              "sakura_kernel.cl", )
 
     sources = []
     for fname in fnames:
@@ -111,13 +110,14 @@ class CLKernel(object):
         types = namedtuple("Types", ["c_int", "c_int_p",
                                      "c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])
-        self.cty = types(c_int=vars(Ctype)["int"].type,
-                         c_int_p=lambda x: cl_buffer(hostbuf=x),
-                         c_uint=vars(Ctype)["uint"].type,
-                         c_uint_p=lambda x: cl_buffer(hostbuf=x),
-                         c_real=vars(Ctype)["real"].type,
-                         c_real_p=lambda x: cl_buffer(hostbuf=x),
-                         )
+        self.cty = types(
+            c_int=vars(Ctype)["int"].type,
+            c_int_p=lambda x: cl_buffer(hostbuf=x),
+            c_uint=vars(Ctype)["uint"].type,
+            c_uint_p=lambda x: cl_buffer(hostbuf=x),
+            c_real=vars(Ctype)["real"].type,
+            c_real_p=lambda x: cl_buffer(hostbuf=x),
+            )
 
     def set_gsize(self, ni, nj):
         vw = self.vector_width
@@ -174,11 +174,12 @@ class CLKernel(object):
         return arrays
 
     def run(self):
-        cl.enqueue_nd_range_kernel(self.queue,
-                                   self.kernel,
-                                   self.global_size,
-                                   self.local_size,
-                                   ).wait()
+        cl.enqueue_nd_range_kernel(
+            self.queue,
+            self.kernel,
+            self.global_size,
+            self.local_size,
+            ).wait()
 
 
 # -- End of File --

@@ -22,8 +22,7 @@ __all__ = ["Phi", "phi",
            "Sakura", "sakura",
            "NregX", "nreg_x",
            "NregV", "nreg_v",
-           "Kepler", "kepler",
-           ]
+           "Kepler", "kepler", ]
 
 LOGGER = logging.getLogger(__name__)
 

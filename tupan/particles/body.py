@@ -118,7 +118,7 @@ class NbodyMethods(object):
         setattr(type(self), attr,
                 typed_property(attr,
                                lambda x: np.zeros(x.n, dtype=dtype),
-                               can_del=True))
+                               doc=doc, can_del=True))
 
     @property       # TODO: @classproperty ???
     def dtype(self):
@@ -719,7 +719,7 @@ class Bodies(AbstractNbodyMethods):
             attrs = self.attrs[:]
             if hasattr(self, 'pn_attrs'):
                 attrs += self.pn_attrs
-            for (attr, sctype, doc) in attrs:
+            for (attr, _, _) in attrs:
                 getattr(self, attr)
         else:
             self.__dict__.update(items)

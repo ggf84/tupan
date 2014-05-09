@@ -56,8 +56,7 @@ class Sakura(Base):
     """
 
     """
-    PROVIDED_METHODS = ['sakura', 'asakura',
-                        ]
+    PROVIDED_METHODS = ['sakura', 'asakura', ]
 
     def __init__(self, eta, time, ps, method, **kwargs):
         """

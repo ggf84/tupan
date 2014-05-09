@@ -167,8 +167,8 @@ class IO(object):
                                 f = interpolate.UnivariateSpline(
                                     time, attr[..., k], s=0, k=2)
                                 for t in times:
-                                    getattr(getattr(snaps[
-                                            t], key), name)[i, k] = f(t)
+                                    getattr(getattr(snaps[t], key),
+                                            name)[i, k] = f(t)
                         else:
                             f = interpolate.UnivariateSpline(
                                 time, attr[...], s=0, k=2)

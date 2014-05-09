@@ -35,14 +35,15 @@ class HDF5IO(object):
         olen = len(group[key]) if key in group else 0
         dtype = group[key].dtype if key in group else obj.dtype
         nlen = olen + len(obj)
-        dset = group.require_dataset(key,
-                                     (olen,),
-                                     dtype=dtype,
-                                     maxshape=(None,),
-                                     chunks=True,
-                                     compression="gzip",
-                                     shuffle=True,
-                                     )
+        dset = group.require_dataset(
+            key,
+            (olen,),
+            dtype=dtype,
+            maxshape=(None,),
+            chunks=True,
+            compression="gzip",
+            shuffle=True,
+            )
         cls = pickle.dumps(type(obj), protocol=PICKLE_PROTOCOL)
         dset.attrs["Class"] = cls.decode('utf-8') if IS_PY3K else cls
         dset.resize((nlen,))

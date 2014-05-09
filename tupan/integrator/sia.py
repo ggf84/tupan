@@ -965,8 +965,7 @@ class SIA(Base):
                         'sia67s.dkd', 'sia67a.dkd', 'sia67h.dkd',
                         'sia67s.kdk', 'sia67a.kdk', 'sia67h.kdk',
                         'sia69s.dkd', 'sia69a.dkd', 'sia69h.dkd',
-                        'sia69s.kdk', 'sia69a.kdk', 'sia69h.kdk',
-                        ]
+                        'sia69s.kdk', 'sia69a.kdk', 'sia69h.kdk', ]
 
     def __init__(self, eta, time, ps, method, **kwargs):
         """
