@@ -6,6 +6,11 @@ env:
  - "3.3"
  - "3.4"
 
+
+before_install:
+ - sudo apt-get update -qq
+ - sudo apt-get install -qq fglrx opencl-headers
+ 
 install:
  # install conda
  - sudo pip install conda
@@ -31,23 +36,4 @@ branches:
 
 notifications:
   email: false
-
-#before_install:
-# - sudo apt-get update -qq
-# - sudo apt-get install -qq python-cffi
-# - sudo apt-get install -qq python-numpy
-# - sudo apt-get install -qq python-scipy
-# - sudo apt-get install -qq python-h5py
-# - sudo apt-get install -qq python-pyopencl
-# - sudo apt-get install -qq python-matplotlib
-# - sudo apt-get install -qq python-opengl
-# - sudo apt-get install -qq python-yaml
-# - sudo apt-get install -qq python3-cffi
-# - sudo apt-get install -qq python3-numpy
-# - sudo apt-get install -qq python3-scipy
-# - sudo apt-get install -qq python3-h5py
-# - sudo apt-get install -qq python3-pyopencl
-# - sudo apt-get install -qq python3-matplotlib
-# - sudo apt-get install -qq python3-opengl
-# - sudo apt-get install -qq python3-yaml
 
