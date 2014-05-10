@@ -12,7 +12,8 @@ install:
  # install deps
  - sudo conda init
  - sudo conda update conda --yes
- - conda create -p $HOME/testenv --yes --file requirements.txt "python=$TRAVIS_PYTHON_VERSION"
+ - conda create -p $HOME/testenv --yes pip "python=$TRAVIS_PYTHON_VERSION"
+ - conda install --yes --file requirements.txt
  - export PATH=$HOME/py/testenv:$PATH
  # install tupan
  - pip install .
