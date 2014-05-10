@@ -14,9 +14,10 @@ install:
  - sudo conda update conda --yes
  - conda create -p $HOME/testenv --yes pip python=$TRAVIS_PYTHON_VERSION
  - export PATH=$HOME/py/testenv:$PATH
- # install deps (except for pyopencl) using conda
- - conda install --yes $(grep -v pyopencl requirements.txt)
- # install pyopencl using pip
+ # install deps (except for pyopencl|pyopengl) using conda
+ - conda install --yes $(grep -viE 'pyopencl|pyopengl' requirements.txt)
+ # install other deps using pip
+ - pip install pyopengl
  - pip install pyopencl
  # install tupan
  - pip install .
