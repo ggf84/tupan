@@ -2,7 +2,6 @@ language: python
 
 python:
  - "2.7"
- - "3.2"
  - "3.3"
  - "3.4"
 
@@ -10,19 +9,30 @@ python:
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq fglrx opencl-headers
- 
-install:
+
  # install conda
  - sudo pip install conda
- # install deps
  - sudo conda init
  - sudo conda update conda --yes
- - conda create -p $HOME/testenv --yes pip python=$TRAVIS_PYTHON_VERSION
- - conda install -p $HOME/testenv --yes $(grep -viE 'pyopencl|pyopengl' requirements.txt)
+ 
+install:
  - export PATH=$HOME/testenv/bin:$PATH
- # install other deps using pip
+
+ # install deps using conda
+ - conda create -p $HOME/testenv --yes pip python=$TRAVIS_PYTHON_VERSION
+ - source activate $HOME/testenv
+ - conda install -p $HOME/testenv --yes $(grep -viE 'pyopencl|pyopengl' requirements.txt)
+
+ # install deps using pip
  - pip install pyopengl
  - pip install pyopencl
+
+ # print useful info
+ - which python
+ - which pip
+ - conda list
+ - conda info -a
+
  # install tupan
  - pip install .
 
