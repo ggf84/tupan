@@ -20,7 +20,6 @@ install:
 
  # install deps using conda
  - conda create -p $HOME/testenv --yes pip python=$TRAVIS_PYTHON_VERSION
- - source activate $HOME/testenv
  - conda install -p $HOME/testenv --yes $(grep -viE 'pyopencl|pyopengl' requirements.txt)
 
  # install deps using pip
