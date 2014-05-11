@@ -13,7 +13,6 @@ before_install:
  # install conda
  - sudo pip install conda
  - sudo conda init
- - sudo conda update conda --yes
  - export TESTENV=$HOME/testenv$TRAVIS_PYTHON_VERSION
  - export PATH=$TESTENV/bin:$PATH
  
