@@ -5,8 +5,8 @@ python:
  - "3.3"
  - "3.4"
 
-
 before_install:
+ # install OpenCL
  - sudo apt-get update -qq
  - sudo apt-get install -qq fglrx opencl-headers
 
@@ -14,21 +14,23 @@ before_install:
  - sudo pip install conda
  - sudo conda init
  - sudo conda update conda --yes
+ - export TESTENV=$HOME/testenv$TRAVIS_PYTHON_VERSION
+ - export PATH=$TESTENV/bin:$PATH
  
 install:
- - export PATH=$HOME/testenv/bin:$PATH
+ # install requirements using conda (except for [pyopencl, pyopengl])
+ - conda create -p $TESTENV --yes pip python=$TRAVIS_PYTHON_VERSION
+ - conda install -p $TESTENV --yes $(grep -viE 'pyopencl|pyopengl' requirements.txt)
 
- # install deps using conda
- - conda create -p $HOME/testenv --yes pip python=$TRAVIS_PYTHON_VERSION
- - conda install -p $HOME/testenv --yes $(grep -viE 'pyopencl|pyopengl' requirements.txt)
-
- # install deps using pip
+ # install [pyopencl, pyopengl] using pip
  - pip install pyopengl
  - pip install pyopencl
 
  # print useful info
+ - pwd
  - which python
  - which pip
+ - which conda
  - conda list
  - conda info -a
 
