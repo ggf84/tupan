@@ -1,8 +1,5 @@
-integrator Package
-==================
-
-:mod:`integrator` Package
--------------------------
+tupan.integrator package
+========================
 
 .. automodule:: tupan.integrator
     :members:
@@ -10,17 +7,21 @@ integrator Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`sakura` Module
---------------------
 
-.. automodule:: tupan.integrator.sakura
+Submodules
+----------
+
+tupan.integrator.fewbody module
+-------------------------------
+
+.. automodule:: tupan.integrator.fewbody
     :members:
     :undoc-members:
     :inherited-members:
     :show-inheritance:
 
-:mod:`hermite` Module
----------------------
+tupan.integrator.hermite module
+-------------------------------
 
 .. automodule:: tupan.integrator.hermite
     :members:
@@ -28,8 +29,8 @@ integrator Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`nreg` Module
-------------------
+tupan.integrator.nreg module
+----------------------------
 
 .. automodule:: tupan.integrator.nreg
     :members:
@@ -37,8 +38,17 @@ integrator Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`sia` Module
------------------
+tupan.integrator.sakura module
+------------------------------
+
+.. automodule:: tupan.integrator.sakura
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:
+
+tupan.integrator.sia module
+---------------------------
 
 .. automodule:: tupan.integrator.sia
     :members:

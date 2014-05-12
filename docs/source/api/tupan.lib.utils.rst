@@ -1,8 +1,5 @@
-utils Package
-=============
-
-:mod:`utils` Package
---------------------
+tupan.lib.utils package
+=======================
 
 .. automodule:: tupan.lib.utils
     :members:
@@ -10,8 +7,12 @@ utils Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`ctype` Module
--------------------
+
+Submodules
+----------
+
+tupan.lib.utils.ctype module
+----------------------------
 
 .. automodule:: tupan.lib.utils.ctype
     :members:
@@ -19,8 +20,8 @@ utils Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`memoize` Module
----------------------
+tupan.lib.utils.memoize module
+------------------------------
 
 .. automodule:: tupan.lib.utils.memoize
     :members:
@@ -28,8 +29,8 @@ utils Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`timing` Module
---------------------
+tupan.lib.utils.timing module
+-----------------------------
 
 .. automodule:: tupan.lib.utils.timing
     :members:

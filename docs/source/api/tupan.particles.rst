@@ -1,8 +1,5 @@
-particles Package
-=================
-
-:mod:`particles` Package
-------------------------
+tupan.particles package
+=======================
 
 .. automodule:: tupan.particles
     :members:
@@ -10,8 +7,12 @@ particles Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`allparticles` Module
---------------------------
+
+Submodules
+----------
+
+tupan.particles.allparticles module
+-----------------------------------
 
 .. automodule:: tupan.particles.allparticles
     :members:
@@ -19,8 +20,8 @@ particles Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`blackhole` Module
------------------------
+tupan.particles.blackhole module
+--------------------------------
 
 .. automodule:: tupan.particles.blackhole
     :members:
@@ -28,8 +29,8 @@ particles Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`body` Module
-------------------
+tupan.particles.body module
+---------------------------
 
 .. automodule:: tupan.particles.body
     :members:
@@ -37,8 +38,8 @@ particles Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`sph` Module
------------------
+tupan.particles.sph module
+--------------------------
 
 .. automodule:: tupan.particles.sph
     :members:
@@ -46,8 +47,8 @@ particles Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`star` Module
-------------------
+tupan.particles.star module
+---------------------------
 
 .. automodule:: tupan.particles.star
     :members:

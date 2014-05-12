@@ -1,8 +1,5 @@
-ics Package
-===========
-
-:mod:`ics` Package
-------------------
+tupan.ics package
+=================
 
 .. automodule:: tupan.ics
     :members:
@@ -10,8 +7,12 @@ ics Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`fewbody` Module
----------------------
+
+Submodules
+----------
+
+tupan.ics.fewbody module
+------------------------
 
 .. automodule:: tupan.ics.fewbody
     :members:
@@ -19,8 +20,8 @@ ics Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`hierarchy` Module
------------------------
+tupan.ics.hierarchy module
+--------------------------
 
 .. automodule:: tupan.ics.hierarchy
     :members:
@@ -28,8 +29,8 @@ ics Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`imf` Module
------------------
+tupan.ics.imf module
+--------------------
 
 .. automodule:: tupan.ics.imf
     :members:
@@ -37,8 +38,8 @@ ics Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`plummer` Module
----------------------
+tupan.ics.plummer module
+------------------------
 
 .. automodule:: tupan.ics.plummer
     :members:

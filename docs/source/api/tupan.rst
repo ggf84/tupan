@@ -1,17 +1,27 @@
 tupan Package
 =============
 
-:mod:`tupan` Package
---------------------
-
-.. automodule:: tupan.__init__
+.. automodule:: tupan
     :members:
     :undoc-members:
     :inherited-members:
     :show-inheritance:
 
-:mod:`simulation` Module
-------------------------
+
+Submodules
+----------
+
+tupan.config module
+-------------------
+
+.. automodule:: tupan.config
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:
+
+tupan.simulation module
+-----------------------
 
 .. automodule:: tupan.simulation
     :members:
@@ -19,14 +29,15 @@ tupan Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`version` Module
----------------------
+tupan.version module
+--------------------
 
 .. automodule:: tupan.version
     :members:
     :undoc-members:
     :inherited-members:
     :show-inheritance:
+
 
 Subpackages
 -----------

@@ -1,8 +1,5 @@
-analysis Package
-================
-
-:mod:`analysis` Package
------------------------
+tupan.analysis package
+======================
 
 .. automodule:: tupan.analysis
     :members:
@@ -10,8 +7,12 @@ analysis Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`glviewer` Module
-----------------------
+
+Submodules
+----------
+
+tupan.analysis.glviewer module
+------------------------------
 
 .. automodule:: tupan.analysis.glviewer
     :members:

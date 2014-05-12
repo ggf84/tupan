@@ -1,8 +1,5 @@
-io Package
-==========
-
-:mod:`io` Package
------------------
+tupan.io package
+================
 
 .. automodule:: tupan.io
     :members:
@@ -10,8 +7,12 @@ io Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`hdf5io` Module
---------------------
+
+Submodules
+----------
+
+tupan.io.hdf5io module
+----------------------
 
 .. automodule:: tupan.io.hdf5io
     :members:
@@ -19,8 +20,8 @@ io Package
     :inherited-members:
     :show-inheritance:
 
-:mod:`psdfio` Module
---------------------
+tupan.io.psdfio module
+----------------------
 
 .. automodule:: tupan.io.psdfio
     :members:

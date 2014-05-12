@@ -1,32 +1,33 @@
-tests Package
-=============
-
-:mod:`tests` Package
---------------------
+tupan.tests package
+===================
 
 .. automodule:: tupan.tests
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`test_body_to_blackhole` Module
-------------------------------------
+
+Submodules
+----------
+
+tupan.tests.test_body_to_blackhole module
+-----------------------------------------
 
 .. automodule:: tupan.tests.test_body_to_blackhole
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`test_extensions` Module
------------------------------
+tupan.tests.test_extensions module
+----------------------------------
 
 .. automodule:: tupan.tests.test_extensions
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`test_plummer` Module
---------------------------
+tupan.tests.test_plummer module
+-------------------------------
 
 .. automodule:: tupan.tests.test_plummer
     :members:
