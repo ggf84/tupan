@@ -6,8 +6,8 @@ python:
  - "3.4"
 
 env:
- - TOX_ENV=test
- - TOX_ENV=docs
+ - TESTCASE=test
+ - TESTCASE=docs
 
 before_install:
  # install OpenCL
@@ -29,20 +29,26 @@ install:
  - pip install pyopengl
  - pip install pyopencl
 
- # install tox
- - pip install tox
-
  # print useful info
  - pwd
  - which python
  - which pip
- - which tox
  - which conda
  - conda list
  - conda info -a
 
+ # install tupan
+ - pip install .
+
 script:
- - tox -e $TOX_ENV
+ - if [[ "$TESTCASE" == "test" ]]; then
+     python -m unittest discover;
+   fi
+ - if [[ "$TESTCASE" == "docs" ]]; then
+     pip install -rdocs/requirements.txt;
+     cd docs;
+     make html;
+   fi
 
 branches:
   only:
