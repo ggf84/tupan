@@ -5,10 +5,6 @@ python:
  - "3.3"
  - "3.4"
 
-env:
- - TESTCASE=test
- - TESTCASE=docs
-
 before_install:
  # install OpenCL
  - sudo apt-get update -qq
@@ -41,14 +37,7 @@ install:
  - pip install .
 
 script:
- - if [[ "$TESTCASE" == "test" ]]; then
-     python -m unittest discover;
-   fi
- - if [[ "$TESTCASE" == "docs" ]]; then
-     pip install -rdocs/requirements.txt;
-     cd docs;
-     make html;
-   fi
+ - python -m unittest discover
 
 branches:
   only:
