@@ -29,16 +29,17 @@ install:
  - pip install pyopengl
  - pip install pyopencl
 
+ # install tox
+ - pip install tox
+
  # print useful info
  - pwd
  - which python
  - which pip
+ - which tox
  - which conda
  - conda list
  - conda info -a
-
- # install tupan
- - pip install .
 
 script:
  - tox -e $TOX_ENV
