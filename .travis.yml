@@ -13,8 +13,7 @@ before_install:
  # install conda
  - pip install conda
  - conda init
- - export TESTENV=$HOME/testenv$TRAVIS_PYTHON_VERSION
- - export PATH=$TESTENV/bin:$PATH
+ - export TESTENV=testenv$TRAVIS_PYTHON_VERSION
 
  # print useful info 
  - pwd
@@ -26,8 +25,9 @@ before_install:
  
 install:
  # install requirements using conda (except for [pyopencl, pyopengl])
- - conda create -p $TESTENV --yes pip python=$TRAVIS_PYTHON_VERSION
- - conda install -p $TESTENV --yes $(grep -viE 'pyopencl|pyopengl' requirements.txt)
+ - conda create -n $TESTENV --yes pip python=$TRAVIS_PYTHON_VERSION
+ - source activate $TESTENV
+ - conda install --yes $(grep -viE 'pyopencl|pyopengl' requirements.txt)
 
  # install [pyopencl, pyopengl] using pip
  - pip install pyopengl
