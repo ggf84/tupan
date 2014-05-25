@@ -11,11 +11,10 @@ before_install:
  - sudo apt-get install -qq fglrx opencl-headers
 
  # install conda
- - sudo pip install conda
- - sudo conda init
+ - pip install conda
+ - conda init
  - export TESTENV=$HOME/testenv$TRAVIS_PYTHON_VERSION
  - export PATH=$TESTENV/bin:$PATH
- - conda remove -p $TESTENV --all --yes
 
  # print useful info 
  - pwd
