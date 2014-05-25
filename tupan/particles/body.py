@@ -752,7 +752,8 @@ class Bodies(AbstractNbodyMethods):
     def set_state(self, array):
         for name in array.dtype.names:
             if hasattr(self, name):
-                setattr(self, name, array[name])
+                typecast = getattr(self, name).dtype.type
+                setattr(self, name, typecast(array[name]))
 
 
 # -- End of File --

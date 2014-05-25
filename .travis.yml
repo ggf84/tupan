@@ -27,7 +27,7 @@ install:
  - pip install pyopengl
  - pip install pyopencl
 
- # print useful info 
+ # print useful info
  - pwd
  - which pip
  - which conda
