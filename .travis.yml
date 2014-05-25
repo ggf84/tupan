@@ -14,7 +14,7 @@ before_install:
  - pip install conda
  - conda init
  - export TESTENV=testenv$TRAVIS_PYTHON_VERSION
- - export PATH=$(dirname $(dirname $(which conda)))/envs/$TESTENV:$PATH
+ - export PATH=$(dirname $(dirname $(which conda)))/envs/$TESTENV/bin:$PATH
 
  # print useful info 
  - pwd
