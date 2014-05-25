@@ -11,19 +11,12 @@ before_install:
  - sudo apt-get install -qq fglrx opencl-headers
 
  # install conda
- - pip install conda
- - conda init
+ - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+ - bash miniconda.sh -b -p $HOME/miniconda
+ - export PATH="$HOME/miniconda/bin:$PATH"
+ - conda update conda --yes
  - export TESTENV=testenv$TRAVIS_PYTHON_VERSION
- - export PATH=$(dirname $(dirname $(which conda)))/envs/$TESTENV/bin:$PATH
 
- # print useful info 
- - pwd
- - which pip
- - which conda
- - which python
- - conda list
- - conda info -a
- 
 install:
  # install requirements using conda (except for [pyopencl, pyopengl])
  - conda create -n $TESTENV --yes pip python=$TRAVIS_PYTHON_VERSION
@@ -34,6 +27,14 @@ install:
  - pip install pyopengl
  - pip install pyopencl
 
+ # print useful info 
+ - pwd
+ - which pip
+ - which conda
+ - which python
+ - conda list
+ - conda info -a
+ 
  # install tupan
  - pip install .
 
