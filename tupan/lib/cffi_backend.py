@@ -13,6 +13,10 @@ import logging
 from functools import partial
 from collections import namedtuple
 from .utils.timing import timings, bind_all
+try:
+    from itertools import izip as zip
+except ImportError:
+    pass
 
 
 LOGGER = logging.getLogger(__name__)
@@ -87,8 +91,8 @@ class CKernel(object):
 
     def __init__(self, fpwidth, name):
         self.kernel = getattr(LIB[fpwidth], name)
+        self.argtypes = None
         self._args = None
-        self._argtypes = None
 
         ffi = FFI[fpwidth]
 
@@ -115,14 +119,6 @@ class CKernel(object):
 
     def set_gsize(self, ni, nj):
         pass
-
-    @property
-    def argtypes(self):
-        return self._argtypes
-
-    @argtypes.setter
-    def argtypes(self, types):
-        self._argtypes = types
 
     @property
     def args(self):

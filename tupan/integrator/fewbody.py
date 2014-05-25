@@ -6,7 +6,7 @@ TODO.
 """
 
 
-from ..lib import extensions
+from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -28,7 +28,7 @@ class FewBody(object):
         return ips
 
     @staticmethod
-    def kepler_solver(ips, dt):
+    def kepler_solver(ips, dt, kernel=ext.Kepler()):
         """
 
         """
@@ -37,7 +37,7 @@ class FewBody(object):
                                       "Kepler-solver does not include "
                                       "post-Newtonian corrections.")
         else:
-            extensions.kepler(ips, ips, dt=dt)
+            kernel(ips, ips, dt=dt)
         return ips
 
     @classmethod

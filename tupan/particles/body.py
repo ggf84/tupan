@@ -10,42 +10,46 @@ from __future__ import print_function
 import sys
 import copy
 import numpy as np
-from ..lib import extensions
+from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
 from ..lib.utils.ctype import Ctype
 
 
-__all__ = ["Bodies"]
+__all__ = ['Bodies']
 
 
-def typed_property(name, expected_type,
+def typed_property(name, sctype,
                    doc=None, can_get=True,
                    can_set=True, can_del=False):
     storage_name = '_' + name
+    dtype = vars(Ctype)[sctype]
+
+    def get_value(self):
+        try:
+            arrays = [getattr(member, storage_name)
+                      for member in self.members.values()]
+            return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
+        except AttributeError:
+            return np.zeros(self.n, dtype=dtype)
 
     def fget(self):
         value = getattr(self, storage_name, None)
         if value is None:
-            def get_value(self):
-                if hasattr(self, 'members'):
-                    arrays = [getattr(member, name)
-                              for member in self.members.values()]
-                    return np.concatenate(arrays)
-                return expected_type(self)
             value = get_value(self)
             setattr(self, name, value)
-            return value
         return value
 
     def fset(self, value):
-        if hasattr(self, 'members'):
-            if not hasattr(self, storage_name):
+        if not hasattr(self, storage_name):
+            try:
                 ns = 0
                 nf = 0
                 for member in self.members.values():
                     nf += member.n
-                    setattr(member, name, value[ns:nf])
+                    setattr(member, storage_name, value[ns:nf])
                     ns += member.n
+            except AttributeError:
+                pass
         setattr(self, storage_name, value)
 
     def fdel(self):
@@ -68,57 +72,42 @@ class NbodyMethods(object):
     """This class holds common methods for particles in n-body systems.
 
     """
-    id = typed_property('id',
-                        lambda self: np.arange(self.n, dtype=Ctype.uint))
-    mass = typed_property('mass',
-                          lambda self: np.zeros(self.n, dtype=Ctype.real))
-    eps2 = typed_property('eps2',
-                          lambda self: np.zeros(self.n, dtype=Ctype.real))
-    rx = typed_property('rx',
-                        lambda self: np.zeros(self.n, dtype=Ctype.real))
-    ry = typed_property('ry',
-                        lambda self: np.zeros(self.n, dtype=Ctype.real))
-    rz = typed_property('rz',
-                        lambda self: np.zeros(self.n, dtype=Ctype.real))
-    vx = typed_property('vx',
-                        lambda self: np.zeros(self.n, dtype=Ctype.real))
-    vy = typed_property('vy',
-                        lambda self: np.zeros(self.n, dtype=Ctype.real))
-    vz = typed_property('vz',
-                        lambda self: np.zeros(self.n, dtype=Ctype.real))
-    time = typed_property('time',
-                          lambda self: np.zeros(self.n, dtype=Ctype.real))
-    nstep = typed_property('nstep',
-                           lambda self: np.zeros(self.n, dtype=Ctype.uint))
-    tstep = typed_property('tstep',
-                           lambda self: np.zeros(self.n, dtype=Ctype.real))
+    id = typed_property('id', 'uint')
+    mass = typed_property('mass', 'real')
+    eps2 = typed_property('eps2', 'real')
+    rx = typed_property('rx', 'real')
+    ry = typed_property('ry', 'real')
+    rz = typed_property('rz', 'real')
+    vx = typed_property('vx', 'real')
+    vy = typed_property('vy', 'real')
+    vz = typed_property('vz', 'real')
+    time = typed_property('time', 'real')
+    nstep = typed_property('nstep', 'uint')
+    tstep = typed_property('tstep', 'real')
 
     include_pn_corrections = False
 
     attrs = [  # name, sctype, doc
-        ("id", 'uint', "index"),
-        ("mass", 'real', "mass"),
-        ("eps2", 'real', "squared softening"),
-        ("rx", 'real', "x-position"),
-        ("ry", 'real', "y-position"),
-        ("rz", 'real', "z-position"),
-        ("vx", 'real', "x-velocity"),
-        ("vy", 'real', "y-velocity"),
-        ("vz", 'real', "z-velocity"),
-        ("time", 'real', "current time"),
-        ("nstep", 'uint', "step number"),
-        ("tstep", 'real', "time step"),
+        ('id', 'uint', 'index'),
+        ('mass', 'real', 'mass'),
+        ('eps2', 'real', 'squared softening'),
+        ('rx', 'real', 'x-position'),
+        ('ry', 'real', 'y-position'),
+        ('rz', 'real', 'z-position'),
+        ('vx', 'real', 'x-velocity'),
+        ('vy', 'real', 'y-velocity'),
+        ('vz', 'real', 'z-velocity'),
+        ('time', 'real', 'current time'),
+        ('nstep', 'uint', 'step number'),
+        ('tstep', 'real', 'time step'),
     ]
 
     def copy(self):
         return copy.deepcopy(self)
 
     def register_attribute(self, attr, sctype, doc=''):
-        dtype = vars(Ctype)[sctype]
         setattr(type(self), attr,
-                typed_property(attr,
-                               lambda x: np.zeros(x.n, dtype=dtype),
-                               doc=doc, can_del=True))
+                typed_property(attr, sctype, doc=doc, can_del=True))
 
     @property       # TODO: @classproperty ???
     def dtype(self):
@@ -354,44 +343,44 @@ class NbodyMethods(object):
         return 2 * self.kinetic_energy + self.potential_energy
 
     # -- gravity
-    def set_tstep(self, ps, eta):
+    def set_tstep(self, ps, eta, kernel=ext.Tstep()):
         """Set individual time-steps due to other particles.
 
         """
-        extensions.tstep(self, ps, eta=eta)
+        kernel(self, ps, eta=eta)
 
-    def set_phi(self, ps):
+    def set_phi(self, ps, kernel=ext.Phi()):
         """Set individual gravitational potential due to other particles.
 
         """
-        extensions.phi(self, ps)
+        kernel(self, ps)
 
-    def set_acc(self, ps):
+    def set_acc(self, ps, kernel=ext.Acc()):
         """Set individual gravitational acceleration due to other particles.
 
         """
-        extensions.acc(self, ps)
+        kernel(self, ps)
 
-    def set_pnacc(self, ps):
+    def set_pnacc(self, ps, kernel=ext.PNAcc()):
         """Set individual post-Newtonian gravitational acceleration due to
         other particles.
 
         """
-        extensions.pnacc(self, ps)
+        kernel(self, ps)
 
-    def set_acc_jerk(self, ps):
+    def set_acc_jerk(self, ps, kernel=ext.AccJerk()):
         """Set individual gravitational acceleration and jerk due to other
         particles.
 
         """
-        extensions.acc_jerk(self, ps)
+        kernel(self, ps)
 
-    def set_snap_crackle(self, ps):
+    def set_snap_crackle(self, ps, kernel=ext.SnapCrackle()):
         """Set individual gravitational snap and crackle due to other
         particles.
 
         """
-        extensions.snap_crackle(self, ps)
+        kernel(self, ps)
 
     # -- miscellaneous methods
     def min_tstep(self):
@@ -503,38 +492,28 @@ class PNbodyMethods(NbodyMethods):
     # -- PN stuff
     # -- TODO: move these methods to a more appropriate place...
 
-    pn_ke = typed_property('pn_ke',
-                           lambda self: np.zeros(self.n, dtype=Ctype.real))
-    pn_mrx = typed_property('pn_mrx',
-                            lambda self: np.zeros(self.n, dtype=Ctype.real))
-    pn_mry = typed_property('pn_mry',
-                            lambda self: np.zeros(self.n, dtype=Ctype.real))
-    pn_mrz = typed_property('pn_mrz',
-                            lambda self: np.zeros(self.n, dtype=Ctype.real))
-    pn_mvx = typed_property('pn_mvx',
-                            lambda self: np.zeros(self.n, dtype=Ctype.real))
-    pn_mvy = typed_property('pn_mvy',
-                            lambda self: np.zeros(self.n, dtype=Ctype.real))
-    pn_mvz = typed_property('pn_mvz',
-                            lambda self: np.zeros(self.n, dtype=Ctype.real))
-    pn_amx = typed_property('pn_amx',
-                            lambda self: np.zeros(self.n, dtype=Ctype.real))
-    pn_amy = typed_property('pn_amy',
-                            lambda self: np.zeros(self.n, dtype=Ctype.real))
-    pn_amz = typed_property('pn_amz',
-                            lambda self: np.zeros(self.n, dtype=Ctype.real))
+    pn_ke = typed_property('pn_ke', 'real')
+    pn_mrx = typed_property('pn_mrx', 'real')
+    pn_mry = typed_property('pn_mry', 'real')
+    pn_mrz = typed_property('pn_mrz', 'real')
+    pn_mvx = typed_property('pn_mvx', 'real')
+    pn_mvy = typed_property('pn_mvy', 'real')
+    pn_mvz = typed_property('pn_mvz', 'real')
+    pn_amx = typed_property('pn_amx', 'real')
+    pn_amy = typed_property('pn_amy', 'real')
+    pn_amz = typed_property('pn_amz', 'real')
 
     pn_attrs = [  # name, sctype, doc
-        ("pn_ke", 'real', "post-newtonian correction for kinectic energy."),
-        ("pn_mrx", 'real', "post-newtonian correction for x-com_r"),
-        ("pn_mry", 'real', "post-newtonian correction for y-com_r"),
-        ("pn_mrz", 'real', "post-newtonian correction for z-com_r"),
-        ("pn_mvx", 'real', "post-newtonian correction for x-com_v"),
-        ("pn_mvy", 'real', "post-newtonian correction for y-com_v"),
-        ("pn_mvz", 'real', "post-newtonian correction for z-com_v"),
-        ("pn_amx", 'real', "post-newtonian correction for x-angular momentum"),
-        ("pn_amy", 'real', "post-newtonian correction for y-angular momentum"),
-        ("pn_amz", 'real', "post-newtonian correction for z-angular momentum"),
+        ('pn_ke', 'real', 'post-newtonian correction for kinectic energy.'),
+        ('pn_mrx', 'real', 'post-newtonian correction for x-com_r'),
+        ('pn_mry', 'real', 'post-newtonian correction for y-com_r'),
+        ('pn_mrz', 'real', 'post-newtonian correction for z-com_r'),
+        ('pn_mvx', 'real', 'post-newtonian correction for x-com_v'),
+        ('pn_mvy', 'real', 'post-newtonian correction for y-com_v'),
+        ('pn_mvz', 'real', 'post-newtonian correction for z-com_v'),
+        ('pn_amx', 'real', 'post-newtonian correction for x-angular momentum'),
+        ('pn_amy', 'real', 'post-newtonian correction for y-angular momentum'),
+        ('pn_amz', 'real', 'post-newtonian correction for z-angular momentum'),
     ]
 
     @property
@@ -645,7 +624,7 @@ class PNbodyMethods(NbodyMethods):
 
 
 AbstractNbodyMethods = NbodyMethods
-if "--pn_order" in sys.argv:
+if '--pn_order' in sys.argv:
     AbstractNbodyMethods = PNbodyMethods
 
 
@@ -714,13 +693,6 @@ class Bodies(AbstractNbodyMethods):
     def __init__(self, n=0, items=None):
         if items is None:
             self.n = n
-
-            # allocate attrs for the first time.
-            attrs = self.attrs[:]
-            if hasattr(self, 'pn_attrs'):
-                attrs += self.pn_attrs
-            for (attr, _, _) in attrs:
-                getattr(self, attr)
         else:
             self.__dict__.update(items)
             self.n = len(self.id)
@@ -734,12 +706,12 @@ class Bodies(AbstractNbodyMethods):
         return repr(dict(self.attributes))
 
     def __str__(self):
-        fmt = type(self).__name__+"(["
+        fmt = type(self).__name__+'(['
         if self.n:
             for (k, v) in self.attributes:
-                fmt += "\n\t{0}: {1},".format(k, v)
-            fmt += "\n"
-        fmt += "])"
+                fmt += '\n\t{0}: {1},'.format(k, v)
+            fmt += '\n'
+        fmt += '])'
         return fmt
 
     def __contains__(self, idx):
@@ -756,8 +728,9 @@ class Bodies(AbstractNbodyMethods):
             self.n = len(self.id)
 
     def __getitem__(self, slc):
-        idx = [slc] if isinstance(slc, int) else slc
-        items = {k: v[idx] for (k, v) in self.attributes}
+        items = {k: v[slc] for (k, v) in self.attributes}
+        if isinstance(slc, int):
+            items = {k: v[None] for (k, v) in items.items()}
         return type(self)(items=items)
 
     def __setitem__(self, slc, values):

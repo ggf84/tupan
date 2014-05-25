@@ -13,6 +13,10 @@ import pyopencl as cl
 from functools import partial
 from collections import namedtuple
 from .utils.timing import timings, bind_all
+try:
+    from itertools import izip as zip
+except ImportError:
+    pass
 
 
 LOGGER = logging.getLogger(__name__)
@@ -94,8 +98,8 @@ class CLKernel(object):
 
     def __init__(self, fpwidth, name):
         self.kernel = getattr(LIB[fpwidth], name)
+        self.argtypes = None
         self._args = None
-        self._argtypes = None
 
         self.max_lsize = LSIZE[fpwidth]
         self.vector_width = VW[fpwidth]
@@ -131,14 +135,6 @@ class CLKernel(object):
 
         self.global_size = (gsize, 1, 1)
         self.local_size = (lsize, 1, 1)
-
-    @property
-    def argtypes(self):
-        return self._argtypes
-
-    @argtypes.setter
-    def argtypes(self, types):
-        self._argtypes = types
 
     @property
     def args(self):

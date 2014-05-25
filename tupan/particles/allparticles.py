@@ -16,7 +16,7 @@ from .body import AbstractNbodyMethods
 from ..lib.utils.timing import timings, bind_all
 
 
-__all__ = ["ParticleSystem"]
+__all__ = ['ParticleSystem']
 
 
 @bind_all(timings)
@@ -28,7 +28,9 @@ class ParticleSystem(AbstractNbodyMethods):
         """
         Initializer.
         """
+        init_ids = False
         if members is None:
+            init_ids = True
             members = {cls.__name__.lower(): cls(n)
                        for (n, cls) in [(nbodies, Bodies),
                                         (nstars, Stars),
@@ -36,6 +38,9 @@ class ParticleSystem(AbstractNbodyMethods):
                                         (nsphs, Sphs)] if n}
         self.members = members
         self.n = len(self)
+        if init_ids:
+            if self.n:
+                self.id[...] = np.arange(self.n)
 
     def register_attribute(self, attr, sctype, doc=''):
         for member in self.members.values():
@@ -51,12 +56,12 @@ class ParticleSystem(AbstractNbodyMethods):
         return repr(self.__dict__)
 
     def __str__(self):
-        fmt = type(self).__name__+"(["
+        fmt = type(self).__name__+'(['
         if self.n:
             for member in self.members.values():
-                fmt += "\n\t{0},".format('\n\t'.join(str(member).split('\n')))
-            fmt += "\n"
-        fmt += "])"
+                fmt += '\n\t{0},'.format('\n\t'.join(str(member).split('\n')))
+            fmt += '\n'
+        fmt += '])'
         return fmt
 
     def __len__(self):
@@ -80,9 +85,9 @@ class ParticleSystem(AbstractNbodyMethods):
 
     def __getitem__(self, slc):
         if isinstance(slc, np.ndarray):
-            members = {}
             ns = 0
             nf = 0
+            members = {}
             for (key, obj) in self.members.items():
                 nf += obj.n
                 members[key] = obj[slc[ns:nf]]
@@ -90,22 +95,20 @@ class ParticleSystem(AbstractNbodyMethods):
             return type(self)(members=members)
 
         if isinstance(slc, int):
-            members = {}
             if abs(slc) > self.n-1:
                 raise IndexError(
-                    "index {0} out of bounds 0<=index<{1}".format(slc, self.n))
+                    'index {0} out of bounds 0<=index<{1}'.format(slc, self.n))
             if slc < 0:
                 slc = self.n + slc
-            n = 0
+            i = slc
+            members = {}
             for (key, obj) in self.members.items():
-                i = slc - n
                 if 0 <= i < obj.n:
                     members[key] = obj[i]
-                n += obj.n
+                i -= obj.n
             return type(self)(members=members)
 
         if isinstance(slc, slice):
-            members = {}
             start = slc.start
             stop = slc.stop
             if start is None:
@@ -116,13 +119,12 @@ class ParticleSystem(AbstractNbodyMethods):
                 start = self.n + start
             if stop < 0:
                 stop = self.n + stop
+            members = {}
             for (key, obj) in self.members.items():
-                if obj.n:
-                    if stop >= 0:
-                        if start < obj.n:
-                            members[key] = obj[start-obj.n:stop]
-                    start -= obj.n
-                    stop -= obj.n
+                if stop >= 0 and start < obj.n:
+                    members[key] = obj[start-obj.n:stop]
+                start -= obj.n
+                stop -= obj.n
             return type(self)(members=members)
 
     def __setitem__(self, slc, values):
@@ -138,15 +140,14 @@ class ParticleSystem(AbstractNbodyMethods):
         if isinstance(slc, int):
             if abs(slc) > self.n-1:
                 raise IndexError(
-                    "index {0} out of bounds 0<=index<{1}".format(slc, self.n))
+                    'index {0} out of bounds 0<=index<{1}'.format(slc, self.n))
             if slc < 0:
                 slc = self.n + slc
-            n = 0
+            i = slc
             for (key, obj) in self.members.items():
-                i = slc - n
                 if 0 <= i < obj.n:
                     obj[i] = values.members[key]
-                n += obj.n
+                i -= obj.n
             return
 
         if isinstance(slc, slice):
@@ -161,12 +162,10 @@ class ParticleSystem(AbstractNbodyMethods):
             if stop < 0:
                 stop = self.n + stop
             for (key, obj) in self.members.items():
-                if obj.n:
-                    if stop >= 0:
-                        if start < obj.n:
-                            obj[start-obj.n:stop] = values.members[key]
-                    start -= obj.n
-                    stop -= obj.n
+                if stop >= 0 and start < obj.n:
+                    obj[start-obj.n:stop] = values.members[key]
+                start -= obj.n
+                stop -= obj.n
             return
 
 

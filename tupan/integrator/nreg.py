@@ -9,7 +9,7 @@ TODO.
 from __future__ import print_function, division
 import logging
 from ..integrator import Base
-from ..lib import extensions
+from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -20,12 +20,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 @timings
-def nreg_x(ps, dt):
+def nreg_x(ps, dt, kernel=ext.NregX()):
     """
 
     """
     mtot = ps.total_mass
-    extensions.nreg_x(ps, ps, dt=dt)
+    kernel(ps, ps, dt=dt)
     ps.rx[...] = ps.mrx / mtot
     ps.ry[...] = ps.mry / mtot
     ps.rz[...] = ps.mrz / mtot
@@ -44,7 +44,7 @@ def nreg_x(ps, dt):
 
 
 @timings
-def nreg_v(ps, dt):
+def nreg_v(ps, dt, kernel=ext.NregV()):
     """
 
     """
@@ -52,7 +52,7 @@ def nreg_v(ps, dt):
 #                                         + ps.vy * ps.ay
 #                                         + ps.vz * ps.az)).sum()
     mtot = ps.total_mass
-    extensions.nreg_v(ps, ps, dt=dt)
+    kernel(ps, ps, dt=dt)
     ps.vx[...] = ps.mvx / mtot
     ps.vy[...] = ps.mvy / mtot
     ps.vz[...] = ps.mvz / mtot

@@ -13,18 +13,13 @@ from .utils.ctype import Ctype
 from .utils.timing import timings, bind_all
 
 
-__all__ = ["Phi", "phi",
-           "Acc", "acc",
-           "AccJerk", "acc_jerk",
-           "SnapCrackle", "snap_crackle",
-           "Tstep", "tstep",
-           "PNAcc", "pnacc",
-           "Sakura", "sakura",
-           "NregX", "nreg_x",
-           "NregV", "nreg_v",
-           "Kepler", "kepler", ]
+__all__ = ['Phi', 'Acc', 'AccJerk', 'SnapCrackle', 'Tstep',
+           'PNAcc', 'Sakura', 'NregX', 'NregV', 'Kepler', ]
 
 LOGGER = logging.getLogger(__name__)
+
+BACKEND = 'CL' if '--use_cl' in sys.argv else 'C'
+FPWIDTH = Ctype.fpwidth
 
 
 @bind_all(timings)
@@ -97,7 +92,7 @@ class Phi(AbstractExtension):
     """
 
     """
-    def __init__(self, backend, fpwidth):
+    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
         super(Phi, self).__init__("phi_kernel", backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
@@ -155,7 +150,7 @@ class Acc(AbstractExtension):
     """
 
     """
-    def __init__(self, backend, fpwidth):
+    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
         super(Acc, self).__init__("acc_kernel", backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
@@ -225,7 +220,7 @@ class AccJerk(AbstractExtension):
     """
 
     """
-    def __init__(self, backend, fpwidth):
+    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
         super(AccJerk, self).__init__("acc_jerk_kernel", backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
@@ -273,7 +268,7 @@ class SnapCrackle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend, fpwidth):
+    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
         super(SnapCrackle, self).__init__("snap_crackle_kernel",
                                           backend, fpwidth)
         cty = self.kernel.cty
@@ -328,7 +323,7 @@ class Tstep(AbstractExtension):
     """
 
     """
-    def __init__(self, backend, fpwidth):
+    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
         super(Tstep, self).__init__("tstep_kernel", backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
@@ -368,7 +363,7 @@ class PNAcc(AbstractExtension):
     """
 
     """
-    def __init__(self, backend, fpwidth):
+    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
         super(PNAcc, self).__init__("pnacc_kernel", backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
@@ -416,7 +411,7 @@ class Sakura(AbstractExtension):
     """
 
     """
-    def __init__(self, backend, fpwidth):
+    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
         super(Sakura, self).__init__("sakura_kernel", backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
@@ -467,7 +462,7 @@ class NregX(AbstractExtension):
     """
 
     """
-    def __init__(self, backend, fpwidth):
+    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
         super(NregX, self).__init__("nreg_Xkernel", backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
@@ -521,7 +516,7 @@ class NregV(AbstractExtension):
     """
 
     """
-    def __init__(self, backend, fpwidth):
+    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
         super(NregV, self).__init__("nreg_Vkernel", backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
@@ -566,7 +561,7 @@ class Kepler(AbstractExtension):
     """
 
     """
-    def __init__(self, backend, fpwidth):
+    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
 
         if backend == "CL":    # No need for CL support.
             backend = "C"      # C is fast enough!
@@ -601,19 +596,7 @@ class Kepler(AbstractExtension):
         self.kernel.args = self.inpargs + self.outargs
 
 
-BACKEND = "CL" if "--use_cl" in sys.argv else "C"
-
 pn = PN()
-phi = Phi(BACKEND, Ctype.fpwidth)
-acc = Acc(BACKEND, Ctype.fpwidth)
-acc_jerk = AccJerk(BACKEND, Ctype.fpwidth)
-snap_crackle = SnapCrackle(BACKEND, Ctype.fpwidth)
-tstep = Tstep(BACKEND, Ctype.fpwidth)
-pnacc = PNAcc(BACKEND, Ctype.fpwidth)
-sakura = Sakura(BACKEND, Ctype.fpwidth)
-nreg_x = NregX(BACKEND, Ctype.fpwidth)
-nreg_v = NregV(BACKEND, Ctype.fpwidth)
-kepler = Kepler(BACKEND, Ctype.fpwidth)
 
 
 # -- End of File --

@@ -11,7 +11,7 @@ import numpy as np
 
 
 class Ctype(object):
-    fpwidth = 'fp32' if "--use_sp" in sys.argv else 'fp64'
+    fpwidth = 'fp32' if '--use_sp' in sys.argv else 'fp64'
 
     int = (np.dtype(np.int32)
            if fpwidth == 'fp32'
