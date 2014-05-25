@@ -15,6 +15,15 @@ before_install:
  - sudo conda init
  - export TESTENV=$HOME/testenv$TRAVIS_PYTHON_VERSION
  - export PATH=$TESTENV/bin:$PATH
+ - conda remove -p $TESTENV --all --yes
+
+ # print useful info 
+ - pwd
+ - which pip
+ - which conda
+ - which python
+ - conda list
+ - conda info -a
  
 install:
  # install requirements using conda (except for [pyopencl, pyopengl])
@@ -24,14 +33,6 @@ install:
  # install [pyopencl, pyopengl] using pip
  - pip install pyopengl
  - pip install pyopencl
-
- # print useful info
- - pwd
- - which python
- - which pip
- - which conda
- - conda list
- - conda info -a
 
  # install tupan
  - pip install .

@@ -51,9 +51,9 @@ class PN(object):
 @timings
 def get_kernel(name, backend, fpwidth):
     if backend == "C":
-        from .cffi_backend import CKernel as Kernel
+        from .backend_cffi import CKernel as Kernel
     elif backend == "CL":
-        from .opencl_backend import CLKernel as Kernel
+        from .backend_opencl import CLKernel as Kernel
     else:
         msg = "Inappropriate 'backend': {}. Supported values: ['C', 'CL']"
         raise ValueError(msg.format(backend))

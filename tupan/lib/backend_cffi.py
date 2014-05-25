@@ -13,10 +13,6 @@ import logging
 from functools import partial
 from collections import namedtuple
 from .utils.timing import timings, bind_all
-try:
-    from itertools import izip as zip
-except ImportError:
-    pass
 
 
 LOGGER = logging.getLogger(__name__)
