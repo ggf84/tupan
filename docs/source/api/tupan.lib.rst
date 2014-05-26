@@ -11,10 +11,10 @@ tupan.lib package
 Submodules
 ----------
 
-tupan.lib.cffi_backend module
+tupan.lib.backend_cffi module
 -----------------------------
 
-.. automodule:: tupan.lib.cffi_backend
+.. automodule:: tupan.lib.backend_cffi
     :members:
     :undoc-members:
     :inherited-members:
@@ -29,10 +29,10 @@ tupan.lib.extensions module
     :inherited-members:
     :show-inheritance:
 
-tupan.lib.opencl_backend module
+tupan.lib.backend_opencl module
 -------------------------------
 
-.. automodule:: tupan.lib.opencl_backend
+.. automodule:: tupan.lib.backend_opencl
     :members:
     :undoc-members:
     :inherited-members:

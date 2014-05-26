@@ -11,10 +11,10 @@ tupan.particles package
 Submodules
 ----------
 
-tupan.particles.allparticles module
------------------------------------
+tupan.particles.body module
+---------------------------
 
-.. automodule:: tupan.particles.allparticles
+.. automodule:: tupan.particles.body
     :members:
     :undoc-members:
     :inherited-members:
@@ -24,15 +24,6 @@ tupan.particles.blackhole module
 --------------------------------
 
 .. automodule:: tupan.particles.blackhole
-    :members:
-    :undoc-members:
-    :inherited-members:
-    :show-inheritance:
-
-tupan.particles.body module
----------------------------
-
-.. automodule:: tupan.particles.body
     :members:
     :undoc-members:
     :inherited-members:
@@ -51,6 +42,15 @@ tupan.particles.star module
 ---------------------------
 
 .. automodule:: tupan.particles.star
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:
+
+tupan.particles.system module
+-----------------------------------
+
+.. automodule:: tupan.particles.system
     :members:
     :undoc-members:
     :inherited-members:
