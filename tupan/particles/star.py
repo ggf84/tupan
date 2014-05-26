@@ -6,7 +6,7 @@ TODO.
 """
 
 
-from .body import Bodies, typed_property
+from .base import Particle, typed_property
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -14,7 +14,7 @@ __all__ = ['Stars']
 
 
 @bind_all(timings)
-class Stars(Bodies):
+class Stars(Particle):
     """
 
     """
@@ -25,7 +25,7 @@ class Stars(Bodies):
     age = typed_property('age', 'real')
     metallicity = typed_property('metallicity', 'real')
 
-    attrs = Bodies.attrs + [
+    attrs = Particle.attrs + [
         ('spinx', 'real', 'x-spin'),
         ('spiny', 'real', 'y-spin'),
         ('spinz', 'real', 'z-spin'),

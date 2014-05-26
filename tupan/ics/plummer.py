@@ -9,7 +9,7 @@ TODO.
 from __future__ import (print_function, division)
 import logging
 import numpy as np
-from ..particles.allparticles import ParticleSystem
+from ..particles import ParticleSystem
 from ..lib.utils.timing import timings, bind_all
 
 

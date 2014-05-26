@@ -6,7 +6,7 @@ TODO.
 """
 
 
-from .body import Bodies, typed_property
+from .base import Particle, typed_property
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -14,13 +14,13 @@ __all__ = ['Sphs']
 
 
 @bind_all(timings)
-class Sphs(Bodies):
+class Sphs(Particle):
     """
 
     """
     density = typed_property('density', 'real')
 
-    attrs = Bodies.attrs + [
+    attrs = Particle.attrs + [
         ('density', 'real', 'density'),
     ]
 

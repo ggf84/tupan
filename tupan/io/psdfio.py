@@ -142,7 +142,7 @@ class Stream(yaml.YAMLObject):
 
     @classmethod
     def from_loader(cls, data):
-        from tupan.particles.allparticles import ParticleSystem
+        from tupan.particles import ParticleSystem
         from tupan.particles.sph import Sphs
         from tupan.particles.star import Stars
         from tupan.particles.blackhole import Blackholes

@@ -12,7 +12,7 @@ from .body import Bodies
 from .sph import Sphs
 from .star import Stars
 from .blackhole import Blackholes
-from .body import AbstractNbodyMethods
+from .base import AbstractNbodyMethods
 from ..lib.utils.timing import timings, bind_all
 
 

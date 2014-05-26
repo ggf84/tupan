@@ -6,7 +6,7 @@ TODO.
 """
 
 
-from .body import Bodies, typed_property
+from .base import Particle, typed_property
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -14,7 +14,7 @@ __all__ = ['Blackholes']
 
 
 @bind_all(timings)
-class Blackholes(Bodies):
+class Blackholes(Particle):
     """
 
     """
@@ -23,7 +23,7 @@ class Blackholes(Bodies):
     spinz = typed_property('spinz', 'real')
     radius = typed_property('radius', 'real')
 
-    attrs = Bodies.attrs + [
+    attrs = Particle.attrs + [
         ('spinx', 'real', 'x-spin'),
         ('spiny', 'real', 'y-spin'),
         ('spinz', 'real', 'z-spin'),
