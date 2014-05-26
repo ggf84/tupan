@@ -50,5 +50,4 @@ Subpackages
     tupan.io
     tupan.lib
     tupan.particles
-    tupan.tests
 

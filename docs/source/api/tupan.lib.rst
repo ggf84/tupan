@@ -20,19 +20,19 @@ tupan.lib.backend_cffi module
     :inherited-members:
     :show-inheritance:
 
-tupan.lib.extensions module
----------------------------
+tupan.lib.backend_opencl module
+-------------------------------
 
-.. automodule:: tupan.lib.extensions
+.. automodule:: tupan.lib.backend_opencl
     :members:
     :undoc-members:
     :inherited-members:
     :show-inheritance:
 
-tupan.lib.backend_opencl module
--------------------------------
+tupan.lib.extensions module
+---------------------------
 
-.. automodule:: tupan.lib.backend_opencl
+.. automodule:: tupan.lib.extensions
     :members:
     :undoc-members:
     :inherited-members:

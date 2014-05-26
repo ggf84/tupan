@@ -47,12 +47,3 @@ tupan.particles.star module
     :inherited-members:
     :show-inheritance:
 
-tupan.particles.system module
------------------------------------
-
-.. automodule:: tupan.particles.system
-    :members:
-    :undoc-members:
-    :inherited-members:
-    :show-inheritance:
-

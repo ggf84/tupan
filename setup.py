@@ -51,7 +51,6 @@ setup(
               'tupan.lib',
               'tupan.lib.utils',
               'tupan.particles',
-              'tupan.tests',
               ],
     package_data=PACKAGE_DATA,
     scripts=['bin/tupan-simulation.py'],
