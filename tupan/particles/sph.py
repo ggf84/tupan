@@ -18,11 +18,7 @@ class Sphs(Particle):
     """
 
     """
-    density = typed_property('density', 'real')
-
-    attrs = Particle.attrs + [
-        ('density', 'real', 'density'),
-    ]
+    density = typed_property('density', 'real', doc='density')
 
 
 # -- End of File --

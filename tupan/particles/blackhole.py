@@ -18,17 +18,10 @@ class Blackholes(Particle):
     """
 
     """
-    spinx = typed_property('spinx', 'real')
-    spiny = typed_property('spiny', 'real')
-    spinz = typed_property('spinz', 'real')
-    radius = typed_property('radius', 'real')
-
-    attrs = Particle.attrs + [
-        ('spinx', 'real', 'x-spin'),
-        ('spiny', 'real', 'y-spin'),
-        ('spinz', 'real', 'z-spin'),
-        ('radius', 'real', 'radius'),
-    ]
+    spinx = typed_property('spinx', 'real', doc='x-spin')
+    spiny = typed_property('spiny', 'real', doc='y-spin')
+    spinz = typed_property('spinz', 'real', doc='z-spin')
+    radius = typed_property('radius', 'real', doc='radius')
 
 
 # -- End of File --

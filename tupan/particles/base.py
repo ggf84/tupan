@@ -20,9 +20,10 @@ __all__ = ['Particle', 'AbstractNbodyMethods']
 
 def typed_property(name, sctype,
                    doc=None, can_get=True,
-                   can_set=True, can_del=False):
+                   can_set=True, can_del=True):
     storage_name = '_' + name
     dtype = vars(Ctype)[sctype]
+    attr = (name, storage_name, sctype, dtype, doc)
 
     def get_value(self):
         try:
@@ -30,6 +31,8 @@ def typed_property(name, sctype,
                       for member in self.members.values()]
             return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
         except AttributeError:
+            cls = type(self)
+            cls.attrs.add(attr)
             return np.zeros(self.n, dtype=dtype)
 
     def fget(self):
@@ -72,47 +75,33 @@ class NbodyMethods(object):
     """This class holds common methods for particles in n-body systems.
 
     """
-    id = typed_property('id', 'uint')
-    mass = typed_property('mass', 'real')
-    eps2 = typed_property('eps2', 'real')
-    rx = typed_property('rx', 'real')
-    ry = typed_property('ry', 'real')
-    rz = typed_property('rz', 'real')
-    vx = typed_property('vx', 'real')
-    vy = typed_property('vy', 'real')
-    vz = typed_property('vz', 'real')
-    time = typed_property('time', 'real')
-    nstep = typed_property('nstep', 'uint')
-    tstep = typed_property('tstep', 'real')
+    attrs = set()
+
+    id = typed_property('id', 'uint', doc='index')
+    mass = typed_property('mass', 'real', doc='mass')
+    eps2 = typed_property('eps2', 'real', doc='squared softening')
+    rx = typed_property('rx', 'real', doc='x-position')
+    ry = typed_property('ry', 'real', doc='y-position')
+    rz = typed_property('rz', 'real', doc='z-position')
+    vx = typed_property('vx', 'real', doc='x-velocity')
+    vy = typed_property('vy', 'real', doc='y-velocity')
+    vz = typed_property('vz', 'real', doc='z-velocity')
+    time = typed_property('time', 'real', doc='current time')
+    nstep = typed_property('nstep', 'uint', doc='step number')
+    tstep = typed_property('tstep', 'real', doc='time step')
 
     include_pn_corrections = False
-
-    attrs = [  # name, sctype, doc
-        ('id', 'uint', 'index'),
-        ('mass', 'real', 'mass'),
-        ('eps2', 'real', 'squared softening'),
-        ('rx', 'real', 'x-position'),
-        ('ry', 'real', 'y-position'),
-        ('rz', 'real', 'z-position'),
-        ('vx', 'real', 'x-velocity'),
-        ('vy', 'real', 'y-velocity'),
-        ('vz', 'real', 'z-velocity'),
-        ('time', 'real', 'current time'),
-        ('nstep', 'uint', 'step number'),
-        ('tstep', 'real', 'time step'),
-    ]
 
     def copy(self):
         return copy.deepcopy(self)
 
     def register_attribute(self, attr, sctype, doc=''):
         setattr(type(self), attr,
-                typed_property(attr, sctype, doc=doc, can_del=True))
+                typed_property(attr, sctype, doc=doc))
 
     @property       # TODO: @classproperty ???
     def dtype(self):
-        return [(name, vars(Ctype)[sctype])
-                for name, sctype, _ in self.attrs]
+        return [(name, dtype) for name, _, _, dtype, _ in self.attrs]
 
     @property
     def pos(self):  # XXX: deprecate?
@@ -492,29 +481,30 @@ class PNbodyMethods(NbodyMethods):
     # -- PN stuff
     # -- TODO: move these methods to a more appropriate place...
 
-    pn_ke = typed_property('pn_ke', 'real')
-    pn_mrx = typed_property('pn_mrx', 'real')
-    pn_mry = typed_property('pn_mry', 'real')
-    pn_mrz = typed_property('pn_mrz', 'real')
-    pn_mvx = typed_property('pn_mvx', 'real')
-    pn_mvy = typed_property('pn_mvy', 'real')
-    pn_mvz = typed_property('pn_mvz', 'real')
-    pn_amx = typed_property('pn_amx', 'real')
-    pn_amy = typed_property('pn_amy', 'real')
-    pn_amz = typed_property('pn_amz', 'real')
-
-    pn_attrs = [  # name, sctype, doc
-        ('pn_ke', 'real', 'post-newtonian correction for kinectic energy.'),
-        ('pn_mrx', 'real', 'post-newtonian correction for x-com_r'),
-        ('pn_mry', 'real', 'post-newtonian correction for y-com_r'),
-        ('pn_mrz', 'real', 'post-newtonian correction for z-com_r'),
-        ('pn_mvx', 'real', 'post-newtonian correction for x-com_v'),
-        ('pn_mvy', 'real', 'post-newtonian correction for y-com_v'),
-        ('pn_mvz', 'real', 'post-newtonian correction for z-com_v'),
-        ('pn_amx', 'real', 'post-newtonian correction for x-angular momentum'),
-        ('pn_amy', 'real', 'post-newtonian correction for y-angular momentum'),
-        ('pn_amz', 'real', 'post-newtonian correction for z-angular momentum'),
-    ]
+    pn_ke = typed_property('pn_ke', 'real',
+                           doc=('post-newtonian correction '
+                                'for kinectic energy.'))
+    pn_mrx = typed_property('pn_mrx', 'real',
+                            doc='post-newtonian correction for x-com_r')
+    pn_mry = typed_property('pn_mry', 'real',
+                            doc='post-newtonian correction for y-com_r')
+    pn_mrz = typed_property('pn_mrz', 'real',
+                            doc='post-newtonian correction for z-com_r')
+    pn_mvx = typed_property('pn_mvx', 'real',
+                            doc='post-newtonian correction for x-com_v')
+    pn_mvy = typed_property('pn_mvy', 'real',
+                            doc='post-newtonian correction for y-com_v')
+    pn_mvz = typed_property('pn_mvz', 'real',
+                            doc='post-newtonian correction for z-com_v')
+    pn_amx = typed_property('pn_amx', 'real',
+                            doc=('post-newtonian correction '
+                                 'for x-angular momentum'))
+    pn_amy = typed_property('pn_amy', 'real',
+                            doc=('post-newtonian correction '
+                                 'for y-angular momentum'))
+    pn_amz = typed_property('pn_amz', 'real',
+                            doc=('post-newtonian correction '
+                                 'for z-angular momentum'))
 
     @property
     def com_r(self):
@@ -628,8 +618,6 @@ if '--pn_order' in sys.argv:
     AbstractNbodyMethods = PNbodyMethods
 
 
-# @bind_all(timings)
-# @make_attrs
 #  class Body(AbstractNbodyMethods):
 #     """
 #     The most basic particle type.

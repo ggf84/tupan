@@ -40,7 +40,7 @@ class ParticleSystem(AbstractNbodyMethods):
         self.n = len(self)
         if init_ids:
             if self.n:
-                self.id[...] = np.arange(self.n)
+                self.id[...] = range(self.n)
 
     def register_attribute(self, attr, sctype, doc=''):
         for member in self.members.values():

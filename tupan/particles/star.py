@@ -18,21 +18,12 @@ class Stars(Particle):
     """
 
     """
-    spinx = typed_property('spinx', 'real')
-    spiny = typed_property('spiny', 'real')
-    spinz = typed_property('spinz', 'real')
-    radius = typed_property('radius', 'real')
-    age = typed_property('age', 'real')
-    metallicity = typed_property('metallicity', 'real')
-
-    attrs = Particle.attrs + [
-        ('spinx', 'real', 'x-spin'),
-        ('spiny', 'real', 'y-spin'),
-        ('spinz', 'real', 'z-spin'),
-        ('radius', 'real', 'radius'),
-        ('age', 'real', 'age'),
-        ('metallicity', 'real', 'metallicity'),
-    ]
+    spinx = typed_property('spinx', 'real', doc='x-spin')
+    spiny = typed_property('spiny', 'real', doc='y-spin')
+    spinz = typed_property('spinz', 'real', doc='z-spin')
+    radius = typed_property('radius', 'real', doc='radius')
+    age = typed_property('age', 'real', doc='age')
+    metallicity = typed_property('metallicity', 'real', doc='metallicity')
 
 
 # -- End of File --
