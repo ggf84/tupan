@@ -36,20 +36,19 @@ __kernel void pnacc_kernel(
     UINT lsize = get_local_size(0);
     UINT i = VW * lsize * get_group_id(0);
 
-    if ((i + VW * lid) >= ni) {
-        i -= VW * lid;
-    }
+    UINT mask = (i + VW * lid) < ni;
+    mask *= lid;
 
     CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3, inv4, inv5, inv6, inv7);
 
-    REALn im = vloadn(lid, _im + i);
-    REALn irx = vloadn(lid, _irx + i);
-    REALn iry = vloadn(lid, _iry + i);
-    REALn irz = vloadn(lid, _irz + i);
-    REALn ie2 = vloadn(lid, _ie2 + i);
-    REALn ivx = vloadn(lid, _ivx + i);
-    REALn ivy = vloadn(lid, _ivy + i);
-    REALn ivz = vloadn(lid, _ivz + i);
+    REALn im = vloadn(mask, _im + i);
+    REALn irx = vloadn(mask, _irx + i);
+    REALn iry = vloadn(mask, _iry + i);
+    REALn irz = vloadn(mask, _irz + i);
+    REALn ie2 = vloadn(mask, _ie2 + i);
+    REALn ivx = vloadn(mask, _ivx + i);
+    REALn ivy = vloadn(mask, _ivy + i);
+    REALn ivz = vloadn(mask, _ivz + i);
 
     REALn ipnax = (REALn)(0);
     REALn ipnay = (REALn)(0);
@@ -101,8 +100,8 @@ __kernel void pnacc_kernel(
             &ipnax, &ipnay, &ipnaz);
     }
 
-    vstoren(ipnax, lid, _ipnax + i);
-    vstoren(ipnay, lid, _ipnay + i);
-    vstoren(ipnaz, lid, _ipnaz + i);
+    vstoren(ipnax, mask, _ipnax + i);
+    vstoren(ipnay, mask, _ipnay + i);
+    vstoren(ipnaz, mask, _ipnaz + i);
 }
 

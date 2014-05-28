@@ -34,21 +34,18 @@ __kernel void sakura_kernel(
 //    UINT i = VW * lsize * get_group_id(0);
     UINT i = 1 * lsize * get_group_id(0);
 
-//    if ((i + VW * lid) >= ni) {
-//        i -= VW * lid;
-//    }
-    if ((i + 1 * lid) >= ni) {
-        i -= 1 * lid;
-    }
+//    UINT mask = (i + VW * lid) < ni;
+    UINT mask = (i + 1 * lid) < ni;
+    mask *= lid;
 
-    REAL im = vload1(lid, _im + i);
-    REAL irx = vload1(lid, _irx + i);
-    REAL iry = vload1(lid, _iry + i);
-    REAL irz = vload1(lid, _irz + i);
-    REAL ie2 = vload1(lid, _ie2 + i);
-    REAL ivx = vload1(lid, _ivx + i);
-    REAL ivy = vload1(lid, _ivy + i);
-    REAL ivz = vload1(lid, _ivz + i);
+    REAL im = vload1(mask, _im + i);
+    REAL irx = vload1(mask, _irx + i);
+    REAL iry = vload1(mask, _iry + i);
+    REAL irz = vload1(mask, _irz + i);
+    REAL ie2 = vload1(mask, _ie2 + i);
+    REAL ivx = vload1(mask, _ivx + i);
+    REAL ivy = vload1(mask, _ivy + i);
+    REAL ivz = vload1(mask, _ivz + i);
 
     REAL idrx = (REAL)(0);
     REAL idry = (REAL)(0);
@@ -105,11 +102,11 @@ __kernel void sakura_kernel(
             &idvx, &idvy, &idvz);
     }
 
-    vstore1(idrx, lid, _idrx + i);
-    vstore1(idry, lid, _idry + i);
-    vstore1(idrz, lid, _idrz + i);
-    vstore1(idvx, lid, _idvx + i);
-    vstore1(idvy, lid, _idvy + i);
-    vstore1(idvz, lid, _idvz + i);
+    vstore1(idrx, mask, _idrx + i);
+    vstore1(idry, mask, _idry + i);
+    vstore1(idrz, mask, _idrz + i);
+    vstore1(idvx, mask, _idvx + i);
+    vstore1(idvy, mask, _idvy + i);
+    vstore1(idvz, mask, _idvz + i);
 }
 

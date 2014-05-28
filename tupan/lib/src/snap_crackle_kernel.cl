@@ -43,24 +43,23 @@ __kernel void snap_crackle_kernel(
     UINT lsize = get_local_size(0);
     UINT i = VW * lsize * get_group_id(0);
 
-    if ((i + VW * lid) >= ni) {
-        i -= VW * lid;
-    }
+    UINT mask = (i + VW * lid) < ni;
+    mask *= lid;
 
-    REALn im = vloadn(lid, _im + i);
-    REALn irx = vloadn(lid, _irx + i);
-    REALn iry = vloadn(lid, _iry + i);
-    REALn irz = vloadn(lid, _irz + i);
-    REALn ie2 = vloadn(lid, _ie2 + i);
-    REALn ivx = vloadn(lid, _ivx + i);
-    REALn ivy = vloadn(lid, _ivy + i);
-    REALn ivz = vloadn(lid, _ivz + i);
-    REALn iax = vloadn(lid, _iax + i);
-    REALn iay = vloadn(lid, _iay + i);
-    REALn iaz = vloadn(lid, _iaz + i);
-    REALn ijx = vloadn(lid, _ijx + i);
-    REALn ijy = vloadn(lid, _ijy + i);
-    REALn ijz = vloadn(lid, _ijz + i);
+    REALn im = vloadn(mask, _im + i);
+    REALn irx = vloadn(mask, _irx + i);
+    REALn iry = vloadn(mask, _iry + i);
+    REALn irz = vloadn(mask, _irz + i);
+    REALn ie2 = vloadn(mask, _ie2 + i);
+    REALn ivx = vloadn(mask, _ivx + i);
+    REALn ivy = vloadn(mask, _ivy + i);
+    REALn ivz = vloadn(mask, _ivz + i);
+    REALn iax = vloadn(mask, _iax + i);
+    REALn iay = vloadn(mask, _iay + i);
+    REALn iaz = vloadn(mask, _iaz + i);
+    REALn ijx = vloadn(mask, _ijx + i);
+    REALn ijy = vloadn(mask, _ijy + i);
+    REALn ijz = vloadn(mask, _ijz + i);
 
     REALn isx = (REALn)(0);
     REALn isy = (REALn)(0);
@@ -135,11 +134,11 @@ __kernel void snap_crackle_kernel(
             &icx, &icy, &icz);
     }
 
-    vstoren(isx, lid, _isx + i);
-    vstoren(isy, lid, _isy + i);
-    vstoren(isz, lid, _isz + i);
-    vstoren(icx, lid, _icx + i);
-    vstoren(icy, lid, _icy + i);
-    vstoren(icz, lid, _icz + i);
+    vstoren(isx, mask, _isx + i);
+    vstoren(isy, mask, _isy + i);
+    vstoren(isz, mask, _isz + i);
+    vstoren(icx, mask, _icx + i);
+    vstoren(icy, mask, _icy + i);
+    vstoren(icz, mask, _icz + i);
 }
 

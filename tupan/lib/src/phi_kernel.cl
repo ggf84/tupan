@@ -20,15 +20,14 @@ __kernel void phi_kernel(
     UINT lsize = get_local_size(0);
     UINT i = VW * lsize * get_group_id(0);
 
-    if ((i + VW * lid) >= ni) {
-        i -= VW * lid;
-    }
+    UINT mask = (i + VW * lid) < ni;
+    mask *= lid;
 
-    REALn im = vloadn(lid, _im + i);
-    REALn irx = vloadn(lid, _irx + i);
-    REALn iry = vloadn(lid, _iry + i);
-    REALn irz = vloadn(lid, _irz + i);
-    REALn ie2 = vloadn(lid, _ie2 + i);
+    REALn im = vloadn(mask, _im + i);
+    REALn irx = vloadn(mask, _irx + i);
+    REALn iry = vloadn(mask, _iry + i);
+    REALn irz = vloadn(mask, _irz + i);
+    REALn ie2 = vloadn(mask, _ie2 + i);
 
     REALn iphi = (REALn)(0);
 
@@ -66,6 +65,6 @@ __kernel void phi_kernel(
             &iphi);
     }
 
-    vstoren(iphi, lid, _iphi + i);
+    vstoren(iphi, mask, _iphi + i);
 }
 

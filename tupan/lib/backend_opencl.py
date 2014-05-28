@@ -8,6 +8,7 @@
 
 from __future__ import division
 import os
+import math
 import logging
 import pyopencl as cl
 from functools import partial
@@ -124,6 +125,7 @@ class CLKernel(object):
         max_lsize = self.max_lsize
 
         ls = (ni + vw - 1) // vw
+        ls = 2**(int(math.log(ls, 2)))
 
         lsize = min(ls, max_lsize)
         ngroups = (ni + (vw * lsize) - 1) // (vw * lsize)

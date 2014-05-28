@@ -33,18 +33,17 @@ __kernel void nreg_Xkernel(
     UINT lsize = get_local_size(0);
     UINT i = VW * lsize * get_group_id(0);
 
-    if ((i + VW * lid) >= ni) {
-        i -= VW * lid;
-    }
+    UINT mask = (i + VW * lid) < ni;
+    mask *= lid;
 
-    REALn im = vloadn(lid, _im + i);
-    REALn irx = vloadn(lid, _irx + i);
-    REALn iry = vloadn(lid, _iry + i);
-    REALn irz = vloadn(lid, _irz + i);
-    REALn ie2 = vloadn(lid, _ie2 + i);
-    REALn ivx = vloadn(lid, _ivx + i);
-    REALn ivy = vloadn(lid, _ivy + i);
-    REALn ivz = vloadn(lid, _ivz + i);
+    REALn im = vloadn(mask, _im + i);
+    REALn irx = vloadn(mask, _irx + i);
+    REALn iry = vloadn(mask, _iry + i);
+    REALn irz = vloadn(mask, _irz + i);
+    REALn ie2 = vloadn(mask, _ie2 + i);
+    REALn ivx = vloadn(mask, _ivx + i);
+    REALn ivy = vloadn(mask, _ivy + i);
+    REALn ivz = vloadn(mask, _ivz + i);
 
     REALn idrx = (REALn)(0);
     REALn idry = (REALn)(0);
@@ -102,13 +101,13 @@ __kernel void nreg_Xkernel(
             &iax, &iay, &iaz, &iu);
     }
 
-    vstoren(idrx, lid, _idrx + i);
-    vstoren(idry, lid, _idry + i);
-    vstoren(idrz, lid, _idrz + i);
-    vstoren(iax, lid, _iax + i);
-    vstoren(iay, lid, _iay + i);
-    vstoren(iaz, lid, _iaz + i);
-    vstoren(im * iu, lid, _iu + i);
+    vstoren(idrx, mask, _idrx + i);
+    vstoren(idry, mask, _idry + i);
+    vstoren(idrz, mask, _idrz + i);
+    vstoren(iax, mask, _iax + i);
+    vstoren(iay, mask, _iay + i);
+    vstoren(iaz, mask, _iaz + i);
+    vstoren(im * iu, mask, _iu + i);
 }
 
 
@@ -139,17 +138,16 @@ __kernel void nreg_Vkernel(
     UINT lsize = get_local_size(0);
     UINT i = VW * lsize * get_group_id(0);
 
-    if ((i + VW * lid) >= ni) {
-        i -= VW * lid;
-    }
+    UINT mask = (i + VW * lid) < ni;
+    mask *= lid;
 
-    REALn im = vloadn(lid, _im + i);
-    REALn ivx = vloadn(lid, _ivx + i);
-    REALn ivy = vloadn(lid, _ivy + i);
-    REALn ivz = vloadn(lid, _ivz + i);
-    REALn iax = vloadn(lid, _iax + i);
-    REALn iay = vloadn(lid, _iay + i);
-    REALn iaz = vloadn(lid, _iaz + i);
+    REALn im = vloadn(mask, _im + i);
+    REALn ivx = vloadn(mask, _ivx + i);
+    REALn ivy = vloadn(mask, _ivy + i);
+    REALn ivz = vloadn(mask, _ivz + i);
+    REALn iax = vloadn(mask, _iax + i);
+    REALn iay = vloadn(mask, _iay + i);
+    REALn iaz = vloadn(mask, _iaz + i);
 
     REALn idvx = (REALn)(0);
     REALn idvy = (REALn)(0);
@@ -200,9 +198,9 @@ __kernel void nreg_Vkernel(
             &idvx, &idvy, &idvz, &ik);
     }
 
-    vstoren(idvx, lid, _idvx + i);
-    vstoren(idvy, lid, _idvy + i);
-    vstoren(idvz, lid, _idvz + i);
-    vstoren(im * ik, lid, _ik + i);
+    vstoren(idvx, mask, _idvx + i);
+    vstoren(idvy, mask, _idvy + i);
+    vstoren(idvz, mask, _idvz + i);
+    vstoren(im * ik, mask, _ik + i);
 }
 

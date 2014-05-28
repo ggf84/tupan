@@ -28,18 +28,17 @@ __kernel void tstep_kernel(
     UINT lsize = get_local_size(0);
     UINT i = VW * lsize * get_group_id(0);
 
-    if ((i + VW * lid) >= ni) {
-        i -= VW * lid;
-    }
+    UINT mask = (i + VW * lid) < ni;
+    mask *= lid;
 
-    REALn im = vloadn(lid, _im + i);
-    REALn irx = vloadn(lid, _irx + i);
-    REALn iry = vloadn(lid, _iry + i);
-    REALn irz = vloadn(lid, _irz + i);
-    REALn ie2 = vloadn(lid, _ie2 + i);
-    REALn ivx = vloadn(lid, _ivx + i);
-    REALn ivy = vloadn(lid, _ivy + i);
-    REALn ivz = vloadn(lid, _ivz + i);
+    REALn im = vloadn(mask, _im + i);
+    REALn irx = vloadn(mask, _irx + i);
+    REALn iry = vloadn(mask, _iry + i);
+    REALn irz = vloadn(mask, _irz + i);
+    REALn ie2 = vloadn(mask, _ie2 + i);
+    REALn ivx = vloadn(mask, _ivx + i);
+    REALn ivy = vloadn(mask, _ivy + i);
+    REALn ivz = vloadn(mask, _ivz + i);
 
     REALn iw2_a = (REALn)(0);
     REALn iw2_b = (REALn)(0);
@@ -90,7 +89,7 @@ __kernel void tstep_kernel(
             &iw2_a, &iw2_b);
     }
 
-    vstoren(eta / sqrt(1 + iw2_a), lid, _idt_a + i);
-    vstoren(eta / sqrt(1 + iw2_b), lid, _idt_b + i);
+    vstoren(eta / sqrt(1 + iw2_a), mask, _idt_a + i);
+    vstoren(eta / sqrt(1 + iw2_b), mask, _idt_b + i);
 }
 
