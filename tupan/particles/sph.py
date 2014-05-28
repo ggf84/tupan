@@ -18,6 +18,8 @@ class Sphs(Particle):
     """
 
     """
+    dtype = []
+
     density = typed_property('density', 'real', doc='density')
 
 

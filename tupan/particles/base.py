@@ -23,16 +23,17 @@ def typed_property(name, sctype,
                    can_set=True, can_del=True):
     storage_name = '_' + name
     dtype = vars(Ctype)[sctype]
-    attr = (name, storage_name, sctype, dtype, doc)
 
     def get_value(self):
         try:
-            arrays = [getattr(member, storage_name)
+            arrays = [getattr(member, name)
                       for member in self.members.values()]
             return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
         except AttributeError:
             cls = type(self)
-            cls.attrs.add(attr)
+            dty = set(cls.dtype)
+            dty.add((name, dtype))
+            cls.dtype = list(dty)
             return np.zeros(self.n, dtype=dtype)
 
     def fget(self):
@@ -75,8 +76,6 @@ class NbodyMethods(object):
     """This class holds common methods for particles in n-body systems.
 
     """
-    attrs = set()
-
     id = typed_property('id', 'uint', doc='index')
     mass = typed_property('mass', 'real', doc='mass')
     eps2 = typed_property('eps2', 'real', doc='squared softening')
@@ -98,10 +97,6 @@ class NbodyMethods(object):
     def register_attribute(self, attr, sctype, doc=''):
         setattr(type(self), attr,
                 typed_property(attr, sctype, doc=doc))
-
-    @property       # TODO: @classproperty ???
-    def dtype(self):
-        return [(name, dtype) for name, _, _, dtype, _ in self.attrs]
 
     @property
     def pos(self):  # XXX: deprecate?

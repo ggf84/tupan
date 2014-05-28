@@ -18,7 +18,7 @@ class Bodies(Particle):
     """
 
     """
-    pass
+    dtype = []
 
 
 # -- End of File --

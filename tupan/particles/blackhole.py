@@ -18,6 +18,8 @@ class Blackholes(Particle):
     """
 
     """
+    dtype = []
+
     spinx = typed_property('spinx', 'real', doc='x-spin')
     spiny = typed_property('spiny', 'real', doc='y-spin')
     spinz = typed_property('spinz', 'real', doc='z-spin')
