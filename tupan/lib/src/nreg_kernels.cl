@@ -31,19 +31,17 @@ __kernel void nreg_Xkernel(
 {
     UINT lid = get_local_id(0);
     UINT lsize = get_local_size(0);
-    UINT i = VW * lsize * get_group_id(0);
+    UINT gid = get_global_id(0);
+    gid *= ((VW * gid) < ni);
 
-    UINT mask = (i + VW * lid) < ni;
-    mask *= lid;
-
-    REALn im = vloadn(mask, _im + i);
-    REALn irx = vloadn(mask, _irx + i);
-    REALn iry = vloadn(mask, _iry + i);
-    REALn irz = vloadn(mask, _irz + i);
-    REALn ie2 = vloadn(mask, _ie2 + i);
-    REALn ivx = vloadn(mask, _ivx + i);
-    REALn ivy = vloadn(mask, _ivy + i);
-    REALn ivz = vloadn(mask, _ivz + i);
+    REALn im = vloadn(gid, _im);
+    REALn irx = vloadn(gid, _irx);
+    REALn iry = vloadn(gid, _iry);
+    REALn irz = vloadn(gid, _irz);
+    REALn ie2 = vloadn(gid, _ie2);
+    REALn ivx = vloadn(gid, _ivx);
+    REALn ivy = vloadn(gid, _ivy);
+    REALn ivz = vloadn(gid, _ivz);
 
     REALn idrx = (REALn)(0);
     REALn idry = (REALn)(0);
@@ -56,6 +54,7 @@ __kernel void nreg_Xkernel(
     UINT j = 0;
 
     #ifdef FAST_LOCAL_MEM
+    for (; (j + lsize - 1) < nj; j += lsize) {
         __local REAL __jm[LSIZE];
         __local REAL __jrx[LSIZE];
         __local REAL __jry[LSIZE];
@@ -64,29 +63,28 @@ __kernel void nreg_Xkernel(
         __local REAL __jvx[LSIZE];
         __local REAL __jvy[LSIZE];
         __local REAL __jvz[LSIZE];
-        for (; (j + lsize - 1) < nj; j += lsize) {
-            __jm[lid] = _jm[j + lid];
-            __jrx[lid] = _jrx[j + lid];
-            __jry[lid] = _jry[j + lid];
-            __jrz[lid] = _jrz[j + lid];
-            __je2[lid] = _je2[j + lid];
-            __jvx[lid] = _jvx[j + lid];
-            __jvy[lid] = _jvy[j + lid];
-            __jvz[lid] = _jvz[j + lid];
-            barrier(CLK_LOCAL_MEM_FENCE);
-            #pragma unroll UNROLL
-            for (UINT k = 0; k < lsize; ++k) {
-                nreg_Xkernel_core(
-                    dt,
-                    im, irx, iry, irz,
-                    ie2, ivx, ivy, ivz,
-                    __jm[k], __jrx[k], __jry[k], __jrz[k],
-                    __je2[k], __jvx[k], __jvy[k], __jvz[k],
-                    &idrx, &idry, &idrz,
-                    &iax, &iay, &iaz, &iu);
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
+        __jm[lid] = _jm[j + lid];
+        __jrx[lid] = _jrx[j + lid];
+        __jry[lid] = _jry[j + lid];
+        __jrz[lid] = _jrz[j + lid];
+        __je2[lid] = _je2[j + lid];
+        __jvx[lid] = _jvx[j + lid];
+        __jvy[lid] = _jvy[j + lid];
+        __jvz[lid] = _jvz[j + lid];
+        barrier(CLK_LOCAL_MEM_FENCE);
+        #pragma unroll UNROLL
+        for (UINT k = 0; k < lsize; ++k) {
+            nreg_Xkernel_core(
+                dt,
+                im, irx, iry, irz,
+                ie2, ivx, ivy, ivz,
+                __jm[k], __jrx[k], __jry[k], __jrz[k],
+                __je2[k], __jvx[k], __jvy[k], __jvz[k],
+                &idrx, &idry, &idrz,
+                &iax, &iay, &iaz, &iu);
         }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
     #endif
 
     #pragma unroll UNROLL
@@ -101,13 +99,13 @@ __kernel void nreg_Xkernel(
             &iax, &iay, &iaz, &iu);
     }
 
-    vstoren(idrx, mask, _idrx + i);
-    vstoren(idry, mask, _idry + i);
-    vstoren(idrz, mask, _idrz + i);
-    vstoren(iax, mask, _iax + i);
-    vstoren(iay, mask, _iay + i);
-    vstoren(iaz, mask, _iaz + i);
-    vstoren(im * iu, mask, _iu + i);
+    vstoren(idrx, gid, _idrx);
+    vstoren(idry, gid, _idry);
+    vstoren(idrz, gid, _idrz);
+    vstoren(iax, gid, _iax);
+    vstoren(iay, gid, _iay);
+    vstoren(iaz, gid, _iaz);
+    vstoren(im * iu, gid, _iu);
 }
 
 
@@ -136,18 +134,16 @@ __kernel void nreg_Vkernel(
 {
     UINT lid = get_local_id(0);
     UINT lsize = get_local_size(0);
-    UINT i = VW * lsize * get_group_id(0);
+    UINT gid = get_global_id(0);
+    gid *= ((VW * gid) < ni);
 
-    UINT mask = (i + VW * lid) < ni;
-    mask *= lid;
-
-    REALn im = vloadn(mask, _im + i);
-    REALn ivx = vloadn(mask, _ivx + i);
-    REALn ivy = vloadn(mask, _ivy + i);
-    REALn ivz = vloadn(mask, _ivz + i);
-    REALn iax = vloadn(mask, _iax + i);
-    REALn iay = vloadn(mask, _iay + i);
-    REALn iaz = vloadn(mask, _iaz + i);
+    REALn im = vloadn(gid, _im);
+    REALn ivx = vloadn(gid, _ivx);
+    REALn ivy = vloadn(gid, _ivy);
+    REALn ivz = vloadn(gid, _ivz);
+    REALn iax = vloadn(gid, _iax);
+    REALn iay = vloadn(gid, _iay);
+    REALn iaz = vloadn(gid, _iaz);
 
     REALn idvx = (REALn)(0);
     REALn idvy = (REALn)(0);
@@ -157,6 +153,7 @@ __kernel void nreg_Vkernel(
     UINT j = 0;
 
     #ifdef FAST_LOCAL_MEM
+    for (; (j + lsize - 1) < nj; j += lsize) {
         __local REAL __jm[LSIZE];
         __local REAL __jvx[LSIZE];
         __local REAL __jvy[LSIZE];
@@ -164,27 +161,26 @@ __kernel void nreg_Vkernel(
         __local REAL __jax[LSIZE];
         __local REAL __jay[LSIZE];
         __local REAL __jaz[LSIZE];
-        for (; (j + lsize - 1) < nj; j += lsize) {
-            __jm[lid] = _jm[j + lid];
-            __jvx[lid] = _jvx[j + lid];
-            __jvy[lid] = _jvy[j + lid];
-            __jvz[lid] = _jvz[j + lid];
-            __jax[lid] = _jax[j + lid];
-            __jay[lid] = _jay[j + lid];
-            __jaz[lid] = _jaz[j + lid];
-            barrier(CLK_LOCAL_MEM_FENCE);
-            #pragma unroll UNROLL
-            for (UINT k = 0; k < lsize; ++k) {
-                nreg_Vkernel_core(
-                    dt,
-                    im, ivx, ivy, ivz,
-                    iax, iay, iaz,
-                    __jm[k], __jvx[k], __jvy[k], __jvz[k],
-                    __jax[k], __jay[k], __jaz[k],
-                    &idvx, &idvy, &idvz, &ik);
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
+        __jm[lid] = _jm[j + lid];
+        __jvx[lid] = _jvx[j + lid];
+        __jvy[lid] = _jvy[j + lid];
+        __jvz[lid] = _jvz[j + lid];
+        __jax[lid] = _jax[j + lid];
+        __jay[lid] = _jay[j + lid];
+        __jaz[lid] = _jaz[j + lid];
+        barrier(CLK_LOCAL_MEM_FENCE);
+        #pragma unroll UNROLL
+        for (UINT k = 0; k < lsize; ++k) {
+            nreg_Vkernel_core(
+                dt,
+                im, ivx, ivy, ivz,
+                iax, iay, iaz,
+                __jm[k], __jvx[k], __jvy[k], __jvz[k],
+                __jax[k], __jay[k], __jaz[k],
+                &idvx, &idvy, &idvz, &ik);
         }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
     #endif
 
     #pragma unroll UNROLL
@@ -198,9 +194,9 @@ __kernel void nreg_Vkernel(
             &idvx, &idvy, &idvz, &ik);
     }
 
-    vstoren(idvx, mask, _idvx + i);
-    vstoren(idvy, mask, _idvy + i);
-    vstoren(idvz, mask, _idvz + i);
-    vstoren(im * ik, mask, _ik + i);
+    vstoren(idvx, gid, _idvx);
+    vstoren(idvy, gid, _idvy);
+    vstoren(idvz, gid, _idvz);
+    vstoren(im * ik, gid, _ik);
 }
 

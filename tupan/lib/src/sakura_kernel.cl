@@ -31,21 +31,18 @@ __kernel void sakura_kernel(
 {
     UINT lid = get_local_id(0);
     UINT lsize = get_local_size(0);
-//    UINT i = VW * lsize * get_group_id(0);
-    UINT i = 1 * lsize * get_group_id(0);
+    UINT gid = get_global_id(0);
+//    gid *= ((VW * gid) < ni);
+    gid *= ((1 * gid) < ni);
 
-//    UINT mask = (i + VW * lid) < ni;
-    UINT mask = (i + 1 * lid) < ni;
-    mask *= lid;
-
-    REAL im = vload1(mask, _im + i);
-    REAL irx = vload1(mask, _irx + i);
-    REAL iry = vload1(mask, _iry + i);
-    REAL irz = vload1(mask, _irz + i);
-    REAL ie2 = vload1(mask, _ie2 + i);
-    REAL ivx = vload1(mask, _ivx + i);
-    REAL ivy = vload1(mask, _ivy + i);
-    REAL ivz = vload1(mask, _ivz + i);
+    REAL im = vload1(gid, _im);
+    REAL irx = vload1(gid, _irx);
+    REAL iry = vload1(gid, _iry);
+    REAL irz = vload1(gid, _irz);
+    REAL ie2 = vload1(gid, _ie2);
+    REAL ivx = vload1(gid, _ivx);
+    REAL ivy = vload1(gid, _ivy);
+    REAL ivz = vload1(gid, _ivz);
 
     REAL idrx = (REAL)(0);
     REAL idry = (REAL)(0);
@@ -57,6 +54,7 @@ __kernel void sakura_kernel(
     UINT j = 0;
 
     #ifdef FAST_LOCAL_MEM
+    for (; (j + lsize - 1) < nj; j += lsize) {
         __local REAL __jm[LSIZE];
         __local REAL __jrx[LSIZE];
         __local REAL __jry[LSIZE];
@@ -65,29 +63,28 @@ __kernel void sakura_kernel(
         __local REAL __jvx[LSIZE];
         __local REAL __jvy[LSIZE];
         __local REAL __jvz[LSIZE];
-        for (; (j + lsize - 1) < nj; j += lsize) {
-            __jm[lid] = _jm[j + lid];
-            __jrx[lid] = _jrx[j + lid];
-            __jry[lid] = _jry[j + lid];
-            __jrz[lid] = _jrz[j + lid];
-            __je2[lid] = _je2[j + lid];
-            __jvx[lid] = _jvx[j + lid];
-            __jvy[lid] = _jvy[j + lid];
-            __jvz[lid] = _jvz[j + lid];
-            barrier(CLK_LOCAL_MEM_FENCE);
-            #pragma unroll UNROLL
-            for (UINT k = 0; k < lsize; ++k) {
-                sakura_kernel_core(
-                    dt, flag,
-                    im, irx, iry, irz,
-                    ie2, ivx, ivy, ivz,
-                    __jm[k], __jrx[k], __jry[k], __jrz[k],
-                    __je2[k], __jvx[k], __jvy[k], __jvz[k],
-                    &idrx, &idry, &idrz,
-                    &idvx, &idvy, &idvz);
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
+        __jm[lid] = _jm[j + lid];
+        __jrx[lid] = _jrx[j + lid];
+        __jry[lid] = _jry[j + lid];
+        __jrz[lid] = _jrz[j + lid];
+        __je2[lid] = _je2[j + lid];
+        __jvx[lid] = _jvx[j + lid];
+        __jvy[lid] = _jvy[j + lid];
+        __jvz[lid] = _jvz[j + lid];
+        barrier(CLK_LOCAL_MEM_FENCE);
+        #pragma unroll UNROLL
+        for (UINT k = 0; k < lsize; ++k) {
+            sakura_kernel_core(
+                dt, flag,
+                im, irx, iry, irz,
+                ie2, ivx, ivy, ivz,
+                __jm[k], __jrx[k], __jry[k], __jrz[k],
+                __je2[k], __jvx[k], __jvy[k], __jvz[k],
+                &idrx, &idry, &idrz,
+                &idvx, &idvy, &idvz);
         }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
     #endif
 
     #pragma unroll UNROLL
@@ -102,11 +99,11 @@ __kernel void sakura_kernel(
             &idvx, &idvy, &idvz);
     }
 
-    vstore1(idrx, mask, _idrx + i);
-    vstore1(idry, mask, _idry + i);
-    vstore1(idrz, mask, _idrz + i);
-    vstore1(idvx, mask, _idvx + i);
-    vstore1(idvy, mask, _idvy + i);
-    vstore1(idvz, mask, _idvz + i);
+    vstore1(idrx, gid, _idrx);
+    vstore1(idry, gid, _idry);
+    vstore1(idrz, gid, _idrz);
+    vstore1(idvx, gid, _idvx);
+    vstore1(idvy, gid, _idvy);
+    vstore1(idvz, gid, _idvz);
 }
 

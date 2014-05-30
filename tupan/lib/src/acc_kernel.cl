@@ -20,16 +20,14 @@ __kernel void acc_kernel(
 {
     UINT lid = get_local_id(0);
     UINT lsize = get_local_size(0);
-    UINT i = VW * lsize * get_group_id(0);
+    UINT gid = get_global_id(0);
+    gid *= ((VW * gid) < ni);
 
-    UINT mask = (i + VW * lid) < ni;
-    mask *= lid;
-
-    REALn im = vloadn(mask, _im + i);
-    REALn irx = vloadn(mask, _irx + i);
-    REALn iry = vloadn(mask, _iry + i);
-    REALn irz = vloadn(mask, _irz + i);
-    REALn ie2 = vloadn(mask, _ie2 + i);
+    REALn im = vloadn(gid, _im);
+    REALn irx = vloadn(gid, _irx);
+    REALn iry = vloadn(gid, _iry);
+    REALn irz = vloadn(gid, _irz);
+    REALn ie2 = vloadn(gid, _ie2);
 
     REALn iax = (REALn)(0);
     REALn iay = (REALn)(0);
@@ -38,27 +36,27 @@ __kernel void acc_kernel(
     UINT j = 0;
 
     #ifdef FAST_LOCAL_MEM
+    for (; (j + lsize - 1) < nj; j += lsize) {
         __local REAL __jm[LSIZE];
         __local REAL __jrx[LSIZE];
         __local REAL __jry[LSIZE];
         __local REAL __jrz[LSIZE];
         __local REAL __je2[LSIZE];
-        for (; (j + lsize - 1) < nj; j += lsize) {
-            __jm[lid] = _jm[j + lid];
-            __jrx[lid] = _jrx[j + lid];
-            __jry[lid] = _jry[j + lid];
-            __jrz[lid] = _jrz[j + lid];
-            __je2[lid] = _je2[j + lid];
-            barrier(CLK_LOCAL_MEM_FENCE);
-            #pragma unroll UNROLL
-            for (UINT k = 0; k < lsize; ++k) {
-                acc_kernel_core(
-                    im, irx, iry, irz, ie2,
-                    __jm[k], __jrx[k], __jry[k], __jrz[k], __je2[k],
-                    &iax, &iay, &iaz);
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
+        __jm[lid] = _jm[j + lid];
+        __jrx[lid] = _jrx[j + lid];
+        __jry[lid] = _jry[j + lid];
+        __jrz[lid] = _jrz[j + lid];
+        __je2[lid] = _je2[j + lid];
+        barrier(CLK_LOCAL_MEM_FENCE);
+        #pragma unroll UNROLL
+        for (UINT k = 0; k < lsize; ++k) {
+            acc_kernel_core(
+                im, irx, iry, irz, ie2,
+                __jm[k], __jrx[k], __jry[k], __jrz[k], __je2[k],
+                &iax, &iay, &iaz);
         }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
     #endif
 
     #pragma unroll UNROLL
@@ -69,8 +67,8 @@ __kernel void acc_kernel(
             &iax, &iay, &iaz);
     }
 
-    vstoren(iax, mask, _iax + i);
-    vstoren(iay, mask, _iay + i);
-    vstoren(iaz, mask, _iaz + i);
+    vstoren(iax, gid, _iax);
+    vstoren(iay, gid, _iay);
+    vstoren(iaz, gid, _iaz);
 }
 
