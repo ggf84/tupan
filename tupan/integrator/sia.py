@@ -9,7 +9,7 @@ TODO.
 from __future__ import print_function
 import logging
 from ..integrator import Base
-from .fewbody import FewBody
+from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -167,7 +167,7 @@ def drift(ips, dt):
     """Drift operator.
 
     """
-    if ips.include_pn_corrections:
+    if hasattr(ips, 'include_pn_corrections'):
         return drift_pn(ips, dt)
     return drift_n(ips, dt)
 
@@ -181,9 +181,39 @@ def kick(ips, dt):
 
     """
     ips.set_acc(ips)
-    if ips.include_pn_corrections:
+    if hasattr(ips, 'include_pn_corrections'):
         return kick_pn(ips, dt)
     return kick_n(ips, dt)
+
+
+#
+# twobody_solver
+#
+@timings
+def twobody_solver(ips, dt, kernel=ext.Kepler()):
+    """
+
+    """
+    if hasattr(ips, 'include_pn_corrections'):
+        raise NotImplementedError("The current version of the "
+                                  "Kepler-solver does not include "
+                                  "post-Newtonian corrections.")
+    else:
+        kernel(ips, ips, dt=dt)
+    return ips
+
+
+#
+# fewbody_solver
+#
+@timings
+def fewbody_solver(ips, dt):
+    """
+
+    """
+    if ips.n == 1:
+        return drift(ips, dt)
+    return twobody_solver(ips, dt)
 
 
 #
@@ -194,8 +224,10 @@ def sf_drift(slow, fast, dt, evolve, recurse, bridge):
     """Slow<->Fast Drift operator.
 
     """
-    slow = evolve(slow, dt)
-    fast = recurse(fast, dt, evolve, bridge)
+    if slow.n:
+        slow = evolve(slow, dt)
+    if fast.n:
+        fast = recurse(fast, dt, evolve, bridge)
     return slow, fast
 
 
@@ -207,90 +239,92 @@ def sf_kick(slow, fast, dt):
     """Slow<->Fast Kick operator.
 
     """
-    if slow.n and fast.n:
-        slow.set_acc(fast)
-        fast.set_acc(slow)
-        if slow.include_pn_corrections:
-#            #
-#            def vw_swap(ps):
-#                ps.vx, ps.wx = ps.wx, ps.vx
-#                ps.vy, ps.wy = ps.wy, ps.vy
-#                ps.vz, ps.wz = ps.wz, ps.vz
-#                return ps
-#            slow.set_pnacc(fast)
-#            fast.set_pnacc(slow)
-#            slow.wx += (slow.ax + slow.pnax) * dt / 2
-#            slow.wy += (slow.ay + slow.pnay) * dt / 2
-#            slow.wz += (slow.az + slow.pnaz) * dt / 2
-#            fast.wx += (fast.ax + fast.pnax) * dt / 2
-#            fast.wy += (fast.ay + fast.pnay) * dt / 2
-#            fast.wz += (fast.az + fast.pnaz) * dt / 2
+    if not (slow.n and fast.n):
+        return slow, fast
+
+    slow.set_acc(fast)
+    fast.set_acc(slow)
+    if hasattr(slow, 'include_pn_corrections'):
+#        #
+#        def vw_swap(ps):
+#            ps.vx, ps.wx = ps.wx, ps.vx
+#            ps.vy, ps.wy = ps.wy, ps.vy
+#            ps.vz, ps.wz = ps.wz, ps.vz
+#            return ps
+#        slow.set_pnacc(fast)
+#        fast.set_pnacc(slow)
+#        slow.wx += (slow.ax + slow.pnax) * dt / 2
+#        slow.wy += (slow.ay + slow.pnay) * dt / 2
+#        slow.wz += (slow.az + slow.pnaz) * dt / 2
+#        fast.wx += (fast.ax + fast.pnax) * dt / 2
+#        fast.wy += (fast.ay + fast.pnay) * dt / 2
+#        fast.wz += (fast.az + fast.pnaz) * dt / 2
 #
-#            slow = vw_swap(slow)
-#            fast = vw_swap(fast)
-#            slow.set_pnacc(fast)
-#            fast.set_pnacc(slow)
-#            slow.pn_kick_ke(dt)
-#            slow.pn_kick_lmom(dt)
-#            slow.pn_kick_amom(dt)
-#            fast.pn_kick_ke(dt)
-#            fast.pn_kick_lmom(dt)
-#            fast.pn_kick_amom(dt)
-#            slow = vw_swap(slow)
-#            fast = vw_swap(fast)
+#        slow = vw_swap(slow)
+#        fast = vw_swap(fast)
+#        slow.set_pnacc(fast)
+#        fast.set_pnacc(slow)
+#        slow.pn_kick_ke(dt)
+#        slow.pn_kick_lmom(dt)
+#        slow.pn_kick_amom(dt)
+#        fast.pn_kick_ke(dt)
+#        fast.pn_kick_lmom(dt)
+#        fast.pn_kick_amom(dt)
+#        slow = vw_swap(slow)
+#        fast = vw_swap(fast)
 #
-#            slow.vx += (slow.ax + slow.pnax) * dt
-#            slow.vy += (slow.ay + slow.pnay) * dt
-#            slow.vz += (slow.az + slow.pnaz) * dt
-#            fast.vx += (fast.ax + fast.pnax) * dt
-#            fast.vy += (fast.ay + fast.pnay) * dt
-#            fast.vz += (fast.az + fast.pnaz) * dt
+#        slow.vx += (slow.ax + slow.pnax) * dt
+#        slow.vy += (slow.ay + slow.pnay) * dt
+#        slow.vz += (slow.az + slow.pnaz) * dt
+#        fast.vx += (fast.ax + fast.pnax) * dt
+#        fast.vy += (fast.ay + fast.pnay) * dt
+#        fast.vz += (fast.az + fast.pnaz) * dt
 #
-#            slow.set_pnacc(fast)
-#            fast.set_pnacc(slow)
-#            slow.wx += (slow.ax + slow.pnax) * dt / 2
-#            slow.wy += (slow.ay + slow.pnay) * dt / 2
-#            slow.wz += (slow.az + slow.pnaz) * dt / 2
-#            fast.wx += (fast.ax + fast.pnax) * dt / 2
-#            fast.wy += (fast.ay + fast.pnay) * dt / 2
-#            fast.wz += (fast.az + fast.pnaz) * dt / 2
-#            #
+#        slow.set_pnacc(fast)
+#        fast.set_pnacc(slow)
+#        slow.wx += (slow.ax + slow.pnax) * dt / 2
+#        slow.wy += (slow.ay + slow.pnay) * dt / 2
+#        slow.wz += (slow.az + slow.pnaz) * dt / 2
+#        fast.wx += (fast.ax + fast.pnax) * dt / 2
+#        fast.wy += (fast.ay + fast.pnay) * dt / 2
+#        fast.wz += (fast.az + fast.pnaz) * dt / 2
+#        #
 
 #############
 
-            #
-            slow.vx += (slow.ax * dt + slow.wx) / 2
-            slow.vy += (slow.ay * dt + slow.wy) / 2
-            slow.vz += (slow.az * dt + slow.wz) / 2
-            fast.vx += (fast.ax * dt + fast.wx) / 2
-            fast.vy += (fast.ay * dt + fast.wy) / 2
-            fast.vz += (fast.az * dt + fast.wz) / 2
+        #
+        slow.vx += (slow.ax * dt + slow.wx) / 2
+        slow.vy += (slow.ay * dt + slow.wy) / 2
+        slow.vz += (slow.az * dt + slow.wz) / 2
+        fast.vx += (fast.ax * dt + fast.wx) / 2
+        fast.vy += (fast.ay * dt + fast.wy) / 2
+        fast.vz += (fast.az * dt + fast.wz) / 2
 
-            slow.set_pnacc(fast)
-            fast.set_pnacc(slow)
-            slow.pn_kick_ke(dt)
-            slow.pn_kick_lmom(dt)
-            slow.pn_kick_amom(dt)
-            fast.pn_kick_ke(dt)
-            fast.pn_kick_lmom(dt)
-            fast.pn_kick_amom(dt)
-            slow.wx[...] = 2 * slow.pnax * dt - slow.wx
-            slow.wy[...] = 2 * slow.pnay * dt - slow.wy
-            slow.wz[...] = 2 * slow.pnaz * dt - slow.wz
-            fast.wx[...] = 2 * fast.pnax * dt - fast.wx
-            fast.wy[...] = 2 * fast.pnay * dt - fast.wy
-            fast.wz[...] = 2 * fast.pnaz * dt - fast.wz
+        slow.set_pnacc(fast)
+        fast.set_pnacc(slow)
+        slow.pn_kick_ke(dt)
+        slow.pn_kick_lmom(dt)
+        slow.pn_kick_amom(dt)
+        fast.pn_kick_ke(dt)
+        fast.pn_kick_lmom(dt)
+        fast.pn_kick_amom(dt)
+        slow.wx[...] = 2 * slow.pnax * dt - slow.wx
+        slow.wy[...] = 2 * slow.pnay * dt - slow.wy
+        slow.wz[...] = 2 * slow.pnaz * dt - slow.wz
+        fast.wx[...] = 2 * fast.pnax * dt - fast.wx
+        fast.wy[...] = 2 * fast.pnay * dt - fast.wy
+        fast.wz[...] = 2 * fast.pnaz * dt - fast.wz
 
-            slow.vx += (slow.ax * dt + slow.wx) / 2
-            slow.vy += (slow.ay * dt + slow.wy) / 2
-            slow.vz += (slow.az * dt + slow.wz) / 2
-            fast.vx += (fast.ax * dt + fast.wx) / 2
-            fast.vy += (fast.ay * dt + fast.wy) / 2
-            fast.vz += (fast.az * dt + fast.wz) / 2
-            #
-        else:
-            slow = kick_n(slow, dt)
-            fast = kick_n(fast, dt)
+        slow.vx += (slow.ax * dt + slow.wx) / 2
+        slow.vy += (slow.ay * dt + slow.wy) / 2
+        slow.vz += (slow.az * dt + slow.wz) / 2
+        fast.vx += (fast.ax * dt + fast.wx) / 2
+        fast.vy += (fast.ay * dt + fast.wy) / 2
+        fast.vz += (fast.az * dt + fast.wz) / 2
+        #
+    else:
+        slow = kick_n(slow, dt)
+        fast = kick_n(fast, dt)
     return slow, fast
 
 
@@ -309,7 +343,7 @@ class SIA21(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         k, d = cls.coefs
 
@@ -325,7 +359,7 @@ class SIA21(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         d, k = cls.coefs
 
@@ -366,7 +400,7 @@ class SIA22(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         k, d = cls.coefs
 
@@ -384,7 +418,7 @@ class SIA22(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         d, k = cls.coefs
 
@@ -430,7 +464,7 @@ class SIA43(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         k, d = cls.coefs
 
@@ -450,7 +484,7 @@ class SIA43(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         d, k = cls.coefs
 
@@ -501,7 +535,7 @@ class SIA44(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         k, d = cls.coefs
 
@@ -523,7 +557,7 @@ class SIA44(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         d, k = cls.coefs
 
@@ -579,7 +613,7 @@ class SIA45(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         k, d = cls.coefs
 
@@ -603,7 +637,7 @@ class SIA45(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         d, k = cls.coefs
 
@@ -664,7 +698,7 @@ class SIA46(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         k, d = cls.coefs
 
@@ -690,7 +724,7 @@ class SIA46(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         d, k = cls.coefs
 
@@ -756,7 +790,7 @@ class SIA67(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         k, d = cls.coefs
 
@@ -784,7 +818,7 @@ class SIA67(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         d, k = cls.coefs
 
@@ -856,7 +890,7 @@ class SIA69(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         k, d = cls.coefs
 
@@ -888,7 +922,7 @@ class SIA69(object):
 
         """
         if ips.n <= 2:
-            return FewBody.evolve(ips, dt)
+            return fewbody_solver(ips, dt)
 
         d, k = cls.coefs
 
@@ -983,7 +1017,7 @@ class SIA(Base):
                     "t_curr = %g and t_end = %g.",
                     self.method, ps.t_curr, t_end)
 
-        if ps.include_pn_corrections:
+        if hasattr(ps, 'include_pn_corrections'):
             ps.register_attribute("wx", "real")
             ps.register_attribute("wy", "real")
             ps.register_attribute("wz", "real")
@@ -1074,9 +1108,6 @@ class SIA(Base):
         """
 
         """
-        if not ps.n:
-            return ps
-
         flag = -1
         if self.update_tstep:
             flag = 1

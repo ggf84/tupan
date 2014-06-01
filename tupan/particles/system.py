@@ -24,23 +24,28 @@ class ParticleSystem(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
     """
-    def __init__(self, nbodies=0, nstars=0, nbhs=0, nsphs=0, members=None):
+    def __init__(self, nbodies=0, nstars=0, nbhs=0, nsphs=0):
         """
         Initializer.
         """
-        init_ids = False
-        if members is None:
-            init_ids = True
-            members = {cls.__name__.lower(): cls(n)
-                       for (n, cls) in [(nbodies, Bodies),
-                                        (nstars, Stars),
-                                        (nbhs, Blackholes),
-                                        (nsphs, Sphs)] if n}
+        members = {cls.__name__.lower(): cls(n)
+                   for (n, cls) in [(nbodies, Bodies),
+                                    (nstars, Stars),
+                                    (nbhs, Blackholes),
+                                    (nsphs, Sphs)] if n}
+        self.set_members(members)
+        if self.n:
+            self.id[...] = range(self.n)
+
+    def set_members(self, members):
         self.members = members
         self.n = len(self)
-        if init_ids:
-            if self.n:
-                self.id[...] = range(self.n)
+
+    @classmethod
+    def from_members(cls, members):
+        obj = cls.__new__(cls)
+        obj.set_members(members)
+        return obj
 
     def register_attribute(self, attr, sctype, doc=''):
         for member in self.members.values():
@@ -92,7 +97,7 @@ class ParticleSystem(AbstractNbodyMethods):
                 nf += obj.n
                 members[key] = obj[slc[ns:nf]]
                 ns += obj.n
-            return type(self)(members=members)
+            return type(self).from_members(members)
 
         if isinstance(slc, int):
             if abs(slc) > self.n-1:
@@ -106,7 +111,7 @@ class ParticleSystem(AbstractNbodyMethods):
                 if 0 <= i < obj.n:
                     members[key] = obj[i]
                 i -= obj.n
-            return type(self)(members=members)
+            return type(self).from_members(members)
 
         if isinstance(slc, slice):
             start = slc.start
@@ -125,7 +130,7 @@ class ParticleSystem(AbstractNbodyMethods):
                     members[key] = obj[start-obj.n:stop]
                 start -= obj.n
                 stop -= obj.n
-            return type(self)(members=members)
+            return type(self).from_members(members)
 
     def __setitem__(self, slc, values):
         if isinstance(slc, np.ndarray):

@@ -13,7 +13,7 @@ import h5py
 from ..lib.utils.timing import timings, bind_all
 
 
-__all__ = ["HDF5IO"]
+__all__ = ['HDF5IO']
 
 IS_PY3K = True if sys.version_info.major > 2 else False
 PICKLE_PROTOCOL = 0  # ensures backward compatibility with Python 2.x
@@ -41,11 +41,11 @@ class HDF5IO(object):
             dtype=dtype,
             maxshape=(None,),
             chunks=True,
-            compression="gzip",
+            compression='gzip',
             shuffle=True,
             )
         cls = pickle.dumps(type(obj), protocol=PICKLE_PROTOCOL)
-        dset.attrs["Class"] = cls.decode('utf-8') if IS_PY3K else cls
+        dset.attrs['Class'] = cls.decode('utf-8') if IS_PY3K else cls
         dset.resize((nlen,))
         dset[olen:] = obj.get_state()
 
@@ -53,14 +53,14 @@ class HDF5IO(object):
         """
 
         """
-        base_name = "Snapshot"
+        base_name = 'Snapshot'
         if isinstance(snap_number, int):
-            base_name += "_"+str(snap_number).zfill(6)
+            base_name += '_' + str(snap_number).zfill(6)
         base_group = fobj.require_group(base_name)
         group_name = type(ps).__name__.lower()
         group = base_group.require_group(group_name)
         cls = pickle.dumps(type(ps), protocol=PICKLE_PROTOCOL)
-        group.attrs["Class"] = cls.decode('utf-8') if IS_PY3K else cls
+        group.attrs['Class'] = cls.decode('utf-8') if IS_PY3K else cls
         for (key, obj) in ps.members.items():
             if obj.n:
                 self.store_dset(group, key, obj)
@@ -76,16 +76,18 @@ class HDF5IO(object):
         """
 
         """
-        base_name = "Snapshot"
+        base_name = 'Snapshot'
         if isinstance(snap_number, int):
-            base_name += "_"+str(snap_number).zfill(6)
+            base_name += '_' + str(snap_number).zfill(6)
         group = list(fobj[base_name].values())[0]
-        ps = pickle.loads(group.attrs["Class"])()
-        for v in group.values():
-            obj = pickle.loads(v.attrs["Class"])(len(v))
-            obj.set_state(v[...])
-            ps.append(obj)
-        return ps
+        members = {}
+        for k, v in group.items():
+            cls = pickle.loads(v.attrs['Class'])
+            obj = cls(len(v))
+            obj.set_state(v)
+            members[k] = obj.copy()
+        cls = pickle.loads(group.attrs['Class'])
+        return cls.from_members(members)
 
     def load_snapshot(self, snap_number=None):
         """
@@ -99,11 +101,11 @@ class HDF5IO(object):
         """
 
         """
-        base_group = fobj.require_group("Worldline")
+        base_group = fobj.require_group('Worldline')
         group_name = type(wl).__name__.lower()
         group = base_group.require_group(group_name)
         cls = pickle.dumps(type(wl), protocol=PICKLE_PROTOCOL)
-        group.attrs["Class"] = cls.decode('utf-8') if IS_PY3K else cls
+        group.attrs['Class'] = cls.decode('utf-8') if IS_PY3K else cls
         for (key, obj) in wl.members.items():
             if obj.n:
                 self.store_dset(group, key, obj)
@@ -134,7 +136,7 @@ class HDF5IO(object):
         Converts a HDF5 stream into a YAML one.
         """
         from . import psdfio
-        fname = self.fname.replace(".hdf5", ".psdf")
+        fname = self.fname.replace('.hdf5', '.psdf')
         stream = psdfio.PSDFIO(fname, fmode='w')
         try:
             ps = self.load_snapshot()

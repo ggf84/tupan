@@ -89,8 +89,6 @@ class NbodyMethods(object):
     nstep = typed_property('nstep', 'uint', doc='step number')
     tstep = typed_property('tstep', 'real', doc='time step')
 
-    include_pn_corrections = False
-
     def copy(self):
         return copy.deepcopy(self)
 
@@ -673,12 +671,18 @@ class Particle(AbstractNbodyMethods):
     """
 
     """
-    def __init__(self, n=0, items=None):
-        if items is None:
-            self.n = n
-        else:
-            self.__dict__.update(items)
-            self.n = len(self.id)
+    def __init__(self, n=0):
+        self.n = n
+
+    def update_attrs(self, attrs):
+        self.__dict__.update(attrs)
+        self.n = len(self.id)
+
+    @classmethod
+    def from_attrs(cls, attrs):
+        obj = cls.__new__(cls)
+        obj.update_attrs(attrs)
+        return obj
 
     @property
     def attributes(self):
@@ -705,16 +709,15 @@ class Particle(AbstractNbodyMethods):
 
     def append(self, obj):
         if obj.n:
-            items = {k: np.concatenate((getattr(self, k), v))
+            attrs = {k: np.concatenate((getattr(self, k), v))
                      for (k, v) in obj.attributes}
-            self.__dict__.update(items)
-            self.n = len(self.id)
+            self.update_attrs(attrs)
 
     def __getitem__(self, slc):
-        items = {k: v[slc] for (k, v) in self.attributes}
+        attrs = {k: v[slc] for (k, v) in self.attributes}
         if isinstance(slc, int):
-            items = {k: v[None] for (k, v) in items.items()}
-        return type(self)(items=items)
+            attrs = {k: v[None] for (k, v) in attrs.items()}
+        return type(self).from_attrs(attrs)
 
     def __setitem__(self, slc, values):
         for (k, v) in self.attributes:

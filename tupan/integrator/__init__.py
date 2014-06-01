@@ -22,7 +22,6 @@ class Base(object):
 
         pn_order = kwargs.pop("pn_order", 0)
         clight = kwargs.pop("clight", None)
-        type(ps).include_pn_corrections = False
         if pn_order > 0:
             if clight is None:
                 raise TypeError(
@@ -33,7 +32,6 @@ class Base(object):
                 from ..lib import extensions
                 extensions.pn.order = pn_order
                 extensions.pn.clight = clight
-                type(ps).include_pn_corrections = True
 
         self.reporter = kwargs.pop("reporter", None)
         self.viewer = kwargs.pop("viewer", None)
