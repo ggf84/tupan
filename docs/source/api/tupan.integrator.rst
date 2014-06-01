@@ -11,15 +11,6 @@ tupan.integrator package
 Submodules
 ----------
 
-tupan.integrator.fewbody module
--------------------------------
-
-.. automodule:: tupan.integrator.fewbody
-    :members:
-    :undoc-members:
-    :inherited-members:
-    :show-inheritance:
-
 tupan.integrator.hermite module
 -------------------------------
 
