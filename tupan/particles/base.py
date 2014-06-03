@@ -17,46 +17,30 @@ from ..lib.utils.ctype import Ctype
 __all__ = ['Particle', 'AbstractNbodyMethods']
 
 
-def particle_property(name, sctype,
-                      doc=None, can_get=True,
-                      can_set=True, can_del=True):
-    storage_name = '_' + name
-    dtype = vars(Ctype)[sctype]
+class lazyproperty(object):
+    def __init__(self, name, sctype, doc):
+        self.name = name
+        self.dtype = vars(Ctype)[sctype]
+        self.__doc__ = doc
 
-    def fget(self):
-        value = getattr(self, storage_name, None)
-        if value is None:
-            value = np.zeros(self.n, dtype=dtype)
-            setattr(self, storage_name, value)
-        return value
-
-    def fset(self, value):
-        setattr(self, storage_name, value)
-
-    def fdel(self):
-        if hasattr(self, storage_name):
-            delattr(self, storage_name)
-
-    fget.__name__ = name
-    fset.__name__ = name
-    fdel.__name__ = name
-    return property(fget if can_get else None,
-                    fset if can_set else None,
-                    fdel if can_del else None,
-                    doc)
+    def __get__(self, instance, cls):
+        if instance is None:
+            return self
+        else:
+            return instance._init_lazyproperty(self.name, self.dtype)
 
 
 class MetaBase(type):
     def __new__(cls, *args, **kwargs):
         new_cls = super(MetaBase, cls).__new__(cls, *args, **kwargs)
 
-        if hasattr(new_cls, 'register_property'):
+        if hasattr(new_cls, 'attr_descr'):
             for name, sctype, doc in new_cls.attr_descr:
-                new_cls.register_property(name, sctype, doc)
+                setattr(new_cls, name, lazyproperty(name, sctype, doc))
 
-            if hasattr(new_cls, 'pn_attr_descr'):
-                for name, sctype, doc in new_cls.pn_attr_descr:
-                    new_cls.register_property(name, sctype, doc)
+        if hasattr(new_cls, 'pn_attr_descr'):
+            for name, sctype, doc in new_cls.pn_attr_descr:
+                setattr(new_cls, name, lazyproperty(name, sctype, doc))
 
         if hasattr(new_cls, 'dtype'):
             dtype = [(name, vars(Ctype)[sctype])
@@ -87,6 +71,9 @@ class NbodyMethods(BaseNbodyMethods):
         ('time', 'real', 'current time'),
         ('nstep', 'uint', 'step number'),
         ('tstep', 'real', 'time step'), ]
+
+    def register_attribute(self, name, sctype, doc=''):
+        setattr(type(self), name, lazyproperty(name, sctype, doc))
 
     def copy(self):
         return copy.deepcopy(self)
@@ -720,12 +707,10 @@ class Particle(AbstractNbodyMethods):
                 typecast = getattr(self, name).dtype.type
                 setattr(self, name, typecast(array[name]))
 
-    @classmethod
-    def register_property(cls, name, sctype, doc=''):
-        setattr(cls, name, particle_property(name, sctype, doc))
-
-    def register_attribute(self, name, sctype, doc=''):
-        type(self).register_property(name, sctype, doc)
+    def _init_lazyproperty(self, name, dtype):
+        value = np.zeros(self.n, dtype=dtype)
+        setattr(self, name, value)
+        return value
 
 
 # -- End of File --

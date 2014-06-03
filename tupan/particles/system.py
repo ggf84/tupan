@@ -19,44 +19,6 @@ from ..lib.utils.timing import timings, bind_all
 __all__ = ['ParticleSystem']
 
 
-def particle_system_property(name, sctype,
-                             doc=None, can_get=True,
-                             can_set=True, can_del=True):
-    storage_name = '_' + name
-
-    def fget(self):
-        value = getattr(self, storage_name, None)
-        if value is None:
-            arrays = [getattr(member, name)
-                      for member in self.members.values()]
-            value = np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
-            ns = 0
-            nf = 0
-            for member in self.members.values():
-                nf += member.n
-                setattr(member, name, value[ns:nf])
-                ns += member.n
-            setattr(self, storage_name, value)
-        return value
-
-    def fset(self, value):
-        setattr(self, storage_name, value)
-
-    def fdel(self):
-        if hasattr(self, storage_name):
-            delattr(self, storage_name)
-        for member in self.members.values():
-            delattr(member, name)
-
-    fget.__name__ = name
-    fset.__name__ = name
-    fdel.__name__ = name
-    return property(fget if can_get else None,
-                    fset if can_set else None,
-                    fdel if can_del else None,
-                    doc)
-
-
 @bind_all(timings)
 class ParticleSystem(AbstractNbodyMethods):
     """
@@ -84,6 +46,12 @@ class ParticleSystem(AbstractNbodyMethods):
         obj = cls.__new__(cls)
         obj.set_members(members)
         return obj
+
+    def register_attribute(self, name, sctype, doc=''):
+        for member in self.members.values():
+            member.register_attribute(name, sctype, doc)
+
+        super(ParticleSystem, self).register_attribute(name, sctype, doc)
 
     #
     # miscellaneous methods
@@ -205,14 +173,18 @@ class ParticleSystem(AbstractNbodyMethods):
                 stop -= obj.n
             return
 
-    @classmethod
-    def register_property(cls, name, sctype, doc=''):
-        setattr(cls, name, particle_system_property(name, sctype, doc))
-
-    def register_attribute(self, name, sctype, doc=''):
+    def _init_lazyproperty(self, name, dtype=None):
+        arrays = [getattr(member, name)
+                  for member in self.members.values()]
+        value = np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
+        ns = 0
+        nf = 0
         for member in self.members.values():
-            member.register_attribute(name, sctype, doc)
-        type(self).register_property(name, sctype, doc)
+            nf += member.n
+            setattr(member, name, value[ns:nf])
+            ns += member.n
+        setattr(self, name, value)
+        return value
 
 
 # -- End of File --
