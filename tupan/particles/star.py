@@ -6,7 +6,7 @@ TODO.
 """
 
 
-from .base import Particle, typed_property
+from .base import Particle
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -18,14 +18,14 @@ class Stars(Particle):
     """
 
     """
-    dtype = []
-
-    spinx = typed_property('spinx', 'real', doc='x-spin')
-    spiny = typed_property('spiny', 'real', doc='y-spin')
-    spinz = typed_property('spinz', 'real', doc='z-spin')
-    radius = typed_property('radius', 'real', doc='radius')
-    age = typed_property('age', 'real', doc='age')
-    metallicity = typed_property('metallicity', 'real', doc='metallicity')
+    dtype = None
+    attr_descr = Particle.attr_descr + [
+        ('spinx', 'real', 'x-spin'),
+        ('spiny', 'real', 'y-spin'),
+        ('spinz', 'real', 'z-spin'),
+        ('radius', 'real', 'radius'),
+        ('age', 'real', 'age'),
+        ('metallicity', 'real', 'metallicity'), ]
 
 
 # -- End of File --

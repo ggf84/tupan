@@ -6,7 +6,7 @@ TODO.
 """
 
 
-from .base import Particle, typed_property
+from .base import Particle
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -18,9 +18,9 @@ class Sphs(Particle):
     """
 
     """
-    dtype = []
-
-    density = typed_property('density', 'real', doc='density')
+    dtype = None
+    attr_descr = Particle.attr_descr + [
+        ('density', 'real', 'density'), ]
 
 
 # -- End of File --

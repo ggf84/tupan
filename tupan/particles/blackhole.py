@@ -6,7 +6,7 @@ TODO.
 """
 
 
-from .base import Particle, typed_property
+from .base import Particle
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -18,12 +18,12 @@ class Blackholes(Particle):
     """
 
     """
-    dtype = []
-
-    spinx = typed_property('spinx', 'real', doc='x-spin')
-    spiny = typed_property('spiny', 'real', doc='y-spin')
-    spinz = typed_property('spinz', 'real', doc='z-spin')
-    radius = typed_property('radius', 'real', doc='radius')
+    dtype = None
+    attr_descr = Particle.attr_descr + [
+        ('spinx', 'real', 'x-spin'),
+        ('spiny', 'real', 'y-spin'),
+        ('spinz', 'real', 'z-spin'),
+        ('radius', 'real', 'radius'), ]
 
 
 # -- End of File --

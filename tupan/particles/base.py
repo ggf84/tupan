@@ -11,57 +11,31 @@ import sys
 import copy
 import numpy as np
 from ..lib import extensions as ext
-from ..lib.utils.timing import timings, bind_all
 from ..lib.utils.ctype import Ctype
 
 
 __all__ = ['Particle', 'AbstractNbodyMethods']
 
 
-def typed_property(name, sctype,
-                   doc=None, can_get=True,
-                   can_set=True, can_del=True):
+def particle_property(name, sctype,
+                      doc=None, can_get=True,
+                      can_set=True, can_del=True):
     storage_name = '_' + name
     dtype = vars(Ctype)[sctype]
-
-    def get_value(self):
-        try:
-            arrays = [getattr(member, name)
-                      for member in self.members.values()]
-            return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
-        except AttributeError:
-            cls = type(self)
-            dty = set(cls.dtype)
-            dty.add((name, dtype))
-            cls.dtype = list(dty)
-            return np.zeros(self.n, dtype=dtype)
 
     def fget(self):
         value = getattr(self, storage_name, None)
         if value is None:
-            value = get_value(self)
-            setattr(self, name, value)
+            value = np.zeros(self.n, dtype=dtype)
+            setattr(self, storage_name, value)
         return value
 
     def fset(self, value):
-        if not hasattr(self, storage_name):
-            try:
-                ns = 0
-                nf = 0
-                for member in self.members.values():
-                    nf += member.n
-                    setattr(member, storage_name, value[ns:nf])
-                    ns += member.n
-            except AttributeError:
-                pass
         setattr(self, storage_name, value)
 
     def fdel(self):
         if hasattr(self, storage_name):
             delattr(self, storage_name)
-        if hasattr(self, 'members'):
-            for member in self.members.values():
-                delattr(member, name)
 
     fget.__name__ = name
     fset.__name__ = name
@@ -72,29 +46,50 @@ def typed_property(name, sctype,
                     doc)
 
 
-class NbodyMethods(object):
+class MetaBase(type):
+    def __new__(cls, *args, **kwargs):
+        new_cls = super(MetaBase, cls).__new__(cls, *args, **kwargs)
+
+        if hasattr(new_cls, 'register_property'):
+            for name, sctype, doc in new_cls.attr_descr:
+                new_cls.register_property(name, sctype, doc)
+
+            if hasattr(new_cls, 'pn_attr_descr'):
+                for name, sctype, doc in new_cls.pn_attr_descr:
+                    new_cls.register_property(name, sctype, doc)
+
+        if hasattr(new_cls, 'dtype'):
+            dtype = [(name, vars(Ctype)[sctype])
+                     for name, sctype, doc in new_cls.attr_descr]
+            setattr(new_cls, 'dtype', dtype)
+
+        return new_cls
+
+
+BaseNbodyMethods = MetaBase('BaseNbodyMethods', (object,), {})
+
+
+class NbodyMethods(BaseNbodyMethods):
     """This class holds common methods for particles in n-body systems.
 
     """
-    id = typed_property('id', 'uint', doc='index')
-    mass = typed_property('mass', 'real', doc='mass')
-    eps2 = typed_property('eps2', 'real', doc='squared softening')
-    rx = typed_property('rx', 'real', doc='x-position')
-    ry = typed_property('ry', 'real', doc='y-position')
-    rz = typed_property('rz', 'real', doc='z-position')
-    vx = typed_property('vx', 'real', doc='x-velocity')
-    vy = typed_property('vy', 'real', doc='y-velocity')
-    vz = typed_property('vz', 'real', doc='z-velocity')
-    time = typed_property('time', 'real', doc='current time')
-    nstep = typed_property('nstep', 'uint', doc='step number')
-    tstep = typed_property('tstep', 'real', doc='time step')
+    # name, sctype, doc
+    attr_descr = [
+        ('id', 'uint', 'index'),
+        ('mass', 'real', 'mass'),
+        ('eps2', 'real', 'squared softening'),
+        ('rx', 'real', 'x-position'),
+        ('ry', 'real', 'y-position'),
+        ('rz', 'real', 'z-position'),
+        ('vx', 'real', 'x-velocity'),
+        ('vy', 'real', 'y-velocity'),
+        ('vz', 'real', 'z-velocity'),
+        ('time', 'real', 'current time'),
+        ('nstep', 'uint', 'step number'),
+        ('tstep', 'real', 'time step'), ]
 
     def copy(self):
         return copy.deepcopy(self)
-
-    def register_attribute(self, attr, sctype, doc=''):
-        setattr(type(self), attr,
-                typed_property(attr, sctype, doc=doc))
 
     @property
     def pos(self):  # XXX: deprecate?
@@ -471,33 +466,18 @@ class PNbodyMethods(NbodyMethods):
     """
     include_pn_corrections = True
 
-    # -- PN stuff
-    # -- TODO: move these methods to a more appropriate place...
-
-    pn_ke = typed_property('pn_ke', 'real',
-                           doc=('post-newtonian correction '
-                                'for kinectic energy.'))
-    pn_mrx = typed_property('pn_mrx', 'real',
-                            doc='post-newtonian correction for x-com_r')
-    pn_mry = typed_property('pn_mry', 'real',
-                            doc='post-newtonian correction for y-com_r')
-    pn_mrz = typed_property('pn_mrz', 'real',
-                            doc='post-newtonian correction for z-com_r')
-    pn_mvx = typed_property('pn_mvx', 'real',
-                            doc='post-newtonian correction for x-com_v')
-    pn_mvy = typed_property('pn_mvy', 'real',
-                            doc='post-newtonian correction for y-com_v')
-    pn_mvz = typed_property('pn_mvz', 'real',
-                            doc='post-newtonian correction for z-com_v')
-    pn_amx = typed_property('pn_amx', 'real',
-                            doc=('post-newtonian correction '
-                                 'for x-angular momentum'))
-    pn_amy = typed_property('pn_amy', 'real',
-                            doc=('post-newtonian correction '
-                                 'for y-angular momentum'))
-    pn_amz = typed_property('pn_amz', 'real',
-                            doc=('post-newtonian correction '
-                                 'for z-angular momentum'))
+    # name, sctype, doc
+    pn_attr_descr = [
+        ('pn_ke', 'real', 'PN correction for kinectic energy.'),
+        ('pn_mrx', 'real', 'PN correction for x-com_r'),
+        ('pn_mry', 'real', 'PN correction for y-com_r'),
+        ('pn_mrz', 'real', 'PN correction for z-com_r'),
+        ('pn_mvx', 'real', 'PN correction for x-com_v'),
+        ('pn_mvy', 'real', 'PN correction for y-com_v'),
+        ('pn_mvz', 'real', 'PN correction for z-com_v'),
+        ('pn_amx', 'real', 'PN correction for x-angular momentum'),
+        ('pn_amy', 'real', 'PN correction for y-angular momentum'),
+        ('pn_amz', 'real', 'PN correction for z-angular momentum'), ]
 
     @property
     def com_r(self):
@@ -666,7 +646,6 @@ if '--pn_order' in sys.argv:
 
 
 ###############################################################################
-@bind_all(timings)
 class Particle(AbstractNbodyMethods):
     """
 
@@ -740,6 +719,13 @@ class Particle(AbstractNbodyMethods):
             if hasattr(self, name):
                 typecast = getattr(self, name).dtype.type
                 setattr(self, name, typecast(array[name]))
+
+    @classmethod
+    def register_property(cls, name, sctype, doc=''):
+        setattr(cls, name, particle_property(name, sctype, doc))
+
+    def register_attribute(self, name, sctype, doc=''):
+        type(self).register_property(name, sctype, doc)
 
 
 # -- End of File --
