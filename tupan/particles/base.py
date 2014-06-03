@@ -17,7 +17,7 @@ from ..lib.utils.ctype import Ctype
 __all__ = ['Particle', 'AbstractNbodyMethods']
 
 
-class lazyproperty(object):
+class LazyProperty(object):
     def __init__(self, name, sctype, doc):
         self.name = name
         self.dtype = vars(Ctype)[sctype]
@@ -26,37 +26,37 @@ class lazyproperty(object):
     def __get__(self, instance, cls):
         if instance is None:
             return self
-        else:
-            return instance._init_lazyproperty(self)
+        return instance._init_lazyproperty(self)
 
 
-class MetaBase(type):
-    def __new__(cls, *args, **kwargs):
-        new_cls = super(MetaBase, cls).__new__(cls, *args, **kwargs)
+class MetaBaseNbodyMethods(type):
+    def __init__(cls, *args, **kwargs):
+        super(MetaBaseNbodyMethods, cls).__init__(*args, **kwargs)
 
-        if hasattr(new_cls, 'attr_descr'):
-            for name, sctype, doc in new_cls.attr_descr:
-                setattr(new_cls, name, lazyproperty(name, sctype, doc))
+        if hasattr(cls, '_init_lazyproperty'):
+            if hasattr(cls, 'attr_descr'):
+                for name, sctype, doc in cls.attr_descr:
+                    setattr(cls, name, LazyProperty(name, sctype, doc))
 
-        if hasattr(new_cls, 'pn_attr_descr'):
-            for name, sctype, doc in new_cls.pn_attr_descr:
-                setattr(new_cls, name, lazyproperty(name, sctype, doc))
+            if hasattr(cls, 'pn_attr_descr'):
+                for name, sctype, doc in cls.pn_attr_descr:
+                    setattr(cls, name, LazyProperty(name, sctype, doc))
 
-        if hasattr(new_cls, 'dtype'):
+        if hasattr(cls, 'dtype'):
             dtype = [(name, vars(Ctype)[sctype])
-                     for name, sctype, doc in new_cls.attr_descr]
-            setattr(new_cls, 'dtype', dtype)
-
-        return new_cls
+                     for name, sctype, doc in cls.attr_descr]
+            setattr(cls, 'dtype', dtype)
 
 
-BaseNbodyMethods = MetaBase('BaseNbodyMethods', (object,), {})
+BaseNbodyMethods = MetaBaseNbodyMethods('BaseNbodyMethods', (object,), {})
 
 
 class NbodyMethods(BaseNbodyMethods):
     """This class holds common methods for particles in n-body systems.
 
     """
+    copy = copy.deepcopy
+
     # name, sctype, doc
     attr_descr = [
         ('id', 'uint', 'index'),
@@ -73,10 +73,7 @@ class NbodyMethods(BaseNbodyMethods):
         ('tstep', 'real', 'time step'), ]
 
     def register_attribute(self, name, sctype, doc=''):
-        setattr(type(self), name, lazyproperty(name, sctype, doc))
-
-    def copy(self):
-        return copy.deepcopy(self)
+        setattr(type(self), name, LazyProperty(name, sctype, doc))
 
     @property
     def pos(self):  # XXX: deprecate?
@@ -85,18 +82,6 @@ class NbodyMethods(BaseNbodyMethods):
     @property
     def vel(self):  # XXX: deprecate?
         return np.concatenate((self.vx, self.vy, self.vz,)).reshape(3, -1).T
-
-    @property
-    def px(self):
-        return self.mass * self.vx
-
-    @property
-    def py(self):
-        return self.mass * self.vy
-
-    @property
-    def pz(self):
-        return self.mass * self.vz
 
     # -- total mass and center-of-mass methods
     @property
@@ -698,7 +683,8 @@ class Particle(AbstractNbodyMethods):
         array = np.zeros(self.n, dtype=self.dtype)
         for name in array.dtype.names:
             if hasattr(self, name):
-                array[name] = getattr(self, name)
+                attr = getattr(self, name)
+                array[name] = attr
         return array
 
     def set_state(self, array):
