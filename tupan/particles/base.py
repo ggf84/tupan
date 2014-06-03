@@ -27,7 +27,7 @@ class lazyproperty(object):
         if instance is None:
             return self
         else:
-            return instance._init_lazyproperty(self.name, self.dtype)
+            return instance._init_lazyproperty(self)
 
 
 class MetaBase(type):
@@ -704,10 +704,11 @@ class Particle(AbstractNbodyMethods):
     def set_state(self, array):
         for name in array.dtype.names:
             if hasattr(self, name):
-                typecast = getattr(self, name).dtype.type
-                setattr(self, name, typecast(array[name]))
+                attr = getattr(self, name)
+                attr[...] = array[name]
 
-    def _init_lazyproperty(self, name, dtype):
+    def _init_lazyproperty(self, lazyprop):
+        name, dtype = lazyprop.name, lazyprop.dtype
         value = np.zeros(self.n, dtype=dtype)
         setattr(self, name, value)
         return value

@@ -173,7 +173,8 @@ class ParticleSystem(AbstractNbodyMethods):
                 stop -= obj.n
             return
 
-    def _init_lazyproperty(self, name, dtype=None):
+    def _init_lazyproperty(self, lazyprop):
+        name = lazyprop.name
         arrays = [getattr(member, name)
                   for member in self.members.values()]
         value = np.concatenate(arrays) if len(arrays) > 1 else arrays[0]

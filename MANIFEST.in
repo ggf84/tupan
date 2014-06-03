@@ -5,5 +5,3 @@ global-include *.py *.cl *.c *.h
 recursive-include docs *.rst
 include docs/Makefile
 include tox.ini
-prune .tox
-prune tupan/lib/__pycache__
