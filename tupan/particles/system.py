@@ -28,23 +28,27 @@ class ParticleSystem(AbstractNbodyMethods):
         """
         Initializer.
         """
-        members = {cls.__name__.lower(): cls(n)
-                   for (n, cls) in [(nbodies, Bodies),
-                                    (nstars, Stars),
-                                    (nbhs, Blackholes),
-                                    (nsphs, Sphs)] if n}
-        self.set_members(members)
+        self.members = {cls.__name__.lower(): cls(n)
+                        for (n, cls) in [(nbodies, Bodies),
+                                         (nstars, Stars),
+                                         (nbhs, Blackholes),
+                                         (nsphs, Sphs)] if n}
+        self.n = len(self)
         if self.n:
             self.id[...] = range(self.n)
 
-    def set_members(self, members):
-        self.members = members
+    def update_members(self, members):
+        d = self.__dict__
+        m = d.get('members', {})
+        m.update(members)
+        d.clear()
+        self.members = m
         self.n = len(self)
 
     @classmethod
     def from_members(cls, members):
         obj = cls.__new__(cls)
-        obj.set_members(members)
+        obj.update_members(members)
         return obj
 
     def register_attribute(self, name, sctype, doc=''):
@@ -57,11 +61,8 @@ class ParticleSystem(AbstractNbodyMethods):
     # miscellaneous methods
     #
 
-    def __repr__(self):
-        return repr(self.__dict__)
-
     def __str__(self):
-        fmt = type(self).__name__+'(['
+        fmt = type(self).__name__ + '(['
         if self.n:
             for member in self.members.values():
                 fmt += '\n\t{0},'.format('\n\t'.join(str(member).split('\n')))
@@ -74,48 +75,42 @@ class ParticleSystem(AbstractNbodyMethods):
 
     def append(self, obj):
         if obj.n:
-            try:
-                members = obj.members
-            except AttributeError:
-                members = dict([(type(obj).__name__.lower(), obj)])
-            for (k, v) in members.items():
+            members = self.members
+            for (k, v) in obj.members.items():
                 try:
-                    self.members[k].append(v)
+                    members[k].append(v)
                 except KeyError:
-                    self.members[k] = v.copy()
-            self.n = len(self)
-            for attr in list(self.__dict__):
-                if attr not in ('n', 'members'):
-                    delattr(self, attr)
+                    members[k] = v.copy()
+            self.update_members(members)
 
-    def __getitem__(self, slc):
-        if isinstance(slc, np.ndarray):
+    def __getitem__(self, index):
+        if isinstance(index, np.ndarray):
             ns = 0
             nf = 0
             members = {}
             for (key, obj) in self.members.items():
                 nf += obj.n
-                members[key] = obj[slc[ns:nf]]
+                members[key] = obj[index[ns:nf]]
                 ns += obj.n
-            return type(self).from_members(members)
+            return self.from_members(members)
 
-        if isinstance(slc, int):
-            if abs(slc) > self.n-1:
-                raise IndexError(
-                    'index {0} out of bounds 0<=index<{1}'.format(slc, self.n))
-            if slc < 0:
-                slc = self.n + slc
-            i = slc
+        if isinstance(index, int):
+            if abs(index) > self.n-1:
+                msg = 'index {0} out of bounds 0<=index<{1}'
+                raise IndexError(msg.format(index, self.n))
+            if index < 0:
+                index = self.n + index
+            i = index
             members = {}
             for (key, obj) in self.members.items():
                 if 0 <= i < obj.n:
                     members[key] = obj[i]
                 i -= obj.n
-            return type(self).from_members(members)
+            return self.from_members(members)
 
-        if isinstance(slc, slice):
-            start = slc.start
-            stop = slc.stop
+        if isinstance(index, slice):
+            start = index.start
+            stop = index.stop
             if start is None:
                 start = 0
             if stop is None:
@@ -130,34 +125,34 @@ class ParticleSystem(AbstractNbodyMethods):
                     members[key] = obj[start-obj.n:stop]
                 start -= obj.n
                 stop -= obj.n
-            return type(self).from_members(members)
+            return self.from_members(members)
 
-    def __setitem__(self, slc, values):
-        if isinstance(slc, np.ndarray):
+    def __setitem__(self, index, values):
+        if isinstance(index, np.ndarray):
             ns = 0
             nf = 0
             for (key, obj) in self.members.items():
                 nf += obj.n
-                obj[slc[ns:nf]] = values.members[key]
+                obj[index[ns:nf]] = values.members[key]
                 ns += obj.n
             return
 
-        if isinstance(slc, int):
-            if abs(slc) > self.n-1:
-                raise IndexError(
-                    'index {0} out of bounds 0<=index<{1}'.format(slc, self.n))
-            if slc < 0:
-                slc = self.n + slc
-            i = slc
+        if isinstance(index, int):
+            if abs(index) > self.n-1:
+                msg = 'index {0} out of bounds 0<=index<{1}'
+                raise IndexError(msg.format(index, self.n))
+            if index < 0:
+                index = self.n + index
+            i = index
             for (key, obj) in self.members.items():
                 if 0 <= i < obj.n:
                     obj[i] = values.members[key]
                 i -= obj.n
             return
 
-        if isinstance(slc, slice):
-            start = slc.start
-            stop = slc.stop
+        if isinstance(index, slice):
+            start = index.start
+            stop = index.stop
             if start is None:
                 start = 0
             if stop is None:
@@ -175,12 +170,16 @@ class ParticleSystem(AbstractNbodyMethods):
 
     def _init_lazyproperty(self, lazyprop):
         name = lazyprop.name
-        arrays = [getattr(member, name)
-                  for member in self.members.values()]
-        value = np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
+        members = self.members
+        if len(members) == 1:
+            value = getattr(next(iter(members.values())), name)
+            setattr(self, name, value)
+            return value
+        arrays = [getattr(member, name) for member in members.values()]
+        value = np.concatenate(arrays)
         ns = 0
         nf = 0
-        for member in self.members.values():
+        for member in members.values():
             nf += member.n
             setattr(member, name, value[ns:nf])
             ns += member.n

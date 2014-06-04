@@ -55,8 +55,6 @@ class NbodyMethods(BaseNbodyMethods):
     """This class holds common methods for particles in n-body systems.
 
     """
-    copy = copy.deepcopy
-
     # name, sctype, doc
     attr_descr = [
         ('id', 'uint', 'index'),
@@ -71,6 +69,12 @@ class NbodyMethods(BaseNbodyMethods):
         ('time', 'real', 'current time'),
         ('nstep', 'uint', 'step number'),
         ('tstep', 'real', 'time step'), ]
+
+    def __repr__(self):
+        return repr(self.__dict__)
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     def register_attribute(self, name, sctype, doc=''):
         setattr(type(self), name, LazyProperty(name, sctype, doc))
@@ -637,14 +641,10 @@ class Particle(AbstractNbodyMethods):
 
     @property
     def attributes(self):
-        return ((k, v) for (k, v) in self.__dict__.items()
-                if k not in ('n',))
-
-    def __repr__(self):
-        return repr(dict(self.attributes))
+        return ((k, v) for (k, v) in self.__dict__.items() if k not in ('n',))
 
     def __str__(self):
-        fmt = type(self).__name__+'(['
+        fmt = type(self).__name__ + '(['
         if self.n:
             for (k, v) in self.attributes:
                 fmt += '\n\t{0}: {1},'.format(k, v)
@@ -660,19 +660,20 @@ class Particle(AbstractNbodyMethods):
 
     def append(self, obj):
         if obj.n:
-            attrs = {k: np.concatenate((getattr(self, k), v))
-                     for (k, v) in obj.attributes}
+            attrs = ((k, np.concatenate([getattr(self, k), v]))
+                     for (k, v) in obj.attributes)
             self.update_attrs(attrs)
 
-    def __getitem__(self, slc):
-        attrs = {k: v[slc] for (k, v) in self.attributes}
-        if isinstance(slc, int):
-            attrs = {k: v[None] for (k, v) in attrs.items()}
-        return type(self).from_attrs(attrs)
+    def __getitem__(self, index):
+        if isinstance(index, int):
+            attrs = ((k, v[index][None]) for (k, v) in self.attributes)
+            return self.from_attrs(attrs)
+        attrs = ((k, v[index]) for (k, v) in self.attributes)
+        return self.from_attrs(attrs)
 
-    def __setitem__(self, slc, values):
+    def __setitem__(self, index, value):
         for (k, v) in self.attributes:
-            v[slc] = getattr(values, k)
+            v[index] = getattr(value, k)
 
     def astype(self, cls):
         newobj = cls(self.n)
