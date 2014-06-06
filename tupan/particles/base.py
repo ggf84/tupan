@@ -107,8 +107,8 @@ class NbodyMethods(BaseNbodyMethods):
         mrx = self.mass * self.rx
         mry = self.mass * self.ry
         mrz = self.mass * self.rz
-        mr = np.array([mrx, mry, mrz]).T
-        return mr.sum(0) / self.total_mass
+        mr = np.array([mrx, mry, mrz])
+        return mr.sum(1) / self.total_mass
 
     @property
     def com_v(self):
@@ -122,8 +122,8 @@ class NbodyMethods(BaseNbodyMethods):
         mvx = self.mass * self.vx
         mvy = self.mass * self.vy
         mvz = self.mass * self.vz
-        mv = np.array([mvx, mvy, mvz]).T
-        return mv.sum(0) / self.total_mass
+        mv = np.array([mvx, mvy, mvz])
+        return mv.sum(1) / self.total_mass
 
     @property
     def com_linear_momentum(self):
@@ -465,8 +465,8 @@ class PNbodyMethods(NbodyMethods):
 
         """
         rcom = super(PNbodyMethods, self).com_r
-        pn_mr = np.array([self.pn_mrx, self.pn_mry, self.pn_mrz]).T
-        pn_rcom = pn_mr.sum(0) / self.total_mass
+        pn_mr = np.array([self.pn_mrx, self.pn_mry, self.pn_mrz])
+        pn_rcom = pn_mr.sum(1) / self.total_mass
         return rcom + pn_rcom
 
     @property
@@ -479,8 +479,8 @@ class PNbodyMethods(NbodyMethods):
 
         """
         vcom = super(PNbodyMethods, self).com_v
-        pn_mv = np.array([self.pn_mvx, self.pn_mvy, self.pn_mvz]).T
-        pn_vcom = pn_mv.sum(0) / self.total_mass
+        pn_mv = np.array([self.pn_mvx, self.pn_mvy, self.pn_mvz])
+        pn_vcom = pn_mv.sum(1) / self.total_mass
         return vcom + pn_vcom
 
     @property
@@ -641,7 +641,9 @@ class Particle(AbstractNbodyMethods):
 
     @property
     def attributes(self):
-        return ((k, v) for (k, v) in self.__dict__.items() if k not in ('n',))
+        for (k, v) in self.__dict__.items():
+            if k not in ('n',):
+                yield (k, v)
 
     def __str__(self):
         fmt = type(self).__name__ + '(['

@@ -100,12 +100,11 @@ class ParticleSystem(AbstractNbodyMethods):
                 raise IndexError(msg.format(index, self.n))
             if index < 0:
                 index = self.n + index
-            i = index
             members = {}
             for (key, obj) in self.members.items():
-                if 0 <= i < obj.n:
-                    members[key] = obj[i]
-                i -= obj.n
+                if 0 <= index < obj.n:
+                    members[key] = obj[index]
+                index -= obj.n
             return self.from_members(members)
 
         if isinstance(index, slice):
@@ -143,11 +142,10 @@ class ParticleSystem(AbstractNbodyMethods):
                 raise IndexError(msg.format(index, self.n))
             if index < 0:
                 index = self.n + index
-            i = index
             for (key, obj) in self.members.items():
-                if 0 <= i < obj.n:
-                    obj[i] = values.members[key]
-                i -= obj.n
+                if 0 <= index < obj.n:
+                    obj[index] = values.members[key]
+                index -= obj.n
             return
 
         if isinstance(index, slice):
@@ -170,16 +168,16 @@ class ParticleSystem(AbstractNbodyMethods):
 
     def _init_lazyproperty(self, lazyprop):
         name = lazyprop.name
-        members = self.members
+        members = self.members.values()
         if len(members) == 1:
-            value = getattr(next(iter(members.values())), name)
+            value = getattr(next(iter(members)), name)
             setattr(self, name, value)
             return value
-        arrays = [getattr(member, name) for member in members.values()]
+        arrays = [getattr(member, name) for member in members]
         value = np.concatenate(arrays)
         ns = 0
         nf = 0
-        for member in members.values():
+        for member in members:
             nf += member.n
             setattr(member, name, value[ns:nf])
             ns += member.n

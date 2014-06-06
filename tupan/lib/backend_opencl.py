@@ -11,7 +11,6 @@ import os
 import math
 import logging
 import pyopencl as cl
-from functools import partial
 from collections import namedtuple
 from .utils.timing import timings, bind_all
 
@@ -105,7 +104,6 @@ class CLKernel(object):
         memf = cl.mem_flags
 #        flags = memf.READ_WRITE | memf.USE_HOST_PTR
         flags = memf.READ_WRITE | memf.COPY_HOST_PTR
-        cl_buffer = partial(cl.Buffer, CTX, flags)
 
         from .utils.ctype import Ctype
         types = namedtuple("Types", ["c_int", "c_int_p",
@@ -113,21 +111,20 @@ class CLKernel(object):
                                      "c_real", "c_real_p"])
         self.cty = types(
             c_int=vars(Ctype)["int"].type,
-            c_int_p=lambda x: cl_buffer(hostbuf=x),
+            c_int_p=lambda x: cl.Buffer(CTX, flags, hostbuf=x),
             c_uint=vars(Ctype)["uint"].type,
-            c_uint_p=lambda x: cl_buffer(hostbuf=x),
+            c_uint_p=lambda x: cl.Buffer(CTX, flags, hostbuf=x),
             c_real=vars(Ctype)["real"].type,
-            c_real_p=lambda x: cl_buffer(hostbuf=x),
+            c_real_p=lambda x: cl.Buffer(CTX, flags, hostbuf=x),
             )
 
     def set_gsize(self, ni, nj):
         vw = self.vector_width
         max_lsize = self.max_lsize
 
-        ls = (ni + vw - 1) // vw
-        ls = 2**(int(math.log(ls, 2)))
-
-        lsize = min(ls, max_lsize)
+        lsize = (ni + vw - 1) // vw
+        lsize = min(lsize, max_lsize)
+        lsize = 2**(int(math.log(lsize, 2)))
         ngroups = (ni + (vw * lsize) - 1) // (vw * lsize)
         gsize = lsize * ngroups
 
@@ -141,7 +138,7 @@ class CLKernel(object):
     @args.setter
     def args(self, args):
         argtypes = self.argtypes
-        self._args = [argtype(arg) for (arg, argtype) in zip(args, argtypes)]
+        self._args = [argtype(arg) for (argtype, arg) in zip(argtypes, args)]
         for (i, arg) in enumerate(self._args):
             self.kernel.set_arg(i, arg)
 

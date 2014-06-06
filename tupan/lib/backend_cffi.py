@@ -10,7 +10,6 @@ import os
 import cffi
 import ctypes
 import logging
-from functools import partial
 from collections import namedtuple
 from .utils.timing import timings, bind_all
 
@@ -95,22 +94,19 @@ class CKernel(object):
 #        from_buffer = ctypes.c_char.from_buffer
 #        from_buffer = ctypes.POINTER(ctypes.c_char).from_buffer
         from_buffer = (ctypes.c_char * 0).from_buffer
-
         addressof = ctypes.addressof
-        icast = partial(ffi.cast, "INT *")
-        uicast = partial(ffi.cast, "UINT *")
-        rcast = partial(ffi.cast, "REAL *")
+        cast = ffi.cast
 
         types = namedtuple("Types", ["c_int", "c_int_p",
                                      "c_uint", "c_uint_p",
                                      "c_real", "c_real_p"])
         self.cty = types(
             c_int=lambda x: x,
-            c_int_p=lambda x: icast(addressof(from_buffer(x))),
+            c_int_p=lambda x: cast("INT *", addressof(from_buffer(x))),
             c_uint=lambda x: x,
-            c_uint_p=lambda x: uicast(addressof(from_buffer(x))),
+            c_uint_p=lambda x: cast("UINT *", addressof(from_buffer(x))),
             c_real=lambda x: x,
-            c_real_p=lambda x: rcast(addressof(from_buffer(x))),
+            c_real_p=lambda x: cast("REAL *", addressof(from_buffer(x))),
             )
 
     def set_gsize(self, ni, nj):
@@ -123,7 +119,7 @@ class CKernel(object):
     @args.setter
     def args(self, args):
         argtypes = self.argtypes
-        self._args = [argtype(arg) for (arg, argtype) in zip(args, argtypes)]
+        self._args = [argtype(arg) for (argtype, arg) in zip(argtypes, args)]
 
     def map_buffers(self, **kwargs):
         return kwargs['outargs']
