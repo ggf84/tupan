@@ -53,7 +53,7 @@ setup(
               'tupan.particles',
               ],
     package_data=PACKAGE_DATA,
-    scripts=['bin/tupan-simulation.py'],
+    scripts=['bin/tupan'],
     url='https://github.com/ggf84/tupan',
     license='MIT License',
     classifiers=[c for c in CLASSIFIERS.split('\n') if c],

@@ -10,9 +10,7 @@ from __future__ import print_function
 import sys
 import math
 import pickle
-import argparse
 import logging
-from pprint import pprint
 from .io import IO
 from .integrator import Integrator
 from .analysis.glviewer import GLviewer
@@ -25,24 +23,12 @@ LOGGER = logging.getLogger(__name__)
 __all__ = ['Simulation']
 
 
-@timings
-def myprint(data, fname, fmode):
-    if fname == '<stdout>':
-        print(data, file=sys.stdout)
-    elif fname == '<stderr>':
-        print(data, file=sys.stderr)
-    else:
-        with open(fname, fmode) as fobj:
-            print(data, file=fobj)
-
-
 @bind_all(timings)
 class Diagnostic(object):
     """
 
     """
-    def __init__(self, fname, time, report_freq=4, pn_order=0):
-        self.fname = fname
+    def __init__(self, time, report_freq=4, pn_order=0):
         self.time = time
         self.report_freq = report_freq
         self.include_pn_corrections = True if pn_order else False
@@ -78,12 +64,12 @@ class Diagnostic(object):
               '{5:10s} {6:10s} {7:10s} '\
               '{8:10s} {9:10s} {10:10s} '\
               '{11:10s} {12:13s}'
-        myprint(fmt.format('#00:time', '#01:dtime',
-                           '#02:ke', '#03:pe', '#04:te',
-                           '#05:virial', '#06:eerr', '#07:geerr',
-                           '#08:com_r', '#09:com_v', '#10:lmom',
-                           '#11:amom', '#12:wct'),
-                self.fname, 'w')
+        print(fmt.format('#00:time', '#01:dtime',
+                         '#02:ke', '#03:pe', '#04:te',
+                         '#05:virial', '#06:eerr', '#07:geerr',
+                         '#08:com_r', '#09:com_v', '#10:lmom',
+                         '#11:amom', '#12:wct'),
+              file=sys.stdout)
 
     def diagnostic_report(self, ps):
         if not self.is_initialized:
@@ -120,13 +106,13 @@ class Diagnostic(object):
               '{virial:< 10.3e} {eerr:< 10.3e} {geerr:< 10.3e} '\
               '{com_r:< 10.3e} {com_v:< 10.3e} {lmom:< 10.3e} '\
               '{amom:< 10.3e} {wct:< 13.6e}'
-        myprint(fmt.format(time=time, dtime=dtime,
-                           ke=ke, pe=pe,
-                           te=te, virial=virial,
-                           eerr=eerr, geerr=geerr, com_r=com_dr,
-                           com_v=com_dv, lmom=dlmom, amom=damom,
-                           wct=self.timer.elapsed()),
-                self.fname, 'a')
+        print(fmt.format(time=time, dtime=dtime,
+                         ke=ke, pe=pe,
+                         te=te, virial=virial,
+                         eerr=eerr, geerr=geerr, com_r=com_dr,
+                         com_v=com_dv, lmom=dlmom, amom=damom,
+                         wct=self.timer.elapsed()),
+              file=sys.stdout)
 
 
 @bind_all(timings)
@@ -138,10 +124,6 @@ class Simulation(object):
         self.args = args
         self.viewer = viewer
 
-        print("#" * 40, file=sys.stderr)
-        pprint(args.__dict__, stream=sys.stderr)
-        print("#" * 40, file=sys.stderr)
-
         # Read the initial conditions
         fname = self.args.input_file
         ps = IO(fname, 'r').load_snapshot()
@@ -152,7 +134,6 @@ class Simulation(object):
 
         # Initializes the diagnostic report of the simulation
         self.dia = Diagnostic(
-            self.args.log_file,
             self.args.t_begin,
             report_freq=self.args.report_freq,
             pn_order=self.args.pn_order,
@@ -201,15 +182,7 @@ class Simulation(object):
 
 
 @timings
-def _main_newrun(args):
-    if args.log_file == sys.stdout:
-        args.log_file = sys.stdout.name
-
-    if args.debug_file == sys.stderr:
-        args.debug_file = sys.stderr.name
-
-    # ------------------------------------------------------------------------
-
+def main_simulation(args):
     viewer = GLviewer() if args.view else None
     mysim = Simulation(args, viewer)
     mysim.evolve()
@@ -217,7 +190,7 @@ def _main_newrun(args):
 
 
 @timings
-def _main_restart(args):
+def main_restart(args):
     with open(args.restart_file, "rb") as fobj:
         mysim = pickle.load(fobj)
 
@@ -237,27 +210,20 @@ def _main_restart(args):
 
 
 @timings
-def parse_args():
+def add_parsers(subparser):
     """Here we process the command line arguments to run a new N-body
     simulation or restart from a previous run.
     """
 
-    # create the parser
-    parser = argparse.ArgumentParser(
-        description="A Python Toolkit for Astrophysical N-Body Simulations."
-        )
-    subparser = parser.add_subparsers(
-        help="Consult specific help for details."
-        )
+    # --- subparser simulation ---
 
-    # -------------------------------------------------------------------------
-    # add subparser newrun
-    newrun = subparser.add_parser(
-        "newrun",
+    # add subparser simulation
+    simulation = subparser.add_parser(
+        "simulation",
         description="Performs a new N-body simulation."
         )
-    # add the arguments to newrun
-    newrun.add_argument(
+    # add the arguments to simulation
+    simulation.add_argument(
         "-i", "--input_file",
         type=str,
         default=None,
@@ -266,7 +232,7 @@ def parse_args():
               "from. The file format, if supported, is automatically "
               "discovered (type: str, default: None).")
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "-m", "--meth",
         type=str,
         default=None,
@@ -274,7 +240,7 @@ def parse_args():
         choices=Integrator.PROVIDED_METHODS,
         help="Integration method name (type: str, default: None)."
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "-e", "--eta",
         type=float,
         default=None,
@@ -282,14 +248,14 @@ def parse_args():
         help=("Parameter for time step determination "
               "(type: float, default: None).")
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "-t", "--t_end",
         type=float,
         default=None,
         required=True,
         help="Time to end the simulation (type: float, default: None)."
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "-o", "--output_file",
         type=str,
         default='',
@@ -297,13 +263,13 @@ def parse_args():
         help=("The name of the output file to store the simulation data "
               "(type: str, default: '').")
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "--t_begin",
         type=float,
         default=0.0,
         help="Time to begin the simulation (type: float, default: 0.0)."
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "--pn_order",
         type=int,
         default=0,
@@ -311,90 +277,81 @@ def parse_args():
         help=("Order of the Post-Newtonian corrections "
               "(type: int, default: 0).")
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "--clight",
         type=float,
         default=None,
         help=("Speed of light value to use in Post-Newtonian corrections "
               "(type: int, default: None).")
         )
-    newrun.add_argument(
-        "--log_file",
-        type=str,
-        default=sys.stdout,
-        help=("File name where log messages should be written "
-              "(type: str, default: sys.stdout).")
-        )
-    newrun.add_argument(
+    simulation.add_argument(
         "-r", "--report_freq",
         type=int,
         default=4,
         help=("Number of time-steps between diagnostic reports of the "
               "simulation (type: int, default: 4).")
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "-d", "--dump_freq",
         type=int,
         default=16,
         help=("Number of time-steps between dump of snapshots "
               "(type: int, default: 16).")
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "--restart_freq",
         type=int,
         default=1,
         help=("Number of time-steps between rewrites of the restart file "
               "(type: int, default: 1).")
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "--use_cl",
         action="store_true",
         help="Enable OpenCL support."
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "--use_sp",
         action="store_true",
         help="Enforce the use of single precision in extension modules."
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "--view",
         action="store_true",
         help="Enable visualization of the simulation in real time."
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "-g", "--gl_freq",
         type=int,
         default=1,
         help=("Number of time-steps between GLviewer events "
               "(type: int, default: 1).")
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "--profile",
         action="store_true",
         help="Enable execution profile."
         )
-    newrun.add_argument(
-        "--debug",
-        action="store_true",
-        help="Enable debug messages."
-        )
-    newrun.add_argument(
-        "--debug_file",
+    simulation.add_argument(
+        "--log",
         type=str,
-        default=sys.stderr,
-        help=("File name where error messages should be written "
-              "(type: str, default: sys.stderr).")
+        default='critical',
+        choices=[logging.getLevelName(i).lower() for i in range(0, 60, 10)],
+        help=("Set the logging level. (type: str, default: 'critical').")
         )
-    newrun.add_argument(
+    simulation.add_argument(
         "--restart_file",
         type=str,
         default="restart.pkl",
         help=("The name of the restart file which must be read from "
               "(type: str, default: 'restart.pkl').")
         )
-    newrun.set_defaults(func=_main_newrun)
+    simulation.set_defaults(func=main_simulation)
 
     # -------------------------------------------------------------------------
+
+    # --- subparser restart ---
+
     # add subparser restart
     restart = subparser.add_parser(
         "restart",
@@ -422,22 +379,7 @@ def parse_args():
         help=("The name of the restart file which must be read from "
               "(type: str, default: 'restart.pkl').")
         )
-    restart.set_defaults(func=_main_restart)
-
-    # ------------------------------------------------------------------------
-    return parser.parse_args()
-
-
-@timings
-def main():
-    """The top-level main function of tupan.
-
-    .. note:: You shouldn't be able to call this function from a ipython
-        session. Instead you must call tupan's script directly from a unix
-        shell.
-    """
-    args = parse_args()
-    args.func(args)
+    restart.set_defaults(func=main_restart)
 
 
 # -- End of File --

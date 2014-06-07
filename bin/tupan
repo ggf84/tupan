@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+
+
+if __name__ == "__main__":
+    import sys
+    from tupan import main
+
+    sys.exit(main())
+
+
+# -- End of File --
