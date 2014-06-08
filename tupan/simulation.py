@@ -122,7 +122,6 @@ class Simulation(object):
     """
     def __init__(self, args, viewer):
         self.args = args
-        self.viewer = viewer
 
         # Read the initial conditions
         fname = self.args.input_file
@@ -130,7 +129,7 @@ class Simulation(object):
 
         # Initializes output file
         fname = self.args.output_file
-        self.io = IO(fname, 'a') if fname else None
+        io = IO(fname, 'a') if fname else None
 
         # Initializes the diagnostic report of the simulation
         self.dia = Diagnostic(
@@ -148,8 +147,8 @@ class Simulation(object):
             pn_order=self.args.pn_order,
             clight=self.args.clight,
             reporter=self.dia,
-            viewer=self.viewer,
-            dumpper=self.io,
+            viewer=viewer,
+            dumpper=io,
             dump_freq=self.args.dump_freq,
             gl_freq=self.args.gl_freq,
             )
@@ -191,195 +190,173 @@ def main_simulation(args):
 
 @timings
 def main_restart(args):
-    with open(args.restart_file, "rb") as fobj:
+    with open(args.restart_file, 'rb') as fobj:
         mysim = pickle.load(fobj)
 
-    # update args
-    type(mysim.integrator.integrator.ps).t_curr = mysim.args.t_end
-    if args.eta is not None:
-        mysim.integrator.integrator.eta = args.eta
+    ps = mysim.integrator.integrator.ps
+
+    if args.use_sp:
+        # FIXME: recast particles' attributes to fp32
+        pass
+
+    # reset eta
+    mysim.integrator.integrator.eta = args.eta
 
     # reset t_end
+    type(ps).t_curr = mysim.args.t_end
     mysim.args.t_end = args.t_end
 
     # reset timer
     mysim.dia.timer.reset_at(mysim.dia.timer.toc)
+
+    viewer = None
+    if args.view:
+        viewer = mysim.integrator.integrator.viewer
+        if not viewer:
+            viewer = GLviewer()
+    mysim.integrator.integrator.viewer = viewer
+    if viewer:
+        viewer.exitgl = False
+        viewer.is_initialized = False
+        viewer.show_event(ps)
 
     mysim.evolve()
     return 0
 
 
 @timings
-def add_parsers(subparser):
+def add_parsers(subparser, parents=None):
     """Here we process the command line arguments to run a new N-body
     simulation or restart from a previous run.
     """
+    import argparse
+    preparser = argparse.ArgumentParser(add_help=False)
+    preparser.add_argument(
+        '-e', '--eta',
+        type=float,
+        required=True,
+        help='Time-step parameter (type: %(type)s, required: %(required)s).'
+        )
+    preparser.add_argument(
+        '-t', '--t_end',
+        type=float,
+        required=True,
+        help='Simulation end time (type: %(type)s, required: %(required)s).'
+        )
+    preparser.add_argument(
+        '--restart_file',
+        type=str,
+        default='restart.pkl',
+        help='Restart filename (type: %(type)s, default: %(default)s).'
+        )
 
-    # --- subparser simulation ---
-
-    # add subparser simulation
-    simulation = subparser.add_parser(
-        "simulation",
-        description="Performs a new N-body simulation."
-        )
-    # add the arguments to simulation
-    simulation.add_argument(
-        "-i", "--input_file",
-        type=str,
-        default=None,
-        required=True,
-        help=("The name of the initial conditions file which must be read "
-              "from. The file format, if supported, is automatically "
-              "discovered (type: str, default: None).")
-        )
-    simulation.add_argument(
-        "-m", "--meth",
-        type=str,
-        default=None,
-        required=True,
-        choices=Integrator.PROVIDED_METHODS,
-        help="Integration method name (type: str, default: None)."
-        )
-    simulation.add_argument(
-        "-e", "--eta",
-        type=float,
-        default=None,
-        required=True,
-        help=("Parameter for time step determination "
-              "(type: float, default: None).")
-        )
-    simulation.add_argument(
-        "-t", "--t_end",
-        type=float,
-        default=None,
-        required=True,
-        help="Time to end the simulation (type: float, default: None)."
-        )
-    simulation.add_argument(
-        "-o", "--output_file",
-        type=str,
-        default='',
-        # choices=IO.PROVIDED_FORMATS,
-        help=("The name of the output file to store the simulation data "
-              "(type: str, default: '').")
-        )
-    simulation.add_argument(
-        "--t_begin",
-        type=float,
-        default=0.0,
-        help="Time to begin the simulation (type: float, default: 0.0)."
-        )
-    simulation.add_argument(
-        "--pn_order",
-        type=int,
-        default=0,
-        choices=[0, 2, 4, 5, 6, 7],
-        help=("Order of the Post-Newtonian corrections "
-              "(type: int, default: 0).")
-        )
-    simulation.add_argument(
-        "--clight",
-        type=float,
-        default=None,
-        help=("Speed of light value to use in Post-Newtonian corrections "
-              "(type: int, default: None).")
-        )
-    simulation.add_argument(
-        "-r", "--report_freq",
-        type=int,
-        default=4,
-        help=("Number of time-steps between diagnostic reports of the "
-              "simulation (type: int, default: 4).")
-        )
-    simulation.add_argument(
-        "-d", "--dump_freq",
-        type=int,
-        default=16,
-        help=("Number of time-steps between dump of snapshots "
-              "(type: int, default: 16).")
-        )
-    simulation.add_argument(
-        "--restart_freq",
-        type=int,
-        default=1,
-        help=("Number of time-steps between rewrites of the restart file "
-              "(type: int, default: 1).")
-        )
-    simulation.add_argument(
-        "--use_cl",
-        action="store_true",
-        help="Enable OpenCL support."
-        )
-    simulation.add_argument(
-        "--use_sp",
-        action="store_true",
-        help="Enforce the use of single precision in extension modules."
-        )
-    simulation.add_argument(
-        "--view",
-        action="store_true",
-        help="Enable visualization of the simulation in real time."
-        )
-    simulation.add_argument(
-        "-g", "--gl_freq",
-        type=int,
-        default=1,
-        help=("Number of time-steps between GLviewer events "
-              "(type: int, default: 1).")
-        )
-    simulation.add_argument(
-        "--profile",
-        action="store_true",
-        help="Enable execution profile."
-        )
-    simulation.add_argument(
-        "--log",
-        type=str,
-        default='critical',
-        choices=[logging.getLevelName(i).lower() for i in range(0, 60, 10)],
-        help=("Set the logging level. (type: str, default: 'critical').")
-        )
-    simulation.add_argument(
-        "--restart_file",
-        type=str,
-        default="restart.pkl",
-        help=("The name of the restart file which must be read from "
-              "(type: str, default: 'restart.pkl').")
-        )
-    simulation.set_defaults(func=main_simulation)
-
-    # -------------------------------------------------------------------------
+    if parents is None:
+        parents = []
+    parents.append(preparser)
 
     # --- subparser restart ---
+    description = 'Restart a simulation from a previous run.'
 
     # add subparser restart
     restart = subparser.add_parser(
-        "restart",
-        description="Restart a simulation from a previous run."
+        'restart',
+        description=description,
+        help=description,
+        parents=parents
         )
     # add the arguments to restart
-    restart.add_argument(
-        "-t", "--t_end",
-        type=float,
-        default=None,
-        required=True,
-        help="Time to end the simulation (type: float, default: None)."
-        )
-    restart.add_argument(
-        "-e", "--eta",
-        type=float,
-        default=None,
-        help=("Parameter for time step determination "
-              "(type: float, default: obtained from the restart file).")
-        )
-    restart.add_argument(
-        "--restart_file",
-        type=str,
-        default="restart.pkl",
-        help=("The name of the restart file which must be read from "
-              "(type: str, default: 'restart.pkl').")
-        )
     restart.set_defaults(func=main_restart)
+
+    # -------------------------------------------------------------------------
+
+    # --- subparser simulation ---
+    description = 'Performs a new N-body simulation.'
+
+    # add subparser simulation
+    simulation = subparser.add_parser(
+        'simulation',
+        description=description,
+        help=description,
+        parents=parents
+        )
+    # add the arguments to simulation
+    simulation.add_argument(
+        '-i', '--input_file',
+        type=str,
+        required=True,
+        help=('Initial conditions filename '
+              '(type: %(type)s, required: %(required)s).')
+        )
+    simulation.add_argument(
+        '-m', '--meth',
+        metavar='METH',
+        type=str,
+        required=True,
+        choices=Integrator.PROVIDED_METHODS,
+        help=('Integration method name '
+              '(type: %(type)s, required: %(required)s, '
+              'choices: {%(choices)s}).')
+        )
+    simulation.add_argument(
+        '-o', '--output_file',
+        type=str,
+        default='',
+        # choices=IO.PROVIDED_FORMATS,
+        help=('Output filename to store the simulation data '
+              '(type: %(type)s, default: %(default)s).')
+        )
+    simulation.add_argument(
+        '--t_begin',
+        type=float,
+        default=0.0,
+        help='Simulation begin time (type: %(type)s, default: %(default)s).'
+        )
+    simulation.add_argument(
+        '--pn_order',
+        metavar='PN_ORDER',
+        type=int,
+        default=0,
+        choices=[0, 2, 4, 5, 6, 7],
+        help=('Order of the Post-Newtonian corrections '
+              '(type: %(type)s, default: %(default)s, '
+              'choices: {%(choices)s}).')
+        )
+    simulation.add_argument(
+        '--clight',
+        type=float,
+        default=None,
+        help=('Speed of light value to use in Post-Newtonian corrections '
+              '(type: %(type)s, default: %(default)s).')
+        )
+    simulation.add_argument(
+        '-r', '--report_freq',
+        type=int,
+        default=4,
+        help=('Number of time-steps between diagnostic reports of the '
+              'simulation (type: %(type)s, default: %(default)s).')
+        )
+    simulation.add_argument(
+        '-d', '--dump_freq',
+        type=int,
+        default=16,
+        help=('Number of time-steps between dump of snapshots '
+              '(type: %(type)s, default: %(default)s).')
+        )
+    simulation.add_argument(
+        '--restart_freq',
+        type=int,
+        default=1,
+        help=('Number of time-steps between rewrites of the restart file '
+              '(type: %(type)s, default: %(default)s).')
+        )
+    simulation.add_argument(
+        '-g', '--gl_freq',
+        type=int,
+        default=1,
+        help=('Number of time-steps between GLviewer events '
+              '(type: %(type)s, default: %(default)s).')
+        )
+    simulation.set_defaults(func=main_simulation)
 
 
 # -- End of File --

@@ -32,9 +32,9 @@ CACHE_DIR = \
             os.path.expanduser(
                 CFG['cache']['prefix']
             ),
-            CFG['cache']['base'] + "-uid{0}-py{1}".format(
+            CFG['cache']['base'] + '-uid{0}-py{1}'.format(
                 getpass.getuser(),
-                ".".join(str(i) for i in sys.version_info)
+                '.'.join(str(i) for i in sys.version_info)
             )
         )
     )

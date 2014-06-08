@@ -20,6 +20,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 try:
+    logging.getLogger('OpenGL').setLevel(logging.CRITICAL + 10)  # disabled!
     from OpenGL import GL
     from OpenGL import GLUT
     HAS_GL = True

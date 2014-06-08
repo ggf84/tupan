@@ -13,9 +13,10 @@ import atexit
 import inspect
 import functools
 from collections import defaultdict
+from tupan import options
 
 
-__all__ = ["timings", "bind_all", "Timer"]
+__all__ = ['timings', 'bind_all', 'Timer']
 
 
 class Timer(object):
@@ -86,9 +87,9 @@ def timings(meth, cls=None):
         timer.start()
         ret = meth(*args, **kwargs)
         timer.stop()
-        dtree["count"] += 1
-        dtree["total"] += timer.elapsed()
-        dtree["average"] = dtree["total"] / dtree["count"]
+        dtree['count'] += 1
+        dtree['total'] += timer.elapsed()
+        dtree['average'] = dtree['total'] / dtree['count']
         return ret
     return wrapper
 
@@ -126,12 +127,14 @@ def bind_all(decorator):
     return wrapper
 
 
-profile = True if "--profile" in sys.argv else False
+timings = (timings
+           if options.profile
+           else lambda meth, cls=None: meth)
+bind_all = (bind_all
+            if options.profile
+            else lambda decor: lambda meth, cls=None: meth)
 
-timings = timings if profile else lambda meth, cls=None: meth
-bind_all = bind_all if profile else lambda decor: lambda meth, cls=None: meth
-
-if profile:
+if options.profile:
     atexit.register(print, DTREE, file=sys.stderr)
 
 

@@ -6,7 +6,6 @@
 if __name__ == "__main__":
     import sys
     from tupan import main
-
     sys.exit(main())
 
 

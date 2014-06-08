@@ -7,9 +7,8 @@
 
 
 from __future__ import print_function, division
-import sys
 import logging
-from .utils.ctype import Ctype
+from tupan import options
 from .utils.timing import timings, bind_all
 
 
@@ -17,9 +16,6 @@ __all__ = ['Phi', 'Acc', 'AccJerk', 'SnapCrackle', 'Tstep',
            'PNAcc', 'Sakura', 'NregX', 'NregV', 'Kepler', ]
 
 LOGGER = logging.getLogger(__name__)
-
-BACKEND = 'CL' if '--use_cl' in sys.argv else 'C'
-FPWIDTH = Ctype.fpwidth
 
 
 @bind_all(timings)
@@ -50,9 +46,9 @@ class PN(object):
 
 @timings
 def get_kernel(name, backend, fpwidth):
-    if backend == "C":
+    if backend == 'C':
         from .backend_cffi import CKernel as Kernel
-    elif backend == "CL":
+    elif backend == 'CL':
         from .backend_opencl import CLKernel as Kernel
     else:
         msg = "Inappropriate 'backend': {}. Supported values: ['C', 'CL']"
@@ -92,8 +88,8 @@ class Phi(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
-        super(Phi, self).__init__("phi_kernel", backend, fpwidth)
+    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
+        super(Phi, self).__init__('phi_kernel', backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -150,8 +146,8 @@ class Acc(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
-        super(Acc, self).__init__("acc_kernel", backend, fpwidth)
+    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
+        super(Acc, self).__init__('acc_kernel', backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -220,8 +216,8 @@ class AccJerk(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
-        super(AccJerk, self).__init__("acc_jerk_kernel", backend, fpwidth)
+    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
+        super(AccJerk, self).__init__('acc_jerk_kernel', backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -268,8 +264,8 @@ class SnapCrackle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
-        super(SnapCrackle, self).__init__("snap_crackle_kernel",
+    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
+        super(SnapCrackle, self).__init__('snap_crackle_kernel',
                                           backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
@@ -323,8 +319,8 @@ class Tstep(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
-        super(Tstep, self).__init__("tstep_kernel", backend, fpwidth)
+    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
+        super(Tstep, self).__init__('tstep_kernel', backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -363,8 +359,8 @@ class PNAcc(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
-        super(PNAcc, self).__init__("pnacc_kernel", backend, fpwidth)
+    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
+        super(PNAcc, self).__init__('pnacc_kernel', backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -411,8 +407,8 @@ class Sakura(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
-        super(Sakura, self).__init__("sakura_kernel", backend, fpwidth)
+    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
+        super(Sakura, self).__init__('sakura_kernel', backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -462,8 +458,8 @@ class NregX(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
-        super(NregX, self).__init__("nreg_Xkernel", backend, fpwidth)
+    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
+        super(NregX, self).__init__('nreg_Xkernel', backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -516,8 +512,8 @@ class NregV(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
-        super(NregV, self).__init__("nreg_Vkernel", backend, fpwidth)
+    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
+        super(NregV, self).__init__('nreg_Vkernel', backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -561,12 +557,12 @@ class Kepler(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=BACKEND, fpwidth=FPWIDTH):
+    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
 
-        if backend == "CL":    # No need for CL support.
-            backend = "C"      # C is fast enough!
+        if backend == 'CL':    # No need for CL support.
+            backend = 'C'      # C is fast enough!
 
-        super(Kepler, self).__init__("kepler_solver_kernel", backend, fpwidth)
+        super(Kepler, self).__init__('kepler_solver_kernel', backend, fpwidth)
         cty = self.kernel.cty
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,

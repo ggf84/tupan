@@ -18,7 +18,7 @@ from .utils.timing import timings, bind_all
 LOGGER = logging.getLogger(__name__)
 
 DIRNAME = os.path.dirname(__file__)
-PATH = os.path.join(DIRNAME, "src")
+PATH = os.path.join(DIRNAME, 'src')
 
 CTX = cl.create_some_context()
 DEV = CTX.devices[0]
@@ -26,12 +26,12 @@ DEV = CTX.devices[0]
 UNROLL = 4
 
 LSIZE = {}
-LSIZE["fp32"] = 64
-LSIZE["fp64"] = 64
+LSIZE['fp32'] = 64
+LSIZE['fp64'] = 64
 
 VW = {}
-VW["fp32"] = DEV.preferred_vector_width_float
-VW["fp64"] = DEV.preferred_vector_width_double
+VW['fp32'] = DEV.preferred_vector_width_float
+VW['fp64'] = DEV.preferred_vector_width_double
 
 FAST_LOCAL_MEM = True
 
@@ -41,45 +41,45 @@ def make_lib(fpwidth):
     """
 
     """
-    cint = "int" if fpwidth == "fp32" else "long"
-    creal = "float" if fpwidth == 'fp32' else "double"
-    LOGGER.debug("Building/Loading %s CL extension module.", fpwidth)
+    cint = 'int' if fpwidth == 'fp32' else 'long'
+    creal = 'float' if fpwidth == 'fp32' else 'double'
+    LOGGER.debug("Building/Loading '%s' CL extension module.", fpwidth)
 
-    fnames = ("phi_kernel.cl",
-              "acc_kernel.cl",
-              "acc_jerk_kernel.cl",
-              "snap_crackle_kernel.cl",
-              "tstep_kernel.cl",
-              "pnacc_kernel.cl",
-              "nreg_kernels.cl",
-              "sakura_kernel.cl", )
+    fnames = ('phi_kernel.cl',
+              'acc_kernel.cl',
+              'acc_jerk_kernel.cl',
+              'snap_crackle_kernel.cl',
+              'tstep_kernel.cl',
+              'pnacc_kernel.cl',
+              'nreg_kernels.cl',
+              'sakura_kernel.cl', )
 
     sources = []
     for fname in fnames:
         with open(os.path.join(PATH, fname), 'r') as fobj:
             sources.append(fobj.read())
-    src = "\n\n".join(sources)
+    src = '\n\n'.join(sources)
 
     # setting options
-    options = " -I {path}".format(path=PATH)
-    options += " -D CONFIG_USE_OPENCL"
-    if fpwidth == "fp64":
-        options += " -D CONFIG_USE_DOUBLE"
+    options = ' -I {path}'.format(path=PATH)
+    options += ' -D CONFIG_USE_OPENCL'
+    if fpwidth == 'fp64':
+        options += ' -D CONFIG_USE_DOUBLE'
     if FAST_LOCAL_MEM:
-        options += " -D FAST_LOCAL_MEM"
-    options += " -D UNROLL={}".format(UNROLL)
-    options += " -D LSIZE={}".format(LSIZE[fpwidth])
-    options += " -D VW={}".format(VW[fpwidth])
-    options += " -cl-fast-relaxed-math"
-#    options += " -cl-opt-disable"
+        options += ' -D FAST_LOCAL_MEM'
+    options += ' -D UNROLL={}'.format(UNROLL)
+    options += ' -D LSIZE={}'.format(LSIZE[fpwidth])
+    options += ' -D VW={}'.format(VW[fpwidth])
+    options += ' -cl-fast-relaxed-math'
+#    options += ' -cl-opt-disable'
 
     # building lib
     program = cl.Program(CTX, src)
     from ..config import CACHE_DIR
     cllib = program.build(options=options, cache_dir=CACHE_DIR)
 
-    LOGGER.debug("CL extension module loaded: "
-                 "(U)INT is (u)%s, REAL is %s.",
+    LOGGER.debug('CL extension module loaded: '
+                 '(U)INT is (u)%s, REAL is %s.',
                  cint, creal)
     return cllib
 
@@ -106,15 +106,15 @@ class CLKernel(object):
         flags = memf.READ_WRITE | memf.COPY_HOST_PTR
 
         from .utils.ctype import Ctype
-        types = namedtuple("Types", ["c_int", "c_int_p",
-                                     "c_uint", "c_uint_p",
-                                     "c_real", "c_real_p"])
+        types = namedtuple('Types', ['c_int', 'c_int_p',
+                                     'c_uint', 'c_uint_p',
+                                     'c_real', 'c_real_p'])
         self.cty = types(
-            c_int=vars(Ctype)["int"].type,
+            c_int=vars(Ctype)['int'].type,
             c_int_p=lambda x: cl.Buffer(CTX, flags, hostbuf=x),
-            c_uint=vars(Ctype)["uint"].type,
+            c_uint=vars(Ctype)['uint'].type,
             c_uint_p=lambda x: cl.Buffer(CTX, flags, hostbuf=x),
-            c_real=vars(Ctype)["real"].type,
+            c_real=vars(Ctype)['real'].type,
             c_real_p=lambda x: cl.Buffer(CTX, flags, hostbuf=x),
             )
 
@@ -157,7 +157,7 @@ class CLKernel(object):
 #                              0,
 #                              ary.shape,
 #                              ary.dtype,
-#                              "C"
+#                              'C'
 #                          )
 #            ev.wait()
         for (ary, buf) in zip(arrays, buffers):
