@@ -8,7 +8,7 @@
 
 from __future__ import print_function, division
 import logging
-from tupan import options
+from tupan.config import options
 from .utils.timing import timings, bind_all
 
 

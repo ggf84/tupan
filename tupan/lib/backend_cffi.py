@@ -55,13 +55,13 @@ def make_lib(fpwidth):
     if fpwidth == 'fp64':
         define_macros.append(('CONFIG_USE_DOUBLE', 1))
 
-    from ..config import CACHE_DIR
+    from ..config import get_cache_dir
     clib = ffi.verify(
         """
         #include "common.h"
         #include "libtupan.h"
         """,
-        tmpdir=CACHE_DIR,
+        tmpdir=get_cache_dir(),
         define_macros=define_macros,
         include_dirs=[PATH],
         libraries=['m'],

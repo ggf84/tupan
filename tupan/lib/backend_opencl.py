@@ -75,8 +75,8 @@ def make_lib(fpwidth):
 
     # building lib
     program = cl.Program(CTX, src)
-    from ..config import CACHE_DIR
-    cllib = program.build(options=options, cache_dir=CACHE_DIR)
+    from ..config import get_cache_dir
+    cllib = program.build(options=options, cache_dir=get_cache_dir())
 
     LOGGER.debug('CL extension module loaded: '
                  '(U)INT is (u)%s, REAL is %s.',

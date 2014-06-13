@@ -5,43 +5,64 @@
 import os
 import sys
 import getpass
-from collections import defaultdict
-try:
-    import ConfigParser as configparser     # Py2
-except ImportError:
-    import configparser                     # Py3
+import argparse
 
 
-PATH = os.path.dirname(__file__)
-FILENAME = os.path.join(PATH, 'tupan.cfg')
-
-CONFIG = configparser.ConfigParser()
-CONFIG.read(FILENAME)
-
-
-CFG = defaultdict(dict)
-for section in CONFIG.sections():
-    for option in CONFIG.options(section):
-        CFG[section][option] = CONFIG.get(section, option)
-
-
-CACHE_DIR = \
-    os.path.abspath(
-        os.path.join(
-            PATH,
-            os.path.expanduser(
-                CFG['cache']['prefix']
-            ),
-            CFG['cache']['base'] + '-uid{0}-py{1}'.format(
-                getpass.getuser(),
-                '.'.join(str(i) for i in sys.version_info)
-            )
-        )
+# create parser and add arguments
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument(
+    '--backend',
+    metavar='BACKEND',
+    type=str,
+    default='C',
+    choices=['C', 'CL'],
+    help=('Extension modules backend '
+          '(type: %(type)s, default: %(default)s, '
+          'choices: {%(choices)s}).')
     )
-try:
-    os.makedirs(CACHE_DIR)
-except OSError:
-    pass
+parser.add_argument(
+    '--cache_prefix',
+    type=str,
+    default=os.path.expanduser('~'),
+    help=('Cache dir prefix '
+          '(type: %(type)s, default: %(default)s).')
+    )
+parser.add_argument(
+    '--fpwidth',
+    metavar='FPWIDTH',
+    type=str,
+    default='fp64',
+    choices=['fp32', 'fp64'],
+    help=('Floating-point width '
+          '(type: %(type)s, default: %(default)s, '
+          'choices: {%(choices)s}).')
+    )
+parser.add_argument(
+    '--profile',
+    action='store_true',
+    help='Enable execution profile.'
+    )
+parser.add_argument(
+    '--view',
+    action='store_true',
+    help='Enable GLviewer support for visualization.'
+    )
+
+# parse known arguments from parser
+options, _ = parser.parse_known_args()
+
+
+def get_cache_dir():
+    user = getpass.getuser()
+    sys_version = '.'.join(str(i) for i in sys.version_info)
+    basename = '.tupan-cache-uid{0}-py{1}'.format(user, sys_version)
+    prefix = options.cache_prefix
+    cache_dir = os.path.abspath(os.path.join(prefix, basename))
+    try:
+        os.makedirs(cache_dir)
+    except OSError:
+        pass
+    return cache_dir
 
 
 # -- End of File --

@@ -10,7 +10,7 @@ from __future__ import print_function
 import sys
 import unittest
 from collections import OrderedDict, defaultdict
-from tupan import options
+from tupan.config import options
 from tupan.lib import extensions
 from tupan.lib.utils.timing import Timer
 

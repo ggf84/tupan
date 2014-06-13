@@ -7,46 +7,8 @@ A Python Toolkit for Astrophysical N-Body Simulations.
 
 
 from __future__ import print_function
-import argparse
 import logging
 logging.getLogger(__name__).addHandler(logging.NullHandler())
-
-
-# create parent_parser and add arguments
-parent_parser = argparse.ArgumentParser(add_help=False)
-parent_parser.add_argument(
-    '--backend',
-    metavar='BACKEND',
-    type=str,
-    default='C',
-    choices=['C', 'CL'],
-    help=('Extension modules backend '
-          '(type: %(type)s, default: %(default)s, '
-          'choices: {%(choices)s}).')
-    )
-parent_parser.add_argument(
-    '--fpwidth',
-    metavar='FPWIDTH',
-    type=str,
-    default='fp64',
-    choices=['fp32', 'fp64'],
-    help=('Floating-point width '
-          '(type: %(type)s, default: %(default)s, '
-          'choices: {%(choices)s}).')
-    )
-parent_parser.add_argument(
-    '--profile',
-    action='store_true',
-    help='Enable execution profile.'
-    )
-parent_parser.add_argument(
-    '--view',
-    action='store_true',
-    help='Enable GLviewer support for visualization.'
-    )
-
-# parse known arguments from parent_parser
-options, _ = parent_parser.parse_known_args()
 
 
 def main():
@@ -56,6 +18,7 @@ def main():
     import os
     import sys
     import pprint
+    import argparse
 
     # create preparser and add arguments
     preparser = argparse.ArgumentParser(add_help=False)
@@ -81,8 +44,9 @@ def main():
     subparser = parser.add_subparsers(help='commands')
 
     # add specific parsers to subparser
+    from . import config
     from . import simulation
-    simulation.add_parsers(subparser, parents=[parent_parser, preparser])
+    simulation.add_parsers(subparser, parents=[config.parser, preparser])
 
     # parse args from the main parser
     args = parser.parse_args()

@@ -7,7 +7,7 @@ TODO.
 
 
 import numpy as np
-from tupan import options
+from tupan.config import options
 
 
 class Ctype(object):

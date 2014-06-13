@@ -195,7 +195,7 @@ def main_restart(args):
 
     ps = mysim.integrator.integrator.ps
 
-    if args.use_sp:
+    if args.fpwidth == 'fp32':
         # FIXME: recast particles' attributes to fp32
         pass
 
