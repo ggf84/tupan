@@ -29,8 +29,6 @@ __kernel void nreg_Xkernel(
     __global REAL * restrict _iaz,
     __global REAL * restrict _iu)
 {
-    UINT lid = get_local_id(0);
-    UINT lsize = get_local_size(0);
     UINT gid = get_global_id(0);
     gid *= ((VW * gid) < ni);
 
@@ -54,7 +52,9 @@ __kernel void nreg_Xkernel(
     UINT j = 0;
 
     #ifdef FAST_LOCAL_MEM
+    UINT lsize = get_local_size(0);
     for (; (j + lsize - 1) < nj; j += lsize) {
+        UINT lid = get_local_id(0);
         __local REAL __jm[LSIZE];
         __local REAL __jrx[LSIZE];
         __local REAL __jry[LSIZE];
@@ -132,8 +132,6 @@ __kernel void nreg_Vkernel(
     __global REAL * restrict _idvz,
     __global REAL * restrict _ik)
 {
-    UINT lid = get_local_id(0);
-    UINT lsize = get_local_size(0);
     UINT gid = get_global_id(0);
     gid *= ((VW * gid) < ni);
 
@@ -153,7 +151,9 @@ __kernel void nreg_Vkernel(
     UINT j = 0;
 
     #ifdef FAST_LOCAL_MEM
+    UINT lsize = get_local_size(0);
     for (; (j + lsize - 1) < nj; j += lsize) {
+        UINT lid = get_local_id(0);
         __local REAL __jm[LSIZE];
         __local REAL __jvx[LSIZE];
         __local REAL __jvy[LSIZE];

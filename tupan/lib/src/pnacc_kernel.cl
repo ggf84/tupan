@@ -32,12 +32,11 @@ __kernel void pnacc_kernel(
     __global REAL * restrict _ipnay,
     __global REAL * restrict _ipnaz)
 {
-    UINT lid = get_local_id(0);
-    UINT lsize = get_local_size(0);
     UINT gid = get_global_id(0);
     gid *= ((VW * gid) < ni);
 
-    CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3, inv4, inv5, inv6, inv7);
+    CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3,
+                                inv4, inv5, inv6, inv7);
 
     REALn im = vloadn(gid, _im);
     REALn irx = vloadn(gid, _irx);
@@ -55,7 +54,9 @@ __kernel void pnacc_kernel(
     UINT j = 0;
 
     #ifdef FAST_LOCAL_MEM
+    UINT lsize = get_local_size(0);
     for (; (j + lsize - 1) < nj; j += lsize) {
+        UINT lid = get_local_id(0);
         __local REAL __jm[LSIZE];
         __local REAL __jrx[LSIZE];
         __local REAL __jry[LSIZE];

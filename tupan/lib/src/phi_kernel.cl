@@ -16,8 +16,6 @@ __kernel void phi_kernel(
     __global const REAL * restrict _je2,
     __global REAL * restrict _iphi)
 {
-    UINT lid = get_local_id(0);
-    UINT lsize = get_local_size(0);
     UINT gid = get_global_id(0);
     gid *= ((VW * gid) < ni);
 
@@ -32,7 +30,9 @@ __kernel void phi_kernel(
     UINT j = 0;
 
     #ifdef FAST_LOCAL_MEM
+    UINT lsize = get_local_size(0);
     for (; (j + lsize - 1) < nj; j += lsize) {
+        UINT lid = get_local_id(0);
         __local REAL __jm[LSIZE];
         __local REAL __jrx[LSIZE];
         __local REAL __jry[LSIZE];

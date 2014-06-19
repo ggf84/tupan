@@ -97,7 +97,7 @@ class CLKernel(object):
         self.argtypes = None
         self._args = None
 
-        self.max_lsize = LSIZE[fpwidth]
+        self.lsize = LSIZE[fpwidth]
         self.vector_width = VW[fpwidth]
         self.queue = cl.CommandQueue(CTX)
 
@@ -120,12 +120,13 @@ class CLKernel(object):
 
     def set_gsize(self, ni, nj):
         vw = self.vector_width
-        max_lsize = self.max_lsize
+        lsize = self.lsize
 
-        lsize = (ni + vw - 1) // vw
-        lsize = min(lsize, max_lsize)
+        n = (ni + vw - 1) // vw
+        lsize = min(n, lsize)
         lsize = 2**(int(math.log(lsize, 2)))
-        ngroups = (ni + (vw * lsize) - 1) // (vw * lsize)
+
+        ngroups = (n + lsize - 1) // lsize
         gsize = lsize * ngroups
 
         self.global_size = (gsize, 1, 1)

@@ -24,8 +24,6 @@ __kernel void tstep_kernel(
     __global REAL * restrict _idt_a,
     __global REAL * restrict _idt_b)
 {
-    UINT lid = get_local_id(0);
-    UINT lsize = get_local_size(0);
     UINT gid = get_global_id(0);
     gid *= ((VW * gid) < ni);
 
@@ -44,7 +42,9 @@ __kernel void tstep_kernel(
     UINT j = 0;
 
     #ifdef FAST_LOCAL_MEM
+    UINT lsize = get_local_size(0);
     for (; (j + lsize - 1) < nj; j += lsize) {
+        UINT lid = get_local_id(0);
         __local REAL __jm[LSIZE];
         __local REAL __jrx[LSIZE];
         __local REAL __jry[LSIZE];
