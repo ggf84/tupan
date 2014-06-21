@@ -104,7 +104,6 @@ class Phi(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni, nj)
         if not hasattr(ips, 'phi'):
             ips.register_attribute('phi', 'real')
 
@@ -162,7 +161,6 @@ class Acc(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni, nj)
         if not hasattr(ips, 'ax'):
             ips.register_attribute('ax', 'real')
         if not hasattr(ips, 'ay'):
@@ -233,7 +231,6 @@ class AccJerk(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni, nj)
         if not hasattr(ips, 'ax'):
             ips.register_attribute('ax', 'real')
         if not hasattr(ips, 'ay'):
@@ -286,7 +283,6 @@ class SnapCrackle(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni, nj)
         if not hasattr(ips, 'sx'):
             ips.register_attribute('sx', 'real')
         if not hasattr(ips, 'sy'):
@@ -336,7 +332,6 @@ class Tstep(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni, nj)
         if not hasattr(ips, 'tstep'):
             ips.register_attribute('tstep', 'real')
         if not hasattr(ips, 'tstepij'):
@@ -379,7 +374,6 @@ class PNAcc(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni, nj)
         if not hasattr(ips, 'pnax'):
             ips.register_attribute('pnax', 'real')
         if not hasattr(ips, 'pnay'):
@@ -425,8 +419,6 @@ class Sakura(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.vector_width = 1
-        self.kernel.set_gsize(ni, nj)
         if not hasattr(ips, 'drx'):
             ips.register_attribute('drx', 'real')
         if not hasattr(ips, 'dry'):
@@ -477,7 +469,6 @@ class NregX(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni, nj)
         if not hasattr(ips, 'mrx'):
             ips.register_attribute('mrx', 'real')
         if not hasattr(ips, 'mry'):
@@ -530,7 +521,6 @@ class NregV(AbstractExtension):
         ni = ips.n
         nj = jps.n
 
-        self.kernel.set_gsize(ni, nj)
         if not hasattr(ips, 'mvx'):
             ips.register_attribute('mvx', 'real')
         if not hasattr(ips, 'mvy'):

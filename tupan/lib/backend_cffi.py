@@ -109,9 +109,6 @@ class CKernel(object):
             c_real_p=lambda x: cast('REAL *', addressof(from_buffer(x))),
             )
 
-    def set_gsize(self, ni, nj):
-        pass
-
     @property
     def args(self):
         return self._args

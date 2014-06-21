@@ -8,7 +8,6 @@
 
 from __future__ import division
 import os
-import math
 import logging
 import pyopencl as cl
 from collections import namedtuple
@@ -97,8 +96,11 @@ class CLKernel(object):
         self.argtypes = None
         self._args = None
 
-        self.lsize = LSIZE[fpwidth]
-        self.vector_width = VW[fpwidth]
+        lsize = LSIZE[fpwidth]
+        gsize = lsize * 2  # XXX: lsize * DEV.max_compute_units ???
+        self.global_size = (gsize, 1, 1)
+        self.local_size = (lsize, 1, 1)
+
         self.queue = cl.CommandQueue(CTX)
 
         memf = cl.mem_flags
@@ -117,20 +119,6 @@ class CLKernel(object):
             c_real=vars(Ctype)['real'].type,
             c_real_p=lambda x: cl.Buffer(CTX, flags, hostbuf=x),
             )
-
-    def set_gsize(self, ni, nj):
-        vw = self.vector_width
-        lsize = self.lsize
-
-        n = (ni + vw - 1) // vw
-        lsize = min(n, lsize)
-        lsize = 2**(int(math.log(lsize, 2)))
-
-        ngroups = (n + lsize - 1) // lsize
-        gsize = lsize * ngroups
-
-        self.global_size = (gsize, 1, 1)
-        self.local_size = (lsize, 1, 1)
 
     @property
     def args(self):
