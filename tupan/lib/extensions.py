@@ -414,6 +414,7 @@ class Sakura(AbstractExtension):
         outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p)
         self.kernel.argtypes = inptypes + outtypes
+        self.kernel.vector_width = 1
 
     def set_args(self, ips, jps, **kwargs):
         ni = ips.n

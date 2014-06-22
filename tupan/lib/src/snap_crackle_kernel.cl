@@ -41,8 +41,10 @@ void snap_crackle_kernel(
     __global REAL * restrict _icy,
     __global REAL * restrict _icz)
 {
-    for (UINT i = 0; VW * i < ni; i += get_global_size(0)) {
-        UINT gid = i + get_global_id(0);
+    for (UINT i = LSIZE * get_group_id(0);
+         VW * i < ni; i += LSIZE * get_num_groups(0)) {
+        UINT lid = get_local_id(0);
+        UINT gid = i + lid;
         gid = ((VW * gid) < ni) ? (gid):(0);
 
         REALn im = vloadn(gid, _im);
@@ -71,7 +73,6 @@ void snap_crackle_kernel(
 
         #ifdef FAST_LOCAL_MEM
         for (; (j + LSIZE - 1) < nj; j += LSIZE) {
-            UINT lid = get_local_id(0);
             barrier(CLK_LOCAL_MEM_FENCE);
             __local REAL __jm[LSIZE];
             __local REAL __jrx[LSIZE];

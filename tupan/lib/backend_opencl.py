@@ -6,7 +6,7 @@
 """
 
 
-from __future__ import division
+from __future__ import print_function, division
 import os
 import logging
 import pyopencl as cl
@@ -96,11 +96,23 @@ class CLKernel(object):
         self.argtypes = None
         self._args = None
 
-        lsize = LSIZE[fpwidth]
-        gsize = lsize * 2  # XXX: lsize * DEV.max_compute_units ???
-        self.global_size = (gsize, 1, 1)
-        self.local_size = (lsize, 1, 1)
+        kwginfo = cl.kernel_work_group_info
+        LOGGER.debug("CL '%s' info: %s %s %s %s %s",
+                     name,
+                     self.kernel.get_work_group_info(
+                         kwginfo.COMPILE_WORK_GROUP_SIZE, DEV),
+                     self.kernel.get_work_group_info(
+                         kwginfo.LOCAL_MEM_SIZE, DEV),
+                     self.kernel.get_work_group_info(
+                         kwginfo.PREFERRED_WORK_GROUP_SIZE_MULTIPLE, DEV),
+                     self.kernel.get_work_group_info(
+                         kwginfo.PRIVATE_MEM_SIZE, DEV),
+                     self.kernel.get_work_group_info(
+                         kwginfo.WORK_GROUP_SIZE, DEV),
+                     )
 
+        self.vector_width = VW[fpwidth]
+        self.local_size = (LSIZE[fpwidth], 1, 1)
         self.queue = cl.CommandQueue(CTX)
 
         memf = cl.mem_flags
@@ -126,6 +138,14 @@ class CLKernel(object):
 
     @args.setter
     def args(self, args):
+        ni = args[0]
+        vw = self.vector_width
+        lsize = self.local_size[0]
+        n = (ni + vw - 1) // vw
+        ngroups = max((n + lsize - 1)//lsize, DEV.max_compute_units)
+        self.global_size = (lsize * ngroups, 1, 1)
+
+        # set args
         argtypes = self.argtypes
         self._args = [argtype(arg) for (argtype, arg) in zip(argtypes, args)]
         for (i, arg) in enumerate(self._args):
