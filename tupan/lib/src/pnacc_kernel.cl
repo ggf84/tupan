@@ -5,14 +5,14 @@ __kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 void pnacc_kernel(
     const UINT ni,
-    __global const REAL * restrict _im,
-    __global const REAL * restrict _irx,
-    __global const REAL * restrict _iry,
-    __global const REAL * restrict _irz,
-    __global const REAL * restrict _ie2,
-    __global const REAL * restrict _ivx,
-    __global const REAL * restrict _ivy,
-    __global const REAL * restrict _ivz,
+    __global const REALn * restrict _im,
+    __global const REALn * restrict _irx,
+    __global const REALn * restrict _iry,
+    __global const REALn * restrict _irz,
+    __global const REALn * restrict _ie2,
+    __global const REALn * restrict _ivx,
+    __global const REALn * restrict _ivy,
+    __global const REALn * restrict _ivz,
     const UINT nj,
     __global const REAL * restrict _jm,
     __global const REAL * restrict _jrx,
@@ -30,9 +30,9 @@ void pnacc_kernel(
     const REAL inv5,
     const REAL inv6,
     const REAL inv7,
-    __global REAL * restrict _ipnax,
-    __global REAL * restrict _ipnay,
-    __global REAL * restrict _ipnaz)
+    __global REALn * restrict _ipnax,
+    __global REALn * restrict _ipnay,
+    __global REALn * restrict _ipnaz)
 {
     for (UINT i = LSIZE * get_group_id(0);
          VW * i < ni; i += LSIZE * get_num_groups(0)) {
@@ -43,14 +43,14 @@ void pnacc_kernel(
         CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3,
                                     inv4, inv5, inv6, inv7);
 
-        REALn im = vloadn(gid, _im);
-        REALn irx = vloadn(gid, _irx);
-        REALn iry = vloadn(gid, _iry);
-        REALn irz = vloadn(gid, _irz);
-        REALn ie2 = vloadn(gid, _ie2);
-        REALn ivx = vloadn(gid, _ivx);
-        REALn ivy = vloadn(gid, _ivy);
-        REALn ivz = vloadn(gid, _ivz);
+        REALn im = _im[gid];
+        REALn irx = _irx[gid];
+        REALn iry = _iry[gid];
+        REALn irz = _irz[gid];
+        REALn ie2 = _ie2[gid];
+        REALn ivx = _ivx[gid];
+        REALn ivy = _ivy[gid];
+        REALn ivz = _ivz[gid];
 
         REALn ipnax = (REALn)(0);
         REALn ipnay = (REALn)(0);
@@ -102,9 +102,9 @@ void pnacc_kernel(
                 &ipnax, &ipnay, &ipnaz);
         }
 
-        vstoren(ipnax, gid, _ipnax);
-        vstoren(ipnay, gid, _ipnay);
-        vstoren(ipnaz, gid, _ipnaz);
+        _ipnax[gid] = ipnax;
+        _ipnay[gid] = ipnay;
+        _ipnaz[gid] = ipnaz;
     }
 }
 

@@ -5,20 +5,20 @@ __kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 void snap_crackle_kernel(
     const UINT ni,
-    __global const REAL * restrict _im,
-    __global const REAL * restrict _irx,
-    __global const REAL * restrict _iry,
-    __global const REAL * restrict _irz,
-    __global const REAL * restrict _ie2,
-    __global const REAL * restrict _ivx,
-    __global const REAL * restrict _ivy,
-    __global const REAL * restrict _ivz,
-    __global const REAL * restrict _iax,
-    __global const REAL * restrict _iay,
-    __global const REAL * restrict _iaz,
-    __global const REAL * restrict _ijx,
-    __global const REAL * restrict _ijy,
-    __global const REAL * restrict _ijz,
+    __global const REALn * restrict _im,
+    __global const REALn * restrict _irx,
+    __global const REALn * restrict _iry,
+    __global const REALn * restrict _irz,
+    __global const REALn * restrict _ie2,
+    __global const REALn * restrict _ivx,
+    __global const REALn * restrict _ivy,
+    __global const REALn * restrict _ivz,
+    __global const REALn * restrict _iax,
+    __global const REALn * restrict _iay,
+    __global const REALn * restrict _iaz,
+    __global const REALn * restrict _ijx,
+    __global const REALn * restrict _ijy,
+    __global const REALn * restrict _ijz,
     const UINT nj,
     __global const REAL * restrict _jm,
     __global const REAL * restrict _jrx,
@@ -34,12 +34,12 @@ void snap_crackle_kernel(
     __global const REAL * restrict _jjx,
     __global const REAL * restrict _jjy,
     __global const REAL * restrict _jjz,
-    __global REAL * restrict _isx,
-    __global REAL * restrict _isy,
-    __global REAL * restrict _isz,
-    __global REAL * restrict _icx,
-    __global REAL * restrict _icy,
-    __global REAL * restrict _icz)
+    __global REALn * restrict _isx,
+    __global REALn * restrict _isy,
+    __global REALn * restrict _isz,
+    __global REALn * restrict _icx,
+    __global REALn * restrict _icy,
+    __global REALn * restrict _icz)
 {
     for (UINT i = LSIZE * get_group_id(0);
          VW * i < ni; i += LSIZE * get_num_groups(0)) {
@@ -47,20 +47,20 @@ void snap_crackle_kernel(
         UINT gid = i + lid;
         gid = ((VW * gid) < ni) ? (gid):(0);
 
-        REALn im = vloadn(gid, _im);
-        REALn irx = vloadn(gid, _irx);
-        REALn iry = vloadn(gid, _iry);
-        REALn irz = vloadn(gid, _irz);
-        REALn ie2 = vloadn(gid, _ie2);
-        REALn ivx = vloadn(gid, _ivx);
-        REALn ivy = vloadn(gid, _ivy);
-        REALn ivz = vloadn(gid, _ivz);
-        REALn iax = vloadn(gid, _iax);
-        REALn iay = vloadn(gid, _iay);
-        REALn iaz = vloadn(gid, _iaz);
-        REALn ijx = vloadn(gid, _ijx);
-        REALn ijy = vloadn(gid, _ijy);
-        REALn ijz = vloadn(gid, _ijz);
+        REALn im = _im[gid];
+        REALn irx = _irx[gid];
+        REALn iry = _iry[gid];
+        REALn irz = _irz[gid];
+        REALn ie2 = _ie2[gid];
+        REALn ivx = _ivx[gid];
+        REALn ivy = _ivy[gid];
+        REALn ivz = _ivz[gid];
+        REALn iax = _iax[gid];
+        REALn iay = _iay[gid];
+        REALn iaz = _iaz[gid];
+        REALn ijx = _ijx[gid];
+        REALn ijy = _ijy[gid];
+        REALn ijz = _ijz[gid];
 
         REALn isx = (REALn)(0);
         REALn isy = (REALn)(0);
@@ -135,12 +135,12 @@ void snap_crackle_kernel(
                 &icx, &icy, &icz);
         }
 
-        vstoren(isx, gid, _isx);
-        vstoren(isy, gid, _isy);
-        vstoren(isz, gid, _isz);
-        vstoren(icx, gid, _icx);
-        vstoren(icy, gid, _icy);
-        vstoren(icz, gid, _icz);
+        _isx[gid] = isx;
+        _isy[gid] = isy;
+        _isz[gid] = isz;
+        _icx[gid] = icx;
+        _icy[gid] = icy;
+        _icz[gid] = icz;
     }
 }
 

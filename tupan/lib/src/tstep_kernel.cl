@@ -5,14 +5,14 @@ __kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 void tstep_kernel(
     const UINT ni,
-    __global const REAL * restrict _im,
-    __global const REAL * restrict _irx,
-    __global const REAL * restrict _iry,
-    __global const REAL * restrict _irz,
-    __global const REAL * restrict _ie2,
-    __global const REAL * restrict _ivx,
-    __global const REAL * restrict _ivy,
-    __global const REAL * restrict _ivz,
+    __global const REALn * restrict _im,
+    __global const REALn * restrict _irx,
+    __global const REALn * restrict _iry,
+    __global const REALn * restrict _irz,
+    __global const REALn * restrict _ie2,
+    __global const REALn * restrict _ivx,
+    __global const REALn * restrict _ivy,
+    __global const REALn * restrict _ivz,
     const UINT nj,
     __global const REAL * restrict _jm,
     __global const REAL * restrict _jrx,
@@ -23,8 +23,8 @@ void tstep_kernel(
     __global const REAL * restrict _jvy,
     __global const REAL * restrict _jvz,
     const REAL eta,
-    __global REAL * restrict _idt_a,
-    __global REAL * restrict _idt_b)
+    __global REALn * restrict _idt_a,
+    __global REALn * restrict _idt_b)
 {
     for (UINT i = LSIZE * get_group_id(0);
          VW * i < ni; i += LSIZE * get_num_groups(0)) {
@@ -32,14 +32,14 @@ void tstep_kernel(
         UINT gid = i + lid;
         gid = ((VW * gid) < ni) ? (gid):(0);
 
-        REALn im = vloadn(gid, _im);
-        REALn irx = vloadn(gid, _irx);
-        REALn iry = vloadn(gid, _iry);
-        REALn irz = vloadn(gid, _irz);
-        REALn ie2 = vloadn(gid, _ie2);
-        REALn ivx = vloadn(gid, _ivx);
-        REALn ivy = vloadn(gid, _ivy);
-        REALn ivz = vloadn(gid, _ivz);
+        REALn im = _im[gid];
+        REALn irx = _irx[gid];
+        REALn iry = _iry[gid];
+        REALn irz = _irz[gid];
+        REALn ie2 = _ie2[gid];
+        REALn ivx = _ivx[gid];
+        REALn ivy = _ivy[gid];
+        REALn ivz = _ivz[gid];
 
         REALn iw2_a = (REALn)(0);
         REALn iw2_b = (REALn)(0);
@@ -90,8 +90,8 @@ void tstep_kernel(
                 &iw2_a, &iw2_b);
         }
 
-        vstoren(eta / sqrt(1 + iw2_a), gid, _idt_a);
-        vstoren(eta / sqrt(1 + iw2_b), gid, _idt_b);
+        _idt_a[gid] = eta / sqrt(1 + iw2_a);
+        _idt_b[gid] = eta / sqrt(1 + iw2_b);
     }
 }
 

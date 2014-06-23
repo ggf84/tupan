@@ -5,14 +5,14 @@ __kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 void nreg_Xkernel(
     const UINT ni,
-    __global const REAL * restrict _im,
-    __global const REAL * restrict _irx,
-    __global const REAL * restrict _iry,
-    __global const REAL * restrict _irz,
-    __global const REAL * restrict _ie2,
-    __global const REAL * restrict _ivx,
-    __global const REAL * restrict _ivy,
-    __global const REAL * restrict _ivz,
+    __global const REALn * restrict _im,
+    __global const REALn * restrict _irx,
+    __global const REALn * restrict _iry,
+    __global const REALn * restrict _irz,
+    __global const REALn * restrict _ie2,
+    __global const REALn * restrict _ivx,
+    __global const REALn * restrict _ivy,
+    __global const REALn * restrict _ivz,
     const UINT nj,
     __global const REAL * restrict _jm,
     __global const REAL * restrict _jrx,
@@ -23,13 +23,13 @@ void nreg_Xkernel(
     __global const REAL * restrict _jvy,
     __global const REAL * restrict _jvz,
     const REAL dt,
-    __global REAL * restrict _idrx,
-    __global REAL * restrict _idry,
-    __global REAL * restrict _idrz,
-    __global REAL * restrict _iax,
-    __global REAL * restrict _iay,
-    __global REAL * restrict _iaz,
-    __global REAL * restrict _iu)
+    __global REALn * restrict _idrx,
+    __global REALn * restrict _idry,
+    __global REALn * restrict _idrz,
+    __global REALn * restrict _iax,
+    __global REALn * restrict _iay,
+    __global REALn * restrict _iaz,
+    __global REALn * restrict _iu)
 {
     for (UINT i = LSIZE * get_group_id(0);
          VW * i < ni; i += LSIZE * get_num_groups(0)) {
@@ -37,14 +37,14 @@ void nreg_Xkernel(
         UINT gid = i + lid;
         gid = ((VW * gid) < ni) ? (gid):(0);
 
-        REALn im = vloadn(gid, _im);
-        REALn irx = vloadn(gid, _irx);
-        REALn iry = vloadn(gid, _iry);
-        REALn irz = vloadn(gid, _irz);
-        REALn ie2 = vloadn(gid, _ie2);
-        REALn ivx = vloadn(gid, _ivx);
-        REALn ivy = vloadn(gid, _ivy);
-        REALn ivz = vloadn(gid, _ivz);
+        REALn im = _im[gid];
+        REALn irx = _irx[gid];
+        REALn iry = _iry[gid];
+        REALn irz = _irz[gid];
+        REALn ie2 = _ie2[gid];
+        REALn ivx = _ivx[gid];
+        REALn ivy = _ivy[gid];
+        REALn ivz = _ivz[gid];
 
         REALn idrx = (REALn)(0);
         REALn idry = (REALn)(0);
@@ -102,13 +102,13 @@ void nreg_Xkernel(
                 &iax, &iay, &iaz, &iu);
         }
 
-        vstoren(idrx, gid, _idrx);
-        vstoren(idry, gid, _idry);
-        vstoren(idrz, gid, _idrz);
-        vstoren(iax, gid, _iax);
-        vstoren(iay, gid, _iay);
-        vstoren(iaz, gid, _iaz);
-        vstoren(im * iu, gid, _iu);
+        _idrx[gid] = idrx;
+        _idry[gid] = idry;
+        _idrz[gid] = idrz;
+        _iax[gid] = iax;
+        _iay[gid] = iay;
+        _iaz[gid] = iaz;
+        _iu[gid] = im * iu;
     }
 }
 
@@ -117,13 +117,13 @@ __kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 void nreg_Vkernel(
     const UINT ni,
-    __global const REAL * restrict _im,
-    __global const REAL * restrict _ivx,
-    __global const REAL * restrict _ivy,
-    __global const REAL * restrict _ivz,
-    __global const REAL * restrict _iax,
-    __global const REAL * restrict _iay,
-    __global const REAL * restrict _iaz,
+    __global const REALn * restrict _im,
+    __global const REALn * restrict _ivx,
+    __global const REALn * restrict _ivy,
+    __global const REALn * restrict _ivz,
+    __global const REALn * restrict _iax,
+    __global const REALn * restrict _iay,
+    __global const REALn * restrict _iaz,
     const UINT nj,
     __global const REAL * restrict _jm,
     __global const REAL * restrict _jvx,
@@ -133,10 +133,10 @@ void nreg_Vkernel(
     __global const REAL * restrict _jay,
     __global const REAL * restrict _jaz,
     const REAL dt,
-    __global REAL * restrict _idvx,
-    __global REAL * restrict _idvy,
-    __global REAL * restrict _idvz,
-    __global REAL * restrict _ik)
+    __global REALn * restrict _idvx,
+    __global REALn * restrict _idvy,
+    __global REALn * restrict _idvz,
+    __global REALn * restrict _ik)
 {
     for (UINT i = LSIZE * get_group_id(0);
          VW * i < ni; i += LSIZE * get_num_groups(0)) {
@@ -144,13 +144,13 @@ void nreg_Vkernel(
         UINT gid = i + lid;
         gid = ((VW * gid) < ni) ? (gid):(0);
 
-        REALn im = vloadn(gid, _im);
-        REALn ivx = vloadn(gid, _ivx);
-        REALn ivy = vloadn(gid, _ivy);
-        REALn ivz = vloadn(gid, _ivz);
-        REALn iax = vloadn(gid, _iax);
-        REALn iay = vloadn(gid, _iay);
-        REALn iaz = vloadn(gid, _iaz);
+        REALn im = _im[gid];
+        REALn ivx = _ivx[gid];
+        REALn ivy = _ivy[gid];
+        REALn ivz = _ivz[gid];
+        REALn iax = _iax[gid];
+        REALn iay = _iay[gid];
+        REALn iaz = _iaz[gid];
 
         REALn idvx = (REALn)(0);
         REALn idvy = (REALn)(0);
@@ -201,10 +201,10 @@ void nreg_Vkernel(
                 &idvx, &idvy, &idvz, &ik);
         }
 
-        vstoren(idvx, gid, _idvx);
-        vstoren(idvy, gid, _idvy);
-        vstoren(idvz, gid, _idvz);
-        vstoren(im * ik, gid, _ik);
+        _idvx[gid] = idvx;
+        _idvy[gid] = idvy;
+        _idvz[gid] = idvz;
+        _ik[gid] = im * ik;
     }
 }
 

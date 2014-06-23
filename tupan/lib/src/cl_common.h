@@ -49,7 +49,6 @@
     typedef float16 REAL16;
 #endif
 
-
 #define paster(x,y) x##y
 #define concat(x,y) paster(x,y)
 #define vec(x) concat(x, VW)
@@ -61,11 +60,5 @@
 #define INTn vec(INT)
 #define UINTn vec(UINT)
 #define REALn vec(REAL)
-
-#define vload1(offset, p) (p)[offset]
-#define vstore1(data, offset, p) do {(p)[offset] = data;} while(0)
-
-#define vloadn vec(vload)
-#define vstoren vec(vstore)
 
 #endif // __CL_COMMON_H__

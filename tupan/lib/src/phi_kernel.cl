@@ -5,18 +5,18 @@ __kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 void phi_kernel(
     const UINT ni,
-    __global const REAL * restrict _im,
-    __global const REAL * restrict _irx,
-    __global const REAL * restrict _iry,
-    __global const REAL * restrict _irz,
-    __global const REAL * restrict _ie2,
+    __global const REALn * restrict _im,
+    __global const REALn * restrict _irx,
+    __global const REALn * restrict _iry,
+    __global const REALn * restrict _irz,
+    __global const REALn * restrict _ie2,
     const UINT nj,
     __global const REAL * restrict _jm,
     __global const REAL * restrict _jrx,
     __global const REAL * restrict _jry,
     __global const REAL * restrict _jrz,
     __global const REAL * restrict _je2,
-    __global REAL * restrict _iphi)
+    __global REALn * restrict _iphi)
 {
     for (UINT i = LSIZE * get_group_id(0);
          VW * i < ni; i += LSIZE * get_num_groups(0)) {
@@ -24,11 +24,11 @@ void phi_kernel(
         UINT gid = i + lid;
         gid = ((VW * gid) < ni) ? (gid):(0);
 
-        REALn im = vloadn(gid, _im);
-        REALn irx = vloadn(gid, _irx);
-        REALn iry = vloadn(gid, _iry);
-        REALn irz = vloadn(gid, _irz);
-        REALn ie2 = vloadn(gid, _ie2);
+        REALn im = _im[gid];
+        REALn irx = _irx[gid];
+        REALn iry = _iry[gid];
+        REALn irz = _irz[gid];
+        REALn ie2 = _ie2[gid];
 
         REALn iphi = (REALn)(0);
 
@@ -66,7 +66,7 @@ void phi_kernel(
                 &iphi);
         }
 
-        vstoren(iphi, gid, _iphi);
+        _iphi[gid] = iphi;
     }
 }
 

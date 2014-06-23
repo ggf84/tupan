@@ -142,7 +142,8 @@ class CLKernel(object):
         vw = self.vector_width
         lsize = self.local_size[0]
         n = (ni + vw - 1) // vw
-        ngroups = max((n + lsize - 1)//lsize, DEV.max_compute_units)
+        ngroups = (n + lsize - 1) // lsize
+        ngroups = max(ngroups, DEV.max_compute_units)
         self.global_size = (lsize * ngroups, 1, 1)
 
         # set args

@@ -37,14 +37,14 @@ void sakura_kernel(
         UINT gid = i + lid;
         gid = ((1 * gid) < ni) ? (gid):(0);
 
-        REAL im = vload1(gid, _im);
-        REAL irx = vload1(gid, _irx);
-        REAL iry = vload1(gid, _iry);
-        REAL irz = vload1(gid, _irz);
-        REAL ie2 = vload1(gid, _ie2);
-        REAL ivx = vload1(gid, _ivx);
-        REAL ivy = vload1(gid, _ivy);
-        REAL ivz = vload1(gid, _ivz);
+        REAL im = _im[gid];
+        REAL irx = _irx[gid];
+        REAL iry = _iry[gid];
+        REAL irz = _irz[gid];
+        REAL ie2 = _ie2[gid];
+        REAL ivx = _ivx[gid];
+        REAL ivy = _ivy[gid];
+        REAL ivz = _ivz[gid];
 
         REAL idrx = (REAL)(0);
         REAL idry = (REAL)(0);
@@ -101,12 +101,12 @@ void sakura_kernel(
                 &idvx, &idvy, &idvz);
         }
 
-        vstore1(idrx, gid, _idrx);
-        vstore1(idry, gid, _idry);
-        vstore1(idrz, gid, _idrz);
-        vstore1(idvx, gid, _idvx);
-        vstore1(idvy, gid, _idvy);
-        vstore1(idvz, gid, _idvz);
+        _idrx[gid] = idrx;
+        _idry[gid] = idry;
+        _idrz[gid] = idrz;
+        _idvx[gid] = idvx;
+        _idvy[gid] = idvy;
+        _idvz[gid] = idvz;
     }
 }
 
