@@ -20,6 +20,17 @@ __all__ = ['ParticleSystem']
 
 
 @bind_all(timings)
+class Members(list):
+    def __init__(self, members):
+        super(Members, self).__init__(members)
+        for member in self:
+            setattr(self, member.name, member)
+
+    def __contains__(self, key):
+        return key in vars(self)
+
+
+@bind_all(timings)
 class ParticleSystem(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
@@ -28,31 +39,30 @@ class ParticleSystem(AbstractNbodyMethods):
         """
         Initializer.
         """
-        self.members = {cls.__name__.lower(): cls(n)
-                        for (n, cls) in [(nbodies, Bodies),
-                                         (nstars, Stars),
-                                         (nbhs, Blackholes),
-                                         (nsphs, Sphs)] if n}
-        self.n = len(self)
+        members = [cls(n) for (n, cls) in [(nbodies, Bodies),
+                                           (nstars, Stars),
+                                           (nbhs, Blackholes),
+                                           (nsphs, Sphs)] if n]
+        self.set_members(members)
         if self.n:
             self.id[...] = range(self.n)
 
-    def update_members(self, members):
-        d = self.__dict__
-        m = d.get('members', {})
-        m.update(members)
-        d.clear()
-        self.members = m
+    def set_members(self, members):
+        self.members = Members(members)
         self.n = len(self)
+
+    def update_members(self, members):
+        vars(self).clear()
+        self.set_members(members)
 
     @classmethod
     def from_members(cls, members):
         obj = cls.__new__(cls)
-        obj.update_members(members)
+        obj.set_members(members)
         return obj
 
     def register_attribute(self, name, sctype, doc=''):
-        for member in self.members.values():
+        for member in self.members:
             member.register_attribute(name, sctype, doc)
 
         super(ParticleSystem, self).register_attribute(name, sctype, doc)
@@ -61,37 +71,43 @@ class ParticleSystem(AbstractNbodyMethods):
     # miscellaneous methods
     #
 
+    def __delattr__(self, name):
+        for member in self.members:
+            if hasattr(member, name):
+                delattr(member, name)
+        super(ParticleSystem, self).__delattr__(name)
+
     def __str__(self):
-        fmt = type(self).__name__ + '(['
+        fmt = self.name + '(['
         if self.n:
-            for member in self.members.values():
+            for member in self.members:
                 fmt += '\n\t{0},'.format('\n\t'.join(str(member).split('\n')))
             fmt += '\n'
         fmt += '])'
         return fmt
 
     def __len__(self):
-        return sum(len(member) for member in self.members.values())
+        return sum(len(member) for member in self.members)
 
     def append(self, obj):
         if obj.n:
             members = self.members
-            for (k, v) in obj.members.items():
+            for (i, member) in enumerate(obj.members):
                 try:
-                    members[k].append(v)
-                except KeyError:
-                    members[k] = v.copy()
+                    members[i].append(member)
+                except IndexError:
+                    members.append(member.copy())
             self.update_members(members)
 
     def __getitem__(self, index):
         if isinstance(index, np.ndarray):
             ns = 0
             nf = 0
-            members = {}
-            for (key, obj) in self.members.items():
-                nf += obj.n
-                members[key] = obj[index[ns:nf]]
-                ns += obj.n
+            members = []
+            for member in self.members:
+                nf += member.n
+                members.append(member[index[ns:nf]])
+                ns += member.n
             return self.from_members(members)
 
         if isinstance(index, int):
@@ -100,11 +116,11 @@ class ParticleSystem(AbstractNbodyMethods):
                 raise IndexError(msg.format(index, self.n))
             if index < 0:
                 index = self.n + index
-            members = {}
-            for (key, obj) in self.members.items():
-                if 0 <= index < obj.n:
-                    members[key] = obj[index]
-                index -= obj.n
+            members = []
+            for member in self.members:
+                if 0 <= index < member.n:
+                    members.append(member[index])
+                index -= member.n
             return self.from_members(members)
 
         if isinstance(index, slice):
@@ -118,22 +134,22 @@ class ParticleSystem(AbstractNbodyMethods):
                 start = self.n + start
             if stop < 0:
                 stop = self.n + stop
-            members = {}
-            for (key, obj) in self.members.items():
-                if stop >= 0 and start < obj.n:
-                    members[key] = obj[start-obj.n:stop]
-                start -= obj.n
-                stop -= obj.n
+            members = []
+            for member in self.members:
+                if stop >= 0 and start < member.n:
+                    members.append(member[start-member.n:stop])
+                start -= member.n
+                stop -= member.n
             return self.from_members(members)
 
     def __setitem__(self, index, values):
         if isinstance(index, np.ndarray):
             ns = 0
             nf = 0
-            for (key, obj) in self.members.items():
-                nf += obj.n
-                obj[index[ns:nf]] = values.members[key]
-                ns += obj.n
+            for (key, member) in enumerate(self.members):
+                nf += member.n
+                member[index[ns:nf]] = values.members[key]
+                ns += member.n
             return
 
         if isinstance(index, int):
@@ -142,10 +158,10 @@ class ParticleSystem(AbstractNbodyMethods):
                 raise IndexError(msg.format(index, self.n))
             if index < 0:
                 index = self.n + index
-            for (key, obj) in self.members.items():
-                if 0 <= index < obj.n:
-                    obj[index] = values.members[key]
-                index -= obj.n
+            for (key, member) in enumerate(self.members):
+                if 0 <= index < member.n:
+                    member[index] = values.members[key]
+                index -= member.n
             return
 
         if isinstance(index, slice):
@@ -159,29 +175,29 @@ class ParticleSystem(AbstractNbodyMethods):
                 start = self.n + start
             if stop < 0:
                 stop = self.n + stop
-            for (key, obj) in self.members.items():
-                if stop >= 0 and start < obj.n:
-                    obj[start-obj.n:stop] = values.members[key]
-                start -= obj.n
-                stop -= obj.n
+            for (key, member) in enumerate(self.members):
+                if stop >= 0 and start < member.n:
+                    member[start-member.n:stop] = values.members[key]
+                start -= member.n
+                stop -= member.n
             return
 
     def _init_lazyproperty(self, lazyprop):
-        name = lazyprop.name
-        members = self.members.values()
+        attr = lazyprop.name
+        members = self.members
         if len(members) == 1:
-            value = getattr(next(iter(members)), name)
-            setattr(self, name, value)
+            value = getattr(next(iter(members)), attr)
+            setattr(self, attr, value)
             return value
-        arrays = [getattr(member, name) for member in members]
+        arrays = [getattr(member, attr) for member in members]
         value = np.concatenate(arrays)
         ns = 0
         nf = 0
         for member in members:
             nf += member.n
-            setattr(member, name, value[ns:nf])
+            setattr(member, attr, value[ns:nf])
             ns += member.n
-        setattr(self, name, value)
+        setattr(self, attr, value)
         return value
 
 

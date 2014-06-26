@@ -21,7 +21,6 @@ if __name__ == "__main__":
 #    imf = ("padoan2007", 0.075, 120.0)
 
     ps = make_plummer(n, eps, imf, seed=1)
-    del ps.phi
 
     fname = ("plummer" + str(n).zfill(5) + '-'
              + '_'.join(str(i) for i in imf) + ".hdf5")
@@ -30,13 +29,13 @@ if __name__ == "__main__":
 
     from tupan.ics.fewbody import make_figure83
     from tupan.particles.blackhole import Blackholes
-    bh = make_figure83().members['bodies'].astype(Blackholes)
+    bh = make_figure83().members.bodies.astype(Blackholes)
     bh.dynrescale_total_mass(0.5)
     ps.dynrescale_total_mass(0.5)
-    ps.update_members({type(bh).__name__.lower(): bh})
+    ps.update_members(ps.members + [bh])
     ps.id[...] = range(ps.n)
     ps.to_nbody_units()
-    nbh = ps.members['blackholes'].n
+    nbh = ps.members.blackholes.n
 
     fname = ("plummer" + str(n).zfill(5) + '-'
              + '_'.join(str(i) for i in imf)

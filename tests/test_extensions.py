@@ -33,6 +33,11 @@ def set_particles(n):
     ps.eps2[...] = np.zeros((ps.n,))
     ps.rx[...], ps.ry[...], ps.rz[...] = np.random.random((ps.n, 3)).T * 10
     ps.vx[...], ps.vy[...], ps.vz[...] = np.random.random((ps.n, 3)).T * 10
+
+    ps.register_attribute('pnax', 'real')
+    ps.register_attribute('pnay', 'real')
+    ps.register_attribute('pnaz', 'real')
+
     return ps
 
 

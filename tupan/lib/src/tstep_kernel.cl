@@ -90,8 +90,8 @@ void tstep_kernel(
                 &iw2_a, &iw2_b);
         }
 
-        _idt_a[gid] = eta / sqrt(1 + iw2_a);
-        _idt_b[gid] = eta / sqrt(1 + iw2_b);
+        _idt_a[gid] = eta / sqrt(fmax((REALn)(1), iw2_a));
+        _idt_b[gid] = eta / sqrt(fmax((REALn)(1), iw2_b));
     }
 }
 

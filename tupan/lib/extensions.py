@@ -101,16 +101,10 @@ class Phi(AbstractExtension):
         self.kernel.argtypes = inptypes + outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        ni = ips.n
-        nj = jps.n
-
-        if not hasattr(ips, 'phi'):
-            ips.register_attribute('phi', 'real')
-
-        self.inpargs = (ni,
+        self.inpargs = (ips.n,
                         ips.mass, ips.rx, ips.ry, ips.rz,
                         ips.eps2,
-                        nj,
+                        jps.n,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2)
         self.outargs = (ips.phi,)
@@ -123,10 +117,7 @@ class Phi(AbstractExtension):
         # likely that only the classes Acc and Phi will have an
         # implementation of this method.
         import numpy as np
-        ni = ips.n
-        if not hasattr(ips, 'phi'):
-            ips.register_attribute('phi', 'real')
-        for i in range(ni):
+        for i in range(ips.n):
             rx = ips.rx[i] - jps.rx
             ry = ips.ry[i] - jps.ry
             rz = ips.rz[i] - jps.rz
@@ -158,20 +149,10 @@ class Acc(AbstractExtension):
         self.kernel.argtypes = inptypes + outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        ni = ips.n
-        nj = jps.n
-
-        if not hasattr(ips, 'ax'):
-            ips.register_attribute('ax', 'real')
-        if not hasattr(ips, 'ay'):
-            ips.register_attribute('ay', 'real')
-        if not hasattr(ips, 'az'):
-            ips.register_attribute('az', 'real')
-
-        self.inpargs = (ni,
+        self.inpargs = (ips.n,
                         ips.mass, ips.rx, ips.ry, ips.rz,
                         ips.eps2,
-                        nj,
+                        jps.n,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2)
         self.outargs = (ips.ax, ips.ay, ips.az)
@@ -184,14 +165,7 @@ class Acc(AbstractExtension):
         # likely that only the classes Acc and Phi will have an
         # implementation of this method.
         import numpy as np
-        ni = ips.n
-        if not hasattr(ips, 'ax'):
-            ips.register_attribute('ax', 'real')
-        if not hasattr(ips, 'ay'):
-            ips.register_attribute('ay', 'real')
-        if not hasattr(ips, 'az'):
-            ips.register_attribute('az', 'real')
-        for i in range(ni):
+        for i in range(ips.n):
             rx = ips.rx[i] - jps.rx
             ry = ips.ry[i] - jps.ry
             rz = ips.rz[i] - jps.rz
@@ -228,26 +202,10 @@ class AccJerk(AbstractExtension):
         self.kernel.argtypes = inptypes + outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        ni = ips.n
-        nj = jps.n
-
-        if not hasattr(ips, 'ax'):
-            ips.register_attribute('ax', 'real')
-        if not hasattr(ips, 'ay'):
-            ips.register_attribute('ay', 'real')
-        if not hasattr(ips, 'az'):
-            ips.register_attribute('az', 'real')
-        if not hasattr(ips, 'jx'):
-            ips.register_attribute('jx', 'real')
-        if not hasattr(ips, 'jy'):
-            ips.register_attribute('jy', 'real')
-        if not hasattr(ips, 'jz'):
-            ips.register_attribute('jz', 'real')
-
-        self.inpargs = (ni,
+        self.inpargs = (ips.n,
                         ips.mass, ips.rx, ips.ry, ips.rz,
                         ips.eps2, ips.vx, ips.vy, ips.vz,
-                        nj,
+                        jps.n,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2, jps.vx, jps.vy, jps.vz)
         self.outargs = (ips.ax, ips.ay, ips.az,
@@ -280,27 +238,11 @@ class SnapCrackle(AbstractExtension):
         self.kernel.argtypes = inptypes + outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        ni = ips.n
-        nj = jps.n
-
-        if not hasattr(ips, 'sx'):
-            ips.register_attribute('sx', 'real')
-        if not hasattr(ips, 'sy'):
-            ips.register_attribute('sy', 'real')
-        if not hasattr(ips, 'sz'):
-            ips.register_attribute('sz', 'real')
-        if not hasattr(ips, 'cx'):
-            ips.register_attribute('cx', 'real')
-        if not hasattr(ips, 'cy'):
-            ips.register_attribute('cy', 'real')
-        if not hasattr(ips, 'cz'):
-            ips.register_attribute('cz', 'real')
-
-        self.inpargs = (ni,
+        self.inpargs = (ips.n,
                         ips.mass, ips.rx, ips.ry, ips.rz,
                         ips.eps2, ips.vx, ips.vy, ips.vz,
                         ips.ax, ips.ay, ips.az, ips.jx, ips.jy, ips.jz,
-                        nj,
+                        jps.n,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2, jps.vx, jps.vy, jps.vz,
                         jps.ax, jps.ay, jps.az, jps.jx, jps.jy, jps.jz)
@@ -329,18 +271,10 @@ class Tstep(AbstractExtension):
         self.kernel.argtypes = inptypes + outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        ni = ips.n
-        nj = jps.n
-
-        if not hasattr(ips, 'tstep'):
-            ips.register_attribute('tstep', 'real')
-        if not hasattr(ips, 'tstepij'):
-            ips.register_attribute('tstepij', 'real')
-
-        self.inpargs = (ni,
+        self.inpargs = (ips.n,
                         ips.mass, ips.rx, ips.ry, ips.rz,
                         ips.eps2, ips.vx, ips.vy, ips.vz,
-                        nj,
+                        jps.n,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2, jps.vx, jps.vy, jps.vz,
                         kwargs['eta'])
@@ -371,20 +305,10 @@ class PNAcc(AbstractExtension):
         self.kernel.argtypes = inptypes + outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        ni = ips.n
-        nj = jps.n
-
-        if not hasattr(ips, 'pnax'):
-            ips.register_attribute('pnax', 'real')
-        if not hasattr(ips, 'pnay'):
-            ips.register_attribute('pnay', 'real')
-        if not hasattr(ips, 'pnaz'):
-            ips.register_attribute('pnaz', 'real')
-
-        self.inpargs = (ni,
+        self.inpargs = (ips.n,
                         ips.mass, ips.rx, ips.ry, ips.rz,
                         ips.eps2, ips.vx, ips.vy, ips.vz,
-                        nj,
+                        jps.n,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2, jps.vx, jps.vy, jps.vz,
                         pn.order, pn.clight**(-1),
@@ -417,9 +341,6 @@ class Sakura(AbstractExtension):
         self.kernel.vector_width = 1
 
     def set_args(self, ips, jps, **kwargs):
-        ni = ips.n
-        nj = jps.n
-
         if not hasattr(ips, 'drx'):
             ips.register_attribute('drx', 'real')
         if not hasattr(ips, 'dry'):
@@ -433,10 +354,10 @@ class Sakura(AbstractExtension):
         if not hasattr(ips, 'dvz'):
             ips.register_attribute('dvz', 'real')
 
-        self.inpargs = (ni,
+        self.inpargs = (ips.n,
                         ips.mass, ips.rx, ips.ry, ips.rz,
                         ips.eps2, ips.vx, ips.vy, ips.vz,
-                        nj,
+                        jps.n,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2, jps.vx, jps.vy, jps.vz,
                         kwargs['dt'], kwargs['flag'])
@@ -467,9 +388,6 @@ class NregX(AbstractExtension):
         self.kernel.argtypes = inptypes + outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        ni = ips.n
-        nj = jps.n
-
         if not hasattr(ips, 'mrx'):
             ips.register_attribute('mrx', 'real')
         if not hasattr(ips, 'mry'):
@@ -485,10 +403,10 @@ class NregX(AbstractExtension):
         if not hasattr(ips, 'u'):
             ips.register_attribute('u', 'real')
 
-        self.inpargs = (ni,
+        self.inpargs = (ips.n,
                         ips.mass, ips.rx, ips.ry, ips.rz,
                         ips.eps2, ips.vx, ips.vy, ips.vz,
-                        nj,
+                        jps.n,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2, jps.vx, jps.vy, jps.vz,
                         kwargs['dt'])
@@ -519,9 +437,6 @@ class NregV(AbstractExtension):
         self.kernel.argtypes = inptypes + outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        ni = ips.n
-        nj = jps.n
-
         if not hasattr(ips, 'mvx'):
             ips.register_attribute('mvx', 'real')
         if not hasattr(ips, 'mvy'):
@@ -531,10 +446,10 @@ class NregV(AbstractExtension):
         if not hasattr(ips, 'mk'):
             ips.register_attribute('mk', 'real')
 
-        self.inpargs = (ni,
+        self.inpargs = (ips.n,
                         ips.mass, ips.vx, ips.vy, ips.vz,
                         ips.ax, ips.ay, ips.az,
-                        nj,
+                        jps.n,
                         jps.mass, jps.vx, jps.vy, jps.vz,
                         jps.ax, jps.ay, jps.az,
                         kwargs['dt'])
@@ -567,13 +482,10 @@ class Kepler(AbstractExtension):
         self.kernel.argtypes = inptypes + outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        ni = ips.n
-        nj = jps.n
-
-        self.inpargs = (ni,
+        self.inpargs = (ips.n,
                         ips.mass, ips.rx, ips.ry, ips.rz,
                         ips.eps2, ips.vx, ips.vy, ips.vz,
-                        nj,
+                        jps.n,
                         jps.mass, jps.rx, jps.ry, jps.rz,
                         jps.eps2, jps.vx, jps.vy, jps.vz,
                         kwargs['dt'])

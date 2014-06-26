@@ -156,23 +156,25 @@ class CLKernel(object):
         arrays = kwargs['outargs']
         buffers = self.args[len(kwargs['inpargs']):]
 
+        for (ary, buf) in zip(arrays, buffers):
+            cl.enqueue_copy(self.queue, ary, buf)
+        return arrays
+
 #        mapf = cl.map_flags
 #        flags = mapf.READ | mapf.WRITE
 #        queue = self.queue
 #        for (ary, buf) in zip(arrays, buffers):
 #            pointer, ev = cl.enqueue_map_buffer(
-#                              queue,
-#                              buf,
-#                              flags,
-#                              0,
-#                              ary.shape,
-#                              ary.dtype,
-#                              'C'
-#                          )
+#                queue,
+#                buf,
+#                flags,
+#                0,
+#                ary.shape,
+#                ary.dtype,
+#                'C'
+#                )
 #            ev.wait()
-        for (ary, buf) in zip(arrays, buffers):
-            cl.enqueue_copy(self.queue, ary, buf)
-        return arrays
+#        return arrays
 
     def run(self):
         cl.enqueue_nd_range_kernel(

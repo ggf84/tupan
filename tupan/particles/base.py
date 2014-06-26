@@ -34,18 +34,29 @@ class MetaBaseNbodyMethods(type):
         super(MetaBaseNbodyMethods, cls).__init__(*args, **kwargs)
 
         if hasattr(cls, '_init_lazyproperty'):
+            setattr(cls, 'name', cls.__name__.lower())
+
             if hasattr(cls, 'attr_descr'):
                 for name, sctype, doc in cls.attr_descr:
+                    setattr(cls, name, LazyProperty(name, sctype, doc))
+
+            if hasattr(cls, 'extra_attr_descr'):
+                for name, sctype, doc in cls.extra_attr_descr:
                     setattr(cls, name, LazyProperty(name, sctype, doc))
 
             if hasattr(cls, 'pn_attr_descr'):
                 for name, sctype, doc in cls.pn_attr_descr:
                     setattr(cls, name, LazyProperty(name, sctype, doc))
 
+            if hasattr(cls, 'pn_extra_attr_descr'):
+                for name, sctype, doc in cls.pn_extra_attr_descr:
+                    setattr(cls, name, LazyProperty(name, sctype, doc))
+
         if hasattr(cls, 'dtype'):
-            dtype = [(name, vars(Ctype)[sctype])
-                     for name, sctype, doc in cls.attr_descr]
-            setattr(cls, 'dtype', dtype)
+            if hasattr(cls, 'attr_descr'):
+                dtype = [(name, vars(Ctype)[sctype])
+                         for name, sctype, doc in cls.attr_descr]
+                setattr(cls, 'dtype', dtype)
 
 
 BaseNbodyMethods = MetaBaseNbodyMethods('BaseNbodyMethods', (object,), {})
@@ -69,6 +80,22 @@ class NbodyMethods(BaseNbodyMethods):
         ('time', 'real', 'current time'),
         ('nstep', 'uint', 'step number'),
         ('tstep', 'real', 'time step'), ]
+
+    extra_attr_descr = [
+        ('phi', 'real', 'gravitational potential'),
+        ('ax', 'real', 'x-acceleration'),
+        ('ay', 'real', 'y-acceleration'),
+        ('az', 'real', 'z-acceleration'),
+        ('jx', 'real', 'x-jerk'),
+        ('jy', 'real', 'y-jerk'),
+        ('jz', 'real', 'z-jerk'),
+        ('sx', 'real', 'x-snap'),
+        ('sy', 'real', 'y-snap'),
+        ('sz', 'real', 'z-snap'),
+        ('cx', 'real', 'x-crackle'),
+        ('cy', 'real', 'y-crackle'),
+        ('cz', 'real', 'z-crackle'),
+        ('tstepij', 'real', 'auxiliary time step'), ]
 
     def __repr__(self):
         return repr(self.__dict__)
@@ -296,44 +323,37 @@ class NbodyMethods(BaseNbodyMethods):
         return 2 * self.kinetic_energy + self.potential_energy
 
     # -- gravity
-    def set_tstep(self, ps, eta, kernel=ext.Tstep()):
+    def set_tstep(self, other, eta, kernel=ext.Tstep()):
         """Set individual time-steps due to other particles.
 
         """
-        kernel(self, ps, eta=eta)
+        kernel(self, other, eta=eta)
 
-    def set_phi(self, ps, kernel=ext.Phi()):
+    def set_phi(self, other, kernel=ext.Phi()):
         """Set individual gravitational potential due to other particles.
 
         """
-        kernel(self, ps)
+        kernel(self, other)
 
-    def set_acc(self, ps, kernel=ext.Acc()):
+    def set_acc(self, other, kernel=ext.Acc()):
         """Set individual gravitational acceleration due to other particles.
 
         """
-        kernel(self, ps)
+        kernel(self, other)
 
-    def set_pnacc(self, ps, kernel=ext.PNAcc()):
-        """Set individual post-Newtonian gravitational acceleration due to
-        other particles.
-
-        """
-        kernel(self, ps)
-
-    def set_acc_jerk(self, ps, kernel=ext.AccJerk()):
+    def set_acc_jerk(self, other, kernel=ext.AccJerk()):
         """Set individual gravitational acceleration and jerk due to other
         particles.
 
         """
-        kernel(self, ps)
+        kernel(self, other)
 
-    def set_snap_crackle(self, ps, kernel=ext.SnapCrackle()):
+    def set_snap_crackle(self, other, kernel=ext.SnapCrackle()):
         """Set individual gravitational snap and crackle due to other
         particles.
 
         """
-        kernel(self, ps)
+        kernel(self, other)
 
     # -- miscellaneous methods
     def min_tstep(self):
@@ -443,7 +463,12 @@ class PNbodyMethods(NbodyMethods):
     include_pn_corrections = True
 
     # name, sctype, doc
-    pn_attr_descr = [
+    pn_attr_descr = []
+
+    pn_extra_attr_descr = [
+        ('pnax', 'real', 'PN x-acceleration'),
+        ('pnay', 'real', 'PN y-acceleration'),
+        ('pnaz', 'real', 'PN z-acceleration'),
         ('pn_ke', 'real', 'PN correction for kinectic energy.'),
         ('pn_mrx', 'real', 'PN correction for x-com_r'),
         ('pn_mry', 'real', 'PN correction for y-com_r'),
@@ -521,6 +546,13 @@ class PNbodyMethods(NbodyMethods):
         ke = super(PNbodyMethods, self).ke
         pn_ke = self.pn_ke
         return ke + pn_ke
+
+    def set_pnacc(self, other, kernel=ext.PNAcc()):
+        """Set individual post-Newtonian gravitational acceleration due to
+        other particles.
+
+        """
+        kernel(self, other)
 
     def pn_kick_ke(self, dt):
         """Kicks kinetic energy due to post-Newtonian terms.
@@ -630,7 +662,7 @@ class Particle(AbstractNbodyMethods):
         self.n = n
 
     def update_attrs(self, attrs):
-        self.__dict__.update(attrs)
+        vars(self).update(attrs)
         self.n = len(self.id)
 
     @classmethod
@@ -641,12 +673,12 @@ class Particle(AbstractNbodyMethods):
 
     @property
     def attributes(self):
-        for (k, v) in self.__dict__.items():
+        for (k, v) in vars(self).items():
             if k not in ('n',):
                 yield (k, v)
 
     def __str__(self):
-        fmt = type(self).__name__ + '(['
+        fmt = self.name + '(['
         if self.n:
             for (k, v) in self.attributes:
                 fmt += '\n\t{0}: {1},'.format(k, v)

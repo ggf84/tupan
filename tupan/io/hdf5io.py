@@ -28,15 +28,15 @@ class HDF5IO(object):
         self.fname = fname
         self.fmode = fmode
 
-    def store_dset(self, group, key, obj):
+    def store_dset(self, group, name, obj):
         """
 
         """
-        olen = len(group[key]) if key in group else 0
-        dtype = group[key].dtype if key in group else obj.dtype
+        olen = len(group[name]) if name in group else 0
+        dtype = group[name].dtype if name in group else obj.dtype
         nlen = olen + len(obj)
         dset = group.require_dataset(
-            key,
+            name,
             (olen,),
             dtype=dtype,
             maxshape=(None,),
@@ -61,9 +61,9 @@ class HDF5IO(object):
         group = base_group.require_group(group_name)
         cls = pickle.dumps(type(ps), protocol=PICKLE_PROTOCOL)
         group.attrs['Class'] = cls.decode('utf-8') if IS_PY3K else cls
-        for (key, obj) in ps.members.items():
-            if obj.n:
-                self.store_dset(group, key, obj)
+        for member in ps.members:
+            if member.n:
+                self.store_dset(group, member.name, member)
 
     def dump_snapshot(self, ps, snap_number=None):
         """
@@ -80,12 +80,12 @@ class HDF5IO(object):
         if isinstance(snap_number, int):
             base_name += '_' + str(snap_number).zfill(6)
         group = list(fobj[base_name].values())[0]
-        members = {}
-        for k, v in group.items():
+        members = []
+        for v in group.values():
             cls = pickle.loads(v.attrs['Class'])
             obj = cls(len(v))
             obj.set_state(v)
-            members[k] = obj.copy()
+            members.append(obj.copy())
         cls = pickle.loads(group.attrs['Class'])
         return cls.from_members(members)
 
@@ -106,9 +106,9 @@ class HDF5IO(object):
         group = base_group.require_group(group_name)
         cls = pickle.dumps(type(wl), protocol=PICKLE_PROTOCOL)
         group.attrs['Class'] = cls.decode('utf-8') if IS_PY3K else cls
-        for (key, obj) in wl.members.items():
-            if obj.n:
-                self.store_dset(group, key, obj)
+        for member in wl.members:
+            if member.n:
+                self.store_dset(group, member.name, member)
 
     def dump_worldline(self, wl):
         """
