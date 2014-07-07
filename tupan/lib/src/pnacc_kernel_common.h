@@ -39,8 +39,12 @@ static inline void pnacc_kernel_core(
     REALn v2 = vx * vx + vy * vy + vz * vz;                                     // 5 FLOPs
     INTn mask = (r2 > 0);
 
-    REALn inv_r1, inv_r2;
-    REALn inv_r3 = smoothed_inv_r3r2r1(r2, e2, mask, &inv_r2, &inv_r1);         // 4 FLOPs
+    REALn inv_r1;
+    REALn inv_r2 = smoothed_inv_r2r1(r2, e2, mask, &inv_r1);                    // 3 FLOPs
+
+    REALn nx = rx * inv_r1;                                                     // 1 FLOPs
+    REALn ny = ry * inv_r1;                                                     // 1 FLOPs
+    REALn nz = rz * inv_r1;                                                     // 1 FLOPs
 
 //    REALn r_sch = 2 * m * clight.inv2;                                          // 2 FLOPs
 //    REALn gamma2_a = r_sch * inv_r1;                                            // 1 FLOPs
@@ -56,16 +60,15 @@ static inline void pnacc_kernel_core(
 //    INTn mask = (gamma2 > (REALn)(1.0e-6));
 //    if (any(mask)) {
         p2p_pnterms(im, jm,
-                    rx, ry, rz, vx, vy, vz, v2,
+                    nx, ny, nz, vx, vy, vz, v2,
                     ivx, ivy, ivz, jvx, jvy, jvz,
-                    inv_r1, inv_r2, inv_r3,
-                    clight, &pn);                                               // ??? FLOPs
+                    inv_r1, inv_r2, clight, &pn);                               // ??? FLOPs
 //        pn.a = select((REALn)(0), pn.a, mask);
 //        pn.b = select((REALn)(0), pn.b, mask);
 //    }
-    *ipnax += pn.a * rx + pn.b * vx;                                            // 4 FLOPs
-    *ipnay += pn.a * ry + pn.b * vy;                                            // 4 FLOPs
-    *ipnaz += pn.a * rz + pn.b * vz;                                            // 4 FLOPs
+    *ipnax += pn.a * nx + pn.b * vx;                                            // 4 FLOPs
+    *ipnay += pn.a * ny + pn.b * vy;                                            // 4 FLOPs
+    *ipnaz += pn.a * nz + pn.b * vz;                                            // 4 FLOPs
 }
 // Total flop count: 40+???
 
