@@ -164,7 +164,7 @@ class CLKernel(object):
 #        flags = mapf.READ | mapf.WRITE
 #        queue = self.queue
 #        for (ary, buf) in zip(arrays, buffers):
-#            pointer, ev = cl.enqueue_map_buffer(
+#            ptr, ev = cl.enqueue_map_buffer(
 #                queue,
 #                buf,
 #                flags,
@@ -174,6 +174,7 @@ class CLKernel(object):
 #                'C'
 #                )
 #            ev.wait()
+#            ary[...] = ptr
 #        return arrays
 
     def run(self):

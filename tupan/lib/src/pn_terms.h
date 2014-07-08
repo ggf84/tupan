@@ -8,26 +8,24 @@
 #define _1_4 (((REAL)(1))/4)
 #define _3_2 (((REAL)(3))/2)
 #define _3_4 (((REAL)(3))/4)
+#define _4_5 (((REAL)(4))/5)
 #define _5_2 (((REAL)(5))/2)
 #define _5_4 (((REAL)(5))/4)
-#define _8_5 (((REAL)(8))/5)
 #define _9_2 (((REAL)(9))/2)
-#define _12_5 (((REAL)(12))/5)
 #define _13_12 (((REAL)(13))/12)
 #define _15_2 (((REAL)(15))/2)
 #define _15_4 (((REAL)(15))/4)
 #define _15_8 (((REAL)(15))/8)
 #define _17_2 (((REAL)(17))/2)
-#define _24_5 (((REAL)(24))/5)
 #define _24_7 (((REAL)(24))/7)
 #define _27_4 (((REAL)(27))/4)
-#define _32_5 (((REAL)(32))/5)
 #define _35_16 (((REAL)(35))/16)
 #define _39_2 (((REAL)(39))/2)
 #define _41_16 (((REAL)(41))/16)
 #define _43_2 (((REAL)(43))/2)
 #define _44_15 (((REAL)(44))/15)
 #define _48_35 (((REAL)(48))/35)
+#define _52_3 (((REAL)(52))/3)
 #define _52_15 (((REAL)(52))/15)
 #define _55_4 (((REAL)(55))/4)
 #define _56_15 (((REAL)(56))/15)
@@ -54,7 +52,6 @@
 #define _204_35 (((REAL)(204))/35)
 #define _205_2 (((REAL)(205))/2)
 #define _207_8 (((REAL)(207))/8)
-#define _208_15 (((REAL)(208))/15)
 #define _225_2 (((REAL)(225))/2)
 #define _229_4 (((REAL)(229))/4)
 #define _243_4 (((REAL)(243))/4)
@@ -164,7 +161,6 @@ static inline void p2p_pn4(
     REALn jv2,
     REALn jv4,
     REALn ivjv,
-    REALn ivjvivjv,
     REALn nv,
     REALn niv,
     REALn njv,
@@ -175,9 +171,9 @@ static inline void p2p_pn4(
     PN *pn4)
 {
     // Include ~1/c^4 terms (21+10 == 31 terms)
-    pn4->a = - 2 * ( + jv4
-                     + ivjvivjv )
-             + 4 * jv2 * ivjv
+    pn4->a = + 2 * ( - jv4
+                     + ivjv * ( + 2 * jv2
+                                - ivjv ) )
              + njv2 * ( + _3_2 * iv2
                         + _9_2 * jv2
                         - 6 * ivjv
@@ -223,15 +219,15 @@ static inline void p2p_pn5(
     PN *pn5)
 {
     // Include ~1/c^5 terms (3+3 == 6 terms)
-    pn5->a = + nv * ( + inv_r * ( - _24_5 * im
-                                  + _208_15 * jm )
-                      + _12_5 * v2 );
+    pn5->a = + nv * ( + inv_r * ( - 6 * im
+                                  + _52_3 * jm )
+                      + 3 * v2 );
 
-    pn5->b = - v2
-             + inv_r * ( + _8_5 * im
-                         - _32_5 * jm );
+    pn5->b = + inv_r * ( + 2 * im
+                         - 8 * jm )
+             - v2;
 
-    REALn m_c5r = (im * inv_r) * clight.inv5;
+    REALn m_c5r = _4_5 * (im * inv_r) * clight.inv5;
     pn5->a *= m_c5r;
     pn5->b *= m_c5r;
 }   // 7+5+4 == 16 FLOPs
@@ -250,7 +246,6 @@ static inline void p2p_pn6(
     REALn jv2,
     REALn jv4,
     REALn ivjv,
-    REALn ivjvivjv,
     REALn nv,
     REALn nvnv,
     REALn niv,
@@ -262,17 +257,17 @@ static inline void p2p_pn6(
     PN *pn6)
 {
     // Include ~1/c^6 terms (66+37 == 103 terms)
-    pn6->a = + njv2 * ( + 3 * ivjvivjv
-                        + _3_2 * iv2 * jv2
-                        - 12 * ivjv * jv2
-                        + _15_2 * jv4
+    pn6->a = + njv2 * ( + 3 * ivjv * ( + ivjv
+                                       - 4 * jv2 )
+                        + _3_2 * jv2 * ( + iv2
+                                         + 5 * jv2 )
                         + njv2 * ( + _15_2 * ( + ivjv
                                                - jv2
                                                - _1_4 * iv2 )
                                    + _35_16 * njv2 ) )
-             + 2 * jv2 * ( - ivjvivjv
-                           + jv2 * ( + 2 * ivjv
-                                     - jv2 ) )
+             + 2 * jv2 * ( + ivjv * ( + 2 * jv2
+                                      - ivjv )
+                           - jv4 )
              + im * inv_r * ( + niv * ( + njv * ( + 244 * ivjv
                                                   - _205_2 * iv2
                                                   - _283_2 * jv2
@@ -330,9 +325,9 @@ static inline void p2p_pn6(
                                                  - _41_16 * PI2 ) );
 
     pn6->b = + njv * ( + jv2 * ( + iv2
-                                 + 8 * ivjv
                                  - 7 * jv2 )
-                       - 2 * ivjvivjv
+                       + 2 * ivjv * ( + 4 * jv2
+                                      - ivjv )
                        + njv * ( + 6 * niv * ( + ivjv
                                                - 2 * jv2 )
                                  + njv * ( + 6 * ( + 2 * jv2
@@ -521,19 +516,17 @@ static inline void p2p_pnterms(
                     REALn jv4 = jv2 * jv2;                                      // 1 FLOPs
                     REALn niv2 = niv * niv;                                     // 1 FLOPs
                     REALn nivnjv = niv * njv;                                   // 1 FLOPs
-                    REALn ivjvivjv = ivjv * ivjv;                               // 1 FLOPs
                     REALn nv = nx * vx + ny * vy + nz * vz;                     // 5 FLOPs
                     p2p_pn4(im, jm, im2, jm2, imjm, inv_r, inv_r2,
-                            iv2, jv2, jv4, ivjv, ivjvivjv,
-                            nv, niv, njv, niv2, njv2, nivnjv,
-                            clight, &pn4);                                      // 72 FLOPs
+                            iv2, jv2, jv4, ivjv, nv, niv, njv,
+                            niv2, njv2, nivnjv, clight, &pn4);                  // 72 FLOPs
                     if (clight.order >= 5) {
                         p2p_pn5(im, jm, inv_r, v2, nv, clight, &pn5);           // 16 FLOPs
                         if (clight.order >= 6) {
                             REALn nvnv = nv * nv;                               // 1 FLOPs
                             p2p_pn6(im, jm, im2, jm2, imjm, inv_r, inv_r2,
-                                    v2, iv2, jv2, jv4, ivjv, ivjvivjv,
-                                    nv, nvnv, niv, njv, niv2, njv2, nivnjv,
+                                    v2, iv2, jv2, jv4, ivjv, nv, nvnv,
+                                    niv, njv, niv2, njv2, nivnjv,
                                     clight, &pn6);                              // ??? FLOPs
                             if (clight.order >= 7) {
                                 REALn iv4 = iv2 * iv2;                          // 1 FLOPs
