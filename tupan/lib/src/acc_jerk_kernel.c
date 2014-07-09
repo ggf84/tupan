@@ -1,42 +1,41 @@
 #include "acc_jerk_kernel_common.h"
-#include "libtupan.h"
 
 
 void acc_jerk_kernel(
     const UINT ni,
-    const REAL * restrict _im,
-    const REAL * restrict _irx,
-    const REAL * restrict _iry,
-    const REAL * restrict _irz,
-    const REAL * restrict _ie2,
-    const REAL * restrict _ivx,
-    const REAL * restrict _ivy,
-    const REAL * restrict _ivz,
+    const REAL * restrict __im,
+    const REAL * restrict __irx,
+    const REAL * restrict __iry,
+    const REAL * restrict __irz,
+    const REAL * restrict __ie2,
+    const REAL * restrict __ivx,
+    const REAL * restrict __ivy,
+    const REAL * restrict __ivz,
     const UINT nj,
-    const REAL * restrict _jm,
-    const REAL * restrict _jrx,
-    const REAL * restrict _jry,
-    const REAL * restrict _jrz,
-    const REAL * restrict _je2,
-    const REAL * restrict _jvx,
-    const REAL * restrict _jvy,
-    const REAL * restrict _jvz,
-    REAL * restrict _iax,
-    REAL * restrict _iay,
-    REAL * restrict _iaz,
-    REAL * restrict _ijx,
-    REAL * restrict _ijy,
-    REAL * restrict _ijz)
+    const REAL * restrict __jm,
+    const REAL * restrict __jrx,
+    const REAL * restrict __jry,
+    const REAL * restrict __jrz,
+    const REAL * restrict __je2,
+    const REAL * restrict __jvx,
+    const REAL * restrict __jvy,
+    const REAL * restrict __jvz,
+    REAL * restrict __iax,
+    REAL * restrict __iay,
+    REAL * restrict __iaz,
+    REAL * restrict __ijx,
+    REAL * restrict __ijy,
+    REAL * restrict __ijz)
 {
     for (UINT i = 0; i < ni; ++i) {
-        REAL im = _im[i];
-        REAL irx = _irx[i];
-        REAL iry = _iry[i];
-        REAL irz = _irz[i];
-        REAL ie2 = _ie2[i];
-        REAL ivx = _ivx[i];
-        REAL ivy = _ivy[i];
-        REAL ivz = _ivz[i];
+        REAL im = __im[i];
+        REAL irx = __irx[i];
+        REAL iry = __iry[i];
+        REAL irz = __irz[i];
+        REAL ie2 = __ie2[i];
+        REAL ivx = __ivx[i];
+        REAL ivy = __ivy[i];
+        REAL ivz = __ivz[i];
         REAL iax = 0;
         REAL iay = 0;
         REAL iaz = 0;
@@ -45,17 +44,17 @@ void acc_jerk_kernel(
         REAL ijz = 0;
         for (UINT j = 0; j < nj; ++j) {
             acc_jerk_kernel_core(im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                                 _jm[j], _jrx[j], _jry[j], _jrz[j],
-                                 _je2[j], _jvx[j], _jvy[j], _jvz[j],
+                                 __jm[j], __jrx[j], __jry[j], __jrz[j],
+                                 __je2[j], __jvx[j], __jvy[j], __jvz[j],
                                  &iax, &iay, &iaz,
                                  &ijx, &ijy, &ijz);
         }
-        _iax[i] = iax;
-        _iay[i] = iay;
-        _iaz[i] = iaz;
-        _ijx[i] = ijx;
-        _ijy[i] = ijy;
-        _ijz[i] = ijz;
+        __iax[i] = iax;
+        __iay[i] = iay;
+        __iaz[i] = iaz;
+        __ijx[i] = ijx;
+        __ijy[i] = ijy;
+        __ijz[i] = ijz;
     }
 }
 

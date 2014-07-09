@@ -1,60 +1,59 @@
 #include "snap_crackle_kernel_common.h"
-#include "libtupan.h"
 
 
 void snap_crackle_kernel(
     const UINT ni,
-    const REAL * restrict _im,
-    const REAL * restrict _irx,
-    const REAL * restrict _iry,
-    const REAL * restrict _irz,
-    const REAL * restrict _ie2,
-    const REAL * restrict _ivx,
-    const REAL * restrict _ivy,
-    const REAL * restrict _ivz,
-    const REAL * restrict _iax,
-    const REAL * restrict _iay,
-    const REAL * restrict _iaz,
-    const REAL * restrict _ijx,
-    const REAL * restrict _ijy,
-    const REAL * restrict _ijz,
+    const REAL * restrict __im,
+    const REAL * restrict __irx,
+    const REAL * restrict __iry,
+    const REAL * restrict __irz,
+    const REAL * restrict __ie2,
+    const REAL * restrict __ivx,
+    const REAL * restrict __ivy,
+    const REAL * restrict __ivz,
+    const REAL * restrict __iax,
+    const REAL * restrict __iay,
+    const REAL * restrict __iaz,
+    const REAL * restrict __ijx,
+    const REAL * restrict __ijy,
+    const REAL * restrict __ijz,
     const UINT nj,
-    const REAL * restrict _jm,
-    const REAL * restrict _jrx,
-    const REAL * restrict _jry,
-    const REAL * restrict _jrz,
-    const REAL * restrict _je2,
-    const REAL * restrict _jvx,
-    const REAL * restrict _jvy,
-    const REAL * restrict _jvz,
-    const REAL * restrict _jax,
-    const REAL * restrict _jay,
-    const REAL * restrict _jaz,
-    const REAL * restrict _jjx,
-    const REAL * restrict _jjy,
-    const REAL * restrict _jjz,
-    REAL * restrict _isx,
-    REAL * restrict _isy,
-    REAL * restrict _isz,
-    REAL * restrict _icx,
-    REAL * restrict _icy,
-    REAL * restrict _icz)
+    const REAL * restrict __jm,
+    const REAL * restrict __jrx,
+    const REAL * restrict __jry,
+    const REAL * restrict __jrz,
+    const REAL * restrict __je2,
+    const REAL * restrict __jvx,
+    const REAL * restrict __jvy,
+    const REAL * restrict __jvz,
+    const REAL * restrict __jax,
+    const REAL * restrict __jay,
+    const REAL * restrict __jaz,
+    const REAL * restrict __jjx,
+    const REAL * restrict __jjy,
+    const REAL * restrict __jjz,
+    REAL * restrict __isx,
+    REAL * restrict __isy,
+    REAL * restrict __isz,
+    REAL * restrict __icx,
+    REAL * restrict __icy,
+    REAL * restrict __icz)
 {
     for (UINT i = 0; i < ni; ++i) {
-        REAL im = _im[i];
-        REAL irx = _irx[i];
-        REAL iry = _iry[i];
-        REAL irz = _irz[i];
-        REAL ie2 = _ie2[i];
-        REAL ivx = _ivx[i];
-        REAL ivy = _ivy[i];
-        REAL ivz = _ivz[i];
-        REAL iax = _iax[i];
-        REAL iay = _iay[i];
-        REAL iaz = _iaz[i];
-        REAL ijx = _ijx[i];
-        REAL ijy = _ijy[i];
-        REAL ijz = _ijz[i];
+        REAL im = __im[i];
+        REAL irx = __irx[i];
+        REAL iry = __iry[i];
+        REAL irz = __irz[i];
+        REAL ie2 = __ie2[i];
+        REAL ivx = __ivx[i];
+        REAL ivy = __ivy[i];
+        REAL ivz = __ivz[i];
+        REAL iax = __iax[i];
+        REAL iay = __iay[i];
+        REAL iaz = __iaz[i];
+        REAL ijx = __ijx[i];
+        REAL ijy = __ijy[i];
+        REAL ijz = __ijz[i];
         REAL isx = 0;
         REAL isy = 0;
         REAL isz = 0;
@@ -65,19 +64,19 @@ void snap_crackle_kernel(
             snap_crackle_kernel_core(im, irx, iry, irz,
                                      ie2, ivx, ivy, ivz,
                                      iax, iay, iaz, ijx, ijy, ijz,
-                                     _jm[j], _jrx[j], _jry[j], _jrz[j],
-                                     _je2[j], _jvx[j], _jvy[j], _jvz[j],
-                                     _jax[j], _jay[j], _jaz[j],
-                                     _jjx[j], _jjy[j], _jjz[j],
+                                     __jm[j], __jrx[j], __jry[j], __jrz[j],
+                                     __je2[j], __jvx[j], __jvy[j], __jvz[j],
+                                     __jax[j], __jay[j], __jaz[j],
+                                     __jjx[j], __jjy[j], __jjz[j],
                                      &isx, &isy, &isz,
                                      &icx, &icy, &icz);
         }
-        _isx[i] = isx;
-        _isy[i] = isy;
-        _isz[i] = isz;
-        _icx[i] = icx;
-        _icy[i] = icy;
-        _icz[i] = icz;
+        __isx[i] = isx;
+        __isy[i] = isy;
+        __isz[i] = isz;
+        __icx[i] = icx;
+        __icy[i] = icy;
+        __icz[i] = icz;
     }
 }
 

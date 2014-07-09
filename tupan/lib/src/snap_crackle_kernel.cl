@@ -1,45 +1,45 @@
 #include "snap_crackle_kernel_common.h"
 
 
-__kernel
+kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 void snap_crackle_kernel(
     const UINT ni,
-    __global const REALn * restrict _im,
-    __global const REALn * restrict _irx,
-    __global const REALn * restrict _iry,
-    __global const REALn * restrict _irz,
-    __global const REALn * restrict _ie2,
-    __global const REALn * restrict _ivx,
-    __global const REALn * restrict _ivy,
-    __global const REALn * restrict _ivz,
-    __global const REALn * restrict _iax,
-    __global const REALn * restrict _iay,
-    __global const REALn * restrict _iaz,
-    __global const REALn * restrict _ijx,
-    __global const REALn * restrict _ijy,
-    __global const REALn * restrict _ijz,
+    global const REALn * restrict __im,
+    global const REALn * restrict __irx,
+    global const REALn * restrict __iry,
+    global const REALn * restrict __irz,
+    global const REALn * restrict __ie2,
+    global const REALn * restrict __ivx,
+    global const REALn * restrict __ivy,
+    global const REALn * restrict __ivz,
+    global const REALn * restrict __iax,
+    global const REALn * restrict __iay,
+    global const REALn * restrict __iaz,
+    global const REALn * restrict __ijx,
+    global const REALn * restrict __ijy,
+    global const REALn * restrict __ijz,
     const UINT nj,
-    __global const REAL * restrict _jm,
-    __global const REAL * restrict _jrx,
-    __global const REAL * restrict _jry,
-    __global const REAL * restrict _jrz,
-    __global const REAL * restrict _je2,
-    __global const REAL * restrict _jvx,
-    __global const REAL * restrict _jvy,
-    __global const REAL * restrict _jvz,
-    __global const REAL * restrict _jax,
-    __global const REAL * restrict _jay,
-    __global const REAL * restrict _jaz,
-    __global const REAL * restrict _jjx,
-    __global const REAL * restrict _jjy,
-    __global const REAL * restrict _jjz,
-    __global REALn * restrict _isx,
-    __global REALn * restrict _isy,
-    __global REALn * restrict _isz,
-    __global REALn * restrict _icx,
-    __global REALn * restrict _icy,
-    __global REALn * restrict _icz)
+    global const REAL * restrict __jm,
+    global const REAL * restrict __jrx,
+    global const REAL * restrict __jry,
+    global const REAL * restrict __jrz,
+    global const REAL * restrict __je2,
+    global const REAL * restrict __jvx,
+    global const REAL * restrict __jvy,
+    global const REAL * restrict __jvz,
+    global const REAL * restrict __jax,
+    global const REAL * restrict __jay,
+    global const REAL * restrict __jaz,
+    global const REAL * restrict __jjx,
+    global const REAL * restrict __jjy,
+    global const REAL * restrict __jjz,
+    global REALn * restrict __isx,
+    global REALn * restrict __isy,
+    global REALn * restrict __isz,
+    global REALn * restrict __icx,
+    global REALn * restrict __icy,
+    global REALn * restrict __icz)
 {
     for (UINT i = LSIZE * get_group_id(0);
          VW * i < ni; i += LSIZE * get_num_groups(0)) {
@@ -47,20 +47,20 @@ void snap_crackle_kernel(
         UINT gid = i + lid;
         gid = ((VW * gid) < ni) ? (gid):(0);
 
-        REALn im = _im[gid];
-        REALn irx = _irx[gid];
-        REALn iry = _iry[gid];
-        REALn irz = _irz[gid];
-        REALn ie2 = _ie2[gid];
-        REALn ivx = _ivx[gid];
-        REALn ivy = _ivy[gid];
-        REALn ivz = _ivz[gid];
-        REALn iax = _iax[gid];
-        REALn iay = _iay[gid];
-        REALn iaz = _iaz[gid];
-        REALn ijx = _ijx[gid];
-        REALn ijy = _ijy[gid];
-        REALn ijz = _ijz[gid];
+        REALn im = __im[gid];
+        REALn irx = __irx[gid];
+        REALn iry = __iry[gid];
+        REALn irz = __irz[gid];
+        REALn ie2 = __ie2[gid];
+        REALn ivx = __ivx[gid];
+        REALn ivy = __ivy[gid];
+        REALn ivz = __ivz[gid];
+        REALn iax = __iax[gid];
+        REALn iay = __iay[gid];
+        REALn iaz = __iaz[gid];
+        REALn ijx = __ijx[gid];
+        REALn ijy = __ijy[gid];
+        REALn ijz = __ijz[gid];
 
         REALn isx = (REALn)(0);
         REALn isy = (REALn)(0);
@@ -74,34 +74,34 @@ void snap_crackle_kernel(
         #ifdef FAST_LOCAL_MEM
         for (; (j + LSIZE - 1) < nj; j += LSIZE) {
             barrier(CLK_LOCAL_MEM_FENCE);
-            __local REAL __jm[LSIZE];
-            __local REAL __jrx[LSIZE];
-            __local REAL __jry[LSIZE];
-            __local REAL __jrz[LSIZE];
-            __local REAL __je2[LSIZE];
-            __local REAL __jvx[LSIZE];
-            __local REAL __jvy[LSIZE];
-            __local REAL __jvz[LSIZE];
-            __local REAL __jax[LSIZE];
-            __local REAL __jay[LSIZE];
-            __local REAL __jaz[LSIZE];
-            __local REAL __jjx[LSIZE];
-            __local REAL __jjy[LSIZE];
-            __local REAL __jjz[LSIZE];
-            __jm[lid] = _jm[j + lid];
-            __jrx[lid] = _jrx[j + lid];
-            __jry[lid] = _jry[j + lid];
-            __jrz[lid] = _jrz[j + lid];
-            __je2[lid] = _je2[j + lid];
-            __jvx[lid] = _jvx[j + lid];
-            __jvy[lid] = _jvy[j + lid];
-            __jvz[lid] = _jvz[j + lid];
-            __jax[lid] = _jax[j + lid];
-            __jay[lid] = _jay[j + lid];
-            __jaz[lid] = _jaz[j + lid];
-            __jjx[lid] = _jjx[j + lid];
-            __jjy[lid] = _jjy[j + lid];
-            __jjz[lid] = _jjz[j + lid];
+            local REAL _jm[LSIZE];
+            local REAL _jrx[LSIZE];
+            local REAL _jry[LSIZE];
+            local REAL _jrz[LSIZE];
+            local REAL _je2[LSIZE];
+            local REAL _jvx[LSIZE];
+            local REAL _jvy[LSIZE];
+            local REAL _jvz[LSIZE];
+            local REAL _jax[LSIZE];
+            local REAL _jay[LSIZE];
+            local REAL _jaz[LSIZE];
+            local REAL _jjx[LSIZE];
+            local REAL _jjy[LSIZE];
+            local REAL _jjz[LSIZE];
+            _jm[lid] = __jm[j + lid];
+            _jrx[lid] = __jrx[j + lid];
+            _jry[lid] = __jry[j + lid];
+            _jrz[lid] = __jrz[j + lid];
+            _je2[lid] = __je2[j + lid];
+            _jvx[lid] = __jvx[j + lid];
+            _jvy[lid] = __jvy[j + lid];
+            _jvz[lid] = __jvz[j + lid];
+            _jax[lid] = __jax[j + lid];
+            _jay[lid] = __jay[j + lid];
+            _jaz[lid] = __jaz[j + lid];
+            _jjx[lid] = __jjx[j + lid];
+            _jjy[lid] = __jjy[j + lid];
+            _jjz[lid] = __jjz[j + lid];
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll UNROLL
             for (UINT k = 0; k < LSIZE; ++k) {
@@ -110,10 +110,10 @@ void snap_crackle_kernel(
                     ie2, ivx, ivy, ivz,
                     iax, iay, iaz,
                     ijx, ijy, ijz,
-                    __jm[k], __jrx[k], __jry[k], __jrz[k],
-                    __je2[k], __jvx[k], __jvy[k], __jvz[k],
-                    __jax[k], __jay[k], __jaz[k],
-                    __jjx[k], __jjy[k], __jjz[k],
+                    _jm[k], _jrx[k], _jry[k], _jrz[k],
+                    _je2[k], _jvx[k], _jvy[k], _jvz[k],
+                    _jax[k], _jay[k], _jaz[k],
+                    _jjx[k], _jjy[k], _jjz[k],
                     &isx, &isy, &isz,
                     &icx, &icy, &icz);
             }
@@ -127,20 +127,20 @@ void snap_crackle_kernel(
                 ie2, ivx, ivy, ivz,
                 iax, iay, iaz,
                 ijx, ijy, ijz,
-                _jm[j], _jrx[j], _jry[j], _jrz[j],
-                _je2[j], _jvx[j], _jvy[j], _jvz[j],
-                _jax[j], _jay[j], _jaz[j],
-                _jjx[j], _jjy[j], _jjz[j],
+                __jm[j], __jrx[j], __jry[j], __jrz[j],
+                __je2[j], __jvx[j], __jvy[j], __jvz[j],
+                __jax[j], __jay[j], __jaz[j],
+                __jjx[j], __jjy[j], __jjz[j],
                 &isx, &isy, &isz,
                 &icx, &icy, &icz);
         }
 
-        _isx[gid] = isx;
-        _isy[gid] = isy;
-        _isz[gid] = isz;
-        _icx[gid] = icx;
-        _icy[gid] = icy;
-        _icz[gid] = icz;
+        __isx[gid] = isx;
+        __isy[gid] = isy;
+        __isz[gid] = isz;
+        __icx[gid] = icx;
+        __icy[gid] = icy;
+        __icz[gid] = icz;
     }
 }
 
