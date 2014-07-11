@@ -93,8 +93,8 @@ class CLKernel(object):
 
     def __init__(self, fpwidth, name):
         self.kernel = getattr(LIB[fpwidth], name)
-        self.argtypes = None
-        self._args = None
+        self.inptypes = None
+        self.outtypes = None
 
         kwginfo = cl.kernel_work_group_info
         LOGGER.debug("CL '%s' info: %s %s %s %s %s",
@@ -132,13 +132,29 @@ class CLKernel(object):
             c_real_p=lambda x: cl.Buffer(CTX, flags, hostbuf=x),
             )
 
-    @property
-    def args(self):
-        return self._args
+    def set_args(self, inpargs, outargs):
+        bufs = []
 
-    @args.setter
-    def args(self, args):
-        ni = args[0]
+        # set inpargs
+        self.inp_argbuf = []
+        for (i, argtype) in enumerate(self.inptypes):
+            arg = inpargs[i]
+            buf = argtype(arg)
+            self.inp_argbuf.append((arg, buf))
+            bufs.append(buf)
+
+        # set outargs
+        self.out_argbuf = []
+        for (i, argtype) in enumerate(self.outtypes):
+            arg = outargs[i]
+            buf = argtype(arg)
+            self.out_argbuf.append((arg, buf))
+            bufs.append(buf)
+
+        for (i, buf) in enumerate(bufs):
+            self.kernel.set_arg(i, buf)
+
+        ni = inpargs[0]
         vw = self.vector_width
         lsize = self.local_size[0]
         n = (ni + vw - 1) // vw
@@ -146,36 +162,26 @@ class CLKernel(object):
         ngroups = max(ngroups, DEV.max_compute_units)
         self.global_size = (lsize * ngroups, 1, 1)
 
-        # set args
-        argtypes = self.argtypes
-        self._args = [argtype(arg) for (argtype, arg) in zip(argtypes, args)]
-        for (i, arg) in enumerate(self._args):
-            self.kernel.set_arg(i, arg)
-
-    def map_buffers(self, **kwargs):
-        arrays = kwargs['outargs']
-        buffers = self.args[len(kwargs['inpargs']):]
-
-        for (ary, buf) in zip(arrays, buffers):
-            cl.enqueue_copy(self.queue, ary, buf)
-        return arrays
+    def map_buffers(self):
+        for (arg, buf) in self.out_argbuf:
+            cl.enqueue_copy(self.queue, arg, buf)
+        return [arg for (arg, buf) in self.out_argbuf]
 
 #        mapf = cl.map_flags
 #        flags = mapf.READ | mapf.WRITE
 #        queue = self.queue
-#        for (ary, buf) in zip(arrays, buffers):
-#            ptr, ev = cl.enqueue_map_buffer(
+#        for (arg, buf) in self.out_argbuf:
+#            arg[...], ev = cl.enqueue_map_buffer(
 #                queue,
 #                buf,
 #                flags,
 #                0,
-#                ary.shape,
-#                ary.dtype,
+#                arg.shape,
+#                arg.dtype,
 #                'C'
 #                )
 #            ev.wait()
-#            ary[...] = ptr
-#        return arrays
+#        return [arg for (arg, buf) in self.out_argbuf]
 
     def run(self):
         cl.enqueue_nd_range_kernel(

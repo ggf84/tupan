@@ -64,8 +64,6 @@ class AbstractExtension(object):
 
     def __init__(self, name, backend, fpwidth):
         self.kernel = get_kernel(name, backend, fpwidth)
-        self.inpargs = None
-        self.outargs = None
 
     def set_args(self, ips, jps, **kwargs):
         raise NotImplementedError
@@ -74,8 +72,7 @@ class AbstractExtension(object):
         self.kernel.run()
 
     def get_result(self):
-        return self.kernel.map_buffers(inpargs=self.inpargs,
-                                       outargs=self.outargs)
+        return self.kernel.map_buffers()
 
     def __call__(self, ips, jps, **kwargs):
         self.set_args(ips, jps, **kwargs)
@@ -90,26 +87,32 @@ class Phi(AbstractExtension):
     """
     def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
         super(Phi, self).__init__('phi_kernel', backend, fpwidth)
+
         cty = self.kernel.cty
+
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p,
                     cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p)
+
         outtypes = (cty.c_real_p,)
-        self.kernel.argtypes = inptypes + outtypes
+
+        self.kernel.inptypes = inptypes
+        self.kernel.outtypes = outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        self.inpargs = (ips.n,
-                        ips.mass, ips.rx, ips.ry, ips.rz,
-                        ips.eps2,
-                        jps.n,
-                        jps.mass, jps.rx, jps.ry, jps.rz,
-                        jps.eps2)
-        self.outargs = (ips.phi,)
+        inpargs = (ips.n,
+                   ips.mass, ips.rx, ips.ry, ips.rz,
+                   ips.eps2,
+                   jps.n,
+                   jps.mass, jps.rx, jps.ry, jps.rz,
+                   jps.eps2)
 
-        self.kernel.args = self.inpargs + self.outargs
+        outargs = (ips.phi,)
+
+        self.kernel.set_args(inpargs, outargs)
 
     def _pycalc(self, ips, jps):
         # Never use this method for production runs. It is very slow
@@ -138,26 +141,32 @@ class Acc(AbstractExtension):
     """
     def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
         super(Acc, self).__init__('acc_kernel', backend, fpwidth)
+
         cty = self.kernel.cty
+
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p,
                     cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p)
+
         outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p)
-        self.kernel.argtypes = inptypes + outtypes
+
+        self.kernel.inptypes = inptypes
+        self.kernel.outtypes = outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        self.inpargs = (ips.n,
-                        ips.mass, ips.rx, ips.ry, ips.rz,
-                        ips.eps2,
-                        jps.n,
-                        jps.mass, jps.rx, jps.ry, jps.rz,
-                        jps.eps2)
-        self.outargs = (ips.ax, ips.ay, ips.az)
+        inpargs = (ips.n,
+                   ips.mass, ips.rx, ips.ry, ips.rz,
+                   ips.eps2,
+                   jps.n,
+                   jps.mass, jps.rx, jps.ry, jps.rz,
+                   jps.eps2)
 
-        self.kernel.args = self.inpargs + self.outargs
+        outargs = (ips.ax, ips.ay, ips.az)
+
+        self.kernel.set_args(inpargs, outargs)
 
     def _pycalc(self, ips, jps):
         # Never use this method for production runs. It is very slow
@@ -190,28 +199,34 @@ class AccJerk(AbstractExtension):
     """
     def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
         super(AccJerk, self).__init__('acc_jerk_kernel', backend, fpwidth)
+
         cty = self.kernel.cty
+
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p)
+
         outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p)
-        self.kernel.argtypes = inptypes + outtypes
+
+        self.kernel.inptypes = inptypes
+        self.kernel.outtypes = outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        self.inpargs = (ips.n,
-                        ips.mass, ips.rx, ips.ry, ips.rz,
-                        ips.eps2, ips.vx, ips.vy, ips.vz,
-                        jps.n,
-                        jps.mass, jps.rx, jps.ry, jps.rz,
-                        jps.eps2, jps.vx, jps.vy, jps.vz)
-        self.outargs = (ips.ax, ips.ay, ips.az,
-                        ips.jx, ips.jy, ips.jz)
+        inpargs = (ips.n,
+                   ips.mass, ips.rx, ips.ry, ips.rz,
+                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   jps.n,
+                   jps.mass, jps.rx, jps.ry, jps.rz,
+                   jps.eps2, jps.vx, jps.vy, jps.vz)
 
-        self.kernel.args = self.inpargs + self.outargs
+        outargs = (ips.ax, ips.ay, ips.az,
+                   ips.jx, ips.jy, ips.jz)
+
+        self.kernel.set_args(inpargs, outargs)
 
 
 @bind_all(timings)
@@ -222,7 +237,9 @@ class SnapCrackle(AbstractExtension):
     def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
         super(SnapCrackle, self).__init__('snap_crackle_kernel',
                                           backend, fpwidth)
+
         cty = self.kernel.cty
+
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -233,23 +250,27 @@ class SnapCrackle(AbstractExtension):
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p)
+
         outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p)
-        self.kernel.argtypes = inptypes + outtypes
+
+        self.kernel.inptypes = inptypes
+        self.kernel.outtypes = outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        self.inpargs = (ips.n,
-                        ips.mass, ips.rx, ips.ry, ips.rz,
-                        ips.eps2, ips.vx, ips.vy, ips.vz,
-                        ips.ax, ips.ay, ips.az, ips.jx, ips.jy, ips.jz,
-                        jps.n,
-                        jps.mass, jps.rx, jps.ry, jps.rz,
-                        jps.eps2, jps.vx, jps.vy, jps.vz,
-                        jps.ax, jps.ay, jps.az, jps.jx, jps.jy, jps.jz)
-        self.outargs = (ips.sx, ips.sy, ips.sz,
-                        ips.cx, ips.cy, ips.cz)
+        inpargs = (ips.n,
+                   ips.mass, ips.rx, ips.ry, ips.rz,
+                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   ips.ax, ips.ay, ips.az, ips.jx, ips.jy, ips.jz,
+                   jps.n,
+                   jps.mass, jps.rx, jps.ry, jps.rz,
+                   jps.eps2, jps.vx, jps.vy, jps.vz,
+                   jps.ax, jps.ay, jps.az, jps.jx, jps.jy, jps.jz)
 
-        self.kernel.args = self.inpargs + self.outargs
+        outargs = (ips.sx, ips.sy, ips.sz,
+                   ips.cx, ips.cy, ips.cz)
+
+        self.kernel.set_args(inpargs, outargs)
 
 
 @bind_all(timings)
@@ -259,7 +280,9 @@ class Tstep(AbstractExtension):
     """
     def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
         super(Tstep, self).__init__('tstep_kernel', backend, fpwidth)
+
         cty = self.kernel.cty
+
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -267,20 +290,24 @@ class Tstep(AbstractExtension):
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real)
+
         outtypes = (cty.c_real_p, cty.c_real_p)
-        self.kernel.argtypes = inptypes + outtypes
+
+        self.kernel.inptypes = inptypes
+        self.kernel.outtypes = outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        self.inpargs = (ips.n,
-                        ips.mass, ips.rx, ips.ry, ips.rz,
-                        ips.eps2, ips.vx, ips.vy, ips.vz,
-                        jps.n,
-                        jps.mass, jps.rx, jps.ry, jps.rz,
-                        jps.eps2, jps.vx, jps.vy, jps.vz,
-                        kwargs['eta'])
-        self.outargs = (ips.tstep, ips.tstepij)
+        inpargs = (ips.n,
+                   ips.mass, ips.rx, ips.ry, ips.rz,
+                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   jps.n,
+                   jps.mass, jps.rx, jps.ry, jps.rz,
+                   jps.eps2, jps.vx, jps.vy, jps.vz,
+                   kwargs['eta'])
 
-        self.kernel.args = self.inpargs + self.outargs
+        outargs = (ips.tstep, ips.tstepij)
+
+        self.kernel.set_args(inpargs, outargs)
 
 
 @bind_all(timings)
@@ -290,7 +317,9 @@ class PNAcc(AbstractExtension):
     """
     def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
         super(PNAcc, self).__init__('pnacc_kernel', backend, fpwidth)
+
         cty = self.kernel.cty
+
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -301,23 +330,27 @@ class PNAcc(AbstractExtension):
                     cty.c_real, cty.c_real,
                     cty.c_real, cty.c_real,
                     cty.c_real, cty.c_real)
+
         outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p)
-        self.kernel.argtypes = inptypes + outtypes
+
+        self.kernel.inptypes = inptypes
+        self.kernel.outtypes = outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        self.inpargs = (ips.n,
-                        ips.mass, ips.rx, ips.ry, ips.rz,
-                        ips.eps2, ips.vx, ips.vy, ips.vz,
-                        jps.n,
-                        jps.mass, jps.rx, jps.ry, jps.rz,
-                        jps.eps2, jps.vx, jps.vy, jps.vz,
-                        pn.order, pn.clight**(-1),
-                        pn.clight**(-2), pn.clight**(-3),
-                        pn.clight**(-4), pn.clight**(-5),
-                        pn.clight**(-6), pn.clight**(-7))
-        self.outargs = (ips.pnax, ips.pnay, ips.pnaz)
+        inpargs = (ips.n,
+                   ips.mass, ips.rx, ips.ry, ips.rz,
+                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   jps.n,
+                   jps.mass, jps.rx, jps.ry, jps.rz,
+                   jps.eps2, jps.vx, jps.vy, jps.vz,
+                   pn.order, pn.clight**(-1),
+                   pn.clight**(-2), pn.clight**(-3),
+                   pn.clight**(-4), pn.clight**(-5),
+                   pn.clight**(-6), pn.clight**(-7))
 
-        self.kernel.args = self.inpargs + self.outargs
+        outargs = (ips.pnax, ips.pnay, ips.pnaz)
+
+        self.kernel.set_args(inpargs, outargs)
 
 
 @bind_all(timings)
@@ -327,7 +360,9 @@ class Sakura(AbstractExtension):
     """
     def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
         super(Sakura, self).__init__('sakura_kernel', backend, fpwidth)
+
         cty = self.kernel.cty
+
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -335,9 +370,13 @@ class Sakura(AbstractExtension):
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real, cty.c_int)
+
         outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p)
-        self.kernel.argtypes = inptypes + outtypes
+
+        self.kernel.inptypes = inptypes
+        self.kernel.outtypes = outtypes
+
         self.kernel.vector_width = 1
 
     def set_args(self, ips, jps, **kwargs):
@@ -354,17 +393,18 @@ class Sakura(AbstractExtension):
         if not hasattr(ips, 'dvz'):
             ips.register_attribute('dvz', 'real')
 
-        self.inpargs = (ips.n,
-                        ips.mass, ips.rx, ips.ry, ips.rz,
-                        ips.eps2, ips.vx, ips.vy, ips.vz,
-                        jps.n,
-                        jps.mass, jps.rx, jps.ry, jps.rz,
-                        jps.eps2, jps.vx, jps.vy, jps.vz,
-                        kwargs['dt'], kwargs['flag'])
-        self.outargs = (ips.drx, ips.dry, ips.drz,
-                        ips.dvx, ips.dvy, ips.dvz)
+        inpargs = (ips.n,
+                   ips.mass, ips.rx, ips.ry, ips.rz,
+                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   jps.n,
+                   jps.mass, jps.rx, jps.ry, jps.rz,
+                   jps.eps2, jps.vx, jps.vy, jps.vz,
+                   kwargs['dt'], kwargs['flag'])
 
-        self.kernel.args = self.inpargs + self.outargs
+        outargs = (ips.drx, ips.dry, ips.drz,
+                   ips.dvx, ips.dvy, ips.dvz)
+
+        self.kernel.set_args(inpargs, outargs)
 
 
 @bind_all(timings)
@@ -374,7 +414,9 @@ class NregX(AbstractExtension):
     """
     def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
         super(NregX, self).__init__('nreg_Xkernel', backend, fpwidth)
+
         cty = self.kernel.cty
+
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -382,10 +424,13 @@ class NregX(AbstractExtension):
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real)
+
         outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p)
-        self.kernel.argtypes = inptypes + outtypes
+
+        self.kernel.inptypes = inptypes
+        self.kernel.outtypes = outtypes
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'mrx'):
@@ -403,18 +448,19 @@ class NregX(AbstractExtension):
         if not hasattr(ips, 'u'):
             ips.register_attribute('u', 'real')
 
-        self.inpargs = (ips.n,
-                        ips.mass, ips.rx, ips.ry, ips.rz,
-                        ips.eps2, ips.vx, ips.vy, ips.vz,
-                        jps.n,
-                        jps.mass, jps.rx, jps.ry, jps.rz,
-                        jps.eps2, jps.vx, jps.vy, jps.vz,
-                        kwargs['dt'])
-        self.outargs = (ips.mrx, ips.mry, ips.mrz,
-                        ips.ax, ips.ay, ips.az,
-                        ips.u)
+        inpargs = (ips.n,
+                   ips.mass, ips.rx, ips.ry, ips.rz,
+                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   jps.n,
+                   jps.mass, jps.rx, jps.ry, jps.rz,
+                   jps.eps2, jps.vx, jps.vy, jps.vz,
+                   kwargs['dt'])
 
-        self.kernel.args = self.inpargs + self.outargs
+        outargs = (ips.mrx, ips.mry, ips.mrz,
+                   ips.ax, ips.ay, ips.az,
+                   ips.u)
+
+        self.kernel.set_args(inpargs, outargs)
 
 
 @bind_all(timings)
@@ -424,7 +470,9 @@ class NregV(AbstractExtension):
     """
     def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
         super(NregV, self).__init__('nreg_Vkernel', backend, fpwidth)
+
         cty = self.kernel.cty
+
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -432,9 +480,12 @@ class NregV(AbstractExtension):
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real)
+
         outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p)
-        self.kernel.argtypes = inptypes + outtypes
+
+        self.kernel.inptypes = inptypes
+        self.kernel.outtypes = outtypes
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'mvx'):
@@ -446,16 +497,17 @@ class NregV(AbstractExtension):
         if not hasattr(ips, 'mk'):
             ips.register_attribute('mk', 'real')
 
-        self.inpargs = (ips.n,
-                        ips.mass, ips.vx, ips.vy, ips.vz,
-                        ips.ax, ips.ay, ips.az,
-                        jps.n,
-                        jps.mass, jps.vx, jps.vy, jps.vz,
-                        jps.ax, jps.ay, jps.az,
-                        kwargs['dt'])
-        self.outargs = (ips.mvx, ips.mvy, ips.mvz, ips.mk)
+        inpargs = (ips.n,
+                   ips.mass, ips.vx, ips.vy, ips.vz,
+                   ips.ax, ips.ay, ips.az,
+                   jps.n,
+                   jps.mass, jps.vx, jps.vy, jps.vz,
+                   jps.ax, jps.ay, jps.az,
+                   kwargs['dt'])
 
-        self.kernel.args = self.inpargs + self.outargs
+        outargs = (ips.mvx, ips.mvy, ips.mvz, ips.mk)
+
+        self.kernel.set_args(inpargs, outargs)
 
 
 @bind_all(timings)
@@ -469,7 +521,9 @@ class Kepler(AbstractExtension):
             backend = 'C'      # C is fast enough!
 
         super(Kepler, self).__init__('kepler_solver_kernel', backend, fpwidth)
+
         cty = self.kernel.cty
+
         inptypes = (cty.c_uint,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
@@ -477,22 +531,26 @@ class Kepler(AbstractExtension):
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real)
+
         outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
                     cty.c_real_p, cty.c_real_p, cty.c_real_p)
-        self.kernel.argtypes = inptypes + outtypes
+
+        self.kernel.inptypes = inptypes
+        self.kernel.outtypes = outtypes
 
     def set_args(self, ips, jps, **kwargs):
-        self.inpargs = (ips.n,
-                        ips.mass, ips.rx, ips.ry, ips.rz,
-                        ips.eps2, ips.vx, ips.vy, ips.vz,
-                        jps.n,
-                        jps.mass, jps.rx, jps.ry, jps.rz,
-                        jps.eps2, jps.vx, jps.vy, jps.vz,
-                        kwargs['dt'])
-        self.outargs = (ips.rx, ips.ry, ips.rz,
-                        ips.vx, ips.vy, ips.vz)
+        inpargs = (ips.n,
+                   ips.mass, ips.rx, ips.ry, ips.rz,
+                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   jps.n,
+                   jps.mass, jps.rx, jps.ry, jps.rz,
+                   jps.eps2, jps.vx, jps.vy, jps.vz,
+                   kwargs['dt'])
 
-        self.kernel.args = self.inpargs + self.outargs
+        outargs = (ips.rx, ips.ry, ips.rz,
+                   ips.vx, ips.vy, ips.vz)
+
+        self.kernel.set_args(inpargs, outargs)
 
 
 pn = PN()

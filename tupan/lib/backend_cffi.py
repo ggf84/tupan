@@ -86,8 +86,8 @@ class CKernel(object):
 
     def __init__(self, fpwidth, name):
         self.kernel = getattr(LIB[fpwidth], name)
-        self.argtypes = None
-        self._args = None
+        self.inptypes = None
+        self.outtypes = None
 
         ffi = FFI[fpwidth]
 
@@ -109,20 +109,32 @@ class CKernel(object):
             c_real_p=lambda x: cast('REAL *', addressof(from_buffer(x))),
             )
 
-    @property
-    def args(self):
-        return self._args
+    def set_args(self, inpargs, outargs):
+        bufs = []
 
-    @args.setter
-    def args(self, args):
-        argtypes = self.argtypes
-        self._args = [argtype(arg) for (argtype, arg) in zip(argtypes, args)]
+        # set inpargs
+        self.inp_argbuf = []
+        for (i, argtype) in enumerate(self.inptypes):
+            arg = inpargs[i]
+            buf = argtype(arg)
+            self.inp_argbuf.append((arg, buf))
+            bufs.append(buf)
 
-    def map_buffers(self, **kwargs):
-        return kwargs['outargs']
+        # set outargs
+        self.out_argbuf = []
+        for (i, argtype) in enumerate(self.outtypes):
+            arg = outargs[i]
+            buf = argtype(arg)
+            self.out_argbuf.append((arg, buf))
+            bufs.append(buf)
+
+        self.bufs = bufs
+
+    def map_buffers(self):
+        return [arg for (arg, buf) in self.out_argbuf]
 
     def run(self):
-        self.kernel(*self.args)
+        self.kernel(*self.bufs)
 
 
 # -- End of File --
