@@ -35,13 +35,23 @@ void tstep_kernel(
         REAL ivz = __ivz[i];
         REAL iw2_a = 0;
         REAL iw2_b = 0;
+
         for (UINT j = 0; j < nj; ++j) {
-            tstep_kernel_core(eta,
-                              im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                              __jm[j], __jrx[j], __jry[j], __jrz[j],
-                              __je2[j], __jvx[j], __jvy[j], __jvz[j],
-                              &iw2_a, &iw2_b);
+            REAL jm = __jm[j];
+            REAL jrx = __jrx[j];
+            REAL jry = __jry[j];
+            REAL jrz = __jrz[j];
+            REAL je2 = __je2[j];
+            REAL jvx = __jvx[j];
+            REAL jvy = __jvy[j];
+            REAL jvz = __jvz[j];
+            tstep_kernel_core(
+                eta,
+                im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                &iw2_a, &iw2_b);
         }
+
         __idt_a[i] = eta / sqrt(fmax((REALn)(1), iw2_a));
         __idt_b[i] = eta / sqrt(fmax((REALn)(1), iw2_b));
     }

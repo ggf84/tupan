@@ -34,8 +34,7 @@ void sakura_kernel(
     for (UINT i = LSIZE * get_group_id(0);
          1 * i < ni; i += LSIZE * get_num_groups(0)) {
         UINT lid = get_local_id(0);
-        UINT gid = i + lid;
-        gid = ((1 * gid) < ni) ? (gid):(0);
+        UINT gid = ((1 * (i + lid)) < ni) ? (i + lid):(0);
 
         REAL im = __im[gid];
         REAL irx = __irx[gid];
@@ -56,49 +55,67 @@ void sakura_kernel(
         UINT j = 0;
 
         #ifdef FAST_LOCAL_MEM
+        local REAL _jm[LSIZE];
+        local REAL _jrx[LSIZE];
+        local REAL _jry[LSIZE];
+        local REAL _jrz[LSIZE];
+        local REAL _je2[LSIZE];
+        local REAL _jvx[LSIZE];
+        local REAL _jvy[LSIZE];
+        local REAL _jvz[LSIZE];
         for (; (j + LSIZE - 1) < nj; j += LSIZE) {
+            REAL jm = __jm[j + lid];
+            REAL jrx = __jrx[j + lid];
+            REAL jry = __jry[j + lid];
+            REAL jrz = __jrz[j + lid];
+            REAL je2 = __je2[j + lid];
+            REAL jvx = __jvx[j + lid];
+            REAL jvy = __jvy[j + lid];
+            REAL jvz = __jvz[j + lid];
             barrier(CLK_LOCAL_MEM_FENCE);
-            local REAL _jm[LSIZE];
-            local REAL _jrx[LSIZE];
-            local REAL _jry[LSIZE];
-            local REAL _jrz[LSIZE];
-            local REAL _je2[LSIZE];
-            local REAL _jvx[LSIZE];
-            local REAL _jvy[LSIZE];
-            local REAL _jvz[LSIZE];
-            _jm[lid] = __jm[j + lid];
-            _jrx[lid] = __jrx[j + lid];
-            _jry[lid] = __jry[j + lid];
-            _jrz[lid] = __jrz[j + lid];
-            _je2[lid] = __je2[j + lid];
-            _jvx[lid] = __jvx[j + lid];
-            _jvy[lid] = __jvy[j + lid];
-            _jvz[lid] = __jvz[j + lid];
+            _jm[lid] = jm;
+            _jrx[lid] = jrx;
+            _jry[lid] = jry;
+            _jrz[lid] = jrz;
+            _je2[lid] = je2;
+            _jvx[lid] = jvx;
+            _jvy[lid] = jvy;
+            _jvz[lid] = jvz;
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll UNROLL
             for (UINT k = 0; k < LSIZE; ++k) {
+                jm = _jm[k];
+                jrx = _jrx[k];
+                jry = _jry[k];
+                jrz = _jrz[k];
+                je2 = _je2[k];
+                jvx = _jvx[k];
+                jvy = _jvy[k];
+                jvz = _jvz[k];
                 sakura_kernel_core(
                     dt, flag,
-                    im, irx, iry, irz,
-                    ie2, ivx, ivy, ivz,
-                    _jm[k], _jrx[k], _jry[k], _jrz[k],
-                    _je2[k], _jvx[k], _jvy[k], _jvz[k],
-                    &idrx, &idry, &idrz,
-                    &idvx, &idvy, &idvz);
+                    im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                    jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                    &idrx, &idry, &idrz, &idvx, &idvy, &idvz);
             }
         }
         #endif
 
         #pragma unroll UNROLL
         for (; j < nj; ++j) {
+            REAL jm = __jm[j];
+            REAL jrx = __jrx[j];
+            REAL jry = __jry[j];
+            REAL jrz = __jrz[j];
+            REAL je2 = __je2[j];
+            REAL jvx = __jvx[j];
+            REAL jvy = __jvy[j];
+            REAL jvz = __jvz[j];
             sakura_kernel_core(
                 dt, flag,
-                im, irx, iry, irz,
-                ie2, ivx, ivy, ivz,
-                __jm[j], __jrx[j], __jry[j], __jrz[j],
-                __je2[j], __jvx[j], __jvy[j], __jvz[j],
-                &idrx, &idry, &idrz,
-                &idvx, &idvy, &idvz);
+                im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                &idrx, &idry, &idrz, &idvx, &idvy, &idvz);
         }
 
         __idrx[gid] = idrx;

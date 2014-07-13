@@ -23,8 +23,7 @@ void acc_kernel(
     for (UINT i = LSIZE * get_group_id(0);
          VW * i < ni; i += LSIZE * get_num_groups(0)) {
         UINT lid = get_local_id(0);
-        UINT gid = i + lid;
-        gid = ((VW * gid) < ni) ? (gid):(0);
+        UINT gid = ((VW * (i + lid)) < ni) ? (i + lid):(0);
 
         REALn im = __im[gid];
         REALn irx = __irx[gid];
@@ -39,24 +38,34 @@ void acc_kernel(
         UINT j = 0;
 
         #ifdef FAST_LOCAL_MEM
+        local REAL _jm[LSIZE];
+        local REAL _jrx[LSIZE];
+        local REAL _jry[LSIZE];
+        local REAL _jrz[LSIZE];
+        local REAL _je2[LSIZE];
         for (; (j + LSIZE - 1) < nj; j += LSIZE) {
+            REAL jm = __jm[j + lid];
+            REAL jrx = __jrx[j + lid];
+            REAL jry = __jry[j + lid];
+            REAL jrz = __jrz[j + lid];
+            REAL je2 = __je2[j + lid];
             barrier(CLK_LOCAL_MEM_FENCE);
-            local REAL _jm[LSIZE];
-            local REAL _jrx[LSIZE];
-            local REAL _jry[LSIZE];
-            local REAL _jrz[LSIZE];
-            local REAL _je2[LSIZE];
-            _jm[lid] = __jm[j + lid];
-            _jrx[lid] = __jrx[j + lid];
-            _jry[lid] = __jry[j + lid];
-            _jrz[lid] = __jrz[j + lid];
-            _je2[lid] = __je2[j + lid];
+            _jm[lid] = jm;
+            _jrx[lid] = jrx;
+            _jry[lid] = jry;
+            _jrz[lid] = jrz;
+            _je2[lid] = je2;
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll UNROLL
             for (UINT k = 0; k < LSIZE; ++k) {
+                jm = _jm[k];
+                jrx = _jrx[k];
+                jry = _jry[k];
+                jrz = _jrz[k];
+                je2 = _je2[k];
                 acc_kernel_core(
                     im, irx, iry, irz, ie2,
-                    _jm[k], _jrx[k], _jry[k], _jrz[k], _je2[k],
+                    jm, jrx, jry, jrz, je2,
                     &iax, &iay, &iaz);
             }
         }
@@ -64,9 +73,14 @@ void acc_kernel(
 
         #pragma unroll UNROLL
         for (; j < nj; ++j) {
+            REAL jm = __jm[j];
+            REAL jrx = __jrx[j];
+            REAL jry = __jry[j];
+            REAL jrz = __jrz[j];
+            REAL je2 = __je2[j];
             acc_kernel_core(
                 im, irx, iry, irz, ie2,
-                __jm[j], __jrx[j], __jry[j], __jrz[j], __je2[j],
+                jm, jrx, jry, jrz, je2,
                 &iax, &iay, &iaz);
         }
 

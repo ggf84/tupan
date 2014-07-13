@@ -23,11 +23,19 @@ void phi_kernel(
         REAL irz = __irz[i];
         REAL ie2 = __ie2[i];
         REAL iphi = 0;
+
         for (UINT j = 0; j < nj; ++j) {
-            phi_kernel_core(im, irx, iry, irz, ie2,
-                            __jm[j], __jrx[j], __jry[j], __jrz[j], __je2[j],
-                            &iphi);
+            REAL jm = __jm[j];
+            REAL jrx = __jrx[j];
+            REAL jry = __jry[j];
+            REAL jrz = __jrz[j];
+            REAL je2 = __je2[j];
+            phi_kernel_core(
+                im, irx, iry, irz, ie2,
+                jm, jrx, jry, jrz, je2,
+                &iphi);
         }
+
         __iphi[i] = iphi;
     }
 }

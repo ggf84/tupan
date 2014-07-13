@@ -45,14 +45,23 @@ void nreg_Xkernel(
         REAL iay = 0;
         REAL iaz = 0;
         REAL iu = 0;
+
         for (UINT j = 0; j < nj; ++j) {
-            nreg_Xkernel_core(dt,
-                              im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                              __jm[j], __jrx[j], __jry[j], __jrz[j],
-                              __je2[j], __jvx[j], __jvy[j], __jvz[j],
-                              &idrx, &idry, &idrz,
-                              &iax, &iay, &iaz, &iu);
+            REAL jm = __jm[j];
+            REAL jrx = __jrx[j];
+            REAL jry = __jry[j];
+            REAL jrz = __jrz[j];
+            REAL je2 = __je2[j];
+            REAL jvx = __jvx[j];
+            REAL jvy = __jvy[j];
+            REAL jvz = __jvz[j];
+            nreg_Xkernel_core(
+                dt,
+                im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                &idrx, &idry, &idrz, &iax, &iay, &iaz, &iu);
         }
+
         __idrx[i] = idrx;
         __idry[i] = idry;
         __idrz[i] = idrz;
@@ -99,13 +108,22 @@ void nreg_Vkernel(
         REAL idvy = 0;
         REAL idvz = 0;
         REAL ik = 0;
+
         for (UINT j = 0; j < nj; ++j) {
-            nreg_Vkernel_core(dt,
-                              im, ivx, ivy, ivz, iax, iay, iaz,
-                              __jm[j], __jvx[j], __jvy[j], __jvz[j],
-                              __jax[j], __jay[j], __jaz[j],
-                              &idvx, &idvy, &idvz, &ik);
+            REAL jm = __jm[j];
+            REAL jvx = __jvx[j];
+            REAL jvy = __jvy[j];
+            REAL jvz = __jvz[j];
+            REAL jax = __jax[j];
+            REAL jay = __jay[j];
+            REAL jaz = __jaz[j];
+            nreg_Vkernel_core(
+                dt,
+                im, ivx, ivy, ivz, iax, iay, iaz,
+                jm, jvx, jvy, jvz, jax, jay, jaz,
+                &idvx, &idvy, &idvz, &ik);
         }
+
         __idvx[i] = idvx;
         __idvy[i] = idvy;
         __idvz[i] = idvz;
