@@ -91,13 +91,11 @@ class Phi(AbstractExtension):
         cty = self.kernel.cty
 
         inptypes = (cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p)
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr)
 
-        outtypes = (cty.c_real_p,)
+        outtypes = (cty.optr,)
 
         self.kernel.inptypes = inptypes
         self.kernel.outtypes = outtypes
@@ -145,13 +143,11 @@ class Acc(AbstractExtension):
         cty = self.kernel.cty
 
         inptypes = (cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p)
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr)
 
-        outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        outtypes = (cty.optr, cty.optr, cty.optr)
 
         self.kernel.inptypes = inptypes
         self.kernel.outtypes = outtypes
@@ -203,14 +199,14 @@ class AccJerk(AbstractExtension):
         cty = self.kernel.cty
 
         inptypes = (cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p)
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr)
 
-        outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        outtypes = (cty.optr, cty.optr, cty.optr,
+                    cty.optr, cty.optr, cty.optr)
 
         self.kernel.inptypes = inptypes
         self.kernel.outtypes = outtypes
@@ -241,18 +237,16 @@ class SnapCrackle(AbstractExtension):
         cty = self.kernel.cty
 
         inptypes = (cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p)
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr)
 
-        outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        outtypes = (cty.optr, cty.optr, cty.optr,
+                    cty.optr, cty.optr, cty.optr)
 
         self.kernel.inptypes = inptypes
         self.kernel.outtypes = outtypes
@@ -284,14 +278,14 @@ class Tstep(AbstractExtension):
         cty = self.kernel.cty
 
         inptypes = (cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_real)
 
-        outtypes = (cty.c_real_p, cty.c_real_p)
+        outtypes = (cty.optr, cty.optr)
 
         self.kernel.inptypes = inptypes
         self.kernel.outtypes = outtypes
@@ -321,17 +315,17 @@ class PNAcc(AbstractExtension):
         cty = self.kernel.cty
 
         inptypes = (cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_uint, cty.c_real,
                     cty.c_real, cty.c_real,
                     cty.c_real, cty.c_real,
                     cty.c_real, cty.c_real)
 
-        outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        outtypes = (cty.optr, cty.optr, cty.optr)
 
         self.kernel.inptypes = inptypes
         self.kernel.outtypes = outtypes
@@ -364,15 +358,15 @@ class Sakura(AbstractExtension):
         cty = self.kernel.cty
 
         inptypes = (cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_real, cty.c_int)
 
-        outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        outtypes = (cty.optr, cty.optr, cty.optr,
+                    cty.optr, cty.optr, cty.optr)
 
         self.kernel.inptypes = inptypes
         self.kernel.outtypes = outtypes
@@ -418,16 +412,15 @@ class NregX(AbstractExtension):
         cty = self.kernel.cty
 
         inptypes = (cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_real)
 
-        outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p)
+        outtypes = (cty.optr, cty.optr, cty.optr, cty.optr,
+                    cty.optr, cty.optr, cty.optr)
 
         self.kernel.inptypes = inptypes
         self.kernel.outtypes = outtypes
@@ -474,15 +467,14 @@ class NregV(AbstractExtension):
         cty = self.kernel.cty
 
         inptypes = (cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr,
                     cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr,
                     cty.c_real)
 
-        outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p)
+        outtypes = (cty.optr, cty.optr, cty.optr, cty.optr)
 
         self.kernel.inptypes = inptypes
         self.kernel.outtypes = outtypes
@@ -525,15 +517,15 @@ class Kepler(AbstractExtension):
         cty = self.kernel.cty
 
         inptypes = (cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_uint,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p, cty.c_real_p,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
+                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
                     cty.c_real)
 
-        outtypes = (cty.c_real_p, cty.c_real_p, cty.c_real_p,
-                    cty.c_real_p, cty.c_real_p, cty.c_real_p)
+        outtypes = (cty.optr, cty.optr, cty.optr,
+                    cty.optr, cty.optr, cty.optr)
 
         self.kernel.inptypes = inptypes
         self.kernel.outtypes = outtypes

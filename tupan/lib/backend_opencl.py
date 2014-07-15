@@ -95,6 +95,10 @@ class CLKernel(object):
         self.kernel = getattr(LIB[fpwidth], name)
         self.inptypes = None
         self.outtypes = None
+        self.iarg = {}
+        self.ibuf = {}
+        self.oarg = {}
+        self.obuf = {}
 
         kwginfo = cl.kernel_work_group_info
         LOGGER.debug("CL '%s' info: %s %s %s %s %s",
@@ -115,40 +119,58 @@ class CLKernel(object):
         self.local_size = (LSIZE[fpwidth], 1, 1)
         self.queue = cl.CommandQueue(CTX)
 
-        memf = cl.mem_flags
-#        flags = memf.READ_WRITE | memf.USE_HOST_PTR
-        flags = memf.READ_WRITE | memf.COPY_HOST_PTR
+        mf = cl.mem_flags
+
+#        def iptr(arg, flags=mf.READ_ONLY | mf.USE_HOST_PTR):
+#            return cl.Buffer(CTX, flags, hostbuf=arg)
+#
+#        def optr(arg, flags=mf.WRITE_ONLY | mf.USE_HOST_PTR):
+#            return cl.Buffer(CTX, flags, hostbuf=arg)
+
+        def iptr(arg, flags=mf.READ_ONLY | mf.COPY_HOST_PTR):
+            return cl.Buffer(CTX, flags, hostbuf=arg)
+
+        def optr(arg, flags=mf.WRITE_ONLY | mf.COPY_HOST_PTR):
+            return cl.Buffer(CTX, flags, hostbuf=arg)
+
+#        def iptr(arg, flags=mf.READ_ONLY | mf.ALLOC_HOST_PTR):
+#            size = arg.size * arg.itemsize
+#            buf = cl.Buffer(CTX, flags, size=size)
+#            cl.enqueue_copy(self.queue, buf, arg)
+#            return buf
+#
+#        def optr(arg, flags=mf.WRITE_ONLY | mf.ALLOC_HOST_PTR):
+#            size = arg.size * arg.itemsize
+#            return cl.Buffer(CTX, flags, size=size)
 
         from .utils.ctype import Ctype
-        types = namedtuple('Types', ['c_int', 'c_int_p',
-                                     'c_uint', 'c_uint_p',
-                                     'c_real', 'c_real_p'])
+        types = namedtuple('Types', ['c_int', 'c_uint',
+                                     'c_real', 'iptr', 'optr'])
         self.cty = types(
             c_int=vars(Ctype)['int'].type,
-            c_int_p=lambda x: cl.Buffer(CTX, flags, hostbuf=x),
             c_uint=vars(Ctype)['uint'].type,
-            c_uint_p=lambda x: cl.Buffer(CTX, flags, hostbuf=x),
             c_real=vars(Ctype)['real'].type,
-            c_real_p=lambda x: cl.Buffer(CTX, flags, hostbuf=x),
+            iptr=iptr,
+            optr=optr,
             )
 
     def set_args(self, inpargs, outargs):
         bufs = []
 
         # set inpargs
-        self.inp_argbuf = []
         for (i, argtype) in enumerate(self.inptypes):
             arg = inpargs[i]
             buf = argtype(arg)
-            self.inp_argbuf.append((arg, buf))
+            self.iarg[i] = arg
+            self.ibuf[i] = buf
             bufs.append(buf)
 
         # set outargs
-        self.out_argbuf = []
         for (i, argtype) in enumerate(self.outtypes):
             arg = outargs[i]
             buf = argtype(arg)
-            self.out_argbuf.append((arg, buf))
+            self.oarg[i] = arg
+            self.obuf[i] = buf
             bufs.append(buf)
 
         for (i, buf) in enumerate(bufs):
@@ -163,14 +185,15 @@ class CLKernel(object):
         self.global_size = (lsize * ngroups, 1, 1)
 
     def map_buffers(self):
-        for (arg, buf) in self.out_argbuf:
+        for (key, arg) in self.oarg.items():
+            buf = self.obuf[key]
             cl.enqueue_copy(self.queue, arg, buf)
-        return [arg for (arg, buf) in self.out_argbuf]
+        return list(self.oarg.values())
 
-#        mapf = cl.map_flags
-#        flags = mapf.READ | mapf.WRITE
+#        flags = cl.map_flags.READ
 #        queue = self.queue
-#        for (arg, buf) in self.out_argbuf:
+#        for (key, arg) in self.oarg.items():
+#            buf = self.obuf[key]
 #            arg[...], ev = cl.enqueue_map_buffer(
 #                queue,
 #                buf,
@@ -178,10 +201,9 @@ class CLKernel(object):
 #                0,
 #                arg.shape,
 #                arg.dtype,
-#                'C'
 #                )
 #            ev.wait()
-#        return [arg for (arg, buf) in self.out_argbuf]
+#        return list(self.oarg.values())
 
     def run(self):
         cl.enqueue_nd_range_kernel(

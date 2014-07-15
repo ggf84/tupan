@@ -88,6 +88,10 @@ class CKernel(object):
         self.kernel = getattr(LIB[fpwidth], name)
         self.inptypes = None
         self.outtypes = None
+        self.iarg = {}
+        self.ibuf = {}
+        self.oarg = {}
+        self.obuf = {}
 
         ffi = FFI[fpwidth]
 
@@ -97,41 +101,39 @@ class CKernel(object):
         addressof = ctypes.addressof
         cast = ffi.cast
 
-        types = namedtuple('Types', ['c_int', 'c_int_p',
-                                     'c_uint', 'c_uint_p',
-                                     'c_real', 'c_real_p'])
+        types = namedtuple('Types', ['c_int', 'c_uint',
+                                     'c_real', 'iptr', 'optr'])
         self.cty = types(
             c_int=lambda x: x,
-            c_int_p=lambda x: cast('INT *', addressof(from_buffer(x))),
             c_uint=lambda x: x,
-            c_uint_p=lambda x: cast('UINT *', addressof(from_buffer(x))),
             c_real=lambda x: x,
-            c_real_p=lambda x: cast('REAL *', addressof(from_buffer(x))),
+            iptr=lambda x: cast('void *', addressof(from_buffer(x))),
+            optr=lambda x: cast('void *', addressof(from_buffer(x))),
             )
 
     def set_args(self, inpargs, outargs):
         bufs = []
 
         # set inpargs
-        self.inp_argbuf = []
         for (i, argtype) in enumerate(self.inptypes):
             arg = inpargs[i]
             buf = argtype(arg)
-            self.inp_argbuf.append((arg, buf))
+            self.iarg[i] = arg
+            self.ibuf[i] = buf
             bufs.append(buf)
 
         # set outargs
-        self.out_argbuf = []
         for (i, argtype) in enumerate(self.outtypes):
             arg = outargs[i]
             buf = argtype(arg)
-            self.out_argbuf.append((arg, buf))
+            self.oarg[i] = arg
+            self.obuf[i] = buf
             bufs.append(buf)
 
         self.bufs = bufs
 
     def map_buffers(self):
-        return [arg for (arg, buf) in self.out_argbuf]
+        return list(self.oarg.values())
 
     def run(self):
         self.kernel(*self.bufs)
