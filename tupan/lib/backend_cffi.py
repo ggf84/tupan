@@ -10,7 +10,7 @@ import os
 import cffi
 import ctypes
 import logging
-from collections import namedtuple
+from tupan.config import options
 from .utils.timing import timings, bind_all
 
 
@@ -20,72 +20,93 @@ DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, 'src')
 
 
-@timings
-def make_lib(fpwidth):
+@bind_all(timings)
+class CDriver(object):
     """
 
     """
-    cint = 'int' if fpwidth == 'fp32' else 'long'
-    creal = 'float' if fpwidth == 'fp32' else 'double'
-    LOGGER.debug("Building/Loading '%s' C extension module.", fpwidth)
+    def __init__(self, fpwidth=options.fpwidth):
+        self.fpwidth = fpwidth
 
-    fnames = ('phi_kernel.c',
-              'acc_kernel.c',
-              'acc_jerk_kernel.c',
-              'snap_crackle_kernel.c',
-              'tstep_kernel.c',
-              'pnacc_kernel.c',
-              'nreg_kernels.c',
-              'sakura_kernel.c',
-              'kepler_solver_kernel.c', )
+        self._make_lib()
 
-    src = []
-    with open(os.path.join(PATH, 'libtupan.h'), 'r') as fobj:
-        src.append('typedef {} INT;'.format(cint))
-        src.append('typedef unsigned {} UINT;'.format(cint))
-        src.append('typedef {} REAL;'.format(creal))
-        src.append(fobj.read())
-    source = '\n'.join(src)
+    def _make_lib(self):
+        cint = 'int' if self.fpwidth == 'fp32' else 'long'
+        creal = 'float' if self.fpwidth == 'fp32' else 'double'
+        LOGGER.debug("Building '%s' C extension module.", self.fpwidth)
 
-    ffi = cffi.FFI()
+        fnames = ('phi_kernel.c',
+                  'acc_kernel.c',
+                  'acc_jerk_kernel.c',
+                  'snap_crackle_kernel.c',
+                  'tstep_kernel.c',
+                  'pnacc_kernel.c',
+                  'nreg_kernels.c',
+                  'sakura_kernel.c',
+                  'kepler_solver_kernel.c', )
 
-    ffi.cdef(source)
+        src = []
+        with open(os.path.join(PATH, 'libtupan.h'), 'r') as fobj:
+            src.append('typedef {} INT;'.format(cint))
+            src.append('typedef unsigned {} UINT;'.format(cint))
+            src.append('typedef {} REAL;'.format(creal))
+            src.append(fobj.read())
+        source = '\n'.join(src)
 
-    define_macros = []
-    if fpwidth == 'fp64':
-        define_macros.append(('CONFIG_USE_DOUBLE', 1))
+        self.ffi = cffi.FFI()
 
-    from ..config import get_cache_dir
-    clib = ffi.verify(
-        """
-        #include "common.h"
-        #include "libtupan.h"
-        """,
-        tmpdir=get_cache_dir(),
-        define_macros=define_macros,
-        include_dirs=[PATH],
-        libraries=['m'],
-        extra_compile_args=['-O3', '-std=c99'],
-        sources=[os.path.join(PATH, fname) for fname in fnames],
-    )
+        self.ffi.cdef(source)
 
-    LOGGER.debug('C extension module loaded: '
-                 '(U)INT is (u)%s, REAL is %s.',
-                 cint, creal)
-    return ffi, clib
+        define_macros = []
+        if self.fpwidth == 'fp64':
+            define_macros.append(('CONFIG_USE_DOUBLE', 1))
+
+        from ..config import get_cache_dir
+        self.lib = self.ffi.verify(
+            """
+            #include "common.h"
+            #include "libtupan.h"
+            """,
+            tmpdir=get_cache_dir(),
+            define_macros=define_macros,
+            include_dirs=[PATH],
+            libraries=['m'],
+            extra_compile_args=['-O3', '-std=c99'],
+            sources=[os.path.join(PATH, fname) for fname in fnames],
+        )
+
+        LOGGER.debug('C extension module loaded: '
+                     '(U)INT is (u)%s, REAL is %s.',
+                     cint, creal)
+
+#        from_buffer = ctypes.c_char.from_buffer
+#        from_buffer = ctypes.POINTER(ctypes.c_char).from_buffer
+        from_buffer = (ctypes.c_char * 0).from_buffer
+        addressof = ctypes.addressof
+        cast = self.ffi.cast
+
+        self.c_int = lambda x: x
+        self.c_uint = lambda x: x
+        self.c_real = lambda x: x
+        self.iptr = lambda x: cast('void *', addressof(from_buffer(x)))
+        self.optr = lambda x: cast('void *', addressof(from_buffer(x)))
+
+    def get_kernel(self, name):
+        LOGGER.debug("Using '%s' function from 'C' backend.", name)
+        kernel = getattr(self.lib, name)
+        return CKernel(kernel)
 
 
-FFI = {}
-LIB = {}
-FFI['fp32'], LIB['fp32'] = make_lib('fp32')
-FFI['fp64'], LIB['fp64'] = make_lib('fp64')
+drv = CDriver()
 
 
 @bind_all(timings)
 class CKernel(object):
+    """
 
-    def __init__(self, fpwidth, name):
-        self.kernel = getattr(LIB[fpwidth], name)
+    """
+    def __init__(self, kernel):
+        self.kernel = kernel
         self.inptypes = None
         self.outtypes = None
         self.iarg = {}
@@ -93,26 +114,22 @@ class CKernel(object):
         self.oarg = {}
         self.obuf = {}
 
-        ffi = FFI[fpwidth]
-
-#        from_buffer = ctypes.c_char.from_buffer
-#        from_buffer = ctypes.POINTER(ctypes.c_char).from_buffer
-        from_buffer = (ctypes.c_char * 0).from_buffer
-        addressof = ctypes.addressof
-        cast = ffi.cast
-
-        types = namedtuple('Types', ['c_int', 'c_uint',
-                                     'c_real', 'iptr', 'optr'])
-        self.cty = types(
-            c_int=lambda x: x,
-            c_uint=lambda x: x,
-            c_real=lambda x: x,
-            iptr=lambda x: cast('void *', addressof(from_buffer(x))),
-            optr=lambda x: cast('void *', addressof(from_buffer(x))),
-            )
-
     def set_args(self, inpargs, outargs):
         bufs = []
+
+        if self.inptypes is None:
+            types = []
+            for arg in inpargs:
+                if isinstance(arg, int):
+                    types.append(drv.c_int if arg < 0 else drv.c_uint)
+                elif isinstance(arg, float):
+                    types.append(drv.c_real)
+                else:
+                    types.append(drv.iptr)
+            self.inptypes = types
+
+        if self.outtypes is None:
+            self.outtypes = [drv.optr for _ in outargs]
 
         # set inpargs
         for (i, argtype) in enumerate(self.inptypes):

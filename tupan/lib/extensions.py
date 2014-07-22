@@ -44,26 +44,19 @@ class PN(object):
         self._clight = float(value)
 
 
-@timings
-def get_kernel(name, backend, fpwidth):
-    if backend == 'C':
-        from .backend_cffi import CKernel as Kernel
-    elif backend == 'CL':
-        from .backend_opencl import CLKernel as Kernel
-    else:
-        msg = "Inappropriate 'backend': {}. Supported values: ['C', 'CL']"
-        raise ValueError(msg.format(backend))
-    LOGGER.debug(
-        "Using '%s' from %s precision %s extension module.",
-        name, fpwidth, backend
-    )
-    return Kernel(fpwidth, name)
-
-
 class AbstractExtension(object):
+    """
 
-    def __init__(self, name, backend, fpwidth):
-        self.kernel = get_kernel(name, backend, fpwidth)
+    """
+    def __init__(self, name, backend):
+        if backend == 'C':
+            from .backend_cffi import drv
+        elif backend == 'CL':
+            from .backend_opencl import drv
+        else:
+            msg = "backend: invalid choice: '{}' (choose from 'C', 'CL')"
+            raise ValueError(msg.format(backend))
+        self.kernel = drv.get_kernel(name)
 
     def set_args(self, ips, jps, **kwargs):
         raise NotImplementedError
@@ -85,20 +78,8 @@ class Phi(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
-        super(Phi, self).__init__('phi_kernel', backend, fpwidth)
-
-        cty = self.kernel.cty
-
-        inptypes = (cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr)
-
-        outtypes = (cty.optr,)
-
-        self.kernel.inptypes = inptypes
-        self.kernel.outtypes = outtypes
+    def __init__(self, backend=options.backend):
+        super(Phi, self).__init__('phi_kernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -137,20 +118,8 @@ class Acc(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
-        super(Acc, self).__init__('acc_kernel', backend, fpwidth)
-
-        cty = self.kernel.cty
-
-        inptypes = (cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr)
-
-        outtypes = (cty.optr, cty.optr, cty.optr)
-
-        self.kernel.inptypes = inptypes
-        self.kernel.outtypes = outtypes
+    def __init__(self, backend=options.backend):
+        super(Acc, self).__init__('acc_kernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -193,23 +162,8 @@ class AccJerk(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
-        super(AccJerk, self).__init__('acc_jerk_kernel', backend, fpwidth)
-
-        cty = self.kernel.cty
-
-        inptypes = (cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr)
-
-        outtypes = (cty.optr, cty.optr, cty.optr,
-                    cty.optr, cty.optr, cty.optr)
-
-        self.kernel.inptypes = inptypes
-        self.kernel.outtypes = outtypes
+    def __init__(self, backend=options.backend):
+        super(AccJerk, self).__init__('acc_jerk_kernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -230,26 +184,8 @@ class SnapCrackle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
-        super(SnapCrackle, self).__init__('snap_crackle_kernel',
-                                          backend, fpwidth)
-
-        cty = self.kernel.cty
-
-        inptypes = (cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr)
-
-        outtypes = (cty.optr, cty.optr, cty.optr,
-                    cty.optr, cty.optr, cty.optr)
-
-        self.kernel.inptypes = inptypes
-        self.kernel.outtypes = outtypes
+    def __init__(self, backend=options.backend):
+        super(SnapCrackle, self).__init__('snap_crackle_kernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -272,23 +208,8 @@ class Tstep(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
-        super(Tstep, self).__init__('tstep_kernel', backend, fpwidth)
-
-        cty = self.kernel.cty
-
-        inptypes = (cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_real)
-
-        outtypes = (cty.optr, cty.optr)
-
-        self.kernel.inptypes = inptypes
-        self.kernel.outtypes = outtypes
+    def __init__(self, backend=options.backend):
+        super(Tstep, self).__init__('tstep_kernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -309,26 +230,8 @@ class PNAcc(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
-        super(PNAcc, self).__init__('pnacc_kernel', backend, fpwidth)
-
-        cty = self.kernel.cty
-
-        inptypes = (cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_uint, cty.c_real,
-                    cty.c_real, cty.c_real,
-                    cty.c_real, cty.c_real,
-                    cty.c_real, cty.c_real)
-
-        outtypes = (cty.optr, cty.optr, cty.optr)
-
-        self.kernel.inptypes = inptypes
-        self.kernel.outtypes = outtypes
+    def __init__(self, backend=options.backend):
+        super(PNAcc, self).__init__('pnacc_kernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -352,24 +255,8 @@ class Sakura(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
-        super(Sakura, self).__init__('sakura_kernel', backend, fpwidth)
-
-        cty = self.kernel.cty
-
-        inptypes = (cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_real, cty.c_int)
-
-        outtypes = (cty.optr, cty.optr, cty.optr,
-                    cty.optr, cty.optr, cty.optr)
-
-        self.kernel.inptypes = inptypes
-        self.kernel.outtypes = outtypes
+    def __init__(self, backend=options.backend):
+        super(Sakura, self).__init__('sakura_kernel', backend)
 
         self.kernel.vector_width = 1
 
@@ -406,24 +293,8 @@ class NregX(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
-        super(NregX, self).__init__('nreg_Xkernel', backend, fpwidth)
-
-        cty = self.kernel.cty
-
-        inptypes = (cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_real)
-
-        outtypes = (cty.optr, cty.optr, cty.optr, cty.optr,
-                    cty.optr, cty.optr, cty.optr)
-
-        self.kernel.inptypes = inptypes
-        self.kernel.outtypes = outtypes
+    def __init__(self, backend=options.backend):
+        super(NregX, self).__init__('nreg_Xkernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'mrx'):
@@ -461,23 +332,8 @@ class NregV(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
-        super(NregV, self).__init__('nreg_Vkernel', backend, fpwidth)
-
-        cty = self.kernel.cty
-
-        inptypes = (cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_real)
-
-        outtypes = (cty.optr, cty.optr, cty.optr, cty.optr)
-
-        self.kernel.inptypes = inptypes
-        self.kernel.outtypes = outtypes
+    def __init__(self, backend=options.backend):
+        super(NregV, self).__init__('nreg_Vkernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'mvx'):
@@ -507,28 +363,12 @@ class Kepler(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend, fpwidth=options.fpwidth):
+    def __init__(self, backend=options.backend):
 
         if backend == 'CL':    # No need for CL support.
             backend = 'C'      # C is fast enough!
 
-        super(Kepler, self).__init__('kepler_solver_kernel', backend, fpwidth)
-
-        cty = self.kernel.cty
-
-        inptypes = (cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_uint,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.iptr, cty.iptr, cty.iptr, cty.iptr,
-                    cty.c_real)
-
-        outtypes = (cty.optr, cty.optr, cty.optr,
-                    cty.optr, cty.optr, cty.optr)
-
-        self.kernel.inptypes = inptypes
-        self.kernel.outtypes = outtypes
+        super(Kepler, self).__init__('kepler_solver_kernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
