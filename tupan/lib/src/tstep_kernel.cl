@@ -26,10 +26,11 @@ void tstep_kernel(
     global REALn * restrict __idt_a,
     global REALn * restrict __idt_b)
 {
-    for (UINT i = LSIZE * get_group_id(0);
-         VW * i < ni; i += LSIZE * get_num_groups(0)) {
+    for (UINT i = LSIZE * get_group_id(0) + get_global_offset(0);
+              i < ni;
+              i += LSIZE * get_num_groups(0)) {
         UINT lid = get_local_id(0);
-        UINT gid = ((VW * (i + lid)) < ni) ? (i + lid):(0);
+        UINT gid = ((i + lid) < ni) ? (i + lid):(0);
 
         REALn im = __im[gid];
         REALn irx = __irx[gid];

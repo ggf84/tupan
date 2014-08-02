@@ -13,7 +13,7 @@ import atexit
 import inspect
 import functools
 from collections import defaultdict
-from tupan.config import options
+from ...config import options
 
 
 __all__ = ['timings', 'bind_all', 'Timer']

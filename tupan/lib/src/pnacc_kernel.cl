@@ -34,10 +34,11 @@ void pnacc_kernel(
     global REALn * restrict __ipnay,
     global REALn * restrict __ipnaz)
 {
-    for (UINT i = LSIZE * get_group_id(0);
-         VW * i < ni; i += LSIZE * get_num_groups(0)) {
+    for (UINT i = LSIZE * get_group_id(0) + get_global_offset(0);
+              i < ni;
+              i += LSIZE * get_num_groups(0)) {
         UINT lid = get_local_id(0);
-        UINT gid = ((VW * (i + lid)) < ni) ? (i + lid):(0);
+        UINT gid = ((i + lid) < ni) ? (i + lid):(0);
 
         CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3,
                                     inv4, inv5, inv6, inv7);

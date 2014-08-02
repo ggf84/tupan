@@ -7,27 +7,47 @@ TODO.
 
 
 import numpy as np
-from tupan.config import options
+from ...config import options
 
 
 class Ctype(object):
-    int = (np.dtype(np.int32)
-           if options.fpwidth == 'fp32'
-           else (np.dtype(np.int64)
-                 if options.fpwidth == 'fp64'
-                 else np.dtype(np.int64)))
+    int_t = (np.int32
+             if options.fpwidth == 'fp32'
+             else (np.int64
+                   if options.fpwidth == 'fp64'
+                   else np.int64))
 
-    uint = (np.dtype(np.uint32)
-            if options.fpwidth == 'fp32'
-            else (np.dtype(np.uint64)
-                  if options.fpwidth == 'fp64'
-                  else np.dtype(np.uint64)))
+    uint_t = (np.uint32
+              if options.fpwidth == 'fp32'
+              else (np.uint64
+                    if options.fpwidth == 'fp64'
+                    else np.uint64))
 
-    real = (np.dtype(np.float32)
-            if options.fpwidth == 'fp32'
-            else (np.dtype(np.float64)
-                  if options.fpwidth == 'fp64'
-                  else np.dtype(np.float64)))
+    real_t = (np.float32
+              if options.fpwidth == 'fp32'
+              else (np.float64
+                    if options.fpwidth == 'fp64'
+                    else np.float64))
+
+    int, uint, real = int_t, uint_t, real_t
+
+    c_int = ('int'
+             if options.fpwidth == 'fp32'
+             else ('long'
+                   if options.fpwidth == 'fp64'
+                   else 'long'))
+
+    c_uint = ('unsigned int'
+              if options.fpwidth == 'fp32'
+              else ('unsigned long'
+                    if options.fpwidth == 'fp64'
+                    else 'unsigned long'))
+
+    c_real = ('float'
+              if options.fpwidth == 'fp32'
+              else ('double'
+                    if options.fpwidth == 'fp64'
+                    else 'double'))
 
 
 # -- End of File --

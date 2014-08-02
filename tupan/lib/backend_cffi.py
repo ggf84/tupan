@@ -10,7 +10,8 @@ import os
 import cffi
 import ctypes
 import logging
-from tupan.config import options
+from ..config import options, get_cache_dir
+from .utils.ctype import Ctype
 from .utils.timing import timings, bind_all
 
 
@@ -31,8 +32,6 @@ class CDriver(object):
         self._make_lib()
 
     def _make_lib(self):
-        cint = 'int' if self.fpwidth == 'fp32' else 'long'
-        creal = 'float' if self.fpwidth == 'fp32' else 'double'
         LOGGER.debug("Building '%s' C extension module.", self.fpwidth)
 
         fnames = ('phi_kernel.c',
@@ -47,9 +46,9 @@ class CDriver(object):
 
         src = []
         with open(os.path.join(PATH, 'libtupan.h'), 'r') as fobj:
-            src.append('typedef {} INT;'.format(cint))
-            src.append('typedef unsigned {} UINT;'.format(cint))
-            src.append('typedef {} REAL;'.format(creal))
+            src.append('typedef {} INT;'.format(Ctype.c_int))
+            src.append('typedef {} UINT;'.format(Ctype.c_uint))
+            src.append('typedef {} REAL;'.format(Ctype.c_real))
             src.append(fobj.read())
         source = '\n'.join(src)
 
@@ -61,7 +60,6 @@ class CDriver(object):
         if self.fpwidth == 'fp64':
             define_macros.append(('CONFIG_USE_DOUBLE', 1))
 
-        from ..config import get_cache_dir
         self.lib = self.ffi.verify(
             """
             #include "common.h"
@@ -75,21 +73,7 @@ class CDriver(object):
             sources=[os.path.join(PATH, fname) for fname in fnames],
         )
 
-        LOGGER.debug('C extension module loaded: '
-                     '(U)INT is (u)%s, REAL is %s.',
-                     cint, creal)
-
-#        from_buffer = ctypes.c_char.from_buffer
-#        from_buffer = ctypes.POINTER(ctypes.c_char).from_buffer
-        from_buffer = (ctypes.c_char * 0).from_buffer
-        addressof = ctypes.addressof
-        cast = self.ffi.cast
-
-        self.c_int = lambda x: x
-        self.c_uint = lambda x: x
-        self.c_real = lambda x: x
-        self.iptr = lambda x: cast('void *', addressof(from_buffer(x)))
-        self.optr = lambda x: cast('void *', addressof(from_buffer(x)))
+        LOGGER.debug('C extension module loaded.')
 
     def get_kernel(self, name):
         LOGGER.debug("Using '%s' function from 'C' backend.", name)
@@ -121,15 +105,26 @@ class CKernel(object):
             types = []
             for arg in inpargs:
                 if isinstance(arg, int):
-                    types.append(drv.c_int if arg < 0 else drv.c_uint)
+                    int_t = lambda x: x
+                    uint_t = lambda x: x
+                    types.append(int_t if arg < 0 else uint_t)
                 elif isinstance(arg, float):
-                    types.append(drv.c_real)
+                    real_t = lambda x: x
+                    types.append(real_t)
                 else:
-                    types.append(drv.iptr)
+                    from_buffer = (ctypes.c_char * 0).from_buffer
+                    addressof = ctypes.addressof
+                    cast = drv.ffi.cast
+                    iptr = lambda x: cast('void *', addressof(from_buffer(x)))
+                    types.append(iptr)
             self.inptypes = types
 
         if self.outtypes is None:
-            self.outtypes = [drv.optr for _ in outargs]
+            from_buffer = (ctypes.c_char * 0).from_buffer
+            addressof = ctypes.addressof
+            cast = drv.ffi.cast
+            optr = lambda x: cast('void *', addressof(from_buffer(x)))
+            self.outtypes = [optr for _ in outargs]
 
         # set inpargs
         for (i, argtype) in enumerate(self.inptypes):

@@ -8,7 +8,7 @@
 
 from __future__ import print_function, division
 import logging
-from tupan.config import options
+from ..config import options
 from .utils.timing import timings, bind_all
 
 
@@ -257,8 +257,6 @@ class Sakura(AbstractExtension):
     """
     def __init__(self, backend=options.backend):
         super(Sakura, self).__init__('sakura_kernel', backend)
-
-        self.kernel.vector_width = 1
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'drx'):
