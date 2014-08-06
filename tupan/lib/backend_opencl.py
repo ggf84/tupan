@@ -22,6 +22,7 @@ DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, 'src')
 
 
+@bind_all(timings)
 class Context(object):
     """
 
@@ -87,6 +88,7 @@ class Context(object):
         self.obuf_count = 0
 
 
+@bind_all(timings)
 class Queue(object):
     """
 
@@ -146,6 +148,7 @@ class Queue(object):
         self.events.append(event)
 
 
+@bind_all(timings)
 class Device(object):
     """
 
@@ -170,13 +173,14 @@ class Device(object):
                     try:
                         info = getattr(cl.device_info, name)
                         value = self.cl_device.get_info(info)
-                    except:
+                    except cl.LogicError:
                         value = '<error>'
                     msg = 2 * indent + '{}: {}'
                     print(msg.format(name, value))
         type(self).idx += 1
 
 
+@bind_all(timings)
 class Program(object):
     """
 
@@ -265,6 +269,7 @@ class Program(object):
         return self
 
 
+@bind_all(timings)
 class Platform(object):
     """
 
@@ -284,6 +289,7 @@ class Platform(object):
 drv = Platform(0)
 
 
+@bind_all(timings)
 class CLKernel(object):
     """
 
