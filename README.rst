@@ -9,6 +9,8 @@ Stable (`master`_)
 
 .. _master: https://github.com/ggf84/tupan/tree/master
 
+.. image:: https://readthedocs.org/projects/tupan/badge/?version=master
+   :target: http://tupan.readthedocs.org/en/master/
 .. image:: https://travis-ci.org/ggf84/tupan.svg?branch=master
    :target: https://travis-ci.org/ggf84/tupan
 .. image:: https://requires.io/github/ggf84/tupan/requirements.png?branch=master
@@ -21,6 +23,8 @@ Development (`dev`_)
 
 .. _dev: https://github.com/ggf84/tupan/tree/dev
 
+.. image:: https://readthedocs.org/projects/tupan/badge/?version=latest
+   :target: http://tupan.readthedocs.org/en/latest/
 .. image:: https://travis-ci.org/ggf84/tupan.svg?branch=dev
    :target: https://travis-ci.org/ggf84/tupan
 .. image:: https://requires.io/github/ggf84/tupan/requirements.png?branch=dev
