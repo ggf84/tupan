@@ -6,14 +6,13 @@ TODO.
 """
 
 
-from __future__ import print_function
 import logging
-from ..integrator import Base
+from .base import Base
 from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
 
 
-__all__ = ["SIA"]
+__all__ = ['SIA']
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ def split(ps, condition):
 
     if slow.n + fast.n != ps.n:
         LOGGER.error(
-            "slow.n + fast.n != ps.n: %d, %d, %d.",
+            'slow.n + fast.n != ps.n: %d, %d, %d.',
             slow.n, fast.n, ps.n)
 
     return slow, fast
@@ -100,6 +99,13 @@ def drift_pn(ips, dt):
     return ips
 
 
+def vw_swap(ips):
+    ips.vx, ips.wx = ips.wx, ips.vx
+    ips.vy, ips.wy = ips.wy, ips.vy
+    ips.vz, ips.wz = ips.wz, ips.vz
+    return ips
+
+
 #
 # kick_pn
 #
@@ -109,49 +115,55 @@ def kick_pn(ips, dt):
 
     """
     #
-    # def vw_swap(ps):
-    #     ps.vx, ps.wx = ps.wx, ps.vx
-    #     ps.vy, ps.wy = ps.wy, ps.vy
-    #     ps.vz, ps.wz = ps.wz, ps.vz
-    #     return ps
-    # ips.set_pnacc(ips)
-    # ips.wx += (ips.ax + ips.pnax) * dt / 2
-    # ips.wy += (ips.ay + ips.pnay) * dt / 2
-    # ips.wz += (ips.az + ips.pnaz) * dt / 2
+    ips.set_pnacc(ips)
+    ips.pn_kick_ke(dt / 2)
+    ips.pn_kick_lmom(dt / 2)
+    ips.pn_kick_amom(dt / 2)
 
-    # ips = vw_swap(ips)
+    ips.wx[...] = ips.vx
+    ips.wy[...] = ips.vy
+    ips.wz[...] = ips.vz
+    ips.wx += (ips.ax + ips.pnax) * dt / 2
+    ips.wy += (ips.ay + ips.pnay) * dt / 2
+    ips.wz += (ips.az + ips.pnaz) * dt / 2
+
+    ips = vw_swap(ips)
+    ips.set_pnacc(ips)
+    ips = vw_swap(ips)
+
+    ips.vx += (ips.ax + ips.pnax) * dt
+    ips.vy += (ips.ay + ips.pnay) * dt
+    ips.vz += (ips.az + ips.pnaz) * dt
+
+    ips.set_pnacc(ips)
+    ips.wx += (ips.ax + ips.pnax) * dt / 2
+    ips.wy += (ips.ay + ips.pnay) * dt / 2
+    ips.wz += (ips.az + ips.pnaz) * dt / 2
+    ips.vx[...] = ips.wx
+    ips.vy[...] = ips.wy
+    ips.vz[...] = ips.wz
+
+    ips.pn_kick_ke(dt / 2)
+    ips.pn_kick_lmom(dt / 2)
+    ips.pn_kick_amom(dt / 2)
+    #
+
+    #
+    # ips.vx += (ips.ax * dt + ips.wx) / 2
+    # ips.vy += (ips.ay * dt + ips.wy) / 2
+    # ips.vz += (ips.az * dt + ips.wz) / 2
+
     # ips.set_pnacc(ips)
     # ips.pn_kick_ke(dt)
     # ips.pn_kick_lmom(dt)
     # ips.pn_kick_amom(dt)
-    # ips = vw_swap(ips)
+    # ips.wx[...] = 2 * ips.pnax * dt - ips.wx
+    # ips.wy[...] = 2 * ips.pnay * dt - ips.wy
+    # ips.wz[...] = 2 * ips.pnaz * dt - ips.wz
 
-    # ips.vx += (ips.ax + ips.pnax) * dt
-    # ips.vy += (ips.ay + ips.pnay) * dt
-    # ips.vz += (ips.az + ips.pnaz) * dt
-
-    # ips.set_pnacc(ips)
-    # ips.wx += (ips.ax + ips.pnax) * dt / 2
-    # ips.wy += (ips.ay + ips.pnay) * dt / 2
-    # ips.wz += (ips.az + ips.pnaz) * dt / 2
-    #
-
-    #
-    ips.vx += (ips.ax * dt + ips.wx) / 2
-    ips.vy += (ips.ay * dt + ips.wy) / 2
-    ips.vz += (ips.az * dt + ips.wz) / 2
-
-    ips.set_pnacc(ips)
-    ips.pn_kick_ke(dt)
-    ips.pn_kick_lmom(dt)
-    ips.pn_kick_amom(dt)
-    ips.wx[...] = 2 * ips.pnax * dt - ips.wx
-    ips.wy[...] = 2 * ips.pnay * dt - ips.wy
-    ips.wz[...] = 2 * ips.pnaz * dt - ips.wz
-
-    ips.vx += (ips.ax * dt + ips.wx) / 2
-    ips.vy += (ips.ay * dt + ips.wy) / 2
-    ips.vz += (ips.az * dt + ips.wz) / 2
+    # ips.vx += (ips.ax * dt + ips.wx) / 2
+    # ips.vy += (ips.ay * dt + ips.wy) / 2
+    # ips.vz += (ips.az * dt + ips.wz) / 2
     #
 
     return ips
@@ -193,9 +205,9 @@ def twobody_solver(ips, dt, kernel=ext.Kepler()):
 
     """
     if hasattr(ips, 'include_pn_corrections'):
-        raise NotImplementedError("The current version of the "
-                                  "Kepler-solver does not include "
-                                  "post-Newtonian corrections.")
+        raise NotImplementedError('The current version of the '
+                                  'Kepler-solver does not include '
+                                  'post-Newtonian corrections.')
     else:
         kernel(ips, ips, dt=dt)
     return ips
@@ -242,22 +254,73 @@ def sf_kick(slow, fast, dt):
     fast.set_acc(slow)
     if hasattr(slow, 'include_pn_corrections'):
         #
-        # def vw_swap(ps):
-        #     ps.vx, ps.wx = ps.wx, ps.vx
-        #     ps.vy, ps.wy = ps.wy, ps.vy
-        #     ps.vz, ps.wz = ps.wz, ps.vz
-        #     return ps
-        # slow.set_pnacc(fast)
-        # fast.set_pnacc(slow)
-        # slow.wx += (slow.ax + slow.pnax) * dt / 2
-        # slow.wy += (slow.ay + slow.pnay) * dt / 2
-        # slow.wz += (slow.az + slow.pnaz) * dt / 2
-        # fast.wx += (fast.ax + fast.pnax) * dt / 2
-        # fast.wy += (fast.ay + fast.pnay) * dt / 2
-        # fast.wz += (fast.az + fast.pnaz) * dt / 2
+        slow.set_pnacc(fast)
+        fast.set_pnacc(slow)
+        slow.pn_kick_ke(dt / 2)
+        slow.pn_kick_lmom(dt / 2)
+        slow.pn_kick_amom(dt / 2)
+        fast.pn_kick_ke(dt / 2)
+        fast.pn_kick_lmom(dt / 2)
+        fast.pn_kick_amom(dt / 2)
 
-        # slow = vw_swap(slow)
-        # fast = vw_swap(fast)
+        slow.wx[...] = slow.vx
+        slow.wy[...] = slow.vy
+        slow.wz[...] = slow.vz
+        fast.wx[...] = fast.vx
+        fast.wy[...] = fast.vy
+        fast.wz[...] = fast.vz
+        slow.wx += (slow.ax + slow.pnax) * dt / 2
+        slow.wy += (slow.ay + slow.pnay) * dt / 2
+        slow.wz += (slow.az + slow.pnaz) * dt / 2
+        fast.wx += (fast.ax + fast.pnax) * dt / 2
+        fast.wy += (fast.ay + fast.pnay) * dt / 2
+        fast.wz += (fast.az + fast.pnaz) * dt / 2
+
+        slow = vw_swap(slow)
+        fast = vw_swap(fast)
+        slow.set_pnacc(fast)
+        fast.set_pnacc(slow)
+        slow = vw_swap(slow)
+        fast = vw_swap(fast)
+
+        slow.vx += (slow.ax + slow.pnax) * dt
+        slow.vy += (slow.ay + slow.pnay) * dt
+        slow.vz += (slow.az + slow.pnaz) * dt
+        fast.vx += (fast.ax + fast.pnax) * dt
+        fast.vy += (fast.ay + fast.pnay) * dt
+        fast.vz += (fast.az + fast.pnaz) * dt
+
+        slow.set_pnacc(fast)
+        fast.set_pnacc(slow)
+        slow.wx += (slow.ax + slow.pnax) * dt / 2
+        slow.wy += (slow.ay + slow.pnay) * dt / 2
+        slow.wz += (slow.az + slow.pnaz) * dt / 2
+        fast.wx += (fast.ax + fast.pnax) * dt / 2
+        fast.wy += (fast.ay + fast.pnay) * dt / 2
+        fast.wz += (fast.az + fast.pnaz) * dt / 2
+        slow.vx[...] = slow.wx
+        slow.vy[...] = slow.wy
+        slow.vz[...] = slow.wz
+        fast.vx[...] = fast.wx
+        fast.vy[...] = fast.wy
+        fast.vz[...] = fast.wz
+
+        slow.pn_kick_ke(dt / 2)
+        slow.pn_kick_lmom(dt / 2)
+        slow.pn_kick_amom(dt / 2)
+        fast.pn_kick_ke(dt / 2)
+        fast.pn_kick_lmom(dt / 2)
+        fast.pn_kick_amom(dt / 2)
+        #
+
+        #
+        # slow.vx += (slow.ax * dt + slow.wx) / 2
+        # slow.vy += (slow.ay * dt + slow.wy) / 2
+        # slow.vz += (slow.az * dt + slow.wz) / 2
+        # fast.vx += (fast.ax * dt + fast.wx) / 2
+        # fast.vy += (fast.ay * dt + fast.wy) / 2
+        # fast.vz += (fast.az * dt + fast.wz) / 2
+
         # slow.set_pnacc(fast)
         # fast.set_pnacc(slow)
         # slow.pn_kick_ke(dt)
@@ -266,55 +329,19 @@ def sf_kick(slow, fast, dt):
         # fast.pn_kick_ke(dt)
         # fast.pn_kick_lmom(dt)
         # fast.pn_kick_amom(dt)
-        # slow = vw_swap(slow)
-        # fast = vw_swap(fast)
+        # slow.wx[...] = 2 * slow.pnax * dt - slow.wx
+        # slow.wy[...] = 2 * slow.pnay * dt - slow.wy
+        # slow.wz[...] = 2 * slow.pnaz * dt - slow.wz
+        # fast.wx[...] = 2 * fast.pnax * dt - fast.wx
+        # fast.wy[...] = 2 * fast.pnay * dt - fast.wy
+        # fast.wz[...] = 2 * fast.pnaz * dt - fast.wz
 
-        # slow.vx += (slow.ax + slow.pnax) * dt
-        # slow.vy += (slow.ay + slow.pnay) * dt
-        # slow.vz += (slow.az + slow.pnaz) * dt
-        # fast.vx += (fast.ax + fast.pnax) * dt
-        # fast.vy += (fast.ay + fast.pnay) * dt
-        # fast.vz += (fast.az + fast.pnaz) * dt
-
-        # slow.set_pnacc(fast)
-        # fast.set_pnacc(slow)
-        # slow.wx += (slow.ax + slow.pnax) * dt / 2
-        # slow.wy += (slow.ay + slow.pnay) * dt / 2
-        # slow.wz += (slow.az + slow.pnaz) * dt / 2
-        # fast.wx += (fast.ax + fast.pnax) * dt / 2
-        # fast.wy += (fast.ay + fast.pnay) * dt / 2
-        # fast.wz += (fast.az + fast.pnaz) * dt / 2
-        #
-
-        #
-        slow.vx += (slow.ax * dt + slow.wx) / 2
-        slow.vy += (slow.ay * dt + slow.wy) / 2
-        slow.vz += (slow.az * dt + slow.wz) / 2
-        fast.vx += (fast.ax * dt + fast.wx) / 2
-        fast.vy += (fast.ay * dt + fast.wy) / 2
-        fast.vz += (fast.az * dt + fast.wz) / 2
-
-        slow.set_pnacc(fast)
-        fast.set_pnacc(slow)
-        slow.pn_kick_ke(dt)
-        slow.pn_kick_lmom(dt)
-        slow.pn_kick_amom(dt)
-        fast.pn_kick_ke(dt)
-        fast.pn_kick_lmom(dt)
-        fast.pn_kick_amom(dt)
-        slow.wx[...] = 2 * slow.pnax * dt - slow.wx
-        slow.wy[...] = 2 * slow.pnay * dt - slow.wy
-        slow.wz[...] = 2 * slow.pnaz * dt - slow.wz
-        fast.wx[...] = 2 * fast.pnax * dt - fast.wx
-        fast.wy[...] = 2 * fast.pnay * dt - fast.wy
-        fast.wz[...] = 2 * fast.pnaz * dt - fast.wz
-
-        slow.vx += (slow.ax * dt + slow.wx) / 2
-        slow.vy += (slow.ay * dt + slow.wy) / 2
-        slow.vz += (slow.az * dt + slow.wz) / 2
-        fast.vx += (fast.ax * dt + fast.wx) / 2
-        fast.vy += (fast.ay * dt + fast.wy) / 2
-        fast.vz += (fast.az * dt + fast.wz) / 2
+        # slow.vx += (slow.ax * dt + slow.wx) / 2
+        # slow.vy += (slow.ay * dt + slow.wy) / 2
+        # slow.vz += (slow.az * dt + slow.wz) / 2
+        # fast.vx += (fast.ax * dt + fast.wx) / 2
+        # fast.vy += (fast.ay * dt + fast.wy) / 2
+        # fast.vz += (fast.az * dt + fast.wz) / 2
         #
     else:
         slow = kick_n(slow, dt)
@@ -326,6 +353,8 @@ class SIAXX(object):
     """
 
     """
+    coefs = (None, None)
+
     def __init__(self, meth, sia):
         self.meth = meth
         self.sia = sia
@@ -568,22 +597,24 @@ class SIA(Base):
     """
 
     """
-    PROVIDED_METHODS = ['sia21s.dkd', 'sia21a.dkd', 'sia21h.dkd',
-                        'sia21s.kdk', 'sia21a.kdk', 'sia21h.kdk',
-                        'sia22s.dkd', 'sia22a.dkd', 'sia22h.dkd',
-                        'sia22s.kdk', 'sia22a.kdk', 'sia22h.kdk',
-                        'sia43s.dkd', 'sia43a.dkd', 'sia43h.dkd',
-                        'sia43s.kdk', 'sia43a.kdk', 'sia43h.kdk',
-                        'sia44s.dkd', 'sia44a.dkd', 'sia44h.dkd',
-                        'sia44s.kdk', 'sia44a.kdk', 'sia44h.kdk',
-                        'sia45s.dkd', 'sia45a.dkd', 'sia45h.dkd',
-                        'sia45s.kdk', 'sia45a.kdk', 'sia45h.kdk',
-                        'sia46s.dkd', 'sia46a.dkd', 'sia46h.dkd',
-                        'sia46s.kdk', 'sia46a.kdk', 'sia46h.kdk',
-                        'sia67s.dkd', 'sia67a.dkd', 'sia67h.dkd',
-                        'sia67s.kdk', 'sia67a.kdk', 'sia67h.kdk',
-                        'sia69s.dkd', 'sia69a.dkd', 'sia69h.dkd',
-                        'sia69s.kdk', 'sia69a.kdk', 'sia69h.kdk', ]
+    PROVIDED_METHODS = [
+        'sia21s.dkd', 'sia21a.dkd', 'sia21h.dkd',
+        'sia21s.kdk', 'sia21a.kdk', 'sia21h.kdk',
+        'sia22s.dkd', 'sia22a.dkd', 'sia22h.dkd',
+        'sia22s.kdk', 'sia22a.kdk', 'sia22h.kdk',
+        'sia43s.dkd', 'sia43a.dkd', 'sia43h.dkd',
+        'sia43s.kdk', 'sia43a.kdk', 'sia43h.kdk',
+        'sia44s.dkd', 'sia44a.dkd', 'sia44h.dkd',
+        'sia44s.kdk', 'sia44a.kdk', 'sia44h.kdk',
+        'sia45s.dkd', 'sia45a.dkd', 'sia45h.dkd',
+        'sia45s.kdk', 'sia45a.kdk', 'sia45h.kdk',
+        'sia46s.dkd', 'sia46a.dkd', 'sia46h.dkd',
+        'sia46s.kdk', 'sia46a.kdk', 'sia46h.kdk',
+        'sia67s.dkd', 'sia67a.dkd', 'sia67h.dkd',
+        'sia67s.kdk', 'sia67a.kdk', 'sia67h.kdk',
+        'sia69s.dkd', 'sia69a.dkd', 'sia69h.dkd',
+        'sia69s.kdk', 'sia69a.kdk', 'sia69h.kdk',
+    ]
 
     def __init__(self, eta, time, ps, method, **kwargs):
         """
@@ -591,6 +622,9 @@ class SIA(Base):
         """
         super(SIA, self).__init__(eta, time, ps, **kwargs)
         self.method = method
+
+        if method not in self.PROVIDED_METHODS:
+            raise ValueError('Invalid integration method: {0}'.format(method))
 
         if 's.' in method:
             self.update_tstep = False
@@ -601,8 +635,6 @@ class SIA(Base):
         elif 'h.' in method:
             self.update_tstep = True
             self.shared_tstep = False
-        else:
-            raise ValueError('Unexpected method: {0}'.format(method))
 
         if 'dkd' in method:
             if 'sia21' in method:
@@ -621,8 +653,6 @@ class SIA(Base):
                 self.bridge = SIA67('dkd', self)
             elif 'sia69' in method:
                 self.bridge = SIA69('dkd', self)
-            else:
-                raise ValueError('Unexpected method: {0}'.format(method))
         elif 'kdk' in method:
             if 'sia21' in method:
                 self.bridge = SIA21('kdk', self)
@@ -640,10 +670,6 @@ class SIA(Base):
                 self.bridge = SIA67('kdk', self)
             elif 'sia69' in method:
                 self.bridge = SIA69('kdk', self)
-            else:
-                raise ValueError('Unexpected method: {0}'.format(method))
-        else:
-            raise ValueError('Unexpected method: {0}'.format(method))
 
     def initialize(self, t_end):
         """
@@ -655,12 +681,9 @@ class SIA(Base):
                     self.method, ps.t_curr, t_end)
 
         if hasattr(ps, 'include_pn_corrections'):
-            ps.register_attribute("wx", "real")
-            ps.register_attribute("wy", "real")
-            ps.register_attribute("wz", "real")
-#            ps.wx[...] = ps.vx
-#            ps.wy[...] = ps.vy
-#            ps.wz[...] = ps.vz
+            ps.register_attribute('wx', 'real')
+            ps.register_attribute('wy', 'real')
+            ps.register_attribute('wz', 'real')
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)
@@ -707,18 +730,7 @@ class SIA(Base):
 
         slow, fast = self.bridge(slow, fast, dt)
 
-        if slow.n:
-            slow.tstep[...] = dt
-            slow.time += dt
-            slow.nstep += 1
-            if self.dumpper:
-                slc = slow.time % (self.dump_freq * dt) == 0
-                if any(slc):
-                    self.wl.append(slow[slc])
-            if self.viewer:
-                slc = slow.time % (self.gl_freq * dt) == 0
-                if any(slc):
-                    self.viewer.show_event(slow[slc])
+        slow = self.dump(dt, slow) if slow.n else slow
 
         return join(slow, fast)
 

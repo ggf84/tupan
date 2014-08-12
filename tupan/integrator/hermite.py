@@ -6,13 +6,12 @@ TODO.
 """
 
 
-from __future__ import print_function
 import logging
-from ..integrator import Base
+from .base import Base
 from ..lib.utils.timing import timings, bind_all
 
 
-__all__ = ["Hermite"]
+__all__ = ['Hermite']
 
 LOGGER = logging.getLogger(__name__)
 
@@ -394,22 +393,12 @@ class Hermite(Base):
         """
 
         """
-        if "ahermite" in self.method:
+        if 'ahermite' in self.method:
             dt = self.get_hermite_tstep(ps, self.eta, dt)
         ps = self.epec(2, ps, dt)
 
+        ps = self.dump(dt, ps)
         type(ps).t_curr += dt
-        ps.tstep[...] = dt
-        ps.time += dt
-        ps.nstep += 1
-        if self.dumpper:
-            slc = ps.time % (self.dump_freq * dt) == 0
-            if any(slc):
-                self.wl.append(ps[slc])
-        if self.viewer:
-            slc = ps.time % (self.gl_freq * dt) == 0
-            if any(slc):
-                self.viewer.show_event(ps[slc])
         return ps
 
 

@@ -6,14 +6,13 @@ TODO.
 """
 
 
-from __future__ import print_function, division
 import logging
-from ..integrator import Base
+from .base import Base
 from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
 
 
-__all__ = ["NREG"]
+__all__ = ['NREG']
 
 
 LOGGER = logging.getLogger(__name__)
@@ -31,16 +30,14 @@ def nreg_x(ps, dt, kernel=ext.NregX()):
     ps.rz[...] = ps.mrz / mtot
     pe = 0.5 * ps.u.sum()
     type(ps).U = pe
-    type(ps).t_curr += dt
-    return ps
+    return ps, dt
 
 #    ps.rx += dt * ps.vx
 #    ps.ry += dt * ps.vy
 #    ps.rz += dt * ps.vz
 #    type(ps).U = -ps.potential_energy
-#    type(ps).t_curr += dt
 #    ps.set_acc(ps)
-#    return ps
+#    return ps, dt
 
 
 @timings
@@ -81,11 +78,11 @@ def anreg_step(ps, h):
     """
 
     """
-    ps = nreg_x(ps, 0.5 * (h / ps.W))
+    ps, dt0 = nreg_x(ps, 0.5 * (h / ps.W))
     ps = nreg_v(ps, (h / ps.U))
-    ps = nreg_x(ps, 0.5 * (h / ps.W))
+    ps, dt1 = nreg_x(ps, 0.5 * (h / ps.W))
 
-    return ps
+    return ps, (dt0 + dt1)
 
 
 @timings
@@ -93,11 +90,11 @@ def nreg_step(ps, h):
     """
 
     """
-    ps = anreg_step(ps, 0.5 * (h * ps.S))
-    type(ps).S = 1/(2/ps.W - 1/ps.S)
-    ps = anreg_step(ps, 0.5 * (h * ps.S))
+    ps, dt0 = anreg_step(ps, 0.5 * (h * ps.S))
+    type(ps).S = 1 / (2 / ps.W - 1 / ps.S)
+    ps, dt1 = anreg_step(ps, 0.5 * (h * ps.S))
 
-    return ps
+    return ps, (dt0 + dt1)
 
 
 @bind_all(timings)
@@ -150,30 +147,17 @@ class NREG(Base):
             self.viewer.show_event(ps)
             self.viewer.enter_main_loop()
 
-    def do_step(self, ps, dt):
+    def do_step(self, ps, h):
         """
 
         """
-        if "anreg" in self.method:
-            t0 = ps.t_curr
-            ps = anreg_step(ps, dt/2)
-            t1 = ps.t_curr
+        if 'anreg' in self.method:
+            ps, dt = anreg_step(ps, h / 2)
         else:
-            t0 = ps.t_curr
-            ps = nreg_step(ps, dt)
-            t1 = ps.t_curr
+            ps, dt = nreg_step(ps, h)
 
-        ps.tstep[...] = t1 - t0
-        ps.time += dt
-        ps.nstep += 1
-        if self.dumpper:
-            slc = ps.time % (self.dump_freq * dt) == 0
-            if any(slc):
-                self.wl.append(ps[slc])
-        if self.viewer:
-            slc = ps.time % (self.gl_freq * dt) == 0
-            if any(slc):
-                self.viewer.show_event(ps[slc])
+        ps = self.dump(dt, ps)
+        type(ps).t_curr += dt
         return ps
 
 

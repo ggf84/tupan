@@ -6,14 +6,13 @@ TODO.
 """
 
 
-from __future__ import print_function, division
 import logging
-from ..integrator import Base
+from .base import Base
 from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
 
 
-__all__ = ["Sakura"]
+__all__ = ['Sakura']
 
 
 LOGGER = logging.getLogger(__name__)
@@ -103,13 +102,13 @@ class Sakura(Base):
         """
         ps.set_tstep(ps, eta)
 
-        iw2_a = (eta/ps.tstep)**2
-        iw2_b = (eta/ps.tstepij)**2
+        iw2_a = (eta / ps.tstep)**2
+        iw2_b = (eta / ps.tstepij)**2
 
         diw2 = (iw2_a - iw2_b)
 
         w2_sakura = diw2.max()
-        dt_sakura = eta/(1 + w2_sakura)**0.5
+        dt_sakura = eta / (1 + w2_sakura)**0.5
 
         ps.tstep[...] = dt_sakura
 
@@ -140,22 +139,12 @@ class Sakura(Base):
 # #                   print(nsteps, de, tol)
 #                    break
 
-        if "asakura" in self.method:
+        if 'asakura' in self.method:
             dt = self.get_sakura_tstep(ps, self.eta, dt)
         ps = sakura_step(ps, dt)
 
+        ps = self.dump(dt, ps)
         type(ps).t_curr += dt
-        ps.tstep[...] = dt
-        ps.time += dt
-        ps.nstep += 1
-        if self.dumpper:
-            slc = ps.time % (self.dump_freq * dt) == 0
-            if any(slc):
-                self.wl.append(ps[slc])
-        if self.viewer:
-            slc = ps.time % (self.gl_freq * dt) == 0
-            if any(slc):
-                self.viewer.show_event(ps[slc])
         return ps
 
 
