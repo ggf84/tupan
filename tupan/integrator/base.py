@@ -11,6 +11,25 @@ import math
 import numpy as np
 
 
+def power_of_two(ps, dtmax):
+    """
+
+    """
+    tcurr = ps.t_curr
+    dt = abs(ps.tstep).min()
+
+    power = int(np.log2(abs(dt)) - 1)
+    dtq = 2.0**power
+    dtq = min(dtq, abs(dtmax))
+    dtq = math.copysign(dtq, dtmax)
+
+    tnext = tcurr + dtq
+    while tnext % dtq != 0:
+        dtq /= 2
+
+    return dtq
+
+
 class Base(object):
     """
 
@@ -54,27 +73,6 @@ class Base(object):
         dt = max(dt, abs(t_end)*(2*sys.float_info.epsilon))
         return math.copysign(dt, self.eta)
 
-    def get_min_block_tstep(self, ps, dt):
-        """
-
-        """
-        min_ts = ps.min_tstep()
-
-        power = int(np.log2(min_ts) - 1)
-        min_bts = 2.0**power
-
-        t_curr = ps.t_curr
-        t_next = t_curr + min_bts
-        while t_next % min_bts != 0:
-            min_bts /= 2
-
-        min_bts = math.copysign(min_bts, dt)
-
-        if abs(min_bts) > abs(dt):
-            min_bts = dt
-
-        return min_bts
-
     def initialize(self, t_end):
         """
 
@@ -94,9 +92,6 @@ class Base(object):
         raise NotImplementedError
 
     def dump(self, dt, ps):
-        ps.tstep[...] = dt
-        ps.time += dt
-        ps.nstep += 1
         if self.dumpper:
             slc = abs(ps.time // dt) % self.dump_freq == 0
             if any(slc):
@@ -105,7 +100,6 @@ class Base(object):
             slc = abs(ps.time // dt) % self.gl_freq == 0
             if any(slc):
                 self.viewer.show_event(ps[slc])
-        return ps
 
     def evolve_step(self, t_end):
         """

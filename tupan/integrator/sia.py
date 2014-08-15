@@ -7,7 +7,7 @@ TODO.
 
 
 import logging
-from .base import Base
+from .base import Base, power_of_two
 from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
 
@@ -25,6 +25,9 @@ def split(ps, condition):
     """Splits the particle's system into slow/fast components.
 
     """
+    if all(condition):
+        return ps, type(ps)()
+
     if ps.n <= 2:       # stop recursion and use a few-body solver!
         return ps, type(ps)()
 
@@ -355,9 +358,9 @@ class SIAXX(object):
     """
     coefs = (None, None)
 
-    def __init__(self, meth, sia):
+    def __init__(self, manager, meth):
+        self.manager = manager
         self.meth = meth
-        self.sia = sia
 
     def dkd(self, ips, dt):
         """Standard DKD-type propagator.
@@ -412,7 +415,7 @@ class SIAXX(object):
 
         """
         evolve = getattr(self, self.meth)
-        recurse = self.sia.recurse
+        recurse = self.manager.recurse
 
         ck, cd = self.coefs
         cn = len(cd) - 1
@@ -433,6 +436,15 @@ class SIAXX(object):
             if cd[i]:
                 slow, fast = sf_drift(slow, fast, cd[i] * dt, evolve, recurse)
 
+        if fast.n == 0:
+            type(slow).t_curr += dt
+
+        if slow.n:
+            slow.tstep[...] = dt
+            slow.time += dt
+            slow.nstep += 1
+            self.manager.dump(dt, slow)
+
         return slow, fast
 
     def sf_kdk(self, slow, fast, dt):
@@ -440,7 +452,7 @@ class SIAXX(object):
 
         """
         evolve = getattr(self, self.meth)
-        recurse = self.sia.recurse
+        recurse = self.manager.recurse
 
         cd, ck = self.coefs
         cn = len(cd) - 1
@@ -460,6 +472,15 @@ class SIAXX(object):
                 slow, fast = sf_drift(slow, fast, cd[i] * dt, evolve, recurse)
             if ck[i]:
                 slow, fast = sf_kick(slow, fast, ck[i] * dt)
+
+        if fast.n == 0:
+            type(slow).t_curr += dt
+
+        if slow.n:
+            slow.tstep[...] = dt
+            slow.time += dt
+            slow.nstep += 1
+            self.manager.dump(dt, slow)
 
         return slow, fast
 
@@ -598,22 +619,22 @@ class SIA(Base):
 
     """
     PROVIDED_METHODS = [
-        'sia21s.dkd', 'sia21a.dkd', 'sia21h.dkd',
-        'sia21s.kdk', 'sia21a.kdk', 'sia21h.kdk',
-        'sia22s.dkd', 'sia22a.dkd', 'sia22h.dkd',
-        'sia22s.kdk', 'sia22a.kdk', 'sia22h.kdk',
-        'sia43s.dkd', 'sia43a.dkd', 'sia43h.dkd',
-        'sia43s.kdk', 'sia43a.kdk', 'sia43h.kdk',
-        'sia44s.dkd', 'sia44a.dkd', 'sia44h.dkd',
-        'sia44s.kdk', 'sia44a.kdk', 'sia44h.kdk',
-        'sia45s.dkd', 'sia45a.dkd', 'sia45h.dkd',
-        'sia45s.kdk', 'sia45a.kdk', 'sia45h.kdk',
-        'sia46s.dkd', 'sia46a.dkd', 'sia46h.dkd',
-        'sia46s.kdk', 'sia46a.kdk', 'sia46h.kdk',
-        'sia67s.dkd', 'sia67a.dkd', 'sia67h.dkd',
-        'sia67s.kdk', 'sia67a.kdk', 'sia67h.kdk',
-        'sia69s.dkd', 'sia69a.dkd', 'sia69h.dkd',
-        'sia69s.kdk', 'sia69a.kdk', 'sia69h.kdk',
+        'sia21c.dkd', 'sia21a.dkd', 'sia21h.dkd',
+        'sia21c.kdk', 'sia21a.kdk', 'sia21h.kdk',
+        'sia22c.dkd', 'sia22a.dkd', 'sia22h.dkd',
+        'sia22c.kdk', 'sia22a.kdk', 'sia22h.kdk',
+        'sia43c.dkd', 'sia43a.dkd', 'sia43h.dkd',
+        'sia43c.kdk', 'sia43a.kdk', 'sia43h.kdk',
+        'sia44c.dkd', 'sia44a.dkd', 'sia44h.dkd',
+        'sia44c.kdk', 'sia44a.kdk', 'sia44h.kdk',
+        'sia45c.dkd', 'sia45a.dkd', 'sia45h.dkd',
+        'sia45c.kdk', 'sia45a.kdk', 'sia45h.kdk',
+        'sia46c.dkd', 'sia46a.dkd', 'sia46h.dkd',
+        'sia46c.kdk', 'sia46a.kdk', 'sia46h.kdk',
+        'sia67c.dkd', 'sia67a.dkd', 'sia67h.dkd',
+        'sia67c.kdk', 'sia67a.kdk', 'sia67h.kdk',
+        'sia69c.dkd', 'sia69a.dkd', 'sia69h.dkd',
+        'sia69c.kdk', 'sia69a.kdk', 'sia69h.kdk',
     ]
 
     def __init__(self, eta, time, ps, method, **kwargs):
@@ -626,9 +647,8 @@ class SIA(Base):
         if method not in self.PROVIDED_METHODS:
             raise ValueError('Invalid integration method: {0}'.format(method))
 
-        if 's.' in method:
+        if 'c.' in method:
             self.update_tstep = False
-            self.shared_tstep = True
         elif 'a.' in method:
             self.update_tstep = True
             self.shared_tstep = True
@@ -638,38 +658,38 @@ class SIA(Base):
 
         if 'dkd' in method:
             if 'sia21' in method:
-                self.bridge = SIA21('dkd', self)
+                self.bridge = SIA21(self, 'dkd')
             elif 'sia22' in method:
-                self.bridge = SIA22('dkd', self)
+                self.bridge = SIA22(self, 'dkd')
             elif 'sia43' in method:
-                self.bridge = SIA43('dkd', self)
+                self.bridge = SIA43(self, 'dkd')
             elif 'sia44' in method:
-                self.bridge = SIA44('dkd', self)
+                self.bridge = SIA44(self, 'dkd')
             elif 'sia45' in method:
-                self.bridge = SIA45('dkd', self)
+                self.bridge = SIA45(self, 'dkd')
             elif 'sia46' in method:
-                self.bridge = SIA46('dkd', self)
+                self.bridge = SIA46(self, 'dkd')
             elif 'sia67' in method:
-                self.bridge = SIA67('dkd', self)
+                self.bridge = SIA67(self, 'dkd')
             elif 'sia69' in method:
-                self.bridge = SIA69('dkd', self)
+                self.bridge = SIA69(self, 'dkd')
         elif 'kdk' in method:
             if 'sia21' in method:
-                self.bridge = SIA21('kdk', self)
+                self.bridge = SIA21(self, 'kdk')
             elif 'sia22' in method:
-                self.bridge = SIA22('kdk', self)
+                self.bridge = SIA22(self, 'kdk')
             elif 'sia43' in method:
-                self.bridge = SIA43('kdk', self)
+                self.bridge = SIA43(self, 'kdk')
             elif 'sia44' in method:
-                self.bridge = SIA44('kdk', self)
+                self.bridge = SIA44(self, 'kdk')
             elif 'sia45' in method:
-                self.bridge = SIA45('kdk', self)
+                self.bridge = SIA45(self, 'kdk')
             elif 'sia46' in method:
-                self.bridge = SIA46('kdk', self)
+                self.bridge = SIA46(self, 'kdk')
             elif 'sia67' in method:
-                self.bridge = SIA67('kdk', self)
+                self.bridge = SIA67(self, 'kdk')
             elif 'sia69' in method:
-                self.bridge = SIA69('kdk', self)
+                self.bridge = SIA69(self, 'kdk')
 
     def initialize(self, t_end):
         """
@@ -711,27 +731,22 @@ class SIA(Base):
         """
 
         """
-        ps = self.recurse(ps, dt)
-        type(ps).t_curr += dt
-        return ps
+        return self.recurse(ps, dt)
 
     def recurse(self, ps, dt):
         """
 
         """
-        flag = -1
         if self.update_tstep:
-            flag = 1
             ps.set_tstep(ps, self.eta)
             if self.shared_tstep:
-                dt = self.get_min_block_tstep(ps, dt)
+                dt = power_of_two(ps, dt)
+            condition = abs(ps.tstep) > abs(dt)
+        else:
+            condition = abs(ps.tstep) > -1
 
-        slow, fast = split(ps, abs(ps.tstep) > flag*abs(dt))
-
+        slow, fast = split(ps, condition)
         slow, fast = self.bridge(slow, fast, dt)
-
-        slow = self.dump(dt, slow) if slow.n else slow
-
         return join(slow, fast)
 
 

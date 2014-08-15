@@ -156,8 +156,11 @@ class NREG(Base):
         else:
             ps, dt = nreg_step(ps, h)
 
-        ps = self.dump(dt, ps)
+        ps.tstep[...] = dt
+        ps.time += dt
+        ps.nstep += 1
         type(ps).t_curr += dt
+        self.dump(dt, ps)
         return ps
 
 

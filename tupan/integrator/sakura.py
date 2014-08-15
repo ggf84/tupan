@@ -7,7 +7,7 @@ TODO.
 
 
 import logging
-from .base import Base
+from .base import Base, power_of_two
 from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
 
@@ -112,8 +112,7 @@ class Sakura(Base):
 
         ps.tstep[...] = dt_sakura
 
-        min_bts = self.get_min_block_tstep(ps, dt)
-        return min_bts
+        return power_of_two(ps, dt)
 
     def do_step(self, ps, dt):
         """
@@ -143,8 +142,11 @@ class Sakura(Base):
             dt = self.get_sakura_tstep(ps, self.eta, dt)
         ps = sakura_step(ps, dt)
 
-        ps = self.dump(dt, ps)
+        ps.tstep[...] = dt
+        ps.time += dt
+        ps.nstep += 1
         type(ps).t_curr += dt
+        self.dump(dt, ps)
         return ps
 
 

@@ -355,19 +355,6 @@ class NbodyMethods(BaseNbodyMethods):
         """
         kernel(self, other)
 
-    # -- miscellaneous methods
-    def min_tstep(self):
-        """Minimum absolute value of tstep.
-
-        """
-        return abs(self.tstep).min()
-
-    def max_tstep(self):
-        """Maximum absolute value of tstep.
-
-        """
-        return abs(self.tstep).max()
-
     # -- lenght scales
     @property
     def virial_radius(self):
