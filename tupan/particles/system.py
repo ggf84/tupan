@@ -61,11 +61,12 @@ class ParticleSystem(AbstractNbodyMethods):
         obj.set_members(members)
         return obj
 
-    def register_attribute(self, name, sctype, doc=''):
+    def register_attribute(self, name, shape, sctype, doc=''):
         for member in self.members:
-            member.register_attribute(name, sctype, doc)
+            member.register_attribute(name, shape, sctype, doc)
 
-        super(ParticleSystem, self).register_attribute(name, sctype, doc)
+        super(ParticleSystem, self).register_attribute(
+            name, shape, sctype, doc)
 
     #
     # miscellaneous methods
@@ -184,18 +185,23 @@ class ParticleSystem(AbstractNbodyMethods):
 
     def _init_lazyproperty(self, lazyprop):
         attr = lazyprop.name
+        shape = lazyprop.shape
         members = self.members
         if len(members) == 1:
-            value = getattr(next(iter(members)), attr)
+            member = next(iter(members))
+            value = getattr(member, attr)
+            value = np.array(value, copy=False, order='C', ndmin=1)
+            setattr(member, attr, value)
             setattr(self, attr, value)
             return value
         arrays = [getattr(member, attr) for member in members]
-        value = np.concatenate(arrays)
+        value = np.concatenate(arrays, 1) if shape else np.concatenate(arrays)
+        value = np.array(value, copy=False, order='C', ndmin=1)
         ns = 0
         nf = 0
         for member in members:
             nf += member.n
-            setattr(member, attr, value[ns:nf])
+            setattr(member, attr, value[..., ns:nf])
             ns += member.n
         setattr(self, attr, value)
         return value

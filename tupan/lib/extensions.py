@@ -83,10 +83,10 @@ class Phi(AbstractExtension):
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
-                   ips.mass, ips.rx, ips.ry, ips.rz,
+                   ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
                    ips.eps2,
                    jps.n,
-                   jps.mass, jps.rx, jps.ry, jps.rz,
+                   jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
                    jps.eps2)
 
         outargs = (ips.phi,)
@@ -94,23 +94,19 @@ class Phi(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
     def _pycalc(self, ips, jps):
-        # Never use this method for production runs. It is very slow
-        # and it's here only for performance comparisons. It is also
-        # likely that only the classes Acc and Phi will have an
-        # implementation of this method.
+        # Never use this method for production runs. It is very
+        # slow and it's here only for performance comparisons.
         import numpy as np
         for i in range(ips.n):
-            rx = ips.rx[i] - jps.rx
-            ry = ips.ry[i] - jps.ry
-            rz = ips.rz[i] - jps.rz
+            r = (ips.pos[..., i] - jps.pos.T).T
             e2 = ips.eps2[i] + jps.eps2
-            r2 = rx * rx + ry * ry + rz * rz
+            r2 = (r**2).sum(0)
             mask = r2 > 0
             inv_r2 = 1 / (r2 + e2)
             inv_r = np.sqrt(inv_r2)
-            ips.phi[i] = -(jps.mass * inv_r)[mask].sum()
+            ips.phi[i] = -(jps.mass * inv_r)[mask].sum(0)
         return (ips.phi,)
-#    calc = _pycalc
+#    __call__ = _pycalc
 
 
 @bind_all(timings)
@@ -123,38 +119,31 @@ class Acc(AbstractExtension):
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
-                   ips.mass, ips.rx, ips.ry, ips.rz,
+                   ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
                    ips.eps2,
                    jps.n,
-                   jps.mass, jps.rx, jps.ry, jps.rz,
+                   jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
                    jps.eps2)
 
-        outargs = (ips.ax, ips.ay, ips.az)
+        outargs = (ips.acc[0], ips.acc[1], ips.acc[2])
 
         self.kernel.set_args(inpargs, outargs)
 
     def _pycalc(self, ips, jps):
-        # Never use this method for production runs. It is very slow
-        # and it's here only for performance comparisons. It is also
-        # likely that only the classes Acc and Phi will have an
-        # implementation of this method.
+        # Never use this method for production runs. It is very
+        # slow and it's here only for performance comparisons.
         import numpy as np
         for i in range(ips.n):
-            rx = ips.rx[i] - jps.rx
-            ry = ips.ry[i] - jps.ry
-            rz = ips.rz[i] - jps.rz
+            r = (ips.pos[..., i] - jps.pos.T).T
             e2 = ips.eps2[i] + jps.eps2
-            r2 = rx * rx + ry * ry + rz * rz
+            r2 = (r**2).sum(0)
             mask = r2 > 0
             inv_r2 = 1 / (r2 + e2)
             inv_r = np.sqrt(inv_r2)
-            inv_r3 = inv_r * inv_r2
-            inv_r3 *= jps.mass
-            ips.ax[i] = -(inv_r3 * rx)[mask].sum()
-            ips.ay[i] = -(inv_r3 * ry)[mask].sum()
-            ips.az[i] = -(inv_r3 * rz)[mask].sum()
-        return (ips.ax, ips.ay, ips.az)
-#    calc = _pycalc
+            inv_r3 = jps.mass * inv_r * inv_r2
+            ips.acc[..., i] = -(inv_r3 * r).T[mask].sum(0)
+        return (ips.acc[0], ips.acc[1], ips.acc[2])
+#    __call__ = _pycalc
 
 
 @bind_all(timings)
@@ -167,14 +156,14 @@ class AccJerk(AbstractExtension):
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
-                   ips.mass, ips.rx, ips.ry, ips.rz,
-                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
+                   ips.eps2, ips.vel[0], ips.vel[1], ips.vel[2],
                    jps.n,
-                   jps.mass, jps.rx, jps.ry, jps.rz,
-                   jps.eps2, jps.vx, jps.vy, jps.vz)
+                   jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
+                   jps.eps2, jps.vel[0], jps.vel[1], jps.vel[2])
 
-        outargs = (ips.ax, ips.ay, ips.az,
-                   ips.jx, ips.jy, ips.jz)
+        outargs = (ips.acc[0], ips.acc[1], ips.acc[2],
+                   ips.jrk[0], ips.jrk[1], ips.jrk[2])
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -189,16 +178,18 @@ class SnapCrackle(AbstractExtension):
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
-                   ips.mass, ips.rx, ips.ry, ips.rz,
-                   ips.eps2, ips.vx, ips.vy, ips.vz,
-                   ips.ax, ips.ay, ips.az, ips.jx, ips.jy, ips.jz,
+                   ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
+                   ips.eps2, ips.vel[0], ips.vel[1], ips.vel[2],
+                   ips.acc[0], ips.acc[1], ips.acc[2],
+                   ips.jrk[0], ips.jrk[1], ips.jrk[2],
                    jps.n,
-                   jps.mass, jps.rx, jps.ry, jps.rz,
-                   jps.eps2, jps.vx, jps.vy, jps.vz,
-                   jps.ax, jps.ay, jps.az, jps.jx, jps.jy, jps.jz)
+                   jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
+                   jps.eps2, jps.vel[0], jps.vel[1], jps.vel[2],
+                   jps.acc[0], jps.acc[1], jps.acc[2],
+                   jps.jrk[0], jps.jrk[1], jps.jrk[2])
 
-        outargs = (ips.sx, ips.sy, ips.sz,
-                   ips.cx, ips.cy, ips.cz)
+        outargs = (ips.snp[0], ips.snp[1], ips.snp[2],
+                   ips.crk[0], ips.crk[1], ips.crk[2])
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -213,11 +204,11 @@ class Tstep(AbstractExtension):
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
-                   ips.mass, ips.rx, ips.ry, ips.rz,
-                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
+                   ips.eps2, ips.vel[0], ips.vel[1], ips.vel[2],
                    jps.n,
-                   jps.mass, jps.rx, jps.ry, jps.rz,
-                   jps.eps2, jps.vx, jps.vy, jps.vz,
+                   jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
+                   jps.eps2, jps.vel[0], jps.vel[1], jps.vel[2],
                    kwargs['eta'])
 
         outargs = (ips.tstep, ips.tstepij)
@@ -235,17 +226,17 @@ class PNAcc(AbstractExtension):
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
-                   ips.mass, ips.rx, ips.ry, ips.rz,
-                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
+                   ips.eps2, ips.vel[0], ips.vel[1], ips.vel[2],
                    jps.n,
-                   jps.mass, jps.rx, jps.ry, jps.rz,
-                   jps.eps2, jps.vx, jps.vy, jps.vz,
+                   jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
+                   jps.eps2, jps.vel[0], jps.vel[1], jps.vel[2],
                    pn.order, pn.clight**(-1),
                    pn.clight**(-2), pn.clight**(-3),
                    pn.clight**(-4), pn.clight**(-5),
                    pn.clight**(-6), pn.clight**(-7))
 
-        outargs = (ips.pnax, ips.pnay, ips.pnaz)
+        outargs = (ips.pnacc[0], ips.pnacc[1], ips.pnacc[2])
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -259,29 +250,21 @@ class Sakura(AbstractExtension):
         super(Sakura, self).__init__('sakura_kernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
-        if not hasattr(ips, 'drx'):
-            ips.register_attribute('drx', 'real')
-        if not hasattr(ips, 'dry'):
-            ips.register_attribute('dry', 'real')
-        if not hasattr(ips, 'drz'):
-            ips.register_attribute('drz', 'real')
-        if not hasattr(ips, 'dvx'):
-            ips.register_attribute('dvx', 'real')
-        if not hasattr(ips, 'dvy'):
-            ips.register_attribute('dvy', 'real')
-        if not hasattr(ips, 'dvz'):
-            ips.register_attribute('dvz', 'real')
+        if not hasattr(ips, 'dpos'):
+            ips.register_attribute('dpos', (3,), 'real')
+        if not hasattr(ips, 'dvel'):
+            ips.register_attribute('dvel', (3,), 'real')
 
         inpargs = (ips.n,
-                   ips.mass, ips.rx, ips.ry, ips.rz,
-                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
+                   ips.eps2, ips.vel[0], ips.vel[1], ips.vel[2],
                    jps.n,
-                   jps.mass, jps.rx, jps.ry, jps.rz,
-                   jps.eps2, jps.vx, jps.vy, jps.vz,
+                   jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
+                   jps.eps2, jps.vel[0], jps.vel[1], jps.vel[2],
                    kwargs['dt'], kwargs['flag'])
 
-        outargs = (ips.drx, ips.dry, ips.drz,
-                   ips.dvx, ips.dvy, ips.dvz)
+        outargs = (ips.dpos[0], ips.dpos[1], ips.dpos[2],
+                   ips.dvel[0], ips.dvel[1], ips.dvel[2])
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -295,31 +278,21 @@ class NregX(AbstractExtension):
         super(NregX, self).__init__('nreg_Xkernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
-        if not hasattr(ips, 'mrx'):
-            ips.register_attribute('mrx', 'real')
-        if not hasattr(ips, 'mry'):
-            ips.register_attribute('mry', 'real')
-        if not hasattr(ips, 'mrz'):
-            ips.register_attribute('mrz', 'real')
-        if not hasattr(ips, 'ax'):
-            ips.register_attribute('ax', 'real')
-        if not hasattr(ips, 'ay'):
-            ips.register_attribute('ay', 'real')
-        if not hasattr(ips, 'az'):
-            ips.register_attribute('az', 'real')
+        if not hasattr(ips, 'mr'):
+            ips.register_attribute('mr', (3,), 'real')
         if not hasattr(ips, 'u'):
-            ips.register_attribute('u', 'real')
+            ips.register_attribute('u', (), 'real')
 
         inpargs = (ips.n,
-                   ips.mass, ips.rx, ips.ry, ips.rz,
-                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
+                   ips.eps2, ips.vel[0], ips.vel[1], ips.vel[2],
                    jps.n,
-                   jps.mass, jps.rx, jps.ry, jps.rz,
-                   jps.eps2, jps.vx, jps.vy, jps.vz,
+                   jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
+                   jps.eps2, jps.vel[0], jps.vel[1], jps.vel[2],
                    kwargs['dt'])
 
-        outargs = (ips.mrx, ips.mry, ips.mrz,
-                   ips.ax, ips.ay, ips.az,
+        outargs = (ips.mr[0], ips.mr[1], ips.mr[2],
+                   ips.acc[0], ips.acc[1], ips.acc[2],
                    ips.u)
 
         self.kernel.set_args(inpargs, outargs)
@@ -334,24 +307,20 @@ class NregV(AbstractExtension):
         super(NregV, self).__init__('nreg_Vkernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
-        if not hasattr(ips, 'mvx'):
-            ips.register_attribute('mvx', 'real')
-        if not hasattr(ips, 'mvy'):
-            ips.register_attribute('mvy', 'real')
-        if not hasattr(ips, 'mvz'):
-            ips.register_attribute('mvz', 'real')
+        if not hasattr(ips, 'mv'):
+            ips.register_attribute('mv', (3,), 'real')
         if not hasattr(ips, 'mk'):
-            ips.register_attribute('mk', 'real')
+            ips.register_attribute('mk', (), 'real')
 
         inpargs = (ips.n,
-                   ips.mass, ips.vx, ips.vy, ips.vz,
-                   ips.ax, ips.ay, ips.az,
+                   ips.mass, ips.vel[0], ips.vel[1], ips.vel[2],
+                   ips.acc[0], ips.acc[1], ips.acc[2],
                    jps.n,
-                   jps.mass, jps.vx, jps.vy, jps.vz,
-                   jps.ax, jps.ay, jps.az,
+                   jps.mass, jps.vel[0], jps.vel[1], jps.vel[2],
+                   jps.acc[0], jps.acc[1], jps.acc[2],
                    kwargs['dt'])
 
-        outargs = (ips.mvx, ips.mvy, ips.mvz, ips.mk)
+        outargs = (ips.mv[0], ips.mv[1], ips.mv[2], ips.mk)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -370,15 +339,15 @@ class Kepler(AbstractExtension):
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
-                   ips.mass, ips.rx, ips.ry, ips.rz,
-                   ips.eps2, ips.vx, ips.vy, ips.vz,
+                   ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
+                   ips.eps2, ips.vel[0], ips.vel[1], ips.vel[2],
                    jps.n,
-                   jps.mass, jps.rx, jps.ry, jps.rz,
-                   jps.eps2, jps.vx, jps.vy, jps.vz,
+                   jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
+                   jps.eps2, jps.vel[0], jps.vel[1], jps.vel[2],
                    kwargs['dt'])
 
-        outargs = (ips.rx, ips.ry, ips.rz,
-                   ips.vx, ips.vy, ips.vz)
+        outargs = (ips.pos[0], ips.pos[1], ips.pos[2],
+                   ips.vel[0], ips.vel[1], ips.vel[2])
 
         self.kernel.set_args(inpargs, outargs)
 

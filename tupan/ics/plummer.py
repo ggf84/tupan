@@ -113,18 +113,14 @@ class Plummer(object):
 
         # set pos
         pos = self.set_pos(np.random.permutation(ilist))
-        self.ps.rx[...] = pos[0]
-        self.ps.ry[...] = pos[1]
-        self.ps.rz[...] = pos[2]
+        self.ps.pos[...] = pos
 
         # set phi
         self.ps.set_phi(self.ps)
 
         # set vel
         vel = self.set_vel(self.ps.phi)
-        self.ps.vx[...] = vel[0]
-        self.ps.vy[...] = vel[1]
-        self.ps.vz[...] = vel[2]
+        self.ps.vel[...] = vel
 
     def make_model(self):
         self.set_bodies()
@@ -173,8 +169,8 @@ class Plummer(object):
 
         b = self.ps
         n = b.n
-        rx = b.rx
-        ry = b.ry
+        rx = b.pos[0]
+        ry = b.pos[1]
         radius = 2 * n * b.mass
         color = n * b.mass
 
