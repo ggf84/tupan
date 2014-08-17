@@ -20,10 +20,8 @@ class Blackholes(Particle):
     """
     dtype = None
     attr_descr = Particle.attr_descr + [
-        ('spinx', 'real', 'x-spin'),
-        ('spiny', 'real', 'y-spin'),
-        ('spinz', 'real', 'z-spin'),
-        ('radius', 'real', 'radius'), ]
+        ('spin', (3,), 'real', 'spin'),
+        ('radius', (), 'real', 'radius'), ]
 
 
 # -- End of File --

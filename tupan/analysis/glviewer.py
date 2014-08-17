@@ -527,7 +527,7 @@ class GLviewer(object):
         if 'bodies' in self.ps.members:
             bodies = self.ps.members.bodies
             if bodies.n:
-                points = bodies.pos
+                points = bodies.pos.T
                 colors = self.get_colors(bodies.mass)
                 sizes = np.sqrt(bodies.eps2 * ntot)
 
@@ -540,7 +540,7 @@ class GLviewer(object):
         if 'blackholes' in self.ps.members:
             blackholes = self.ps.members.blackholes
             if blackholes.n:
-                points = blackholes.pos
+                points = blackholes.pos.T
                 colors = self.get_colors(blackholes.mass)
                 colors[..., 0].fill(0)
                 colors[..., 1].fill(1)
@@ -561,7 +561,7 @@ class GLviewer(object):
         if 'stars' in self.ps.members:
             stars = self.ps.members.stars
             if stars.n:
-                points = stars.pos
+                points = stars.pos.T
                 colors = self.get_colors(stars.mass)
                 sizes = np.sqrt(stars.eps2 * ntot)
 
@@ -574,7 +574,7 @@ class GLviewer(object):
         if 'sphs' in self.ps.members:
             sph = self.ps.members.sphs
             if sph.n:
-                points = sph.pos
+                points = sph.pos.T
                 colors = self.get_colors(sph.mass)
                 sizes = np.sqrt(sph.eps2 * ntot)
 

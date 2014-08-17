@@ -23,29 +23,17 @@ def sakura_step(ps, dt, kernel=ext.Sakura()):
     """
 
     """
-    ps.rx += ps.vx * dt / 2
-    ps.ry += ps.vy * dt / 2
-    ps.rz += ps.vz * dt / 2
+    ps.pos += ps.vel * dt / 2
 
     kernel(ps, ps, dt=dt/2, flag=-1)
-    ps.rx += ps.drx
-    ps.ry += ps.dry
-    ps.rz += ps.drz
-    ps.vx += ps.dvx
-    ps.vy += ps.dvy
-    ps.vz += ps.dvz
+    ps.pos += ps.dpos
+    ps.vel += ps.dvel
 
     kernel(ps, ps, dt=dt/2, flag=+1)
-    ps.rx += ps.drx
-    ps.ry += ps.dry
-    ps.rz += ps.drz
-    ps.vx += ps.dvx
-    ps.vy += ps.dvy
-    ps.vz += ps.dvz
+    ps.pos += ps.dpos
+    ps.vel += ps.dvel
 
-    ps.rx += ps.vx * dt / 2
-    ps.ry += ps.vy * dt / 2
-    ps.rz += ps.vz * dt / 2
+    ps.pos += ps.vel * dt / 2
 
     return ps
 

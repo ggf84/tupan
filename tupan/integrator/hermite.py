@@ -75,9 +75,7 @@ class H2(HX):
     def prepare(ps, eta):
         ps.set_tstep(ps, eta)
         ps.set_acc(ps)
-        ps.jx = ps.vx * 0
-        ps.jy = ps.vy * 0
-        ps.jz = ps.vz * 0
+        ps.jrk = ps.vel * 0
         return ps
 
     @staticmethod
@@ -87,9 +85,7 @@ class H2(HX):
         """
         h = dt
 
-        ps.rx += h * (ps.vx)
-        ps.ry += h * (ps.vy)
-        ps.rz += h * (ps.vz)
+        ps.pos += h * (ps.vel)
 
         return ps
 
@@ -103,42 +99,28 @@ class H2(HX):
 
         ps1.set_acc(ps1)
 
-        ax_p = (ps0.ax + ps1.ax)
-        ay_p = (ps0.ay + ps1.ay)
-        az_p = (ps0.az + ps1.az)
+        acc_p = (ps0.acc + ps1.acc)
 
-        ps1.vx[...] = ps0.vx + h2 * (ax_p)
-        ps1.vy[...] = ps0.vy + h2 * (ay_p)
-        ps1.vz[...] = ps0.vz + h2 * (az_p)
+        ps1.vel[...] = ps0.vel + h2 * (acc_p)
 
-        vx_p = (ps0.vx + ps1.vx)
-        vy_p = (ps0.vy + ps1.vy)
-        vz_p = (ps0.vz + ps1.vz)
+        vel_p = (ps0.vel + ps1.vel)
 
-        ps1.rx[...] = ps0.rx + h2 * (vx_p)
-        ps1.ry[...] = ps0.ry + h2 * (vy_p)
-        ps1.rz[...] = ps0.rz + h2 * (vz_p)
+        ps1.pos[...] = ps0.pos + h2 * (vel_p)
 
         hinv = 1 / h
 
-        ax_m = (ps0.ax - ps1.ax)
-        ay_m = (ps0.ay - ps1.ay)
-        az_m = (ps0.az - ps1.az)
+        acc_m = (ps0.acc - ps1.acc)
 
-        jx = -hinv * (ax_m)
-        jy = -hinv * (ay_m)
-        jz = -hinv * (az_m)
+        jrk = -hinv * (acc_m)
 
-        ps1.jx[...] = jx
-        ps1.jy[...] = jy
-        ps1.jz[...] = jz
+        ps1.jrk[...] = jrk
 
         return ps1
 
     @staticmethod
     def set_nextstep(ps, eta):
-        s0 = (ps.ax**2 + ps.ay**2 + ps.az**2)
-        s1 = (ps.jx**2 + ps.jy**2 + ps.jz**2)
+        s0 = (ps.acc**2).sum(0)
+        s1 = (ps.jrk**2).sum(0)
 
         u = s0
         l = s1
@@ -157,12 +139,8 @@ class H4(HX):
     def prepare(ps, eta):
         ps.set_tstep(ps, eta)
         ps.set_acc_jerk(ps)
-        ps.sx = ps.ax * 0
-        ps.sy = ps.ay * 0
-        ps.sz = ps.az * 0
-        ps.cx = ps.jx * 0
-        ps.cy = ps.jy * 0
-        ps.cz = ps.jz * 0
+        ps.snp = ps.acc * 0
+        ps.crk = ps.jrk * 0
         return ps
 
     @staticmethod
@@ -174,13 +152,8 @@ class H4(HX):
         h2 = h / 2
         h3 = h / 3
 
-        ps.rx += h * (ps.vx + h2 * (ps.ax + h3 * (ps.jx)))
-        ps.ry += h * (ps.vy + h2 * (ps.ay + h3 * (ps.jy)))
-        ps.rz += h * (ps.vz + h2 * (ps.az + h3 * (ps.jz)))
-
-        ps.vx += h * (ps.ax + h2 * (ps.jx))
-        ps.vy += h * (ps.ay + h2 * (ps.jy))
-        ps.vz += h * (ps.az + h2 * (ps.jz))
+        ps.pos += h * (ps.vel + h2 * (ps.acc + h3 * (ps.jrk)))
+        ps.vel += h * (ps.acc + h2 * (ps.jrk))
 
         return ps
 
@@ -195,61 +168,37 @@ class H4(HX):
 
         ps1.set_acc_jerk(ps1)
 
-        jx_m = (ps0.jx - ps1.jx)
-        jy_m = (ps0.jy - ps1.jy)
-        jz_m = (ps0.jz - ps1.jz)
-        ax_p = (ps0.ax + ps1.ax)
-        ay_p = (ps0.ay + ps1.ay)
-        az_p = (ps0.az + ps1.az)
+        jrk_m = (ps0.jrk - ps1.jrk)
+        acc_p = (ps0.acc + ps1.acc)
 
-        ps1.vx[...] = ps0.vx + h2 * (ax_p + h6 * (jx_m))
-        ps1.vy[...] = ps0.vy + h2 * (ay_p + h6 * (jy_m))
-        ps1.vz[...] = ps0.vz + h2 * (az_p + h6 * (jz_m))
+        ps1.vel[...] = ps0.vel + h2 * (acc_p + h6 * (jrk_m))
 
-        ax_m = (ps0.ax - ps1.ax)
-        ay_m = (ps0.ay - ps1.ay)
-        az_m = (ps0.az - ps1.az)
-        vx_p = (ps0.vx + ps1.vx)
-        vy_p = (ps0.vy + ps1.vy)
-        vz_p = (ps0.vz + ps1.vz)
+        acc_m = (ps0.acc - ps1.acc)
+        vel_p = (ps0.vel + ps1.vel)
 
-        ps1.rx[...] = ps0.rx + h2 * (vx_p + h6 * (ax_m))
-        ps1.ry[...] = ps0.ry + h2 * (vy_p + h6 * (ay_m))
-        ps1.rz[...] = ps0.rz + h2 * (vz_p + h6 * (az_m))
+        ps1.pos[...] = ps0.pos + h2 * (vel_p + h6 * (acc_m))
 
         hinv = 1 / h
         hinv2 = hinv * hinv
         hinv3 = hinv * hinv2
 
-        jx_p = (ps0.jx + ps1.jx)
-        jy_p = (ps0.jy + ps1.jy)
-        jz_p = (ps0.jz + ps1.jz)
+        jrk_p = (ps0.jrk + ps1.jrk)
 
-        sx = -hinv * (jx_m)
-        sy = -hinv * (jy_m)
-        sz = -hinv * (jz_m)
-        cx = 6 * hinv3 * (2 * ax_m + h * jx_p)
-        cy = 6 * hinv3 * (2 * ay_m + h * jy_p)
-        cz = 6 * hinv3 * (2 * az_m + h * jz_p)
-        sx += h2 * (cx)
-        sy += h2 * (cy)
-        sz += h2 * (cz)
+        snp = -hinv * (jrk_m)
+        crk = 6 * hinv3 * (2 * acc_m + h * jrk_p)
+        snp += h2 * (crk)
 
-        ps1.sx[...] = sx
-        ps1.sy[...] = sy
-        ps1.sz[...] = sz
-        ps1.cx[...] = cx
-        ps1.cy[...] = cy
-        ps1.cz[...] = cz
+        ps1.snp[...] = snp
+        ps1.crk[...] = crk
 
         return ps1
 
     @staticmethod
     def set_nextstep(ps, eta):
-        s0 = (ps.ax**2 + ps.ay**2 + ps.az**2)
-        s1 = (ps.jx**2 + ps.jy**2 + ps.jz**2)
-        s2 = (ps.sx**2 + ps.sy**2 + ps.sz**2)
-        s3 = (ps.cx**2 + ps.cy**2 + ps.cz**2)
+        s0 = (ps.acc**2).sum(0)
+        s1 = (ps.jrk**2).sum(0)
+        s2 = (ps.snp**2).sum(0)
+        s3 = (ps.crk**2).sum(0)
 
         u = (s0 * s2)**0.5 + s1
         l = (s1 * s3)**0.5 + s2
@@ -269,15 +218,9 @@ class H6(HX):
         ps.set_tstep(ps, eta)
         ps.set_acc_jerk(ps)
         ps.set_snap_crackle(ps)
-        ps.cx = ps.jx * 0
-        ps.cy = ps.jy * 0
-        ps.cz = ps.jz * 0
-        ps.d4ax = ps.sx * 0
-        ps.d4ay = ps.sy * 0
-        ps.d4az = ps.sz * 0
-        ps.d5ax = ps.cx * 0
-        ps.d5ay = ps.cy * 0
-        ps.d5az = ps.cz * 0
+        ps.crk = ps.jrk * 0
+        ps.d4a = ps.snp * 0
+        ps.d5a = ps.crk * 0
         return ps
 
     @staticmethod
@@ -291,29 +234,13 @@ class H6(HX):
         h4 = h / 4
         h5 = h / 5
 
-        ps.rx += h * (ps.vx
-                      + h2 * (ps.ax
-                              + h3 * (ps.jx
-                                      + h4 * (ps.sx
-                                              + h5 * (ps.cx)))))
-        ps.ry += h * (ps.vy
-                      + h2 * (ps.ay
-                              + h3 * (ps.jy
-                                      + h4 * (ps.sy
-                                              + h5 * (ps.cy)))))
-        ps.rz += h * (ps.vz
-                      + h2 * (ps.az
-                              + h3 * (ps.jz
-                                      + h4 * (ps.sz
-                                              + h5 * (ps.cz)))))
-
-        ps.vx += h * (ps.ax + h2 * (ps.jx + h3 * (ps.sx + h4 * (ps.cx))))
-        ps.vy += h * (ps.ay + h2 * (ps.jy + h3 * (ps.sy + h4 * (ps.cy))))
-        ps.vz += h * (ps.az + h2 * (ps.jz + h3 * (ps.sz + h4 * (ps.cz))))
-
-        ps.ax += h * (ps.jx + h2 * (ps.sx + h3 * (ps.cx)))
-        ps.ay += h * (ps.jy + h2 * (ps.sy + h3 * (ps.cy)))
-        ps.az += h * (ps.jz + h2 * (ps.sz + h3 * (ps.cz)))
+        ps.pos += h * (ps.vel
+                       + h2 * (ps.acc
+                               + h3 * (ps.jrk
+                                       + h4 * (ps.snp
+                                               + h5 * (ps.crk)))))
+        ps.vel += h * (ps.acc + h2 * (ps.jrk + h3 * (ps.snp + h4 * (ps.crk))))
+        ps.acc += h * (ps.jrk + h2 * (ps.snp + h3 * (ps.crk)))
 
         return ps
 
@@ -330,82 +257,47 @@ class H6(HX):
         ps1.set_snap_crackle(ps1)
         ps1.set_acc_jerk(ps1)
 
-        sx_p = (ps0.sx + ps1.sx)
-        sy_p = (ps0.sy + ps1.sy)
-        sz_p = (ps0.sz + ps1.sz)
-        jx_m = (ps0.jx - ps1.jx)
-        jy_m = (ps0.jy - ps1.jy)
-        jz_m = (ps0.jz - ps1.jz)
-        ax_p = (ps0.ax + ps1.ax)
-        ay_p = (ps0.ay + ps1.ay)
-        az_p = (ps0.az + ps1.az)
+        snp_p = (ps0.snp + ps1.snp)
+        jrk_m = (ps0.jrk - ps1.jrk)
+        acc_p = (ps0.acc + ps1.acc)
 
-        ps1.vx[...] = ps0.vx + h2 * (ax_p + h5 * (jx_m + h12 * (sx_p)))
-        ps1.vy[...] = ps0.vy + h2 * (ay_p + h5 * (jy_m + h12 * (sy_p)))
-        ps1.vz[...] = ps0.vz + h2 * (az_p + h5 * (jz_m + h12 * (sz_p)))
+        ps1.vel[...] = ps0.vel + h2 * (acc_p + h5 * (jrk_m + h12 * (snp_p)))
 
-        jx_p = (ps0.jx + ps1.jx)
-        jy_p = (ps0.jy + ps1.jy)
-        jz_p = (ps0.jz + ps1.jz)
-        ax_m = (ps0.ax - ps1.ax)
-        ay_m = (ps0.ay - ps1.ay)
-        az_m = (ps0.az - ps1.az)
-        vx_p = (ps0.vx + ps1.vx)
-        vy_p = (ps0.vy + ps1.vy)
-        vz_p = (ps0.vz + ps1.vz)
+        jrk_p = (ps0.jrk + ps1.jrk)
+        acc_m = (ps0.acc - ps1.acc)
+        vel_p = (ps0.vel + ps1.vel)
 
-        ps1.rx[...] = ps0.rx + h2 * (vx_p + h5 * (ax_m + h12 * (jx_p)))
-        ps1.ry[...] = ps0.ry + h2 * (vy_p + h5 * (ay_m + h12 * (jy_p)))
-        ps1.rz[...] = ps0.rz + h2 * (vz_p + h5 * (az_m + h12 * (jz_p)))
+        ps1.pos[...] = ps0.pos + h2 * (vel_p + h5 * (acc_m + h12 * (jrk_p)))
 
         hinv = 1 / h
         hinv2 = hinv * hinv
         hinv3 = hinv * hinv2
         hinv5 = hinv2 * hinv3
 
-        sx_m = (ps0.sx - ps1.sx)
-        sy_m = (ps0.sy - ps1.sy)
-        sz_m = (ps0.sz - ps1.sz)
+        snp_m = (ps0.snp - ps1.snp)
 
-        cx = 3 * hinv3 * (10 * ax_m + h * (5 * jx_p + h2 * sx_m))
-        cy = 3 * hinv3 * (10 * ay_m + h * (5 * jy_p + h2 * sy_m))
-        cz = 3 * hinv3 * (10 * az_m + h * (5 * jz_p + h2 * sz_m))
-        d4ax = 6 * hinv3 * (2 * jx_m + h * sx_p)
-        d4ay = 6 * hinv3 * (2 * jy_m + h * sy_p)
-        d4az = 6 * hinv3 * (2 * jz_m + h * sz_p)
-        d5ax = -60 * hinv5 * (12 * ax_m + h * (6 * jx_p + h * sx_m))
-        d5ay = -60 * hinv5 * (12 * ay_m + h * (6 * jy_p + h * sy_m))
-        d5az = -60 * hinv5 * (12 * az_m + h * (6 * jz_p + h * sz_m))
+        crk = 3 * hinv3 * (10 * acc_m + h * (5 * jrk_p + h2 * snp_m))
+        d4a = 6 * hinv3 * (2 * jrk_m + h * snp_p)
+        d5a = -60 * hinv5 * (12 * acc_m + h * (6 * jrk_p + h * snp_m))
 
         h4 = h / 4
-        cx += h2 * (d4ax + h4 * d5ax)
-        cy += h2 * (d4ay + h4 * d5ay)
-        cz += h2 * (d4az + h4 * d5az)
-        d4ax += h2 * (d5ax)
-        d4ay += h2 * (d5ay)
-        d4az += h2 * (d5az)
+        crk += h2 * (d4a + h4 * d5a)
+        d4a += h2 * (d5a)
 
-        ps1.cx[...] = cx
-        ps1.cy[...] = cy
-        ps1.cz[...] = cz
-
-        ps1.d4ax[...] = d4ax
-        ps1.d4ay[...] = d4ay
-        ps1.d4az[...] = d4az
-        ps1.d5ax[...] = d5ax
-        ps1.d5ay[...] = d5ay
-        ps1.d5az[...] = d5az
+        ps1.crk[...] = crk
+        ps1.d4a[...] = d4a
+        ps1.d5a[...] = d5a
 
         return ps1
 
     @staticmethod
     def set_nextstep(ps, eta):
-        s0 = (ps.ax**2 + ps.ay**2 + ps.az**2)
-        s1 = (ps.jx**2 + ps.jy**2 + ps.jz**2)
-        s2 = (ps.sx**2 + ps.sy**2 + ps.sz**2)
-        s3 = (ps.cx**2 + ps.cy**2 + ps.cz**2)
-        s4 = (ps.d4ax**2 + ps.d4ay**2 + ps.d4az**2)
-        s5 = (ps.d5ax**2 + ps.d5ay**2 + ps.d5az**2)
+        s0 = (ps.acc**2).sum(0)
+        s1 = (ps.jrk**2).sum(0)
+        s2 = (ps.snp**2).sum(0)
+        s3 = (ps.crk**2).sum(0)
+        s4 = (ps.d4a**2).sum(0)
+        s5 = (ps.d5a**2).sum(0)
 
         u = (s0 * s2)**0.5 + s1
         l = (s3 * s5)**0.5 + s4
@@ -425,18 +317,10 @@ class H8(HX):
         ps.set_tstep(ps, eta)
         ps.set_acc_jerk(ps)
         ps.set_snap_crackle(ps)
-        ps.d4ax = ps.sx * 0
-        ps.d4ay = ps.sy * 0
-        ps.d4az = ps.sz * 0
-        ps.d5ax = ps.cx * 0
-        ps.d5ay = ps.cy * 0
-        ps.d5az = ps.cz * 0
-        ps.d6ax = ps.d4ax * 0
-        ps.d6ay = ps.d4ay * 0
-        ps.d6az = ps.d4az * 0
-        ps.d7ax = ps.d5ax * 0
-        ps.d7ay = ps.d5ay * 0
-        ps.d7az = ps.d5az * 0
+        ps.d4a = ps.snp * 0
+        ps.d5a = ps.crk * 0
+        ps.d6a = ps.d4a * 0
+        ps.d7a = ps.d5a * 0
         return ps
 
     @staticmethod
@@ -452,66 +336,25 @@ class H8(HX):
         h6 = h / 6
         h7 = h / 7
 
-        ps.rx += h * (ps.vx
-                      + h2 * (ps.ax
-                              + h3 * (ps.jx
-                                      + h4 * (ps.sx
-                                              + h5 * (ps.cx
-                                                      + h6 * (ps.d4ax
-                                                              + h7 * (ps.d5ax)))))))
-        ps.ry += h * (ps.vy
-                      + h2 * (ps.ay
-                              + h3 * (ps.jy
-                                      + h4 * (ps.sy
-                                              + h5 * (ps.cy
-                                                      + h6 * (ps.d4ay
-                                                              + h7 * (ps.d5ay)))))))
-        ps.rz += h * (ps.vz
-                      + h2 * (ps.az
-                              + h3 * (ps.jz
-                                      + h4 * (ps.sz
-                                              + h5 * (ps.cz
-                                                      + h6 * (ps.d4az
-                                                              + h7 * (ps.d5az)))))))
-
-        ps.vx += h * (ps.ax
-                      + h2 * (ps.jx
-                              + h3 * (ps.sx
-                                      + h4 * (ps.cx
-                                              + h5 * (ps.d4ax
-                                                      + h6 * (ps.d5ax))))))
-        ps.vy += h * (ps.ay
-                      + h2 * (ps.jy
-                              + h3 * (ps.sy
-                                      + h4 * (ps.cy
-                                              + h5 * (ps.d4ay
-                                                      + h6 * (ps.d5ay))))))
-        ps.vz += h * (ps.az
-                      + h2 * (ps.jz
-                              + h3 * (ps.sz
-                                      + h4 * (ps.cz
-                                              + h5 * (ps.d4az
-                                                      + h6 * (ps.d5az))))))
-
-        ps.ax += h * (ps.jx
-                      + h2 * (ps.sx
-                              + h3 * (ps.cx
-                                      + h4 * (ps.d4ax
-                                              + h5 * (ps.d5ax)))))
-        ps.ay += h * (ps.jy
-                      + h2 * (ps.sy
-                              + h3 * (ps.cy
-                                      + h4 * (ps.d4ay
-                                              + h5 * (ps.d5ay)))))
-        ps.az += h * (ps.jz
-                      + h2 * (ps.sz
-                              + h3 * (ps.cz
-                                      + h4 * (ps.d4az
-                                              + h5 * (ps.d5az)))))
-
-        ps.jx += h * (ps.sx + h2 * (ps.cx + h3 * (ps.d4ax + h4 * (ps.d5ax))))
-        ps.jy += h * (ps.sy + h2 * (ps.cy + h3 * (ps.d4ay + h4 * (ps.d5ay))))
-        ps.jz += h * (ps.sz + h2 * (ps.cz + h3 * (ps.d4az + h4 * (ps.d5az))))
+        ps.pos += h * (ps.vel
+                       + h2 * (ps.acc
+                               + h3 * (ps.jrk
+                                       + h4 * (ps.snp
+                                               + h5 * (ps.crk
+                                                       + h6 * (ps.d4a
+                                                               + h7 * (ps.d5a)))))))
+        ps.vel += h * (ps.acc
+                       + h2 * (ps.jrk
+                               + h3 * (ps.snp
+                                       + h4 * (ps.crk
+                                               + h5 * (ps.d4a
+                                                       + h6 * (ps.d5a))))))
+        ps.acc += h * (ps.jrk
+                       + h2 * (ps.snp
+                               + h3 * (ps.crk
+                                       + h4 * (ps.d4a
+                                               + h5 * (ps.d5a)))))
+        ps.jrk += h * (ps.snp + h2 * (ps.crk + h3 * (ps.d4a + h4 * (ps.d5a))))
 
         return ps
 
@@ -529,57 +372,25 @@ class H8(HX):
         ps1.set_snap_crackle(ps1)
         ps1.set_acc_jerk(ps1)
 
-        cx_m = (ps0.cx - ps1.cx)
-        cy_m = (ps0.cy - ps1.cy)
-        cz_m = (ps0.cz - ps1.cz)
-        sx_p = (ps0.sx + ps1.sx)
-        sy_p = (ps0.sy + ps1.sy)
-        sz_p = (ps0.sz + ps1.sz)
-        jx_m = (ps0.jx - ps1.jx)
-        jy_m = (ps0.jy - ps1.jy)
-        jz_m = (ps0.jz - ps1.jz)
-        ax_p = (ps0.ax + ps1.ax)
-        ay_p = (ps0.ay + ps1.ay)
-        az_p = (ps0.az + ps1.az)
+        crk_m = (ps0.crk - ps1.crk)
+        snp_p = (ps0.snp + ps1.snp)
+        jrk_m = (ps0.jrk - ps1.jrk)
+        acc_p = (ps0.acc + ps1.acc)
 
-        ps1.vx[...] = ps0.vx + h2 * (ax_p
-                                     + h14 * (3 * jx_m
-                                              + h3 * (sx_p
-                                                      + h20 * (cx_m))))
-        ps1.vy[...] = ps0.vy + h2 * (ay_p
-                                     + h14 * (3 * jy_m
-                                              + h3 * (sy_p
-                                                      + h20 * (cy_m))))
-        ps1.vz[...] = ps0.vz + h2 * (az_p
-                                     + h14 * (3 * jz_m
-                                              + h3 * (sz_p
-                                                      + h20 * (cz_m))))
+        ps1.vel[...] = ps0.vel + h2 * (acc_p
+                                       + h14 * (3 * jrk_m
+                                                + h3 * (snp_p
+                                                        + h20 * (crk_m))))
 
-        sx_m = (ps0.sx - ps1.sx)
-        sy_m = (ps0.sy - ps1.sy)
-        sz_m = (ps0.sz - ps1.sz)
-        jx_p = (ps0.jx + ps1.jx)
-        jy_p = (ps0.jy + ps1.jy)
-        jz_p = (ps0.jz + ps1.jz)
-        ax_m = (ps0.ax - ps1.ax)
-        ay_m = (ps0.ay - ps1.ay)
-        az_m = (ps0.az - ps1.az)
-        vx_p = (ps0.vx + ps1.vx)
-        vy_p = (ps0.vy + ps1.vy)
-        vz_p = (ps0.vz + ps1.vz)
+        snp_m = (ps0.snp - ps1.snp)
+        jrk_p = (ps0.jrk + ps1.jrk)
+        acc_m = (ps0.acc - ps1.acc)
+        vel_p = (ps0.vel + ps1.vel)
 
-        ps1.rx[...] = ps0.rx + h2 * (vx_p
-                                     + h14 * (3 * ax_m
-                                              + h3 * (jx_p
-                                                      + h20 * (sx_m))))
-        ps1.ry[...] = ps0.ry + h2 * (vy_p
-                                     + h14 * (3 * ay_m
-                                              + h3 * (jy_p
-                                                      + h20 * (sy_m))))
-        ps1.rz[...] = ps0.rz + h2 * (vz_p
-                                     + h14 * (3 * az_m
-                                              + h3 * (jz_p
-                                                      + h20 * (sz_m))))
+        ps1.pos[...] = ps0.pos + h2 * (vel_p
+                                       + h14 * (3 * acc_m
+                                                + h3 * (jrk_p
+                                                        + h20 * (snp_m))))
 
         hinv = 1 / h
         hinv2 = hinv * hinv
@@ -587,79 +398,42 @@ class H8(HX):
         hinv5 = hinv2 * hinv3
         hinv7 = hinv2 * hinv5
 
-        cx_p = (ps0.cx + ps1.cx)
-        cy_p = (ps0.cy + ps1.cy)
-        cz_p = (ps0.cz + ps1.cz)
+        crk_p = (ps0.crk + ps1.crk)
 
-        d4ax = 3 * hinv3 * (10 * jx_m + h * (5 * sx_p + h2 * cx_m))
-        d4ay = 3 * hinv3 * (10 * jy_m + h * (5 * sy_p + h2 * cy_m))
-        d4az = 3 * hinv3 * (10 * jz_m + h * (5 * sz_p + h2 * cz_m))
-        d5ax = -15 * hinv5 * (168 * ax_m
-                              + h * (84 * jx_p
-                                     + h * (16 * sx_m
-                                            + h * cx_p)))
-        d5ay = -15 * hinv5 * (168 * ay_m
-                              + h * (84 * jy_p
-                                     + h * (16 * sy_m
-                                            + h * cy_p)))
-        d5az = -15 * hinv5 * (168 * az_m
-                              + h * (84 * jz_p
-                                     + h * (16 * sz_m
-                                            + h * cz_p)))
-        d6ax = -60 * hinv5 * (12 * jx_m + h * (6 * sx_p + h * cx_m))
-        d6ay = -60 * hinv5 * (12 * jy_m + h * (6 * sy_p + h * cy_m))
-        d6az = -60 * hinv5 * (12 * jz_m + h * (6 * sz_p + h * cz_m))
-        d7ax = 840 * hinv7 * (120 * ax_m
-                              + h * (60 * jx_p
-                                     + h * (12 * sx_m
-                                            + h * cx_p)))
-        d7ay = 840 * hinv7 * (120 * ay_m
-                              + h * (60 * jy_p
-                                     + h * (12 * sy_m
-                                            + h * cy_p)))
-        d7az = 840 * hinv7 * (120 * az_m
-                              + h * (60 * jz_p
-                                     + h * (12 * sz_m
-                                            + h * cz_p)))
+        d4a = 3 * hinv3 * (10 * jrk_m + h * (5 * snp_p + h2 * crk_m))
+        d5a = -15 * hinv5 * (168 * acc_m
+                             + h * (84 * jrk_p
+                                    + h * (16 * snp_m
+                                           + h * crk_p)))
+        d6a = -60 * hinv5 * (12 * jrk_m + h * (6 * snp_p + h * crk_m))
+        d7a = 840 * hinv7 * (120 * acc_m
+                             + h * (60 * jrk_p
+                                    + h * (12 * snp_m
+                                           + h * crk_p)))
 
         h4 = h / 4
         h6 = h / 6
-        d4ax += h2 * (d5ax + h4 * (d6ax + h6 * d7ax))
-        d4ay += h2 * (d5ay + h4 * (d6ay + h6 * d7ay))
-        d4az += h2 * (d5az + h4 * (d6az + h6 * d7az))
-        d5ax += h2 * (d6ax + h4 * d7ax)
-        d5ay += h2 * (d6ay + h4 * d7ay)
-        d5az += h2 * (d6az + h4 * d7az)
-        d6ax += h2 * (d7ax)
-        d6ay += h2 * (d7ay)
-        d6az += h2 * (d7az)
+        d4a += h2 * (d5a + h4 * (d6a + h6 * d7a))
+        d5a += h2 * (d6a + h4 * d7a)
+        d6a += h2 * (d7a)
 
-        ps1.d4ax[...] = d4ax
-        ps1.d4ay[...] = d4ay
-        ps1.d4az[...] = d4az
-        ps1.d5ax[...] = d5ax
-        ps1.d5ay[...] = d5ay
-        ps1.d5az[...] = d5az
-
-        ps1.d6ax[...] = d6ax
-        ps1.d6ay[...] = d6ay
-        ps1.d6az[...] = d6az
-        ps1.d7ax[...] = d7ax
-        ps1.d7ay[...] = d7ay
-        ps1.d7az[...] = d7az
+        ps1.d4a[...] = d4a
+        ps1.d5a[...] = d5a
+        ps1.d6a[...] = d6a
+        ps1.d7a[...] = d7a
 
         return ps1
 
     @staticmethod
     def set_nextstep(ps, eta):
-        s0 = (ps.ax**2 + ps.ay**2 + ps.az**2)
-        s1 = (ps.jx**2 + ps.jy**2 + ps.jz**2)
-        s2 = (ps.sx**2 + ps.sy**2 + ps.sz**2)
-#        s3 = (ps.cx**2 + ps.cy**2 + ps.cz**2)
-#        s4 = (ps.d4ax**2 + ps.d4ay**2 + ps.d4az**2)
-        s5 = (ps.d5ax**2 + ps.d5ay**2 + ps.d5az**2)
-        s6 = (ps.d6ax**2 + ps.d6ay**2 + ps.d6az**2)
-        s7 = (ps.d7ax**2 + ps.d7ay**2 + ps.d7az**2)
+        s0 = (ps.acc**2).sum(0)
+        s1 = (ps.jrk**2).sum(0)
+        s2 = (ps.snp**2).sum(0)
+#        s3 = (ps.crk**2).sum(0)
+#        s4 = (ps.d4a**2).sum(0)
+        s5 = (ps.d5a**2).sum(0)
+        s6 = (ps.d6a**2).sum(0)
+        s7 = (ps.d7a**2).sum(0)
 
         u = (s0 * s2)**0.5 + s1
         l = (s5 * s7)**0.5 + s6

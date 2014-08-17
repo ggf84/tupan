@@ -30,12 +30,10 @@ def set_particles(n):
     ps = ParticleSystem(n-n//2, n//2)
     ps.mass[...] = np.random.random((ps.n,))
     ps.eps2[...] = np.zeros((ps.n,))
-    ps.rx[...], ps.ry[...], ps.rz[...] = np.random.random((ps.n, 3)).T * 10
-    ps.vx[...], ps.vy[...], ps.vz[...] = np.random.random((ps.n, 3)).T * 10
+    ps.pos[...] = np.random.random((3, ps.n)) * 10
+    ps.vel[...] = np.random.random((3, ps.n)) * 10
 
-    ps.register_attribute('pnax', 'real')
-    ps.register_attribute('pnay', 'real')
-    ps.register_attribute('pnaz', 'real')
+    ps.register_attribute('pnacc', (3,), 'real')
 
     return ps
 

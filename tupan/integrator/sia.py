@@ -67,9 +67,7 @@ def drift_n(ips, dt):
     """Drift operator for Newtonian quantities.
 
     """
-    ips.rx += ips.vx * dt
-    ips.ry += ips.vy * dt
-    ips.rz += ips.vz * dt
+    ips.pos += ips.vel * dt
     return ips
 
 
@@ -81,9 +79,7 @@ def kick_n(ips, dt):
     """Kick operator for Newtonian quantities.
 
     """
-    ips.vx += ips.ax * dt
-    ips.vy += ips.ay * dt
-    ips.vz += ips.az * dt
+    ips.vel += ips.acc * dt
     return ips
 
 
@@ -95,17 +91,8 @@ def drift_pn(ips, dt):
     """Drift operator for post-Newtonian quantities.
 
     """
-    ips.rx += ips.vx * dt
-    ips.ry += ips.vy * dt
-    ips.rz += ips.vz * dt
+    ips.pos += ips.vel * dt
     ips.pn_drift_com_r(dt)
-    return ips
-
-
-def vw_swap(ips):
-    ips.vx, ips.wx = ips.wx, ips.vx
-    ips.vy, ips.wy = ips.wy, ips.vy
-    ips.vz, ips.wz = ips.wz, ips.vz
     return ips
 
 
@@ -123,28 +110,18 @@ def kick_pn(ips, dt):
     ips.pn_kick_lmom(dt / 2)
     ips.pn_kick_amom(dt / 2)
 
-    ips.wx[...] = ips.vx
-    ips.wy[...] = ips.vy
-    ips.wz[...] = ips.vz
-    ips.wx += (ips.ax + ips.pnax) * dt / 2
-    ips.wy += (ips.ay + ips.pnay) * dt / 2
-    ips.wz += (ips.az + ips.pnaz) * dt / 2
+    ips.w[...] = ips.vel
+    ips.w += (ips.acc + ips.pnacc) * dt / 2
 
-    ips = vw_swap(ips)
+    ips.vel, ips.w = ips.w, ips.vel
     ips.set_pnacc(ips)
-    ips = vw_swap(ips)
+    ips.vel, ips.w = ips.w, ips.vel
 
-    ips.vx += (ips.ax + ips.pnax) * dt
-    ips.vy += (ips.ay + ips.pnay) * dt
-    ips.vz += (ips.az + ips.pnaz) * dt
+    ips.vel += (ips.acc + ips.pnacc) * dt
 
     ips.set_pnacc(ips)
-    ips.wx += (ips.ax + ips.pnax) * dt / 2
-    ips.wy += (ips.ay + ips.pnay) * dt / 2
-    ips.wz += (ips.az + ips.pnaz) * dt / 2
-    ips.vx[...] = ips.wx
-    ips.vy[...] = ips.wy
-    ips.vz[...] = ips.wz
+    ips.w += (ips.acc + ips.pnacc) * dt / 2
+    ips.vel[...] = ips.w
 
     ips.pn_kick_ke(dt / 2)
     ips.pn_kick_lmom(dt / 2)
@@ -152,21 +129,15 @@ def kick_pn(ips, dt):
     #
 
     #
-    # ips.vx += (ips.ax * dt + ips.wx) / 2
-    # ips.vy += (ips.ay * dt + ips.wy) / 2
-    # ips.vz += (ips.az * dt + ips.wz) / 2
+    # ips.vel += (ips.acc * dt + ips.w) / 2
 
     # ips.set_pnacc(ips)
     # ips.pn_kick_ke(dt)
     # ips.pn_kick_lmom(dt)
     # ips.pn_kick_amom(dt)
-    # ips.wx[...] = 2 * ips.pnax * dt - ips.wx
-    # ips.wy[...] = 2 * ips.pnay * dt - ips.wy
-    # ips.wz[...] = 2 * ips.pnaz * dt - ips.wz
+    # ips.w[...] = 2 * ips.pnacc * dt - ips.w
 
-    # ips.vx += (ips.ax * dt + ips.wx) / 2
-    # ips.vy += (ips.ay * dt + ips.wy) / 2
-    # ips.vz += (ips.az * dt + ips.wz) / 2
+    # ips.vel += (ips.acc * dt + ips.w) / 2
     #
 
     return ips
@@ -266,47 +237,27 @@ def sf_kick(slow, fast, dt):
         fast.pn_kick_lmom(dt / 2)
         fast.pn_kick_amom(dt / 2)
 
-        slow.wx[...] = slow.vx
-        slow.wy[...] = slow.vy
-        slow.wz[...] = slow.vz
-        fast.wx[...] = fast.vx
-        fast.wy[...] = fast.vy
-        fast.wz[...] = fast.vz
-        slow.wx += (slow.ax + slow.pnax) * dt / 2
-        slow.wy += (slow.ay + slow.pnay) * dt / 2
-        slow.wz += (slow.az + slow.pnaz) * dt / 2
-        fast.wx += (fast.ax + fast.pnax) * dt / 2
-        fast.wy += (fast.ay + fast.pnay) * dt / 2
-        fast.wz += (fast.az + fast.pnaz) * dt / 2
+        slow.w[...] = slow.vel
+        fast.w[...] = fast.vel
+        slow.w += (slow.acc + slow.pnacc) * dt / 2
+        fast.w += (fast.acc + fast.pnacc) * dt / 2
 
-        slow = vw_swap(slow)
-        fast = vw_swap(fast)
+        slow.vel, slow.w = slow.w, slow.vel
+        fast.vel, fast.w = fast.w, fast.vel
         slow.set_pnacc(fast)
         fast.set_pnacc(slow)
-        slow = vw_swap(slow)
-        fast = vw_swap(fast)
+        slow.vel, slow.w = slow.w, slow.vel
+        fast.vel, fast.w = fast.w, fast.vel
 
-        slow.vx += (slow.ax + slow.pnax) * dt
-        slow.vy += (slow.ay + slow.pnay) * dt
-        slow.vz += (slow.az + slow.pnaz) * dt
-        fast.vx += (fast.ax + fast.pnax) * dt
-        fast.vy += (fast.ay + fast.pnay) * dt
-        fast.vz += (fast.az + fast.pnaz) * dt
+        slow.vel += (slow.acc + slow.pnacc) * dt
+        fast.vel += (fast.acc + fast.pnacc) * dt
 
         slow.set_pnacc(fast)
         fast.set_pnacc(slow)
-        slow.wx += (slow.ax + slow.pnax) * dt / 2
-        slow.wy += (slow.ay + slow.pnay) * dt / 2
-        slow.wz += (slow.az + slow.pnaz) * dt / 2
-        fast.wx += (fast.ax + fast.pnax) * dt / 2
-        fast.wy += (fast.ay + fast.pnay) * dt / 2
-        fast.wz += (fast.az + fast.pnaz) * dt / 2
-        slow.vx[...] = slow.wx
-        slow.vy[...] = slow.wy
-        slow.vz[...] = slow.wz
-        fast.vx[...] = fast.wx
-        fast.vy[...] = fast.wy
-        fast.vz[...] = fast.wz
+        slow.w += (slow.acc + slow.pnacc) * dt / 2
+        fast.w += (fast.acc + fast.pnacc) * dt / 2
+        slow.vel[...] = slow.w
+        fast.vel[...] = fast.w
 
         slow.pn_kick_ke(dt / 2)
         slow.pn_kick_lmom(dt / 2)
@@ -317,12 +268,8 @@ def sf_kick(slow, fast, dt):
         #
 
         #
-        # slow.vx += (slow.ax * dt + slow.wx) / 2
-        # slow.vy += (slow.ay * dt + slow.wy) / 2
-        # slow.vz += (slow.az * dt + slow.wz) / 2
-        # fast.vx += (fast.ax * dt + fast.wx) / 2
-        # fast.vy += (fast.ay * dt + fast.wy) / 2
-        # fast.vz += (fast.az * dt + fast.wz) / 2
+        # slow.vel += (slow.acc * dt + slow.w) / 2
+        # fast.vel += (fast.acc * dt + fast.w) / 2
 
         # slow.set_pnacc(fast)
         # fast.set_pnacc(slow)
@@ -332,19 +279,11 @@ def sf_kick(slow, fast, dt):
         # fast.pn_kick_ke(dt)
         # fast.pn_kick_lmom(dt)
         # fast.pn_kick_amom(dt)
-        # slow.wx[...] = 2 * slow.pnax * dt - slow.wx
-        # slow.wy[...] = 2 * slow.pnay * dt - slow.wy
-        # slow.wz[...] = 2 * slow.pnaz * dt - slow.wz
-        # fast.wx[...] = 2 * fast.pnax * dt - fast.wx
-        # fast.wy[...] = 2 * fast.pnay * dt - fast.wy
-        # fast.wz[...] = 2 * fast.pnaz * dt - fast.wz
+        # slow.w[...] = 2 * slow.pnacc * dt - slow.w
+        # fast.w[...] = 2 * fast.pnacc * dt - fast.w
 
-        # slow.vx += (slow.ax * dt + slow.wx) / 2
-        # slow.vy += (slow.ay * dt + slow.wy) / 2
-        # slow.vz += (slow.az * dt + slow.wz) / 2
-        # fast.vx += (fast.ax * dt + fast.wx) / 2
-        # fast.vy += (fast.ay * dt + fast.wy) / 2
-        # fast.vz += (fast.az * dt + fast.wz) / 2
+        # slow.vel += (slow.acc * dt + slow.w) / 2
+        # fast.vel += (fast.acc * dt + fast.w) / 2
         #
     else:
         slow = kick_n(slow, dt)
@@ -701,9 +640,7 @@ class SIA(Base):
                     self.method, ps.t_curr, t_end)
 
         if hasattr(ps, 'include_pn_corrections'):
-            ps.register_attribute('wx', 'real')
-            ps.register_attribute('wy', 'real')
-            ps.register_attribute('wz', 'real')
+            ps.register_attribute('w', (3,), 'real')
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)

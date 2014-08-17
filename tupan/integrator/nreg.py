@@ -25,16 +25,12 @@ def nreg_x(ps, dt, kernel=ext.NregX()):
     """
     mtot = ps.total_mass
     kernel(ps, ps, dt=dt)
-    ps.rx[...] = ps.mrx / mtot
-    ps.ry[...] = ps.mry / mtot
-    ps.rz[...] = ps.mrz / mtot
+    ps.pos[...] = ps.mr / mtot
     pe = 0.5 * ps.u.sum()
     type(ps).U = pe
     return ps, dt
 
-#    ps.rx += dt * ps.vx
-#    ps.ry += dt * ps.vy
-#    ps.rz += dt * ps.vz
+#    ps.pos += dt * ps.vel
 #    type(ps).U = -ps.potential_energy
 #    ps.set_acc(ps)
 #    return ps, dt
@@ -45,31 +41,19 @@ def nreg_v(ps, dt, kernel=ext.NregV()):
     """
 
     """
-#    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
-#                                         + ps.vy * ps.ay
-#                                         + ps.vz * ps.az)).sum()
+#    type(ps).W += 0.5 * dt * (ps.mass * ps.vel * ps.acc).sum()
     mtot = ps.total_mass
     kernel(ps, ps, dt=dt)
-    ps.vx[...] = ps.mvx / mtot
-    ps.vy[...] = ps.mvy / mtot
-    ps.vz[...] = ps.mvz / mtot
+    ps.vel[...] = ps.mv / mtot
     ke = 0.25 * ps.mk.sum() / mtot
     type(ps).W = (ke - ps.E0)
-#    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
-#                                         + ps.vy * ps.ay
-#                                         + ps.vz * ps.az)).sum()
+#    type(ps).W += 0.5 * dt * (ps.mass * ps.vel * ps.acc).sum()
     return ps
 
-# #    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
-# #                                         + ps.vy * ps.ay
-# #                                         + ps.vz * ps.az)).sum()
-#     ps.vx += dt * ps.ax
-#     ps.vy += dt * ps.ay
-#     ps.vz += dt * ps.az
+# #    type(ps).W += 0.5 * dt * (ps.mass * ps.vel * ps.acc).sum()
+#     ps.vel += dt * ps.acc
 #     type(ps).W = (ps.kinetic_energy - ps.E0)
-# #    type(ps).W += 0.5 * dt * (ps.mass * (ps.vx * ps.ax
-# #                                         + ps.vy * ps.ay
-# #                                         + ps.vz * ps.az)).sum()
+# #    type(ps).W += 0.5 * dt * (ps.mass * ps.vel * ps.acc).sum()
 #     return ps
 
 
