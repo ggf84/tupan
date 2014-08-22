@@ -1,2 +1,4 @@
-.. |currentyear| date:: %Y
-.. include:: ../../LICENSE.txt
+License
+=======
+
+.. include:: ../../LICENSE.rst
