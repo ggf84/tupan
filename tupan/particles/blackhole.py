@@ -18,10 +18,11 @@ class Blackholes(Particle):
     """
 
     """
-    dtype = None
-    attr_descr = Particle.attr_descr + [
+    name = None
+    default_attr_descr = Particle.default_attr_descr + [
         ('spin', (3,), 'real', 'spin'),
-        ('radius', (), 'real', 'radius'), ]
+        ('radius', (), 'real', 'radius'),
+    ]
 
 
 # -- End of File --

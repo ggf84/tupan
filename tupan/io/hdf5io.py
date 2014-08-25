@@ -57,8 +57,7 @@ class HDF5IO(object):
         if isinstance(snap_number, int):
             base_name += '_' + str(snap_number).zfill(6)
         base_group = fobj.require_group(base_name)
-        group_name = type(ps).__name__.lower()
-        group = base_group.require_group(group_name)
+        group = base_group.require_group(ps.name)
         cls = pickle.dumps(type(ps), protocol=PICKLE_PROTOCOL)
         group.attrs['Class'] = cls.decode('utf-8') if IS_PY3K else cls
         for member in ps.members:
@@ -102,8 +101,7 @@ class HDF5IO(object):
 
         """
         base_group = fobj.require_group('Worldline')
-        group_name = type(wl).__name__.lower()
-        group = base_group.require_group(group_name)
+        group = base_group.require_group(wl.name)
         cls = pickle.dumps(type(wl), protocol=PICKLE_PROTOCOL)
         group.attrs['Class'] = cls.decode('utf-8') if IS_PY3K else cls
         for member in wl.members:

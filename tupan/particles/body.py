@@ -18,8 +18,8 @@ class Bodies(Particle):
     """
 
     """
-    dtype = None
-    attr_descr = Particle.attr_descr + []
+    name = None
+    default_attr_descr = Particle.default_attr_descr + []
 
 
 # -- End of File --

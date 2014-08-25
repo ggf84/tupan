@@ -17,47 +17,32 @@ from ..lib.utils.ctype import Ctype
 __all__ = ['Particle', 'AbstractNbodyMethods']
 
 
-class LazyProperty(object):
-    def __init__(self, name, shape, sctype, doc):
-        self.name = name
-        self.shape = shape
-        self.dtype = vars(Ctype)[sctype]
-        self.__doc__ = doc
-
-    def __get__(self, instance, cls):
-        if instance is None:
-            return self
-        return instance._init_lazyproperty(self)
-
-
 class MetaBaseNbodyMethods(type):
     def __init__(cls, *args, **kwargs):
         super(MetaBaseNbodyMethods, cls).__init__(*args, **kwargs)
 
-        if hasattr(cls, '_init_lazyproperty'):
+        if hasattr(cls, 'name'):
             setattr(cls, 'name', cls.__name__.lower())
 
-            if hasattr(cls, 'attr_descr'):
-                for name, shape, sctype, doc in cls.attr_descr:
-                    setattr(cls, name, LazyProperty(name, shape, sctype, doc))
-
-            if hasattr(cls, 'extra_attr_descr'):
-                for name, shape, sctype, doc in cls.extra_attr_descr:
-                    setattr(cls, name, LazyProperty(name, shape, sctype, doc))
-
-            if hasattr(cls, 'pn_attr_descr'):
-                for name, shape, sctype, doc in cls.pn_attr_descr:
-                    setattr(cls, name, LazyProperty(name, shape, sctype, doc))
-
-            if hasattr(cls, 'pn_extra_attr_descr'):
-                for name, shape, sctype, doc in cls.pn_extra_attr_descr:
-                    setattr(cls, name, LazyProperty(name, shape, sctype, doc))
-
-        if hasattr(cls, 'dtype'):
-            if hasattr(cls, 'attr_descr'):
+            if hasattr(cls, 'default_attr_descr'):
                 dtype = [(name, vars(Ctype)[sctype], shape)
-                         for name, shape, sctype, doc in cls.attr_descr]
+                         for name, shape, sctype, _ in cls.default_attr_descr]
                 setattr(cls, 'dtype', dtype)
+
+            attr_descrs = []
+            if hasattr(cls, 'default_attr_descr'):
+                attr_descrs += cls.default_attr_descr
+            if hasattr(cls, 'extra_attr_descr'):
+                attr_descrs += cls.extra_attr_descr
+            if hasattr(cls, 'pn_default_attr_descr'):
+                attr_descrs += cls.pn_default_attr_descr
+            if hasattr(cls, 'pn_extra_attr_descr'):
+                attr_descrs += cls.pn_extra_attr_descr
+            attr_names = [name for name, _, _, _ in attr_descrs]
+            setattr(cls, 'attr_names', attr_names)
+            attr_descrs = {name: (shape, sctype, doc)
+                           for name, shape, sctype, doc in attr_descrs}
+            setattr(cls, 'attr_descrs', attr_descrs)
 
 
 BaseNbodyMethods = MetaBaseNbodyMethods('BaseNbodyMethods', (object,), {})
@@ -68,7 +53,7 @@ class NbodyMethods(BaseNbodyMethods):
 
     """
     # name, shape, sctype, doc
-    attr_descr = [
+    default_attr_descr = [
         ('id', (), 'uint', 'index'),
         ('mass', (), 'real', 'mass'),
         ('pos', (3,), 'real', 'position'),
@@ -76,7 +61,8 @@ class NbodyMethods(BaseNbodyMethods):
         ('eps2', (), 'real', 'squared softening'),
         ('time', (), 'real', 'current time'),
         ('nstep', (), 'uint', 'step number'),
-        ('tstep', (), 'real', 'time step'), ]
+        ('tstep', (), 'real', 'time step'),
+    ]
 
     extra_attr_descr = [
         ('phi', (), 'real', 'gravitational potential'),
@@ -84,7 +70,8 @@ class NbodyMethods(BaseNbodyMethods):
         ('jrk', (3,), 'real', 'jerk'),
         ('snp', (3,), 'real', 'snap'),
         ('crk', (3,), 'real', 'crackle'),
-        ('tstepij', (), 'real', 'auxiliary time step'), ]
+        ('tstepij', (), 'real', 'auxiliary time step'),
+    ]
 
     # -- misc
     def __repr__(self):
@@ -94,7 +81,9 @@ class NbodyMethods(BaseNbodyMethods):
         return copy.deepcopy(self)
 
     def register_attribute(self, name, shape, sctype, doc=''):
-        setattr(type(self), name, LazyProperty(name, shape, sctype, doc))
+        if name not in self.attr_names:
+            self.attr_names.append(name)
+            self.attr_descrs[name] = (shape, sctype, doc)
 
     # -- total mass and center-of-mass methods
     @property
@@ -399,14 +388,15 @@ class PNbodyMethods(NbodyMethods):
     include_pn_corrections = True
 
     # name, shape, sctype, doc
-    pn_attr_descr = []
+    pn_default_attr_descr = []
 
     pn_extra_attr_descr = [
         ('pnacc', (3,), 'real', 'PN acceleration'),
         ('pn_mr', (3,), 'real', 'PN correction for com_r'),
         ('pn_mv', (3,), 'real', 'PN correction for com_v'),
         ('pn_am', (3,), 'real', 'PN correction for angular momentum'),
-        ('pn_ke', (), 'real', 'PN correction for kinectic energy.'), ]
+        ('pn_ke', (), 'real', 'PN correction for kinectic energy.'),
+    ]
 
     @property
     def com_r(self):
@@ -530,17 +520,12 @@ class Particle(AbstractNbodyMethods):
         obj.update_attrs(attrs)
         return obj
 
-    @property
-    def attributes(self):
-        for (k, v) in vars(self).items():
-            if k not in ('n',):
-                yield (k, v)
-
     def __str__(self):
         fmt = self.name + '(['
         if self.n:
-            for (k, v) in self.attributes:
-                fmt += '\n\t{0}: {1},'.format(k, v)
+            for name in self.attr_names:
+                ary = getattr(self, name)
+                fmt += '\n\t{0}: {1},'.format(name, ary)
             fmt += '\n'
         fmt += '])'
         return fmt
@@ -551,32 +536,41 @@ class Particle(AbstractNbodyMethods):
     def __len__(self):
         return self.n
 
-    def append(self, obj):
-        if obj.n:
+    def append(self, other):
+        if other.n:
             attrs = []
-            for (k, v) in obj.attributes:
-                if v.ndim > 1:
-                    ary = np.concatenate([getattr(self, k), v], 1)
-                else:
-                    ary = np.concatenate([getattr(self, k), v])
-                attrs.append((k, ary))
+            concat = np.concatenate
+            for name in self.attr_names:
+                sary = getattr(self, name)
+                oary = getattr(other, name)
+                arrays = [sary, oary]
+                cary = concat(arrays, 1) if oary.ndim > 1 else concat(arrays)
+                attrs.append((name, cary))
             self.update_attrs(attrs)
 
     def __getitem__(self, index):
         attrs = []
+        index = (Ellipsis, index)
         if isinstance(index, int):
-            for (k, v) in self.attributes:
-                ary = v[..., index, None]
-                attrs.append((k, ary))
-            return self.from_attrs(attrs)
-        for (k, v) in self.attributes:
-            ary = v[..., index]
-            attrs.append((k, ary))
+            index += (None,)
+        for name in self.attr_names:
+            ary = getattr(self, name)
+            slc = ary[index]
+            attrs.append((name, slc))
         return self.from_attrs(attrs)
 
     def __setitem__(self, index, value):
-        for (k, v) in self.attributes:
-            v[..., index] = getattr(value, k)
+        for name in self.attr_names:
+            ary = getattr(self, name)
+            ary[..., index] = getattr(value, name)
+
+    def __getattr__(self, name):
+        if name not in self.attr_names:
+            raise AttributeError(name)
+        shape, sctype, _ = self.attr_descrs[name]
+        value = np.zeros(shape + (self.n,), dtype=vars(Ctype)[sctype])
+        setattr(self, name, value)
+        return value
 
     def astype(self, cls):
         newobj = cls(self.n)
@@ -596,12 +590,6 @@ class Particle(AbstractNbodyMethods):
             if hasattr(self, name):
                 attr = getattr(self, name)
                 attr[...] = array[name].T
-
-    def _init_lazyproperty(self, lazyprop):
-        name, shape, dtype = lazyprop.name, lazyprop.shape, lazyprop.dtype
-        value = np.zeros(shape + (self.n,), dtype=dtype)
-        setattr(self, name, value)
-        return value
 
 
 # -- End of File --

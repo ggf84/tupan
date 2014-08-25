@@ -18,9 +18,10 @@ class Sphs(Particle):
     """
 
     """
-    dtype = None
-    attr_descr = Particle.attr_descr + [
-        ('density', (), 'real', 'density'), ]
+    name = None
+    default_attr_descr = Particle.default_attr_descr + [
+        ('density', (), 'real', 'density'),
+    ]
 
 
 # -- End of File --

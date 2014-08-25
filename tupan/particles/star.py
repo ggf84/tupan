@@ -18,12 +18,13 @@ class Stars(Particle):
     """
 
     """
-    dtype = None
-    attr_descr = Particle.attr_descr + [
+    name = None
+    default_attr_descr = Particle.default_attr_descr + [
         ('spin', (3,), 'real', 'spin'),
         ('radius', (), 'real', 'radius'),
         ('age', (), 'real', 'age'),
-        ('metallicity', (), 'real', 'metallicity'), ]
+        ('metallicity', (), 'real', 'metallicity'),
+    ]
 
 
 # -- End of File --

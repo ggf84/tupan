@@ -4,6 +4,8 @@
 #include "common.h"
 #include "smoothing.h"
 
+#define _3_2 (((REAL)(3))/2)
+
 static inline void snap_crackle_kernel_core(
     const REALn im,
     const REALn irx,
@@ -72,12 +74,12 @@ static inline void snap_crackle_kernel_core(
     vy -= alpha * ry;                                                           // 2 FLOPs
     vz -= alpha * rz;                                                           // 2 FLOPs
 
-    REALn sw1 = 2 * alpha;                                                      // 1 FLOPs
-    Ax -= sw1 * vx + beta * rx;                                                 // 4 FLOPs
-    Ay -= sw1 * vy + beta * ry;                                                 // 4 FLOPs
-    Az -= sw1 * vz + beta * rz;                                                 // 4 FLOPs
+    alpha *= 2;                                                                 // 1 FLOPs
+    Ax -= alpha * vx + beta * rx;                                               // 4 FLOPs
+    Ay -= alpha * vy + beta * ry;                                               // 4 FLOPs
+    Az -= alpha * vz + beta * rz;                                               // 4 FLOPs
 
-    alpha *= 3;                                                                 // 1 FLOPs
+    alpha *= _3_2;                                                              // 1 FLOPs
     beta *= 3;                                                                  // 1 FLOPs
     Jx -= alpha * Ax + beta * vx + gamma * rx;                                  // 6 FLOPs
     Jy -= alpha * Ay + beta * vy + gamma * ry;                                  // 6 FLOPs

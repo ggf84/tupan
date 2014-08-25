@@ -35,6 +35,8 @@ class ParticleSystem(AbstractNbodyMethods):
     """
     This class holds the particle types in the simulation.
     """
+    name = None
+
     def __init__(self, nbodies=0, nstars=0, nbhs=0, nsphs=0):
         """
         Initializer.
@@ -183,27 +185,29 @@ class ParticleSystem(AbstractNbodyMethods):
                 stop -= member.n
             return
 
-    def _init_lazyproperty(self, lazyprop):
-        attr = lazyprop.name
-        shape = lazyprop.shape
+    def __getattr__(self, name):
+        if name not in self.attr_names:
+            raise AttributeError(name)
+        shape, _, _ = self.attr_descrs[name]
         members = self.members
         if len(members) == 1:
             member = next(iter(members))
-            value = getattr(member, attr)
+            value = getattr(member, name)
             value = np.array(value, copy=False, order='C', ndmin=1)
-            setattr(member, attr, value)
-            setattr(self, attr, value)
+            setattr(member, name, value)
+            setattr(self, name, value)
             return value
-        arrays = [getattr(member, attr) for member in members]
-        value = np.concatenate(arrays, 1) if shape else np.concatenate(arrays)
+        concat = np.concatenate
+        arrays = [getattr(member, name) for member in members]
+        value = concat(arrays, 1) if shape else concat(arrays)
         value = np.array(value, copy=False, order='C', ndmin=1)
         ns = 0
         nf = 0
         for member in members:
             nf += member.n
-            setattr(member, attr, value[..., ns:nf])
+            setattr(member, name, value[..., ns:nf])
             ns += member.n
-        setattr(self, attr, value)
+        setattr(self, name, value)
         return value
 
 
