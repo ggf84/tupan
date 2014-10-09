@@ -63,6 +63,11 @@ class Base(object):
             raise TypeError(msg.format(type(
                 self).__name__, ', '.join(kwargs.keys())))
 
+    def __getstate__(self):  # apparently vispy objects can't be pickled!
+        dct = vars(self).copy()
+        del dct['viewer']
+        return dct
+
     def get_base_tstep(self, t_end):
         """
 
