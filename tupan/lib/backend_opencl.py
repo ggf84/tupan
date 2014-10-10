@@ -274,11 +274,16 @@ class Platform(object):
     """
 
     """
-    def __init__(self, idx):
+    def __init__(self, idx=0):
         cl_platforms = cl.get_platforms()
-        for i, cl_platform in enumerate(cl_platforms):
-            print(str([i]) + ' ' + str(cl_platform))
-
+        if len(cl_platforms) > 1:
+            print("Choose platform:")
+            for i, cl_platform in enumerate(cl_platforms):
+                print(str([i]) + ' ' + str(cl_platform))
+            try:
+                idx = int(input('Choice [0]: '))
+            except:
+                pass
         self.cl_platform = cl_platforms[idx]
         self.context = Context(self.cl_platform)
 
@@ -286,7 +291,7 @@ class Platform(object):
         return CLKernel(name)
 
 
-drv = Platform(0)
+drv = Platform()
 
 
 @bind_all(timings)
