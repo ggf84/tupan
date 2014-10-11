@@ -5,8 +5,11 @@
 TODO.
 """
 
+import os
 import logging
+import subprocess
 import numpy as np
+from PIL import Image
 from matplotlib import cm
 from vispy import gloo
 from vispy import app
@@ -128,7 +131,7 @@ class GLviewer(app.Canvas):
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        self.psize = 20
+        self.psize = 25
 
         self.translate = [-0.0, -0.0, -0.0]
         translate(self.view, *self.translate)
@@ -139,6 +142,28 @@ class GLviewer(app.Canvas):
             prog['u_view'] = self.view
 
         self.show()
+
+        self.make_movie = False
+        cmdline = [
+            "avconv", "-y",
+            "-r", "30",
+            "-f", "image2pipe",
+            "-vcodec", "ppm",
+            "-i", "-",
+            "-q", "1",
+            "-vcodec", "mpeg4",
+            "movie.mp4",
+        ]
+        self.pipe = subprocess.Popen(cmdline,
+                                     stdin=subprocess.PIPE,
+                                     stdout=open(os.devnull, 'w'),
+                                     stderr=subprocess.STDOUT)
+
+    def record_screen(self):
+        im = gloo.read_pixels()
+        im = Image.frombuffer('RGBA', self.size, im.tostring(),
+                              'raw', 'RGBA', 0, 1)
+        im.save(self.pipe.stdin, format='ppm')
 
     def on_initialize(self, event):
         gloo.set_state(depth_test=True, blend=True, clear_color='black')
@@ -160,6 +185,8 @@ class GLviewer(app.Canvas):
             zrotate(self.model, +1)
         elif event.key == '<':
             zrotate(self.model, -1)
+        elif event.text == 'm':
+            self.make_movie = not self.make_movie
         elif event.text == 'z':
             scale(self.model, 1/1.03125)
         elif event.text == 'Z':
@@ -231,6 +258,9 @@ class GLviewer(app.Canvas):
         if 'blackholes' in self.data:
             gloo.set_state(blend_func=('src_alpha', 'zero'))
             self.program['blackholes'].draw('points')
+
+        if self.make_movie:
+            self.record_screen()
 
         self.title = self.titlestr.format(fps=self.fps,
                                           width=self.size[0],
