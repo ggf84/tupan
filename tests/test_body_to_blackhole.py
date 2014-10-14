@@ -46,8 +46,7 @@ if __name__ == "__main__":
 
     from tupan.analysis.glviewer import GLviewer
     viewer = GLviewer()
-    viewer.initialize()
-    viewer.set_particle_system(ps)
+    viewer.show_event(ps)
     viewer.enter_main_loop()
 
 
