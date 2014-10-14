@@ -549,14 +549,11 @@ class Particle(AbstractNbodyMethods):
             self.update_attrs(attrs)
 
     def __getitem__(self, index):
-        attrs = []
-        index = (Ellipsis, index)
+        idx = (Ellipsis, index)
         if isinstance(index, int):
-            index += (None,)
-        for name in self.attr_names:
-            ary = getattr(self, name)
-            slc = ary[index]
-            attrs.append((name, slc))
+            idx += (None,)
+        attrs = [(name, getattr(self, name)[idx])
+                 for name in self.attr_names]
         return self.from_attrs(attrs)
 
     def __setitem__(self, index, value):
