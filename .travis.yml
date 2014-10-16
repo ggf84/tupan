@@ -18,13 +18,13 @@ before_install:
  - export TESTENV=testenv$TRAVIS_PYTHON_VERSION
 
 install:
- # install requirements using conda (except for [pyopencl, pyopengl])
+ # install requirements using conda (except for [pyopencl, vispy])
  - conda create -n $TESTENV --yes pip python=$TRAVIS_PYTHON_VERSION
  - source activate $TESTENV
- - conda install --yes $(grep -viE 'pyopencl|pyopengl' requirements.txt)
+ - conda install --yes $(grep -viE 'pyopencl|vispy' requirements.txt)
 
- # install [pyopencl, pyopengl] using pip
- - pip install pyopengl
+ # install [pyopencl, vispy] using pip
+ - pip install vispy
  - pip install pyopencl
 
  # print useful info

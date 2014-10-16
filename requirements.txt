@@ -4,6 +4,6 @@ scipy
 h5py
 pyopencl
 matplotlib
-PyOpenGL
+vispy
 PyYAML
 Pillow
