@@ -110,10 +110,12 @@ void main()
 class GLviewer(app.Canvas):
 
     def __init__(self):
-        app.Canvas.__init__(self, keys='interactive')
         width = 768
-        self.aspect = 16.0 / 9.0
-        self.size = width, int(width / self.aspect)
+        aspect = 16.0 / 9.0
+        size = width, int(width / aspect)
+        super(GLviewer, self).__init__(keys='interactive')
+        self.size = size
+        self.aspect = aspect
         self.titlestr = "tupan viewer: {fps:.1f} fps @ {width} x {height}"
         self.measure_fps(callback=lambda x: x)
         self.title = self.titlestr.format(fps=self.fps,
@@ -141,7 +143,8 @@ class GLviewer(app.Canvas):
             prog['u_model'] = self.model
             prog['u_view'] = self.view
 
-        self.show()
+        self.show(True)
+        self.is_visible = True
 
         self.make_movie = False
         cmdline = [
@@ -191,6 +194,8 @@ class GLviewer(app.Canvas):
             scale(self.model, 1/1.03125)
         elif event.text == 'Z':
             scale(self.model, 1*1.03125)
+        elif event.key == 'Escape':
+            self.is_visible = False
         for prog in self.program.values():
             prog['u_psize'] = self.psize
             prog['u_model'] = self.model
@@ -290,11 +295,12 @@ class GLviewer(app.Canvas):
             self.data[name]['a_color'][...] = cm.cubehelix(c)
             self.data[name]['a_psize'][...] = s
             self.vdata[name].set_data(self.data[name])
-        app.process_events()
+        self.app.process_events()
         self.update()
 
     def enter_main_loop(self):
-        app.run()
+        if self.is_visible:
+            self.app.run()
 
 
 # -- End of File --

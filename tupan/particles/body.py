@@ -6,7 +6,7 @@ TODO.
 """
 
 
-from .base import Particle
+from .base import AbstractParticle
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -14,12 +14,12 @@ __all__ = ['Bodies']
 
 
 @bind_all(timings)
-class Bodies(Particle):
+class Bodies(AbstractParticle):
     """
 
     """
     name = None
-    default_attr_descr = Particle.default_attr_descr + []
+    default_attr_descr = AbstractParticle.default_attr_descr + []
 
 
 # -- End of File --

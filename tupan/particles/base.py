@@ -7,51 +7,23 @@ TODO.
 
 
 from __future__ import print_function
-import sys
+import abc
 import copy
 import numpy as np
 from ..lib import extensions as ext
+from ..lib.utils import with_metaclass
 from ..lib.utils.ctype import Ctype
 
 
-__all__ = ['Particle', 'AbstractNbodyMethods']
+__all__ = ['AbstractParticle', 'AbstractNbodyMethods']
 
 
-class MetaBaseNbodyMethods(type):
-    def __init__(cls, *args, **kwargs):
-        super(MetaBaseNbodyMethods, cls).__init__(*args, **kwargs)
-
-        if hasattr(cls, 'name'):
-            setattr(cls, 'name', cls.__name__.lower())
-
-            if hasattr(cls, 'default_attr_descr'):
-                dtype = [(name, vars(Ctype)[sctype], shape)
-                         for name, shape, sctype, _ in cls.default_attr_descr]
-                setattr(cls, 'dtype', dtype)
-
-            attr_descrs = []
-            if hasattr(cls, 'default_attr_descr'):
-                attr_descrs += cls.default_attr_descr
-            if hasattr(cls, 'extra_attr_descr'):
-                attr_descrs += cls.extra_attr_descr
-            if hasattr(cls, 'pn_default_attr_descr'):
-                attr_descrs += cls.pn_default_attr_descr
-            if hasattr(cls, 'pn_extra_attr_descr'):
-                attr_descrs += cls.pn_extra_attr_descr
-            attr_names = [name for name, _, _, _ in attr_descrs]
-            setattr(cls, 'attr_names', attr_names)
-            attr_descrs = {name: (shape, sctype, doc)
-                           for name, shape, sctype, doc in attr_descrs}
-            setattr(cls, 'attr_descrs', attr_descrs)
-
-
-BaseNbodyMethods = MetaBaseNbodyMethods('BaseNbodyMethods', (object,), {})
-
-
-class NbodyMethods(BaseNbodyMethods):
+class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
     """This class holds common methods for particles in n-body systems.
 
     """
+    include_pn_corrections = False
+
     # name, shape, sctype, doc
     default_attr_descr = [
         ('id', (), 'uint', 'index'),
@@ -71,6 +43,16 @@ class NbodyMethods(BaseNbodyMethods):
         ('snp', (3,), 'real', 'snap'),
         ('crk', (3,), 'real', 'crackle'),
         ('tstepij', (), 'real', 'auxiliary time step'),
+    ]
+
+    pn_default_attr_descr = []
+
+    pn_extra_attr_descr = [
+        ('pnacc', (3,), 'real', 'PN acceleration'),
+        ('pn_mr', (3,), 'real', 'PN correction for com_r'),
+        ('pn_mv', (3,), 'real', 'PN correction for com_v'),
+        ('pn_am', (3,), 'real', 'PN correction for angular momentum'),
+        ('pn_ke', (), 'real', 'PN correction for kinectic energy.'),
     ]
 
     # -- misc
@@ -103,7 +85,10 @@ class NbodyMethods(BaseNbodyMethods):
 
         """
         mr = self.mass * self.pos
-        return mr.sum(1) / self.total_mass
+        rcom = mr.sum(1) / self.total_mass
+        if self.include_pn_corrections:
+            rcom += self.pn_mr.sum(1) / self.total_mass
+        return rcom
 
     @property
     def com_v(self):
@@ -115,7 +100,10 @@ class NbodyMethods(BaseNbodyMethods):
 
         """
         mv = self.mass * self.vel
-        return mv.sum(1) / self.total_mass
+        vcom = mv.sum(1) / self.total_mass
+        if self.include_pn_corrections:
+            vcom += self.pn_mv.sum(1) / self.total_mass
+        return vcom
 
     @property
     def com_linear_momentum(self):
@@ -168,7 +156,10 @@ class NbodyMethods(BaseNbodyMethods):
             Post-Newtonian corrections, if enabled, are included.
 
         """
-        return self.mass * self.vel
+        mv = self.mass * self.vel
+        if self.include_pn_corrections:
+            mv += self.pn_mv
+        return mv
 
     @property
     def linear_momentum(self):
@@ -197,7 +188,10 @@ class NbodyMethods(BaseNbodyMethods):
 
         """
         mv = self.mass * self.vel
-        return np.cross(self.pos.T, mv.T).T
+        am = np.cross(self.pos.T, mv.T).T
+        if self.include_pn_corrections:
+            am += self.pn_am
+        return am
 
     @property
     def angular_momentum(self):
@@ -225,7 +219,10 @@ class NbodyMethods(BaseNbodyMethods):
             Post-Newtonian corrections, if enabled, are included.
 
         """
-        return 0.5 * self.mass * (self.vel**2).sum(0)
+        ke = 0.5 * self.mass * (self.vel**2).sum(0)
+        if self.include_pn_corrections:
+            ke += self.pn_ke
+        return ke
 
     @property
     def kinetic_energy(self):
@@ -289,6 +286,13 @@ class NbodyMethods(BaseNbodyMethods):
 
     def set_acc(self, other, kernel=ext.Acc()):
         """Set individual gravitational acceleration due to other particles.
+
+        """
+        kernel(self, other)
+
+    def set_pnacc(self, other, kernel=ext.PNAcc()):
+        """Set individual post-Newtonian gravitational acceleration due to
+        other particles.
 
         """
         kernel(self, other)
@@ -381,129 +385,38 @@ class NbodyMethods(BaseNbodyMethods):
         self.dynrescale_virial_radius(1.0)
 
 
-class PNbodyMethods(NbodyMethods):
-    """This class holds some post-Newtonian methods.
-
-    """
-    include_pn_corrections = True
-
-    # name, shape, sctype, doc
-    pn_default_attr_descr = []
-
-    pn_extra_attr_descr = [
-        ('pnacc', (3,), 'real', 'PN acceleration'),
-        ('pn_mr', (3,), 'real', 'PN correction for com_r'),
-        ('pn_mv', (3,), 'real', 'PN correction for com_v'),
-        ('pn_am', (3,), 'real', 'PN correction for angular momentum'),
-        ('pn_ke', (), 'real', 'PN correction for kinectic energy.'),
-    ]
-
-    @property
-    def com_r(self):
-        """Center-of-Mass position of the system.
-
-        .. note::
-
-            Post-Newtonian corrections, if enabled, are included.
-
-        """
-        rcom = super(PNbodyMethods, self).com_r
-        pn_rcom = self.pn_mr.sum(1) / self.total_mass
-        return rcom + pn_rcom
-
-    @property
-    def com_v(self):
-        """Center-of-Mass velocity of the system.
-
-        .. note::
-
-            Post-Newtonian corrections, if enabled, are included.
-
-        """
-        vcom = super(PNbodyMethods, self).com_v
-        pn_vcom = self.pn_mv.sum(1) / self.total_mass
-        return vcom + pn_vcom
-
-    @property
-    def lm(self):
-        """Individual linear momentum.
-
-        .. note::
-
-            Post-Newtonian corrections, if enabled, are included.
-
-        """
-        lm = super(PNbodyMethods, self).lm
-        return lm + self.pn_mv
-
-    @property
-    def am(self):
-        """Individual angular momentum.
-
-        .. note::
-
-            Post-Newtonian corrections, if enabled, are included.
-
-        """
-        am = super(PNbodyMethods, self).am
-        return am + self.pn_am
-
-    @property
-    def ke(self):
-        """Individual kinetic energy.
-
-        .. note::
-
-            Post-Newtonian corrections, if enabled, are included.
-
-        """
-        ke = super(PNbodyMethods, self).ke
-        return ke + self.pn_ke
-
-    def set_pnacc(self, other, kernel=ext.PNAcc()):
-        """Set individual post-Newtonian gravitational acceleration due to
-        other particles.
-
-        """
-        kernel(self, other)
-
-    def pn_kick_ke(self, dt):
-        """Kicks kinetic energy due to post-Newtonian terms.
-
-        """
-        pnforce = self.mass * self.pnacc
-        self.pn_ke -= (self.vel * pnforce).sum(0) * dt
-
-    def pn_drift_com_r(self, dt):
-        """Drifts center of mass position due to post-Newtonian terms.
-
-        """
-        self.pn_mr += self.pn_mv * dt
-
-    def pn_kick_lmom(self, dt):
-        """Kicks linear momentum due to post-Newtonian terms.
-
-        """
-        pnforce = self.mass * self.pnacc
-        self.pn_mv -= pnforce * dt
-
-    def pn_kick_amom(self, dt):
-        """Kicks angular momentum due to post-Newtonian terms.
-
-        """
-        pnforce = self.mass * self.pnacc
-        self.pn_am -= np.cross(self.pos.T, pnforce.T).T * dt
-
-
-AbstractNbodyMethods = NbodyMethods
-if '--pn_order' in sys.argv:
-    AbstractNbodyMethods = PNbodyMethods
-
-
 ###############################################################################
 
 
-class Particle(AbstractNbodyMethods):
+class MetaParticle(abc.ABCMeta):
+    def __init__(cls, *args, **kwargs):
+        super(MetaParticle, cls).__init__(*args, **kwargs)
+
+        if hasattr(cls, 'name'):
+            setattr(cls, 'name', cls.__name__.lower())
+
+            if hasattr(cls, 'default_attr_descr'):
+                dtype = [(name, vars(Ctype)[sctype], shape)
+                         for name, shape, sctype, _ in cls.default_attr_descr]
+                setattr(cls, 'dtype', dtype)
+
+            attr_descrs = []
+            if hasattr(cls, 'default_attr_descr'):
+                attr_descrs += cls.default_attr_descr
+            if hasattr(cls, 'extra_attr_descr'):
+                attr_descrs += cls.extra_attr_descr
+            if hasattr(cls, 'pn_default_attr_descr'):
+                attr_descrs += cls.pn_default_attr_descr
+            if hasattr(cls, 'pn_extra_attr_descr'):
+                attr_descrs += cls.pn_extra_attr_descr
+            attr_names = [name for name, _, _, _ in attr_descrs]
+            setattr(cls, 'attr_names', attr_names)
+            attr_descrs = {name: (shape, sctype, doc)
+                           for name, shape, sctype, doc in attr_descrs}
+            setattr(cls, 'attr_descrs', attr_descrs)
+
+
+class AbstractParticle(with_metaclass(MetaParticle, AbstractNbodyMethods)):
     """
 
     """

@@ -7,6 +7,7 @@ TODO.
 
 
 import logging
+import numpy as np
 from .base import Base, power_of_two
 from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
@@ -92,7 +93,7 @@ def drift_pn(ips, dt):
 
     """
     ips.pos += ips.vel * dt
-    ips.pn_drift_com_r(dt)
+    ips.pn_mr += ips.pn_mv * dt
     return ips
 
 
@@ -106,12 +107,13 @@ def kick_pn(ips, dt):
     """
     #
     ips.set_pnacc(ips)
-    ips.pn_kick_ke(dt / 2)
-    ips.pn_kick_lmom(dt / 2)
-    ips.pn_kick_amom(dt / 2)
+    pnforce = ips.mass * ips.pnacc
+    ips.pn_ke -= (ips.vel * pnforce).sum(0) * (dt / 2)
+    ips.pn_mv -= pnforce * (dt / 2)
+    ips.pn_am -= np.cross(ips.pos.T, pnforce.T).T * (dt / 2)
 
     ips.w[...] = ips.vel
-    ips.w += (ips.acc + ips.pnacc) * dt / 2
+    ips.w += (ips.acc + ips.pnacc) * (dt / 2)
 
     ips.vel, ips.w = ips.w, ips.vel
     ips.set_pnacc(ips)
@@ -120,21 +122,23 @@ def kick_pn(ips, dt):
     ips.vel += (ips.acc + ips.pnacc) * dt
 
     ips.set_pnacc(ips)
-    ips.w += (ips.acc + ips.pnacc) * dt / 2
+    ips.w += (ips.acc + ips.pnacc) * (dt / 2)
     ips.vel[...] = ips.w
 
-    ips.pn_kick_ke(dt / 2)
-    ips.pn_kick_lmom(dt / 2)
-    ips.pn_kick_amom(dt / 2)
+    pnforce = ips.mass * ips.pnacc
+    ips.pn_ke -= (ips.vel * pnforce).sum(0) * (dt / 2)
+    ips.pn_mv -= pnforce * (dt / 2)
+    ips.pn_am -= np.cross(ips.pos.T, pnforce.T).T * (dt / 2)
     #
 
     #
     # ips.vel += (ips.acc * dt + ips.w) / 2
 
     # ips.set_pnacc(ips)
-    # ips.pn_kick_ke(dt)
-    # ips.pn_kick_lmom(dt)
-    # ips.pn_kick_amom(dt)
+    # pnforce = ips.mass * ips.pnacc
+    # ips.pn_ke -= (ips.vel * pnforce).sum(0) * dt
+    # ips.pn_mv -= pnforce * dt
+    # ips.pn_am -= np.cross(ips.pos.T, pnforce.T).T * dt
     # ips.w[...] = 2 * ips.pnacc * dt - ips.w
 
     # ips.vel += (ips.acc * dt + ips.w) / 2
@@ -151,7 +155,7 @@ def drift(ips, dt):
     """Drift operator.
 
     """
-    if hasattr(ips, 'include_pn_corrections'):
+    if ips.include_pn_corrections:
         return drift_pn(ips, dt)
     return drift_n(ips, dt)
 
@@ -165,7 +169,7 @@ def kick(ips, dt):
 
     """
     ips.set_acc(ips)
-    if hasattr(ips, 'include_pn_corrections'):
+    if ips.include_pn_corrections:
         return kick_pn(ips, dt)
     return kick_n(ips, dt)
 
@@ -178,7 +182,7 @@ def twobody_solver(ips, dt, kernel=ext.Kepler()):
     """
 
     """
-    if hasattr(ips, 'include_pn_corrections'):
+    if ips.include_pn_corrections:
         raise NotImplementedError('The current version of the '
                                   'Kepler-solver does not include '
                                   'post-Newtonian corrections.')
@@ -214,6 +218,91 @@ def sf_drift(slow, fast, dt, evolve, recurse):
 
 
 #
+# sf_kick_n
+#
+@timings
+def sf_kick_n(slow, fast, dt):
+    """Slow<->Fast Kick operator for Newtonian quantities.
+
+    """
+    slow = kick_n(slow, dt)
+    fast = kick_n(fast, dt)
+    return slow, fast
+
+
+#
+# sf_kick_pn
+#
+@timings
+def sf_kick_pn(slow, fast, dt):
+    """Slow<->Fast Kick operator for post-Newtonian quantities.
+
+    """
+    slow.set_pnacc(fast)
+    fast.set_pnacc(slow)
+    pnforce = slow.mass * slow.pnacc
+    slow.pn_ke -= (slow.vel * pnforce).sum(0) * (dt / 2)
+    slow.pn_mv -= pnforce * (dt / 2)
+    slow.pn_am -= np.cross(slow.pos.T, pnforce.T).T * (dt / 2)
+    pnforce = fast.mass * fast.pnacc
+    fast.pn_ke -= (fast.vel * pnforce).sum(0) * (dt / 2)
+    fast.pn_mv -= pnforce * (dt / 2)
+    fast.pn_am -= np.cross(fast.pos.T, pnforce.T).T * (dt / 2)
+
+    slow.w[...] = slow.vel
+    fast.w[...] = fast.vel
+    slow.w += (slow.acc + slow.pnacc) * (dt / 2)
+    fast.w += (fast.acc + fast.pnacc) * (dt / 2)
+
+    slow.vel, slow.w = slow.w, slow.vel
+    fast.vel, fast.w = fast.w, fast.vel
+    slow.set_pnacc(fast)
+    fast.set_pnacc(slow)
+    slow.vel, slow.w = slow.w, slow.vel
+    fast.vel, fast.w = fast.w, fast.vel
+
+    slow.vel += (slow.acc + slow.pnacc) * dt
+    fast.vel += (fast.acc + fast.pnacc) * dt
+
+    slow.set_pnacc(fast)
+    fast.set_pnacc(slow)
+    slow.w += (slow.acc + slow.pnacc) * (dt / 2)
+    fast.w += (fast.acc + fast.pnacc) * (dt / 2)
+    slow.vel[...] = slow.w
+    fast.vel[...] = fast.w
+
+    pnforce = slow.mass * slow.pnacc
+    slow.pn_ke -= (slow.vel * pnforce).sum(0) * (dt / 2)
+    slow.pn_mv -= pnforce * (dt / 2)
+    slow.pn_am -= np.cross(slow.pos.T, pnforce.T).T * (dt / 2)
+    pnforce = fast.mass * fast.pnacc
+    fast.pn_ke -= (fast.vel * pnforce).sum(0) * (dt / 2)
+    fast.pn_mv -= pnforce * (dt / 2)
+    fast.pn_am -= np.cross(fast.pos.T, pnforce.T).T * (dt / 2)
+
+    # slow.vel += (slow.acc * dt + slow.w) / 2
+    # fast.vel += (fast.acc * dt + fast.w) / 2
+
+    # slow.set_pnacc(fast)
+    # fast.set_pnacc(slow)
+    # pnforce = slow.mass * slow.pnacc
+    # slow.pn_ke -= (slow.vel * pnforce).sum(0) * dt
+    # slow.pn_mv -= pnforce * dt
+    # slow.pn_am -= np.cross(slow.pos.T, pnforce.T).T * dt
+    # pnforce = fast.mass * fast.pnacc
+    # fast.pn_ke -= (fast.vel * pnforce).sum(0) * dt
+    # fast.pn_mv -= pnforce * dt
+    # fast.pn_am -= np.cross(fast.pos.T, pnforce.T).T * dt
+    # slow.w[...] = 2 * slow.pnacc * dt - slow.w
+    # fast.w[...] = 2 * fast.pnacc * dt - fast.w
+
+    # slow.vel += (slow.acc * dt + slow.w) / 2
+    # fast.vel += (fast.acc * dt + fast.w) / 2
+
+    return slow, fast
+
+
+#
 # sf_kick
 #
 @timings
@@ -226,69 +315,9 @@ def sf_kick(slow, fast, dt):
 
     slow.set_acc(fast)
     fast.set_acc(slow)
-    if hasattr(slow, 'include_pn_corrections'):
-        #
-        slow.set_pnacc(fast)
-        fast.set_pnacc(slow)
-        slow.pn_kick_ke(dt / 2)
-        slow.pn_kick_lmom(dt / 2)
-        slow.pn_kick_amom(dt / 2)
-        fast.pn_kick_ke(dt / 2)
-        fast.pn_kick_lmom(dt / 2)
-        fast.pn_kick_amom(dt / 2)
-
-        slow.w[...] = slow.vel
-        fast.w[...] = fast.vel
-        slow.w += (slow.acc + slow.pnacc) * dt / 2
-        fast.w += (fast.acc + fast.pnacc) * dt / 2
-
-        slow.vel, slow.w = slow.w, slow.vel
-        fast.vel, fast.w = fast.w, fast.vel
-        slow.set_pnacc(fast)
-        fast.set_pnacc(slow)
-        slow.vel, slow.w = slow.w, slow.vel
-        fast.vel, fast.w = fast.w, fast.vel
-
-        slow.vel += (slow.acc + slow.pnacc) * dt
-        fast.vel += (fast.acc + fast.pnacc) * dt
-
-        slow.set_pnacc(fast)
-        fast.set_pnacc(slow)
-        slow.w += (slow.acc + slow.pnacc) * dt / 2
-        fast.w += (fast.acc + fast.pnacc) * dt / 2
-        slow.vel[...] = slow.w
-        fast.vel[...] = fast.w
-
-        slow.pn_kick_ke(dt / 2)
-        slow.pn_kick_lmom(dt / 2)
-        slow.pn_kick_amom(dt / 2)
-        fast.pn_kick_ke(dt / 2)
-        fast.pn_kick_lmom(dt / 2)
-        fast.pn_kick_amom(dt / 2)
-        #
-
-        #
-        # slow.vel += (slow.acc * dt + slow.w) / 2
-        # fast.vel += (fast.acc * dt + fast.w) / 2
-
-        # slow.set_pnacc(fast)
-        # fast.set_pnacc(slow)
-        # slow.pn_kick_ke(dt)
-        # slow.pn_kick_lmom(dt)
-        # slow.pn_kick_amom(dt)
-        # fast.pn_kick_ke(dt)
-        # fast.pn_kick_lmom(dt)
-        # fast.pn_kick_amom(dt)
-        # slow.w[...] = 2 * slow.pnacc * dt - slow.w
-        # fast.w[...] = 2 * fast.pnacc * dt - fast.w
-
-        # slow.vel += (slow.acc * dt + slow.w) / 2
-        # fast.vel += (fast.acc * dt + fast.w) / 2
-        #
-    else:
-        slow = kick_n(slow, dt)
-        fast = kick_n(fast, dt)
-    return slow, fast
+    if slow.include_pn_corrections:
+        return sf_kick_pn(slow, fast, dt)
+    return sf_kick_n(slow, fast, dt)
 
 
 class SIAXX(object):
@@ -639,7 +668,7 @@ class SIA(Base):
                     "t_curr = %g and t_end = %g.",
                     self.method, ps.t_curr, t_end)
 
-        if hasattr(ps, 'include_pn_corrections'):
+        if ps.include_pn_corrections:
             ps.register_attribute('w', (3,), 'real')
 
         if self.reporter:

@@ -12,7 +12,8 @@ from .body import Bodies
 from .sph import Sphs
 from .star import Stars
 from .blackhole import Blackholes
-from .base import AbstractNbodyMethods
+from .base import MetaParticle, AbstractNbodyMethods
+from ..lib.utils import with_metaclass
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -31,7 +32,7 @@ class Members(list):
 
 
 @bind_all(timings)
-class ParticleSystem(AbstractNbodyMethods):
+class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
     """
     This class holds the particle types in the simulation.
     """
