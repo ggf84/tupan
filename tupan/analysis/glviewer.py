@@ -133,7 +133,7 @@ class GLviewer(app.Canvas):
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        self.psize = 25
+        self.psize = 20
 
         self.translate = [-0.0, -0.0, -0.0]
         translate(self.view, *self.translate)
@@ -289,8 +289,17 @@ class GLviewer(app.Canvas):
             self.ps[np.in1d(self.ps.id, ps.id)] = ps
         for member in self.ps.members:
             name, pos, c, s = member.name, member.pos, member.mass, member.mass
-            c = (c/c.max())**(1/3.0)
+
+#            c = (c/c.max())**(1/3.0)
+            cmax, cmin = c.max(), c.min()
+            c = (np.log(c / cmin) / np.log(cmax / cmin)
+                 if cmax > cmin else c / cmax)
+
             s = (s/s.max())**(1/4.0)
+#            smax, smin = s.max(), s.min()
+#            s = (np.log(s / smin) / np.log(smax / smin)
+#                 if smax > smin else s / smax)
+
             self.data[name]['a_position'][...] = pos.T
             self.data[name]['a_color'][...] = cm.cubehelix(c)
             self.data[name]['a_psize'][...] = s
