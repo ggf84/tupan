@@ -99,9 +99,9 @@ varying float v_psize;
 void main()
 {
     float r = length(gl_PointCoord.xy - vec2(0.5f, 0.5f));
-    float alpha = 1 - 8 * r;
-    if (abs(alpha) > 0.36f) discard;  // kill pixels outside circle
-    alpha = exp(-16*alpha*alpha);
+    float alpha = (1 - 8 * r) * v_psize / 7;
+    if (abs(alpha) > 1.5f) discard;  // kill pixels outside circle
+    alpha = exp(-alpha*alpha);
     gl_FragColor = vec4(1, 0, 0, alpha);
 }
 """
@@ -116,11 +116,6 @@ class GLviewer(app.Canvas):
         super(GLviewer, self).__init__(keys='interactive')
         self.size = size
         self.aspect = aspect
-        self.titlestr = "tupan viewer: {fps:.1f} fps @ {width} x {height}"
-        self.measure_fps(callback=lambda x: x)
-        self.title = self.titlestr.format(fps=self.fps,
-                                          width=self.size[0],
-                                          height=self.size[1])
 
         self.ps = None
         self.data = {}
@@ -143,6 +138,10 @@ class GLviewer(app.Canvas):
             prog['u_model'] = self.model
             prog['u_view'] = self.view
 
+        def callback(fps):
+            titlestr = "tupan viewer: %0.1f fps @ %d x %d"
+            self.title = titlestr % (fps, self.size[0], self.size[1])
+        self.measure_fps(callback=callback)
         self.show(True)
         self.is_visible = True
 
@@ -266,10 +265,6 @@ class GLviewer(app.Canvas):
 
         if self.make_movie:
             self.record_screen()
-
-        self.title = self.titlestr.format(fps=self.fps,
-                                          width=self.size[0],
-                                          height=self.size[1])
 
     def init_vertex_buffers(self):
         for member in self.ps.members:

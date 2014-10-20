@@ -6,7 +6,7 @@ TODO.
 """
 
 
-from .base import AbstractParticle
+from .base import AbstractParticle, AbstractNbodyMethods
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -14,12 +14,12 @@ __all__ = ['Sphs']
 
 
 @bind_all(timings)
-class Sphs(AbstractParticle):
+class Sphs(AbstractParticle, AbstractNbodyMethods):
     """
 
     """
     name = None
-    default_attr_descr = AbstractParticle.default_attr_descr + [
+    default_attr_descr = AbstractNbodyMethods.default_attr_descr + [
         ('density', (), 'real', 'density'),
     ]
 

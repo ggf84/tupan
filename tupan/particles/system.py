@@ -7,6 +7,7 @@ TODO.
 
 
 from __future__ import print_function
+import copy
 import numpy as np
 from .body import Bodies
 from .sph import Sphs
@@ -68,8 +69,9 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         for member in self.members:
             member.register_attribute(name, shape, sctype, doc)
 
-        super(ParticleSystem, self).register_attribute(
-            name, shape, sctype, doc)
+        if name not in self.attr_names:
+            self.attr_names.append(name)
+            self.attr_descrs[name] = (shape, sctype, doc)
 
     #
     # miscellaneous methods
@@ -80,6 +82,12 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
             if hasattr(member, name):
                 delattr(member, name)
         super(ParticleSystem, self).__delattr__(name)
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+    def __repr__(self):
+        return repr(vars(self))
 
     def __str__(self):
         fmt = self.name + '(['

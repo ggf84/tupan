@@ -18,6 +18,135 @@ from ..lib.utils.ctype import Ctype
 __all__ = ['AbstractParticle', 'AbstractNbodyMethods']
 
 
+class MetaParticle(abc.ABCMeta):
+    def __init__(cls, *args, **kwargs):
+        super(MetaParticle, cls).__init__(*args, **kwargs)
+
+        if hasattr(cls, 'name'):
+            setattr(cls, 'name', cls.__name__.lower())
+
+            if hasattr(cls, 'default_attr_descr'):
+                dtype = [(name, vars(Ctype)[sctype], shape)
+                         for name, shape, sctype, _ in cls.default_attr_descr]
+                setattr(cls, 'dtype', dtype)
+
+            attr_descrs = []
+            if hasattr(cls, 'default_attr_descr'):
+                attr_descrs += cls.default_attr_descr
+            if hasattr(cls, 'extra_attr_descr'):
+                attr_descrs += cls.extra_attr_descr
+            if hasattr(cls, 'pn_default_attr_descr'):
+                attr_descrs += cls.pn_default_attr_descr
+            if hasattr(cls, 'pn_extra_attr_descr'):
+                attr_descrs += cls.pn_extra_attr_descr
+
+            attr_names = [name for name, _, _, _ in attr_descrs]
+            setattr(cls, 'attr_names', attr_names)
+            attr_descrs = {name: (shape, sctype, doc)
+                           for name, shape, sctype, doc in attr_descrs}
+            setattr(cls, 'attr_descrs', attr_descrs)
+
+
+class AbstractParticle(with_metaclass(MetaParticle, object)):
+    """
+
+    """
+    def __init__(self, n=0):
+        self.n = n
+
+    def update_attrs(self, attrs):
+        vars(self).update(attrs)
+        self.n = len(self.id)
+
+    @classmethod
+    def from_attrs(cls, attrs):
+        obj = cls.__new__(cls)
+        obj.update_attrs(attrs)
+        return obj
+
+    def register_attribute(self, name, shape, sctype, doc=''):
+        if name not in self.attr_names:
+            self.attr_names.append(name)
+            self.attr_descrs[name] = (shape, sctype, doc)
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+    def __repr__(self):
+        return repr(vars(self))
+
+    def __str__(self):
+        fmt = self.name + '(['
+        if self.n:
+            for name in self.attr_names:
+                ary = getattr(self, name)
+                fmt += '\n\t{0}: {1},'.format(name, ary)
+            fmt += '\n'
+        fmt += '])'
+        return fmt
+
+    def __contains__(self, idx):
+        return idx in self.id
+
+    def __len__(self):
+        return self.n
+
+    def append(self, other):
+        if other.n:
+            attrs = []
+            concat = np.concatenate
+            for name in self.attr_names:
+                sary = getattr(self, name)
+                oary = getattr(other, name)
+                arrays = [sary, oary]
+                cary = concat(arrays, 1) if oary.ndim > 1 else concat(arrays)
+                attrs.append((name, cary))
+            self.update_attrs(attrs)
+
+    def __getitem__(self, index):
+        idx = (Ellipsis, index)
+        if isinstance(index, int):
+            idx += (None,)
+        attrs = [(name, getattr(self, name)[idx])
+                 for name in self.attr_names]
+        return self.from_attrs(attrs)
+
+    def __setitem__(self, index, value):
+        for name in self.attr_names:
+            ary = getattr(self, name)
+            ary[..., index] = getattr(value, name)
+
+    def __getattr__(self, name):
+        if name not in self.attr_names:
+            raise AttributeError(name)
+        shape, sctype, _ = self.attr_descrs[name]
+        value = np.zeros(shape + (self.n,), dtype=vars(Ctype)[sctype])
+        setattr(self, name, value)
+        return value
+
+    def astype(self, cls):
+        newobj = cls(self.n)
+        newobj.set_state(self.get_state())
+        return newobj
+
+    def get_state(self):
+        array = np.zeros(self.n, dtype=self.dtype)
+        for name in array.dtype.names:
+            if hasattr(self, name):
+                attr = getattr(self, name)
+                array[name] = attr.T
+        return array
+
+    def set_state(self, array):
+        for name in array.dtype.names:
+            if hasattr(self, name):
+                attr = getattr(self, name)
+                attr[...] = array[name].T
+
+
+###############################################################################
+
+
 class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
     """This class holds common methods for particles in n-body systems.
 
@@ -54,18 +183,6 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         ('pn_am', (3,), 'real', 'PN correction for angular momentum'),
         ('pn_ke', (), 'real', 'PN correction for kinectic energy.'),
     ]
-
-    # -- misc
-    def __repr__(self):
-        return repr(self.__dict__)
-
-    def copy(self):
-        return copy.deepcopy(self)
-
-    def register_attribute(self, name, shape, sctype, doc=''):
-        if name not in self.attr_names:
-            self.attr_names.append(name)
-            self.attr_descrs[name] = (shape, sctype, doc)
 
     # -- total mass and center-of-mass methods
     @property
@@ -383,123 +500,6 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """
         self.dynrescale_total_mass(1.0)
         self.dynrescale_virial_radius(1.0)
-
-
-###############################################################################
-
-
-class MetaParticle(abc.ABCMeta):
-    def __init__(cls, *args, **kwargs):
-        super(MetaParticle, cls).__init__(*args, **kwargs)
-
-        if hasattr(cls, 'name'):
-            setattr(cls, 'name', cls.__name__.lower())
-
-            if hasattr(cls, 'default_attr_descr'):
-                dtype = [(name, vars(Ctype)[sctype], shape)
-                         for name, shape, sctype, _ in cls.default_attr_descr]
-                setattr(cls, 'dtype', dtype)
-
-            attr_descrs = []
-            if hasattr(cls, 'default_attr_descr'):
-                attr_descrs += cls.default_attr_descr
-            if hasattr(cls, 'extra_attr_descr'):
-                attr_descrs += cls.extra_attr_descr
-            if hasattr(cls, 'pn_default_attr_descr'):
-                attr_descrs += cls.pn_default_attr_descr
-            if hasattr(cls, 'pn_extra_attr_descr'):
-                attr_descrs += cls.pn_extra_attr_descr
-            attr_names = [name for name, _, _, _ in attr_descrs]
-            setattr(cls, 'attr_names', attr_names)
-            attr_descrs = {name: (shape, sctype, doc)
-                           for name, shape, sctype, doc in attr_descrs}
-            setattr(cls, 'attr_descrs', attr_descrs)
-
-
-class AbstractParticle(with_metaclass(MetaParticle, AbstractNbodyMethods)):
-    """
-
-    """
-    def __init__(self, n=0):
-        self.n = n
-
-    def update_attrs(self, attrs):
-        vars(self).update(attrs)
-        self.n = len(self.id)
-
-    @classmethod
-    def from_attrs(cls, attrs):
-        obj = cls.__new__(cls)
-        obj.update_attrs(attrs)
-        return obj
-
-    def __str__(self):
-        fmt = self.name + '(['
-        if self.n:
-            for name in self.attr_names:
-                ary = getattr(self, name)
-                fmt += '\n\t{0}: {1},'.format(name, ary)
-            fmt += '\n'
-        fmt += '])'
-        return fmt
-
-    def __contains__(self, idx):
-        return idx in self.id
-
-    def __len__(self):
-        return self.n
-
-    def append(self, other):
-        if other.n:
-            attrs = []
-            concat = np.concatenate
-            for name in self.attr_names:
-                sary = getattr(self, name)
-                oary = getattr(other, name)
-                arrays = [sary, oary]
-                cary = concat(arrays, 1) if oary.ndim > 1 else concat(arrays)
-                attrs.append((name, cary))
-            self.update_attrs(attrs)
-
-    def __getitem__(self, index):
-        idx = (Ellipsis, index)
-        if isinstance(index, int):
-            idx += (None,)
-        attrs = [(name, getattr(self, name)[idx])
-                 for name in self.attr_names]
-        return self.from_attrs(attrs)
-
-    def __setitem__(self, index, value):
-        for name in self.attr_names:
-            ary = getattr(self, name)
-            ary[..., index] = getattr(value, name)
-
-    def __getattr__(self, name):
-        if name not in self.attr_names:
-            raise AttributeError(name)
-        shape, sctype, _ = self.attr_descrs[name]
-        value = np.zeros(shape + (self.n,), dtype=vars(Ctype)[sctype])
-        setattr(self, name, value)
-        return value
-
-    def astype(self, cls):
-        newobj = cls(self.n)
-        newobj.set_state(self.get_state())
-        return newobj
-
-    def get_state(self):
-        array = np.zeros(self.n, dtype=self.dtype)
-        for name in array.dtype.names:
-            if hasattr(self, name):
-                attr = getattr(self, name)
-                array[name] = attr.T
-        return array
-
-    def set_state(self, array):
-        for name in array.dtype.names:
-            if hasattr(self, name):
-                attr = getattr(self, name)
-                attr[...] = array[name].T
 
 
 # -- End of File --
