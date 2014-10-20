@@ -77,12 +77,6 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
     # miscellaneous methods
     #
 
-    def __delattr__(self, name):
-        for member in self.members:
-            if hasattr(member, name):
-                delattr(member, name)
-        super(ParticleSystem, self).__delattr__(name)
-
     def copy(self):
         return copy.deepcopy(self)
 
