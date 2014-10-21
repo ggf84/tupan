@@ -94,12 +94,10 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
     def append(self, other):
         if other.n:
             attrs = []
-            concat = np.concatenate
             for name in self.attr_names:
                 sary = getattr(self, name)
                 oary = getattr(other, name)
-                arrays = [sary, oary]
-                cary = concat(arrays, 1) if oary.ndim > 1 else concat(arrays)
+                cary = np.concatenate([sary, oary], 1 if sary.ndim > 1 else 0)
                 attrs.append((name, cary))
             self.update_attrs(attrs)
 
@@ -112,9 +110,10 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
         return self.from_attrs(attrs)
 
     def __setitem__(self, index, value):
+        idx = (Ellipsis, index)
         for name in self.attr_names:
             ary = getattr(self, name)
-            ary[..., index] = getattr(value, name)
+            ary[idx] = getattr(value, name)
 
     def __getattr__(self, name):
         if name not in self.attr_names:

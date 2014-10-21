@@ -196,14 +196,15 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         if len(members) == 1:
             member = next(iter(members))
             value = getattr(member, name)
-            value = np.array(value, copy=False, order='C', ndmin=1)
-            setattr(member, name, value)
+            if shape:
+                value = np.array(value, copy=False, order='C', ndmin=1)
+                setattr(member, name, value)
             setattr(self, name, value)
             return value
-        concat = np.concatenate
         arrays = [getattr(member, name) for member in members]
-        value = concat(arrays, 1) if shape else concat(arrays)
-        value = np.array(value, copy=False, order='C', ndmin=1)
+        value = np.concatenate(arrays, 1 if shape else 0)
+        if shape:
+            value = np.array(value, copy=False, order='C', ndmin=1)
         ns = 0
         nf = 0
         for member in members:
