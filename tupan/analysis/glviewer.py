@@ -121,10 +121,10 @@ class GLviewer(app.Canvas):
         self.data = {}
         self.vdata = {}
         self.program = {}
-        self.program['bodies'] = gloo.Program(VERT_SHADER, FRAG_SHADER0)
-        self.program['stars'] = gloo.Program(VERT_SHADER, FRAG_SHADER0)
-        self.program['sphs'] = gloo.Program(VERT_SHADER, FRAG_SHADER1)
-        self.program['blackholes'] = gloo.Program(VERT_SHADER, FRAG_SHADER2)
+        self.program['body'] = gloo.Program(VERT_SHADER, FRAG_SHADER0)
+        self.program['star'] = gloo.Program(VERT_SHADER, FRAG_SHADER0)
+        self.program['sph'] = gloo.Program(VERT_SHADER, FRAG_SHADER1)
+        self.program['blackhole'] = gloo.Program(VERT_SHADER, FRAG_SHADER2)
         self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
@@ -241,27 +241,27 @@ class GLviewer(app.Canvas):
     def on_draw(self, event):
         gloo.clear()
 
-        if 'bodies' in self.data:
+        if 'body' in self.data:
             gloo.set_depth_mask(False)
             gloo.set_state(blend_func=('src_alpha', 'one'))
-            self.program['bodies'].draw('points')
+            self.program['body'].draw('points')
             gloo.set_depth_mask(True)
 
-        if 'stars' in self.data:
+        if 'star' in self.data:
             gloo.set_depth_mask(False)
             gloo.set_state(blend_func=('src_alpha', 'one'))
-            self.program['stars'].draw('points')
+            self.program['star'].draw('points')
             gloo.set_depth_mask(True)
 
-        if 'sphs' in self.data:
+        if 'sph' in self.data:
             gloo.set_depth_mask(False)
             gloo.set_state(blend_func=('src_alpha', 'one'))
-            self.program['sphs'].draw('points')
+            self.program['sph'].draw('points')
             gloo.set_depth_mask(True)
 
-        if 'blackholes' in self.data:
+        if 'blackhole' in self.data:
             gloo.set_state(blend_func=('src_alpha', 'zero'))
-            self.program['blackholes'].draw('points')
+            self.program['blackhole'].draw('points')
 
         if self.make_movie:
             self.record_screen()
@@ -281,7 +281,7 @@ class GLviewer(app.Canvas):
             self.ps = ps.copy()
             self.init_vertex_buffers()
         else:
-            self.ps[np.in1d(self.ps.id, ps.id)] = ps
+            self.ps[np.in1d(self.ps.pid, ps.pid)] = ps
         for member in self.ps.members:
             name, pos, c, s = member.name, member.pos, member.mass, member.mass
 

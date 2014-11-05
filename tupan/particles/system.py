@@ -9,10 +9,10 @@ TODO.
 from __future__ import print_function
 import copy
 import numpy as np
-from .body import Bodies
-from .sph import Sphs
-from .star import Stars
-from .blackhole import Blackholes
+from .body import Body
+from .sph import Sph
+from .star import Star
+from .blackhole import Blackhole
 from .base import MetaParticle, AbstractNbodyMethods
 from ..lib.utils import with_metaclass
 from ..lib.utils.timing import timings, bind_all
@@ -39,17 +39,17 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
     """
     name = None
 
-    def __init__(self, nbodies=0, nstars=0, nbhs=0, nsphs=0):
+    def __init__(self, nbody=0, nstar=0, nbh=0, nsph=0):
         """
         Initializer.
         """
-        members = [cls(n) for (n, cls) in [(nbodies, Bodies),
-                                           (nstars, Stars),
-                                           (nbhs, Blackholes),
-                                           (nsphs, Sphs)] if n]
+        members = [cls(n) for (n, cls) in [(nbody, Body),
+                                           (nstar, Star),
+                                           (nbh, Blackhole),
+                                           (nsph, Sph)] if n]
         self.set_members(members)
         if self.n:
-            self.id[...] = range(self.n)
+            self.pid[...] = range(self.n)
 
     def set_members(self, members):
         self.members = Members(members)

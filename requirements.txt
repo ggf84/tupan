@@ -5,5 +5,4 @@ h5py
 pyopencl
 matplotlib
 vispy
-PyYAML
 Pillow

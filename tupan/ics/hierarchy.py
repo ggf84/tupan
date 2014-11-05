@@ -26,7 +26,7 @@ def make_hierarchy(parent_ps, relative_size, make_subsys, *args, **kwargs):
         subsys.com_to_origin()
         subsys.com_move_to(p.com_r, p.com_v)
         ps.append(subsys)
-    ps.id = range(ps.n)
+    ps.pid = range(ps.n)
 
     return ps
 

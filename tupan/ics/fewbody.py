@@ -50,7 +50,7 @@ def make_binary(m1, m2, a, e):
     vz = [0.0, 0.0]
     ps.vel[...] = [vx, vy, vz]
 
-    ps.id[...] = range(ps.n)
+    ps.pid[...] = range(ps.n)
     return ps
 
 
@@ -73,7 +73,7 @@ def make_pythagorean():
     vz = [0.0, 0.0, 0.0]
     ps.vel[...] = [vx, vy, vz]
 
-    ps.id[...] = range(ps.n)
+    ps.pid[...] = range(ps.n)
     return ps
 
 
@@ -96,7 +96,7 @@ def make_circular3():
     vz = [0.0, 0.0, 0.0]
     ps.vel[...] = [vx, vy, vz]
 
-    ps.id[...] = range(ps.n)
+    ps.pid[...] = range(ps.n)
     return ps
 
 
@@ -119,7 +119,7 @@ def make_figure83():
     vz = [0.0, 0.0, 0.0]
     ps.vel[...] = [vx, vy, vz]
 
-    ps.id[...] = range(ps.n)
+    ps.pid[...] = range(ps.n)
     return ps
 
 
@@ -142,7 +142,7 @@ def make_figure84():
     vz = [0.0, 0.0, 0.0, 0.0]
     ps.vel[...] = [vx, vy, vz]
 
-    ps.id[...] = range(ps.n)
+    ps.pid[...] = range(ps.n)
     return ps
 
 
@@ -228,7 +228,7 @@ def make_solar_system():
           -0.0375021230229398, ]
     ps.vel[...] = [vx, vy, vz]
 
-    ps.id[...] = range(ps.n)
+    ps.pid[...] = range(ps.n)
     return ps
 
 

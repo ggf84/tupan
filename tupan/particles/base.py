@@ -28,7 +28,7 @@ class MetaParticle(abc.ABCMeta):
             if hasattr(cls, 'default_attr_descr'):
                 dtype = [(name, vars(Ctype)[sctype], shape)
                          for name, shape, sctype, _ in cls.default_attr_descr]
-                setattr(cls, 'dtype', dtype)
+                setattr(cls, 'dtype', np.dtype(dtype))
 
             attr_descrs = []
             if hasattr(cls, 'default_attr_descr'):
@@ -56,7 +56,7 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
 
     def update_attrs(self, attrs):
         vars(self).update(attrs)
-        self.n = len(self.id)
+        self.n = len(self.pid)
 
     @classmethod
     def from_attrs(cls, attrs):
@@ -86,7 +86,7 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
         return fmt
 
     def __contains__(self, idx):
-        return idx in self.id
+        return idx in self.pid
 
     def __len__(self):
         return self.n
@@ -154,7 +154,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
 
     # name, shape, sctype, doc
     default_attr_descr = [
-        ('id', (), 'uint', 'index'),
+        ('pid', (), 'uint', 'particle id'),
         ('mass', (), 'real', 'mass'),
         ('pos', (3,), 'real', 'position'),
         ('vel', (3,), 'real', 'velocity'),

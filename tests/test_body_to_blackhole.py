@@ -10,39 +10,40 @@ from __future__ import print_function
 
 if __name__ == "__main__":
     from tupan.ics.plummer import make_plummer
-    from tupan.io import IO
+    from tupan.io import HDF5IO
 
     n = 256
     eps = 4.0/n
 
-    imf = ("equalmass",)
+#    imf = ("equalmass",)
 #    imf = ("salpeter1955", 0.5, 120.0)
-#    imf = ("parravano2011", 0.075, 120.0)
+    imf = ("parravano2011", 0.075, 120.0)
 #    imf = ("padoan2007", 0.075, 120.0)
 
     ps = make_plummer(n, eps, imf, seed=1)
 
     fname = ("plummer" + str(n).zfill(5) + '-'
-             + '_'.join(str(i) for i in imf) + ".hdf5")
-    io = IO(fname, 'w')
-    io.dump_snapshot(ps)
+             + '_'.join(str(i) for i in imf))
+
+    with HDF5IO(fname, 'w') as fid:
+        fid.write_ic(ps)
 
     from tupan.ics.fewbody import make_figure83
-    from tupan.particles.blackhole import Blackholes
-    bh = make_figure83().members.bodies.astype(Blackholes)
+    from tupan.particles.blackhole import Blackhole
+    bh = make_figure83().members.body.astype(Blackhole)
     bh.dynrescale_total_mass(0.5)
     ps.dynrescale_total_mass(0.5)
     ps.update_members(ps.members + [bh])
-    ps.id[...] = range(ps.n)
+    ps.pid[...] = range(ps.n)
     ps.to_nbody_units()
-    nbh = ps.members.blackholes.n
+    nbh = ps.members.blackhole.n
 
     fname = ("plummer" + str(n).zfill(5) + '-'
              + '_'.join(str(i) for i in imf)
-             + '-'+str(nbh)+'bh' + ".hdf5")
+             + '-'+str(nbh)+'bh')
 
-    io = IO(fname, 'w')
-    io.dump_snapshot(ps)
+    with HDF5IO(fname, 'w') as fid:
+        fid.write_ic(ps)
 
     from tupan.analysis.glviewer import GLviewer
     viewer = GLviewer()

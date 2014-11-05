@@ -10,11 +10,11 @@ from .base import AbstractParticle, AbstractNbodyMethods
 from ..lib.utils.timing import timings, bind_all
 
 
-__all__ = ['Bodies']
+__all__ = ['Body']
 
 
 @bind_all(timings)
-class Bodies(AbstractParticle, AbstractNbodyMethods):
+class Body(AbstractParticle, AbstractNbodyMethods):
     """
 
     """

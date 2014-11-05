@@ -98,7 +98,7 @@ class Plummer(object):
         ilist = np.arange(n)
 
         # set index
-        self.ps.id[...] = ilist
+        self.ps.pid[...] = ilist
 
         srand = np.random.get_state()
 

@@ -489,7 +489,7 @@ class Hermite(Base):
         if self.reporter:
             self.reporter.diagnostic_report(ps)
         if self.dumpper:
-            self.dumpper.dump_worldline(ps)
+            self.dumpper.init_worldline(ps)
         if self.viewer:
             self.viewer.show_event(ps)
 

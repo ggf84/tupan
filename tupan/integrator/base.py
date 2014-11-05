@@ -99,10 +99,12 @@ class Base(object):
 
     def dump(self, dt, ps):
         if self.dumpper:
+#            slc = ps.nstep % self.dump_freq == 0
             slc = abs(ps.time // dt) % self.dump_freq == 0
             if any(slc):
-                self.wl.append(ps[slc])
+                self.dumpper.wl.append(ps[slc])
         if self.viewer:
+#            slc = ps.nstep % self.gl_freq == 0
             slc = abs(ps.time // dt) % self.gl_freq == 0
             if any(slc):
                 self.viewer.show_event(ps[slc])
@@ -116,7 +118,6 @@ class Base(object):
 
         ps = self.ps
 
-        self.wl = type(ps)()
         dt = self.get_base_tstep(t_end)
 
         ps = self.do_step(ps, dt)
@@ -124,7 +125,7 @@ class Base(object):
         if self.reporter:
             self.reporter.diagnostic_report(ps)
         if self.dumpper:
-            self.dumpper.dump_worldline(self.wl)
+            self.dumpper.flush_worldline()
 
         self.ps = ps
 

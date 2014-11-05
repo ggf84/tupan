@@ -11,7 +11,7 @@ from __future__ import print_function
 
 if __name__ == "__main__":
     from tupan.ics.plummer import make_plummer
-    from tupan.io import IO
+    from tupan.io import HDF5IO
 
     n = 256
     eps = 4.0/n
@@ -24,11 +24,10 @@ if __name__ == "__main__":
     ps = make_plummer(n, eps, imf, seed=1)
 
     fname = ("plummer" + str(n).zfill(5) + '-'
-             + '_'.join(str(i) for i in imf) + ".hdf5")
-    io = IO(fname, 'w')
-    io.dump_snapshot(ps)
+             + '_'.join(str(i) for i in imf))
 
-#     p.show()
+    with HDF5IO(fname, 'w') as fid:
+        fid.write_ic(ps)
 
     from tupan.analysis.glviewer import GLviewer
     viewer = GLviewer()

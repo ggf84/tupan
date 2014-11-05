@@ -11,7 +11,7 @@ import sys
 import math
 import pickle
 import logging
-from .io import IO
+from .io import HDF5IO
 from .integrator import Integrator
 from .analysis.glviewer import GLviewer
 from .lib.utils.timing import timings, bind_all, Timer
@@ -125,11 +125,12 @@ class Simulation(object):
 
         # Read the initial conditions
         fname = self.args.input_file
-        ps = IO(fname, 'r').load_snapshot()
+        with HDF5IO(fname, 'r') as fid:
+            ps = fid.read_ic()
 
         # Initializes output file
         fname = self.args.output_file
-        io = IO(fname, 'a') if fname else None
+        io = HDF5IO(fname, 'w') if fname else None
 
         # Initializes the diagnostic report of the simulation
         self.dia = Diagnostic(
@@ -301,7 +302,6 @@ def add_parsers(subparser, parents=None):
         '-o', '--output_file',
         type=str,
         default='',
-        # choices=IO.PROVIDED_FORMATS,
         help=('Output filename to store the simulation data '
               '(type: %(type)s, default: %(default)s).')
         )

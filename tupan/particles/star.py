@@ -10,11 +10,11 @@ from .base import AbstractParticle, AbstractNbodyMethods
 from ..lib.utils.timing import timings, bind_all
 
 
-__all__ = ['Stars']
+__all__ = ['Star']
 
 
 @bind_all(timings)
-class Stars(AbstractParticle, AbstractNbodyMethods):
+class Star(AbstractParticle, AbstractNbodyMethods):
     """
 
     """
