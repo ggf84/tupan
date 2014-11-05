@@ -19,6 +19,47 @@ IS_PY3K = True if sys.version_info.major > 2 else False
 PICKLE_PROTOCOL = 0  # ensures backward compatibility with Python 2.x
 
 
+def dump_ps(root, ps):
+    cls = pickle.dumps(type(ps), protocol=PICKLE_PROTOCOL)
+    cls = cls.decode('utf-8') if IS_PY3K else cls
+    ps_group = root.require_group(ps.name)
+    ps_group.attrs['CLASS'] = cls
+    for member in ps.members:
+        if member.n:
+            cls = pickle.dumps(type(member), protocol=PICKLE_PROTOCOL)
+            cls = cls.decode('utf-8') if IS_PY3K else cls
+            member_group = ps_group.require_group(member.name)
+            member_group.attrs['CLASS'] = cls
+            member_group.attrs['N'] = member.n
+            attr_group = member_group.require_group('attributes')
+            for name in member.dtype.names:
+                ary = getattr(member, name)
+                dset = attr_group.require_dataset(
+                    name,
+                    shape=ary.T.shape,
+                    dtype=ary.dtype,
+                    chunks=True,
+                    shuffle=True,
+                    compression='gzip',
+                    )
+                dset[...] = ary.T
+
+
+def load_ps(root):
+    ps_group = list(root.values())[0]
+    ps_cls = pickle.loads(ps_group.attrs['CLASS'])
+    members = []
+    for member_group in ps_group.values():
+        n = member_group.attrs['N']
+        member_cls = pickle.loads(member_group.attrs['CLASS'])
+        member = member_cls(n)
+        for name, dset in member_group['attributes'].items():
+            attr = getattr(member, name)
+            attr[...] = dset[...].T
+        members.append(member)
+    return ps_cls.from_members(members)
+
+
 @bind_all(timings)
 class HDF5IO(object):
     """
@@ -47,46 +88,13 @@ class HDF5IO(object):
         """
 
         """
-        cls = pickle.dumps(type(ps), protocol=PICKLE_PROTOCOL)
-        cls = cls.decode('utf-8') if IS_PY3K else cls
-        ps_group = self.file.require_group(ps.name)
-        ps_group.attrs['CLASS'] = cls
-        for member in ps.members:
-            if member.n:
-                cls = pickle.dumps(type(member), protocol=PICKLE_PROTOCOL)
-                cls = cls.decode('utf-8') if IS_PY3K else cls
-                member_group = ps_group.require_group(member.name)
-                member_group.attrs['CLASS'] = cls
-                member_group.attrs['N'] = member.n
-                attr_group = member_group.require_group('attributes')
-                for name in member.dtype.names:
-                    ary = getattr(member, name)
-                    dset = attr_group.require_dataset(
-                        name,
-                        shape=ary.T.shape,
-                        dtype=ary.dtype,
-                        chunks=True,
-                        shuffle=True,
-                        compression='gzip',
-                        )
-                    dset[...] = ary.T
+        dump_ps(self.file, ps)
 
     def read_ic(self):
         """
 
         """
-        ps_group = list(self.file.values())[0]
-        ps_cls = pickle.loads(ps_group.attrs['CLASS'])
-        members = []
-        for member_group in ps_group.values():
-            n = member_group.attrs['N']
-            member_cls = pickle.loads(member_group.attrs['CLASS'])
-            member = member_cls(n)
-            for name, dset in member_group['attributes'].items():
-                attr = getattr(member, name)
-                attr[...] = dset[...].T
-            members.append(member)
-        return ps_cls.from_members(members)
+        return load_ps(self.file)
 
     def write_snapshot(self, ps, snap_id):
         """
@@ -94,29 +102,7 @@ class HDF5IO(object):
         """
         snap_name = 'Snapshot_' + str(snap_id).zfill(6)
         snap_group = self.file.require_group(snap_name)
-        cls = pickle.dumps(type(ps), protocol=PICKLE_PROTOCOL)
-        cls = cls.decode('utf-8') if IS_PY3K else cls
-        ps_group = snap_group.require_group(ps.name)
-        ps_group.attrs['CLASS'] = cls
-        for member in ps.members:
-            if member.n:
-                cls = pickle.dumps(type(member), protocol=PICKLE_PROTOCOL)
-                cls = cls.decode('utf-8') if IS_PY3K else cls
-                member_group = ps_group.require_group(member.name)
-                member_group.attrs['CLASS'] = cls
-                member_group.attrs['N'] = member.n
-                attr_group = member_group.require_group('attributes')
-                for name in member.dtype.names:
-                    ary = getattr(member, name)
-                    dset = attr_group.require_dataset(
-                        name,
-                        shape=ary.T.shape,
-                        dtype=ary.dtype,
-                        chunks=True,
-                        shuffle=True,
-                        compression='gzip',
-                        )
-                    dset[...] = ary.T
+        dump_ps(snap_group, ps)
 
     def read_snapshot(self, snap_id):
         """
@@ -124,18 +110,7 @@ class HDF5IO(object):
         """
         snap_name = 'Snapshot_' + str(snap_id).zfill(6)
         snap_group = self.file[snap_name]
-        ps_group = list(snap_group.values())[0]
-        ps_cls = pickle.loads(ps_group.attrs['CLASS'])
-        members = []
-        for member_group in ps_group.values():
-            n = member_group.attrs['N']
-            member_cls = pickle.loads(member_group.attrs['CLASS'])
-            member = member_cls(n)
-            for name, dset in member_group['attributes'].items():
-                attr = getattr(member, name)
-                attr[...] = dset[...].T
-            members.append(member)
-        return ps_cls.from_members(members)
+        return load_ps(snap_group)
 
     def init_worldline(self, ps):
         """
@@ -156,29 +131,7 @@ class HDF5IO(object):
         """
         wl_name = 'Worldline_' + str(self.wl_id).zfill(6)
         wl_group = self.file.require_group(wl_name)
-        cls = pickle.dumps(type(ps), protocol=PICKLE_PROTOCOL)
-        cls = cls.decode('utf-8') if IS_PY3K else cls
-        ps_group = wl_group.require_group(ps.name)
-        ps_group.attrs['CLASS'] = cls
-        for member in ps.members:
-            if member.n:
-                cls = pickle.dumps(type(member), protocol=PICKLE_PROTOCOL)
-                cls = cls.decode('utf-8') if IS_PY3K else cls
-                member_group = ps_group.require_group(member.name)
-                member_group.attrs['CLASS'] = cls
-                member_group.attrs['N'] = member.n
-                attr_group = member_group.require_group('attributes')
-                for name in member.dtype.names:
-                    ary = getattr(member, name)
-                    dset = attr_group.require_dataset(
-                        name,
-                        shape=ary.T.shape,
-                        dtype=ary.dtype,
-                        chunks=True,
-                        shuffle=True,
-                        compression='gzip',
-                        )
-                    dset[...] = ary.T
+        dump_ps(wl_group, ps)
 
     def read_worldline(self):
         """
@@ -186,18 +139,7 @@ class HDF5IO(object):
         """
         wl = None
         for wl_group in self.file.values():
-            ps_group = list(wl_group.values())[0]
-            ps_cls = pickle.loads(ps_group.attrs['CLASS'])
-            members = []
-            for member_group in ps_group.values():
-                n = member_group.attrs['N']
-                member_cls = pickle.loads(member_group.attrs['CLASS'])
-                member = member_cls(n)
-                for name, dset in member_group['attributes'].items():
-                    attr = getattr(member, name)
-                    attr[...] = dset[...].T
-                members.append(member)
-            ps = ps_cls.from_members(members)
+            ps = load_ps(wl_group)
             if wl is None:
                 wl = ps
             else:

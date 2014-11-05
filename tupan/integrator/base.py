@@ -99,12 +99,10 @@ class Base(object):
 
     def dump(self, dt, ps):
         if self.dumpper:
-#            slc = ps.nstep % self.dump_freq == 0
             slc = abs(ps.time // dt) % self.dump_freq == 0
             if any(slc):
                 self.dumpper.wl.append(ps[slc])
         if self.viewer:
-#            slc = ps.nstep % self.gl_freq == 0
             slc = abs(ps.time // dt) % self.gl_freq == 0
             if any(slc):
                 self.viewer.show_event(ps[slc])
