@@ -20,12 +20,3 @@ tupan.io.hdf5io module
     :inherited-members:
     :show-inheritance:
 
-tupan.io.psdfio module
-----------------------
-
-.. automodule:: tupan.io.psdfio
-    :members:
-    :undoc-members:
-    :inherited-members:
-    :show-inheritance:
-
