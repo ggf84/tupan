@@ -24,7 +24,7 @@ def dump_ps(root, ps):
     cls = cls.decode('utf-8') if IS_PY3K else cls
     ps_group = root.require_group(ps.name)
     ps_group.attrs['CLASS'] = cls
-    for member in ps.members:
+    for member in ps.members.values():
         if member.n:
             cls = pickle.dumps(type(member), protocol=PICKLE_PROTOCOL)
             cls = cls.decode('utf-8') if IS_PY3K else cls
@@ -32,7 +32,7 @@ def dump_ps(root, ps):
             member_group.attrs['CLASS'] = cls
             member_group.attrs['N'] = member.n
             attr_group = member_group.require_group('attributes')
-            for name in member.dtype.names:
+            for name in member.default_attr_names:
                 ary = getattr(member, name)
                 dset = attr_group.require_dataset(
                     name,
@@ -48,16 +48,16 @@ def dump_ps(root, ps):
 def load_ps(root):
     ps_group = list(root.values())[0]
     ps_cls = pickle.loads(ps_group.attrs['CLASS'])
-    members = []
-    for member_group in ps_group.values():
+    members = {}
+    for member_name, member_group in ps_group.items():
         n = member_group.attrs['N']
         member_cls = pickle.loads(member_group.attrs['CLASS'])
         member = member_cls(n)
         for name, dset in member_group['attributes'].items():
             attr = getattr(member, name)
             attr[...] = dset[...].T
-        members.append(member)
-    return ps_cls.from_members(members)
+        members[member_name] = member
+    return ps_cls.from_members(**members)
 
 
 @bind_all(timings)
@@ -163,18 +163,20 @@ class HDF5IO(object):
 
 #        # ---
 #        start = time.time()
-#        for member in ps.members:
+#        for member in ps.members.values():
 #            if member.n:
 #                pids = set(member.pid)
 #                n = len(pids)
 #                for t in times:
 #                    snap = type(member)(n)
-#                    snaps[t].update_members([snap] + snaps[t].members)
+#                    members = snaps[t].members
+#                    members[snap.name] = snap
+#                    snaps[t].update_members(**members)
 #        pids = set(ps.pid)
 #        n = len(pids)
 #        for i, pid in enumerate(pids):
 #            pstream = ps[ps.pid == pid]
-#            for attr in ps.dtype.names:
+#            for attr in ps.default_attr_names:
 #                array = getattr(pstream, attr)
 #                if array.ndim > 1:
 #                    for axis in range(array.shape[0]):
@@ -191,17 +193,19 @@ class HDF5IO(object):
 
         # ---
         start = time.time()
-        for member in ps.members:
+        for member in ps.members.values():
             if member.n:
                 name = member.name
                 pids = set(member.pid)
                 n = len(pids)
                 for t in times:
                     snap = type(member)(n)
-                    snaps[t].update_members(snaps[t].members + [snap])
+                    members = snaps[t].members
+                    members[snap.name] = snap
+                    snaps[t].update_members(**members)
                 for i, pid in enumerate(pids):
                     pstream = member[member.pid == pid]
-                    for attr in member.dtype.names:
+                    for attr in member.default_attr_names:
                         array = getattr(pstream, attr)
                         if array.ndim > 1:
                             for axis in range(array.shape[0]):

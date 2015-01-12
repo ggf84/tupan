@@ -7,7 +7,9 @@ TODO.
 
 
 import logging
+from abc import ABCMeta, abstractmethod
 from .base import Base, power_of_two
+from ..lib.utils import with_metaclass
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -16,31 +18,38 @@ __all__ = ['Hermite']
 LOGGER = logging.getLogger(__name__)
 
 
-class HX(object):
+class HX(with_metaclass(ABCMeta, object)):
     """
 
     """
-    order = None
-
-    def __init__(self, manager):
-        self.initialized = False
-        self.manager = manager
+    @property
+    @abstractmethod
+    def order(self):
+        raise NotImplementedError
 
     @staticmethod
+    @abstractmethod
     def prepare(ps, eta):
         raise NotImplementedError
 
     @staticmethod
+    @abstractmethod
     def predict(ps, dt):
         raise NotImplementedError
 
     @staticmethod
+    @abstractmethod
     def ecorrect(ps1, ps0, dt):
         raise NotImplementedError
 
     @staticmethod
+    @abstractmethod
     def set_nextstep(ps, eta):
         raise NotImplementedError
+
+    def __init__(self, manager):
+        self.initialized = False
+        self.manager = manager
 
     def pec(self, n, ps, eta, dtmax):
         if not self.initialized:
@@ -58,7 +67,7 @@ class HX(object):
         ps1.tstep[...] = dt
         ps1.time += dt
         ps1.nstep += 1
-        self.manager.dump(dt, ps)
+        self.manager.dump(dt, ps1)
         if self.manager.update_tstep:
             self.set_nextstep(ps1, eta)
         return ps1
@@ -138,7 +147,7 @@ class H4(HX):
     @staticmethod
     def prepare(ps, eta):
         ps.set_tstep(ps, eta)
-        ps.set_acc_jerk(ps)
+        ps.set_acc_jrk(ps)
         ps.snp = ps.acc * 0
         ps.crk = ps.jrk * 0
         return ps
@@ -166,7 +175,7 @@ class H4(HX):
         h2 = h / 2
         h6 = h / 6
 
-        ps1.set_acc_jerk(ps1)
+        ps1.set_acc_jrk(ps1)
 
         jrk_m = (ps0.jrk - ps1.jrk)
         acc_p = (ps0.acc + ps1.acc)
@@ -216,8 +225,8 @@ class H6(HX):
     @staticmethod
     def prepare(ps, eta):
         ps.set_tstep(ps, eta)
-        ps.set_acc_jerk(ps)
-        ps.set_snap_crackle(ps)
+        ps.set_acc_jrk(ps)
+        ps.set_snp_crk(ps)
         ps.crk = ps.jrk * 0
         ps.d4a = ps.snp * 0
         ps.d5a = ps.crk * 0
@@ -254,8 +263,8 @@ class H6(HX):
         h5 = h / 5
         h12 = h / 12
 
-        ps1.set_snap_crackle(ps1)
-        ps1.set_acc_jerk(ps1)
+        ps1.set_snp_crk(ps1)
+        ps1.set_acc_jrk(ps1)
 
         snp_p = (ps0.snp + ps1.snp)
         jrk_m = (ps0.jrk - ps1.jrk)
@@ -315,8 +324,8 @@ class H8(HX):
     @staticmethod
     def prepare(ps, eta):
         ps.set_tstep(ps, eta)
-        ps.set_acc_jerk(ps)
-        ps.set_snap_crackle(ps)
+        ps.set_acc_jrk(ps)
+        ps.set_snp_crk(ps)
         ps.d4a = ps.snp * 0
         ps.d5a = ps.crk * 0
         ps.d6a = ps.d4a * 0
@@ -369,8 +378,8 @@ class H8(HX):
         h14 = h / 14
         h20 = h / 20
 
-        ps1.set_snap_crackle(ps1)
-        ps1.set_acc_jerk(ps1)
+        ps1.set_snp_crk(ps1)
+        ps1.set_acc_jrk(ps1)
 
         crk_m = (ps0.crk - ps1.crk)
         snp_p = (ps0.snp + ps1.snp)

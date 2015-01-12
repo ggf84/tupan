@@ -27,13 +27,13 @@ def best_of(n, func, *args, **kwargs):
 def set_particles(n):
     import numpy as np
     from tupan.particles import ParticleSystem
-    ps = ParticleSystem(n-n//2, n//2)
-    ps.mass[...] = np.random.random((ps.n,))
-    ps.eps2[...] = np.zeros((ps.n,))
-    ps.pos[...] = np.random.random((3, ps.n)) * 10
-    ps.vel[...] = np.random.random((3, ps.n)) * 10
 
-    ps.register_attribute('pnacc', (3,), 'real')
+    ps = ParticleSystem(n-n//2, n//2)
+
+    ps.mass[...] = np.random.random((n,))
+    ps.eps2[...] = np.zeros((n,))
+    ps.pos[...] = np.random.random((3, n)) * 10
+    ps.vel[...] = np.random.random((3, n)) * 10
 
     return ps
 

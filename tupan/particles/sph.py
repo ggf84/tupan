@@ -20,7 +20,7 @@ class Sph(AbstractParticle, AbstractNbodyMethods):
     """
     name = None
     default_attr_descr = AbstractNbodyMethods.default_attr_descr + [
-        ('density', (), 'real', 'density'),
+        ('density', '{n}', 'real', 'density'),
     ]
 
 

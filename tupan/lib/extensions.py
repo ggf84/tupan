@@ -251,9 +251,9 @@ class Sakura(AbstractExtension):
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'dpos'):
-            ips.register_attribute('dpos', (3,), 'real')
+            ips.register_attribute('dpos', '3, {n}', 'real')
         if not hasattr(ips, 'dvel'):
-            ips.register_attribute('dvel', (3,), 'real')
+            ips.register_attribute('dvel', '3, {n}', 'real')
 
         inpargs = (ips.n,
                    ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
@@ -279,9 +279,9 @@ class NregX(AbstractExtension):
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'mr'):
-            ips.register_attribute('mr', (3,), 'real')
+            ips.register_attribute('mr', '3, {n}', 'real')
         if not hasattr(ips, 'u'):
-            ips.register_attribute('u', (), 'real')
+            ips.register_attribute('u', '{n}', 'real')
 
         inpargs = (ips.n,
                    ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
@@ -308,9 +308,9 @@ class NregV(AbstractExtension):
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'mv'):
-            ips.register_attribute('mv', (3,), 'real')
+            ips.register_attribute('mv', '3, {n}', 'real')
         if not hasattr(ips, 'mk'):
-            ips.register_attribute('mk', (), 'real')
+            ips.register_attribute('mk', '{n}', 'real')
 
         inpargs = (ips.n,
                    ips.mass, ips.vel[0], ips.vel[1], ips.vel[2],
@@ -347,7 +347,9 @@ class Kepler(AbstractExtension):
                    kwargs['dt'])
 
         outargs = (ips.pos[0], ips.pos[1], ips.pos[2],
-                   ips.vel[0], ips.vel[1], ips.vel[2])
+                   ips.vel[0], ips.vel[1], ips.vel[2],
+                   jps.pos[0], jps.pos[1], jps.pos[2],
+                   jps.vel[0], jps.vel[1], jps.vel[2])
 
         self.kernel.set_args(inpargs, outargs)
 

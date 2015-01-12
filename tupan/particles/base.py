@@ -25,14 +25,14 @@ class MetaParticle(abc.ABCMeta):
         if hasattr(cls, 'name'):
             setattr(cls, 'name', cls.__name__.lower())
 
-            if hasattr(cls, 'default_attr_descr'):
-                dtype = [(name, vars(Ctype)[sctype], shape)
-                         for name, shape, sctype, _ in cls.default_attr_descr]
-                setattr(cls, 'dtype', np.dtype(dtype))
-
             attr_descrs = []
             if hasattr(cls, 'default_attr_descr'):
                 attr_descrs += cls.default_attr_descr
+
+            default_attr_names = {name: (shape, sctype, doc)
+                                  for name, shape, sctype, doc in attr_descrs}
+            setattr(cls, 'default_attr_names', default_attr_names)
+
             if hasattr(cls, 'extra_attr_descr'):
                 attr_descrs += cls.extra_attr_descr
             if hasattr(cls, 'pn_default_attr_descr'):
@@ -40,11 +40,9 @@ class MetaParticle(abc.ABCMeta):
             if hasattr(cls, 'pn_extra_attr_descr'):
                 attr_descrs += cls.pn_extra_attr_descr
 
-            attr_names = [name for name, _, _, _ in attr_descrs]
+            attr_names = {name: (shape, sctype, doc)
+                          for name, shape, sctype, doc in attr_descrs}
             setattr(cls, 'attr_names', attr_names)
-            attr_descrs = {name: (shape, sctype, doc)
-                           for name, shape, sctype, doc in attr_descrs}
-            setattr(cls, 'attr_descrs', attr_descrs)
 
 
 class AbstractParticle(with_metaclass(MetaParticle, object)):
@@ -54,20 +52,19 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
     def __init__(self, n=0):
         self.n = n
 
-    def update_attrs(self, attrs):
-        vars(self).update(attrs)
+    def update_attrs(self, **attrs):
+        vars(self).update(**attrs)
         self.n = len(self.pid)
 
     @classmethod
-    def from_attrs(cls, attrs):
+    def from_attrs(cls, **attrs):
         obj = cls.__new__(cls)
-        obj.update_attrs(attrs)
+        obj.update_attrs(**attrs)
         return obj
 
     def register_attribute(self, name, shape, sctype, doc=''):
         if name not in self.attr_names:
-            self.attr_names.append(name)
-            self.attr_descrs[name] = (shape, sctype, doc)
+            self.attr_names[name] = (shape, sctype, doc)
 
     def copy(self):
         return copy.deepcopy(self)
@@ -79,8 +76,8 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
         fmt = self.name + '(['
         if self.n:
             for name in self.attr_names:
-                ary = getattr(self, name)
-                fmt += '\n\t{0}: {1},'.format(name, ary)
+                value = getattr(self, name)
+                fmt += '\n\t{0}: {1},'.format(name, value)
             fmt += '\n'
         fmt += '])'
         return fmt
@@ -93,54 +90,56 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
 
     def append(self, other):
         if other.n:
-            attrs = []
+            attrs = {}
             for name in self.attr_names:
-                sary = getattr(self, name)
-                oary = getattr(other, name)
-                cary = np.concatenate([sary, oary], 1 if sary.ndim > 1 else 0)
-                attrs.append((name, cary))
-            self.update_attrs(attrs)
+                arrays = [getattr(self, name), getattr(other, name)]
+                attrs[name] = np.concatenate(arrays, -1)  # along last dimension
+            self.update_attrs(**attrs)
 
     def __getitem__(self, index):
-        idx = (Ellipsis, index)
-        if isinstance(index, int):
-            idx += (None,)
-        attrs = [(name, getattr(self, name)[idx])
-                 for name in self.attr_names]
-        return self.from_attrs(attrs)
+        index = ((Ellipsis, index, None)
+                 if isinstance(index, int)
+                     else (Ellipsis, index))
+        attrs = {}
+        for name in self.attr_names:
+            value = getattr(self, name)[index]
+            value = np.array(value, copy=False, order='C')
+            attrs[name] = value
+        return self.from_attrs(**attrs)
 
     def __setitem__(self, index, value):
-        idx = (Ellipsis, index)
+        index = (Ellipsis, index)
         for name in self.attr_names:
-            ary = getattr(self, name)
-            ary[idx] = getattr(value, name)
+            attr = getattr(self, name)
+            attr[index] = getattr(value, name)
 
     def __getattr__(self, name):
         if name not in self.attr_names:
             raise AttributeError(name)
-        shape, sctype, _ = self.attr_descrs[name]
-        value = np.zeros(shape + (self.n,), dtype=vars(Ctype)[sctype])
+        shape, sctype, _ = self.attr_names[name]
+        shape = eval(shape.format(n=self.n))
+        dtype = vars(Ctype)[sctype]
+        value = np.zeros(shape, dtype=dtype)
         setattr(self, name, value)
         return value
 
     def astype(self, cls):
-        newobj = cls(self.n)
-        newobj.set_state(self.get_state())
-        return newobj
+        obj = cls(self.n)
+        obj.set_state(self.get_state())
+        return obj
 
     def get_state(self):
-        array = np.zeros(self.n, dtype=self.dtype)
-        for name in array.dtype.names:
-            if hasattr(self, name):
-                attr = getattr(self, name)
-                array[name] = attr.T
-        return array
+        arrays = {}
+        for name in self.attr_names:
+            value = getattr(self, name)
+            arrays[name] = value
+        return arrays
 
-    def set_state(self, array):
-        for name in array.dtype.names:
-            if hasattr(self, name):
-                attr = getattr(self, name)
-                attr[...] = array[name].T
+    def set_state(self, arrays):
+        for name in self.attr_names:
+            if name in arrays:
+                value = getattr(self, name)
+                value[...] = arrays[name]
 
 
 ###############################################################################
@@ -154,33 +153,33 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
 
     # name, shape, sctype, doc
     default_attr_descr = [
-        ('pid', (), 'uint', 'particle id'),
-        ('mass', (), 'real', 'mass'),
-        ('pos', (3,), 'real', 'position'),
-        ('vel', (3,), 'real', 'velocity'),
-        ('eps2', (), 'real', 'squared softening'),
-        ('time', (), 'real', 'current time'),
-        ('nstep', (), 'uint', 'step number'),
-        ('tstep', (), 'real', 'time step'),
+        ('pid', '{n}', 'uint', 'particle id'),
+        ('mass', '{n}', 'real', 'mass'),
+        ('pos', '3, {n}', 'real', 'position'),
+        ('vel', '3, {n}', 'real', 'velocity'),
+        ('eps2', '{n}', 'real', 'squared softening'),
+        ('time', '{n}', 'real', 'current time'),
+        ('nstep', '{n}', 'uint', 'step number'),
+        ('tstep', '{n}', 'real', 'time step'),
     ]
 
     extra_attr_descr = [
-        ('phi', (), 'real', 'gravitational potential'),
-        ('acc', (3,), 'real', 'acceleration'),
-        ('jrk', (3,), 'real', 'jerk'),
-        ('snp', (3,), 'real', 'snap'),
-        ('crk', (3,), 'real', 'crackle'),
-        ('tstepij', (), 'real', 'auxiliary time step'),
+        ('phi', '{n}', 'real', 'gravitational potential'),
+        ('acc', '3, {n}', 'real', 'acceleration'),
+        ('jrk', '3, {n}', 'real', 'jerk'),
+        ('snp', '3, {n}', 'real', 'snap'),
+        ('crk', '3, {n}', 'real', 'crackle'),
+        ('tstepij', '{n}', 'real', 'auxiliary time step'),
     ]
 
     pn_default_attr_descr = []
 
     pn_extra_attr_descr = [
-        ('pnacc', (3,), 'real', 'PN acceleration'),
-        ('pn_mr', (3,), 'real', 'PN correction for com_r'),
-        ('pn_mv', (3,), 'real', 'PN correction for com_v'),
-        ('pn_am', (3,), 'real', 'PN correction for angular momentum'),
-        ('pn_ke', (), 'real', 'PN correction for kinectic energy.'),
+        ('pnacc', '3, {n}', 'real', 'PN acceleration'),
+        ('pn_mr', '3, {n}', 'real', 'PN correction for com_r'),
+        ('pn_mv', '3, {n}', 'real', 'PN correction for com_v'),
+        ('pn_am', '3, {n}', 'real', 'PN correction for angular momentum'),
+        ('pn_ke', '{n}', 'real', 'PN correction for kinectic energy.'),
     ]
 
     # -- total mass and center-of-mass methods
@@ -413,14 +412,14 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """
         kernel(self, other)
 
-    def set_acc_jerk(self, other, kernel=ext.AccJerk()):
+    def set_acc_jrk(self, other, kernel=ext.AccJerk()):
         """Set individual gravitational acceleration and jerk due to other
         particles.
 
         """
         kernel(self, other)
 
-    def set_snap_crackle(self, other, kernel=ext.SnapCrackle()):
+    def set_snp_crk(self, other, kernel=ext.SnapCrackle()):
         """Set individual gravitational snap and crackle due to other
         particles.
 

@@ -63,9 +63,9 @@ void main()
 {
     float r = length(gl_PointCoord.xy - vec2(0.5f, 0.5f));
     if (r > 0.5f) discard;  // kill pixels outside circle
-    float alpha = exp(-16*r*r);
-    float core = exp(-256*r*r);
-    gl_FragColor = vec4(v_color.rgb * (1 + core), (alpha + 7*core)/8);
+    float alpha = (1 - sqrt(2*r));
+    alpha *= alpha;
+    gl_FragColor = vec4(v_color.rgb * (1 + alpha), alpha);
 }
 """
 
@@ -82,7 +82,9 @@ void main()
 {
     float r = length(gl_PointCoord.xy - vec2(0.5f, 0.5f));
     if (r > 0.5f) discard;  // kill pixels outside circle
-    float alpha = exp(-16*r*r);
+    float alpha = (0.5 - r);
+    alpha *= alpha;
+    alpha *= alpha;
     gl_FragColor = vec4(v_color.rgb, alpha);
 }
 """
@@ -267,9 +269,8 @@ class GLviewer(app.Canvas):
             self.record_screen()
 
     def init_vertex_buffers(self):
-        for member in self.ps.members:
+        for name, member in self.ps.members.items():
             n = member.n
-            name = member.name
             self.data[name] = np.zeros(n, [('a_position', np.float32, 3),
                                            ('a_color',    np.float32, 4),
                                            ('a_psize', np.float32, 1)])
@@ -282,8 +283,8 @@ class GLviewer(app.Canvas):
             self.init_vertex_buffers()
         else:
             self.ps[np.in1d(self.ps.pid, ps.pid)] = ps
-        for member in self.ps.members:
-            name, pos, c, s = member.name, member.pos, member.mass, member.mass
+        for name, member in self.ps.members.items():
+            pos, c, s = member.pos, member.mass, member.mass
 
 #            c = (c/c.max())**(1/3.0)
             cmax, cmin = c.max(), c.min()

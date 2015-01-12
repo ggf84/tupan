@@ -33,8 +33,10 @@ if __name__ == "__main__":
     bh = make_figure83().members.body.astype(Blackhole)
     bh.dynrescale_total_mass(0.5)
     ps.dynrescale_total_mass(0.5)
-    ps.update_members(ps.members + [bh])
-    ps.pid[...] = range(ps.n)
+    members = ps.members
+    members[bh.name] = bh
+    ps.update_members(**members)
+    ps.reset_pid()
     ps.to_nbody_units()
     nbh = ps.members.blackhole.n
 

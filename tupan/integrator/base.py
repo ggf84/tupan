@@ -53,6 +53,8 @@ class Base(object):
                 extensions.pn.order = pn_order
                 extensions.pn.clight = clight
                 type(self.ps).include_pn_corrections = True
+                for member in self.ps.members.values():
+                    type(member).include_pn_corrections = True
 
         self.reporter = kwargs.pop('reporter', None)
         self.viewer = kwargs.pop('viewer', None)

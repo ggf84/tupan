@@ -22,14 +22,11 @@ __all__ = ['ParticleSystem']
 
 
 @bind_all(timings)
-class Members(list):
-    def __init__(self, members):
-        super(Members, self).__init__(members)
-        for member in self:
-            setattr(self, member.name, member)
-
-    def __contains__(self, key):
-        return key in vars(self)
+class Members(dict):
+    def __init__(self, **members):
+        super(Members, self).__init__(**members)
+        for name, member in self.items():
+            setattr(self, name, member)
 
 
 @bind_all(timings)
@@ -43,35 +40,37 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         """
         Initializer.
         """
-        members = [cls(n) for (n, cls) in [(nbody, Body),
-                                           (nstar, Star),
-                                           (nbh, Blackhole),
-                                           (nsph, Sph)] if n]
-        self.set_members(members)
+        members = {cls.name: cls(n) for (n, cls) in [(nbody, Body),
+                                                     (nstar, Star),
+                                                     (nbh, Blackhole),
+                                                     (nsph, Sph)] if n}
+        self.set_members(**members)
         if self.n:
-            self.pid[...] = range(self.n)
+            self.reset_pid()
 
-    def set_members(self, members):
-        self.members = Members(members)
+    def reset_pid(self):
+        self.pid[...] = range(self.n)
+
+    def set_members(self, **members):
+        self.members = Members(**members)
         self.n = len(self)
 
-    def update_members(self, members):
+    def update_members(self, **members):
         vars(self).clear()
-        self.set_members(members)
+        self.set_members(**members)
 
     @classmethod
-    def from_members(cls, members):
+    def from_members(cls, **members):
         obj = cls.__new__(cls)
-        obj.set_members(members)
+        obj.set_members(**members)
         return obj
 
     def register_attribute(self, name, shape, sctype, doc=''):
-        for member in self.members:
+        for member in self.members.values():
             member.register_attribute(name, shape, sctype, doc)
 
         if name not in self.attr_names:
-            self.attr_names.append(name)
-            self.attr_descrs[name] = (shape, sctype, doc)
+            self.attr_names[name] = (shape, sctype, doc)
 
     #
     # miscellaneous methods
@@ -86,35 +85,34 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
     def __str__(self):
         fmt = self.name + '(['
         if self.n:
-            for member in self.members:
+            for member in self.members.values():
                 fmt += '\n\t{0},'.format('\n\t'.join(str(member).split('\n')))
             fmt += '\n'
         fmt += '])'
         return fmt
 
     def __len__(self):
-        return sum(len(member) for member in self.members)
+        return sum(len(member) for member in self.members.values())
 
-    def append(self, obj):
-        if obj.n:
+    def append(self, other):
+        if other.n:
             members = self.members
-            for (i, member) in enumerate(obj.members):
+            for name, member in other.members.items():
                 try:
-                    members[i].append(member)
-                except IndexError:
-                    members.append(member.copy())
-            self.update_members(members)
+                    members[name].append(member)
+                except KeyError:
+                    members[name] = member.copy()
+            self.update_members(**members)
 
     def __getitem__(self, index):
         if isinstance(index, np.ndarray):
-            ns = 0
-            nf = 0
-            members = []
-            for member in self.members:
+            ns, nf = 0, 0
+            members = {}
+            for name, member in self.members.items():
                 nf += member.n
-                members.append(member[index[ns:nf]])
+                members[name] = member[index[ns:nf]]
                 ns += member.n
-            return self.from_members(members)
+            return self.from_members(**members)
 
         if isinstance(index, int):
             if abs(index) > self.n-1:
@@ -122,12 +120,12 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
                 raise IndexError(msg.format(index, self.n))
             if index < 0:
                 index = self.n + index
-            members = []
-            for member in self.members:
+            members = {}
+            for name, member in self.members.items():
                 if 0 <= index < member.n:
-                    members.append(member[index])
+                    members[name] = member[index]
                 index -= member.n
-            return self.from_members(members)
+            return self.from_members(**members)
 
         if isinstance(index, slice):
             start = index.start
@@ -140,21 +138,21 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
                 start = self.n + start
             if stop < 0:
                 stop = self.n + stop
-            members = []
-            for member in self.members:
+            members = {}
+            for name, member in self.members.items():
                 if stop >= 0 and start < member.n:
-                    members.append(member[start-member.n:stop])
+                    members[name] = member[start-member.n:stop]
                 start -= member.n
                 stop -= member.n
-            return self.from_members(members)
+            return self.from_members(**members)
 
-    def __setitem__(self, index, values):
+    def __setitem__(self, index, value):
         if isinstance(index, np.ndarray):
-            ns = 0
-            nf = 0
-            for (key, member) in enumerate(self.members):
+            ns, nf = 0, 0
+            for name, member in self.members.items():
                 nf += member.n
-                member[index[ns:nf]] = values.members[key]
+                if name in value.members:
+                    member[index[ns:nf]] = value.members[name]
                 ns += member.n
             return
 
@@ -164,9 +162,10 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
                 raise IndexError(msg.format(index, self.n))
             if index < 0:
                 index = self.n + index
-            for (key, member) in enumerate(self.members):
+            for name, member in self.members.items():
                 if 0 <= index < member.n:
-                    member[index] = values.members[key]
+                    if name in value.members:
+                        member[index] = value.members[name]
                 index -= member.n
             return
 
@@ -181,32 +180,24 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
                 start = self.n + start
             if stop < 0:
                 stop = self.n + stop
-            for (key, member) in enumerate(self.members):
+            for name, member in self.members.items():
                 if stop >= 0 and start < member.n:
-                    member[start-member.n:stop] = values.members[key]
+                    if name in value.members:
+                        member[start-member.n:stop] = value.members[name]
                 start -= member.n
                 stop -= member.n
             return
 
     def __getattr__(self, name):
-        if name not in self.attr_names:
-            raise AttributeError(name)
-        shape, _, _ = self.attr_descrs[name]
-        members = self.members
+        members = list(self.members.values())
         if len(members) == 1:
             member = next(iter(members))
             value = getattr(member, name)
-            if shape:
-                value = np.array(value, copy=False, order='C', ndmin=1)
-                setattr(member, name, value)
             setattr(self, name, value)
             return value
         arrays = [getattr(member, name) for member in members]
-        value = np.concatenate(arrays, 1 if shape else 0)
-        if shape:
-            value = np.array(value, copy=False, order='C', ndmin=1)
-        ns = 0
-        nf = 0
+        value = np.concatenate(arrays, -1)  # along last dimension
+        ns, nf = 0, 0
         for member in members:
             nf += member.n
             setattr(member, name, value[..., ns:nf])

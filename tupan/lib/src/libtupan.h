@@ -253,5 +253,11 @@ void kepler_solver_kernel(
     REAL * restrict __ir1z,
     REAL * restrict __iv1x,
     REAL * restrict __iv1y,
-    REAL * restrict __iv1z);
+    REAL * restrict __iv1z,
+    REAL * restrict __jr1x,
+    REAL * restrict __jr1y,
+    REAL * restrict __jr1z,
+    REAL * restrict __jv1x,
+    REAL * restrict __jv1y,
+    REAL * restrict __jv1z);
 

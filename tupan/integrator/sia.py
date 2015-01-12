@@ -133,14 +133,14 @@ def kick_pn(ips, dt):
 
     #
     # ips.vel += (ips.acc * dt + ips.w) / 2
-
+    #
     # ips.set_pnacc(ips)
     # pnforce = ips.mass * ips.pnacc
     # ips.pn_ke -= (ips.vel * pnforce).sum(0) * dt
     # ips.pn_mv -= pnforce * dt
     # ips.pn_am -= np.cross(ips.pos.T, pnforce.T).T * dt
     # ips.w[...] = 2 * ips.pnacc * dt - ips.w
-
+    #
     # ips.vel += (ips.acc * dt + ips.w) / 2
     #
 
@@ -187,7 +187,11 @@ def twobody_solver(ips, dt, kernel=ext.Kepler()):
                                   'Kepler-solver does not include '
                                   'post-Newtonian corrections.')
     else:
-        kernel(ips, ips, dt=dt)
+        ps0, ps1 = ips[0], ips[1]
+        kernel(next(iter(ps0.members.values())),
+               next(iter(ps1.members.values())),
+               dt=dt)
+        ips = join(ps0, ps1)
     return ips
 
 
@@ -238,66 +242,56 @@ def sf_kick_pn(slow, fast, dt):
     """Slow<->Fast Kick operator for post-Newtonian quantities.
 
     """
+    #
     slow.set_pnacc(fast)
     fast.set_pnacc(slow)
-    pnforce = slow.mass * slow.pnacc
-    slow.pn_ke -= (slow.vel * pnforce).sum(0) * (dt / 2)
-    slow.pn_mv -= pnforce * (dt / 2)
-    slow.pn_am -= np.cross(slow.pos.T, pnforce.T).T * (dt / 2)
-    pnforce = fast.mass * fast.pnacc
-    fast.pn_ke -= (fast.vel * pnforce).sum(0) * (dt / 2)
-    fast.pn_mv -= pnforce * (dt / 2)
-    fast.pn_am -= np.cross(fast.pos.T, pnforce.T).T * (dt / 2)
+    for ps in [slow, fast]:
+        pnforce = ps.mass * ps.pnacc
+        ps.pn_ke -= (ps.vel * pnforce).sum(0) * (dt / 2)
+        ps.pn_mv -= pnforce * (dt / 2)
+        ps.pn_am -= np.cross(ps.pos.T, pnforce.T).T * (dt / 2)
 
-    slow.w[...] = slow.vel
-    fast.w[...] = fast.vel
-    slow.w += (slow.acc + slow.pnacc) * (dt / 2)
-    fast.w += (fast.acc + fast.pnacc) * (dt / 2)
+        ps.w[...] = ps.vel
+        ps.w += (ps.acc + ps.pnacc) * (dt / 2)
 
-    slow.vel, slow.w = slow.w, slow.vel
-    fast.vel, fast.w = fast.w, fast.vel
+    for ps in [slow, fast]:
+        ps.vel, ps.w = ps.w, ps.vel
     slow.set_pnacc(fast)
     fast.set_pnacc(slow)
-    slow.vel, slow.w = slow.w, slow.vel
-    fast.vel, fast.w = fast.w, fast.vel
+    for ps in [slow, fast]:
+        ps.vel, ps.w = ps.w, ps.vel
 
-    slow.vel += (slow.acc + slow.pnacc) * dt
-    fast.vel += (fast.acc + fast.pnacc) * dt
+    for ps in [slow, fast]:
+        ps.vel += (ps.acc + ps.pnacc) * dt
 
     slow.set_pnacc(fast)
     fast.set_pnacc(slow)
-    slow.w += (slow.acc + slow.pnacc) * (dt / 2)
-    fast.w += (fast.acc + fast.pnacc) * (dt / 2)
-    slow.vel[...] = slow.w
-    fast.vel[...] = fast.w
+    for ps in [slow, fast]:
+        ps.w += (ps.acc + ps.pnacc) * (dt / 2)
+        ps.vel[...] = ps.w
 
-    pnforce = slow.mass * slow.pnacc
-    slow.pn_ke -= (slow.vel * pnforce).sum(0) * (dt / 2)
-    slow.pn_mv -= pnforce * (dt / 2)
-    slow.pn_am -= np.cross(slow.pos.T, pnforce.T).T * (dt / 2)
-    pnforce = fast.mass * fast.pnacc
-    fast.pn_ke -= (fast.vel * pnforce).sum(0) * (dt / 2)
-    fast.pn_mv -= pnforce * (dt / 2)
-    fast.pn_am -= np.cross(fast.pos.T, pnforce.T).T * (dt / 2)
+        pnforce = ps.mass * ps.pnacc
+        ps.pn_ke -= (ps.vel * pnforce).sum(0) * (dt / 2)
+        ps.pn_mv -= pnforce * (dt / 2)
+        ps.pn_am -= np.cross(ps.pos.T, pnforce.T).T * (dt / 2)
+    #
 
-    # slow.vel += (slow.acc * dt + slow.w) / 2
-    # fast.vel += (fast.acc * dt + fast.w) / 2
-
+    #
+    # for ps in [slow, fast]:
+    #    ps.vel += (ps.acc * dt + ps.w) / 2
+    #
     # slow.set_pnacc(fast)
     # fast.set_pnacc(slow)
-    # pnforce = slow.mass * slow.pnacc
-    # slow.pn_ke -= (slow.vel * pnforce).sum(0) * dt
-    # slow.pn_mv -= pnforce * dt
-    # slow.pn_am -= np.cross(slow.pos.T, pnforce.T).T * dt
-    # pnforce = fast.mass * fast.pnacc
-    # fast.pn_ke -= (fast.vel * pnforce).sum(0) * dt
-    # fast.pn_mv -= pnforce * dt
-    # fast.pn_am -= np.cross(fast.pos.T, pnforce.T).T * dt
-    # slow.w[...] = 2 * slow.pnacc * dt - slow.w
-    # fast.w[...] = 2 * fast.pnacc * dt - fast.w
-
-    # slow.vel += (slow.acc * dt + slow.w) / 2
-    # fast.vel += (fast.acc * dt + fast.w) / 2
+    # for ps in [slow, fast]:
+    #     pnforce = ps.mass * ps.pnacc
+    #     ps.pn_ke -= (ps.vel * pnforce).sum(0) * dt
+    #     ps.pn_mv -= pnforce * dt
+    #     ps.pn_am -= np.cross(ps.pos.T, pnforce.T).T * dt
+    #     ps.w[...] = 2 * ps.pnacc * dt - ps.w
+    #
+    # for ps in [slow, fast]:
+    #     ps.vel += (ps.acc * dt + ps.w) / 2
+    #
 
     return slow, fast
 
@@ -669,7 +663,7 @@ class SIA(Base):
                     self.method, ps.t_curr, t_end)
 
         if ps.include_pn_corrections:
-            ps.register_attribute('w', (3,), 'real')
+            ps.register_attribute('w', '3, {n}', 'real')
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)

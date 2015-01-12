@@ -26,32 +26,22 @@ void kepler_solver_kernel(
     REAL * restrict __ir1z,
     REAL * restrict __iv1x,
     REAL * restrict __iv1y,
-    REAL * restrict __iv1z)
+    REAL * restrict __iv1z,
+    REAL * restrict __jr1x,
+    REAL * restrict __jr1y,
+    REAL * restrict __jr1z,
+    REAL * restrict __jv1x,
+    REAL * restrict __jv1y,
+    REAL * restrict __jv1z)
 {
-    REAL ir1x[ni];
-    REAL ir1y[ni];
-    REAL ir1z[ni];
-    REAL iv1x[ni];
-    REAL iv1y[ni];
-    REAL iv1z[ni];
-    for (UINT i = 0; i < ni; ++i) {
-        for (UINT j = i+1; j < nj; ++j) {
-            kepler_solver_kernel_core(dt,
-                               __im[i], __irx[i], __iry[i], __irz[i],
-                               __ie2[i], __ivx[i], __ivy[i], __ivz[i],
-                               __jm[j], __jrx[j], __jry[j], __jrz[j],
-                               __je2[j], __jvx[j], __jvy[j], __jvz[j],
-                               &ir1x[i], &ir1y[i], &ir1z[i],
-                               &iv1x[i], &iv1y[i], &iv1z[i],
-                               &ir1x[j], &ir1y[j], &ir1z[j],
-                               &iv1x[j], &iv1y[j], &iv1z[j]);
-        }
-        __ir1x[i] = ir1x[i];
-        __ir1y[i] = ir1y[i];
-        __ir1z[i] = ir1z[i];
-        __iv1x[i] = iv1x[i];
-        __iv1y[i] = iv1y[i];
-        __iv1z[i] = iv1z[i];
-    }
+    kepler_solver_kernel_core(dt,
+                       __im[0], __irx[0], __iry[0], __irz[0],
+                       __ie2[0], __ivx[0], __ivy[0], __ivz[0],
+                       __jm[0], __jrx[0], __jry[0], __jrz[0],
+                       __je2[0], __jvx[0], __jvy[0], __jvz[0],
+                       __ir1x, __ir1y, __ir1z,
+                       __iv1x, __iv1y, __iv1z,
+                       __jr1x, __jr1y, __jr1z,
+                       __jv1x, __jv1y, __jv1z);
 }
 
