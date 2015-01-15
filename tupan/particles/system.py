@@ -25,8 +25,7 @@ __all__ = ['ParticleSystem']
 class Members(dict):
     def __init__(self, **members):
         super(Members, self).__init__(**members)
-        for name, member in self.items():
-            setattr(self, name, member)
+        self.__dict__ = self
 
 
 @bind_all(timings)
@@ -54,6 +53,8 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
     def set_members(self, **members):
         self.members = Members(**members)
         self.n = len(self)
+        for member in self.members.values():
+            self.attr_names.update(**member.attr_names)
 
     def update_members(self, **members):
         vars(self).clear()
@@ -189,19 +190,23 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
             return
 
     def __getattr__(self, name):
+        if name not in self.attr_names:
+            raise AttributeError(name)
         members = list(self.members.values())
         if len(members) == 1:
             member = next(iter(members))
             value = getattr(member, name)
             setattr(self, name, value)
             return value
-        arrays = [getattr(member, name) for member in members]
+        arrays = [getattr(member, name) for member in members
+                  if name in member.attr_names]
         value = np.concatenate(arrays, -1)  # along last dimension
         ns, nf = 0, 0
         for member in members:
-            nf += member.n
-            setattr(member, name, value[..., ns:nf])
-            ns += member.n
+            if name in member.attr_names:
+                nf += member.n
+                setattr(member, name, value[..., ns:nf])
+                ns += member.n
         setattr(self, name, value)
         return value
 
