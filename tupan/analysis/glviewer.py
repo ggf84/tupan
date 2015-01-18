@@ -61,9 +61,10 @@ varying float v_psize;
 // ------------------------------------
 void main()
 {
-    float r = length(gl_PointCoord.xy - vec2(0.5f, 0.5f));
-    if (r > 0.5f) discard;  // kill pixels outside circle
-    float alpha = (1 - sqrt(2*r));
+    float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
+    if (r > 1) discard;  // kill pixels outside circle
+    float alpha = (1 - r);
+    alpha *= alpha;
     alpha *= alpha;
     gl_FragColor = vec4(v_color.rgb * (1 + alpha), alpha);
 }
@@ -80,9 +81,9 @@ varying float v_psize;
 // ------------------------------------
 void main()
 {
-    float r = length(gl_PointCoord.xy - vec2(0.5f, 0.5f));
-    if (r > 0.5f) discard;  // kill pixels outside circle
-    float alpha = (0.5 - r);
+    float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
+    if (r > 1) discard;  // kill pixels outside circle
+    float alpha = (1 - r) / 2;
     alpha *= alpha;
     alpha *= alpha;
     gl_FragColor = vec4(v_color.rgb, alpha);
@@ -100,10 +101,12 @@ varying float v_psize;
 // ------------------------------------
 void main()
 {
-    float r = length(gl_PointCoord.xy - vec2(0.5f, 0.5f));
-    float alpha = (1 - 8 * r) * v_psize / 7;
-    if (abs(alpha) > 1.5f) discard;  // kill pixels outside circle
-    alpha = exp(-alpha*alpha);
+    float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
+    float r1 = r - 0.5;
+    float r2 = r - 0.25;
+    r = abs(max(r1, r2)) * v_psize / 2;
+    if (r > 1) discard;  // kill pixels outside ring
+    float alpha = exp(-r * r / 4);
     gl_FragColor = vec4(1, 0, 0, alpha);
 }
 """

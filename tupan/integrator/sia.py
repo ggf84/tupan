@@ -331,20 +331,20 @@ class SIAXX(object):
         if ips.n <= 2:
             return fewbody_solver(ips, dt)
 
-        ck, cd = self.coefs
-        cn = len(cd) - 1
+        coefs = self.coefs
+        ck0, cd0 = coefs[-1]
 
-        for i in range(cn):
-            ips = drift(ips, cd[i] * dt) if cd[i] else ips
-            ips = kick(ips, ck[i] * dt) if ck[i] else ips
+        for ck, cd in coefs[:-1]:
+            ips = drift(ips, cd * dt) if cd else ips
+            ips = kick(ips, ck * dt) if ck else ips
 
-        ips = drift(ips, cd[-1] * dt)
-        ips = kick(ips, ck[-1] * dt)
-        ips = drift(ips, cd[-1] * dt)
+        ips = drift(ips, cd0 * dt)
+        ips = kick(ips, ck0 * dt)
+        ips = drift(ips, cd0 * dt)
 
-        for i in reversed(range(cn)):
-            ips = kick(ips, ck[i] * dt) if ck[i] else ips
-            ips = drift(ips, cd[i] * dt) if cd[i] else ips
+        for ck, cd in reversed(coefs[:-1]):
+            ips = kick(ips, ck * dt) if ck else ips
+            ips = drift(ips, cd * dt) if cd else ips
 
         return ips
 
@@ -355,20 +355,20 @@ class SIAXX(object):
         if ips.n <= 2:
             return fewbody_solver(ips, dt)
 
-        cd, ck = self.coefs
-        cn = len(cd) - 1
+        coefs = self.coefs
+        cd0, ck0 = coefs[-1]
 
-        for i in range(cn):
-            ips = kick(ips, ck[i] * dt) if ck[i] else ips
-            ips = drift(ips, cd[i] * dt) if cd[i] else ips
+        for cd, ck in coefs[:-1]:
+            ips = kick(ips, ck * dt) if ck else ips
+            ips = drift(ips, cd * dt) if cd else ips
 
-        ips = kick(ips, ck[-1] * dt)
-        ips = drift(ips, cd[-1] * dt)
-        ips = kick(ips, ck[-1] * dt)
+        ips = kick(ips, ck0 * dt)
+        ips = drift(ips, cd0 * dt)
+        ips = kick(ips, ck0 * dt)
 
-        for i in reversed(range(cn)):
-            ips = drift(ips, cd[i] * dt) if cd[i] else ips
-            ips = kick(ips, ck[i] * dt) if ck[i] else ips
+        for cd, ck in reversed(coefs[:-1]):
+            ips = drift(ips, cd * dt) if cd else ips
+            ips = kick(ips, ck * dt) if ck else ips
 
         return ips
 
@@ -379,24 +379,22 @@ class SIAXX(object):
         evolve = getattr(self, self.meth)
         recurse = self.manager.recurse
 
-        ck, cd = self.coefs
-        cn = len(cd) - 1
+        coefs = self.coefs
+        ck0, cd0 = coefs[-1]
 
-        for i in range(cn):
-            if cd[i]:
-                slow, fast = sf_drift(slow, fast, cd[i] * dt, evolve, recurse)
-            if ck[i]:
-                slow, fast = sf_kick(slow, fast, ck[i] * dt)
+        for ck, cd in coefs[:-1]:
+            slow, fast = sf_drift(slow, fast, cd * dt,
+                                  evolve, recurse) if cd else (slow, fast)
+            slow, fast = sf_kick(slow, fast, ck * dt) if ck else (slow, fast)
 
-        slow, fast = sf_drift(slow, fast, cd[-1] * dt, evolve, recurse)
-        slow, fast = sf_kick(slow, fast, ck[-1] * dt)
-        slow, fast = sf_drift(slow, fast, cd[-1] * dt, evolve, recurse)
+        slow, fast = sf_drift(slow, fast, cd0 * dt, evolve, recurse)
+        slow, fast = sf_kick(slow, fast, ck0 * dt)
+        slow, fast = sf_drift(slow, fast, cd0 * dt, evolve, recurse)
 
-        for i in reversed(range(cn)):
-            if ck[i]:
-                slow, fast = sf_kick(slow, fast, ck[i] * dt)
-            if cd[i]:
-                slow, fast = sf_drift(slow, fast, cd[i] * dt, evolve, recurse)
+        for ck, cd in reversed(coefs[:-1]):
+            slow, fast = sf_kick(slow, fast, ck * dt) if ck else (slow, fast)
+            slow, fast = sf_drift(slow, fast, cd * dt,
+                                  evolve, recurse) if cd else (slow, fast)
 
         if fast.n == 0:
             type(slow).t_curr += dt
@@ -416,24 +414,22 @@ class SIAXX(object):
         evolve = getattr(self, self.meth)
         recurse = self.manager.recurse
 
-        cd, ck = self.coefs
-        cn = len(cd) - 1
+        coefs = self.coefs
+        cd0, ck0 = coefs[-1]
 
-        for i in range(cn):
-            if ck[i]:
-                slow, fast = sf_kick(slow, fast, ck[i] * dt)
-            if cd[i]:
-                slow, fast = sf_drift(slow, fast, cd[i] * dt, evolve, recurse)
+        for cd, ck in coefs[:-1]:
+            slow, fast = sf_kick(slow, fast, ck * dt) if ck else (slow, fast)
+            slow, fast = sf_drift(slow, fast, cd * dt,
+                                  evolve, recurse) if cd else (slow, fast)
 
-        slow, fast = sf_kick(slow, fast, ck[-1] * dt)
-        slow, fast = sf_drift(slow, fast, cd[-1] * dt, evolve, recurse)
-        slow, fast = sf_kick(slow, fast, ck[-1] * dt)
+        slow, fast = sf_kick(slow, fast, ck0 * dt)
+        slow, fast = sf_drift(slow, fast, cd0 * dt, evolve, recurse)
+        slow, fast = sf_kick(slow, fast, ck0 * dt)
 
-        for i in reversed(range(cn)):
-            if cd[i]:
-                slow, fast = sf_drift(slow, fast, cd[i] * dt, evolve, recurse)
-            if ck[i]:
-                slow, fast = sf_kick(slow, fast, ck[i] * dt)
+        for cd, ck in reversed(coefs[:-1]):
+            slow, fast = sf_drift(slow, fast, cd * dt,
+                                  evolve, recurse) if cd else (slow, fast)
+            slow, fast = sf_kick(slow, fast, ck * dt) if ck else (slow, fast)
 
         if fast.n == 0:
             type(slow).t_curr += dt
@@ -453,8 +449,7 @@ class SIAXX(object):
 @bind_all(timings)
 class SIA21(SIAXX):
     # REF.: Yoshida, Phys. Lett. A 150 (1990)
-    coefs = ([1.0],
-             [0.5])
+    coefs = [(1.0, 0.5)]
 
     __call__ = SIAXX.sf_dkd
 
@@ -465,10 +460,8 @@ class SIA21(SIAXX):
 @bind_all(timings)
 class SIA22(SIAXX):
     # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
-    coefs = ([0.1931833275037836,
-              0.6136333449924328],
-             [None,
-              0.5])
+    coefs = [(0.1931833275037836, None),
+             (0.6136333449924328, 0.5)]
 
     __call__ = SIAXX.sf_kdk
 
@@ -479,10 +472,8 @@ class SIA22(SIAXX):
 @bind_all(timings)
 class SIA43(SIAXX):
     # REF.: Yoshida, Phys. Lett. A 150 (1990)
-    coefs = ([1.3512071919596575,
-              -1.7024143839193150],
-             [0.6756035959798288,
-              -0.17560359597982877])
+    coefs = [(1.3512071919596575, 0.6756035959798288),
+             (-1.702414383919315, -0.17560359597982877)]
 
     __call__ = SIAXX.sf_dkd
 
@@ -493,12 +484,9 @@ class SIA43(SIAXX):
 @bind_all(timings)
 class SIA44(SIAXX):
     # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
-    coefs = ([0.1786178958448091,
-              -0.06626458266981843,
-              0.7752933736500186],
-             [None,
-              0.7123418310626056,
-              -0.21234183106260562])
+    coefs = [(0.1786178958448091, None),
+             (-0.06626458266981843, 0.7123418310626056),
+             (0.7752933736500186, -0.21234183106260562)]
 
     __call__ = SIAXX.sf_kdk
 
@@ -509,12 +497,9 @@ class SIA44(SIAXX):
 @bind_all(timings)
 class SIA45(SIAXX):
     # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
-    coefs = ([-0.0844296195070715,
-              0.354900057157426,
-              0.459059124699291],
-             [0.2750081212332419,
-              -0.1347950099106792,
-              0.35978688867743724])
+    coefs = [(-0.0844296195070715, 0.2750081212332419),
+             (0.354900057157426, -0.1347950099106792),
+             (0.459059124699291, 0.35978688867743724)]
 
     __call__ = SIAXX.sf_dkd
 
@@ -525,14 +510,10 @@ class SIA45(SIAXX):
 @bind_all(timings)
 class SIA46(SIAXX):
     # REF.: Blanes & Moan, J. Comp. Appl. Math. 142 (2002)
-    coefs = ([0.0792036964311957,
-              0.353172906049774,
-              -0.0420650803577195,
-              0.21937695575349958],
-             [None,
-              0.209515106613362,
-              -0.143851773179818,
-              0.434336666566456])
+    coefs = [(0.0792036964311957, None),
+             (0.353172906049774, 0.209515106613362),
+             (-0.0420650803577195, -0.143851773179818),
+             (0.21937695575349958, 0.434336666566456)]
 
     __call__ = SIAXX.sf_kdk
 
@@ -543,14 +524,10 @@ class SIA46(SIAXX):
 @bind_all(timings)
 class SIA67(SIAXX):
     # REF.: Yoshida, Phys. Lett. A 150 (1990)
-    coefs = ([0.7845136104775573,
-              0.23557321335935813,
-              -1.177679984178871,
-              1.3151863206839112],
-             [0.39225680523877865,
-              0.5100434119184577,
-              -0.47105338540975644,
-              0.06875316825252015])
+    coefs = [(0.7845136104775573, 0.39225680523877865),
+             (0.23557321335935813, 0.5100434119184577),
+             (-1.177679984178871, -0.47105338540975644),
+             (1.3151863206839112, 0.06875316825252015)]
 
     __call__ = SIAXX.sf_dkd
 
@@ -561,16 +538,11 @@ class SIA67(SIAXX):
 @bind_all(timings)
 class SIA69(SIAXX):
     # REF.: Kahan & Li, Math. Comput. 66 (1997)
-    coefs = ([0.39103020330868477,
-              0.334037289611136,
-              -0.7062272811875614,
-              0.08187754964805945,
-              0.7985644772393624],
-             [0.19551510165434238,
-              0.3625337464599104,
-              -0.1860949957882127,
-              -0.31217486576975095,
-              0.44022101344371095])
+    coefs = [(0.39103020330868477, 0.19551510165434238),
+             (0.334037289611136, 0.3625337464599104),
+             (-0.7062272811875614, -0.1860949957882127),
+             (0.08187754964805945, -0.31217486576975095),
+             (0.7985644772393624, 0.44022101344371095)]
 
     __call__ = SIAXX.sf_dkd
 
