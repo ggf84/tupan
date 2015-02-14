@@ -4,17 +4,19 @@
 #include "common.h"
 #include "smoothing.h"
 
-static inline void acc_kernel_core(
-    const REALn im,
-    const REALn irx,
-    const REALn iry,
-    const REALn irz,
-    const REALn ie2,
-    const REALn jm,
-    const REALn jrx,
-    const REALn jry,
-    const REALn jrz,
-    const REALn je2,
+
+static inline void
+acc_kernel_core(
+    REALn const im,
+    REALn const irx,
+    REALn const iry,
+    REALn const irz,
+    REALn const ie2,
+    REALn const jm,
+    REALn const jrx,
+    REALn const jry,
+    REALn const jrz,
+    REALn const je2,
     REALn *iax,
     REALn *iay,
     REALn *iaz)
@@ -33,5 +35,6 @@ static inline void acc_kernel_core(
     *iaz -= m_r3 * rz;                                                          // 2 FLOPs
 }
 // Total flop count: 20
+
 
 #endif  // __ACC_KERNEL_COMMON_H__

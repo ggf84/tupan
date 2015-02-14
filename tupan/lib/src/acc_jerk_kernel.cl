@@ -1,33 +1,33 @@
 #include "acc_jerk_kernel_common.h"
 
 
-kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
-void acc_jerk_kernel(
-    const UINT ni,
-    global const REALn * restrict __im,
-    global const REALn * restrict __irx,
-    global const REALn * restrict __iry,
-    global const REALn * restrict __irz,
-    global const REALn * restrict __ie2,
-    global const REALn * restrict __ivx,
-    global const REALn * restrict __ivy,
-    global const REALn * restrict __ivz,
-    const UINT nj,
-    global const REAL * restrict __jm,
-    global const REAL * restrict __jrx,
-    global const REAL * restrict __jry,
-    global const REAL * restrict __jrz,
-    global const REAL * restrict __je2,
-    global const REAL * restrict __jvx,
-    global const REAL * restrict __jvy,
-    global const REAL * restrict __jvz,
-    global REALn * restrict __iax,
-    global REALn * restrict __iay,
-    global REALn * restrict __iaz,
-    global REALn * restrict __ijx,
-    global REALn * restrict __ijy,
-    global REALn * restrict __ijz)
+kernel void
+acc_jerk_kernel(
+    UINT const ni,
+    global REALn const __im[restrict],
+    global REALn const __irx[restrict],
+    global REALn const __iry[restrict],
+    global REALn const __irz[restrict],
+    global REALn const __ie2[restrict],
+    global REALn const __ivx[restrict],
+    global REALn const __ivy[restrict],
+    global REALn const __ivz[restrict],
+    UINT const nj,
+    global REAL const __jm[restrict],
+    global REAL const __jrx[restrict],
+    global REAL const __jry[restrict],
+    global REAL const __jrz[restrict],
+    global REAL const __je2[restrict],
+    global REAL const __jvx[restrict],
+    global REAL const __jvy[restrict],
+    global REAL const __jvz[restrict],
+    global REALn __iax[restrict],
+    global REALn __iay[restrict],
+    global REALn __iaz[restrict],
+    global REALn __ijx[restrict],
+    global REALn __ijy[restrict],
+    global REALn __ijz[restrict])
 {
     for (UINT i = LSIZE * get_group_id(0) + get_global_offset(0);
               i < ni;
@@ -99,7 +99,6 @@ void acc_jerk_kernel(
         }
         #endif
 
-        #pragma unroll UNROLL
         for (; j < nj; ++j) {
             REAL jm = __jm[j];
             REAL jrx = __jrx[j];

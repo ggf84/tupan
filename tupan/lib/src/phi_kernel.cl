@@ -1,22 +1,22 @@
 #include "phi_kernel_common.h"
 
 
-kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
-void phi_kernel(
-    const UINT ni,
-    global const REALn * restrict __im,
-    global const REALn * restrict __irx,
-    global const REALn * restrict __iry,
-    global const REALn * restrict __irz,
-    global const REALn * restrict __ie2,
-    const UINT nj,
-    global const REAL * restrict __jm,
-    global const REAL * restrict __jrx,
-    global const REAL * restrict __jry,
-    global const REAL * restrict __jrz,
-    global const REAL * restrict __je2,
-    global REALn * restrict __iphi)
+kernel void
+phi_kernel(
+    UINT const ni,
+    global REALn const __im[restrict],
+    global REALn const __irx[restrict],
+    global REALn const __iry[restrict],
+    global REALn const __irz[restrict],
+    global REALn const __ie2[restrict],
+    UINT const nj,
+    global REAL const __jm[restrict],
+    global REAL const __jrx[restrict],
+    global REAL const __jry[restrict],
+    global REAL const __jrz[restrict],
+    global REAL const __je2[restrict],
+    global REALn __iphi[restrict])
 {
     for (UINT i = LSIZE * get_group_id(0) + get_global_offset(0);
               i < ni;
@@ -68,7 +68,6 @@ void phi_kernel(
         }
         #endif
 
-        #pragma unroll UNROLL
         for (; j < nj; ++j) {
             REAL jm = __jm[j];
             REAL jrx = __jrx[j];

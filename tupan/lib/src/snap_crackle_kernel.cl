@@ -1,45 +1,45 @@
 #include "snap_crackle_kernel_common.h"
 
 
-kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
-void snap_crackle_kernel(
-    const UINT ni,
-    global const REALn * restrict __im,
-    global const REALn * restrict __irx,
-    global const REALn * restrict __iry,
-    global const REALn * restrict __irz,
-    global const REALn * restrict __ie2,
-    global const REALn * restrict __ivx,
-    global const REALn * restrict __ivy,
-    global const REALn * restrict __ivz,
-    global const REALn * restrict __iax,
-    global const REALn * restrict __iay,
-    global const REALn * restrict __iaz,
-    global const REALn * restrict __ijx,
-    global const REALn * restrict __ijy,
-    global const REALn * restrict __ijz,
-    const UINT nj,
-    global const REAL * restrict __jm,
-    global const REAL * restrict __jrx,
-    global const REAL * restrict __jry,
-    global const REAL * restrict __jrz,
-    global const REAL * restrict __je2,
-    global const REAL * restrict __jvx,
-    global const REAL * restrict __jvy,
-    global const REAL * restrict __jvz,
-    global const REAL * restrict __jax,
-    global const REAL * restrict __jay,
-    global const REAL * restrict __jaz,
-    global const REAL * restrict __jjx,
-    global const REAL * restrict __jjy,
-    global const REAL * restrict __jjz,
-    global REALn * restrict __isx,
-    global REALn * restrict __isy,
-    global REALn * restrict __isz,
-    global REALn * restrict __icx,
-    global REALn * restrict __icy,
-    global REALn * restrict __icz)
+kernel void
+snap_crackle_kernel(
+    UINT const ni,
+    global REALn const __im[restrict],
+    global REALn const __irx[restrict],
+    global REALn const __iry[restrict],
+    global REALn const __irz[restrict],
+    global REALn const __ie2[restrict],
+    global REALn const __ivx[restrict],
+    global REALn const __ivy[restrict],
+    global REALn const __ivz[restrict],
+    global REALn const __iax[restrict],
+    global REALn const __iay[restrict],
+    global REALn const __iaz[restrict],
+    global REALn const __ijx[restrict],
+    global REALn const __ijy[restrict],
+    global REALn const __ijz[restrict],
+    UINT const nj,
+    global REAL const __jm[restrict],
+    global REAL const __jrx[restrict],
+    global REAL const __jry[restrict],
+    global REAL const __jrz[restrict],
+    global REAL const __je2[restrict],
+    global REAL const __jvx[restrict],
+    global REAL const __jvy[restrict],
+    global REAL const __jvz[restrict],
+    global REAL const __jax[restrict],
+    global REAL const __jay[restrict],
+    global REAL const __jaz[restrict],
+    global REAL const __jjx[restrict],
+    global REAL const __jjy[restrict],
+    global REAL const __jjz[restrict],
+    global REALn __isx[restrict],
+    global REALn __isy[restrict],
+    global REALn __isz[restrict],
+    global REALn __icx[restrict],
+    global REALn __icy[restrict],
+    global REALn __icz[restrict])
 {
     for (UINT i = LSIZE * get_group_id(0) + get_global_offset(0);
               i < ni;
@@ -143,7 +143,6 @@ void snap_crackle_kernel(
         }
         #endif
 
-        #pragma unroll UNROLL
         for (; j < nj; ++j) {
             REAL jm = __jm[j];
             REAL jrx = __jrx[j];

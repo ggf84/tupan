@@ -5,24 +5,25 @@
 #include "universal_kepler_solver.h"
 
 
-static inline void kepler_solver_kernel_core(
-    const REAL dt,
-    const REAL im,
-    const REAL irx,
-    const REAL iry,
-    const REAL irz,
-    const REAL ie2,
-    const REAL ivx,
-    const REAL ivy,
-    const REAL ivz,
-    const REAL jm,
-    const REAL jrx,
-    const REAL jry,
-    const REAL jrz,
-    const REAL je2,
-    const REAL jvx,
-    const REAL jvy,
-    const REAL jvz,
+static inline void
+kepler_solver_kernel_core(
+    REAL const dt,
+    REAL const im,
+    REAL const irx,
+    REAL const iry,
+    REAL const irz,
+    REAL const ie2,
+    REAL const ivx,
+    REAL const ivy,
+    REAL const ivz,
+    REAL const jm,
+    REAL const jrx,
+    REAL const jry,
+    REAL const jrz,
+    REAL const je2,
+    REAL const jvx,
+    REAL const jvy,
+    REAL const jvz,
     REAL *ir1x,
     REAL *ir1y,
     REAL *ir1z,
@@ -45,8 +46,9 @@ static inline void kepler_solver_kernel_core(
     REAL v0z = ivz - jvz;                                                       // 1 FLOPs
     REAL m = im + jm;                                                           // 1 FLOPs
 
-    REAL imu = im / m;                                                          // 1 FLOPs
-    REAL jmu = jm / m;                                                          // 1 FLOPs
+    REAL inv_m = 1 / m;                                                         // 1 FLOPs
+    REAL imu = im * inv_m;                                                      // 1 FLOPs
+    REAL jmu = jm * inv_m;                                                      // 1 FLOPs
 
     REAL rcmx = imu * irx + jmu * jrx;                                          // 3 FLOPs
     REAL rcmy = imu * iry + jmu * jry;                                          // 3 FLOPs
@@ -81,6 +83,7 @@ static inline void kepler_solver_kernel_core(
     *jv1y = vcmy - imu * v1y;                                                   // 2 FLOPs
     *jv1z = vcmz - imu * v1z;                                                   // 2 FLOPs
 }
-// Total flop count: 58 + ?
+// Total flop count: 59 + ?
+
 
 #endif  // __KEPLER_SOLVER_KERNEL_COMMON_H__

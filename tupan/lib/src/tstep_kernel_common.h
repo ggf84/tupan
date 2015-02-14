@@ -4,24 +4,26 @@
 #include "common.h"
 #include "smoothing.h"
 
-static inline void tstep_kernel_core(
-    const REALn eta,
-    const REALn im,
-    const REALn irx,
-    const REALn iry,
-    const REALn irz,
-    const REALn ie2,
-    const REALn ivx,
-    const REALn ivy,
-    const REALn ivz,
-    const REALn jm,
-    const REALn jrx,
-    const REALn jry,
-    const REALn jrz,
-    const REALn je2,
-    const REALn jvx,
-    const REALn jvy,
-    const REALn jvz,
+
+static inline void
+tstep_kernel_core(
+    REALn const eta,
+    REALn const im,
+    REALn const irx,
+    REALn const iry,
+    REALn const irz,
+    REALn const ie2,
+    REALn const ivx,
+    REALn const ivy,
+    REALn const ivz,
+    REALn const jm,
+    REALn const jrx,
+    REALn const jry,
+    REALn const jrz,
+    REALn const je2,
+    REALn const jvx,
+    REALn const jvy,
+    REALn const jvz,
     REALn *iw2_a,
     REALn *iw2_b)
 {
@@ -55,5 +57,6 @@ static inline void tstep_kernel_core(
     *iw2_b = fmax(w2, *iw2_b);
 }
 // Total flop count: 42
+
 
 #endif  // __TSTEP_KERNEL_COMMON_H__

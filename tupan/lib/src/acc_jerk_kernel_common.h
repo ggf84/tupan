@@ -4,25 +4,31 @@
 #include "common.h"
 #include "smoothing.h"
 
-static inline void acc_jerk_kernel_core(
-    const REALn im,
-    const REALn irx,
-    const REALn iry,
-    const REALn irz,
-    const REALn ie2,
-    const REALn ivx,
-    const REALn ivy,
-    const REALn ivz,
-    const REALn jm,
-    const REALn jrx,
-    const REALn jry,
-    const REALn jrz,
-    const REALn je2,
-    const REALn jvx,
-    const REALn jvy,
-    const REALn jvz,
-    REALn *iAx, REALn *iAy, REALn *iAz,
-    REALn *iJx, REALn *iJy, REALn *iJz)
+
+static inline void
+acc_jerk_kernel_core(
+    REALn const im,
+    REALn const irx,
+    REALn const iry,
+    REALn const irz,
+    REALn const ie2,
+    REALn const ivx,
+    REALn const ivy,
+    REALn const ivz,
+    REALn const jm,
+    REALn const jrx,
+    REALn const jry,
+    REALn const jrz,
+    REALn const je2,
+    REALn const jvx,
+    REALn const jvy,
+    REALn const jvz,
+    REALn *iax,
+    REALn *iay,
+    REALn *iaz,
+    REALn *ijx,
+    REALn *ijy,
+    REALn *ijz)
 {
     REALn rx = irx - jrx;                                                       // 1 FLOPs
     REALn ry = iry - jry;                                                       // 1 FLOPs
@@ -44,13 +50,14 @@ static inline void acc_jerk_kernel_core(
     vy -= alpha * ry;                                                           // 2 FLOPs
     vz -= alpha * rz;                                                           // 2 FLOPs
 
-    *iAx -= m_r3 * rx;                                                          // 2 FLOPs
-    *iAy -= m_r3 * ry;                                                          // 2 FLOPs
-    *iAz -= m_r3 * rz;                                                          // 2 FLOPs
-    *iJx -= m_r3 * vx;                                                          // 2 FLOPs
-    *iJy -= m_r3 * vy;                                                          // 2 FLOPs
-    *iJz -= m_r3 * vz;                                                          // 2 FLOPs
+    *iax -= m_r3 * rx;                                                          // 2 FLOPs
+    *iay -= m_r3 * ry;                                                          // 2 FLOPs
+    *iaz -= m_r3 * rz;                                                          // 2 FLOPs
+    *ijx -= m_r3 * vx;                                                          // 2 FLOPs
+    *ijy -= m_r3 * vy;                                                          // 2 FLOPs
+    *ijz -= m_r3 * vz;                                                          // 2 FLOPs
 }
 // Total flop count: 42
+
 
 #endif  // __ACC_JERK_KERNEL_COMMON_H__

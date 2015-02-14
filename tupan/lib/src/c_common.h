@@ -56,6 +56,7 @@
 
 #define any(mask) mask
 #define all(mask) mask
+#define rsqrt(x) (1 / sqrt(x))
 #define select(a, b, c) ((c) ? (b):(a))
 
 #endif // __C_COMMON_H__

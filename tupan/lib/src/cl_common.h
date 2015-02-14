@@ -1,13 +1,11 @@
 #ifndef __CL_COMMON_H__
 #define __CL_COMMON_H__
 
-#ifdef CONFIG_USE_DOUBLE
-    #if !defined(CL_VERSION_1_2)
-        #if defined(cl_khr_fp64)
-            #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-        #else
-            #error "The hardware/OpenCL implementation does not support double precision arithmetic."
-        #endif
+#if !defined(CL_VERSION_1_2)
+    #if defined(cl_khr_fp64)
+        #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+    #else
+        #error "Missing double precision extension"
     #endif
 #endif
 

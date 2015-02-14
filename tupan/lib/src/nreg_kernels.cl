@@ -1,35 +1,35 @@
 #include "nreg_kernels_common.h"
 
 
-kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
-void nreg_Xkernel(
-    const UINT ni,
-    global const REALn * restrict __im,
-    global const REALn * restrict __irx,
-    global const REALn * restrict __iry,
-    global const REALn * restrict __irz,
-    global const REALn * restrict __ie2,
-    global const REALn * restrict __ivx,
-    global const REALn * restrict __ivy,
-    global const REALn * restrict __ivz,
-    const UINT nj,
-    global const REAL * restrict __jm,
-    global const REAL * restrict __jrx,
-    global const REAL * restrict __jry,
-    global const REAL * restrict __jrz,
-    global const REAL * restrict __je2,
-    global const REAL * restrict __jvx,
-    global const REAL * restrict __jvy,
-    global const REAL * restrict __jvz,
-    const REAL dt,
-    global REALn * restrict __idrx,
-    global REALn * restrict __idry,
-    global REALn * restrict __idrz,
-    global REALn * restrict __iax,
-    global REALn * restrict __iay,
-    global REALn * restrict __iaz,
-    global REALn * restrict __iu)
+kernel void
+nreg_Xkernel(
+    UINT const ni,
+    global REALn const __im[restrict],
+    global REALn const __irx[restrict],
+    global REALn const __iry[restrict],
+    global REALn const __irz[restrict],
+    global REALn const __ie2[restrict],
+    global REALn const __ivx[restrict],
+    global REALn const __ivy[restrict],
+    global REALn const __ivz[restrict],
+    UINT const nj,
+    global REAL const __jm[restrict],
+    global REAL const __jrx[restrict],
+    global REAL const __jry[restrict],
+    global REAL const __jrz[restrict],
+    global REAL const __je2[restrict],
+    global REAL const __jvx[restrict],
+    global REAL const __jvy[restrict],
+    global REAL const __jvz[restrict],
+    REAL const dt,
+    global REALn __idrx[restrict],
+    global REALn __idry[restrict],
+    global REALn __idrz[restrict],
+    global REALn __iax[restrict],
+    global REALn __iay[restrict],
+    global REALn __iaz[restrict],
+    global REALn __iu[restrict])
 {
     for (UINT i = LSIZE * get_group_id(0) + get_global_offset(0);
               i < ni;
@@ -103,7 +103,6 @@ void nreg_Xkernel(
         }
         #endif
 
-        #pragma unroll UNROLL
         for (; j < nj; ++j) {
             REAL jm = __jm[j];
             REAL jrx = __jrx[j];
@@ -131,30 +130,30 @@ void nreg_Xkernel(
 }
 
 
-kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
-void nreg_Vkernel(
-    const UINT ni,
-    global const REALn * restrict __im,
-    global const REALn * restrict __ivx,
-    global const REALn * restrict __ivy,
-    global const REALn * restrict __ivz,
-    global const REALn * restrict __iax,
-    global const REALn * restrict __iay,
-    global const REALn * restrict __iaz,
-    const UINT nj,
-    global const REAL * restrict __jm,
-    global const REAL * restrict __jvx,
-    global const REAL * restrict __jvy,
-    global const REAL * restrict __jvz,
-    global const REAL * restrict __jax,
-    global const REAL * restrict __jay,
-    global const REAL * restrict __jaz,
-    const REAL dt,
-    global REALn * restrict __idvx,
-    global REALn * restrict __idvy,
-    global REALn * restrict __idvz,
-    global REALn * restrict __ik)
+kernel void
+nreg_Vkernel(
+    UINT const ni,
+    global REALn const __im[restrict],
+    global REALn const __ivx[restrict],
+    global REALn const __ivy[restrict],
+    global REALn const __ivz[restrict],
+    global REALn const __iax[restrict],
+    global REALn const __iay[restrict],
+    global REALn const __iaz[restrict],
+    UINT const nj,
+    global REAL const __jm[restrict],
+    global REAL const __jvx[restrict],
+    global REAL const __jvy[restrict],
+    global REAL const __jvz[restrict],
+    global REAL const __jax[restrict],
+    global REAL const __jay[restrict],
+    global REAL const __jaz[restrict],
+    REAL const dt,
+    global REALn __idvx[restrict],
+    global REALn __idvy[restrict],
+    global REALn __idvz[restrict],
+    global REALn __ik[restrict])
 {
     for (UINT i = LSIZE * get_group_id(0) + get_global_offset(0);
               i < ni;
@@ -220,7 +219,6 @@ void nreg_Vkernel(
         }
         #endif
 
-        #pragma unroll UNROLL
         for (; j < nj; ++j) {
             REAL jm = __jm[j];
             REAL jvx = __jvx[j];

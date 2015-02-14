@@ -223,9 +223,10 @@ class Program(object):
             opts += ' -D CONFIG_USE_DOUBLE'
         if fast_local_mem:
             opts += ' -D FAST_LOCAL_MEM'
+        opts += ' -I {path}'.format(path=PATH)
+        opts += ' -cl-std=CL1.1'
         opts += ' -cl-fast-relaxed-math'
 #        opts += ' -cl-opt-disable'
-        opts += ' -I {path}'.format(path=PATH)
 
         self.cl_program.build(options=opts,
                               devices=[self.cl_device],

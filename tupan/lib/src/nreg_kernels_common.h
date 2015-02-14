@@ -4,24 +4,26 @@
 #include "common.h"
 #include "smoothing.h"
 
-static inline void nreg_Xkernel_core(
-    const REALn dt,
-    const REALn im,
-    const REALn irx,
-    const REALn iry,
-    const REALn irz,
-    const REALn ie2,
-    const REALn ivx,
-    const REALn ivy,
-    const REALn ivz,
-    const REALn jm,
-    const REALn jrx,
-    const REALn jry,
-    const REALn jrz,
-    const REALn je2,
-    const REALn jvx,
-    const REALn jvy,
-    const REALn jvz,
+
+static inline void
+nreg_Xkernel_core(
+    REALn const dt,
+    REALn const im,
+    REALn const irx,
+    REALn const iry,
+    REALn const irz,
+    REALn const ie2,
+    REALn const ivx,
+    REALn const ivy,
+    REALn const ivz,
+    REALn const jm,
+    REALn const jrx,
+    REALn const jry,
+    REALn const jrz,
+    REALn const je2,
+    REALn const jvx,
+    REALn const jvy,
+    REALn const jvz,
     REALn *idrx,
     REALn *idry,
     REALn *idrz,
@@ -45,8 +47,8 @@ static inline void nreg_Xkernel_core(
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
     INTn mask = (r2 > 0);
 
-    REALn m_r1;
-    REALn m_r3 = smoothed_m_r3_m_r1(jm, r2, e2, mask, &m_r1);                   // 5 FLOPs
+    REALn m_r3;
+    REALn m_r1 = smoothed_m_r1_m_r3(jm, r2, e2, mask, &m_r3);                   // 5 FLOPs
 
     *idrx += jm * rx;                                                           // 2 FLOPs
     *idry += jm * ry;                                                           // 2 FLOPs
@@ -58,22 +60,24 @@ static inline void nreg_Xkernel_core(
 }
 // Total flop count: 37
 
-static inline void nreg_Vkernel_core(
-    const REALn dt,
-    const REALn im,
-    const REALn ivx,
-    const REALn ivy,
-    const REALn ivz,
-    const REALn iax,
-    const REALn iay,
-    const REALn iaz,
-    const REALn jm,
-    const REALn jvx,
-    const REALn jvy,
-    const REALn jvz,
-    const REALn jax,
-    const REALn jay,
-    const REALn jaz,
+
+static inline void
+nreg_Vkernel_core(
+    REALn const dt,
+    REALn const im,
+    REALn const ivx,
+    REALn const ivy,
+    REALn const ivz,
+    REALn const iax,
+    REALn const iay,
+    REALn const iaz,
+    REALn const jm,
+    REALn const jvx,
+    REALn const jvy,
+    REALn const jvz,
+    REALn const jax,
+    REALn const jay,
+    REALn const jaz,
     REALn *idvx,
     REALn *idvy,
     REALn *idvz,
@@ -98,5 +102,6 @@ static inline void nreg_Vkernel_core(
     *ik += jm * v2;                                                             // 2 FLOPs
 }
 // Total flop count: 25
+
 
 #endif  // __NREG_KERNELS_COMMON_H__

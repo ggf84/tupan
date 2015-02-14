@@ -7,20 +7,18 @@
     #include "c_common.h"
 #endif
 
-#define PI ((REAL)(3.141592653589793))
-#define PI2 ((REAL)(9.869604401089358))
-#define TWOPI ((REAL)(6.283185307179586))
-#define FOURPI ((REAL)(12.566370614359172))
-#define THREE_FOURPI ((REAL)(0.238732414637843))
+#define PI ((REAL)(3.14159265358979323846))
+#define PI2 ((REAL)(9.86960440108935861883))
+#define TWOPI ((REAL)(6.28318530717958647693))
+#define FOURPI ((REAL)(1.25663706143591729539e+1))
+#define THREE_FOURPI ((REAL)(2.3873241463784300365e-1))
 
 #ifdef CONFIG_USE_DOUBLE
-    #define TOLERANCE ((REAL)(2.2737367544323205948e-13))     // 2^(-42)
+    #define TOLERANCE exp2((REAL)(-42))
 #else
-    #define TOLERANCE ((REAL)(1.52587890625e-5))              // (2^-16)
+    #define TOLERANCE exp2((REAL)(-16))
 #endif
 #define MAXITER 64
-#define COMPARE(x, y) (((x) > (y)) - ((x) < (y)))
-#define SIGN(x) COMPARE(x, 0)
 
 
 typedef struct clight_struct {

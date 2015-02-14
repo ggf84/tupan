@@ -4,39 +4,45 @@
 #include "common.h"
 #include "smoothing.h"
 
-#define _3_2 (((REAL)(3))/2)
+#define _3_2 (3/(REAL)(2))
 
-static inline void snap_crackle_kernel_core(
-    const REALn im,
-    const REALn irx,
-    const REALn iry,
-    const REALn irz,
-    const REALn ie2,
-    const REALn ivx,
-    const REALn ivy,
-    const REALn ivz,
-    const REALn iAx,
-    const REALn iAy,
-    const REALn iAz,
-    const REALn iJx,
-    const REALn iJy,
-    const REALn iJz,
-    const REALn jm,
-    const REALn jrx,
-    const REALn jry,
-    const REALn jrz,
-    const REALn je2,
-    const REALn jvx,
-    const REALn jvy,
-    const REALn jvz,
-    const REALn jAx,
-    const REALn jAy,
-    const REALn jAz,
-    const REALn jJx,
-    const REALn jJy,
-    const REALn jJz,
-    REALn *iSx, REALn *iSy, REALn *iSz,
-    REALn *iCx, REALn *iCy, REALn *iCz)
+
+static inline void
+snap_crackle_kernel_core(
+    REALn const im,
+    REALn const irx,
+    REALn const iry,
+    REALn const irz,
+    REALn const ie2,
+    REALn const ivx,
+    REALn const ivy,
+    REALn const ivz,
+    REALn const iax,
+    REALn const iay,
+    REALn const iaz,
+    REALn const ijx,
+    REALn const ijy,
+    REALn const ijz,
+    REALn const jm,
+    REALn const jrx,
+    REALn const jry,
+    REALn const jrz,
+    REALn const je2,
+    REALn const jvx,
+    REALn const jvy,
+    REALn const jvz,
+    REALn const jax,
+    REALn const jay,
+    REALn const jaz,
+    REALn const jjx,
+    REALn const jjy,
+    REALn const jjz,
+    REALn *isx,
+    REALn *isy,
+    REALn *isz,
+    REALn *icx,
+    REALn *icy,
+    REALn *icz)
 {
     REALn rx = irx - jrx;                                                       // 1 FLOPs
     REALn ry = iry - jry;                                                       // 1 FLOPs
@@ -45,18 +51,18 @@ static inline void snap_crackle_kernel_core(
     REALn vx = ivx - jvx;                                                       // 1 FLOPs
     REALn vy = ivy - jvy;                                                       // 1 FLOPs
     REALn vz = ivz - jvz;                                                       // 1 FLOPs
-    REALn Ax = iAx - jAx;                                                       // 1 FLOPs
-    REALn Ay = iAy - jAy;                                                       // 1 FLOPs
-    REALn Az = iAz - jAz;                                                       // 1 FLOPs
-    REALn Jx = iJx - jJx;                                                       // 1 FLOPs
-    REALn Jy = iJy - jJy;                                                       // 1 FLOPs
-    REALn Jz = iJz - jJz;                                                       // 1 FLOPs
+    REALn ax = iax - jax;                                                       // 1 FLOPs
+    REALn ay = iay - jay;                                                       // 1 FLOPs
+    REALn az = iaz - jaz;                                                       // 1 FLOPs
+    REALn jx = ijx - jjx;                                                       // 1 FLOPs
+    REALn jy = ijy - jjy;                                                       // 1 FLOPs
+    REALn jz = ijz - jjz;                                                       // 1 FLOPs
     REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
     REALn rv = rx * vx + ry * vy + rz * vz;                                     // 5 FLOPs
     REALn v2 = vx * vx + vy * vy + vz * vz;                                     // 5 FLOPs
-    REALn rJ = rx * Jx + ry * Jy + rz * Jz;                                     // 5 FLOPs
-    REALn rA = rx * Ax + ry * Ay + rz * Az;                                     // 5 FLOPs
-    REALn vA = vx * Ax + vy * Ay + vz * Az;                                     // 5 FLOPs
+    REALn rj = rx * jx + ry * jy + rz * jz;                                     // 5 FLOPs
+    REALn ra = rx * ax + ry * ay + rz * az;                                     // 5 FLOPs
+    REALn va = vx * ax + vy * ay + vz * az;                                     // 5 FLOPs
     INTn mask = (r2 > 0);
 
     REALn inv_r2;
@@ -64,8 +70,8 @@ static inline void snap_crackle_kernel_core(
 
     REALn alpha = rv * inv_r2;                                                  // 1 FLOPs
     REALn alpha2 = alpha * alpha;                                               // 1 FLOPs
-    REALn beta = 3 * ((v2 + rA) * inv_r2 + alpha2);                             // 4 FLOPs
-    REALn gamma = (3 * vA + rJ) * inv_r2 + alpha * (beta - 4 * alpha2);         // 7 FLOPs
+    REALn beta = 3 * ((v2 + ra) * inv_r2 + alpha2);                             // 4 FLOPs
+    REALn gamma = (3 * va + rj) * inv_r2 + alpha * (beta - 4 * alpha2);         // 7 FLOPs
 
     alpha *= 3;                                                                 // 1 FLOPs
     gamma *= 3;                                                                 // 1 FLOPs
@@ -75,23 +81,33 @@ static inline void snap_crackle_kernel_core(
     vz -= alpha * rz;                                                           // 2 FLOPs
 
     alpha *= 2;                                                                 // 1 FLOPs
-    Ax -= alpha * vx + beta * rx;                                               // 4 FLOPs
-    Ay -= alpha * vy + beta * ry;                                               // 4 FLOPs
-    Az -= alpha * vz + beta * rz;                                               // 4 FLOPs
+    ax -= alpha * vx;                                                           // 2 FLOPs
+    ay -= alpha * vy;                                                           // 2 FLOPs
+    az -= alpha * vz;                                                           // 2 FLOPs
+    ax -= beta * rx;                                                            // 2 FLOPs
+    ay -= beta * ry;                                                            // 2 FLOPs
+    az -= beta * rz;                                                            // 2 FLOPs
 
     alpha *= _3_2;                                                              // 1 FLOPs
     beta *= 3;                                                                  // 1 FLOPs
-    Jx -= alpha * Ax + beta * vx + gamma * rx;                                  // 6 FLOPs
-    Jy -= alpha * Ay + beta * vy + gamma * ry;                                  // 6 FLOPs
-    Jz -= alpha * Az + beta * vz + gamma * rz;                                  // 6 FLOPs
+    jx -= alpha * ax;                                                           // 2 FLOPs
+    jy -= alpha * ay;                                                           // 2 FLOPs
+    jz -= alpha * az;                                                           // 2 FLOPs
+    jx -= beta * vx;                                                            // 2 FLOPs
+    jy -= beta * vy;                                                            // 2 FLOPs
+    jz -= beta * vz;                                                            // 2 FLOPs
+    jx -= gamma * rx;                                                           // 2 FLOPs
+    jy -= gamma * ry;                                                           // 2 FLOPs
+    jz -= gamma * rz;                                                           // 2 FLOPs
 
-    *iSx -= m_r3 * Ax;                                                          // 2 FLOPs
-    *iSy -= m_r3 * Ay;                                                          // 2 FLOPs
-    *iSz -= m_r3 * Az;                                                          // 2 FLOPs
-    *iCx -= m_r3 * Jx;                                                          // 2 FLOPs
-    *iCy -= m_r3 * Jy;                                                          // 2 FLOPs
-    *iCz -= m_r3 * Jz;                                                          // 2 FLOPs
+    *isx -= m_r3 * ax;                                                          // 2 FLOPs
+    *isy -= m_r3 * ay;                                                          // 2 FLOPs
+    *isz -= m_r3 * az;                                                          // 2 FLOPs
+    *icx -= m_r3 * jx;                                                          // 2 FLOPs
+    *icy -= m_r3 * jy;                                                          // 2 FLOPs
+    *icz -= m_r3 * jz;                                                          // 2 FLOPs
 }
 // Total flop count: 114
+
 
 #endif  // __SNAP_CRACKLE_KERNEL_COMMON_H__

@@ -1,38 +1,38 @@
 #include "pnacc_kernel_common.h"
 
 
-kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
-void pnacc_kernel(
-    const UINT ni,
-    global const REALn * restrict __im,
-    global const REALn * restrict __irx,
-    global const REALn * restrict __iry,
-    global const REALn * restrict __irz,
-    global const REALn * restrict __ie2,
-    global const REALn * restrict __ivx,
-    global const REALn * restrict __ivy,
-    global const REALn * restrict __ivz,
-    const UINT nj,
-    global const REAL * restrict __jm,
-    global const REAL * restrict __jrx,
-    global const REAL * restrict __jry,
-    global const REAL * restrict __jrz,
-    global const REAL * restrict __je2,
-    global const REAL * restrict __jvx,
-    global const REAL * restrict __jvy,
-    global const REAL * restrict __jvz,
-    const UINT order,
-    const REAL inv1,
-    const REAL inv2,
-    const REAL inv3,
-    const REAL inv4,
-    const REAL inv5,
-    const REAL inv6,
-    const REAL inv7,
-    global REALn * restrict __ipnax,
-    global REALn * restrict __ipnay,
-    global REALn * restrict __ipnaz)
+kernel void
+pnacc_kernel(
+    UINT const ni,
+    global REALn const __im[restrict],
+    global REALn const __irx[restrict],
+    global REALn const __iry[restrict],
+    global REALn const __irz[restrict],
+    global REALn const __ie2[restrict],
+    global REALn const __ivx[restrict],
+    global REALn const __ivy[restrict],
+    global REALn const __ivz[restrict],
+    UINT const nj,
+    global REAL const __jm[restrict],
+    global REAL const __jrx[restrict],
+    global REAL const __jry[restrict],
+    global REAL const __jrz[restrict],
+    global REAL const __je2[restrict],
+    global REAL const __jvx[restrict],
+    global REAL const __jvy[restrict],
+    global REAL const __jvz[restrict],
+    UINT const order,
+    REAL const inv1,
+    REAL const inv2,
+    REAL const inv3,
+    REAL const inv4,
+    REAL const inv5,
+    REAL const inv6,
+    REAL const inv7,
+    global REALn __ipnax[restrict],
+    global REALn __ipnay[restrict],
+    global REALn __ipnaz[restrict])
 {
     for (UINT i = LSIZE * get_group_id(0) + get_global_offset(0);
               i < ni;
@@ -105,7 +105,6 @@ void pnacc_kernel(
         }
         #endif
 
-        #pragma unroll UNROLL
         for (; j < nj; ++j) {
             REAL jm = __jm[j];
             REAL jrx = __jrx[j];

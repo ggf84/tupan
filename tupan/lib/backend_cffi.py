@@ -69,7 +69,7 @@ class CDriver(object):
             define_macros=define_macros,
             include_dirs=[PATH],
             libraries=['m'],
-            extra_compile_args=['-O3', '-std=c99'],
+            extra_compile_args=['-O3', '-std=c99', '-march=native'],
             sources=[os.path.join(PATH, fname) for fname in fnames],
         )
 

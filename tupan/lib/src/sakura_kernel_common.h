@@ -6,16 +6,17 @@
 #include "universal_kepler_solver.h"
 
 
-static inline void twobody_solver(
-    const REAL dt,
-    const REAL m,
-    const REAL e2,
-    const REAL r0x,
-    const REAL r0y,
-    const REAL r0z,
-    const REAL v0x,
-    const REAL v0y,
-    const REAL v0z,
+static inline void
+twobody_solver(
+    REAL const dt,
+    REAL const m,
+    REAL const e2,
+    REAL const r0x,
+    REAL const r0y,
+    REAL const r0z,
+    REAL const v0x,
+    REAL const v0y,
+    REAL const v0z,
     REAL *r1x,
     REAL *r1y,
     REAL *r1z,
@@ -31,17 +32,18 @@ static inline void twobody_solver(
 }
 
 
-static inline void evolve_twobody(
-    const REAL dt,
-    const INT flag,
-    const REAL m,
-    const REAL e2,
-    const REAL r0x,
-    const REAL r0y,
-    const REAL r0z,
-    const REAL v0x,
-    const REAL v0y,
-    const REAL v0z,
+static inline void
+evolve_twobody(
+    REAL const dt,
+    INT const flag,
+    REAL const m,
+    REAL const e2,
+    REAL const r0x,
+    REAL const r0y,
+    REAL const r0z,
+    REAL const v0x,
+    REAL const v0y,
+    REAL const v0z,
     REAL *r1x,
     REAL *r1y,
     REAL *r1z,
@@ -57,37 +59,37 @@ static inline void evolve_twobody(
     REAL vz = v0z;
 
     if (flag == -1) {
-        rx -= vx * dt;                                                              // 2 FLOPs
-        ry -= vy * dt;                                                              // 2 FLOPs
-        rz -= vz * dt;                                                              // 2 FLOPs
+        rx -= vx * dt;                                                          // 2 FLOPs
+        ry -= vy * dt;                                                          // 2 FLOPs
+        rz -= vz * dt;                                                          // 2 FLOPs
         twobody_solver(dt, m, e2, rx, ry, rz, vx, vy, vz,
-                       &rx, &ry, &rz, &vx, &vy, &vz);                               // ? FLOPS
+                       &rx, &ry, &rz, &vx, &vy, &vz);                           // ? FLOPS
     }
     if (flag == 1) {
         twobody_solver(dt, m, e2, rx, ry, rz, vx, vy, vz,
-                       &rx, &ry, &rz, &vx, &vy, &vz);                               // ? FLOPS
-        rx -= vx * dt;                                                              // 2 FLOPs
-        ry -= vy * dt;                                                              // 2 FLOPs
-        rz -= vz * dt;                                                              // 2 FLOPs
+                       &rx, &ry, &rz, &vx, &vy, &vz);                           // ? FLOPS
+        rx -= vx * dt;                                                          // 2 FLOPs
+        ry -= vy * dt;                                                          // 2 FLOPs
+        rz -= vz * dt;                                                          // 2 FLOPs
     }
     if (flag == -2) {
-        rx -= vx * dt / 2;                                                          // 2 FLOPs
-        ry -= vy * dt / 2;                                                          // 2 FLOPs
-        rz -= vz * dt / 2;                                                          // 2 FLOPs
+        rx -= vx * dt / 2;                                                      // 2 FLOPs
+        ry -= vy * dt / 2;                                                      // 2 FLOPs
+        rz -= vz * dt / 2;                                                      // 2 FLOPs
         twobody_solver(dt, m, e2, rx, ry, rz, vx, vy, vz,
-                       &rx, &ry, &rz, &vx, &vy, &vz);                               // ? FLOPS
-        rx -= vx * dt / 2;                                                          // 2 FLOPs
-        ry -= vy * dt / 2;                                                          // 2 FLOPs
-        rz -= vz * dt / 2;                                                          // 2 FLOPs
+                       &rx, &ry, &rz, &vx, &vy, &vz);                           // ? FLOPS
+        rx -= vx * dt / 2;                                                      // 2 FLOPs
+        ry -= vy * dt / 2;                                                      // 2 FLOPs
+        rz -= vz * dt / 2;                                                      // 2 FLOPs
     }
     if (flag == 2) {
         twobody_solver(dt/2, m, e2, rx, ry, rz, vx, vy, vz,
-                       &rx, &ry, &rz, &vx, &vy, &vz);                               // ? FLOPS
-        rx -= vx * dt;                                                              // 2 FLOPs
-        ry -= vy * dt;                                                              // 2 FLOPs
-        rz -= vz * dt;                                                              // 2 FLOPs
+                       &rx, &ry, &rz, &vx, &vy, &vz);                           // ? FLOPS
+        rx -= vx * dt;                                                          // 2 FLOPs
+        ry -= vy * dt;                                                          // 2 FLOPs
+        rz -= vz * dt;                                                          // 2 FLOPs
         twobody_solver(dt/2, m, e2, rx, ry, rz, vx, vy, vz,
-                       &rx, &ry, &rz, &vx, &vy, &vz);                               // ? FLOPS
+                       &rx, &ry, &rz, &vx, &vy, &vz);                           // ? FLOPS
     }
 
     *r1x = rx;
@@ -99,25 +101,26 @@ static inline void evolve_twobody(
 }
 
 
-static inline void sakura_kernel_core(
-    const REAL dt,
-    const INT flag,
-    const REAL im,
-    const REAL irx,
-    const REAL iry,
-    const REAL irz,
-    const REAL ie2,
-    const REAL ivx,
-    const REAL ivy,
-    const REAL ivz,
-    const REAL jm,
-    const REAL jrx,
-    const REAL jry,
-    const REAL jrz,
-    const REAL je2,
-    const REAL jvx,
-    const REAL jvy,
-    const REAL jvz,
+static inline void
+sakura_kernel_core(
+    REAL const dt,
+    INT const flag,
+    REAL const im,
+    REAL const irx,
+    REAL const iry,
+    REAL const irz,
+    REAL const ie2,
+    REAL const ivx,
+    REAL const ivy,
+    REAL const ivz,
+    REAL const jm,
+    REAL const jrx,
+    REAL const jry,
+    REAL const jrz,
+    REAL const je2,
+    REAL const jvx,
+    REAL const jvy,
+    REAL const jvz,
     REAL *idrx,
     REAL *idry,
     REAL *idrz,
@@ -149,5 +152,6 @@ static inline void sakura_kernel_core(
     *idvz += jmu * (v1z - v0z);                                                 // 3 FLOPs
 }
 // Total flop count: 36 + ?
+
 
 #endif  // __SAKURA_KERNEL_COMMON_H__

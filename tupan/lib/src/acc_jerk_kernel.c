@@ -1,31 +1,32 @@
 #include "acc_jerk_kernel_common.h"
 
 
-void acc_jerk_kernel(
-    const UINT ni,
-    const REAL * restrict __im,
-    const REAL * restrict __irx,
-    const REAL * restrict __iry,
-    const REAL * restrict __irz,
-    const REAL * restrict __ie2,
-    const REAL * restrict __ivx,
-    const REAL * restrict __ivy,
-    const REAL * restrict __ivz,
-    const UINT nj,
-    const REAL * restrict __jm,
-    const REAL * restrict __jrx,
-    const REAL * restrict __jry,
-    const REAL * restrict __jrz,
-    const REAL * restrict __je2,
-    const REAL * restrict __jvx,
-    const REAL * restrict __jvy,
-    const REAL * restrict __jvz,
-    REAL * restrict __iax,
-    REAL * restrict __iay,
-    REAL * restrict __iaz,
-    REAL * restrict __ijx,
-    REAL * restrict __ijy,
-    REAL * restrict __ijz)
+void
+acc_jerk_kernel(
+    UINT const ni,
+    REAL const __im[restrict],
+    REAL const __irx[restrict],
+    REAL const __iry[restrict],
+    REAL const __irz[restrict],
+    REAL const __ie2[restrict],
+    REAL const __ivx[restrict],
+    REAL const __ivy[restrict],
+    REAL const __ivz[restrict],
+    UINT const nj,
+    REAL const __jm[restrict],
+    REAL const __jrx[restrict],
+    REAL const __jry[restrict],
+    REAL const __jrz[restrict],
+    REAL const __je2[restrict],
+    REAL const __jvx[restrict],
+    REAL const __jvy[restrict],
+    REAL const __jvz[restrict],
+    REAL __iax[restrict],
+    REAL __iay[restrict],
+    REAL __iaz[restrict],
+    REAL __ijx[restrict],
+    REAL __ijy[restrict],
+    REAL __ijz[restrict])
 {
     for (UINT i = 0; i < ni; ++i) {
         REAL im = __im[i];

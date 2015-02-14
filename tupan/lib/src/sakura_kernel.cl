@@ -1,35 +1,35 @@
 #include "sakura_kernel_common.h"
 
 
-kernel
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
-void sakura_kernel(
-    const UINT ni,
-    global const REAL * restrict __im,
-    global const REAL * restrict __irx,
-    global const REAL * restrict __iry,
-    global const REAL * restrict __irz,
-    global const REAL * restrict __ie2,
-    global const REAL * restrict __ivx,
-    global const REAL * restrict __ivy,
-    global const REAL * restrict __ivz,
-    const UINT nj,
-    global const REAL * restrict __jm,
-    global const REAL * restrict __jrx,
-    global const REAL * restrict __jry,
-    global const REAL * restrict __jrz,
-    global const REAL * restrict __je2,
-    global const REAL * restrict __jvx,
-    global const REAL * restrict __jvy,
-    global const REAL * restrict __jvz,
-    const REAL dt,
-    const INT flag,
-    global REAL * restrict __idrx,
-    global REAL * restrict __idry,
-    global REAL * restrict __idrz,
-    global REAL * restrict __idvx,
-    global REAL * restrict __idvy,
-    global REAL * restrict __idvz)
+kernel void
+sakura_kernel(
+    UINT const ni,
+    global REAL const __im[restrict],
+    global REAL const __irx[restrict],
+    global REAL const __iry[restrict],
+    global REAL const __irz[restrict],
+    global REAL const __ie2[restrict],
+    global REAL const __ivx[restrict],
+    global REAL const __ivy[restrict],
+    global REAL const __ivz[restrict],
+    UINT const nj,
+    global REAL const __jm[restrict],
+    global REAL const __jrx[restrict],
+    global REAL const __jry[restrict],
+    global REAL const __jrz[restrict],
+    global REAL const __je2[restrict],
+    global REAL const __jvx[restrict],
+    global REAL const __jvy[restrict],
+    global REAL const __jvz[restrict],
+    REAL const dt,
+    INT const flag,
+    global REAL __idrx[restrict],
+    global REAL __idry[restrict],
+    global REAL __idrz[restrict],
+    global REAL __idvx[restrict],
+    global REAL __idvy[restrict],
+    global REAL __idvz[restrict])
 {
     for (UINT i = LSIZE * get_group_id(0) + get_global_offset(0);
               i < ni;
@@ -102,7 +102,6 @@ void sakura_kernel(
         }
         #endif
 
-        #pragma unroll UNROLL
         for (; j < nj; ++j) {
             REAL jm = __jm[j];
             REAL jrx = __jrx[j];

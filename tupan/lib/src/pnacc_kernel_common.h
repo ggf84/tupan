@@ -5,24 +5,26 @@
 #include "smoothing.h"
 #include "pn_terms.h"
 
-static inline void pnacc_kernel_core(
-    const REALn im,
-    const REALn irx,
-    const REALn iry,
-    const REALn irz,
-    const REALn ie2,
-    const REALn ivx,
-    const REALn ivy,
-    const REALn ivz,
-    const REALn jm,
-    const REALn jrx,
-    const REALn jry,
-    const REALn jrz,
-    const REALn je2,
-    const REALn jvx,
-    const REALn jvy,
-    const REALn jvz,
-    const CLIGHT clight,
+
+static inline void
+pnacc_kernel_core(
+    REALn const im,
+    REALn const irx,
+    REALn const iry,
+    REALn const irz,
+    REALn const ie2,
+    REALn const ivx,
+    REALn const ivy,
+    REALn const ivz,
+    REALn const jm,
+    REALn const jrx,
+    REALn const jry,
+    REALn const jrz,
+    REALn const je2,
+    REALn const jvx,
+    REALn const jvy,
+    REALn const jvz,
+    CLIGHT const clight,
     REALn *ipnax,
     REALn *ipnay,
     REALn *ipnaz)
@@ -39,8 +41,8 @@ static inline void pnacc_kernel_core(
     REALn v2 = vx * vx + vy * vy + vz * vz;                                     // 5 FLOPs
     INTn mask = (r2 > 0);
 
-    REALn inv_r1;
-    REALn inv_r2 = smoothed_inv_r2r1(r2, e2, mask, &inv_r1);                    // 3 FLOPs
+    REALn inv_r2;
+    REALn inv_r1 = smoothed_inv_r1r2(r2, e2, mask, &inv_r2);                    // 3 FLOPs
 
     REALn nx = rx * inv_r1;                                                     // 1 FLOPs
     REALn ny = ry * inv_r1;                                                     // 1 FLOPs
@@ -71,5 +73,6 @@ static inline void pnacc_kernel_core(
     *ipnaz += pn.a * nz + pn.b * vz;                                            // 4 FLOPs
 }
 // Total flop count: 40+???
+
 
 #endif  // __PNACC_KERNEL_COMMON_H__
