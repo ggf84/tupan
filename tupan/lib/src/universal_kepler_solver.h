@@ -4,11 +4,11 @@
 #include "common.h"
 
 
-static inline REAL
+static inline real_t
 stumpff_c0(
-    REAL const zeta)
+    real_t const zeta)
 {
-    REAL abs_zeta = fabs(zeta);
+    real_t abs_zeta = fabs(zeta);
     if (abs_zeta < 1) {
         /* Taylor series: 1 + z / 2 + z*z / 24 + z*z*z / 720 + ...
          *
@@ -31,7 +31,7 @@ stumpff_c0(
         * zeta / 2   + 1);
     }
 
-    REAL sz = sqrt(abs_zeta);
+    real_t sz = sqrt(abs_zeta);
     if (zeta < 0) {
         return cos(sz);
     }
@@ -39,11 +39,11 @@ stumpff_c0(
 }
 
 
-static inline REAL
+static inline real_t
 stumpff_c1(
-    REAL const zeta)
+    real_t const zeta)
 {
-    REAL abs_zeta = fabs(zeta);
+    real_t abs_zeta = fabs(zeta);
     if (abs_zeta < 1) {
         /* Taylor series: 1 + z / 6 + z*z / 120 + z*z*z / 5040 + ...
          *
@@ -66,7 +66,7 @@ stumpff_c1(
             * zeta / 6   + 1);
     }
 
-    REAL sz = sqrt(abs_zeta);
+    real_t sz = sqrt(abs_zeta);
     if (zeta < 0) {
         return sin(sz) / sz;
     }
@@ -74,11 +74,11 @@ stumpff_c1(
 }
 
 
-static inline REAL
+static inline real_t
 stumpff_c2(
-    REAL const zeta)
+    real_t const zeta)
 {
-    REAL abs_zeta = fabs(zeta);
+    real_t abs_zeta = fabs(zeta);
     if (abs_zeta < 1) {
         /* stumpff_c2(z) = (stumpff_c0(z) - 1) / z
          */
@@ -94,7 +94,7 @@ stumpff_c2(
             * zeta / 12  + 1) / 2;
     }
 
-    REAL sz = sqrt(abs_zeta);
+    real_t sz = sqrt(abs_zeta);
     if (zeta < 0) {
         return (cos(sz) - 1) / zeta;
     }
@@ -102,11 +102,11 @@ stumpff_c2(
 }
 
 
-static inline REAL
+static inline real_t
 stumpff_c3(
-    REAL const zeta)
+    real_t const zeta)
 {
-    REAL abs_zeta = fabs(zeta);
+    real_t abs_zeta = fabs(zeta);
     if (abs_zeta < 1) {
         /* stumpff_c3(z) = (stumpff_c1(z) - 1) / z
          */
@@ -122,7 +122,7 @@ stumpff_c3(
             * zeta / 20  + 1) / 6;
     }
 
-    REAL sz = sqrt(abs_zeta);
+    real_t sz = sqrt(abs_zeta);
     if (zeta < 0) {
         return (sin(sz) / sz - 1) / zeta;
     }
@@ -130,215 +130,215 @@ stumpff_c3(
 }
 
 
-static inline REAL
+static inline real_t
 S0(
-    REAL const s,
-    REAL const alpha)
+    real_t const s,
+    real_t const alpha)
 {
-    REAL s2 = s * s;
-    REAL zeta = alpha * s2;
+    real_t s2 = s * s;
+    real_t zeta = alpha * s2;
     return stumpff_c0(zeta);
 }
 
 
-static inline REAL
+static inline real_t
 S1(
-    REAL const s,
-    REAL const alpha)
+    real_t const s,
+    real_t const alpha)
 {
-    REAL s2 = s * s;
-    REAL zeta = alpha * s2;
+    real_t s2 = s * s;
+    real_t zeta = alpha * s2;
     return s * stumpff_c1(zeta);
 }
 
 
-static inline REAL
+static inline real_t
 S2(
-    REAL const s,
-    REAL const alpha)
+    real_t const s,
+    real_t const alpha)
 {
-    REAL s2 = s * s;
-    REAL zeta = alpha * s2;
+    real_t s2 = s * s;
+    real_t zeta = alpha * s2;
     return s2 * stumpff_c2(zeta);
 }
 
 
-static inline REAL
+static inline real_t
 S3(
-    REAL const s,
-    REAL const alpha)
+    real_t const s,
+    real_t const alpha)
 {
-    REAL s2 = s * s;
-    REAL s3 = s * s2;
-    REAL zeta = alpha * s2;
+    real_t s2 = s * s;
+    real_t s3 = s * s2;
+    real_t zeta = alpha * s2;
     return s3 * stumpff_c3(zeta);
 }
 
 
-static inline REAL
+static inline real_t
 lagrange_f(
-    REAL const s,
-    REAL const m,
-    REAL const r0,
-    REAL const alpha)
+    real_t const s,
+    real_t const m,
+    real_t const r0,
+    real_t const alpha)
 {
     return 1 - m * S2(s, alpha) / r0;
 }
 
 
-static inline REAL
+static inline real_t
 lagrange_g(
-    REAL const s,
-    REAL const r0,
-    REAL const r0v0,
-    REAL const alpha)
+    real_t const s,
+    real_t const r0,
+    real_t const r0v0,
+    real_t const alpha)
 {
 //    return r0 * s + r0v0 * S2(s, alpha) + (alpha * r0) * S3(s, alpha);
     return r0 * S1(s, alpha) + r0v0 * S2(s, alpha);
 }
 
 
-static inline REAL
+static inline real_t
 lagrange_dfds(
-    REAL const s,
-    REAL const m,
-    REAL const r0,
-    REAL const alpha)
+    real_t const s,
+    real_t const m,
+    real_t const r0,
+    real_t const alpha)
 {
     return -m * S1(s, alpha) / r0;
 }
 
 
-static inline REAL
+static inline real_t
 lagrange_dgds(
-    REAL const s,
-    REAL const r0,
-    REAL const r0v0,
-    REAL const alpha)
+    real_t const s,
+    real_t const r0,
+    real_t const r0v0,
+    real_t const alpha)
 {
 //    return r0 + r0v0 * S1(s, alpha) + (alpha * r0) * S2(s, alpha);
     return r0 * S0(s, alpha) + r0v0 * S1(s, alpha);
 }
 
 
-static inline REAL
+static inline real_t
 universal_kepler(
-    REAL const s,
-    REAL const m,
-    REAL const r0,
-    REAL const r0v0,
-    REAL const alpha)
+    real_t const s,
+    real_t const m,
+    real_t const r0,
+    real_t const r0v0,
+    real_t const alpha)
 {
 //    return r0 * S1(s, alpha) + r0v0 * S2(s, alpha) + m * S3(s, alpha);
     return r0 * s + r0v0 * S2(s, alpha) + (m + alpha * r0) * S3(s, alpha);
 }
 
 
-static inline REAL
+static inline real_t
 universal_kepler_ds(
-    REAL const s,
-    REAL const m,
-    REAL const r0,
-    REAL const r0v0,
-    REAL const alpha)
+    real_t const s,
+    real_t const m,
+    real_t const r0,
+    real_t const r0v0,
+    real_t const alpha)
 {
 //    return r0 * S0(s, alpha) + r0v0 * S1(s, alpha) + m * S2(s, alpha);
     return r0 + r0v0 * S1(s, alpha) + (m + alpha * r0) * S2(s, alpha);
 }
 
 
-static inline REAL
+static inline real_t
 universal_kepler_dsds(
-    REAL const s,
-    REAL const m,
-    REAL const r0,
-    REAL const r0v0,
-    REAL const alpha)
+    real_t const s,
+    real_t const m,
+    real_t const r0,
+    real_t const r0v0,
+    real_t const alpha)
 {
 //    return r0v0 * S0(s, alpha) + (m + alpha * r0) * S1(s, alpha);
     return r0v0 * S0(s, alpha) + (m + alpha * r0) * S1(s, alpha);
 }
 
 
-static inline REAL
+static inline real_t
 f(
-    REAL const s,
-    REAL const arg[static 5])
+    real_t const s,
+    real_t const arg[static 5])
 {
     return universal_kepler(s, arg[1], arg[2], arg[3], arg[4]) - arg[0];
 }
 
 
-static inline REAL
+static inline real_t
 fprime(
-    REAL const s,
-    REAL const arg[static 5])
+    real_t const s,
+    real_t const arg[static 5])
 {
     return universal_kepler_ds(s, arg[1], arg[2], arg[3], arg[4]);
 }
 
 
-static inline REAL
+static inline real_t
 fprimeprime(
-    REAL const s,
-    REAL const arg[static 5])
+    real_t const s,
+    real_t const arg[static 5])
 {
     return universal_kepler_dsds(s, arg[1], arg[2], arg[3], arg[4]);
 }
 
 
 #define ORDER 5
-static inline REAL
+static inline real_t
 laguerre(
-    REAL const s,
-    REAL const arg[static 5])
+    real_t const s,
+    real_t const arg[static 5])
 {
-    REAL fv = f(s, arg);
-    REAL dfv = fprime(s, arg);
-    REAL ddfv = fprimeprime(s, arg);
-    REAL a = dfv;
-    REAL a2 = a * a;
-    REAL b = a2 - fv * ddfv;
-    REAL g = ORDER * fv;
-    REAL h = a + copysign(sqrt(fabs((ORDER - 1) * (ORDER * b - a2))), a);
+    real_t fv = f(s, arg);
+    real_t dfv = fprime(s, arg);
+    real_t ddfv = fprimeprime(s, arg);
+    real_t a = dfv;
+    real_t a2 = a * a;
+    real_t b = a2 - fv * ddfv;
+    real_t g = ORDER * fv;
+    real_t h = a + copysign(sqrt(fabs((ORDER - 1) * (ORDER * b - a2))), a);
 
     return -g / h;
 }
 
 
-static inline REAL
+static inline real_t
 halley(
-    REAL const s,
-    REAL const arg[static 5])
+    real_t const s,
+    real_t const arg[static 5])
 {
-    REAL fv = f(s, arg);
-    REAL dfv = fprime(s, arg);
-    REAL ddfv = fprimeprime(s, arg);
-    REAL g = 2 * fv * dfv;
-    REAL h = (2 * dfv * dfv - fv * ddfv);
+    real_t fv = f(s, arg);
+    real_t dfv = fprime(s, arg);
+    real_t ddfv = fprimeprime(s, arg);
+    real_t g = 2 * fv * dfv;
+    real_t h = (2 * dfv * dfv - fv * ddfv);
 
     return -g / h;
 }
 
 
-static inline REAL
+static inline real_t
 newton(
-    REAL const s,
-    REAL const arg[static 5])
+    real_t const s,
+    real_t const arg[static 5])
 {
-    REAL fv = f(s, arg);
-    REAL dfv = fprime(s, arg);
-    REAL g = fv;
-    REAL h = dfv;
+    real_t fv = f(s, arg);
+    real_t dfv = fprime(s, arg);
+    real_t g = fv;
+    real_t h = dfv;
 
     return -g / h;
 }
 
 
-static inline REAL
+static inline real_t
 fdelta(
-    REAL const s,
-    REAL const arg[static 5])
+    real_t const s,
+    real_t const arg[static 5])
 {
 //    return newton(s, arg);
 //    return halley(s, arg);
@@ -346,18 +346,18 @@ fdelta(
 }
 
 
-static inline INT
+static inline int_t
 findroot(
-    REAL const x0,
-    REAL const arg[static 5],
-    REAL *x)
+    real_t const x0,
+    real_t const arg[static 5],
+    real_t *x)
 {
-    INT n = 0;
-    REAL a, b;
+    int_t n = 0;
+    real_t a, b;
 
     *x = x0;
     do {
-        REAL delta = fdelta(*x, arg);
+        real_t delta = fdelta(*x, arg);
         if (fabs(delta) > fabs(*x))
             delta = copysign(fabs((*x)/2), delta);
 
@@ -375,35 +375,35 @@ findroot(
 
 static inline void
 set_new_pos_vel(
-    REAL const s,
-    REAL const m,
-    REAL const r0,
-    REAL const r0v0,
-    REAL const alpha,
-    REAL const r0x,
-    REAL const r0y,
-    REAL const r0z,
-    REAL const v0x,
-    REAL const v0y,
-    REAL const v0z,
-    REAL *r1x,
-    REAL *r1y,
-    REAL *r1z,
-    REAL *v1x,
-    REAL *v1y,
-    REAL *v1z)
+    real_t const s,
+    real_t const m,
+    real_t const r0,
+    real_t const r0v0,
+    real_t const alpha,
+    real_t const r0x,
+    real_t const r0y,
+    real_t const r0z,
+    real_t const v0x,
+    real_t const v0y,
+    real_t const v0z,
+    real_t *r1x,
+    real_t *r1y,
+    real_t *r1z,
+    real_t *v1x,
+    real_t *v1y,
+    real_t *v1z)
 {
-    REAL lf = lagrange_f(s, m, r0, alpha);
-    REAL lg = lagrange_g(s, r0, r0v0, alpha);
+    real_t lf = lagrange_f(s, m, r0, alpha);
+    real_t lg = lagrange_g(s, r0, r0v0, alpha);
 
     *r1x = r0x * lf + v0x * lg;
     *r1y = r0y * lf + v0y * lg;
     *r1z = r0z * lf + v0z * lg;
 
-    REAL ldf = lagrange_dfds(s, m, r0, alpha);
-    REAL ldg = lagrange_dgds(s, r0, r0v0, alpha);
+    real_t ldf = lagrange_dfds(s, m, r0, alpha);
+    real_t ldg = lagrange_dgds(s, r0, r0v0, alpha);
 
-    REAL r1 = lf * ldg - lg * ldf;
+    real_t r1 = lf * ldg - lg * ldf;
 
     ldf /= r1;
     ldg /= r1;
@@ -414,23 +414,23 @@ set_new_pos_vel(
 }
 
 
-static inline INT
+static inline int_t
 __universal_kepler_solver(
-    REAL const dt0,
-    REAL const m,
-    REAL const e2,
-    REAL const r0x,
-    REAL const r0y,
-    REAL const r0z,
-    REAL const v0x,
-    REAL const v0y,
-    REAL const v0z,
-    REAL *r1x,
-    REAL *r1y,
-    REAL *r1z,
-    REAL *v1x,
-    REAL *v1y,
-    REAL *v1z)
+    real_t const dt0,
+    real_t const m,
+    real_t const e2,
+    real_t const r0x,
+    real_t const r0y,
+    real_t const r0z,
+    real_t const v0x,
+    real_t const v0y,
+    real_t const v0z,
+    real_t *r1x,
+    real_t *r1y,
+    real_t *r1z,
+    real_t *v1x,
+    real_t *v1y,
+    real_t *v1z)
 {
     *r1x = r0x;
     *r1y = r0y;
@@ -439,22 +439,22 @@ __universal_kepler_solver(
     *v1y = v0y;
     *v1z = v0z;
 
-    REAL r0sqr = r0x * r0x + r0y * r0y + r0z * r0z;
+    real_t r0sqr = r0x * r0x + r0y * r0y + r0z * r0z;
     if (!(r0sqr > 0)) return 0;
 
     r0sqr += e2;
-    REAL inv_r0 = rsqrt(r0sqr);
-    REAL r0 = r0sqr * inv_r0;
+    real_t inv_r0 = rsqrt(r0sqr);
+    real_t r0 = r0sqr * inv_r0;
 
-    REAL r0v0 = r0x * v0x + r0y * v0y + r0z * v0z;
-    REAL v0sqr = v0x * v0x + v0y * v0y + v0z * v0z;
-    REAL u0sqr = 2 * m * inv_r0;
-    REAL u = sqrt(u0sqr);
-    REAL v = sqrt(v0sqr);
-    REAL alpha0 = (v - u) * (v + u);
-//    REAL alpha0 = v0sqr - u0sqr;
-    REAL lagr0 = v0sqr + u0sqr;
-    REAL abs_alpha0 = fabs(alpha0);
+    real_t r0v0 = r0x * v0x + r0y * v0y + r0z * v0z;
+    real_t v0sqr = v0x * v0x + v0y * v0y + v0z * v0z;
+    real_t u0sqr = 2 * m * inv_r0;
+    real_t u = sqrt(u0sqr);
+    real_t v = sqrt(v0sqr);
+    real_t alpha0 = (v - u) * (v + u);
+//    real_t alpha0 = v0sqr - u0sqr;
+    real_t lagr0 = v0sqr + u0sqr;
+    real_t abs_alpha0 = fabs(alpha0);
 
     #ifndef CONFIG_USE_OPENCL
     if (r0 * abs_alpha0 < 32 * sqrt(TOLERANCE) * m) {
@@ -476,15 +476,15 @@ __universal_kepler_solver(
     }
     #endif
 
-    REAL s0, s, arg[5];
+    real_t s0, s, arg[5];
 
-    REAL dt = dt0;
+    real_t dt = dt0;
 
     /* First guess for highly hyperbolic orbits:
      * adapted from formula 4.5.11 in fundamentals
      * of astrodynamics (Bate et al. 1971).
      */
-    REAL ss = (2 * alpha0 * fabs(dt0 / (r0v0 + (m + alpha0 * r0) / sqrt(abs_alpha0))));
+    real_t ss = (2 * alpha0 * fabs(dt0 / (r0v0 + (m + alpha0 * r0) / sqrt(abs_alpha0))));
     if (ss > 1) {
         s0 = copysign(log(ss) / sqrt(abs_alpha0), dt0);
     } else {
@@ -492,9 +492,9 @@ __universal_kepler_solver(
          * step to a fraction of the orbital period.
          */
         if (alpha0 < 0) {
-            REAL T = 2 * PI * m / (abs_alpha0 * sqrt(abs_alpha0));
-            REAL ratio = dt0 / T;
-            dt = (ratio - (INT)(ratio)) * T;
+            real_t T = 2 * PI * m / (abs_alpha0 * sqrt(abs_alpha0));
+            real_t ratio = dt0 / T;
+            dt = (ratio - (int_t)(ratio)) * T;
         }
         /* This seems to work well for both
          * elliptical and nearly parabolical
@@ -502,7 +502,7 @@ __universal_kepler_solver(
          */
         s0 = dt * abs_alpha0 / m;
 
-        REAL s01 = dt / r0;
+        real_t s01 = dt / r0;
         if (fabs(alpha0 * s01 * s01) < 1)
             s0 = s01;
     }
@@ -513,7 +513,7 @@ __universal_kepler_solver(
     arg[3] = r0v0;
     arg[4] = alpha0;
 
-    INT err = findroot(s0, arg, &s);
+    int_t err = findroot(s0, arg, &s);
     if (err != 0) {
         #ifndef CONFIG_USE_OPENCL
         fprintf(stderr, "#---WARNING: Maximum iteration steps "
@@ -536,10 +536,10 @@ __universal_kepler_solver(
         return err;
     }
 
-    REAL alpha = alpha0;
+    real_t alpha = alpha0;
     if (e2 > 0) {
-        REAL r1 = universal_kepler_ds(s, m, r0, r0v0, alpha);
-        REAL inv_r = (1 / r0 + 1 / r1) / 2;
+        real_t r1 = universal_kepler_ds(s, m, r0, r0v0, alpha);
+        real_t inv_r = (1 / r0 + 1 / r1) / 2;
         alpha = alpha0 + m * e2 * inv_r * inv_r * inv_r;
         r1 = universal_kepler_ds(s, m, r0, r0v0, alpha);
         inv_r = (1 / r0 + 1 / r1) / 2;
@@ -552,12 +552,12 @@ __universal_kepler_solver(
                     &(*v1x), &(*v1y), &(*v1z));
 
     if (e2 > 0) {
-        REAL r1sqr = *r1x * *r1x + *r1y * *r1y + *r1z * *r1z;
-        REAL inv_r1 = rsqrt(r1sqr + e2);
-        REAL v1sqr = *v1x * *v1x + *v1y * *v1y + *v1z * *v1z;
-        REAL u1sqr = 2 * m * inv_r1;
-        REAL lagr1 = v1sqr + u1sqr;
-        REAL alpha1 = v1sqr - u1sqr;
+        real_t r1sqr = *r1x * *r1x + *r1y * *r1y + *r1z * *r1z;
+        real_t inv_r1 = rsqrt(r1sqr + e2);
+        real_t v1sqr = *v1x * *v1x + *v1y * *v1y + *v1z * *v1z;
+        real_t u1sqr = 2 * m * inv_r1;
+        real_t lagr1 = v1sqr + u1sqr;
+        real_t alpha1 = v1sqr - u1sqr;
         if (fabs(alpha1 - alpha0) > TOLERANCE * fabs(lagr1 + lagr0)) return -11;
     }
 
@@ -565,32 +565,32 @@ __universal_kepler_solver(
 }
 
 
-static inline INT
+static inline int_t
 _universal_kepler_solver(
-    REAL const dt,
-    REAL const m,
-    REAL const e2,
-    REAL const r0x,
-    REAL const r0y,
-    REAL const r0z,
-    REAL const v0x,
-    REAL const v0y,
-    REAL const v0z,
-    REAL *r1x,
-    REAL *r1y,
-    REAL *r1z,
-    REAL *v1x,
-    REAL *v1y,
-    REAL *v1z)
+    real_t const dt,
+    real_t const m,
+    real_t const e2,
+    real_t const r0x,
+    real_t const r0y,
+    real_t const r0z,
+    real_t const v0x,
+    real_t const v0y,
+    real_t const v0z,
+    real_t *r1x,
+    real_t *r1y,
+    real_t *r1z,
+    real_t *v1x,
+    real_t *v1y,
+    real_t *v1z)
 {
-    INT err = __universal_kepler_solver(dt, m, e2,
+    int_t err = __universal_kepler_solver(dt, m, e2,
                                         r0x, r0y, r0z,
                                         v0x, v0y, v0z,
                                         &(*r1x), &(*r1y), &(*r1z),
                                         &(*v1x), &(*v1y), &(*v1z));
     if (err == 0) return err;
 
-    INT n = 2;
+    int_t n = 2;
     do {
         err = 0;
         *r1x = r0x;
@@ -599,7 +599,7 @@ _universal_kepler_solver(
         *v1x = v0x;
         *v1y = v0y;
         *v1z = v0z;
-        for (INT i = 0; i < n; ++i) {
+        for (int_t i = 0; i < n; ++i) {
             err |= __universal_kepler_solver(dt/n, m, e2,
                                              *r1x, *r1y, *r1z,
                                              *v1x, *v1y, *v1z,
@@ -614,25 +614,25 @@ _universal_kepler_solver(
 }
 
 
-static inline INT
+static inline int_t
 universal_kepler_solver(
-    REAL const dt,
-    REAL const m,
-    REAL const e2,
-    REAL const r0x,
-    REAL const r0y,
-    REAL const r0z,
-    REAL const v0x,
-    REAL const v0y,
-    REAL const v0z,
-    REAL *r1x,
-    REAL *r1y,
-    REAL *r1z,
-    REAL *v1x,
-    REAL *v1y,
-    REAL *v1z)
+    real_t const dt,
+    real_t const m,
+    real_t const e2,
+    real_t const r0x,
+    real_t const r0y,
+    real_t const r0z,
+    real_t const v0x,
+    real_t const v0y,
+    real_t const v0z,
+    real_t *r1x,
+    real_t *r1y,
+    real_t *r1z,
+    real_t *v1x,
+    real_t *v1y,
+    real_t *v1z)
 {
-    INT err = _universal_kepler_solver(dt, m, e2,
+    int_t err = _universal_kepler_solver(dt, m, e2,
                                        r0x, r0y, r0z,
                                        v0x, v0y, v0z,
                                        &(*r1x), &(*r1y), &(*r1z),

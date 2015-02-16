@@ -4,113 +4,110 @@
 __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 kernel void
 tstep_kernel(
-    UINT const ni,
-    global REALn const __im[restrict],
-    global REALn const __irx[restrict],
-    global REALn const __iry[restrict],
-    global REALn const __irz[restrict],
-    global REALn const __ie2[restrict],
-    global REALn const __ivx[restrict],
-    global REALn const __ivy[restrict],
-    global REALn const __ivz[restrict],
-    UINT const nj,
-    global REAL const __jm[restrict],
-    global REAL const __jrx[restrict],
-    global REAL const __jry[restrict],
-    global REAL const __jrz[restrict],
-    global REAL const __je2[restrict],
-    global REAL const __jvx[restrict],
-    global REAL const __jvy[restrict],
-    global REAL const __jvz[restrict],
-    REAL const eta,
-    global REALn __idt_a[restrict],
-    global REALn __idt_b[restrict])
+    uint_t const ni,
+    global real_tn const __im[restrict],
+    global real_tn const __irx[restrict],
+    global real_tn const __iry[restrict],
+    global real_tn const __irz[restrict],
+    global real_tn const __ie2[restrict],
+    global real_tn const __ivx[restrict],
+    global real_tn const __ivy[restrict],
+    global real_tn const __ivz[restrict],
+    uint_t const nj,
+    global real_t const __jm[restrict],
+    global real_t const __jrx[restrict],
+    global real_t const __jry[restrict],
+    global real_t const __jrz[restrict],
+    global real_t const __je2[restrict],
+    global real_t const __jvx[restrict],
+    global real_t const __jvy[restrict],
+    global real_t const __jvz[restrict],
+    real_t const eta,
+    global real_tn __idt_a[restrict],
+    global real_tn __idt_b[restrict])
 {
-    for (UINT i = LSIZE * get_group_id(0) + get_global_offset(0);
-              i < ni;
-              i += LSIZE * get_num_groups(0)) {
-        UINT lid = get_local_id(0);
-        UINT gid = ((i + lid) < ni) ? (i + lid):(0);
+    uint_t lid = get_local_id(0);
+    uint_t gid = get_global_id(0);
+    gid = (gid < ni) ? (gid):(0);
 
-        REALn im = __im[gid];
-        REALn irx = __irx[gid];
-        REALn iry = __iry[gid];
-        REALn irz = __irz[gid];
-        REALn ie2 = __ie2[gid];
-        REALn ivx = __ivx[gid];
-        REALn ivy = __ivy[gid];
-        REALn ivz = __ivz[gid];
+    real_tn im = __im[gid];
+    real_tn irx = __irx[gid];
+    real_tn iry = __iry[gid];
+    real_tn irz = __irz[gid];
+    real_tn ie2 = __ie2[gid];
+    real_tn ivx = __ivx[gid];
+    real_tn ivy = __ivy[gid];
+    real_tn ivz = __ivz[gid];
 
-        REALn iw2_a = (REALn)(0);
-        REALn iw2_b = (REALn)(0);
+    real_tn iw2_a = (real_tn)(0);
+    real_tn iw2_b = (real_tn)(0);
 
-        UINT j = 0;
+    uint_t j = 0;
 
-        #ifdef FAST_LOCAL_MEM
-        local REAL _jm[LSIZE];
-        local REAL _jrx[LSIZE];
-        local REAL _jry[LSIZE];
-        local REAL _jrz[LSIZE];
-        local REAL _je2[LSIZE];
-        local REAL _jvx[LSIZE];
-        local REAL _jvy[LSIZE];
-        local REAL _jvz[LSIZE];
-        for (; (j + LSIZE - 1) < nj; j += LSIZE) {
-            REAL jm = __jm[j + lid];
-            REAL jrx = __jrx[j + lid];
-            REAL jry = __jry[j + lid];
-            REAL jrz = __jrz[j + lid];
-            REAL je2 = __je2[j + lid];
-            REAL jvx = __jvx[j + lid];
-            REAL jvy = __jvy[j + lid];
-            REAL jvz = __jvz[j + lid];
-            barrier(CLK_LOCAL_MEM_FENCE);
-            _jm[lid] = jm;
-            _jrx[lid] = jrx;
-            _jry[lid] = jry;
-            _jrz[lid] = jrz;
-            _je2[lid] = je2;
-            _jvx[lid] = jvx;
-            _jvy[lid] = jvy;
-            _jvz[lid] = jvz;
-            barrier(CLK_LOCAL_MEM_FENCE);
-            #pragma unroll UNROLL
-            for (UINT k = 0; k < LSIZE; ++k) {
-                jm = _jm[k];
-                jrx = _jrx[k];
-                jry = _jry[k];
-                jrz = _jrz[k];
-                je2 = _je2[k];
-                jvx = _jvx[k];
-                jvy = _jvy[k];
-                jvz = _jvz[k];
-                tstep_kernel_core(
-                    eta,
-                    im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                    jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-                    &iw2_a, &iw2_b);
-            }
-        }
-        #endif
-
-        for (; j < nj; ++j) {
-            REAL jm = __jm[j];
-            REAL jrx = __jrx[j];
-            REAL jry = __jry[j];
-            REAL jrz = __jrz[j];
-            REAL je2 = __je2[j];
-            REAL jvx = __jvx[j];
-            REAL jvy = __jvy[j];
-            REAL jvz = __jvz[j];
+    #ifdef FAST_LOCAL_MEM
+    local real_t _jm[LSIZE];
+    local real_t _jrx[LSIZE];
+    local real_t _jry[LSIZE];
+    local real_t _jrz[LSIZE];
+    local real_t _je2[LSIZE];
+    local real_t _jvx[LSIZE];
+    local real_t _jvy[LSIZE];
+    local real_t _jvz[LSIZE];
+    for (; (j + LSIZE - 1) < nj; j += LSIZE) {
+        real_t jm = __jm[j + lid];
+        real_t jrx = __jrx[j + lid];
+        real_t jry = __jry[j + lid];
+        real_t jrz = __jrz[j + lid];
+        real_t je2 = __je2[j + lid];
+        real_t jvx = __jvx[j + lid];
+        real_t jvy = __jvy[j + lid];
+        real_t jvz = __jvz[j + lid];
+        barrier(CLK_LOCAL_MEM_FENCE);
+        _jm[lid] = jm;
+        _jrx[lid] = jrx;
+        _jry[lid] = jry;
+        _jrz[lid] = jrz;
+        _je2[lid] = je2;
+        _jvx[lid] = jvx;
+        _jvy[lid] = jvy;
+        _jvz[lid] = jvz;
+        barrier(CLK_LOCAL_MEM_FENCE);
+        #pragma unroll UNROLL
+        for (uint_t k = 0; k < LSIZE; ++k) {
+            jm = _jm[k];
+            jrx = _jrx[k];
+            jry = _jry[k];
+            jrz = _jrz[k];
+            je2 = _je2[k];
+            jvx = _jvx[k];
+            jvy = _jvy[k];
+            jvz = _jvz[k];
             tstep_kernel_core(
                 eta,
                 im, irx, iry, irz, ie2, ivx, ivy, ivz,
                 jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
                 &iw2_a, &iw2_b);
         }
-
-        __idt_a[gid] = eta / sqrt(fmax((REALn)(1), iw2_a));
-        __idt_b[gid] = eta / sqrt(fmax((REALn)(1), iw2_b));
     }
+    #endif
+
+    for (; j < nj; ++j) {
+        real_t jm = __jm[j];
+        real_t jrx = __jrx[j];
+        real_t jry = __jry[j];
+        real_t jrz = __jrz[j];
+        real_t je2 = __je2[j];
+        real_t jvx = __jvx[j];
+        real_t jvy = __jvy[j];
+        real_t jvz = __jvz[j];
+        tstep_kernel_core(
+            eta,
+            im, irx, iry, irz, ie2, ivx, ivy, ivz,
+            jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+            &iw2_a, &iw2_b);
+    }
+
+    __idt_a[gid] = eta / sqrt(fmax((real_tn)(1), iw2_a));
+    __idt_b[gid] = eta / sqrt(fmax((real_tn)(1), iw2_b));
 }
 

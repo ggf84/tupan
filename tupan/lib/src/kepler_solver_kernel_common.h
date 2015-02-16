@@ -7,62 +7,62 @@
 
 static inline void
 kepler_solver_kernel_core(
-    REAL const dt,
-    REAL const im,
-    REAL const irx,
-    REAL const iry,
-    REAL const irz,
-    REAL const ie2,
-    REAL const ivx,
-    REAL const ivy,
-    REAL const ivz,
-    REAL const jm,
-    REAL const jrx,
-    REAL const jry,
-    REAL const jrz,
-    REAL const je2,
-    REAL const jvx,
-    REAL const jvy,
-    REAL const jvz,
-    REAL *ir1x,
-    REAL *ir1y,
-    REAL *ir1z,
-    REAL *iv1x,
-    REAL *iv1y,
-    REAL *iv1z,
-    REAL *jr1x,
-    REAL *jr1y,
-    REAL *jr1z,
-    REAL *jv1x,
-    REAL *jv1y,
-    REAL *jv1z)
+    real_t const dt,
+    real_t const im,
+    real_t const irx,
+    real_t const iry,
+    real_t const irz,
+    real_t const ie2,
+    real_t const ivx,
+    real_t const ivy,
+    real_t const ivz,
+    real_t const jm,
+    real_t const jrx,
+    real_t const jry,
+    real_t const jrz,
+    real_t const je2,
+    real_t const jvx,
+    real_t const jvy,
+    real_t const jvz,
+    real_t *ir1x,
+    real_t *ir1y,
+    real_t *ir1z,
+    real_t *iv1x,
+    real_t *iv1y,
+    real_t *iv1z,
+    real_t *jr1x,
+    real_t *jr1y,
+    real_t *jr1z,
+    real_t *jv1x,
+    real_t *jv1y,
+    real_t *jv1z)
 {
-    REAL r0x = irx - jrx;                                                       // 1 FLOPs
-    REAL r0y = iry - jry;                                                       // 1 FLOPs
-    REAL r0z = irz - jrz;                                                       // 1 FLOPs
-    REAL e2 = ie2 + je2;                                                        // 1 FLOPs
-    REAL v0x = ivx - jvx;                                                       // 1 FLOPs
-    REAL v0y = ivy - jvy;                                                       // 1 FLOPs
-    REAL v0z = ivz - jvz;                                                       // 1 FLOPs
-    REAL m = im + jm;                                                           // 1 FLOPs
+    real_t r0x = irx - jrx;                                                     // 1 FLOPs
+    real_t r0y = iry - jry;                                                     // 1 FLOPs
+    real_t r0z = irz - jrz;                                                     // 1 FLOPs
+    real_t e2 = ie2 + je2;                                                      // 1 FLOPs
+    real_t v0x = ivx - jvx;                                                     // 1 FLOPs
+    real_t v0y = ivy - jvy;                                                     // 1 FLOPs
+    real_t v0z = ivz - jvz;                                                     // 1 FLOPs
+    real_t m = im + jm;                                                         // 1 FLOPs
 
-    REAL inv_m = 1 / m;                                                         // 1 FLOPs
-    REAL imu = im * inv_m;                                                      // 1 FLOPs
-    REAL jmu = jm * inv_m;                                                      // 1 FLOPs
+    real_t inv_m = 1 / m;                                                       // 1 FLOPs
+    real_t imu = im * inv_m;                                                    // 1 FLOPs
+    real_t jmu = jm * inv_m;                                                    // 1 FLOPs
 
-    REAL rcmx = imu * irx + jmu * jrx;                                          // 3 FLOPs
-    REAL rcmy = imu * iry + jmu * jry;                                          // 3 FLOPs
-    REAL rcmz = imu * irz + jmu * jrz;                                          // 3 FLOPs
-    REAL vcmx = imu * ivx + jmu * jvx;                                          // 3 FLOPs
-    REAL vcmy = imu * ivy + jmu * jvy;                                          // 3 FLOPs
-    REAL vcmz = imu * ivz + jmu * jvz;                                          // 3 FLOPs
+    real_t rcmx = imu * irx + jmu * jrx;                                        // 3 FLOPs
+    real_t rcmy = imu * iry + jmu * jry;                                        // 3 FLOPs
+    real_t rcmz = imu * irz + jmu * jrz;                                        // 3 FLOPs
+    real_t vcmx = imu * ivx + jmu * jvx;                                        // 3 FLOPs
+    real_t vcmy = imu * ivy + jmu * jvy;                                        // 3 FLOPs
+    real_t vcmz = imu * ivz + jmu * jvz;                                        // 3 FLOPs
 
     rcmx += vcmx * dt;                                                          // 2 FLOPs
     rcmy += vcmy * dt;                                                          // 2 FLOPs
     rcmz += vcmz * dt;                                                          // 2 FLOPs
 
-    REAL r1x, r1y, r1z;
-    REAL v1x, v1y, v1z;
+    real_t r1x, r1y, r1z;
+    real_t v1x, v1y, v1z;
     universal_kepler_solver(dt, m, e2,
                             r0x, r0y, r0z,
                             v0x, v0y, v0z,

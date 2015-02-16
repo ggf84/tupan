@@ -8,21 +8,21 @@
 
 static inline void
 twobody_solver(
-    REAL const dt,
-    REAL const m,
-    REAL const e2,
-    REAL const r0x,
-    REAL const r0y,
-    REAL const r0z,
-    REAL const v0x,
-    REAL const v0y,
-    REAL const v0z,
-    REAL *r1x,
-    REAL *r1y,
-    REAL *r1z,
-    REAL *v1x,
-    REAL *v1y,
-    REAL *v1z)
+    real_t const dt,
+    real_t const m,
+    real_t const e2,
+    real_t const r0x,
+    real_t const r0y,
+    real_t const r0z,
+    real_t const v0x,
+    real_t const v0y,
+    real_t const v0z,
+    real_t *r1x,
+    real_t *r1y,
+    real_t *r1z,
+    real_t *v1x,
+    real_t *v1y,
+    real_t *v1z)
 {
     universal_kepler_solver(dt, m, e2,
                             r0x, r0y, r0z,
@@ -34,29 +34,29 @@ twobody_solver(
 
 static inline void
 evolve_twobody(
-    REAL const dt,
-    INT const flag,
-    REAL const m,
-    REAL const e2,
-    REAL const r0x,
-    REAL const r0y,
-    REAL const r0z,
-    REAL const v0x,
-    REAL const v0y,
-    REAL const v0z,
-    REAL *r1x,
-    REAL *r1y,
-    REAL *r1z,
-    REAL *v1x,
-    REAL *v1y,
-    REAL *v1z)
+    real_t const dt,
+    int_t const flag,
+    real_t const m,
+    real_t const e2,
+    real_t const r0x,
+    real_t const r0y,
+    real_t const r0z,
+    real_t const v0x,
+    real_t const v0y,
+    real_t const v0z,
+    real_t *r1x,
+    real_t *r1y,
+    real_t *r1z,
+    real_t *v1x,
+    real_t *v1y,
+    real_t *v1z)
 {
-    REAL rx = r0x;
-    REAL ry = r0y;
-    REAL rz = r0z;
-    REAL vx = v0x;
-    REAL vy = v0y;
-    REAL vz = v0z;
+    real_t rx = r0x;
+    real_t ry = r0y;
+    real_t rz = r0z;
+    real_t vx = v0x;
+    real_t vy = v0y;
+    real_t vz = v0z;
 
     if (flag == -1) {
         rx -= vx * dt;                                                          // 2 FLOPs
@@ -103,46 +103,46 @@ evolve_twobody(
 
 static inline void
 sakura_kernel_core(
-    REAL const dt,
-    INT const flag,
-    REAL const im,
-    REAL const irx,
-    REAL const iry,
-    REAL const irz,
-    REAL const ie2,
-    REAL const ivx,
-    REAL const ivy,
-    REAL const ivz,
-    REAL const jm,
-    REAL const jrx,
-    REAL const jry,
-    REAL const jrz,
-    REAL const je2,
-    REAL const jvx,
-    REAL const jvy,
-    REAL const jvz,
-    REAL *idrx,
-    REAL *idry,
-    REAL *idrz,
-    REAL *idvx,
-    REAL *idvy,
-    REAL *idvz)
+    real_t const dt,
+    int_t const flag,
+    real_t const im,
+    real_t const irx,
+    real_t const iry,
+    real_t const irz,
+    real_t const ie2,
+    real_t const ivx,
+    real_t const ivy,
+    real_t const ivz,
+    real_t const jm,
+    real_t const jrx,
+    real_t const jry,
+    real_t const jrz,
+    real_t const je2,
+    real_t const jvx,
+    real_t const jvy,
+    real_t const jvz,
+    real_t *idrx,
+    real_t *idry,
+    real_t *idrz,
+    real_t *idvx,
+    real_t *idvy,
+    real_t *idvz)
 {
-    REAL r0x = irx - jrx;                                                       // 1 FLOPs
-    REAL r0y = iry - jry;                                                       // 1 FLOPs
-    REAL r0z = irz - jrz;                                                       // 1 FLOPs
-    REAL e2 = ie2 + je2;                                                        // 1 FLOPs
-    REAL v0x = ivx - jvx;                                                       // 1 FLOPs
-    REAL v0y = ivy - jvy;                                                       // 1 FLOPs
-    REAL v0z = ivz - jvz;                                                       // 1 FLOPs
-    REAL m = im + jm;                                                           // 1 FLOPs
+    real_t r0x = irx - jrx;                                                     // 1 FLOPs
+    real_t r0y = iry - jry;                                                     // 1 FLOPs
+    real_t r0z = irz - jrz;                                                     // 1 FLOPs
+    real_t e2 = ie2 + je2;                                                      // 1 FLOPs
+    real_t v0x = ivx - jvx;                                                     // 1 FLOPs
+    real_t v0y = ivy - jvy;                                                     // 1 FLOPs
+    real_t v0z = ivz - jvz;                                                     // 1 FLOPs
+    real_t m = im + jm;                                                         // 1 FLOPs
 
-    REAL r1x, r1y, r1z;
-    REAL v1x, v1y, v1z;
+    real_t r1x, r1y, r1z;
+    real_t v1x, v1y, v1z;
     evolve_twobody(dt, flag, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
                    &r1x, &r1y, &r1z, &v1x, &v1y, &v1z);                         // ? FLOPs
 
-    REAL jmu = jm / m;                                                          // 1 FLOPs
+    real_t jmu = jm / m;                                                        // 1 FLOPs
 
     *idrx += jmu * (r1x - r0x);                                                 // 3 FLOPs
     *idry += jmu * (r1y - r0y);                                                 // 3 FLOPs

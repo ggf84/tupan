@@ -46,9 +46,9 @@ class CDriver(object):
 
         src = []
         with open(os.path.join(PATH, 'libtupan.h'), 'r') as fobj:
-            src.append('typedef {} INT;'.format(Ctype.c_int))
-            src.append('typedef {} UINT;'.format(Ctype.c_uint))
-            src.append('typedef {} REAL;'.format(Ctype.c_real))
+            src.append('typedef {} int_t;'.format(Ctype.c_int))
+            src.append('typedef {} uint_t;'.format(Ctype.c_uint))
+            src.append('typedef {} real_t;'.format(Ctype.c_real))
             src.append(fobj.read())
         source = '\n'.join(src)
 

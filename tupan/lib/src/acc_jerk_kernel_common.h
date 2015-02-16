@@ -7,44 +7,44 @@
 
 static inline void
 acc_jerk_kernel_core(
-    REALn const im,
-    REALn const irx,
-    REALn const iry,
-    REALn const irz,
-    REALn const ie2,
-    REALn const ivx,
-    REALn const ivy,
-    REALn const ivz,
-    REALn const jm,
-    REALn const jrx,
-    REALn const jry,
-    REALn const jrz,
-    REALn const je2,
-    REALn const jvx,
-    REALn const jvy,
-    REALn const jvz,
-    REALn *iax,
-    REALn *iay,
-    REALn *iaz,
-    REALn *ijx,
-    REALn *ijy,
-    REALn *ijz)
+    real_tn const im,
+    real_tn const irx,
+    real_tn const iry,
+    real_tn const irz,
+    real_tn const ie2,
+    real_tn const ivx,
+    real_tn const ivy,
+    real_tn const ivz,
+    real_tn const jm,
+    real_tn const jrx,
+    real_tn const jry,
+    real_tn const jrz,
+    real_tn const je2,
+    real_tn const jvx,
+    real_tn const jvy,
+    real_tn const jvz,
+    real_tn *iax,
+    real_tn *iay,
+    real_tn *iaz,
+    real_tn *ijx,
+    real_tn *ijy,
+    real_tn *ijz)
 {
-    REALn rx = irx - jrx;                                                       // 1 FLOPs
-    REALn ry = iry - jry;                                                       // 1 FLOPs
-    REALn rz = irz - jrz;                                                       // 1 FLOPs
-    REALn e2 = ie2 + je2;                                                       // 1 FLOPs
-    REALn vx = ivx - jvx;                                                       // 1 FLOPs
-    REALn vy = ivy - jvy;                                                       // 1 FLOPs
-    REALn vz = ivz - jvz;                                                       // 1 FLOPs
-    REALn r2 = rx * rx + ry * ry + rz * rz;                                     // 5 FLOPs
-    REALn rv = rx * vx + ry * vy + rz * vz;                                     // 5 FLOPs
-    INTn mask = (r2 > 0);
+    real_tn rx = irx - jrx;                                                     // 1 FLOPs
+    real_tn ry = iry - jry;                                                     // 1 FLOPs
+    real_tn rz = irz - jrz;                                                     // 1 FLOPs
+    real_tn e2 = ie2 + je2;                                                     // 1 FLOPs
+    real_tn vx = ivx - jvx;                                                     // 1 FLOPs
+    real_tn vy = ivy - jvy;                                                     // 1 FLOPs
+    real_tn vz = ivz - jvz;                                                     // 1 FLOPs
+    real_tn r2 = rx * rx + ry * ry + rz * rz;                                   // 5 FLOPs
+    real_tn rv = rx * vx + ry * vy + rz * vz;                                   // 5 FLOPs
+    int_tn mask = (r2 > 0);
 
-    REALn inv_r2;
-    REALn m_r3 = smoothed_m_r3_inv_r2(jm, r2, e2, mask, &inv_r2);               // 5 FLOPs
+    real_tn inv_r2;
+    real_tn m_r3 = smoothed_m_r3_inv_r2(jm, r2, e2, mask, &inv_r2);             // 5 FLOPs
 
-    REALn alpha = 3 * rv * inv_r2;                                              // 2 FLOPs
+    real_tn alpha = 3 * rv * inv_r2;                                            // 2 FLOPs
 
     vx -= alpha * rx;                                                           // 2 FLOPs
     vy -= alpha * ry;                                                           // 2 FLOPs

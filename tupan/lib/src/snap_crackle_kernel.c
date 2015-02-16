@@ -3,80 +3,80 @@
 
 void
 snap_crackle_kernel(
-    UINT const ni,
-    REAL const __im[restrict],
-    REAL const __irx[restrict],
-    REAL const __iry[restrict],
-    REAL const __irz[restrict],
-    REAL const __ie2[restrict],
-    REAL const __ivx[restrict],
-    REAL const __ivy[restrict],
-    REAL const __ivz[restrict],
-    REAL const __iax[restrict],
-    REAL const __iay[restrict],
-    REAL const __iaz[restrict],
-    REAL const __ijx[restrict],
-    REAL const __ijy[restrict],
-    REAL const __ijz[restrict],
-    UINT const nj,
-    REAL const __jm[restrict],
-    REAL const __jrx[restrict],
-    REAL const __jry[restrict],
-    REAL const __jrz[restrict],
-    REAL const __je2[restrict],
-    REAL const __jvx[restrict],
-    REAL const __jvy[restrict],
-    REAL const __jvz[restrict],
-    REAL const __jax[restrict],
-    REAL const __jay[restrict],
-    REAL const __jaz[restrict],
-    REAL const __jjx[restrict],
-    REAL const __jjy[restrict],
-    REAL const __jjz[restrict],
-    REAL __isx[restrict],
-    REAL __isy[restrict],
-    REAL __isz[restrict],
-    REAL __icx[restrict],
-    REAL __icy[restrict],
-    REAL __icz[restrict])
+    uint_t const ni,
+    real_t const __im[restrict],
+    real_t const __irx[restrict],
+    real_t const __iry[restrict],
+    real_t const __irz[restrict],
+    real_t const __ie2[restrict],
+    real_t const __ivx[restrict],
+    real_t const __ivy[restrict],
+    real_t const __ivz[restrict],
+    real_t const __iax[restrict],
+    real_t const __iay[restrict],
+    real_t const __iaz[restrict],
+    real_t const __ijx[restrict],
+    real_t const __ijy[restrict],
+    real_t const __ijz[restrict],
+    uint_t const nj,
+    real_t const __jm[restrict],
+    real_t const __jrx[restrict],
+    real_t const __jry[restrict],
+    real_t const __jrz[restrict],
+    real_t const __je2[restrict],
+    real_t const __jvx[restrict],
+    real_t const __jvy[restrict],
+    real_t const __jvz[restrict],
+    real_t const __jax[restrict],
+    real_t const __jay[restrict],
+    real_t const __jaz[restrict],
+    real_t const __jjx[restrict],
+    real_t const __jjy[restrict],
+    real_t const __jjz[restrict],
+    real_t __isx[restrict],
+    real_t __isy[restrict],
+    real_t __isz[restrict],
+    real_t __icx[restrict],
+    real_t __icy[restrict],
+    real_t __icz[restrict])
 {
-    for (UINT i = 0; i < ni; ++i) {
-        REAL im = __im[i];
-        REAL irx = __irx[i];
-        REAL iry = __iry[i];
-        REAL irz = __irz[i];
-        REAL ie2 = __ie2[i];
-        REAL ivx = __ivx[i];
-        REAL ivy = __ivy[i];
-        REAL ivz = __ivz[i];
-        REAL iax = __iax[i];
-        REAL iay = __iay[i];
-        REAL iaz = __iaz[i];
-        REAL ijx = __ijx[i];
-        REAL ijy = __ijy[i];
-        REAL ijz = __ijz[i];
-        REAL isx = 0;
-        REAL isy = 0;
-        REAL isz = 0;
-        REAL icx = 0;
-        REAL icy = 0;
-        REAL icz = 0;
+    for (uint_t i = 0; i < ni; ++i) {
+        real_t im = __im[i];
+        real_t irx = __irx[i];
+        real_t iry = __iry[i];
+        real_t irz = __irz[i];
+        real_t ie2 = __ie2[i];
+        real_t ivx = __ivx[i];
+        real_t ivy = __ivy[i];
+        real_t ivz = __ivz[i];
+        real_t iax = __iax[i];
+        real_t iay = __iay[i];
+        real_t iaz = __iaz[i];
+        real_t ijx = __ijx[i];
+        real_t ijy = __ijy[i];
+        real_t ijz = __ijz[i];
+        real_t isx = 0;
+        real_t isy = 0;
+        real_t isz = 0;
+        real_t icx = 0;
+        real_t icy = 0;
+        real_t icz = 0;
 
-        for (UINT j = 0; j < nj; ++j) {
-            REAL jm = __jm[j];
-            REAL jrx = __jrx[j];
-            REAL jry = __jry[j];
-            REAL jrz = __jrz[j];
-            REAL je2 = __je2[j];
-            REAL jvx = __jvx[j];
-            REAL jvy = __jvy[j];
-            REAL jvz = __jvz[j];
-            REAL jax = __jax[j];
-            REAL jay = __jay[j];
-            REAL jaz = __jaz[j];
-            REAL jjx = __jjx[j];
-            REAL jjy = __jjy[j];
-            REAL jjz = __jjz[j];
+        for (uint_t j = 0; j < nj; ++j) {
+            real_t jm = __jm[j];
+            real_t jrx = __jrx[j];
+            real_t jry = __jry[j];
+            real_t jrz = __jrz[j];
+            real_t je2 = __je2[j];
+            real_t jvx = __jvx[j];
+            real_t jvy = __jvy[j];
+            real_t jvz = __jvz[j];
+            real_t jax = __jax[j];
+            real_t jay = __jay[j];
+            real_t jaz = __jaz[j];
+            real_t jjx = __jjx[j];
+            real_t jjy = __jjy[j];
+            real_t jjz = __jjz[j];
             snap_crackle_kernel_core(
                 im, irx, iry, irz, ie2, ivx, ivy, ivz,
                 iax, iay, iaz, ijx, ijy, ijz,

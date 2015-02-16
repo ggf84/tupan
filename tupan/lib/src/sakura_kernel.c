@@ -3,58 +3,58 @@
 
 void
 sakura_kernel(
-    UINT const ni,
-    REAL const __im[restrict],
-    REAL const __irx[restrict],
-    REAL const __iry[restrict],
-    REAL const __irz[restrict],
-    REAL const __ie2[restrict],
-    REAL const __ivx[restrict],
-    REAL const __ivy[restrict],
-    REAL const __ivz[restrict],
-    UINT const nj,
-    REAL const __jm[restrict],
-    REAL const __jrx[restrict],
-    REAL const __jry[restrict],
-    REAL const __jrz[restrict],
-    REAL const __je2[restrict],
-    REAL const __jvx[restrict],
-    REAL const __jvy[restrict],
-    REAL const __jvz[restrict],
-    REAL const dt,
-    INT const flag,
-    REAL __idrx[restrict],
-    REAL __idry[restrict],
-    REAL __idrz[restrict],
-    REAL __idvx[restrict],
-    REAL __idvy[restrict],
-    REAL __idvz[restrict])
+    uint_t const ni,
+    real_t const __im[restrict],
+    real_t const __irx[restrict],
+    real_t const __iry[restrict],
+    real_t const __irz[restrict],
+    real_t const __ie2[restrict],
+    real_t const __ivx[restrict],
+    real_t const __ivy[restrict],
+    real_t const __ivz[restrict],
+    uint_t const nj,
+    real_t const __jm[restrict],
+    real_t const __jrx[restrict],
+    real_t const __jry[restrict],
+    real_t const __jrz[restrict],
+    real_t const __je2[restrict],
+    real_t const __jvx[restrict],
+    real_t const __jvy[restrict],
+    real_t const __jvz[restrict],
+    real_t const dt,
+    int_t const flag,
+    real_t __idrx[restrict],
+    real_t __idry[restrict],
+    real_t __idrz[restrict],
+    real_t __idvx[restrict],
+    real_t __idvy[restrict],
+    real_t __idvz[restrict])
 {
-    for (UINT i = 0; i < ni; ++i) {
-        REAL im = __im[i];
-        REAL irx = __irx[i];
-        REAL iry = __iry[i];
-        REAL irz = __irz[i];
-        REAL ie2 = __ie2[i];
-        REAL ivx = __ivx[i];
-        REAL ivy = __ivy[i];
-        REAL ivz = __ivz[i];
-        REAL idrx = 0;
-        REAL idry = 0;
-        REAL idrz = 0;
-        REAL idvx = 0;
-        REAL idvy = 0;
-        REAL idvz = 0;
+    for (uint_t i = 0; i < ni; ++i) {
+        real_t im = __im[i];
+        real_t irx = __irx[i];
+        real_t iry = __iry[i];
+        real_t irz = __irz[i];
+        real_t ie2 = __ie2[i];
+        real_t ivx = __ivx[i];
+        real_t ivy = __ivy[i];
+        real_t ivz = __ivz[i];
+        real_t idrx = 0;
+        real_t idry = 0;
+        real_t idrz = 0;
+        real_t idvx = 0;
+        real_t idvy = 0;
+        real_t idvz = 0;
 
-        for (UINT j = 0; j < nj; ++j) {
-            REAL jm = __jm[j];
-            REAL jrx = __jrx[j];
-            REAL jry = __jry[j];
-            REAL jrz = __jrz[j];
-            REAL je2 = __je2[j];
-            REAL jvx = __jvx[j];
-            REAL jvy = __jvy[j];
-            REAL jvz = __jvz[j];
+        for (uint_t j = 0; j < nj; ++j) {
+            real_t jm = __jm[j];
+            real_t jrx = __jrx[j];
+            real_t jry = __jry[j];
+            real_t jrz = __jrz[j];
+            real_t je2 = __je2[j];
+            real_t jvx = __jvx[j];
+            real_t jvy = __jvy[j];
+            real_t jvz = __jvz[j];
             sakura_kernel_core(
                 dt, flag,
                 im, irx, iry, irz, ie2, ivx, ivy, ivz,

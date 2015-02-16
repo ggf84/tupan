@@ -4,58 +4,32 @@
 #include <stdio.h>
 #include <tgmath.h>
 
+#define DEFINE_TYPE(TYPEA, TYPEB)   \
+    typedef TYPEA TYPEB;            \
+    typedef TYPEA TYPEB##1;         \
+    typedef TYPEA TYPEB##2;         \
+    typedef TYPEA TYPEB##4;         \
+    typedef TYPEA TYPEB##8;         \
+    typedef TYPEA TYPEB##16;
+
 #ifdef CONFIG_USE_DOUBLE
-    typedef long INT;
-    typedef long INT2;
-    typedef long INT4;
-    typedef long INT8;
-    typedef long INT16;
-
-    typedef unsigned long UINT;
-    typedef unsigned long UINT2;
-    typedef unsigned long UINT4;
-    typedef unsigned long UINT8;
-    typedef unsigned long UINT16;
-
-    typedef double REAL;
-    typedef double REAL2;
-    typedef double REAL4;
-    typedef double REAL8;
-    typedef double REAL16;
+    DEFINE_TYPE(long, int_t)
+    DEFINE_TYPE(unsigned long, uint_t)
+    DEFINE_TYPE(double, real_t)
 #else
-    typedef int INT;
-    typedef int INT2;
-    typedef int INT4;
-    typedef int INT8;
-    typedef int INT16;
-
-    typedef unsigned int UINT;
-    typedef unsigned int UINT2;
-    typedef unsigned int UINT4;
-    typedef unsigned int UINT8;
-    typedef unsigned int UINT16;
-
-    typedef float REAL;
-    typedef float REAL2;
-    typedef float REAL4;
-    typedef float REAL8;
-    typedef float REAL16;
+    DEFINE_TYPE(int, int_t)
+    DEFINE_TYPE(unsigned int, uint_t)
+    DEFINE_TYPE(float, real_t)
 #endif
 
 #define paster(x,y) x##y
 #define concat(x,y) paster(x,y)
 #define vec(x) concat(x, 1)
 
-#define INT1 INT
-#define UINT1 UINT
-#define REAL1 REAL
+#define int_tn vec(int_t)
+#define uint_tn vec(uint_t)
+#define real_tn vec(real_t)
 
-#define INTn vec(INT)
-#define UINTn vec(UINT)
-#define REALn vec(REAL)
-
-#define any(mask) mask
-#define all(mask) mask
 #define rsqrt(x) (1 / sqrt(x))
 #define select(a, b, c) ((c) ? (b):(a))
 
