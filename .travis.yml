@@ -8,7 +8,7 @@ python:
 before_install:
  # install OpenCL
  - sudo apt-get update -qq
- - sudo apt-get install -qq fglrx opencl-headers
+ - sudo apt-get install -qq fglrx-dev opencl-headers
 
  # install conda
  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh

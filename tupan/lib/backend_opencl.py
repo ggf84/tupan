@@ -318,12 +318,10 @@ class CLKernel(object):
             types = []
             for arg in inpargs:
                 if isinstance(arg, int):
-                    int_t = Ctype.int_t
-                    uint_t = Ctype.uint_t
-                    types.append(int_t if arg < 0 else uint_t)
+                    # sizeof(int_t) == sizeof(uint_t)
+                    types.append(Ctype.uint_t)
                 elif isinstance(arg, float):
-                    real_t = Ctype.real_t
-                    types.append(real_t)
+                    types.append(Ctype.real_t)
                 else:
                     iptr = drv.context.to_ibuf
                     types.append(iptr)
