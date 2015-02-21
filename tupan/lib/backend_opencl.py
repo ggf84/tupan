@@ -7,6 +7,7 @@
 
 
 import os
+import struct
 import logging
 import pyopencl as cl
 from functools import partial
@@ -308,6 +309,10 @@ class CLKernel(object):
         self.ibuf = {}
         self.oarg = {}
         self.obuf = {}
+
+    def make_struct(self, fmt, *args):
+        s = struct.pack(fmt, *args)
+        return s
 
     def set_args(self, inpargs, outargs):
         bufs = []

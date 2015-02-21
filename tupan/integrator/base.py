@@ -41,17 +41,17 @@ class Base(object):
         self.is_initialized = False
 
         pn_order = kwargs.pop('pn_order', 0)
-        clight = kwargs.pop('clight', None)
+        clight = kwargs.pop('clight', float('inf'))
         if pn_order > 0:
-            if clight is None:
-                raise TypeError(
-                    "'clight' is not defined. Please set the speed of light "
-                    "argument 'clight' when using 'pn_order' > 0."
+            if clight == float('inf'):
+                raise ValueError(
+                    "By default 'clight' == float('inf'). Please set "
+                    "the speed of light argument 'clight' to a finite "
+                    "value if you chose 'pn_order' > 0."
                 )
             else:
                 from ..lib import extensions
-                extensions.pn.order = pn_order
-                extensions.pn.clight = clight
+                extensions.pn = extensions.PN(pn_order, clight)
                 type(self.ps).include_pn_corrections = True
                 for member in self.ps.members.values():
                     type(member).include_pn_corrections = True

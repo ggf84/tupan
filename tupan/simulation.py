@@ -324,7 +324,7 @@ def add_parsers(subparser, parents=None):
     simulation.add_argument(
         '--clight',
         type=float,
-        default=None,
+        default=float('inf'),
         help=('Speed of light value to use in Post-Newtonian corrections '
               '(type: %(type)s, default: %(default)s).')
         )

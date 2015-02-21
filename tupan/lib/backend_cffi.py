@@ -9,6 +9,7 @@
 import os
 import cffi
 import ctypes
+import struct
 import logging
 from ..config import options, get_cache_dir
 from .utils.ctype import Ctype
@@ -49,6 +50,7 @@ class CDriver(object):
             src.append('typedef {} int_t;'.format(Ctype.c_int))
             src.append('typedef {} uint_t;'.format(Ctype.c_uint))
             src.append('typedef {} real_t;'.format(Ctype.c_real))
+            src.append('typedef struct clight_struct {...;} CLIGHT;')
             src.append(fobj.read())
         source = '\n'.join(src)
 
@@ -104,6 +106,10 @@ class CKernel(object):
         self.oarg = {}
         self.obuf = {}
 
+    def make_struct(self, fmt, *args):
+        s = struct.pack(fmt, *args)
+        return drv.ffi.new('char[]', s)
+
     def set_args(self, inpargs, outargs):
         bufs = []
 
@@ -113,6 +119,8 @@ class CKernel(object):
                 if isinstance(arg, int):
                     types.append(lambda x: x)
                 elif isinstance(arg, float):
+                    types.append(lambda x: x)
+                elif isinstance(arg, drv.ffi.CData):
                     types.append(lambda x: x)
                 else:
                     iptr = drv.to_buf

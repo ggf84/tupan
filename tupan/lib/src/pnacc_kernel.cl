@@ -22,14 +22,7 @@ pnacc_kernel(
     global real_t const __jvx[restrict],
     global real_t const __jvy[restrict],
     global real_t const __jvz[restrict],
-    uint_t const order,
-    real_t const inv1,
-    real_t const inv2,
-    real_t const inv3,
-    real_t const inv4,
-    real_t const inv5,
-    real_t const inv6,
-    real_t const inv7,
+    constant CLIGHT const * restrict clight,
     global real_tn __ipnax[restrict],
     global real_tn __ipnay[restrict],
     global real_tn __ipnaz[restrict])
@@ -37,9 +30,6 @@ pnacc_kernel(
     uint_t lid = get_local_id(0);
     uint_t gid = get_global_id(0);
     gid = (gid < ni) ? (gid):(0);
-
-    CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3,
-                                inv4, inv5, inv6, inv7);
 
     real_tn im = __im[gid];
     real_tn irx = __irx[gid];
@@ -97,7 +87,7 @@ pnacc_kernel(
             pnacc_kernel_core(
                 im, irx, iry, irz, ie2, ivx, ivy, ivz,
                 jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-                clight,
+                *clight,
                 &ipnax, &ipnay, &ipnaz);
         }
     }
@@ -115,7 +105,7 @@ pnacc_kernel(
         pnacc_kernel_core(
             im, irx, iry, irz, ie2, ivx, ivy, ivz,
             jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-            clight,
+            *clight,
             &ipnax, &ipnay, &ipnaz);
     }
 

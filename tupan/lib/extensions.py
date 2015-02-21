@@ -8,7 +8,9 @@
 
 from __future__ import print_function, division
 import logging
+import numpy as np
 from ..config import options
+from .utils.ctype import Ctype
 from .utils.timing import timings, bind_all
 
 
@@ -23,25 +25,14 @@ class PN(object):
     """This class holds the values of the PN parameters.
 
     """
-    def __init__(self):
-        self._order = 0
-        self._clight = None
+    def __init__(self, order=0, clight='inf'):
+        self.order = int(order)
+        self.clight = float(clight)
+        for i in range(1, 8):
+            setattr(self, 'inv'+str(i), self.clight**(-i))
 
-    @property
-    def order(self):
-        return self._order
 
-    @order.setter
-    def order(self, value):
-        self._order = int(value)
-
-    @property
-    def clight(self):
-        return self._clight
-
-    @clight.setter
-    def clight(self, value):
-        self._clight = float(value)
+pn = PN()
 
 
 class AbstractExtension(object):
@@ -223,18 +214,25 @@ class PNAcc(AbstractExtension):
     """
     def __init__(self, backend=options.backend):
         super(PNAcc, self).__init__('pnacc_kernel', backend)
+        self.clight = None
 
     def set_args(self, ips, jps, **kwargs):
+        if self.clight is None:
+            real_t = np.dtype(Ctype.real_t).char
+            uint_t = np.dtype(Ctype.uint_t).char
+            fmt = '=' + real_t * 7 + uint_t
+            self.clight = self.kernel.make_struct(
+                            fmt,
+                            pn.inv1, pn.inv2, pn.inv3, pn.inv4,
+                            pn.inv5, pn.inv6, pn.inv7, pn.order)
+
         inpargs = (ips.n,
                    ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
                    ips.eps2, ips.vel[0], ips.vel[1], ips.vel[2],
                    jps.n,
                    jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
                    jps.eps2, jps.vel[0], jps.vel[1], jps.vel[2],
-                   pn.order, pn.clight**(-1),
-                   pn.clight**(-2), pn.clight**(-3),
-                   pn.clight**(-4), pn.clight**(-5),
-                   pn.clight**(-6), pn.clight**(-7))
+                   self.clight)
 
         outargs = (ips.pnacc[0], ips.pnacc[1], ips.pnacc[2])
 
@@ -352,9 +350,6 @@ class Kepler(AbstractExtension):
                    jps.vel[0], jps.vel[1], jps.vel[2])
 
         self.kernel.set_args(inpargs, outargs)
-
-
-pn = PN()
 
 
 # -- End of File --

@@ -21,20 +21,11 @@ pnacc_kernel(
     real_t const __jvx[restrict],
     real_t const __jvy[restrict],
     real_t const __jvz[restrict],
-    uint_t const order,
-    real_t const inv1,
-    real_t const inv2,
-    real_t const inv3,
-    real_t const inv4,
-    real_t const inv5,
-    real_t const inv6,
-    real_t const inv7,
+    CLIGHT const * restrict clight,
     real_t __ipnax[restrict],
     real_t __ipnay[restrict],
     real_t __ipnaz[restrict])
 {
-    CLIGHT clight = CLIGHT_Init(order, inv1, inv2, inv3,
-                                inv4, inv5, inv6, inv7);
     for (uint_t i = 0; i < ni; ++i) {
         real_t im = __im[i];
         real_t irx = __irx[i];
@@ -60,7 +51,7 @@ pnacc_kernel(
             pnacc_kernel_core(
                 im, irx, iry, irz, ie2, ivx, ivy, ivz,
                 jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-                clight,
+                *clight,
                 &ipnax, &ipnay, &ipnaz);
         }
 
