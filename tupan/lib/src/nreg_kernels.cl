@@ -55,40 +55,40 @@ nreg_Xkernel(
     uint_t j = 0;
 
     #ifdef FAST_LOCAL_MEM
-    local real_t _jm[GROUPS * LSIZE];
-    local real_t _jrx[GROUPS * LSIZE];
-    local real_t _jry[GROUPS * LSIZE];
-    local real_t _jrz[GROUPS * LSIZE];
-    local real_t _je2[GROUPS * LSIZE];
-    local real_t _jvx[GROUPS * LSIZE];
-    local real_t _jvy[GROUPS * LSIZE];
-    local real_t _jvz[GROUPS * LSIZE];
+    local real_t _jm[GROUPS][LSIZE];
+    local real_t _jrx[GROUPS][LSIZE];
+    local real_t _jry[GROUPS][LSIZE];
+    local real_t _jrz[GROUPS][LSIZE];
+    local real_t _je2[GROUPS][LSIZE];
+    local real_t _jvx[GROUPS][LSIZE];
+    local real_t _jvy[GROUPS][LSIZE];
+    local real_t _jvz[GROUPS][LSIZE];
     #pragma unroll
     for (uint_t g = GROUPS; g > 0; --g) {
         #pragma unroll
         for (; (j + g * LSIZE - 1) < nj; j += g * LSIZE) {
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll
-            for (uint_t k = 0; k < g * LSIZE; k += LSIZE) {
-                _jm[k + lid] = __jm[j + k + lid];
-                _jrx[k + lid] = __jrx[j + k + lid];
-                _jry[k + lid] = __jry[j + k + lid];
-                _jrz[k + lid] = __jrz[j + k + lid];
-                _je2[k + lid] = __je2[j + k + lid];
-                _jvx[k + lid] = __jvx[j + k + lid];
-                _jvy[k + lid] = __jvy[j + k + lid];
-                _jvz[k + lid] = __jvz[j + k + lid];
+            for (uint_t k = 0; k < g; ++k) {
+                _jm[k][lid] = __jm[j + k * LSIZE + lid];
+                _jrx[k][lid] = __jrx[j + k * LSIZE + lid];
+                _jry[k][lid] = __jry[j + k * LSIZE + lid];
+                _jrz[k][lid] = __jrz[j + k * LSIZE + lid];
+                _je2[k][lid] = __je2[j + k * LSIZE + lid];
+                _jvx[k][lid] = __jvx[j + k * LSIZE + lid];
+                _jvy[k][lid] = __jvy[j + k * LSIZE + lid];
+                _jvz[k][lid] = __jvz[j + k * LSIZE + lid];
                 barrier(CLK_LOCAL_MEM_FENCE);
                 #pragma unroll
                 for (uint_t l = 0; l < LSIZE; ++l) {
-                    real_t jm = _jm[k + l];
-                    real_t jrx = _jrx[k + l];
-                    real_t jry = _jry[k + l];
-                    real_t jrz = _jrz[k + l];
-                    real_t je2 = _je2[k + l];
-                    real_t jvx = _jvx[k + l];
-                    real_t jvy = _jvy[k + l];
-                    real_t jvz = _jvz[k + l];
+                    real_t jm = _jm[k][l];
+                    real_t jrx = _jrx[k][l];
+                    real_t jry = _jry[k][l];
+                    real_t jrz = _jrz[k][l];
+                    real_t je2 = _je2[k][l];
+                    real_t jvx = _jvx[k][l];
+                    real_t jvy = _jvy[k][l];
+                    real_t jvz = _jvz[k][l];
                     nreg_Xkernel_core(
                         dt,
                         im, irx, iry, irz, ie2, ivx, ivy, ivz,
@@ -172,37 +172,37 @@ nreg_Vkernel(
     uint_t j = 0;
 
     #ifdef FAST_LOCAL_MEM
-    local real_t _jm[GROUPS * LSIZE];
-    local real_t _jvx[GROUPS * LSIZE];
-    local real_t _jvy[GROUPS * LSIZE];
-    local real_t _jvz[GROUPS * LSIZE];
-    local real_t _jax[GROUPS * LSIZE];
-    local real_t _jay[GROUPS * LSIZE];
-    local real_t _jaz[GROUPS * LSIZE];
+    local real_t _jm[GROUPS][LSIZE];
+    local real_t _jvx[GROUPS][LSIZE];
+    local real_t _jvy[GROUPS][LSIZE];
+    local real_t _jvz[GROUPS][LSIZE];
+    local real_t _jax[GROUPS][LSIZE];
+    local real_t _jay[GROUPS][LSIZE];
+    local real_t _jaz[GROUPS][LSIZE];
     #pragma unroll
     for (uint_t g = GROUPS; g > 0; --g) {
         #pragma unroll
         for (; (j + g * LSIZE - 1) < nj; j += g * LSIZE) {
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll
-            for (uint_t k = 0; k < g * LSIZE; k += LSIZE) {
-                _jm[k + lid] = __jm[j + k + lid];
-                _jvx[k + lid] = __jvx[j + k + lid];
-                _jvy[k + lid] = __jvy[j + k + lid];
-                _jvz[k + lid] = __jvz[j + k + lid];
-                _jax[k + lid] = __jax[j + k + lid];
-                _jay[k + lid] = __jay[j + k + lid];
-                _jaz[k + lid] = __jaz[j + k + lid];
+            for (uint_t k = 0; k < g; ++k) {
+                _jm[k][lid] = __jm[j + k * LSIZE + lid];
+                _jvx[k][lid] = __jvx[j + k * LSIZE + lid];
+                _jvy[k][lid] = __jvy[j + k * LSIZE + lid];
+                _jvz[k][lid] = __jvz[j + k * LSIZE + lid];
+                _jax[k][lid] = __jax[j + k * LSIZE + lid];
+                _jay[k][lid] = __jay[j + k * LSIZE + lid];
+                _jaz[k][lid] = __jaz[j + k * LSIZE + lid];
                 barrier(CLK_LOCAL_MEM_FENCE);
                 #pragma unroll
                 for (uint_t l = 0; l < LSIZE; ++l) {
-                    real_t jm = _jm[k + l];
-                    real_t jvx = _jvx[k + l];
-                    real_t jvy = _jvy[k + l];
-                    real_t jvz = _jvz[k + l];
-                    real_t jax = _jax[k + l];
-                    real_t jay = _jay[k + l];
-                    real_t jaz = _jaz[k + l];
+                    real_t jm = _jm[k][l];
+                    real_t jvx = _jvx[k][l];
+                    real_t jvy = _jvy[k][l];
+                    real_t jvz = _jvz[k][l];
+                    real_t jax = _jax[k][l];
+                    real_t jay = _jay[k][l];
+                    real_t jaz = _jaz[k][l];
                     nreg_Vkernel_core(
                         dt,
                         im, ivx, ivy, ivz, iax, iay, iaz,
