@@ -22,11 +22,20 @@ import time
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
-MOCK_MODULES = ["cffi", "cffi.FFI", "cffi.FFI.cdef", "h5py",
-                "matplotlib", "numpy", "pyopencl", "PIL", "PIL.Image",
-                "vispy", "vispy.gloo", "vispy.app", "scipy",
-                "scipy.integrate", "scipy.integrate.quad",
-                "scipy.optimize", "scipy.optimize.fminbound"]
+MOCK_MODULES = [
+    "PIL",
+    "cffi",
+    "h5py",
+    "matplotlib",
+    "numpy",
+    "pyopencl",
+    "scipy",
+    "scipy.integrate",
+    "scipy.optimize",
+    "vispy",
+    "vispy.util",
+    "vispy.util.transforms",
+]
 for mod_name in MOCK_MODULES:
     try:
         __import__(mod_name)
@@ -44,13 +53,13 @@ for mod_name in MOCK_MODULES:
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.graphviz',
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.pngmath',
     'sphinx.ext.todo',
+    'sphinx.ext.viewcode',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
