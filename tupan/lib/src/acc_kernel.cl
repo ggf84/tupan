@@ -37,39 +37,42 @@ acc_kernel(
     uint_t j = 0;
 
     #ifdef FAST_LOCAL_MEM
-    local real_t _jm[LSIZE];
-    local real_t _jrx[LSIZE];
-    local real_t _jry[LSIZE];
-    local real_t _jrz[LSIZE];
-    local real_t _je2[LSIZE];
-    for (; (j + LSIZE - 1) < nj; j += LSIZE) {
-        real_t jm = __jm[j + lid];
-        real_t jrx = __jrx[j + lid];
-        real_t jry = __jry[j + lid];
-        real_t jrz = __jrz[j + lid];
-        real_t je2 = __je2[j + lid];
-        barrier(CLK_LOCAL_MEM_FENCE);
-        _jm[lid] = jm;
-        _jrx[lid] = jrx;
-        _jry[lid] = jry;
-        _jrz[lid] = jrz;
-        _je2[lid] = je2;
-        barrier(CLK_LOCAL_MEM_FENCE);
-        #pragma unroll UNROLL
-        for (uint_t k = 0; k < LSIZE; ++k) {
-            jm = _jm[k];
-            jrx = _jrx[k];
-            jry = _jry[k];
-            jrz = _jrz[k];
-            je2 = _je2[k];
-            acc_kernel_core(
-                im, irx, iry, irz, ie2,
-                jm, jrx, jry, jrz, je2,
-                &iax, &iay, &iaz);
+    local real_t _jm[GROUPS * LSIZE];
+    local real_t _jrx[GROUPS * LSIZE];
+    local real_t _jry[GROUPS * LSIZE];
+    local real_t _jrz[GROUPS * LSIZE];
+    local real_t _je2[GROUPS * LSIZE];
+    #pragma unroll
+    for (uint_t g = GROUPS; g > 0; --g) {
+        #pragma unroll
+        for (; (j + g * LSIZE - 1) < nj; j += g * LSIZE) {
+            barrier(CLK_LOCAL_MEM_FENCE);
+            #pragma unroll
+            for (uint_t k = 0; k < g * LSIZE; k += LSIZE) {
+                _jm[k + lid] = __jm[j + k + lid];
+                _jrx[k + lid] = __jrx[j + k + lid];
+                _jry[k + lid] = __jry[j + k + lid];
+                _jrz[k + lid] = __jrz[j + k + lid];
+                _je2[k + lid] = __je2[j + k + lid];
+                barrier(CLK_LOCAL_MEM_FENCE);
+                #pragma unroll
+                for (uint_t l = 0; l < LSIZE; ++l) {
+                    real_t jm = _jm[k + l];
+                    real_t jrx = _jrx[k + l];
+                    real_t jry = _jry[k + l];
+                    real_t jrz = _jrz[k + l];
+                    real_t je2 = _je2[k + l];
+                    acc_kernel_core(
+                        im, irx, iry, irz, ie2,
+                        jm, jrx, jry, jrz, je2,
+                        &iax, &iay, &iaz);
+                }
+            }
         }
     }
     #endif
 
+    #pragma unroll
     for (; j < nj; ++j) {
         real_t jm = __jm[j];
         real_t jrx = __jrx[j];

@@ -208,7 +208,7 @@ class Program(object):
         self.kernel = None
 
     def build(self, fpwidth=options.fpwidth):
-        unroll = 4
+        groups = 4
         lsize = 64
         fast_local_mem = True
         vw = (self.cl_device.preferred_vector_width_float
@@ -217,7 +217,7 @@ class Program(object):
 
         # setting program options
         opts = ' -D VW={}'.format(vw)
-        opts += ' -D UNROLL={}'.format(unroll)
+        opts += ' -D GROUPS={}'.format(groups)
         opts += ' -D LSIZE={}'.format(lsize)
         opts += ' -D CONFIG_USE_OPENCL'
         if fpwidth == 'fp64':
@@ -225,7 +225,7 @@ class Program(object):
         if fast_local_mem:
             opts += ' -D FAST_LOCAL_MEM'
         opts += ' -I {path}'.format(path=PATH)
-        opts += ' -cl-std=CL1.1'
+#        opts += ' -cl-std=CL1.1'
         opts += ' -cl-fast-relaxed-math'
 #        opts += ' -cl-opt-disable'
 
@@ -238,7 +238,7 @@ class Program(object):
         for kernel in kernels:
             name = kernel.function_name
             kernel.vw = vw if name != 'sakura_kernel' else 1
-            kernel.unroll = unroll
+            kernel.groups = groups
             kernel.lsize = lsize
             kernel.name = name
             LOGGER.debug(

@@ -47,52 +47,52 @@ pnacc_kernel(
     uint_t j = 0;
 
     #ifdef FAST_LOCAL_MEM
-    local real_t _jm[LSIZE];
-    local real_t _jrx[LSIZE];
-    local real_t _jry[LSIZE];
-    local real_t _jrz[LSIZE];
-    local real_t _je2[LSIZE];
-    local real_t _jvx[LSIZE];
-    local real_t _jvy[LSIZE];
-    local real_t _jvz[LSIZE];
-    for (; (j + LSIZE - 1) < nj; j += LSIZE) {
-        real_t jm = __jm[j + lid];
-        real_t jrx = __jrx[j + lid];
-        real_t jry = __jry[j + lid];
-        real_t jrz = __jrz[j + lid];
-        real_t je2 = __je2[j + lid];
-        real_t jvx = __jvx[j + lid];
-        real_t jvy = __jvy[j + lid];
-        real_t jvz = __jvz[j + lid];
-        barrier(CLK_LOCAL_MEM_FENCE);
-        _jm[lid] = jm;
-        _jrx[lid] = jrx;
-        _jry[lid] = jry;
-        _jrz[lid] = jrz;
-        _je2[lid] = je2;
-        _jvx[lid] = jvx;
-        _jvy[lid] = jvy;
-        _jvz[lid] = jvz;
-        barrier(CLK_LOCAL_MEM_FENCE);
-        #pragma unroll UNROLL
-        for (uint_t k = 0; k < LSIZE; ++k) {
-            jm = _jm[k];
-            jrx = _jrx[k];
-            jry = _jry[k];
-            jrz = _jrz[k];
-            je2 = _je2[k];
-            jvx = _jvx[k];
-            jvy = _jvy[k];
-            jvz = _jvz[k];
-            pnacc_kernel_core(
-                im, irx, iry, irz, ie2, ivx, ivy, ivz,
-                jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-                *clight,
-                &ipnax, &ipnay, &ipnaz);
+    local real_t _jm[GROUPS * LSIZE];
+    local real_t _jrx[GROUPS * LSIZE];
+    local real_t _jry[GROUPS * LSIZE];
+    local real_t _jrz[GROUPS * LSIZE];
+    local real_t _je2[GROUPS * LSIZE];
+    local real_t _jvx[GROUPS * LSIZE];
+    local real_t _jvy[GROUPS * LSIZE];
+    local real_t _jvz[GROUPS * LSIZE];
+    #pragma unroll
+    for (uint_t g = GROUPS; g > 0; --g) {
+        #pragma unroll
+        for (; (j + g * LSIZE - 1) < nj; j += g * LSIZE) {
+            barrier(CLK_LOCAL_MEM_FENCE);
+            #pragma unroll
+            for (uint_t k = 0; k < g * LSIZE; k += LSIZE) {
+                _jm[k + lid] = __jm[j + k + lid];
+                _jrx[k + lid] = __jrx[j + k + lid];
+                _jry[k + lid] = __jry[j + k + lid];
+                _jrz[k + lid] = __jrz[j + k + lid];
+                _je2[k + lid] = __je2[j + k + lid];
+                _jvx[k + lid] = __jvx[j + k + lid];
+                _jvy[k + lid] = __jvy[j + k + lid];
+                _jvz[k + lid] = __jvz[j + k + lid];
+                barrier(CLK_LOCAL_MEM_FENCE);
+                #pragma unroll
+                for (uint_t l = 0; l < LSIZE; ++l) {
+                    real_t jm = _jm[k + l];
+                    real_t jrx = _jrx[k + l];
+                    real_t jry = _jry[k + l];
+                    real_t jrz = _jrz[k + l];
+                    real_t je2 = _je2[k + l];
+                    real_t jvx = _jvx[k + l];
+                    real_t jvy = _jvy[k + l];
+                    real_t jvz = _jvz[k + l];
+                    pnacc_kernel_core(
+                        im, irx, iry, irz, ie2, ivx, ivy, ivz,
+                        jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+                        *clight,
+                        &ipnax, &ipnay, &ipnaz);
+                }
+            }
         }
     }
     #endif
 
+    #pragma unroll
     for (; j < nj; ++j) {
         real_t jm = __jm[j];
         real_t jrx = __jrx[j];
