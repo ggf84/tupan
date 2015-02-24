@@ -231,7 +231,7 @@ class Program(object):
 
         self.cl_program.build(options=opts,
                               devices=[self.cl_device],
-                              cache_dir=get_cache_dir())
+                              cache_dir=get_cache_dir(fpwidth))
 
         kwgi = cl.kernel_work_group_info
         kernels = self.cl_program.all_kernels()

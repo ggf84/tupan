@@ -52,12 +52,12 @@ parser.add_argument(
 options, _ = parser.parse_known_args()
 
 
-def get_cache_dir():
+def get_cache_dir(*postfix):
     user = getpass.getuser()
     sys_version = '.'.join(str(i) for i in sys.version_info)
     basename = '.tupan-cache-uid{0}-py{1}'.format(user, sys_version)
     prefix = options.cache_prefix
-    cache_dir = os.path.abspath(os.path.join(prefix, basename))
+    cache_dir = os.path.abspath(os.path.join(prefix, basename, *postfix))
     try:
         os.makedirs(cache_dir)
     except OSError:

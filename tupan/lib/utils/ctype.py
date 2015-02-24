@@ -29,8 +29,6 @@ class Ctype(object):
                     if options.fpwidth == 'fp64'
                     else np.float64))
 
-    int, uint, real = int_t, uint_t, real_t
-
     c_int = ('int'
              if options.fpwidth == 'fp32'
              else ('long'

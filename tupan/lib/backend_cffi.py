@@ -28,12 +28,7 @@ class CDriver(object):
 
     """
     def __init__(self, fpwidth=options.fpwidth):
-        self.fpwidth = fpwidth
-
-        self._make_lib()
-
-    def _make_lib(self):
-        LOGGER.debug("Building '%s' C extension module.", self.fpwidth)
+        LOGGER.debug("Building '%s' C extension module.", fpwidth)
 
         fnames = ('phi_kernel.c',
                   'acc_kernel.c',
@@ -59,7 +54,7 @@ class CDriver(object):
         self.ffi.cdef(source)
 
         define_macros = []
-        if self.fpwidth == 'fp64':
+        if fpwidth == 'fp64':
             define_macros.append(('CONFIG_USE_DOUBLE', 1))
 
         self.lib = self.ffi.verify(
@@ -67,7 +62,7 @@ class CDriver(object):
             #include "common.h"
             #include "libtupan.h"
             """,
-            tmpdir=get_cache_dir(),
+            tmpdir=get_cache_dir(fpwidth),
             define_macros=define_macros,
             include_dirs=[PATH],
             libraries=['m'],

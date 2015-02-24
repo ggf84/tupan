@@ -99,7 +99,7 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
     def __getitem__(self, index):
         index = ((Ellipsis, index, None)
                  if isinstance(index, int)
-                     else (Ellipsis, index))
+                 else (Ellipsis, index))
         attrs = {}
         for name in self.attr_names:
             value = getattr(self, name)[index]
@@ -153,33 +153,33 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
 
     # name, shape, sctype, doc
     default_attr_descr = [
-        ('pid', '{n}', 'uint', 'particle id'),
-        ('mass', '{n}', 'real', 'mass'),
-        ('pos', '3, {n}', 'real', 'position'),
-        ('vel', '3, {n}', 'real', 'velocity'),
-        ('eps2', '{n}', 'real', 'squared softening'),
-        ('time', '{n}', 'real', 'current time'),
-        ('nstep', '{n}', 'uint', 'step number'),
-        ('tstep', '{n}', 'real', 'time step'),
+        ('pid', '{n}', 'uint_t', 'particle id'),
+        ('mass', '{n}', 'real_t', 'mass'),
+        ('pos', '3, {n}', 'real_t', 'position'),
+        ('vel', '3, {n}', 'real_t', 'velocity'),
+        ('eps2', '{n}', 'real_t', 'squared softening'),
+        ('time', '{n}', 'real_t', 'current time'),
+        ('nstep', '{n}', 'uint_t', 'step number'),
+        ('tstep', '{n}', 'real_t', 'time step'),
     ]
 
     extra_attr_descr = [
-        ('phi', '{n}', 'real', 'gravitational potential'),
-        ('acc', '3, {n}', 'real', 'acceleration'),
-        ('jrk', '3, {n}', 'real', 'jerk'),
-        ('snp', '3, {n}', 'real', 'snap'),
-        ('crk', '3, {n}', 'real', 'crackle'),
-        ('tstepij', '{n}', 'real', 'auxiliary time step'),
+        ('phi', '{n}', 'real_t', 'gravitational potential'),
+        ('acc', '3, {n}', 'real_t', 'acceleration'),
+        ('jrk', '3, {n}', 'real_t', 'jerk'),
+        ('snp', '3, {n}', 'real_t', 'snap'),
+        ('crk', '3, {n}', 'real_t', 'crackle'),
+        ('tstepij', '{n}', 'real_t', 'auxiliary time step'),
     ]
 
     pn_default_attr_descr = []
 
     pn_extra_attr_descr = [
-        ('pnacc', '3, {n}', 'real', 'PN acceleration'),
-        ('pn_mr', '3, {n}', 'real', 'PN correction for com_r'),
-        ('pn_mv', '3, {n}', 'real', 'PN correction for com_v'),
-        ('pn_am', '3, {n}', 'real', 'PN correction for angular momentum'),
-        ('pn_ke', '{n}', 'real', 'PN correction for kinectic energy.'),
+        ('pnacc', '3, {n}', 'real_t', 'PN acceleration'),
+        ('pn_mr', '3, {n}', 'real_t', 'PN correction for com_r'),
+        ('pn_mv', '3, {n}', 'real_t', 'PN correction for com_v'),
+        ('pn_am', '3, {n}', 'real_t', 'PN correction for angular momentum'),
+        ('pn_ke', '{n}', 'real_t', 'PN correction for kinectic energy.'),
     ]
 
     # -- total mass and center-of-mass methods

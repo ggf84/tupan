@@ -626,7 +626,7 @@ class SIA(Base):
                     self.method, ps.t_curr, t_end)
 
         if ps.include_pn_corrections:
-            ps.register_attribute('w', '3, {n}', 'real')
+            ps.register_attribute('w', '3, {n}', 'real_t')
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)

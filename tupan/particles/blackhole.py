@@ -20,8 +20,8 @@ class Blackhole(AbstractParticle, AbstractNbodyMethods):
     """
     name = None
     default_attr_descr = AbstractNbodyMethods.default_attr_descr + [
-        ('spin', '3, {n}', 'real', 'spin'),
-        ('radius', '{n}', 'real', 'radius'),
+        ('spin', '3, {n}', 'real_t', 'spin'),
+        ('radius', '{n}', 'real_t', 'radius'),
     ]
 
 
