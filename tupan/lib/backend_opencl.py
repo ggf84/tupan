@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 #
 
-"""This module implements the OpenCL backend to call CL-extensions.
-
 """
-
+This module implements the OpenCL backend to call CL-extensions.
+"""
 
 import os
 import struct

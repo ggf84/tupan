@@ -5,7 +5,6 @@
 Test suite for extensions module.
 """
 
-
 from __future__ import print_function
 import sys
 import unittest

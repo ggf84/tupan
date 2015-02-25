@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # tupan documentation build configuration file, created by
-# sphinx-quickstart on Sun May 11 20:04:38 2014.
+# sphinx-quickstart on Mon Feb 23 23:14:07 2015.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -43,6 +43,7 @@ for mod_name in MOCK_MODULES:
         import mock
         sys.modules[mod_name] = mock.MagicMock()
 
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -53,17 +54,27 @@ for mod_name in MOCK_MODULES:
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
+    'sphinx.ext.coverage',
     'sphinx.ext.doctest',
+    'sphinx.ext.extlinks',
     'sphinx.ext.graphviz',
+    'sphinx.ext.ifconfig',
     'sphinx.ext.inheritance_diagram',
-    'sphinx.ext.pngmath',
+    'sphinx.ext.mathjax',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
 ]
 
+rst_prolog = """
+.. |tupan| replace:: :mod:`tupan`
+.. |currentyear| date:: %Y
+"""
+
+# If this is True, todo and todolist produce output, else they produce nothing.
+todo_include_todos = True
+
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = []
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -103,7 +114,7 @@ release = ver_dict["VERSION"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+#exclude_patterns = []
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -163,8 +174,7 @@ html_theme = 'default'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ['_static']
-html_static_path = []
+#html_static_path = []
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -293,73 +303,3 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
-
-
-# -- Options for Epub output ----------------------------------------------
-
-# Bibliographic Dublin Core info.
-epub_title = 'tupan'
-epub_author = 'Guilherme G. Ferrari'
-epub_publisher = 'Guilherme G. Ferrari'
-epub_copyright = '2011-{}, Guilherme G. Ferrari'.format(time.strftime('%Y'))
-
-# The basename for the epub file. It defaults to the project name.
-#epub_basename = 'tupan'
-
-# The HTML theme for the epub output. Since the default themes are not optimized
-# for small screen space, using the same theme for HTML and epub output is
-# usually not wise. This defaults to 'epub', a theme designed to save visual
-# space.
-#epub_theme = 'epub'
-
-# The language of the text. It defaults to the language option
-# or en if the language is not set.
-#epub_language = ''
-
-# The scheme of the identifier. Typical schemes are ISBN or URL.
-#epub_scheme = ''
-
-# The unique identifier of the text. This can be a ISBN number
-# or the project homepage.
-#epub_identifier = ''
-
-# A unique identification for the text.
-#epub_uid = ''
-
-# A tuple containing the cover image and cover page html template filenames.
-#epub_cover = ()
-
-# A sequence of (type, uri, title) tuples for the guide element of content.opf.
-#epub_guide = ()
-
-# HTML files that should be inserted before the pages created by sphinx.
-# The format is a list of tuples containing the path and title.
-#epub_pre_files = []
-
-# HTML files shat should be inserted after the pages created by sphinx.
-# The format is a list of tuples containing the path and title.
-#epub_post_files = []
-
-# A list of files that should not be packed into the epub file.
-epub_exclude_files = ['search.html']
-
-# The depth of the table of contents in toc.ncx.
-#epub_tocdepth = 3
-
-# Allow duplicate toc entries.
-#epub_tocdup = True
-
-# Choose between 'default' and 'includehidden'.
-#epub_tocscope = 'default'
-
-# Fix unsupported image types using the PIL.
-#epub_fix_images = False
-
-# Scale large images.
-#epub_max_image_width = 0
-
-# How to display URL addresses: 'footnote', 'no', or 'inline'.
-#epub_show_urls = 'inline'
-
-# If false, no index is generated.
-#epub_use_index = True

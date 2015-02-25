@@ -5,15 +5,12 @@
 TODO.
 """
 
-
 from __future__ import (print_function, division)
 import logging
 import numpy as np
 from ..particles import ParticleSystem
 from ..lib.utils.timing import timings, bind_all
 
-
-__all__ = ['Plummer']
 
 LOGGER = logging.getLogger(__name__)
 

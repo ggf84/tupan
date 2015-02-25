@@ -5,7 +5,6 @@
 TODO.
 """
 
-
 from __future__ import print_function
 import abc
 import copy
@@ -13,9 +12,6 @@ import numpy as np
 from ..lib import extensions as ext
 from ..lib.utils import with_metaclass
 from ..lib.utils.ctype import Ctype
-
-
-__all__ = ['AbstractParticle', 'AbstractNbodyMethods']
 
 
 class MetaParticle(abc.ABCMeta):

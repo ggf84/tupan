@@ -5,15 +5,12 @@
 TODO.
 """
 
-
 import logging
 from abc import ABCMeta, abstractmethod
 from .base import Base, power_of_two
 from ..lib.utils import with_metaclass
 from ..lib.utils.timing import timings, bind_all
 
-
-__all__ = ['Hermite']
 
 LOGGER = logging.getLogger(__name__)
 

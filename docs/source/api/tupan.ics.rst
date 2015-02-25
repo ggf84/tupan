@@ -1,49 +1,55 @@
-tupan.ics package
-=================
+:mod:`tupan.ics` package
+========================
+.. contents::
 
 .. automodule:: tupan.ics
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
+    .. inheritance-diagram:: tupan.ics
 
-Submodules
-----------
 
-tupan.ics.fewbody module
-------------------------
+:mod:`tupan.ics.fewbody` module
+-------------------------------
 
 .. automodule:: tupan.ics.fewbody
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
-tupan.ics.hierarchy module
---------------------------
+    .. inheritance-diagram:: tupan.ics.fewbody
+
+
+:mod:`tupan.ics.hierarchy` module
+---------------------------------
 
 .. automodule:: tupan.ics.hierarchy
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
-tupan.ics.imf module
---------------------
+    .. inheritance-diagram:: tupan.ics.hierarchy
+
+
+:mod:`tupan.ics.imf` module
+---------------------------
 
 .. automodule:: tupan.ics.imf
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
-tupan.ics.plummer module
-------------------------
+    .. inheritance-diagram:: tupan.ics.imf
+
+
+:mod:`tupan.ics.plummer` module
+-------------------------------
 
 .. automodule:: tupan.ics.plummer
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
+
+    .. inheritance-diagram:: tupan.ics.plummer
 

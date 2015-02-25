@@ -2,6 +2,6 @@ API Documentation
 =================
 
 .. toctree::
-   :maxdepth: 4
+    :glob:
 
-   tupan
+    tupan

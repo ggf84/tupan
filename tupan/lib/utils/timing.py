@@ -5,7 +5,6 @@
 TODO.
 """
 
-
 from __future__ import print_function
 import sys
 import timeit
@@ -14,9 +13,6 @@ import inspect
 import functools
 from collections import defaultdict
 from ...config import options
-
-
-__all__ = ['timings', 'bind_all', 'Timer']
 
 
 class Timer(object):

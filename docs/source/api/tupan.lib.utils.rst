@@ -1,40 +1,44 @@
-tupan.lib.utils package
-=======================
+:mod:`tupan.lib.utils` package
+==============================
+.. contents::
 
 .. automodule:: tupan.lib.utils
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
+    .. inheritance-diagram:: tupan.lib.utils
 
-Submodules
-----------
 
-tupan.lib.utils.ctype module
-----------------------------
+:mod:`tupan.lib.utils.ctype` module
+-----------------------------------
 
 .. automodule:: tupan.lib.utils.ctype
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
-tupan.lib.utils.memoize module
-------------------------------
+    .. inheritance-diagram:: tupan.lib.utils.ctype
+
+
+:mod:`tupan.lib.utils.memoize` module
+-------------------------------------
 
 .. automodule:: tupan.lib.utils.memoize
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
-tupan.lib.utils.timing module
------------------------------
+    .. inheritance-diagram:: tupan.lib.utils.memoize
+
+
+:mod:`tupan.lib.utils.timing` module
+------------------------------------
 
 .. automodule:: tupan.lib.utils.timing
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
+
+    .. inheritance-diagram:: tupan.lib.utils.timing
 

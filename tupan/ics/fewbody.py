@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 #
 
-"""This module provides initial conditions for some few-body systems with
+"""
+This module provides initial conditions for some few-body systems with
 known numerical solutions.
 """
-
 
 from __future__ import division
 from ..particles import ParticleSystem

@@ -5,15 +5,11 @@
 TODO.
 """
 
-
 from __future__ import print_function
 import numpy as np
 from scipy.integrate import quad
 from scipy.optimize import fminbound
 from ..lib.utils.timing import timings, bind_all
-
-
-__all__ = ['IMF']
 
 
 @bind_all(timings)

@@ -1,53 +1,54 @@
-tupan Package
-=============
+:mod:`tupan` package
+====================
+.. contents::
 
 .. automodule:: tupan
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
+    .. inheritance-diagram:: tupan
 
-Submodules
-----------
 
-tupan.config module
--------------------
+:mod:`tupan.config` module
+--------------------------
 
 .. automodule:: tupan.config
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
-tupan.simulation module
------------------------
+    .. inheritance-diagram:: tupan.config
+
+
+:mod:`tupan.simulation` module
+------------------------------
 
 .. automodule:: tupan.simulation
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
-tupan.version module
---------------------
+    .. inheritance-diagram:: tupan.simulation
+
+
+:mod:`tupan.version` module
+---------------------------
 
 .. automodule:: tupan.version
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
+
+    .. inheritance-diagram:: tupan.version
 
 
 Subpackages
 -----------
 
 .. toctree::
+    :glob:
+    :titlesonly:
 
-    tupan.analysis
-    tupan.ics
-    tupan.integrator
-    tupan.io
-    tupan.lib
-    tupan.particles
+    tupan.*
 

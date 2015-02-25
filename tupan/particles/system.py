@@ -5,7 +5,6 @@
 TODO.
 """
 
-
 from __future__ import print_function
 import copy
 import numpy as np
@@ -16,9 +15,6 @@ from .blackhole import Blackhole
 from .base import MetaParticle, AbstractNbodyMethods
 from ..lib.utils import with_metaclass
 from ..lib.utils.timing import timings, bind_all
-
-
-__all__ = ['ParticleSystem']
 
 
 @bind_all(timings)

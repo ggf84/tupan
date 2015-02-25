@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 #
 
-"""This module implements highlevel interfaces for C/CL-extensions.
-
 """
-
+This module implements highlevel interfaces for C/CL-extensions.
+"""
 
 from __future__ import print_function, division
 import logging
@@ -13,9 +12,6 @@ from ..config import options
 from .utils.ctype import Ctype
 from .utils.timing import timings, bind_all
 
-
-__all__ = ['Phi', 'Acc', 'AccJerk', 'SnapCrackle', 'Tstep',
-           'PNAcc', 'Sakura', 'NregX', 'NregV', 'Kepler', ]
 
 LOGGER = logging.getLogger(__name__)
 
@@ -87,7 +83,6 @@ class Phi(AbstractExtension):
     def _pycalc(self, ips, jps):
         # Never use this method for production runs. It is very
         # slow and it's here only for performance comparisons.
-        import numpy as np
         for i in range(ips.n):
             r = (ips.pos[..., i] - jps.pos.T).T
             e2 = ips.eps2[i] + jps.eps2
@@ -123,7 +118,6 @@ class Acc(AbstractExtension):
     def _pycalc(self, ips, jps):
         # Never use this method for production runs. It is very
         # slow and it's here only for performance comparisons.
-        import numpy as np
         for i in range(ips.n):
             r = (ips.pos[..., i] - jps.pos.T).T
             e2 = ips.eps2[i] + jps.eps2

@@ -2,9 +2,8 @@ User Guide
 ==========
 
 .. toctree::
-    :maxdepth: 4
+    :glob:
+    :titlesonly:
 
-    user.intro
-    user.install
-    user.usage
+    user.*
 

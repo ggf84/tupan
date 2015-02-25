@@ -5,15 +5,12 @@
 TODO.
 """
 
-
 from __future__ import print_function
 import sys
 import h5py
 import pickle
 from ..lib.utils.timing import timings, bind_all
 
-
-__all__ = ['HDF5IO']
 
 IS_PY3K = True if sys.version_info.major > 2 else False
 PICKLE_PROTOCOL = 0  # ensures backward compatibility with Python 2.x

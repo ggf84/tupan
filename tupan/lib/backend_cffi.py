@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 #
 
-"""This module implements the CFFI backend to call C-extensions.
-
 """
-
+This module implements the CFFI backend to call C-extensions.
+"""
 
 import os
 import cffi

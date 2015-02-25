@@ -1,48 +1,54 @@
-tupan.lib package
-=================
+:mod:`tupan.lib` package
+========================
+.. contents::
 
 .. automodule:: tupan.lib
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
+    .. inheritance-diagram:: tupan.lib
 
-Submodules
-----------
 
-tupan.lib.backend_cffi module
------------------------------
+:mod:`tupan.lib.backend_cffi` module
+------------------------------------
 
 .. automodule:: tupan.lib.backend_cffi
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
-tupan.lib.backend_opencl module
--------------------------------
+    .. inheritance-diagram:: tupan.lib.backend_cffi
+
+
+:mod:`tupan.lib.backend_opencl` module
+--------------------------------------
 
 .. automodule:: tupan.lib.backend_opencl
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
-tupan.lib.extensions module
----------------------------
+    .. inheritance-diagram:: tupan.lib.backend_opencl
+
+
+:mod:`tupan.lib.extensions` module
+----------------------------------
 
 .. automodule:: tupan.lib.extensions
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
+
+    .. inheritance-diagram:: tupan.lib.extensions
 
 
 Subpackages
 -----------
 
 .. toctree::
+    :glob:
+    :titlesonly:
 
-    tupan.lib.utils
+    tupan.lib.*
 

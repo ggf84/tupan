@@ -1,22 +1,22 @@
-tupan.analysis package
-======================
+:mod:`tupan.analysis` package
+=============================
+.. contents::
 
 .. automodule:: tupan.analysis
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
+    .. inheritance-diagram:: tupan.analysis
 
-Submodules
-----------
 
-tupan.analysis.glviewer module
-------------------------------
+:mod:`tupan.analysis.glviewer` module
+-------------------------------------
 
 .. automodule:: tupan.analysis.glviewer
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
+
+    .. inheritance-diagram:: tupan.analysis.glviewer
 

@@ -5,7 +5,6 @@
 TODO.
 """
 
-
 from __future__ import print_function
 import sys
 import math
@@ -18,9 +17,6 @@ from .lib.utils.timing import timings, bind_all, Timer
 
 
 LOGGER = logging.getLogger(__name__)
-
-
-__all__ = ['Simulation']
 
 
 @bind_all(timings)

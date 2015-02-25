@@ -5,15 +5,12 @@
 TODO.
 """
 
-
 import logging
 import numpy as np
 from .base import Base, power_of_two
 from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
 
-
-__all__ = ['SIA']
 
 LOGGER = logging.getLogger(__name__)
 

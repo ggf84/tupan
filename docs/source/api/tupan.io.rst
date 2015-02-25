@@ -1,22 +1,22 @@
-tupan.io package
-================
+:mod:`tupan.io` package
+=======================
+.. contents::
 
 .. automodule:: tupan.io
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
 
+    .. inheritance-diagram:: tupan.io
 
-Submodules
-----------
 
-tupan.io.hdf5io module
-----------------------
+:mod:`tupan.io.hdf5io` module
+-----------------------------
 
 .. automodule:: tupan.io.hdf5io
     :members:
     :undoc-members:
-    :inherited-members:
     :show-inheritance:
+
+    .. inheritance-diagram:: tupan.io.hdf5io
 
