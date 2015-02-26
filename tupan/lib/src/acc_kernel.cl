@@ -37,31 +37,31 @@ acc_kernel(
     uint_t j = 0;
 
     #ifdef FAST_LOCAL_MEM
-    local real_t _jm[GROUPS][LSIZE];
-    local real_t _jrx[GROUPS][LSIZE];
-    local real_t _jry[GROUPS][LSIZE];
-    local real_t _jrz[GROUPS][LSIZE];
-    local real_t _je2[GROUPS][LSIZE];
+    local real_t _jm[2][LSIZE];
+    local real_t _jrx[2][LSIZE];
+    local real_t _jry[2][LSIZE];
+    local real_t _jrz[2][LSIZE];
+    local real_t _je2[2][LSIZE];
     #pragma unroll
-    for (uint_t g = GROUPS; g > 0; --g) {
+    for (uint_t g = GROUPS; g > 0; g >>= 1) {
         #pragma unroll
         for (; (j + g * LSIZE - 1) < nj; j += g * LSIZE) {
             barrier(CLK_LOCAL_MEM_FENCE);
             #pragma unroll
             for (uint_t k = 0; k < g; ++k) {
-                _jm[k][lid] = __jm[j + k * LSIZE + lid];
-                _jrx[k][lid] = __jrx[j + k * LSIZE + lid];
-                _jry[k][lid] = __jry[j + k * LSIZE + lid];
-                _jrz[k][lid] = __jrz[j + k * LSIZE + lid];
-                _je2[k][lid] = __je2[j + k * LSIZE + lid];
+                _jm[k & 1][lid] = __jm[j + k * LSIZE + lid];
+                _jrx[k & 1][lid] = __jrx[j + k * LSIZE + lid];
+                _jry[k & 1][lid] = __jry[j + k * LSIZE + lid];
+                _jrz[k & 1][lid] = __jrz[j + k * LSIZE + lid];
+                _je2[k & 1][lid] = __je2[j + k * LSIZE + lid];
                 barrier(CLK_LOCAL_MEM_FENCE);
                 #pragma unroll
                 for (uint_t l = 0; l < LSIZE; ++l) {
-                    real_t jm = _jm[k][l];
-                    real_t jrx = _jrx[k][l];
-                    real_t jry = _jry[k][l];
-                    real_t jrz = _jrz[k][l];
-                    real_t je2 = _je2[k][l];
+                    real_t jm = _jm[k & 1][l];
+                    real_t jrx = _jrx[k & 1][l];
+                    real_t jry = _jry[k & 1][l];
+                    real_t jrz = _jrz[k & 1][l];
+                    real_t je2 = _je2[k & 1][l];
                     acc_kernel_core(
                         im, irx, iry, irz, ie2,
                         jm, jrx, jry, jrz, je2,
