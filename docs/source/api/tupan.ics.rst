@@ -1,6 +1,5 @@
-:mod:`tupan.ics` package
-========================
-.. contents::
+:mod:`!tupan.ics` package
+=========================
 
 .. automodule:: tupan.ics
     :members:
@@ -9,9 +8,13 @@
 
     .. inheritance-diagram:: tupan.ics
 
+.. contents:: Contents
+    :local:
+    :backlinks: top
 
-:mod:`tupan.ics.fewbody` module
--------------------------------
+
+:mod:`!tupan.ics.fewbody` module
+--------------------------------
 
 .. automodule:: tupan.ics.fewbody
     :members:
@@ -21,8 +24,8 @@
     .. inheritance-diagram:: tupan.ics.fewbody
 
 
-:mod:`tupan.ics.hierarchy` module
----------------------------------
+:mod:`!tupan.ics.hierarchy` module
+----------------------------------
 
 .. automodule:: tupan.ics.hierarchy
     :members:
@@ -32,8 +35,8 @@
     .. inheritance-diagram:: tupan.ics.hierarchy
 
 
-:mod:`tupan.ics.imf` module
----------------------------
+:mod:`!tupan.ics.imf` module
+----------------------------
 
 .. automodule:: tupan.ics.imf
     :members:
@@ -43,8 +46,8 @@
     .. inheritance-diagram:: tupan.ics.imf
 
 
-:mod:`tupan.ics.plummer` module
--------------------------------
+:mod:`!tupan.ics.plummer` module
+--------------------------------
 
 .. automodule:: tupan.ics.plummer
     :members:

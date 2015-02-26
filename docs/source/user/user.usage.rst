@@ -1,5 +1,5 @@
-Using |tupan|
-=============
+Usage
+=====
 
 .. todo:: Write this section.
 

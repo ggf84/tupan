@@ -1,6 +1,5 @@
-:mod:`tupan.lib` package
-========================
-.. contents::
+:mod:`!tupan.lib` package
+=========================
 
 .. automodule:: tupan.lib
     :members:
@@ -9,9 +8,13 @@
 
     .. inheritance-diagram:: tupan.lib
 
+.. contents:: Contents
+    :local:
+    :backlinks: top
 
-:mod:`tupan.lib.backend_cffi` module
-------------------------------------
+
+:mod:`!tupan.lib.backend_cffi` module
+-------------------------------------
 
 .. automodule:: tupan.lib.backend_cffi
     :members:
@@ -21,8 +24,8 @@
     .. inheritance-diagram:: tupan.lib.backend_cffi
 
 
-:mod:`tupan.lib.backend_opencl` module
---------------------------------------
+:mod:`!tupan.lib.backend_opencl` module
+---------------------------------------
 
 .. automodule:: tupan.lib.backend_opencl
     :members:
@@ -32,8 +35,8 @@
     .. inheritance-diagram:: tupan.lib.backend_opencl
 
 
-:mod:`tupan.lib.extensions` module
-----------------------------------
+:mod:`!tupan.lib.extensions` module
+-----------------------------------
 
 .. automodule:: tupan.lib.extensions
     :members:

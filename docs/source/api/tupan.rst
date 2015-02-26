@@ -1,6 +1,5 @@
-:mod:`tupan` package
-====================
-.. contents::
+:mod:`!tupan` package
+=====================
 
 .. automodule:: tupan
     :members:
@@ -9,9 +8,13 @@
 
     .. inheritance-diagram:: tupan
 
+.. contents:: Contents
+    :local:
+    :backlinks: top
 
-:mod:`tupan.config` module
---------------------------
+
+:mod:`!tupan.config` module
+---------------------------
 
 .. automodule:: tupan.config
     :members:
@@ -21,8 +24,8 @@
     .. inheritance-diagram:: tupan.config
 
 
-:mod:`tupan.simulation` module
-------------------------------
+:mod:`!tupan.simulation` module
+-------------------------------
 
 .. automodule:: tupan.simulation
     :members:
@@ -32,8 +35,8 @@
     .. inheritance-diagram:: tupan.simulation
 
 
-:mod:`tupan.version` module
----------------------------
+:mod:`!tupan.version` module
+----------------------------
 
 .. automodule:: tupan.version
     :members:

@@ -1,6 +1,5 @@
-:mod:`tupan.lib.utils` package
-==============================
-.. contents::
+:mod:`!tupan.lib.utils` package
+===============================
 
 .. automodule:: tupan.lib.utils
     :members:
@@ -9,9 +8,13 @@
 
     .. inheritance-diagram:: tupan.lib.utils
 
+.. contents:: Contents
+    :local:
+    :backlinks: top
 
-:mod:`tupan.lib.utils.ctype` module
------------------------------------
+
+:mod:`!tupan.lib.utils.ctype` module
+------------------------------------
 
 .. automodule:: tupan.lib.utils.ctype
     :members:
@@ -21,8 +24,8 @@
     .. inheritance-diagram:: tupan.lib.utils.ctype
 
 
-:mod:`tupan.lib.utils.memoize` module
--------------------------------------
+:mod:`!tupan.lib.utils.memoize` module
+--------------------------------------
 
 .. automodule:: tupan.lib.utils.memoize
     :members:
@@ -32,8 +35,8 @@
     .. inheritance-diagram:: tupan.lib.utils.memoize
 
 
-:mod:`tupan.lib.utils.timing` module
-------------------------------------
+:mod:`!tupan.lib.utils.timing` module
+-------------------------------------
 
 .. automodule:: tupan.lib.utils.timing
     :members:

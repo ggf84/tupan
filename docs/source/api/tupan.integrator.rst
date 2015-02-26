@@ -1,6 +1,5 @@
-:mod:`tupan.integrator` package
-===============================
-.. contents::
+:mod:`!tupan.integrator` package
+================================
 
 .. automodule:: tupan.integrator
     :members:
@@ -9,9 +8,13 @@
 
     .. inheritance-diagram:: tupan.integrator
 
+.. contents:: Contents
+    :local:
+    :backlinks: top
 
-:mod:`tupan.integrator.base` module
------------------------------------
+
+:mod:`!tupan.integrator.base` module
+------------------------------------
 
 .. automodule:: tupan.integrator.base
     :members:
@@ -21,8 +24,8 @@
     .. inheritance-diagram:: tupan.integrator.base
 
 
-:mod:`tupan.integrator.hermite` module
---------------------------------------
+:mod:`!tupan.integrator.hermite` module
+---------------------------------------
 
 .. automodule:: tupan.integrator.hermite
     :members:
@@ -32,8 +35,8 @@
     .. inheritance-diagram:: tupan.integrator.hermite
 
 
-:mod:`tupan.integrator.nreg` module
------------------------------------
+:mod:`!tupan.integrator.nreg` module
+------------------------------------
 
 .. automodule:: tupan.integrator.nreg
     :members:
@@ -43,8 +46,8 @@
     .. inheritance-diagram:: tupan.integrator.nreg
 
 
-:mod:`tupan.integrator.sakura` module
--------------------------------------
+:mod:`!tupan.integrator.sakura` module
+--------------------------------------
 
 .. automodule:: tupan.integrator.sakura
     :members:
@@ -54,8 +57,8 @@
     .. inheritance-diagram:: tupan.integrator.sakura
 
 
-:mod:`tupan.integrator.sia` module
-----------------------------------
+:mod:`!tupan.integrator.sia` module
+-----------------------------------
 
 .. automodule:: tupan.integrator.sia
     :members:

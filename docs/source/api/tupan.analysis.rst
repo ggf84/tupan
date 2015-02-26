@@ -1,6 +1,5 @@
-:mod:`tupan.analysis` package
-=============================
-.. contents::
+:mod:`!tupan.analysis` package
+==============================
 
 .. automodule:: tupan.analysis
     :members:
@@ -9,9 +8,13 @@
 
     .. inheritance-diagram:: tupan.analysis
 
+.. contents:: Contents
+    :local:
+    :backlinks: top
 
-:mod:`tupan.analysis.glviewer` module
--------------------------------------
+
+:mod:`!tupan.analysis.glviewer` module
+--------------------------------------
 
 .. automodule:: tupan.analysis.glviewer
     :members:

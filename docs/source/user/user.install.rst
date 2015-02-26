@@ -1,5 +1,5 @@
-Getting and installing
-======================
+Installing
+==========
 
 .. todo:: Write this section.
 

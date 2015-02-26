@@ -1,6 +1,5 @@
-:mod:`tupan.io` package
-=======================
-.. contents::
+:mod:`!tupan.io` package
+========================
 
 .. automodule:: tupan.io
     :members:
@@ -9,9 +8,13 @@
 
     .. inheritance-diagram:: tupan.io
 
+.. contents:: Contents
+    :local:
+    :backlinks: top
 
-:mod:`tupan.io.hdf5io` module
------------------------------
+
+:mod:`!tupan.io.hdf5io` module
+------------------------------
 
 .. automodule:: tupan.io.hdf5io
     :members:
