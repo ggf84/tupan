@@ -35,4 +35,33 @@
 #define uint_tn vec(uint_t)
 #define real_tn vec(real_t)
 
-#endif // __CL_COMMON_H__
+typedef int_t int_tm[IUNROLL];
+typedef uint_t uint_tm[IUNROLL];
+typedef real_t real_tm[IUNROLL];
+
+typedef int_tn int_tnxm[IUNROLL];
+typedef uint_tn uint_tnxm[IUNROLL];
+typedef real_tn real_tnxm[IUNROLL];
+
+#define copy1(_DST, _SRC)	\
+	(_DST)[0] = (_SRC)[0];
+
+#define copy2(_DST, _SRC)	\
+	copy1(_DST+0, _SRC+0);	\
+	copy1(_DST+1, _SRC+1);
+
+#define copy4(_DST, _SRC)	\
+	copy2(_DST+0, _SRC+0);	\
+	copy2(_DST+2, _SRC+2);
+
+#define copy8(_DST, _SRC)	\
+	copy4(_DST+0, _SRC+0);	\
+	copy4(_DST+4, _SRC+4);
+
+#define copy16(_DST, _SRC)	\
+	copy8(_DST+0, _SRC+0);	\
+	copy8(_DST+8, _SRC+8);
+
+#define icopy concat(copy, IUNROLL)
+
+#endif	// __CL_COMMON_H__

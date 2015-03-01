@@ -207,7 +207,7 @@ class Program(object):
         self.kernel = None
 
     def build(self, fpwidth=options.fpwidth):
-        groups = 4
+        iunroll = 2
         lsize = 64
         fast_local_mem = True
         vw = (self.cl_device.preferred_vector_width_float
@@ -216,7 +216,7 @@ class Program(object):
 
         # setting program options
         opts = ' -D VW={}'.format(vw)
-        opts += ' -D GROUPS={}'.format(groups)
+        opts += ' -D IUNROLL={}'.format(iunroll)
         opts += ' -D LSIZE={}'.format(lsize)
         opts += ' -D CONFIG_USE_OPENCL'
         if fpwidth == 'fp64':
@@ -236,8 +236,7 @@ class Program(object):
         kernels = self.cl_program.all_kernels()
         for kernel in kernels:
             name = kernel.function_name
-            kernel.vw = vw if name != 'sakura_kernel' else 1
-            kernel.groups = groups
+            kernel.stride = (vw if name != 'sakura_kernel' else 1) * iunroll
             kernel.lsize = lsize
             kernel.name = name
             LOGGER.debug(
@@ -371,22 +370,22 @@ class CLKernel(object):
         for device in drv.context.devices:
             kernel = device.program.kernel[name]
 
-            vw = kernel.vw
+            stride = kernel.stride
             lsize = kernel.lsize
 
-            n = (ni + vw - 1) // vw
+            n = (ni + stride - 1) // stride
             n_per_dev = (n + ndevs - 1) // ndevs
 
             ngroups = (n_per_dev + lsize - 1) // lsize
             gsize = lsize * ngroups
-            offset = (voffset + vw - 1) // vw
+            offset = (voffset + stride - 1) // stride
 
             local_work_size = (lsize, 1, 1)
             global_work_size = (gsize, 1, 1)
             global_work_offset = (offset, 0, 0)
 
             offset += gsize
-            voffset += gsize * vw
+            voffset += gsize * stride
             nn = min(offset, n)
 
             kernel.set_arg(0, uint_t(nn))

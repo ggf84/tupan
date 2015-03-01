@@ -5,20 +5,20 @@ __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 kernel void
 snap_crackle_kernel(
 	uint_t const ni,
-	global real_tn const __im[restrict],
-	global real_tn const __irx[restrict],
-	global real_tn const __iry[restrict],
-	global real_tn const __irz[restrict],
-	global real_tn const __ie2[restrict],
-	global real_tn const __ivx[restrict],
-	global real_tn const __ivy[restrict],
-	global real_tn const __ivz[restrict],
-	global real_tn const __iax[restrict],
-	global real_tn const __iay[restrict],
-	global real_tn const __iaz[restrict],
-	global real_tn const __ijx[restrict],
-	global real_tn const __ijy[restrict],
-	global real_tn const __ijz[restrict],
+	global real_tnxm const __im[restrict],
+	global real_tnxm const __irx[restrict],
+	global real_tnxm const __iry[restrict],
+	global real_tnxm const __irz[restrict],
+	global real_tnxm const __ie2[restrict],
+	global real_tnxm const __ivx[restrict],
+	global real_tnxm const __ivy[restrict],
+	global real_tnxm const __ivz[restrict],
+	global real_tnxm const __iax[restrict],
+	global real_tnxm const __iay[restrict],
+	global real_tnxm const __iaz[restrict],
+	global real_tnxm const __ijx[restrict],
+	global real_tnxm const __ijy[restrict],
+	global real_tnxm const __ijz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
@@ -34,101 +34,103 @@ snap_crackle_kernel(
 	global real_t const __jjx[restrict],
 	global real_t const __jjy[restrict],
 	global real_t const __jjz[restrict],
-	global real_tn __isx[restrict],
-	global real_tn __isy[restrict],
-	global real_tn __isz[restrict],
-	global real_tn __icx[restrict],
-	global real_tn __icy[restrict],
-	global real_tn __icz[restrict])
+	global real_tnxm __isx[restrict],
+	global real_tnxm __isy[restrict],
+	global real_tnxm __isz[restrict],
+	global real_tnxm __icx[restrict],
+	global real_tnxm __icy[restrict],
+	global real_tnxm __icz[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
 	gid = (gid < ni) ? (gid):(0);
 
-	real_tn im = __im[gid];
-	real_tn irx = __irx[gid];
-	real_tn iry = __iry[gid];
-	real_tn irz = __irz[gid];
-	real_tn ie2 = __ie2[gid];
-	real_tn ivx = __ivx[gid];
-	real_tn ivy = __ivy[gid];
-	real_tn ivz = __ivz[gid];
-	real_tn iax = __iax[gid];
-	real_tn iay = __iay[gid];
-	real_tn iaz = __iaz[gid];
-	real_tn ijx = __ijx[gid];
-	real_tn ijy = __ijy[gid];
-	real_tn ijz = __ijz[gid];
+	real_tnxm im; icopy(im, __im[gid]);
+	real_tnxm irx; icopy(irx, __irx[gid]);
+	real_tnxm iry; icopy(iry, __iry[gid]);
+	real_tnxm irz; icopy(irz, __irz[gid]);
+	real_tnxm ie2; icopy(ie2, __ie2[gid]);
+	real_tnxm ivx; icopy(ivx, __ivx[gid]);
+	real_tnxm ivy; icopy(ivy, __ivy[gid]);
+	real_tnxm ivz; icopy(ivz, __ivz[gid]);
+	real_tnxm iax; icopy(iax, __iax[gid]);
+	real_tnxm iay; icopy(iay, __iay[gid]);
+	real_tnxm iaz; icopy(iaz, __iaz[gid]);
+	real_tnxm ijx; icopy(ijx, __ijx[gid]);
+	real_tnxm ijy; icopy(ijy, __ijy[gid]);
+	real_tnxm ijz; icopy(ijz, __ijz[gid]);
 
-	real_tn isx = (real_tn)(0);
-	real_tn isy = (real_tn)(0);
-	real_tn isz = (real_tn)(0);
-	real_tn icx = (real_tn)(0);
-	real_tn icy = (real_tn)(0);
-	real_tn icz = (real_tn)(0);
+	real_tnxm isx = {0};
+	real_tnxm isy = {0};
+	real_tnxm isz = {0};
+	real_tnxm icx = {0};
+	real_tnxm icy = {0};
+	real_tnxm icz = {0};
 
 	uint_t j = 0;
 
 	#ifdef FAST_LOCAL_MEM
-	local real_t _jm[2][LSIZE];
-	local real_t _jrx[2][LSIZE];
-	local real_t _jry[2][LSIZE];
-	local real_t _jrz[2][LSIZE];
-	local real_t _je2[2][LSIZE];
-	local real_t _jvx[2][LSIZE];
-	local real_t _jvy[2][LSIZE];
-	local real_t _jvz[2][LSIZE];
-	local real_t _jax[2][LSIZE];
-	local real_t _jay[2][LSIZE];
-	local real_t _jaz[2][LSIZE];
-	local real_t _jjx[2][LSIZE];
-	local real_t _jjy[2][LSIZE];
-	local real_t _jjz[2][LSIZE];
+	local real_t _jm[LSIZE];
+	local real_t _jrx[LSIZE];
+	local real_t _jry[LSIZE];
+	local real_t _jrz[LSIZE];
+	local real_t _je2[LSIZE];
+	local real_t _jvx[LSIZE];
+	local real_t _jvy[LSIZE];
+	local real_t _jvz[LSIZE];
+	local real_t _jax[LSIZE];
+	local real_t _jay[LSIZE];
+	local real_t _jaz[LSIZE];
+	local real_t _jjx[LSIZE];
+	local real_t _jjy[LSIZE];
+	local real_t _jjz[LSIZE];
 	#pragma unroll
-	for (uint_t g = GROUPS; g > 0; g >>= 1) {
+	for (; (j + LSIZE - 1) < nj; j += LSIZE) {
+		barrier(CLK_LOCAL_MEM_FENCE);
+		_jm[lid] = __jm[j + lid];
+		_jrx[lid] = __jrx[j + lid];
+		_jry[lid] = __jry[j + lid];
+		_jrz[lid] = __jrz[j + lid];
+		_je2[lid] = __je2[j + lid];
+		_jvx[lid] = __jvx[j + lid];
+		_jvy[lid] = __jvy[j + lid];
+		_jvz[lid] = __jvz[j + lid];
+		_jax[lid] = __jax[j + lid];
+		_jay[lid] = __jay[j + lid];
+		_jaz[lid] = __jaz[j + lid];
+		_jjx[lid] = __jjx[j + lid];
+		_jjy[lid] = __jjy[j + lid];
+		_jjz[lid] = __jjz[j + lid];
+		barrier(CLK_LOCAL_MEM_FENCE);
 		#pragma unroll
-		for (; (j + g * LSIZE - 1) < nj; j += g * LSIZE) {
-			barrier(CLK_LOCAL_MEM_FENCE);
+		for (uint_t k = 0; k < LSIZE; ++k) {
+			real_t jm = _jm[k];
+			real_t jrx = _jrx[k];
+			real_t jry = _jry[k];
+			real_t jrz = _jrz[k];
+			real_t je2 = _je2[k];
+			real_t jvx = _jvx[k];
+			real_t jvy = _jvy[k];
+			real_t jvz = _jvz[k];
+			real_t jax = _jax[k];
+			real_t jay = _jay[k];
+			real_t jaz = _jaz[k];
+			real_t jjx = _jjx[k];
+			real_t jjy = _jjy[k];
+			real_t jjz = _jjz[k];
 			#pragma unroll
-			for (uint_t k = 0; k < g; ++k) {
-				_jm[k & 1][lid] = __jm[j + k * LSIZE + lid];
-				_jrx[k & 1][lid] = __jrx[j + k * LSIZE + lid];
-				_jry[k & 1][lid] = __jry[j + k * LSIZE + lid];
-				_jrz[k & 1][lid] = __jrz[j + k * LSIZE + lid];
-				_je2[k & 1][lid] = __je2[j + k * LSIZE + lid];
-				_jvx[k & 1][lid] = __jvx[j + k * LSIZE + lid];
-				_jvy[k & 1][lid] = __jvy[j + k * LSIZE + lid];
-				_jvz[k & 1][lid] = __jvz[j + k * LSIZE + lid];
-				_jax[k & 1][lid] = __jax[j + k * LSIZE + lid];
-				_jay[k & 1][lid] = __jay[j + k * LSIZE + lid];
-				_jaz[k & 1][lid] = __jaz[j + k * LSIZE + lid];
-				_jjx[k & 1][lid] = __jjx[j + k * LSIZE + lid];
-				_jjy[k & 1][lid] = __jjy[j + k * LSIZE + lid];
-				_jjz[k & 1][lid] = __jjz[j + k * LSIZE + lid];
-				barrier(CLK_LOCAL_MEM_FENCE);
-				#pragma unroll
-				for (uint_t l = 0; l < LSIZE; ++l) {
-					real_t jm = _jm[k & 1][l];
-					real_t jrx = _jrx[k & 1][l];
-					real_t jry = _jry[k & 1][l];
-					real_t jrz = _jrz[k & 1][l];
-					real_t je2 = _je2[k & 1][l];
-					real_t jvx = _jvx[k & 1][l];
-					real_t jvy = _jvy[k & 1][l];
-					real_t jvz = _jvz[k & 1][l];
-					real_t jax = _jax[k & 1][l];
-					real_t jay = _jay[k & 1][l];
-					real_t jaz = _jaz[k & 1][l];
-					real_t jjx = _jjx[k & 1][l];
-					real_t jjy = _jjy[k & 1][l];
-					real_t jjz = _jjz[k & 1][l];
-					snap_crackle_kernel_core(
-						im, irx, iry, irz, ie2, ivx, ivy, ivz,
-						iax, iay, iaz, ijx, ijy, ijz,
-						jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-						jax, jay, jaz, jjx, jjy, jjz,
-						&isx, &isy, &isz, &icx, &icy, &icz);
-				}
+			for (uint_t i = 0; i < IUNROLL; ++i) {
+				snap_crackle_kernel_core(
+					im[i], irx[i], iry[i], irz[i],
+					ie2[i], ivx[i], ivy[i], ivz[i],
+					iax[i], iay[i], iaz[i],
+					ijx[i], ijy[i], ijz[i],
+					jm, jrx, jry, jrz,
+					je2, jvx, jvy, jvz,
+					jax, jay, jaz,
+					jjx, jjy, jjz,
+					&isx[i], &isy[i], &isz[i],
+					&icx[i], &icy[i], &icz[i]);
 			}
 		}
 	}
@@ -150,19 +152,27 @@ snap_crackle_kernel(
 		real_t jjx = __jjx[j];
 		real_t jjy = __jjy[j];
 		real_t jjz = __jjz[j];
-		snap_crackle_kernel_core(
-			im, irx, iry, irz, ie2, ivx, ivy, ivz,
-			iax, iay, iaz, ijx, ijy, ijz,
-			jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-			jax, jay, jaz, jjx, jjy, jjz,
-			&isx, &isy, &isz, &icx, &icy, &icz);
+		#pragma unroll
+		for (uint_t i = 0; i < IUNROLL; ++i) {
+			snap_crackle_kernel_core(
+				im[i], irx[i], iry[i], irz[i],
+				ie2[i], ivx[i], ivy[i], ivz[i],
+				iax[i], iay[i], iaz[i],
+				ijx[i], ijy[i], ijz[i],
+				jm, jrx, jry, jrz,
+				je2, jvx, jvy, jvz,
+				jax, jay, jaz,
+				jjx, jjy, jjz,
+				&isx[i], &isy[i], &isz[i],
+				&icx[i], &icy[i], &icz[i]);
+		}
 	}
 
-	__isx[gid] = isx;
-	__isy[gid] = isy;
-	__isz[gid] = isz;
-	__icx[gid] = icx;
-	__icy[gid] = icy;
-	__icz[gid] = icz;
+	icopy(__isx[gid], isx);
+	icopy(__isy[gid], isy);
+	icopy(__isz[gid], isz);
+	icopy(__icx[gid], icx);
+	icopy(__icy[gid], icy);
+	icopy(__icz[gid], icz);
 }
 
