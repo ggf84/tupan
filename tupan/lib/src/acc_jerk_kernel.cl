@@ -5,14 +5,14 @@ __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 kernel void
 acc_jerk_kernel(
 	uint_t const ni,
-	global real_tnxm const __im[restrict],
-	global real_tnxm const __irx[restrict],
-	global real_tnxm const __iry[restrict],
-	global real_tnxm const __irz[restrict],
-	global real_tnxm const __ie2[restrict],
-	global real_tnxm const __ivx[restrict],
-	global real_tnxm const __ivy[restrict],
-	global real_tnxm const __ivz[restrict],
+	global real_tn const __im[restrict],
+	global real_tn const __irx[restrict],
+	global real_tn const __iry[restrict],
+	global real_tn const __irz[restrict],
+	global real_tn const __ie2[restrict],
+	global real_tn const __ivx[restrict],
+	global real_tn const __ivy[restrict],
+	global real_tn const __ivz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
@@ -22,32 +22,32 @@ acc_jerk_kernel(
 	global real_t const __jvx[restrict],
 	global real_t const __jvy[restrict],
 	global real_t const __jvz[restrict],
-	global real_tnxm __iax[restrict],
-	global real_tnxm __iay[restrict],
-	global real_tnxm __iaz[restrict],
-	global real_tnxm __ijx[restrict],
-	global real_tnxm __ijy[restrict],
-	global real_tnxm __ijz[restrict])
+	global real_tn __iax[restrict],
+	global real_tn __iay[restrict],
+	global real_tn __iaz[restrict],
+	global real_tn __ijx[restrict],
+	global real_tn __ijy[restrict],
+	global real_tn __ijz[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
 	gid = (gid < ni) ? (gid):(0);
 
-	real_tnxm im; icopy(im, __im[gid]);
-	real_tnxm irx; icopy(irx, __irx[gid]);
-	real_tnxm iry; icopy(iry, __iry[gid]);
-	real_tnxm irz; icopy(irz, __irz[gid]);
-	real_tnxm ie2; icopy(ie2, __ie2[gid]);
-	real_tnxm ivx; icopy(ivx, __ivx[gid]);
-	real_tnxm ivy; icopy(ivy, __ivy[gid]);
-	real_tnxm ivz; icopy(ivz, __ivz[gid]);
+	real_tn im[] = aloadn(gid, __im);
+	real_tn irx[] = aloadn(gid, __irx);
+	real_tn iry[] = aloadn(gid, __iry);
+	real_tn irz[] = aloadn(gid, __irz);
+	real_tn ie2[] = aloadn(gid, __ie2);
+	real_tn ivx[] = aloadn(gid, __ivx);
+	real_tn ivy[] = aloadn(gid, __ivy);
+	real_tn ivz[] = aloadn(gid, __ivz);
 
-	real_tnxm iax = {0};
-	real_tnxm iay = {0};
-	real_tnxm iaz = {0};
-	real_tnxm ijx = {0};
-	real_tnxm ijy = {0};
-	real_tnxm ijz = {0};
+	real_tn iax[IUNROLL] = {0};
+	real_tn iay[IUNROLL] = {0};
+	real_tn iaz[IUNROLL] = {0};
+	real_tn ijx[IUNROLL] = {0};
+	real_tn ijy[IUNROLL] = {0};
+	real_tn ijz[IUNROLL] = {0};
 
 	uint_t j = 0;
 
@@ -118,11 +118,11 @@ acc_jerk_kernel(
 		}
 	}
 
-	icopy(__iax[gid], iax);
-	icopy(__iay[gid], iay);
-	icopy(__iaz[gid], iaz);
-	icopy(__ijx[gid], ijx);
-	icopy(__ijy[gid], ijy);
-	icopy(__ijz[gid], ijz);
+	astoren(iax, gid, __iax);
+	astoren(iay, gid, __iay);
+	astoren(iaz, gid, __iaz);
+	astoren(ijx, gid, __ijx);
+	astoren(ijy, gid, __ijy);
+	astoren(ijz, gid, __ijz);
 }
 

@@ -5,20 +5,20 @@ __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 kernel void
 snap_crackle_kernel(
 	uint_t const ni,
-	global real_tnxm const __im[restrict],
-	global real_tnxm const __irx[restrict],
-	global real_tnxm const __iry[restrict],
-	global real_tnxm const __irz[restrict],
-	global real_tnxm const __ie2[restrict],
-	global real_tnxm const __ivx[restrict],
-	global real_tnxm const __ivy[restrict],
-	global real_tnxm const __ivz[restrict],
-	global real_tnxm const __iax[restrict],
-	global real_tnxm const __iay[restrict],
-	global real_tnxm const __iaz[restrict],
-	global real_tnxm const __ijx[restrict],
-	global real_tnxm const __ijy[restrict],
-	global real_tnxm const __ijz[restrict],
+	global real_tn const __im[restrict],
+	global real_tn const __irx[restrict],
+	global real_tn const __iry[restrict],
+	global real_tn const __irz[restrict],
+	global real_tn const __ie2[restrict],
+	global real_tn const __ivx[restrict],
+	global real_tn const __ivy[restrict],
+	global real_tn const __ivz[restrict],
+	global real_tn const __iax[restrict],
+	global real_tn const __iay[restrict],
+	global real_tn const __iaz[restrict],
+	global real_tn const __ijx[restrict],
+	global real_tn const __ijy[restrict],
+	global real_tn const __ijz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
@@ -34,38 +34,38 @@ snap_crackle_kernel(
 	global real_t const __jjx[restrict],
 	global real_t const __jjy[restrict],
 	global real_t const __jjz[restrict],
-	global real_tnxm __isx[restrict],
-	global real_tnxm __isy[restrict],
-	global real_tnxm __isz[restrict],
-	global real_tnxm __icx[restrict],
-	global real_tnxm __icy[restrict],
-	global real_tnxm __icz[restrict])
+	global real_tn __isx[restrict],
+	global real_tn __isy[restrict],
+	global real_tn __isz[restrict],
+	global real_tn __icx[restrict],
+	global real_tn __icy[restrict],
+	global real_tn __icz[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
 	gid = (gid < ni) ? (gid):(0);
 
-	real_tnxm im; icopy(im, __im[gid]);
-	real_tnxm irx; icopy(irx, __irx[gid]);
-	real_tnxm iry; icopy(iry, __iry[gid]);
-	real_tnxm irz; icopy(irz, __irz[gid]);
-	real_tnxm ie2; icopy(ie2, __ie2[gid]);
-	real_tnxm ivx; icopy(ivx, __ivx[gid]);
-	real_tnxm ivy; icopy(ivy, __ivy[gid]);
-	real_tnxm ivz; icopy(ivz, __ivz[gid]);
-	real_tnxm iax; icopy(iax, __iax[gid]);
-	real_tnxm iay; icopy(iay, __iay[gid]);
-	real_tnxm iaz; icopy(iaz, __iaz[gid]);
-	real_tnxm ijx; icopy(ijx, __ijx[gid]);
-	real_tnxm ijy; icopy(ijy, __ijy[gid]);
-	real_tnxm ijz; icopy(ijz, __ijz[gid]);
+	real_tn im[] = aloadn(gid, __im);
+	real_tn irx[] = aloadn(gid, __irx);
+	real_tn iry[] = aloadn(gid, __iry);
+	real_tn irz[] = aloadn(gid, __irz);
+	real_tn ie2[] = aloadn(gid, __ie2);
+	real_tn ivx[] = aloadn(gid, __ivx);
+	real_tn ivy[] = aloadn(gid, __ivy);
+	real_tn ivz[] = aloadn(gid, __ivz);
+	real_tn iax[] = aloadn(gid, __iax);
+	real_tn iay[] = aloadn(gid, __iay);
+	real_tn iaz[] = aloadn(gid, __iaz);
+	real_tn ijx[] = aloadn(gid, __ijx);
+	real_tn ijy[] = aloadn(gid, __ijy);
+	real_tn ijz[] = aloadn(gid, __ijz);
 
-	real_tnxm isx = {0};
-	real_tnxm isy = {0};
-	real_tnxm isz = {0};
-	real_tnxm icx = {0};
-	real_tnxm icy = {0};
-	real_tnxm icz = {0};
+	real_tn isx[IUNROLL] = {0};
+	real_tn isy[IUNROLL] = {0};
+	real_tn isz[IUNROLL] = {0};
+	real_tn icx[IUNROLL] = {0};
+	real_tn icy[IUNROLL] = {0};
+	real_tn icz[IUNROLL] = {0};
 
 	uint_t j = 0;
 
@@ -168,11 +168,11 @@ snap_crackle_kernel(
 		}
 	}
 
-	icopy(__isx[gid], isx);
-	icopy(__isy[gid], isy);
-	icopy(__isz[gid], isz);
-	icopy(__icx[gid], icx);
-	icopy(__icy[gid], icy);
-	icopy(__icz[gid], icz);
+	astoren(isx, gid, __isx);
+	astoren(isy, gid, __isy);
+	astoren(isz, gid, __isz);
+	astoren(icx, gid, __icx);
+	astoren(icy, gid, __icy);
+	astoren(icz, gid, __icz);
 }
 

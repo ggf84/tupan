@@ -5,14 +5,14 @@ __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 kernel void
 sakura_kernel(
 	uint_t const ni,
-	global real_tm const __im[restrict],
-	global real_tm const __irx[restrict],
-	global real_tm const __iry[restrict],
-	global real_tm const __irz[restrict],
-	global real_tm const __ie2[restrict],
-	global real_tm const __ivx[restrict],
-	global real_tm const __ivy[restrict],
-	global real_tm const __ivz[restrict],
+	global real_t const __im[restrict],
+	global real_t const __irx[restrict],
+	global real_t const __iry[restrict],
+	global real_t const __irz[restrict],
+	global real_t const __ie2[restrict],
+	global real_t const __ivx[restrict],
+	global real_t const __ivy[restrict],
+	global real_t const __ivz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
@@ -24,32 +24,32 @@ sakura_kernel(
 	global real_t const __jvz[restrict],
 	real_t const dt,
 	int_t const flag,
-	global real_tm __idrx[restrict],
-	global real_tm __idry[restrict],
-	global real_tm __idrz[restrict],
-	global real_tm __idvx[restrict],
-	global real_tm __idvy[restrict],
-	global real_tm __idvz[restrict])
+	global real_t __idrx[restrict],
+	global real_t __idry[restrict],
+	global real_t __idrz[restrict],
+	global real_t __idvx[restrict],
+	global real_t __idvy[restrict],
+	global real_t __idvz[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
 	gid = (gid < ni) ? (gid):(0);
 
-	real_tm im; icopy(im, __im[gid]);
-	real_tm irx; icopy(irx, __irx[gid]);
-	real_tm iry; icopy(iry, __iry[gid]);
-	real_tm irz; icopy(irz, __irz[gid]);
-	real_tm ie2; icopy(ie2, __ie2[gid]);
-	real_tm ivx; icopy(ivx, __ivx[gid]);
-	real_tm ivy; icopy(ivy, __ivy[gid]);
-	real_tm ivz; icopy(ivz, __ivz[gid]);
+	real_t im[] = aloadn(gid, __im);
+	real_t irx[] = aloadn(gid, __irx);
+	real_t iry[] = aloadn(gid, __iry);
+	real_t irz[] = aloadn(gid, __irz);
+	real_t ie2[] = aloadn(gid, __ie2);
+	real_t ivx[] = aloadn(gid, __ivx);
+	real_t ivy[] = aloadn(gid, __ivy);
+	real_t ivz[] = aloadn(gid, __ivz);
 
-	real_tm idrx = {0};
-	real_tm idry = {0};
-	real_tm idrz = {0};
-	real_tm idvx = {0};
-	real_tm idvy = {0};
-	real_tm idvz = {0};
+	real_t idrx[IUNROLL] = {0};
+	real_t idry[IUNROLL] = {0};
+	real_t idrz[IUNROLL] = {0};
+	real_t idvx[IUNROLL] = {0};
+	real_t idvy[IUNROLL] = {0};
+	real_t idvz[IUNROLL] = {0};
 
 	uint_t j = 0;
 
@@ -122,11 +122,11 @@ sakura_kernel(
 		}
 	}
 
-	icopy(__idrx[gid], idrx);
-	icopy(__idry[gid], idry);
-	icopy(__idrz[gid], idrz);
-	icopy(__idvx[gid], idvx);
-	icopy(__idvy[gid], idvy);
-	icopy(__idvz[gid], idvz);
+	astoren(idrx, gid, __idrx);
+	astoren(idry, gid, __idry);
+	astoren(idrz, gid, __idrz);
+	astoren(idvx, gid, __idvx);
+	astoren(idvy, gid, __idvy);
+	astoren(idvz, gid, __idvz);
 }
 

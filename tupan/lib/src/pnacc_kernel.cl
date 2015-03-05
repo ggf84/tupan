@@ -5,14 +5,14 @@ __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 kernel void
 pnacc_kernel(
 	uint_t const ni,
-	global real_tnxm const __im[restrict],
-	global real_tnxm const __irx[restrict],
-	global real_tnxm const __iry[restrict],
-	global real_tnxm const __irz[restrict],
-	global real_tnxm const __ie2[restrict],
-	global real_tnxm const __ivx[restrict],
-	global real_tnxm const __ivy[restrict],
-	global real_tnxm const __ivz[restrict],
+	global real_tn const __im[restrict],
+	global real_tn const __irx[restrict],
+	global real_tn const __iry[restrict],
+	global real_tn const __irz[restrict],
+	global real_tn const __ie2[restrict],
+	global real_tn const __ivx[restrict],
+	global real_tn const __ivy[restrict],
+	global real_tn const __ivz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
@@ -23,26 +23,26 @@ pnacc_kernel(
 	global real_t const __jvy[restrict],
 	global real_t const __jvz[restrict],
 	constant CLIGHT const * restrict clight,
-	global real_tnxm __ipnax[restrict],
-	global real_tnxm __ipnay[restrict],
-	global real_tnxm __ipnaz[restrict])
+	global real_tn __ipnax[restrict],
+	global real_tn __ipnay[restrict],
+	global real_tn __ipnaz[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
 	gid = (gid < ni) ? (gid):(0);
 
-	real_tnxm im; icopy(im, __im[gid]);
-	real_tnxm irx; icopy(irx, __irx[gid]);
-	real_tnxm iry; icopy(iry, __iry[gid]);
-	real_tnxm irz; icopy(irz, __irz[gid]);
-	real_tnxm ie2; icopy(ie2, __ie2[gid]);
-	real_tnxm ivx; icopy(ivx, __ivx[gid]);
-	real_tnxm ivy; icopy(ivy, __ivy[gid]);
-	real_tnxm ivz; icopy(ivz, __ivz[gid]);
+	real_tn im[] = aloadn(gid, __im);
+	real_tn irx[] = aloadn(gid, __irx);
+	real_tn iry[] = aloadn(gid, __iry);
+	real_tn irz[] = aloadn(gid, __irz);
+	real_tn ie2[] = aloadn(gid, __ie2);
+	real_tn ivx[] = aloadn(gid, __ivx);
+	real_tn ivy[] = aloadn(gid, __ivy);
+	real_tn ivz[] = aloadn(gid, __ivz);
 
-	real_tnxm ipnax = {0};
-	real_tnxm ipnay = {0};
-	real_tnxm ipnaz = {0};
+	real_tn ipnax[IUNROLL] = {0};
+	real_tn ipnay[IUNROLL] = {0};
+	real_tn ipnaz[IUNROLL] = {0};
 
 	uint_t j = 0;
 
@@ -112,8 +112,8 @@ pnacc_kernel(
 		}
 	}
 
-	icopy(__ipnax[gid], ipnax);
-	icopy(__ipnay[gid], ipnay);
-	icopy(__ipnaz[gid], ipnaz);
+	astoren(ipnax, gid, __ipnax);
+	astoren(ipnay, gid, __ipnay);
+	astoren(ipnaz, gid, __ipnaz);
 }
 

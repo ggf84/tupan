@@ -35,33 +35,34 @@
 #define uint_tn vec(uint_t)
 #define real_tn vec(real_t)
 
-typedef int_t int_tm[IUNROLL];
-typedef uint_t uint_tm[IUNROLL];
-typedef real_t real_tm[IUNROLL];
+#define vload1(_offset, _ptr) *(_ptr+_offset)
+#define vloadn concat(vload, IUNROLL)
 
-typedef int_tn int_tnxm[IUNROLL];
-typedef uint_tn uint_tnxm[IUNROLL];
-typedef real_tn real_tnxm[IUNROLL];
+#define vstore1(_src, _offset, _ptr) *(_ptr+_offset) = _src
+#define vstoren concat(vstore, IUNROLL)
 
-#define copy1(_DST, _SRC)	\
-	(_DST)[0] = (_SRC)[0];
+#define aload1(_offset, _ptr)	\
+	*(_ptr+_offset)
+#define aload2(_offset, _ptr)	\
+	aload1(0, _ptr+2*_offset), aload1(1, _ptr+2*_offset)
+#define aload4(_offset, _ptr)	\
+	aload2(0, _ptr+4*_offset), aload2(1, _ptr+4*_offset)
+#define aload8(_offset, _ptr)	\
+	aload4(0, _ptr+8*_offset), aload4(1, _ptr+8*_offset)
+#define aload16(_offset, _ptr)	\
+	aload8(0, _ptr+16*_offset), aload8(1, _ptr+16*_offset)
+#define aloadn(_offset, _ptr) {concat(aload, IUNROLL)(_offset, _ptr)}
 
-#define copy2(_DST, _SRC)	\
-	copy1(_DST+0, _SRC+0);	\
-	copy1(_DST+1, _SRC+1);
-
-#define copy4(_DST, _SRC)	\
-	copy2(_DST+0, _SRC+0);	\
-	copy2(_DST+2, _SRC+2);
-
-#define copy8(_DST, _SRC)	\
-	copy4(_DST+0, _SRC+0);	\
-	copy4(_DST+4, _SRC+4);
-
-#define copy16(_DST, _SRC)	\
-	copy8(_DST+0, _SRC+0);	\
-	copy8(_DST+8, _SRC+8);
-
-#define icopy concat(copy, IUNROLL)
+#define astore1(_src, _offset, _ptr)	\
+	*(_ptr+_offset) = *(_src)
+#define astore2(_src, _offset, _ptr)	\
+	astore1(_src, 0, _ptr+2*_offset), astore1(_src+1, 1, _ptr+2*_offset)
+#define astore4(_src, _offset, _ptr)	\
+	astore2(_src, 0, _ptr+4*_offset), astore2(_src+2, 1, _ptr+4*_offset)
+#define astore8(_src, _offset, _ptr)	\
+	astore4(_src, 0, _ptr+8*_offset), astore4(_src+4, 1, _ptr+8*_offset)
+#define astore16(_src, _offset, _ptr)	\
+	astore8(_src, 0, _ptr+16*_offset), astore8(_src+8, 1, _ptr+16*_offset)
+#define astoren concat(astore, IUNROLL)
 
 #endif	// __CL_COMMON_H__

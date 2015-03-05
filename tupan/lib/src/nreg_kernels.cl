@@ -5,14 +5,14 @@ __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 kernel void
 nreg_Xkernel(
 	uint_t const ni,
-	global real_tnxm const __im[restrict],
-	global real_tnxm const __irx[restrict],
-	global real_tnxm const __iry[restrict],
-	global real_tnxm const __irz[restrict],
-	global real_tnxm const __ie2[restrict],
-	global real_tnxm const __ivx[restrict],
-	global real_tnxm const __ivy[restrict],
-	global real_tnxm const __ivz[restrict],
+	global real_tn const __im[restrict],
+	global real_tn const __irx[restrict],
+	global real_tn const __iry[restrict],
+	global real_tn const __irz[restrict],
+	global real_tn const __ie2[restrict],
+	global real_tn const __ivx[restrict],
+	global real_tn const __ivy[restrict],
+	global real_tn const __ivz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
@@ -23,34 +23,34 @@ nreg_Xkernel(
 	global real_t const __jvy[restrict],
 	global real_t const __jvz[restrict],
 	real_t const dt,
-	global real_tnxm __idrx[restrict],
-	global real_tnxm __idry[restrict],
-	global real_tnxm __idrz[restrict],
-	global real_tnxm __iax[restrict],
-	global real_tnxm __iay[restrict],
-	global real_tnxm __iaz[restrict],
-	global real_tnxm __iu[restrict])
+	global real_tn __idrx[restrict],
+	global real_tn __idry[restrict],
+	global real_tn __idrz[restrict],
+	global real_tn __iax[restrict],
+	global real_tn __iay[restrict],
+	global real_tn __iaz[restrict],
+	global real_tn __iu[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
 	gid = (gid < ni) ? (gid):(0);
 
-	real_tnxm im; icopy(im, __im[gid]);
-	real_tnxm irx; icopy(irx, __irx[gid]);
-	real_tnxm iry; icopy(iry, __iry[gid]);
-	real_tnxm irz; icopy(irz, __irz[gid]);
-	real_tnxm ie2; icopy(ie2, __ie2[gid]);
-	real_tnxm ivx; icopy(ivx, __ivx[gid]);
-	real_tnxm ivy; icopy(ivy, __ivy[gid]);
-	real_tnxm ivz; icopy(ivz, __ivz[gid]);
+	real_tn im[] = aloadn(gid, __im);
+	real_tn irx[] = aloadn(gid, __irx);
+	real_tn iry[] = aloadn(gid, __iry);
+	real_tn irz[] = aloadn(gid, __irz);
+	real_tn ie2[] = aloadn(gid, __ie2);
+	real_tn ivx[] = aloadn(gid, __ivx);
+	real_tn ivy[] = aloadn(gid, __ivy);
+	real_tn ivz[] = aloadn(gid, __ivz);
 
-	real_tnxm idrx = {0};
-	real_tnxm idry = {0};
-	real_tnxm idrz = {0};
-	real_tnxm iax = {0};
-	real_tnxm iay = {0};
-	real_tnxm iaz = {0};
-	real_tnxm iu = {0};
+	real_tn idrx[IUNROLL] = {0};
+	real_tn idry[IUNROLL] = {0};
+	real_tn idrz[IUNROLL] = {0};
+	real_tn iax[IUNROLL] = {0};
+	real_tn iay[IUNROLL] = {0};
+	real_tn iaz[IUNROLL] = {0};
+	real_tn iu[IUNROLL] = {0};
 
 	uint_t j = 0;
 
@@ -128,13 +128,13 @@ nreg_Xkernel(
 		iu[i] *= im[i];
 	}
 
-	icopy(__idrx[gid], idrx);
-	icopy(__idry[gid], idry);
-	icopy(__idrz[gid], idrz);
-	icopy(__iax[gid], iax);
-	icopy(__iay[gid], iay);
-	icopy(__iaz[gid], iaz);
-	icopy(__iu[gid], iu);
+	astoren(idrx, gid, __idrx);
+	astoren(idry, gid, __idry);
+	astoren(idrz, gid, __idrz);
+	astoren(iax, gid, __iax);
+	astoren(iay, gid, __iay);
+	astoren(iaz, gid, __iaz);
+	astoren(iu, gid, __iu);
 }
 
 
@@ -142,13 +142,13 @@ __attribute__((reqd_work_group_size(LSIZE, 1, 1)))
 kernel void
 nreg_Vkernel(
 	uint_t const ni,
-	global real_tnxm const __im[restrict],
-	global real_tnxm const __ivx[restrict],
-	global real_tnxm const __ivy[restrict],
-	global real_tnxm const __ivz[restrict],
-	global real_tnxm const __iax[restrict],
-	global real_tnxm const __iay[restrict],
-	global real_tnxm const __iaz[restrict],
+	global real_tn const __im[restrict],
+	global real_tn const __ivx[restrict],
+	global real_tn const __ivy[restrict],
+	global real_tn const __ivz[restrict],
+	global real_tn const __iax[restrict],
+	global real_tn const __iay[restrict],
+	global real_tn const __iaz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jvx[restrict],
@@ -158,27 +158,27 @@ nreg_Vkernel(
 	global real_t const __jay[restrict],
 	global real_t const __jaz[restrict],
 	real_t const dt,
-	global real_tnxm __idvx[restrict],
-	global real_tnxm __idvy[restrict],
-	global real_tnxm __idvz[restrict],
-	global real_tnxm __ik[restrict])
+	global real_tn __idvx[restrict],
+	global real_tn __idvy[restrict],
+	global real_tn __idvz[restrict],
+	global real_tn __ik[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
 	gid = (gid < ni) ? (gid):(0);
 
-	real_tnxm im; icopy(im, __im[gid]);
-	real_tnxm ivx; icopy(ivx, __ivx[gid]);
-	real_tnxm ivy; icopy(ivy, __ivy[gid]);
-	real_tnxm ivz; icopy(ivz, __ivz[gid]);
-	real_tnxm iax; icopy(iax, __iax[gid]);
-	real_tnxm iay; icopy(iay, __iay[gid]);
-	real_tnxm iaz; icopy(iaz, __iaz[gid]);
+	real_tn im[] = aloadn(gid, __im);
+	real_tn ivx[] = aloadn(gid, __ivx);
+	real_tn ivy[] = aloadn(gid, __ivy);
+	real_tn ivz[] = aloadn(gid, __ivz);
+	real_tn iax[] = aloadn(gid, __iax);
+	real_tn iay[] = aloadn(gid, __iay);
+	real_tn iaz[] = aloadn(gid, __iaz);
 
-	real_tnxm idvx = {0};
-	real_tnxm idvy = {0};
-	real_tnxm idvz = {0};
-	real_tnxm ik = {0};
+	real_tn idvx[IUNROLL] = {0};
+	real_tn idvy[IUNROLL] = {0};
+	real_tn idvz[IUNROLL] = {0};
+	real_tn ik[IUNROLL] = {0};
 
 	uint_t j = 0;
 
@@ -250,9 +250,9 @@ nreg_Vkernel(
 		ik[i] *= im[i];
 	}
 
-	icopy(__idvx[gid], idvx);
-	icopy(__idvy[gid], idvy);
-	icopy(__idvz[gid], idvz);
-	icopy(__ik[gid], ik);
+	astoren(idvx, gid, __idvx);
+	astoren(idvy, gid, __idvy);
+	astoren(idvz, gid, __idvz);
+	astoren(ik, gid, __ik);
 }
 
