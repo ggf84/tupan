@@ -6,7 +6,6 @@ This module implements the OpenCL backend to call CL-extensions.
 """
 
 import os
-import struct
 import logging
 import pyopencl as cl
 from functools import partial
@@ -308,9 +307,16 @@ class CLKernel(object):
         self.oarg = {}
         self.obuf = {}
 
-    def make_struct(self, fmt, *args):
-        s = struct.pack(fmt, *args)
-        return s
+    def make_struct(self, name, *args):
+        import numpy as np
+        real_t = np.dtype(Ctype.real_t).char
+        uint_t = np.dtype(Ctype.uint_t).char
+        formats = {'CLIGHT': 7 * real_t + uint_t}
+
+        fmt = formats[name]
+        fmt = fmt.replace('L', 'Q')  # numpy bug?
+        fmt = np.dtype(','.join(fmt), align=True)
+        return {'struct': np.array(tuple(args), dtype=fmt)}
 
     def set_args(self, inpargs, outargs):
         bufs = []
@@ -325,6 +331,8 @@ class CLKernel(object):
                     types.append(Ctype.uint_t)
                 elif isinstance(arg, float):
                     types.append(Ctype.real_t)
+                elif isinstance(arg, dict):
+                    types.append(lambda x: x['struct'])
                 else:
                     iptr = drv.context.to_ibuf
                     types.append(iptr)

@@ -22,7 +22,7 @@ pnacc_kernel(
 	global real_t const __jvx[restrict],
 	global real_t const __jvy[restrict],
 	global real_t const __jvz[restrict],
-	constant CLIGHT const * restrict clight,
+	CLIGHT const clight,
 	global real_tn __ipnax[restrict],
 	global real_tn __ipnay[restrict],
 	global real_tn __ipnaz[restrict])
@@ -84,7 +84,7 @@ pnacc_kernel(
 					ie2[i], ivx[i], ivy[i], ivz[i],
 					jm, jrx, jry, jrz,
 					je2, jvx, jvy, jvz,
-					*clight,
+					clight,
 					&ipnax[i], &ipnay[i], &ipnaz[i]);
 			}
 		}
@@ -107,7 +107,7 @@ pnacc_kernel(
 				ie2[i], ivx[i], ivy[i], ivz[i],
 				jm, jrx, jry, jrz,
 				je2, jvx, jvy, jvz,
-				*clight,
+				clight,
 				&ipnax[i], &ipnay[i], &ipnaz[i]);
 		}
 	}

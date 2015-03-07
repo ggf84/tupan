@@ -143,7 +143,7 @@ pnacc_kernel(
 	real_t const * restrict __jvx,
 	real_t const * restrict __jvy,
 	real_t const * restrict __jvz,
-	CLIGHT const * restrict clight,
+	CLIGHT const clight,
 	real_t * restrict __ipnax,
 	real_t * restrict __ipnay,
 	real_t * restrict __ipnaz);

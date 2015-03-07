@@ -9,7 +9,6 @@ from __future__ import print_function, division
 import logging
 import numpy as np
 from ..config import options
-from .utils.ctype import Ctype
 from .utils.timing import timings, bind_all
 
 
@@ -212,11 +211,8 @@ class PNAcc(AbstractExtension):
 
     def set_args(self, ips, jps, **kwargs):
         if self.clight is None:
-            real_t = np.dtype(Ctype.real_t).char
-            uint_t = np.dtype(Ctype.uint_t).char
-            fmt = '=' + real_t * 7 + uint_t
             self.clight = self.kernel.make_struct(
-                            fmt,
+                            'CLIGHT',
                             pn.inv1, pn.inv2, pn.inv3, pn.inv4,
                             pn.inv5, pn.inv6, pn.inv7, pn.order)
 

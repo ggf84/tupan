@@ -21,7 +21,7 @@ pnacc_kernel(
 	real_t const __jvx[restrict],
 	real_t const __jvy[restrict],
 	real_t const __jvz[restrict],
-	CLIGHT const * restrict clight,
+	CLIGHT const clight,
 	real_t __ipnax[restrict],
 	real_t __ipnay[restrict],
 	real_t __ipnaz[restrict])
@@ -51,7 +51,7 @@ pnacc_kernel(
 			pnacc_kernel_core(
 				im, irx, iry, irz, ie2, ivx, ivy, ivz,
 				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-				*clight,
+				clight,
 				&ipnax, &ipnay, &ipnaz);
 		}
 

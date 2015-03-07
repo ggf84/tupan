@@ -8,7 +8,6 @@ This module implements the CFFI backend to call C-extensions.
 import os
 import cffi
 import ctypes
-import struct
 import logging
 from ..config import options, get_cache_dir
 from .utils.ctype import Ctype
@@ -44,7 +43,19 @@ class CDriver(object):
             src.append('typedef {} int_t;'.format(Ctype.c_int))
             src.append('typedef {} uint_t;'.format(Ctype.c_uint))
             src.append('typedef {} real_t;'.format(Ctype.c_real))
-            src.append('typedef struct clight_struct {...;} CLIGHT;')
+            src.append(
+                '''
+                typedef struct clight_struct {
+                    real_t inv1;
+                    real_t inv2;
+                    real_t inv3;
+                    real_t inv4;
+                    real_t inv5;
+                    real_t inv6;
+                    real_t inv7;
+                    uint_t order;
+                } CLIGHT;
+                ''')
             src.append(fobj.read())
         source = '\n'.join(src)
 
@@ -100,9 +111,8 @@ class CKernel(object):
         self.oarg = {}
         self.obuf = {}
 
-    def make_struct(self, fmt, *args):
-        s = struct.pack(fmt, *args)
-        return drv.ffi.new('char[]', s)
+    def make_struct(self, name, *args):
+        return {'struct': drv.ffi.new(name+' *', args)}
 
     def set_args(self, inpargs, outargs):
         bufs = []
@@ -114,8 +124,8 @@ class CKernel(object):
                     types.append(lambda x: x)
                 elif isinstance(arg, float):
                     types.append(lambda x: x)
-                elif isinstance(arg, drv.ffi.CData):
-                    types.append(lambda x: x)
+                elif isinstance(arg, dict):
+                    types.append(lambda x: x['struct'][0])
                 else:
                     iptr = drv.to_buf
                     types.append(iptr)
