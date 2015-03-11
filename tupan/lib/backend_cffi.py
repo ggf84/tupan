@@ -7,7 +7,6 @@ This module implements the CFFI backend to call C-extensions.
 
 import os
 import cffi
-import ctypes
 import logging
 from ..config import options, get_cache_dir
 from .utils.ctype import Ctype
@@ -87,11 +86,10 @@ class CDriver(object):
         kernel = getattr(self.lib, name)
         return CKernel(kernel)
 
-    def to_buf(self, x,
-               addressof=ctypes.addressof,
-               from_buffer=(ctypes.c_char * 0).from_buffer):
+    def to_buf(self, x):
         cast = self.ffi.cast
-        return cast('void *', addressof(from_buffer(x)))
+        from_buffer = self.ffi.from_buffer
+        return cast('void *', from_buffer(x))
 
 
 drv = CDriver()
