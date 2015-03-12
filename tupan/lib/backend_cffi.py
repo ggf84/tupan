@@ -86,11 +86,6 @@ class CDriver(object):
         kernel = getattr(self.lib, name)
         return CKernel(kernel)
 
-    def to_buf(self, x):
-        cast = self.ffi.cast
-        from_buffer = self.ffi.from_buffer
-        return cast('void *', from_buffer(x))
-
 
 drv = CDriver()
 
@@ -125,13 +120,11 @@ class CKernel(object):
                 elif isinstance(arg, dict):
                     types.append(lambda x: x['struct'][0])
                 else:
-                    iptr = drv.to_buf
-                    types.append(iptr)
+                    types.append(drv.ffi.from_buffer)
             self.inptypes = types
 
         if self.outtypes is None:
-            optr = drv.to_buf
-            self.outtypes = [optr for _ in outargs]
+            self.outtypes = [drv.ffi.from_buffer for _ in outargs]
 
         # set inpargs
         for (i, argtype) in enumerate(self.inptypes):
