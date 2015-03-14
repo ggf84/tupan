@@ -22,9 +22,9 @@ class PN(object):
     """
     def __init__(self, order=0, clight='inf'):
         self.order = int(order)
-        self.clight = float(clight)
+        clight = float(clight)
         for i in range(1, 8):
-            setattr(self, 'inv'+str(i), self.clight**(-i))
+            setattr(self, 'inv'+str(i), clight**(-i))
 
 
 pn = PN()
@@ -211,10 +211,7 @@ class PNAcc(AbstractExtension):
 
     def set_args(self, ips, jps, **kwargs):
         if self.clight is None:
-            self.clight = self.kernel.make_struct(
-                            'CLIGHT',
-                            pn.inv1, pn.inv2, pn.inv3, pn.inv4,
-                            pn.inv5, pn.inv6, pn.inv7, pn.order)
+            self.clight = self.kernel.make_struct('CLIGHT', **vars(pn))
 
         inpargs = (ips.n,
                    ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],

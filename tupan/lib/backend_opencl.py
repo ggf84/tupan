@@ -307,16 +307,18 @@ class CLKernel(object):
         self.oarg = {}
         self.obuf = {}
 
-    def make_struct(self, name, *args):
+    def make_struct(self, name, **kwargs):
         import numpy as np
-        real_t = np.dtype(Ctype.real_t).char
-        uint_t = np.dtype(Ctype.uint_t).char
-        formats = {'CLIGHT': 7 * real_t + uint_t}
+        real_t = Ctype.real_t
+        uint_t = Ctype.uint_t
+        formats = {'CLIGHT': [('inv1', real_t), ('inv2', real_t),
+                              ('inv3', real_t), ('inv4', real_t),
+                              ('inv5', real_t), ('inv6', real_t),
+                              ('inv7', real_t), ('order', uint_t)]}
 
-        fmt = formats[name]
-        fmt = fmt.replace('L', 'Q')  # numpy bug?
-        fmt = np.dtype(','.join(fmt), align=True)
-        return {'struct': np.array(tuple(args), dtype=fmt)}
+        dtype = np.dtype(formats[name], align=True)
+        fields = (kwargs[name] for name in dtype.names)
+        return {'struct': np.array(tuple(fields), dtype=dtype)}
 
     def set_args(self, inpargs, outargs):
         bufs = []

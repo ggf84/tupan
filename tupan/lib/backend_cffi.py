@@ -104,8 +104,8 @@ class CKernel(object):
         self.oarg = {}
         self.obuf = {}
 
-    def make_struct(self, name, *args):
-        return {'struct': drv.ffi.new(name+' *', args)}
+    def make_struct(self, name, **kwargs):
+        return {'struct': drv.ffi.new(name+' *', kwargs)}
 
     def set_args(self, inpargs, outargs):
         bufs = []
