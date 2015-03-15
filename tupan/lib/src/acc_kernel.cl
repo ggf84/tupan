@@ -30,9 +30,9 @@ acc_kernel(
 	real_tn irz[] = aloadn(gid, __irz);
 	real_tn ie2[] = aloadn(gid, __ie2);
 
-	real_tn iax[IUNROLL] = {0};
-	real_tn iay[IUNROLL] = {0};
-	real_tn iaz[IUNROLL] = {0};
+	real_tn iax[IUNROLL] = {(real_tn)(0)};
+	real_tn iay[IUNROLL] = {(real_tn)(0)};
+	real_tn iaz[IUNROLL] = {(real_tn)(0)};
 
 	uint_t j = 0;
 

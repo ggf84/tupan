@@ -28,7 +28,7 @@ phi_kernel(
 	real_tn irz[] = aloadn(gid, __irz);
 	real_tn ie2[] = aloadn(gid, __ie2);
 
-	real_tn iphi[IUNROLL] = {0};
+	real_tn iphi[IUNROLL] = {(real_tn)(0)};
 
 	uint_t j = 0;
 

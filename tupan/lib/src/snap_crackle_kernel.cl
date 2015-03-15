@@ -60,12 +60,12 @@ snap_crackle_kernel(
 	real_tn ijy[] = aloadn(gid, __ijy);
 	real_tn ijz[] = aloadn(gid, __ijz);
 
-	real_tn isx[IUNROLL] = {0};
-	real_tn isy[IUNROLL] = {0};
-	real_tn isz[IUNROLL] = {0};
-	real_tn icx[IUNROLL] = {0};
-	real_tn icy[IUNROLL] = {0};
-	real_tn icz[IUNROLL] = {0};
+	real_tn isx[IUNROLL] = {(real_tn)(0)};
+	real_tn isy[IUNROLL] = {(real_tn)(0)};
+	real_tn isz[IUNROLL] = {(real_tn)(0)};
+	real_tn icx[IUNROLL] = {(real_tn)(0)};
+	real_tn icy[IUNROLL] = {(real_tn)(0)};
+	real_tn icz[IUNROLL] = {(real_tn)(0)};
 
 	uint_t j = 0;
 

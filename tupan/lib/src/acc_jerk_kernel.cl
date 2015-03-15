@@ -42,12 +42,12 @@ acc_jerk_kernel(
 	real_tn ivy[] = aloadn(gid, __ivy);
 	real_tn ivz[] = aloadn(gid, __ivz);
 
-	real_tn iax[IUNROLL] = {0};
-	real_tn iay[IUNROLL] = {0};
-	real_tn iaz[IUNROLL] = {0};
-	real_tn ijx[IUNROLL] = {0};
-	real_tn ijy[IUNROLL] = {0};
-	real_tn ijz[IUNROLL] = {0};
+	real_tn iax[IUNROLL] = {(real_tn)(0)};
+	real_tn iay[IUNROLL] = {(real_tn)(0)};
+	real_tn iaz[IUNROLL] = {(real_tn)(0)};
+	real_tn ijx[IUNROLL] = {(real_tn)(0)};
+	real_tn ijy[IUNROLL] = {(real_tn)(0)};
+	real_tn ijz[IUNROLL] = {(real_tn)(0)};
 
 	uint_t j = 0;
 

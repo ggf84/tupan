@@ -44,13 +44,13 @@ nreg_Xkernel(
 	real_tn ivy[] = aloadn(gid, __ivy);
 	real_tn ivz[] = aloadn(gid, __ivz);
 
-	real_tn idrx[IUNROLL] = {0};
-	real_tn idry[IUNROLL] = {0};
-	real_tn idrz[IUNROLL] = {0};
-	real_tn iax[IUNROLL] = {0};
-	real_tn iay[IUNROLL] = {0};
-	real_tn iaz[IUNROLL] = {0};
-	real_tn iu[IUNROLL] = {0};
+	real_tn idrx[IUNROLL] = {(real_tn)(0)};
+	real_tn idry[IUNROLL] = {(real_tn)(0)};
+	real_tn idrz[IUNROLL] = {(real_tn)(0)};
+	real_tn iax[IUNROLL] = {(real_tn)(0)};
+	real_tn iay[IUNROLL] = {(real_tn)(0)};
+	real_tn iaz[IUNROLL] = {(real_tn)(0)};
+	real_tn iu[IUNROLL] = {(real_tn)(0)};
 
 	uint_t j = 0;
 
@@ -175,10 +175,10 @@ nreg_Vkernel(
 	real_tn iay[] = aloadn(gid, __iay);
 	real_tn iaz[] = aloadn(gid, __iaz);
 
-	real_tn idvx[IUNROLL] = {0};
-	real_tn idvy[IUNROLL] = {0};
-	real_tn idvz[IUNROLL] = {0};
-	real_tn ik[IUNROLL] = {0};
+	real_tn idvx[IUNROLL] = {(real_tn)(0)};
+	real_tn idvy[IUNROLL] = {(real_tn)(0)};
+	real_tn idvz[IUNROLL] = {(real_tn)(0)};
+	real_tn ik[IUNROLL] = {(real_tn)(0)};
 
 	uint_t j = 0;
 

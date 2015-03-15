@@ -39,8 +39,8 @@ tstep_kernel(
 	real_tn ivy[] = aloadn(gid, __ivy);
 	real_tn ivz[] = aloadn(gid, __ivz);
 
-	real_tn iw2_a[IUNROLL] = {0};
-	real_tn iw2_b[IUNROLL] = {0};
+	real_tn iw2_a[IUNROLL] = {(real_tn)(0)};
+	real_tn iw2_b[IUNROLL] = {(real_tn)(0)};
 
 	uint_t j = 0;
 
@@ -109,8 +109,8 @@ tstep_kernel(
 		}
 	}
 
-	real_tn idt_a[IUNROLL] = {0};
-	real_tn idt_b[IUNROLL] = {0};
+	real_tn idt_a[IUNROLL] = {(real_tn)(0)};
+	real_tn idt_b[IUNROLL] = {(real_tn)(0)};
 
 	#pragma unroll
 	for (uint_t i = 0; i < IUNROLL; ++i) {

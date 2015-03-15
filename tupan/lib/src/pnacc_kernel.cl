@@ -40,9 +40,9 @@ pnacc_kernel(
 	real_tn ivy[] = aloadn(gid, __ivy);
 	real_tn ivz[] = aloadn(gid, __ivz);
 
-	real_tn ipnax[IUNROLL] = {0};
-	real_tn ipnay[IUNROLL] = {0};
-	real_tn ipnaz[IUNROLL] = {0};
+	real_tn ipnax[IUNROLL] = {(real_tn)(0)};
+	real_tn ipnay[IUNROLL] = {(real_tn)(0)};
+	real_tn ipnaz[IUNROLL] = {(real_tn)(0)};
 
 	uint_t j = 0;
 

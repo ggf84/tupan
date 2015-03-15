@@ -44,12 +44,12 @@ sakura_kernel(
 	real_t ivy[] = aloadn(gid, __ivy);
 	real_t ivz[] = aloadn(gid, __ivz);
 
-	real_t idrx[IUNROLL] = {0};
-	real_t idry[IUNROLL] = {0};
-	real_t idrz[IUNROLL] = {0};
-	real_t idvx[IUNROLL] = {0};
-	real_t idvy[IUNROLL] = {0};
-	real_t idvz[IUNROLL] = {0};
+	real_t idrx[IUNROLL] = {(real_t)(0)};
+	real_t idry[IUNROLL] = {(real_t)(0)};
+	real_t idrz[IUNROLL] = {(real_t)(0)};
+	real_t idvx[IUNROLL] = {(real_t)(0)};
+	real_t idvy[IUNROLL] = {(real_t)(0)};
+	real_t idvz[IUNROLL] = {(real_t)(0)};
 
 	uint_t j = 0;
 
