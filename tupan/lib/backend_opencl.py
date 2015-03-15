@@ -36,7 +36,7 @@ class Context(object):
 #            [cl.device_partition_property.BY_COUNTS, 1, 1, 1])
 
         self.cl_context = cl.Context(devices=cl_devices)
-        self.queue = Queue(self.cl_context)
+        self.default_queue = Queue(self.cl_context)
         self.devices = [Device(self.cl_context, cl_device)
                         for cl_device in cl_devices]
 
@@ -365,13 +365,12 @@ class CLKernel(object):
     def map_buffers(self):
         for (key, arg) in self.oarg.items():
             buf = self.obuf[key]
-            drv.context.queue.enqueue_read_buffer(buf, arg)
-        drv.context.queue.wait_for_events()
+            drv.context.default_queue.enqueue_read_buffer(buf, arg)
+        drv.context.default_queue.wait_for_events()
         return list(self.oarg.values())
 
     def run(self):
         offset = 0
-        voffset = 0
         ni = self.iarg[0]
         name = self.name
         uint_t = Ctype.uint_t
@@ -384,21 +383,20 @@ class CLKernel(object):
             lsize = kernel.lsize
 
             n = (ni + stride - 1) // stride
-            n_per_dev = (n + ndevs - 1) // ndevs
 
-            ngroups = (n_per_dev + lsize - 1) // lsize
-            gsize = lsize * ngroups
-            offset = (voffset + stride - 1) // stride
+            wsize = (n + ndevs * lsize - 1) // (ndevs * lsize)
+            gsize = lsize * wsize
+            offset = (offset + stride - 1) // stride
 
             local_work_size = (lsize, 1, 1)
             global_work_size = (gsize, 1, 1)
             global_work_offset = (offset, 0, 0)
 
             offset += gsize
-            voffset += gsize * stride
-            nn = min(offset, n)
+            n = min(offset, n)
+            offset *= stride
 
-            kernel.set_arg(0, uint_t(nn))
+            kernel.set_arg(0, uint_t(n))
             for (j, buf) in enumerate(self.bufs[1:], start=1):
                 kernel.set_arg(j, buf)
 
@@ -408,7 +406,7 @@ class CLKernel(object):
                 local_work_size,
                 global_work_offset)
 
-        drv.context.queue.wait_for_events()
+        drv.context.default_queue.wait_for_events()
 
 
 # -- End of File --

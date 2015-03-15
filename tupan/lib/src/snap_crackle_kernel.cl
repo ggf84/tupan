@@ -1,7 +1,7 @@
 #include "snap_crackle_kernel_common.h"
 
 
-__attribute__((reqd_work_group_size(LSIZE, 1, 1)))
+__attribute__((vec_type_hint(real_tn)))
 kernel void
 snap_crackle_kernel(
 	uint_t const ni,
@@ -43,7 +43,7 @@ snap_crackle_kernel(
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
-	gid = (gid < ni) ? (gid):(0);
+	gid %= ni;
 
 	real_tn im[] = aloadn(gid, __im);
 	real_tn irx[] = aloadn(gid, __irx);

@@ -1,7 +1,7 @@
 #include "sakura_kernel_common.h"
 
 
-__attribute__((reqd_work_group_size(LSIZE, 1, 1)))
+__attribute__((vec_type_hint(real_t)))
 kernel void
 sakura_kernel(
 	uint_t const ni,
@@ -33,7 +33,7 @@ sakura_kernel(
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
-	gid = (gid < ni) ? (gid):(0);
+	gid %= ni;
 
 	real_t im[] = aloadn(gid, __im);
 	real_t irx[] = aloadn(gid, __irx);
