@@ -152,27 +152,30 @@ class GLviewer(app.Canvas):
         self.show(True)
         self.is_visible = True
 
+        self.ffwriter = None
         self.make_movie = False
-        cmdline = [
-            "avconv", "-y",
-            "-r", "30",
-            "-f", "image2pipe",
-            "-vcodec", "ppm",
-            "-i", "-",
-            "-q", "1",
-            "-vcodec", "mpeg4",
-            "movie.mp4",
-        ]
-        self.pipe = subprocess.Popen(cmdline,
-                                     stdin=subprocess.PIPE,
-                                     stdout=open(os.devnull, 'w'),
-                                     stderr=subprocess.STDOUT)
 
     def record_screen(self):
+        if not self.ffwriter:
+            cmdline = [
+                "ffmpeg", "-y",
+                "-r", "60",
+                "-f", "image2pipe",
+                "-vcodec", "ppm",
+                "-i", "-",
+                "-q", "1",
+                "-vcodec", "mpeg4",
+                "movie.mp4",
+            ]
+            self.ffwriter = subprocess.Popen(cmdline,
+                                             stdin=subprocess.PIPE,
+                                             stdout=subprocess.PIPE,
+                                             stderr=subprocess.PIPE)
+
         im = gloo.read_pixels()
         im = Image.frombuffer('RGBA', self.size, im.tostring(),
                               'raw', 'RGBA', 0, 1)
-        im.save(self.pipe.stdin, format='ppm')
+        im.save(self.ffwriter.stdin, format='ppm')
 
     def on_initialize(self, event):
         gloo.set_state(depth_test=True, blend=True, clear_color='black')

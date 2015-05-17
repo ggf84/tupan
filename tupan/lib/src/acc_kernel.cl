@@ -1,7 +1,6 @@
 #include "acc_kernel_common.h"
 
 
-__attribute__((vec_type_hint(real_tn)))
 kernel void
 acc_kernel(
 	uint_t const ni,

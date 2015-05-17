@@ -9,6 +9,7 @@
 
 #define PI ((real_t)(3.14159265358979323846))
 #define PI2 ((real_t)(9.86960440108935861883))
+#define PI_2 ((real_t)(1.57079632679489661923))
 #define TWOPI ((real_t)(6.28318530717958647693))
 #define FOURPI ((real_t)(1.25663706143591729539e+1))
 #define THREE_FOURPI ((real_t)(2.3873241463784300365e-1))

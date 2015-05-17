@@ -1,7 +1,6 @@
 #include "phi_kernel_common.h"
 
 
-__attribute__((vec_type_hint(real_tn)))
 kernel void
 phi_kernel(
 	uint_t const ni,

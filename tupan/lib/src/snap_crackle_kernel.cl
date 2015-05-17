@@ -1,7 +1,6 @@
 #include "snap_crackle_kernel_common.h"
 
 
-__attribute__((vec_type_hint(real_tn)))
 kernel void
 snap_crackle_kernel(
 	uint_t const ni,

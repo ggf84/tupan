@@ -1,7 +1,6 @@
 #include "sakura_kernel_common.h"
 
 
-__attribute__((vec_type_hint(real_t)))
 kernel void
 sakura_kernel(
 	uint_t const ni,

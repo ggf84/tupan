@@ -2,7 +2,6 @@
 #define __SAKURA_KERNEL_COMMON_H__
 
 #include "common.h"
-#include "smoothing.h"
 #include "universal_kepler_solver.h"
 
 

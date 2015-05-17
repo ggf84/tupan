@@ -1,7 +1,6 @@
 #include "nreg_kernels_common.h"
 
 
-__attribute__((vec_type_hint(real_tn)))
 kernel void
 nreg_Xkernel(
 	uint_t const ni,
@@ -138,7 +137,6 @@ nreg_Xkernel(
 }
 
 
-__attribute__((vec_type_hint(real_tn)))
 kernel void
 nreg_Vkernel(
 	uint_t const ni,

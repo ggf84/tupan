@@ -1,7 +1,6 @@
 #include "acc_jerk_kernel_common.h"
 
 
-__attribute__((vec_type_hint(real_tn)))
 kernel void
 acc_jerk_kernel(
 	uint_t const ni,

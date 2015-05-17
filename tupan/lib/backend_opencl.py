@@ -206,12 +206,12 @@ class Program(object):
         self.kernel = None
 
     def build(self, fpwidth=options.fpwidth):
-        iunroll = 2
-        lsize = 64
-        fast_local_mem = True
         vw = (self.cl_device.preferred_vector_width_float
               if fpwidth == 'fp32'
               else self.cl_device.preferred_vector_width_double)
+        iunroll = 2
+        lsize = 64
+        fast_local_mem = True
 
         # setting program options
         opts = ' -D VW={}'.format(vw)
@@ -223,8 +223,10 @@ class Program(object):
         if fast_local_mem:
             opts += ' -D FAST_LOCAL_MEM'
         opts += ' -I {path}'.format(path=PATH)
-#        opts += ' -cl-std=CL1.1'
         opts += ' -cl-fast-relaxed-math'
+        if 'OpenCL 2.0' in self.cl_device.platform.version:
+            opts += ' -cl-std=CL2.0'
+            opts += ' -cl-uniform-work-group-size'
 #        opts += ' -cl-opt-disable'
 
         self.cl_program.build(options=opts,
@@ -308,7 +310,6 @@ class CLKernel(object):
         self.obuf = {}
 
     def make_struct(self, name, **kwargs):
-        import numpy as np
         real_t = Ctype.real_t
         uint_t = Ctype.uint_t
         formats = {'CLIGHT': [('inv1', real_t), ('inv2', real_t),
@@ -316,9 +317,11 @@ class CLKernel(object):
                               ('inv5', real_t), ('inv6', real_t),
                               ('inv7', real_t), ('order', uint_t)]}
 
+        import numpy as np
         dtype = np.dtype(formats[name], align=True)
-        fields = (kwargs[name] for name in dtype.names)
-        return {'struct': np.array(tuple(fields), dtype=dtype)}
+        fields = tuple(kwargs[name] for name in dtype.names)
+#        return {'struct': np.array(fields, dtype=dtype)}
+        return np.array(fields, dtype=dtype)
 
     def set_args(self, inpargs, outargs):
         bufs = []
@@ -333,8 +336,8 @@ class CLKernel(object):
                     types.append(Ctype.uint_t)
                 elif isinstance(arg, float):
                     types.append(Ctype.real_t)
-                elif isinstance(arg, dict):
-                    types.append(lambda x: x['struct'])
+#                elif isinstance(arg, dict):
+#                    types.append(lambda x: x['struct'])
                 else:
                     iptr = drv.context.to_ibuf
                     types.append(iptr)

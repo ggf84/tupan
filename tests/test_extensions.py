@@ -27,6 +27,7 @@ def set_particles(n):
     import numpy as np
     from tupan.particles import ParticleSystem
 
+    np.random.seed(987654321)
     ps = ParticleSystem(n-n//2, n//2)
 
     ps.mass[...] = np.random.random((n,))
@@ -41,7 +42,7 @@ class TestCase1(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.ps = set_particles(256)
+        cls.ps = set_particles(128)
 
     def compare_result(self, kernel, ps, **kwargs):
         msg = ("extensions.{0}: max deviation of results "
@@ -114,7 +115,7 @@ class TestCase1(unittest.TestCase):
     def test07(self):
         print("\n---------- test07 ----------")
         dt = 1.0/64
-        self.compare_result(extensions.Sakura, self.ps, dt=dt, flag=0)
+        self.compare_result(extensions.Sakura, self.ps, dt=dt, flag=-2)
 
     def test08(self):
         print("\n---------- test08 ----------")
@@ -217,7 +218,7 @@ class TestCase2(unittest.TestCase):
     def test07(self):
         print("\n---------- test07 ----------")
         dt = 1.0/64
-        self.performance(extensions.Sakura, self.pslist, dt=dt, flag=0)
+        self.performance(extensions.Sakura, self.pslist, dt=dt, flag=-2)
 
     def test08(self):
         print("\n---------- test08 ----------")

@@ -33,7 +33,13 @@ stumpff_c0(
 
 	real_t sz = sqrt(abs_zeta);
 	if (zeta < 0) {
+		#ifndef CONFIG_USE_OPENCL
 		return cos(sz);
+		#else
+		// Put this here, otherwise AMD's OpenCL segfaults
+		// at compilation-time in DP-mode. WTF!
+		return sin(sz + PI_2);
+		#endif
 	}
 	return cosh(sz);
 }
@@ -449,29 +455,27 @@ __universal_kepler_solver(
 	real_t r0v0 = r0x * v0x + r0y * v0y + r0z * v0z;
 	real_t v0sqr = v0x * v0x + v0y * v0y + v0z * v0z;
 	real_t u0sqr = 2 * m * inv_r0;
-	real_t u = sqrt(u0sqr);
-	real_t v = sqrt(v0sqr);
-	real_t alpha0 = (v - u) * (v + u);
-//	real_t alpha0 = v0sqr - u0sqr;
+	real_t alpha0 = v0sqr - u0sqr;
 	real_t lagr0 = v0sqr + u0sqr;
 	real_t abs_alpha0 = fabs(alpha0);
 
 	#ifndef CONFIG_USE_OPENCL
-	if (r0 * abs_alpha0 < 32 * sqrt(TOLERANCE) * m) {
-		fprintf(stderr, "#---WARNING: Floating point precision "
-						"used may be lower than required.\n");
-		fprintf(stderr, "#---err flag: None\n");
+	if ((abs_alpha0 < TOLERANCE * lagr0)
+			&& (r0 * abs_alpha0 < TOLERANCE * m)) {
+		fprintf(stderr, "#---WARNING: Please use higher floating "
+						"point precision.\n");
+		fprintf(stderr, "#---err flag: \n");
 		fprintf(stderr,
 			"#   dt0: %a, m: %a, e2: %a,"
 			" r0x: %a, r0y: %a, r0z: %a,"
 			" v0x: %a, v0y: %a, v0z: %a\n"
 			"#   r0: %a, r0v0: %a, v0sqr: %a,"
-			" u0sqr: %a, alpha0: %a\n",
+			" u0sqr: %a, alpha0: %a, lagr0: %a\n",
 			dt0, m, e2,
 			r0x, r0y, r0z,
 			v0x, v0y, v0z,
 			r0, r0v0, v0sqr,
-			u0sqr, alpha0);
+			u0sqr, alpha0, lagr0);
 		fprintf(stderr, "#---\n");
 	}
 	#endif
@@ -645,7 +649,7 @@ universal_kepler_solver(
 	#ifndef CONFIG_USE_OPENCL
 	if (err != 0) {
 		fprintf(stderr, "#---ERROR: The solution "
-						"may not have converged.\n");
+						"have not converged.\n");
 		fprintf(stderr, "#---err flag: %ld\n", (long)(err));
 		fprintf(stderr,
 			"#   dt: %a, m: %a, e2: %a,"
