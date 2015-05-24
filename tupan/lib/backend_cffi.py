@@ -29,8 +29,8 @@ class CDriver(object):
 
         fnames = ('phi_kernel.c',
                   'acc_kernel.c',
-                  'acc_jerk_kernel.c',
-                  'snap_crackle_kernel.c',
+                  'acc_jrk_kernel.c',
+                  'snp_crk_kernel.c',
                   'tstep_kernel.c',
                   'pnacc_kernel.c',
                   'nreg_kernels.c',

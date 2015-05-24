@@ -240,11 +240,11 @@ class H6(HX):
         h4 = h / 4
         h5 = h / 5
 
-        ps.pos += h * (ps.vel
-                       + h2 * (ps.acc
-                               + h3 * (ps.jrk
-                                       + h4 * (ps.snp
-                                               + h5 * (ps.crk)))))
+        ps.pos += h * (ps.vel +
+                       h2 * (ps.acc +
+                             h3 * (ps.jrk +
+                                   h4 * (ps.snp +
+                                         h5 * (ps.crk)))))
         ps.vel += h * (ps.acc + h2 * (ps.jrk + h3 * (ps.snp + h4 * (ps.crk))))
         ps.acc += h * (ps.jrk + h2 * (ps.snp + h3 * (ps.crk)))
 
@@ -342,24 +342,24 @@ class H8(HX):
         h6 = h / 6
         h7 = h / 7
 
-        ps.pos += h * (ps.vel
-                       + h2 * (ps.acc
-                               + h3 * (ps.jrk
-                                       + h4 * (ps.snp
-                                               + h5 * (ps.crk
-                                                       + h6 * (ps.d4a
-                                                               + h7 * (ps.d5a)))))))
-        ps.vel += h * (ps.acc
-                       + h2 * (ps.jrk
-                               + h3 * (ps.snp
-                                       + h4 * (ps.crk
-                                               + h5 * (ps.d4a
-                                                       + h6 * (ps.d5a))))))
-        ps.acc += h * (ps.jrk
-                       + h2 * (ps.snp
-                               + h3 * (ps.crk
-                                       + h4 * (ps.d4a
-                                               + h5 * (ps.d5a)))))
+        ps.pos += h * (ps.vel +
+                       h2 * (ps.acc +
+                             h3 * (ps.jrk +
+                                   h4 * (ps.snp +
+                                         h5 * (ps.crk +
+                                               h6 * (ps.d4a +
+                                                     h7 * (ps.d5a)))))))
+        ps.vel += h * (ps.acc +
+                       h2 * (ps.jrk +
+                             h3 * (ps.snp +
+                                   h4 * (ps.crk +
+                                         h5 * (ps.d4a +
+                                               h6 * (ps.d5a))))))
+        ps.acc += h * (ps.jrk +
+                       h2 * (ps.snp +
+                             h3 * (ps.crk +
+                                   h4 * (ps.d4a +
+                                         h5 * (ps.d5a)))))
         ps.jrk += h * (ps.snp + h2 * (ps.crk + h3 * (ps.d4a + h4 * (ps.d5a))))
 
         return ps
@@ -383,20 +383,20 @@ class H8(HX):
         jrk_m = (ps0.jrk - ps1.jrk)
         acc_p = (ps0.acc + ps1.acc)
 
-        ps1.vel[...] = ps0.vel + h2 * (acc_p
-                                       + h14 * (3 * jrk_m
-                                                + h3 * (snp_p
-                                                        + h20 * (crk_m))))
+        ps1.vel[...] = ps0.vel + h2 * (acc_p +
+                                       h14 * (3 * jrk_m +
+                                              h3 * (snp_p +
+                                                    h20 * (crk_m))))
 
         snp_m = (ps0.snp - ps1.snp)
         jrk_p = (ps0.jrk + ps1.jrk)
         acc_m = (ps0.acc - ps1.acc)
         vel_p = (ps0.vel + ps1.vel)
 
-        ps1.pos[...] = ps0.pos + h2 * (vel_p
-                                       + h14 * (3 * acc_m
-                                                + h3 * (jrk_p
-                                                        + h20 * (snp_m))))
+        ps1.pos[...] = ps0.pos + h2 * (vel_p +
+                                       h14 * (3 * acc_m +
+                                              h3 * (jrk_p +
+                                                    h20 * (snp_m))))
 
         hinv = 1 / h
         hinv2 = hinv * hinv
@@ -407,15 +407,15 @@ class H8(HX):
         crk_p = (ps0.crk + ps1.crk)
 
         d4a = 3 * hinv3 * (10 * jrk_m + h * (5 * snp_p + h2 * crk_m))
-        d5a = -15 * hinv5 * (168 * acc_m
-                             + h * (84 * jrk_p
-                                    + h * (16 * snp_m
-                                           + h * crk_p)))
+        d5a = -15 * hinv5 * (168 * acc_m +
+                             h * (84 * jrk_p +
+                                  h * (16 * snp_m +
+                                       h * crk_p)))
         d6a = -60 * hinv5 * (12 * jrk_m + h * (6 * snp_p + h * crk_m))
-        d7a = 840 * hinv7 * (120 * acc_m
-                             + h * (60 * jrk_p
-                                    + h * (12 * snp_m
-                                           + h * crk_p)))
+        d7a = 840 * hinv7 * (120 * acc_m +
+                             h * (60 * jrk_p +
+                                  h * (12 * snp_m +
+                                       h * crk_p)))
 
         h4 = h / 4
         h6 = h / 6

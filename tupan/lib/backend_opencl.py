@@ -187,8 +187,8 @@ class Program(object):
     def __init__(self, cl_context, cl_device):
         fnames = ('phi_kernel.cl',
                   'acc_kernel.cl',
-                  'acc_jerk_kernel.cl',
-                  'snap_crackle_kernel.cl',
+                  'acc_jrk_kernel.cl',
+                  'snp_crk_kernel.cl',
                   'tstep_kernel.cl',
                   'pnacc_kernel.cl',
                   'nreg_kernels.cl',

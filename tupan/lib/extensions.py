@@ -131,12 +131,12 @@ class Acc(AbstractExtension):
 
 
 @bind_all(timings)
-class AccJerk(AbstractExtension):
+class AccJrk(AbstractExtension):
     """
 
     """
     def __init__(self, backend=options.backend):
-        super(AccJerk, self).__init__('acc_jerk_kernel', backend)
+        super(AccJrk, self).__init__('acc_jrk_kernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -153,12 +153,12 @@ class AccJerk(AbstractExtension):
 
 
 @bind_all(timings)
-class SnapCrackle(AbstractExtension):
+class SnpCrk(AbstractExtension):
     """
 
     """
     def __init__(self, backend=options.backend):
-        super(SnapCrackle, self).__init__('snap_crackle_kernel', backend)
+        super(SnpCrk, self).__init__('snp_crk_kernel', backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,

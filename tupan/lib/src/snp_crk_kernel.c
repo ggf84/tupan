@@ -1,8 +1,8 @@
-#include "snap_crackle_kernel_common.h"
+#include "snp_crk_kernel_common.h"
 
 
 void
-snap_crackle_kernel(
+snp_crk_kernel(
 	uint_t const ni,
 	real_t const __im[restrict],
 	real_t const __irx[restrict],
@@ -77,7 +77,7 @@ snap_crackle_kernel(
 			real_t jjx = __jjx[j];
 			real_t jjy = __jjy[j];
 			real_t jjz = __jjz[j];
-			snap_crackle_kernel_core(
+			snp_crk_kernel_core(
 				im, irx, iry, irz, ie2, ivx, ivy, ivz,
 				iax, iay, iaz, ijx, ijy, ijz,
 				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,

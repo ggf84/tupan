@@ -1,8 +1,8 @@
-#include "snap_crackle_kernel_common.h"
+#include "acc_jrk_kernel_common.h"
 
 
 kernel void
-snap_crackle_kernel(
+acc_jrk_kernel(
 	uint_t const ni,
 	global real_tnxm const __im[restrict],
 	global real_tnxm const __irx[restrict],
@@ -12,12 +12,6 @@ snap_crackle_kernel(
 	global real_tnxm const __ivx[restrict],
 	global real_tnxm const __ivy[restrict],
 	global real_tnxm const __ivz[restrict],
-	global real_tnxm const __iax[restrict],
-	global real_tnxm const __iay[restrict],
-	global real_tnxm const __iaz[restrict],
-	global real_tnxm const __ijx[restrict],
-	global real_tnxm const __ijy[restrict],
-	global real_tnxm const __ijz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
@@ -27,18 +21,12 @@ snap_crackle_kernel(
 	global real_t const __jvx[restrict],
 	global real_t const __jvy[restrict],
 	global real_t const __jvz[restrict],
-	global real_t const __jax[restrict],
-	global real_t const __jay[restrict],
-	global real_t const __jaz[restrict],
-	global real_t const __jjx[restrict],
-	global real_t const __jjy[restrict],
-	global real_t const __jjz[restrict],
-	global real_tnxm __isx[restrict],
-	global real_tnxm __isy[restrict],
-	global real_tnxm __isz[restrict],
-	global real_tnxm __icx[restrict],
-	global real_tnxm __icy[restrict],
-	global real_tnxm __icz[restrict])
+	global real_tnxm __iax[restrict],
+	global real_tnxm __iay[restrict],
+	global real_tnxm __iaz[restrict],
+	global real_tnxm __ijx[restrict],
+	global real_tnxm __ijy[restrict],
+	global real_tnxm __ijz[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
@@ -52,19 +40,13 @@ snap_crackle_kernel(
 	real_tnxm ivx = aloadn(0, __ivx[gid]);
 	real_tnxm ivy = aloadn(0, __ivy[gid]);
 	real_tnxm ivz = aloadn(0, __ivz[gid]);
-	real_tnxm iax = aloadn(0, __iax[gid]);
-	real_tnxm iay = aloadn(0, __iay[gid]);
-	real_tnxm iaz = aloadn(0, __iaz[gid]);
-	real_tnxm ijx = aloadn(0, __ijx[gid]);
-	real_tnxm ijy = aloadn(0, __ijy[gid]);
-	real_tnxm ijz = aloadn(0, __ijz[gid]);
 
-	real_tnxm isx = {(real_tn)(0)};
-	real_tnxm isy = {(real_tn)(0)};
-	real_tnxm isz = {(real_tn)(0)};
-	real_tnxm icx = {(real_tn)(0)};
-	real_tnxm icy = {(real_tn)(0)};
-	real_tnxm icz = {(real_tn)(0)};
+	real_tnxm iax = {(real_tn)(0)};
+	real_tnxm iay = {(real_tn)(0)};
+	real_tnxm iaz = {(real_tn)(0)};
+	real_tnxm ijx = {(real_tn)(0)};
+	real_tnxm ijy = {(real_tn)(0)};
+	real_tnxm ijz = {(real_tn)(0)};
 
 	uint_t j = 0;
 
@@ -77,12 +59,6 @@ snap_crackle_kernel(
 	local real_t _jvx[LSIZE];
 	local real_t _jvy[LSIZE];
 	local real_t _jvz[LSIZE];
-	local real_t _jax[LSIZE];
-	local real_t _jay[LSIZE];
-	local real_t _jaz[LSIZE];
-	local real_t _jjx[LSIZE];
-	local real_t _jjy[LSIZE];
-	local real_t _jjz[LSIZE];
 	#pragma unroll
 	for (; (j + LSIZE - 1) < nj; j += LSIZE) {
 		barrier(CLK_LOCAL_MEM_FENCE);
@@ -94,12 +70,6 @@ snap_crackle_kernel(
 		_jvx[lid] = __jvx[j + lid];
 		_jvy[lid] = __jvy[j + lid];
 		_jvz[lid] = __jvz[j + lid];
-		_jax[lid] = __jax[j + lid];
-		_jay[lid] = __jay[j + lid];
-		_jaz[lid] = __jaz[j + lid];
-		_jjx[lid] = __jjx[j + lid];
-		_jjy[lid] = __jjy[j + lid];
-		_jjz[lid] = __jjz[j + lid];
 		barrier(CLK_LOCAL_MEM_FENCE);
 		#pragma unroll
 		for (uint_t k = 0; k < LSIZE; ++k) {
@@ -111,25 +81,15 @@ snap_crackle_kernel(
 			real_t jvx = _jvx[k];
 			real_t jvy = _jvy[k];
 			real_t jvz = _jvz[k];
-			real_t jax = _jax[k];
-			real_t jay = _jay[k];
-			real_t jaz = _jaz[k];
-			real_t jjx = _jjx[k];
-			real_t jjy = _jjy[k];
-			real_t jjz = _jjz[k];
 			#pragma unroll
 			for (uint_t i = 0; i < IUNROLL; ++i) {
-				snap_crackle_kernel_core(
+				acc_jrk_kernel_core(
 					im[i], irx[i], iry[i], irz[i],
 					ie2[i], ivx[i], ivy[i], ivz[i],
-					iax[i], iay[i], iaz[i],
-					ijx[i], ijy[i], ijz[i],
 					jm, jrx, jry, jrz,
 					je2, jvx, jvy, jvz,
-					jax, jay, jaz,
-					jjx, jjy, jjz,
-					&isx[i], &isy[i], &isz[i],
-					&icx[i], &icy[i], &icz[i]);
+					&iax[i], &iay[i], &iaz[i],
+					&ijx[i], &ijy[i], &ijz[i]);
 			}
 		}
 	}
@@ -145,33 +105,23 @@ snap_crackle_kernel(
 		real_t jvx = __jvx[j];
 		real_t jvy = __jvy[j];
 		real_t jvz = __jvz[j];
-		real_t jax = __jax[j];
-		real_t jay = __jay[j];
-		real_t jaz = __jaz[j];
-		real_t jjx = __jjx[j];
-		real_t jjy = __jjy[j];
-		real_t jjz = __jjz[j];
 		#pragma unroll
 		for (uint_t i = 0; i < IUNROLL; ++i) {
-			snap_crackle_kernel_core(
+			acc_jrk_kernel_core(
 				im[i], irx[i], iry[i], irz[i],
 				ie2[i], ivx[i], ivy[i], ivz[i],
-				iax[i], iay[i], iaz[i],
-				ijx[i], ijy[i], ijz[i],
 				jm, jrx, jry, jrz,
 				je2, jvx, jvy, jvz,
-				jax, jay, jaz,
-				jjx, jjy, jjz,
-				&isx[i], &isy[i], &isz[i],
-				&icx[i], &icy[i], &icz[i]);
+				&iax[i], &iay[i], &iaz[i],
+				&ijx[i], &ijy[i], &ijz[i]);
 		}
 	}
 
-	astoren(isx, 0, __isx[gid]);
-	astoren(isy, 0, __isy[gid]);
-	astoren(isz, 0, __isz[gid]);
-	astoren(icx, 0, __icx[gid]);
-	astoren(icy, 0, __icy[gid]);
-	astoren(icz, 0, __icz[gid]);
+	astoren(iax, 0, __iax[gid]);
+	astoren(iay, 0, __iay[gid]);
+	astoren(iaz, 0, __iaz[gid]);
+	astoren(ijx, 0, __ijx[gid]);
+	astoren(ijy, 0, __ijy[gid]);
+	astoren(ijz, 0, __ijz[gid]);
 }
 

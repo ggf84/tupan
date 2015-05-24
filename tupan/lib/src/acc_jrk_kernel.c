@@ -1,8 +1,8 @@
-#include "acc_jerk_kernel_common.h"
+#include "acc_jrk_kernel_common.h"
 
 
 void
-acc_jerk_kernel(
+acc_jrk_kernel(
 	uint_t const ni,
 	real_t const __im[restrict],
 	real_t const __irx[restrict],
@@ -53,7 +53,7 @@ acc_jerk_kernel(
 			real_t jvx = __jvx[j];
 			real_t jvy = __jvy[j];
 			real_t jvz = __jvz[j];
-			acc_jerk_kernel_core(
+			acc_jrk_kernel_core(
 				im, irx, iry, irz, ie2, ivx, ivy, ivz,
 				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
 				&iax, &iay, &iaz, &ijx, &ijy, &ijz);

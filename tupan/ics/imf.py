@@ -25,9 +25,14 @@ class IMFSample(object):
             raise ValueError('Mass range outer of limits'
                              ' [{0}:{1}].'.format(min_mlow, max_mhigh))
 
-        intarg = lambda m: imf_func(m)/m
+        def intarg(m):
+            return imf_func(m)/m
+
         norm, _ = quad(intarg, min_mlow, max_mhigh)
-        imf_func_normed = lambda m: imf_func(m)/norm
+
+        def imf_func_normed(m):
+            return imf_func(m)/norm
+
         mpeak = float(fminbound(lambda m: -imf_func_normed(m),
                                 min_mlow, max_mhigh,
                                 xtol=1.0e-8))
@@ -64,21 +69,25 @@ class IMF(object):
     """
     @staticmethod
     def equalmass():
-        imf_func = lambda m: (1.0+m)-m
-        min_mlow = 0.1
-        max_mhigh = 10.0
+        min_mlow = 0.5
+        max_mhigh = 2.0
         mlow = 1.0
         mhigh = 1.0
-        imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
-        return imf
+
+        def imf_func(m):
+            return (1.0+m)-m
+
+        return IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
 
     @staticmethod
     def salpeter1955(mlow, mhigh):
-        imf_func = lambda m: m**(-1.35)
         min_mlow = 0.4
         max_mhigh = 120.0
-        imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
-        return imf
+
+        def imf_func(m):
+            return m**(-1.35)
+
+        return IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
 
     @staticmethod
     def padoan2007(mlow, mhigh):
@@ -86,21 +95,24 @@ class IMF(object):
         gamma = 1.4
         m_ch = 1.0
         sigma = 1.8
-        imf_func = lambda m: ((m**(-gamma)) * (1.0 + erf((
-            4.0 * np.log(m/m_ch) + sigma**2) / (np.sqrt(8.0) * sigma))))
         min_mlow = 0.004
         max_mhigh = 120.0
-        imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
-        return imf
+
+        def imf_func(m):
+            return ((m**(-gamma)) * (1.0 + erf((
+                4.0 * np.log(m/m_ch) + sigma**2) / (np.sqrt(8.0) * sigma))))
+
+        return IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
 
     @staticmethod
     def parravano2011(mlow, mhigh):
-        imf_func = lambda m: (m**(-1.35))*(
-            1.0 - np.exp(-(m/0.35)**(0.51+1.35)))
         min_mlow = 0.004
         max_mhigh = 120.0
-        imf = IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
-        return imf
+
+        def imf_func(m):
+            return (m**(-1.35)) * (1.0 - np.exp(-(m / 0.35)**(0.51 + 1.35)))
+
+        return IMFSample(imf_func, min_mlow, max_mhigh, mlow, mhigh)
 
 
 # -- End of File --

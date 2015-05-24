@@ -34,7 +34,7 @@ acc_kernel(
 	real_t * restrict __iaz);
 
 void
-acc_jerk_kernel(
+acc_jrk_kernel(
 	uint_t const ni,
 	real_t const * restrict __im,
 	real_t const * restrict __irx,
@@ -61,7 +61,7 @@ acc_jerk_kernel(
 	real_t * restrict __ijz);
 
 void
-snap_crackle_kernel(
+snp_crk_kernel(
 	uint_t const ni,
 	real_t const * restrict __im,
 	real_t const * restrict __irx,

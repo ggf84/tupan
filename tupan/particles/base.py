@@ -408,14 +408,14 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """
         kernel(self, other)
 
-    def set_acc_jrk(self, other, kernel=ext.AccJerk()):
+    def set_acc_jrk(self, other, kernel=ext.AccJrk()):
         """Set individual gravitational acceleration and jerk due to other
         particles.
 
         """
         kernel(self, other)
 
-    def set_snp_crk(self, other, kernel=ext.SnapCrackle()):
+    def set_snp_crk(self, other, kernel=ext.SnpCrk()):
         """Set individual gravitational snap and crackle due to other
         particles.
 

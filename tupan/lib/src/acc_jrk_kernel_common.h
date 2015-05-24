@@ -1,12 +1,12 @@
-#ifndef __ACC_JERK_KERNEL_COMMON_H__
-#define __ACC_JERK_KERNEL_COMMON_H__
+#ifndef __ACC_JRK_KERNEL_COMMON_H__
+#define __ACC_JRK_KERNEL_COMMON_H__
 
 #include "common.h"
 #include "smoothing.h"
 
 
 static inline void
-acc_jerk_kernel_core(
+acc_jrk_kernel_core(
 	real_tn const im,
 	real_tn const irx,
 	real_tn const iry,
@@ -60,4 +60,4 @@ acc_jerk_kernel_core(
 // Total flop count: 42
 
 
-#endif	// __ACC_JERK_KERNEL_COMMON_H__
+#endif	// __ACC_JRK_KERNEL_COMMON_H__

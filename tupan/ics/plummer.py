@@ -138,8 +138,12 @@ class Plummer(object):
         linbins = np.power(10.0, bins)
         selection = np.where(hist > 0)
 
-        fitfunc = lambda k, m: k * self.imf.func(m)
-        errfunc = lambda k, m, y: fitfunc(k, m)[selection] - y[selection]
+        def fitfunc(k, m):
+            return k * self.imf.func(m)
+
+        def errfunc(k, m, y):
+            return fitfunc(k, m)[selection] - y[selection]
+
         k0 = 1.0
         k1, _ = optimize.leastsq(errfunc, k0, args=(linbins[:-1], hist))
         x = np.logspace(np.log10(self.imf.min_mlow),
@@ -204,7 +208,9 @@ class Plummer(object):
 
 
 @timings
-def make_plummer(n, eps, imf, seed=None, mfrac=0.999, softening_type=0):
+def make_plummer(n, eps, imf,
+                 seed=None, mfrac=0.999,
+                 softening_type=0, show=False):
     if n < 2:
         n = 2
     from tupan.ics.imf import IMF
@@ -212,6 +218,8 @@ def make_plummer(n, eps, imf, seed=None, mfrac=0.999, softening_type=0):
     p = Plummer(n, eps, imf, seed=seed, mfrac=mfrac,
                 softening_type=softening_type)
     p.make_model()
+    if show:
+        p.show()
     return p.ps
 
 

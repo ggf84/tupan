@@ -96,11 +96,11 @@ class TestCase1(unittest.TestCase):
 
     def test03(self):
         print("\n---------- test03 ----------")
-        self.compare_result(extensions.AccJerk, self.ps)
+        self.compare_result(extensions.AccJrk, self.ps)
 
     def test04(self):
         print("\n---------- test04 ----------")
-        self.compare_result(extensions.SnapCrackle, self.ps)
+        self.compare_result(extensions.SnpCrk, self.ps)
 
     def test05(self):
         print("\n---------- test05 ----------")
@@ -199,11 +199,11 @@ class TestCase2(unittest.TestCase):
 
     def test03(self):
         print("\n---------- test03 ----------")
-        self.performance(extensions.AccJerk, self.pslist)
+        self.performance(extensions.AccJrk, self.pslist)
 
     def test04(self):
         print("\n---------- test04 ----------")
-        self.performance(extensions.SnapCrackle, self.pslist)
+        self.performance(extensions.SnpCrk, self.pslist)
 
     def test05(self):
         print("\n---------- test05 ----------")

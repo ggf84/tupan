@@ -1,5 +1,5 @@
-#ifndef __SNAP_CRACKLE_KERNEL_COMMON_H__
-#define __SNAP_CRACKLE_KERNEL_COMMON_H__
+#ifndef __SNP_CRK_KERNEL_COMMON_H__
+#define __SNP_CRK_KERNEL_COMMON_H__
 
 #include "common.h"
 #include "smoothing.h"
@@ -8,7 +8,7 @@
 
 
 static inline void
-snap_crackle_kernel_core(
+snp_crk_kernel_core(
 	real_tn const im,
 	real_tn const irx,
 	real_tn const iry,
@@ -110,4 +110,4 @@ snap_crackle_kernel_core(
 // Total flop count: 114
 
 
-#endif	// __SNAP_CRACKLE_KERNEL_COMMON_H__
+#endif	// __SNP_CRK_KERNEL_COMMON_H__

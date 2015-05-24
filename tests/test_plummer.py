@@ -22,8 +22,8 @@ if __name__ == "__main__":
 
     ps = make_plummer(n, eps, imf, seed=1)
 
-    fname = ("plummer" + str(n).zfill(5) + '-'
-             + '_'.join(str(i) for i in imf))
+    fname = ("plummer" + str(n).zfill(5) + '-' +
+             '_'.join(str(i) for i in imf))
 
     with HDF5IO(fname, 'w') as fid:
         fid.write_ic(ps)
