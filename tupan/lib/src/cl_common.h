@@ -35,6 +35,14 @@
 #define uint_tn vec(uint_t)
 #define real_tn vec(real_t)
 
+typedef int_t1 int_t1xm[IUNROLL];
+typedef uint_t1 uint_t1xm[IUNROLL];
+typedef real_t1 real_t1xm[IUNROLL];
+
+typedef int_tn int_tnxm[IUNROLL];
+typedef uint_tn uint_tnxm[IUNROLL];
+typedef real_tn real_tnxm[IUNROLL];
+
 #define vload1(_offset, _ptr) *(_ptr+_offset)
 #define vloadn concat(vload, IUNROLL)
 

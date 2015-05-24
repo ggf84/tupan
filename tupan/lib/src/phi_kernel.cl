@@ -4,30 +4,30 @@
 kernel void
 phi_kernel(
 	uint_t const ni,
-	global real_tn const __im[restrict],
-	global real_tn const __irx[restrict],
-	global real_tn const __iry[restrict],
-	global real_tn const __irz[restrict],
-	global real_tn const __ie2[restrict],
+	global real_tnxm const __im[restrict],
+	global real_tnxm const __irx[restrict],
+	global real_tnxm const __iry[restrict],
+	global real_tnxm const __irz[restrict],
+	global real_tnxm const __ie2[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
 	global real_t const __jry[restrict],
 	global real_t const __jrz[restrict],
 	global real_t const __je2[restrict],
-	global real_tn __iphi[restrict])
+	global real_tnxm __iphi[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
 	gid %= ni;
 
-	real_tn im[] = aloadn(gid, __im);
-	real_tn irx[] = aloadn(gid, __irx);
-	real_tn iry[] = aloadn(gid, __iry);
-	real_tn irz[] = aloadn(gid, __irz);
-	real_tn ie2[] = aloadn(gid, __ie2);
+	real_tnxm im = aloadn(0, __im[gid]);
+	real_tnxm irx = aloadn(0, __irx[gid]);
+	real_tnxm iry = aloadn(0, __iry[gid]);
+	real_tnxm irz = aloadn(0, __irz[gid]);
+	real_tnxm ie2 = aloadn(0, __ie2[gid]);
 
-	real_tn iphi[IUNROLL] = {(real_tn)(0)};
+	real_tnxm iphi = {(real_tn)(0)};
 
 	uint_t j = 0;
 
@@ -80,6 +80,6 @@ phi_kernel(
 		}
 	}
 
-	astoren(iphi, gid, __iphi);
+	astoren(iphi, 0, __iphi[gid]);
 }
 

@@ -4,14 +4,14 @@
 kernel void
 tstep_kernel(
 	uint_t const ni,
-	global real_tn const __im[restrict],
-	global real_tn const __irx[restrict],
-	global real_tn const __iry[restrict],
-	global real_tn const __irz[restrict],
-	global real_tn const __ie2[restrict],
-	global real_tn const __ivx[restrict],
-	global real_tn const __ivy[restrict],
-	global real_tn const __ivz[restrict],
+	global real_tnxm const __im[restrict],
+	global real_tnxm const __irx[restrict],
+	global real_tnxm const __iry[restrict],
+	global real_tnxm const __irz[restrict],
+	global real_tnxm const __ie2[restrict],
+	global real_tnxm const __ivx[restrict],
+	global real_tnxm const __ivy[restrict],
+	global real_tnxm const __ivz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
@@ -22,24 +22,24 @@ tstep_kernel(
 	global real_t const __jvy[restrict],
 	global real_t const __jvz[restrict],
 	real_t const eta,
-	global real_tn __idt_a[restrict],
-	global real_tn __idt_b[restrict])
+	global real_tnxm __idt_a[restrict],
+	global real_tnxm __idt_b[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
 	gid %= ni;
 
-	real_tn im[] = aloadn(gid, __im);
-	real_tn irx[] = aloadn(gid, __irx);
-	real_tn iry[] = aloadn(gid, __iry);
-	real_tn irz[] = aloadn(gid, __irz);
-	real_tn ie2[] = aloadn(gid, __ie2);
-	real_tn ivx[] = aloadn(gid, __ivx);
-	real_tn ivy[] = aloadn(gid, __ivy);
-	real_tn ivz[] = aloadn(gid, __ivz);
+	real_tnxm im = aloadn(0, __im[gid]);
+	real_tnxm irx = aloadn(0, __irx[gid]);
+	real_tnxm iry = aloadn(0, __iry[gid]);
+	real_tnxm irz = aloadn(0, __irz[gid]);
+	real_tnxm ie2 = aloadn(0, __ie2[gid]);
+	real_tnxm ivx = aloadn(0, __ivx[gid]);
+	real_tnxm ivy = aloadn(0, __ivy[gid]);
+	real_tnxm ivz = aloadn(0, __ivz[gid]);
 
-	real_tn iw2_a[IUNROLL] = {(real_tn)(0)};
-	real_tn iw2_b[IUNROLL] = {(real_tn)(0)};
+	real_tnxm iw2_a = {(real_tn)(0)};
+	real_tnxm iw2_b = {(real_tn)(0)};
 
 	uint_t j = 0;
 
@@ -108,8 +108,8 @@ tstep_kernel(
 		}
 	}
 
-	real_tn idt_a[IUNROLL] = {(real_tn)(0)};
-	real_tn idt_b[IUNROLL] = {(real_tn)(0)};
+	real_tnxm idt_a = {(real_tn)(0)};
+	real_tnxm idt_b = {(real_tn)(0)};
 
 	#pragma unroll
 	for (uint_t i = 0; i < IUNROLL; ++i) {
@@ -117,7 +117,7 @@ tstep_kernel(
 		idt_b[i] = eta / sqrt(fmax((real_tn)(1), iw2_b[i]));
 	}
 
-	astoren(idt_a, gid, __idt_a);
-	astoren(idt_b, gid, __idt_b);
+	astoren(idt_a, 0, __idt_a[gid]);
+	astoren(idt_b, 0, __idt_b[gid]);
 }
 

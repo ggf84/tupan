@@ -4,14 +4,14 @@
 kernel void
 sakura_kernel(
 	uint_t const ni,
-	global real_t const __im[restrict],
-	global real_t const __irx[restrict],
-	global real_t const __iry[restrict],
-	global real_t const __irz[restrict],
-	global real_t const __ie2[restrict],
-	global real_t const __ivx[restrict],
-	global real_t const __ivy[restrict],
-	global real_t const __ivz[restrict],
+	global real_t1xm const __im[restrict],
+	global real_t1xm const __irx[restrict],
+	global real_t1xm const __iry[restrict],
+	global real_t1xm const __irz[restrict],
+	global real_t1xm const __ie2[restrict],
+	global real_t1xm const __ivx[restrict],
+	global real_t1xm const __ivy[restrict],
+	global real_t1xm const __ivz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
@@ -23,32 +23,32 @@ sakura_kernel(
 	global real_t const __jvz[restrict],
 	real_t const dt,
 	int_t const flag,
-	global real_t __idrx[restrict],
-	global real_t __idry[restrict],
-	global real_t __idrz[restrict],
-	global real_t __idvx[restrict],
-	global real_t __idvy[restrict],
-	global real_t __idvz[restrict])
+	global real_t1xm __idrx[restrict],
+	global real_t1xm __idry[restrict],
+	global real_t1xm __idrz[restrict],
+	global real_t1xm __idvx[restrict],
+	global real_t1xm __idvy[restrict],
+	global real_t1xm __idvz[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
 	gid %= ni;
 
-	real_t im[] = aloadn(gid, __im);
-	real_t irx[] = aloadn(gid, __irx);
-	real_t iry[] = aloadn(gid, __iry);
-	real_t irz[] = aloadn(gid, __irz);
-	real_t ie2[] = aloadn(gid, __ie2);
-	real_t ivx[] = aloadn(gid, __ivx);
-	real_t ivy[] = aloadn(gid, __ivy);
-	real_t ivz[] = aloadn(gid, __ivz);
+	real_t1xm im = aloadn(0, __im[gid]);
+	real_t1xm irx = aloadn(0, __irx[gid]);
+	real_t1xm iry = aloadn(0, __iry[gid]);
+	real_t1xm irz = aloadn(0, __irz[gid]);
+	real_t1xm ie2 = aloadn(0, __ie2[gid]);
+	real_t1xm ivx = aloadn(0, __ivx[gid]);
+	real_t1xm ivy = aloadn(0, __ivy[gid]);
+	real_t1xm ivz = aloadn(0, __ivz[gid]);
 
-	real_t idrx[IUNROLL] = {(real_t)(0)};
-	real_t idry[IUNROLL] = {(real_t)(0)};
-	real_t idrz[IUNROLL] = {(real_t)(0)};
-	real_t idvx[IUNROLL] = {(real_t)(0)};
-	real_t idvy[IUNROLL] = {(real_t)(0)};
-	real_t idvz[IUNROLL] = {(real_t)(0)};
+	real_t1xm idrx = {(real_t1)(0)};
+	real_t1xm idry = {(real_t1)(0)};
+	real_t1xm idrz = {(real_t1)(0)};
+	real_t1xm idvx = {(real_t1)(0)};
+	real_t1xm idvy = {(real_t1)(0)};
+	real_t1xm idvz = {(real_t1)(0)};
 
 	uint_t j = 0;
 
@@ -121,11 +121,11 @@ sakura_kernel(
 		}
 	}
 
-	astoren(idrx, gid, __idrx);
-	astoren(idry, gid, __idry);
-	astoren(idrz, gid, __idrz);
-	astoren(idvx, gid, __idvx);
-	astoren(idvy, gid, __idvy);
-	astoren(idvz, gid, __idvz);
+	astoren(idrx, 0, __idrx[gid]);
+	astoren(idry, 0, __idry[gid]);
+	astoren(idrz, 0, __idrz[gid]);
+	astoren(idvx, 0, __idvx[gid]);
+	astoren(idvy, 0, __idvy[gid]);
+	astoren(idvz, 0, __idvz[gid]);
 }
 
