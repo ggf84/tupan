@@ -5,7 +5,6 @@
 TODO.
 """
 
-import os
 import logging
 import subprocess
 import numpy as np
@@ -13,8 +12,7 @@ from PIL import Image
 from matplotlib import cm
 from vispy import gloo
 from vispy import app
-from vispy.util.transforms import ortho, translate, scale
-from vispy.util.transforms import xrotate, yrotate, zrotate
+from vispy.util.transforms import ortho, translate, scale, rotate
 
 
 LOGGER = logging.getLogger(__name__)
@@ -132,13 +130,12 @@ class GLviewer(app.Canvas):
         self.program['star'] = gloo.Program(VERT_SHADER, FRAG_SHADER0)
         self.program['sph'] = gloo.Program(VERT_SHADER, FRAG_SHADER1)
         self.program['blackhole'] = gloo.Program(VERT_SHADER, FRAG_SHADER2)
-        self.view = np.eye(4, dtype=np.float32)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
         self.psize = 20
 
         self.translate = [-0.0, -0.0, -0.0]
-        translate(self.view, *self.translate)
+        self.view = translate(self.translate)
 
         for prog in self.program.values():
             prog['u_psize'] = self.psize
@@ -186,23 +183,23 @@ class GLviewer(app.Canvas):
         elif event.key == '-':
             self.psize -= 1
         elif event.key == 'Up':
-            xrotate(self.model, +1)
+            self.model = np.dot(self.model, rotate(+1, [1, 0, 0]))
         elif event.key == 'Down':
-            xrotate(self.model, -1)
+            self.model = np.dot(self.model, rotate(-1, [1, 0, 0]))
         elif event.key == 'Right':
-            yrotate(self.model, +1)
+            self.model = np.dot(self.model, rotate(+1, [0, 1, 0]))
         elif event.key == 'Left':
-            yrotate(self.model, -1)
+            self.model = np.dot(self.model, rotate(-1, [0, 1, 0]))
         elif event.key == '>':
-            zrotate(self.model, +1)
+            self.model = np.dot(self.model, rotate(+1, [0, 0, 1]))
         elif event.key == '<':
-            zrotate(self.model, -1)
+            self.model = np.dot(self.model, rotate(-1, [0, 0, 1]))
         elif event.text == 'm':
             self.make_movie = not self.make_movie
         elif event.text == 'z':
-            scale(self.model, 1/1.03125)
+            self.model = np.dot(self.model, scale([1/1.03125]*3))
         elif event.text == 'Z':
-            scale(self.model, 1*1.03125)
+            self.model = np.dot(self.model, scale([1*1.03125]*3))
         elif event.key == 'Escape':
             self.is_visible = False
         for prog in self.program.values():
@@ -221,9 +218,9 @@ class GLviewer(app.Canvas):
 
     def on_mouse_wheel(self, event):
         if event.delta[1] > 0:
-            scale(self.model, 1/1.03125)
+            self.model = np.dot(self.model, scale([1/1.03125]*3))
         if event.delta[1] < 0:
-            scale(self.model, 1*1.03125)
+            self.model = np.dot(self.model, scale([1*1.03125]*3))
         for prog in self.program.values():
             prog['u_model'] = self.model
         self.update()
@@ -232,18 +229,18 @@ class GLviewer(app.Canvas):
         x, y = event.pos
         w, h = self.size
         if event.is_dragging:
-            dx = 5 * (2 * x / float(w) - 1) * self.aspect
-            dy = 5 * (1 - 2 * y / float(h))
+            dx = (2 * x / float(w) - 1) * self.aspect
+            dy = (1 - 2 * y / float(h))
             if event.button == 1:
-                self.translate[0] = dx
-                self.translate[1] = dy
-                self.view = np.eye(4, dtype=np.float32)
-                translate(self.view, *self.translate)
+                self.translate[0] = 5 * dx
+                self.translate[1] = 5 * dy
+                self.view = translate(self.translate)
                 for prog in self.program.values():
                     prog['u_view'] = self.view
             if event.button == 2:
-                xrotate(self.model, +dy)
-                yrotate(self.model, -dx)
+                self.model = np.dot(self.model,
+                                    np.dot(rotate(-dx, [0, 1, 0]),
+                                           rotate(+dy, [1, 0, 0])))
                 for prog in self.program.values():
                     prog['u_model'] = self.model
         self.update()
