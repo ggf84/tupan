@@ -64,7 +64,7 @@ void main()
     float alpha = (1 - r);
     alpha *= alpha;
     alpha *= alpha;
-    gl_FragColor = vec4(v_color.rgb * (1 + alpha), alpha);
+    gl_FragColor = vec4(v_color.rgb * (1 + 0.5 * alpha), alpha);
 }
 """
 
@@ -291,15 +291,14 @@ class GLviewer(app.Canvas):
         for name, member in self.ps.members.items():
             pos, c, s = member.pos, member.mass, member.mass
 
-#            c = (c/c.max())**(1/3.0)
-            cmax, cmin = c.max(), c.min()
-            c = (np.log(c / cmin) / np.log(cmax / cmin)
-                 if cmax > cmin else c / cmax)
+            def f(arg): return np.log(arg)
+#            def f(arg): return arg**(1/3.0)
 
-            s = (s/s.max())**(1/4.0)
-#            smax, smin = s.max(), s.min()
-#            s = (np.log(s / smin) / np.log(smax / smin)
-#                 if smax > smin else s / smax)
+            cmax, cmin = c.max(), c.min()
+            c = (f(c / cmin) / f(cmax / cmin)) if cmax > cmin else (c / cmax)
+
+            smax, smin = s.max(), s.min()
+            s = (f(s / smin) / f(smax / smin)) if smax > smin else (s / smax)
 
             self.data[name]['a_position'][...] = pos.T
             self.data[name]['a_color'][...] = cm.cubehelix(c)
