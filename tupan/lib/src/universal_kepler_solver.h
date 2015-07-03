@@ -105,18 +105,12 @@ update_pos_vel(
 	real_t const inv_r1,
 	real_t const sigma0,
 	real_t const Gs[static restrict 4],
-	real_t const r0x,
-	real_t const r0y,
-	real_t const r0z,
-	real_t const v0x,
-	real_t const v0y,
-	real_t const v0z,
-	real_t *r1x,
-	real_t *r1y,
-	real_t *r1z,
-	real_t *v1x,
-	real_t *v1y,
-	real_t *v1z)
+	real_t *rx,
+	real_t *ry,
+	real_t *rz,
+	real_t *vx,
+	real_t *vy,
+	real_t *vz)
 {
 	// These are not the traditional Gauss f and g functions.
 	real_t f = -m * Gs[2] * inv_r0;
@@ -124,12 +118,15 @@ update_pos_vel(
 	real_t df = -m * Gs[1] * inv_r0 * inv_r1;
 	real_t dg = -m * Gs[2] * inv_r1;
 
-	*r1x = (r0x * f + v0x * g) + r0x;
-	*r1y = (r0y * f + v0y * g) + r0y;
-	*r1z = (r0z * f + v0z * g) + r0z;
-	*v1x = (r0x * df + v0x * dg) + v0x;
-	*v1y = (r0y * df + v0y * dg) + v0y;
-	*v1z = (r0z * df + v0z * dg) + v0z;
+	real_t r0x = *rx, r0y = *ry, r0z = *rz;
+	real_t v0x = *vx, v0y = *vy, v0z = *vz;
+
+	*rx += (r0x * f + v0x * g);
+	*ry += (r0y * f + v0y * g);
+	*rz += (r0z * f + v0z * g);
+	*vx += (r0x * df + v0x * dg);
+	*vy += (r0y * df + v0y * dg);
+	*vz += (r0z * df + v0z * dg);
 }
 
 
@@ -219,40 +216,27 @@ __universal_kepler_solver(
 	real_t const dt0,
 	real_t const m,
 	real_t const e2,
-	real_t const r0x,
-	real_t const r0y,
-	real_t const r0z,
-	real_t const v0x,
-	real_t const v0y,
-	real_t const v0z,
-	real_t *r1x,
-	real_t *r1y,
-	real_t *r1z,
-	real_t *v1x,
-	real_t *v1y,
-	real_t *v1z)
+	real_t *rx,
+	real_t *ry,
+	real_t *rz,
+	real_t *vx,
+	real_t *vy,
+	real_t *vz)
 {
-	*r1x = r0x;
-	*r1y = r0y;
-	*r1z = r0z;
-	*v1x = v0x;
-	*v1y = v0y;
-	*v1z = v0z;
+	real_t r2 = *rx * *rx + *ry * *ry + *rz * *rz;
+	if (!(r2 > 0)) return 0;
 
-	real_t r0sqr = r0x * r0x + r0y * r0y + r0z * r0z;
-	if (!(r0sqr > 0)) return 0;
+	r2 += e2;
+	real_t inv_r0 = rsqrt(r2);
+	real_t r0 = r2 * inv_r0;
 
-	r0sqr += e2;
-	real_t inv_r0 = rsqrt(r0sqr);
-	real_t r0 = r0sqr * inv_r0;
-
-	real_t sigma0 = r0x * v0x + r0y * v0y + r0z * v0z;
-	real_t v0sqr = v0x * v0x + v0y * v0y + v0z * v0z;
-	real_t u0sqr = 2 * m * inv_r0;
-	real_t alpha0 = v0sqr - u0sqr;
-	real_t lagr0 = v0sqr + u0sqr;
-	real_t abs_alpha0 = fabs(alpha0);
+	real_t phi0 = 2 * m * inv_r0;
+	real_t v0sqr = *vx * *vx + *vy * *vy + *vz * *vz;
+	real_t sigma0 = *rx * *vx + *ry * *vy + *rz * *vz;
+	real_t alpha0 = v0sqr - phi0;
 	real_t gamma0 = alpha0 * r0 + m;
+	real_t lagr0 = v0sqr + phi0;
+	real_t abs_alpha0 = fabs(alpha0);
 
 	#ifndef CONFIG_USE_OPENCL
 	if ((abs_alpha0 < TOLERANCE * lagr0)
@@ -262,15 +246,15 @@ __universal_kepler_solver(
 		fprintf(stderr, "#---err flag: \n");
 		fprintf(stderr,
 			"#   dt0: %a, m: %a, e2: %a,"
-			" r0x: %a, r0y: %a, r0z: %a,"
-			" v0x: %a, v0y: %a, v0z: %a\n"
+			" rx: %a, ry: %a, rz: %a,"
+			" vx: %a, vy: %a, vz: %a\n"
 			"#   r0: %a, sigma0: %a, v0sqr: %a,"
-			" u0sqr: %a, alpha0: %a, lagr0: %a\n",
+			" phi0: %a, alpha0: %a, lagr0: %a\n",
 			dt0, m, e2,
-			r0x, r0y, r0z,
-			v0x, v0y, v0z,
+			*rx, *ry, *rz,
+			*vx, *vy, *vz,
 			r0, sigma0, v0sqr,
-			u0sqr, alpha0, lagr0);
+			phi0, alpha0, lagr0);
 		fprintf(stderr, "#---\n");
 	}
 	#endif
@@ -285,15 +269,14 @@ __universal_kepler_solver(
 		real_t inv_r = s / dt;	// time average of 1/r over dt.
 		alpha += 2 * m * e2 * inv_r * inv_r * inv_r;
 		gamma = alpha * r0 + m;
-		err = rootfinder(r0, dt, alpha, sigma0, gamma, Gs, &s);
+		err |= rootfinder(r0, dt, alpha, sigma0, gamma, Gs, &s);
 	}
 	real_t r1 = kepler_fp(r0, sigma0, gamma, Gs);
 
 	update_pos_vel(
 		m, r0, inv_r0, 1/r1, sigma0, Gs,
-		r0x, r0y, r0z, v0x, v0y, v0z,
-		&(*r1x), &(*r1y), &(*r1z),
-		&(*v1x), &(*v1y), &(*v1z));
+		&(*rx), &(*ry), &(*rz),
+		&(*vx), &(*vy), &(*vz));
 
 	#ifndef CONFIG_USE_OPENCL
 	if (err != 0) {
@@ -303,17 +286,17 @@ __universal_kepler_solver(
 		fprintf(stderr, "#---err flag: %ld\n", (long)(err));
 		fprintf(stderr,
 			"#   dt0: %a, m: %a, e2: %a, r0: %a, alpha0: %a,"
-			" sigma0: %a, gamma0: %a, v0sqr: %a, u0sqr: %a,"
-			" r0x: %a, r0y: %a, r0z: %a, v0x: %a, v0y: %a, v0z: %a\n",
+			" sigma0: %a, gamma0: %a, v0sqr: %a, phi0: %a,"
+			" rx: %a, ry: %a, rz: %a, vx: %a, vy: %a, vz: %a\n",
 			dt0, m, e2,	r0, alpha0,
-			sigma0, gamma0, v0sqr, u0sqr,
-			r0x, r0y, r0z, v0x, v0y, v0z);
+			sigma0, gamma0, v0sqr, phi0,
+			*rx, *ry, *rz, *vx, *vy, *vz);
 		fprintf(stderr, "#---\n");
 	}
 	#endif
 
 	if (e2 > 0) {
-		real_t r1sqr = *r1x * *r1x + *r1y * *r1y + *r1z * *r1z;
+		real_t r1sqr = *rx * *rx + *ry * *ry + *rz * *rz;
 		real_t r1a = sqrt(r1sqr + e2);
 		if (fabs(r1a - r1) > exp2(-(real_t)(3)*sizeof(real_t)) * (r1a + r1)) {
 			err = -11;
@@ -329,49 +312,39 @@ _universal_kepler_solver(
 	real_t const dt,
 	real_t const m,
 	real_t const e2,
-	real_t const r0x,
-	real_t const r0y,
-	real_t const r0z,
-	real_t const v0x,
-	real_t const v0y,
-	real_t const v0z,
-	real_t *r1x,
-	real_t *r1y,
-	real_t *r1z,
-	real_t *v1x,
-	real_t *v1y,
-	real_t *v1z)
+	real_t *rx,
+	real_t *ry,
+	real_t *rz,
+	real_t *vx,
+	real_t *vy,
+	real_t *vz)
 {
-	int_t err = __universal_kepler_solver(
-			dt, m, e2,
-			r0x, r0y, r0z,
-			v0x, v0y, v0z,
-			&(*r1x), &(*r1y), &(*r1z),
-			&(*v1x), &(*v1y), &(*v1z));
-	if (err == 0) return err;
+	int_t err;
+	uint_t n = 1;
 
-	int_t n = 2;
-	uint_t iter = 0;
-	do {
+	real_t r0x = *rx, r0y = *ry, r0z = *rz;
+	real_t v0x = *vx, v0y = *vy, v0z = *vz;
+
+	for (uint_t iter = 0; iter < MAXITER; ++iter) {
 		err = 0;
-		*r1x = r0x;
-		*r1y = r0y;
-		*r1z = r0z;
-		*v1x = v0x;
-		*v1y = v0y;
-		*v1z = v0z;
-		for (int_t i = 0; i < n; ++i) {
+		*rx = r0x;
+		*ry = r0y;
+		*rz = r0z;
+		*vx = v0x;
+		*vy = v0y;
+		*vz = v0z;
+		for (uint_t i = 0; i < n; ++i) {
 			err |= __universal_kepler_solver(
-					dt/n, m, e2,
-					*r1x, *r1y, *r1z,
-					*v1x, *v1y, *v1z,
-					&(*r1x), &(*r1y), &(*r1z),
-					&(*v1x), &(*v1y), &(*v1z));
+						dt/n, m, e2,
+						&(*rx), &(*ry), &(*rz),
+						&(*vx), &(*vy), &(*vz));
+			if (err != 0) {
+				n *= 2;
+				i = n;
+			}
 		}
-		if (iter > MAXITER) return err;
-		n *= 2;
-		iter++;
-	} while (err != 0);
+		if (err == 0) iter = MAXITER;
+	}
 
 	return err;
 }
@@ -395,12 +368,13 @@ universal_kepler_solver(
 	real_t *v1y,
 	real_t *v1z)
 {
+	*r1x = r0x, *r1y = r0y, *r1z = r0z;
+	*v1x = v0x, *v1y = v0y, *v1z = v0z;
+
 	int_t err = _universal_kepler_solver(
-			dt, m, e2,
-			r0x, r0y, r0z,
-			v0x, v0y, v0z,
-			&(*r1x), &(*r1y), &(*r1z),
-			&(*v1x), &(*v1y), &(*v1z));
+					dt, m, e2,
+					&(*r1x), &(*r1y), &(*r1z),
+					&(*v1x), &(*v1y), &(*v1z));
 
 	#ifndef CONFIG_USE_OPENCL
 	if (err != 0) {
