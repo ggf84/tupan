@@ -30,6 +30,7 @@
 #define uint_tn vec(uint_t)
 #define real_tn vec(real_t)
 
+#define constant const
 #define rsqrt(x) (1 / sqrt(x))
 #define select(a, b, c) ((c) ? (b):(a))
 

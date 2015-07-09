@@ -209,7 +209,6 @@ class Program(object):
         vw = (self.cl_device.preferred_vector_width_float
               if fpwidth == 'fp32'
               else self.cl_device.preferred_vector_width_double)
-        vw *= 2
         lsize = 64
         fast_local_mem = True
 
