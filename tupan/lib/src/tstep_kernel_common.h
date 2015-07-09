@@ -48,7 +48,7 @@ tstep_kernel_core(
 
 	real_tn w2 = (v2 + a * m_r1) * inv_r2;										// 3 FLOPs
 	real_tn gamma = (w2 + b * m_r1) * inv_r2;									// 3 FLOPs
-	gamma *= (eta / sqrt(w2));													// 3 FLOPs
+	gamma *= (eta * rsqrt(w2));													// 3 FLOPs
 	w2 -= gamma * rv;															// 2 FLOPs
 
 	w2 = select((real_tn)(0), w2, mask);

@@ -4,14 +4,14 @@
 kernel void
 sakura_kernel(
 	uint_t const ni,
-	global real_t1xm const __im[restrict],
-	global real_t1xm const __irx[restrict],
-	global real_t1xm const __iry[restrict],
-	global real_t1xm const __irz[restrict],
-	global real_t1xm const __ie2[restrict],
-	global real_t1xm const __ivx[restrict],
-	global real_t1xm const __ivy[restrict],
-	global real_t1xm const __ivz[restrict],
+	global real_t1 const __im[restrict],
+	global real_t1 const __irx[restrict],
+	global real_t1 const __iry[restrict],
+	global real_t1 const __irz[restrict],
+	global real_t1 const __ie2[restrict],
+	global real_t1 const __ivx[restrict],
+	global real_t1 const __ivy[restrict],
+	global real_t1 const __ivz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
@@ -23,32 +23,32 @@ sakura_kernel(
 	global real_t const __jvz[restrict],
 	real_t const dt,
 	int_t const flag,
-	global real_t1xm __idrx[restrict],
-	global real_t1xm __idry[restrict],
-	global real_t1xm __idrz[restrict],
-	global real_t1xm __idvx[restrict],
-	global real_t1xm __idvy[restrict],
-	global real_t1xm __idvz[restrict])
+	global real_t1 __idrx[restrict],
+	global real_t1 __idry[restrict],
+	global real_t1 __idrz[restrict],
+	global real_t1 __idvx[restrict],
+	global real_t1 __idvy[restrict],
+	global real_t1 __idvz[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
-	gid %= ni;
+	uint_t i = gid % ni;
 
-	real_t1xm im = aloadn(0, __im[gid]);
-	real_t1xm irx = aloadn(0, __irx[gid]);
-	real_t1xm iry = aloadn(0, __iry[gid]);
-	real_t1xm irz = aloadn(0, __irz[gid]);
-	real_t1xm ie2 = aloadn(0, __ie2[gid]);
-	real_t1xm ivx = aloadn(0, __ivx[gid]);
-	real_t1xm ivy = aloadn(0, __ivy[gid]);
-	real_t1xm ivz = aloadn(0, __ivz[gid]);
+	real_t1 im = __im[i];
+	real_t1 irx = __irx[i];
+	real_t1 iry = __iry[i];
+	real_t1 irz = __irz[i];
+	real_t1 ie2 = __ie2[i];
+	real_t1 ivx = __ivx[i];
+	real_t1 ivy = __ivy[i];
+	real_t1 ivz = __ivz[i];
 
-	real_t1xm idrx = {(real_t1)(0)};
-	real_t1xm idry = {(real_t1)(0)};
-	real_t1xm idrz = {(real_t1)(0)};
-	real_t1xm idvx = {(real_t1)(0)};
-	real_t1xm idvy = {(real_t1)(0)};
-	real_t1xm idvz = {(real_t1)(0)};
+	real_t1 idrx = (real_t1)(0);
+	real_t1 idry = (real_t1)(0);
+	real_t1 idrz = (real_t1)(0);
+	real_t1 idvx = (real_t1)(0);
+	real_t1 idvy = (real_t1)(0);
+	real_t1 idvz = (real_t1)(0);
 
 	uint_t j = 0;
 
@@ -83,49 +83,37 @@ sakura_kernel(
 			real_t jvx = _jvx[k];
 			real_t jvy = _jvy[k];
 			real_t jvz = _jvz[k];
-			#pragma unroll
-			for (uint_t i = 0; i < IUNROLL; ++i) {
-				sakura_kernel_core(
-					dt, flag,
-					im[i], irx[i], iry[i], irz[i],
-					ie2[i], ivx[i], ivy[i], ivz[i],
-					jm, jrx, jry, jrz,
-					je2, jvx, jvy, jvz,
-					&idrx[i], &idry[i], &idrz[i],
-					&idvx[i], &idvy[i], &idvz[i]);
-			}
+			sakura_kernel_core(
+				dt, flag,
+				im, irx, iry, irz, ie2, ivx, ivy, ivz,
+				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+				&idrx, &idry, &idrz, &idvx, &idvy, &idvz);
 		}
 	}
 	#endif
 
 	#pragma unroll
-	for (; j < nj; ++j) {
-		real_t jm = __jm[j];
-		real_t jrx = __jrx[j];
-		real_t jry = __jry[j];
-		real_t jrz = __jrz[j];
-		real_t je2 = __je2[j];
-		real_t jvx = __jvx[j];
-		real_t jvy = __jvy[j];
-		real_t jvz = __jvz[j];
-		#pragma unroll
-		for (uint_t i = 0; i < IUNROLL; ++i) {
-			sakura_kernel_core(
-				dt, flag,
-				im[i], irx[i], iry[i], irz[i],
-				ie2[i], ivx[i], ivy[i], ivz[i],
-				jm, jrx, jry, jrz,
-				je2, jvx, jvy, jvz,
-				&idrx[i], &idry[i], &idrz[i],
-				&idvx[i], &idvy[i], &idvz[i]);
-		}
+	for (uint_t k = j; k < nj; ++k) {
+		real_t jm = __jm[k];
+		real_t jrx = __jrx[k];
+		real_t jry = __jry[k];
+		real_t jrz = __jrz[k];
+		real_t je2 = __je2[k];
+		real_t jvx = __jvx[k];
+		real_t jvy = __jvy[k];
+		real_t jvz = __jvz[k];
+		sakura_kernel_core(
+			dt, flag,
+			im, irx, iry, irz, ie2, ivx, ivy, ivz,
+			jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+			&idrx, &idry, &idrz, &idvx, &idvy, &idvz);
 	}
 
-	astoren(idrx, 0, __idrx[gid]);
-	astoren(idry, 0, __idry[gid]);
-	astoren(idrz, 0, __idrz[gid]);
-	astoren(idvx, 0, __idvx[gid]);
-	astoren(idvy, 0, __idvy[gid]);
-	astoren(idvz, 0, __idvz[gid]);
+	__idrx[i] = idrx;
+	__idry[i] = idry;
+	__idrz[i] = idrz;
+	__idvx[i] = idvx;
+	__idvy[i] = idvy;
+	__idvz[i] = idvz;
 }
 

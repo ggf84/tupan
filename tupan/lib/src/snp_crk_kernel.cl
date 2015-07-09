@@ -4,20 +4,20 @@
 kernel void
 snp_crk_kernel(
 	uint_t const ni,
-	global real_tnxm const __im[restrict],
-	global real_tnxm const __irx[restrict],
-	global real_tnxm const __iry[restrict],
-	global real_tnxm const __irz[restrict],
-	global real_tnxm const __ie2[restrict],
-	global real_tnxm const __ivx[restrict],
-	global real_tnxm const __ivy[restrict],
-	global real_tnxm const __ivz[restrict],
-	global real_tnxm const __iax[restrict],
-	global real_tnxm const __iay[restrict],
-	global real_tnxm const __iaz[restrict],
-	global real_tnxm const __ijx[restrict],
-	global real_tnxm const __ijy[restrict],
-	global real_tnxm const __ijz[restrict],
+	global real_tn const __im[restrict],
+	global real_tn const __irx[restrict],
+	global real_tn const __iry[restrict],
+	global real_tn const __irz[restrict],
+	global real_tn const __ie2[restrict],
+	global real_tn const __ivx[restrict],
+	global real_tn const __ivy[restrict],
+	global real_tn const __ivz[restrict],
+	global real_tn const __iax[restrict],
+	global real_tn const __iay[restrict],
+	global real_tn const __iaz[restrict],
+	global real_tn const __ijx[restrict],
+	global real_tn const __ijy[restrict],
+	global real_tn const __ijz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
@@ -33,38 +33,38 @@ snp_crk_kernel(
 	global real_t const __jjx[restrict],
 	global real_t const __jjy[restrict],
 	global real_t const __jjz[restrict],
-	global real_tnxm __isx[restrict],
-	global real_tnxm __isy[restrict],
-	global real_tnxm __isz[restrict],
-	global real_tnxm __icx[restrict],
-	global real_tnxm __icy[restrict],
-	global real_tnxm __icz[restrict])
+	global real_tn __isx[restrict],
+	global real_tn __isy[restrict],
+	global real_tn __isz[restrict],
+	global real_tn __icx[restrict],
+	global real_tn __icy[restrict],
+	global real_tn __icz[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
-	gid %= ni;
+	uint_t i = gid % ni;
 
-	real_tnxm im = aloadn(0, __im[gid]);
-	real_tnxm irx = aloadn(0, __irx[gid]);
-	real_tnxm iry = aloadn(0, __iry[gid]);
-	real_tnxm irz = aloadn(0, __irz[gid]);
-	real_tnxm ie2 = aloadn(0, __ie2[gid]);
-	real_tnxm ivx = aloadn(0, __ivx[gid]);
-	real_tnxm ivy = aloadn(0, __ivy[gid]);
-	real_tnxm ivz = aloadn(0, __ivz[gid]);
-	real_tnxm iax = aloadn(0, __iax[gid]);
-	real_tnxm iay = aloadn(0, __iay[gid]);
-	real_tnxm iaz = aloadn(0, __iaz[gid]);
-	real_tnxm ijx = aloadn(0, __ijx[gid]);
-	real_tnxm ijy = aloadn(0, __ijy[gid]);
-	real_tnxm ijz = aloadn(0, __ijz[gid]);
+	real_tn im = __im[i];
+	real_tn irx = __irx[i];
+	real_tn iry = __iry[i];
+	real_tn irz = __irz[i];
+	real_tn ie2 = __ie2[i];
+	real_tn ivx = __ivx[i];
+	real_tn ivy = __ivy[i];
+	real_tn ivz = __ivz[i];
+	real_tn iax = __iax[i];
+	real_tn iay = __iay[i];
+	real_tn iaz = __iaz[i];
+	real_tn ijx = __ijx[i];
+	real_tn ijy = __ijy[i];
+	real_tn ijz = __ijz[i];
 
-	real_tnxm isx = {(real_tn)(0)};
-	real_tnxm isy = {(real_tn)(0)};
-	real_tnxm isz = {(real_tn)(0)};
-	real_tnxm icx = {(real_tn)(0)};
-	real_tnxm icy = {(real_tn)(0)};
-	real_tnxm icz = {(real_tn)(0)};
+	real_tn isx = (real_tn)(0);
+	real_tn isy = (real_tn)(0);
+	real_tn isz = (real_tn)(0);
+	real_tn icx = (real_tn)(0);
+	real_tn icy = (real_tn)(0);
+	real_tn icz = (real_tn)(0);
 
 	uint_t j = 0;
 
@@ -117,61 +117,45 @@ snp_crk_kernel(
 			real_t jjx = _jjx[k];
 			real_t jjy = _jjy[k];
 			real_t jjz = _jjz[k];
-			#pragma unroll
-			for (uint_t i = 0; i < IUNROLL; ++i) {
-				snp_crk_kernel_core(
-					im[i], irx[i], iry[i], irz[i],
-					ie2[i], ivx[i], ivy[i], ivz[i],
-					iax[i], iay[i], iaz[i],
-					ijx[i], ijy[i], ijz[i],
-					jm, jrx, jry, jrz,
-					je2, jvx, jvy, jvz,
-					jax, jay, jaz,
-					jjx, jjy, jjz,
-					&isx[i], &isy[i], &isz[i],
-					&icx[i], &icy[i], &icz[i]);
-			}
+			snp_crk_kernel_core(
+				im, irx, iry, irz, ie2, ivx, ivy, ivz,
+				iax, iay, iaz, ijx, ijy, ijz,
+				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+				jax, jay, jaz, jjx, jjy, jjz,
+				&isx, &isy, &isz, &icx, &icy, &icz);
 		}
 	}
 	#endif
 
 	#pragma unroll
-	for (; j < nj; ++j) {
-		real_t jm = __jm[j];
-		real_t jrx = __jrx[j];
-		real_t jry = __jry[j];
-		real_t jrz = __jrz[j];
-		real_t je2 = __je2[j];
-		real_t jvx = __jvx[j];
-		real_t jvy = __jvy[j];
-		real_t jvz = __jvz[j];
-		real_t jax = __jax[j];
-		real_t jay = __jay[j];
-		real_t jaz = __jaz[j];
-		real_t jjx = __jjx[j];
-		real_t jjy = __jjy[j];
-		real_t jjz = __jjz[j];
-		#pragma unroll
-		for (uint_t i = 0; i < IUNROLL; ++i) {
-			snp_crk_kernel_core(
-				im[i], irx[i], iry[i], irz[i],
-				ie2[i], ivx[i], ivy[i], ivz[i],
-				iax[i], iay[i], iaz[i],
-				ijx[i], ijy[i], ijz[i],
-				jm, jrx, jry, jrz,
-				je2, jvx, jvy, jvz,
-				jax, jay, jaz,
-				jjx, jjy, jjz,
-				&isx[i], &isy[i], &isz[i],
-				&icx[i], &icy[i], &icz[i]);
-		}
+	for (uint_t k = j; k < nj; ++k) {
+		real_t jm = __jm[k];
+		real_t jrx = __jrx[k];
+		real_t jry = __jry[k];
+		real_t jrz = __jrz[k];
+		real_t je2 = __je2[k];
+		real_t jvx = __jvx[k];
+		real_t jvy = __jvy[k];
+		real_t jvz = __jvz[k];
+		real_t jax = __jax[k];
+		real_t jay = __jay[k];
+		real_t jaz = __jaz[k];
+		real_t jjx = __jjx[k];
+		real_t jjy = __jjy[k];
+		real_t jjz = __jjz[k];
+		snp_crk_kernel_core(
+			im, irx, iry, irz, ie2, ivx, ivy, ivz,
+			iax, iay, iaz, ijx, ijy, ijz,
+			jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+			jax, jay, jaz, jjx, jjy, jjz,
+			&isx, &isy, &isz, &icx, &icy, &icz);
 	}
 
-	astoren(isx, 0, __isx[gid]);
-	astoren(isy, 0, __isy[gid]);
-	astoren(isz, 0, __isz[gid]);
-	astoren(icx, 0, __icx[gid]);
-	astoren(icy, 0, __icy[gid]);
-	astoren(icz, 0, __icz[gid]);
+	__isx[i] = isx;
+	__isy[i] = isy;
+	__isz[i] = isz;
+	__icx[i] = icx;
+	__icy[i] = icy;
+	__icz[i] = icz;
 }
 

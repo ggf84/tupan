@@ -4,14 +4,14 @@
 kernel void
 nreg_Xkernel(
 	uint_t const ni,
-	global real_tnxm const __im[restrict],
-	global real_tnxm const __irx[restrict],
-	global real_tnxm const __iry[restrict],
-	global real_tnxm const __irz[restrict],
-	global real_tnxm const __ie2[restrict],
-	global real_tnxm const __ivx[restrict],
-	global real_tnxm const __ivy[restrict],
-	global real_tnxm const __ivz[restrict],
+	global real_tn const __im[restrict],
+	global real_tn const __irx[restrict],
+	global real_tn const __iry[restrict],
+	global real_tn const __irz[restrict],
+	global real_tn const __ie2[restrict],
+	global real_tn const __ivx[restrict],
+	global real_tn const __ivy[restrict],
+	global real_tn const __ivz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
@@ -22,34 +22,34 @@ nreg_Xkernel(
 	global real_t const __jvy[restrict],
 	global real_t const __jvz[restrict],
 	real_t const dt,
-	global real_tnxm __idrx[restrict],
-	global real_tnxm __idry[restrict],
-	global real_tnxm __idrz[restrict],
-	global real_tnxm __iax[restrict],
-	global real_tnxm __iay[restrict],
-	global real_tnxm __iaz[restrict],
-	global real_tnxm __iu[restrict])
+	global real_tn __idrx[restrict],
+	global real_tn __idry[restrict],
+	global real_tn __idrz[restrict],
+	global real_tn __iax[restrict],
+	global real_tn __iay[restrict],
+	global real_tn __iaz[restrict],
+	global real_tn __iu[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
-	gid %= ni;
+	uint_t i = gid % ni;
 
-	real_tnxm im = aloadn(0, __im[gid]);
-	real_tnxm irx = aloadn(0, __irx[gid]);
-	real_tnxm iry = aloadn(0, __iry[gid]);
-	real_tnxm irz = aloadn(0, __irz[gid]);
-	real_tnxm ie2 = aloadn(0, __ie2[gid]);
-	real_tnxm ivx = aloadn(0, __ivx[gid]);
-	real_tnxm ivy = aloadn(0, __ivy[gid]);
-	real_tnxm ivz = aloadn(0, __ivz[gid]);
+	real_tn im = __im[i];
+	real_tn irx = __irx[i];
+	real_tn iry = __iry[i];
+	real_tn irz = __irz[i];
+	real_tn ie2 = __ie2[i];
+	real_tn ivx = __ivx[i];
+	real_tn ivy = __ivy[i];
+	real_tn ivz = __ivz[i];
 
-	real_tnxm idrx = {(real_tn)(0)};
-	real_tnxm idry = {(real_tn)(0)};
-	real_tnxm idrz = {(real_tn)(0)};
-	real_tnxm iax = {(real_tn)(0)};
-	real_tnxm iay = {(real_tn)(0)};
-	real_tnxm iaz = {(real_tn)(0)};
-	real_tnxm iu = {(real_tn)(0)};
+	real_tn idrx = (real_tn)(0);
+	real_tn idry = (real_tn)(0);
+	real_tn idrz = (real_tn)(0);
+	real_tn iax = (real_tn)(0);
+	real_tn iay = (real_tn)(0);
+	real_tn iaz = (real_tn)(0);
+	real_tn iu = (real_tn)(0);
 
 	uint_t j = 0;
 
@@ -84,69 +84,52 @@ nreg_Xkernel(
 			real_t jvx = _jvx[k];
 			real_t jvy = _jvy[k];
 			real_t jvz = _jvz[k];
-			#pragma unroll
-			for (uint_t i = 0; i < IUNROLL; ++i) {
-				nreg_Xkernel_core(
-					dt,
-					im[i], irx[i], iry[i], irz[i],
-					ie2[i], ivx[i], ivy[i], ivz[i],
-					jm, jrx, jry, jrz,
-					je2, jvx, jvy, jvz,
-					&idrx[i], &idry[i], &idrz[i],
-					&iax[i], &iay[i], &iaz[i], &iu[i]);
-			}
+			nreg_Xkernel_core(
+				dt,
+				im, irx, iry, irz, ie2, ivx, ivy, ivz,
+				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+				&idrx, &idry, &idrz, &iax, &iay, &iaz, &iu);
 		}
 	}
 	#endif
 
 	#pragma unroll
-	for (; j < nj; ++j) {
-		real_t jm = __jm[j];
-		real_t jrx = __jrx[j];
-		real_t jry = __jry[j];
-		real_t jrz = __jrz[j];
-		real_t je2 = __je2[j];
-		real_t jvx = __jvx[j];
-		real_t jvy = __jvy[j];
-		real_t jvz = __jvz[j];
-		#pragma unroll
-		for (uint_t i = 0; i < IUNROLL; ++i) {
-			nreg_Xkernel_core(
-				dt,
-				im[i], irx[i], iry[i], irz[i],
-				ie2[i], ivx[i], ivy[i], ivz[i],
-				jm, jrx, jry, jrz,
-				je2, jvx, jvy, jvz,
-				&idrx[i], &idry[i], &idrz[i],
-				&iax[i], &iay[i], &iaz[i], &iu[i]);
-		}
+	for (uint_t k = j; k < nj; ++k) {
+		real_t jm = __jm[k];
+		real_t jrx = __jrx[k];
+		real_t jry = __jry[k];
+		real_t jrz = __jrz[k];
+		real_t je2 = __je2[k];
+		real_t jvx = __jvx[k];
+		real_t jvy = __jvy[k];
+		real_t jvz = __jvz[k];
+		nreg_Xkernel_core(
+			dt,
+			im, irx, iry, irz, ie2, ivx, ivy, ivz,
+			jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
+			&idrx, &idry, &idrz, &iax, &iay, &iaz, &iu);
 	}
 
-	#pragma unroll
-	for (uint_t i = 0; i < IUNROLL; ++i) {
-		iu[i] *= im[i];
-	}
-
-	astoren(idrx, 0, __idrx[gid]);
-	astoren(idry, 0, __idry[gid]);
-	astoren(idrz, 0, __idrz[gid]);
-	astoren(iax, 0, __iax[gid]);
-	astoren(iay, 0, __iay[gid]);
-	astoren(iaz, 0, __iaz[gid]);
-	astoren(iu, 0, __iu[gid]);
+	__idrx[i] = idrx;
+	__idry[i] = idry;
+	__idrz[i] = idrz;
+	__iax[i] = iax;
+	__iay[i] = iay;
+	__iaz[i] = iaz;
+	__iu[i] = im * iu;
 }
 
 
 kernel void
 nreg_Vkernel(
 	uint_t const ni,
-	global real_tnxm const __im[restrict],
-	global real_tnxm const __ivx[restrict],
-	global real_tnxm const __ivy[restrict],
-	global real_tnxm const __ivz[restrict],
-	global real_tnxm const __iax[restrict],
-	global real_tnxm const __iay[restrict],
-	global real_tnxm const __iaz[restrict],
+	global real_tn const __im[restrict],
+	global real_tn const __ivx[restrict],
+	global real_tn const __ivy[restrict],
+	global real_tn const __ivz[restrict],
+	global real_tn const __iax[restrict],
+	global real_tn const __iay[restrict],
+	global real_tn const __iaz[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jvx[restrict],
@@ -156,27 +139,27 @@ nreg_Vkernel(
 	global real_t const __jay[restrict],
 	global real_t const __jaz[restrict],
 	real_t const dt,
-	global real_tnxm __idvx[restrict],
-	global real_tnxm __idvy[restrict],
-	global real_tnxm __idvz[restrict],
-	global real_tnxm __ik[restrict])
+	global real_tn __idvx[restrict],
+	global real_tn __idvy[restrict],
+	global real_tn __idvz[restrict],
+	global real_tn __ik[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
-	gid %= ni;
+	uint_t i = gid % ni;
 
-	real_tnxm im = aloadn(0, __im[gid]);
-	real_tnxm ivx = aloadn(0, __ivx[gid]);
-	real_tnxm ivy = aloadn(0, __ivy[gid]);
-	real_tnxm ivz = aloadn(0, __ivz[gid]);
-	real_tnxm iax = aloadn(0, __iax[gid]);
-	real_tnxm iay = aloadn(0, __iay[gid]);
-	real_tnxm iaz = aloadn(0, __iaz[gid]);
+	real_tn im = __im[i];
+	real_tn ivx = __ivx[i];
+	real_tn ivy = __ivy[i];
+	real_tn ivz = __ivz[i];
+	real_tn iax = __iax[i];
+	real_tn iay = __iay[i];
+	real_tn iaz = __iaz[i];
 
-	real_tnxm idvx = {(real_tn)(0)};
-	real_tnxm idvy = {(real_tn)(0)};
-	real_tnxm idvz = {(real_tn)(0)};
-	real_tnxm ik = {(real_tn)(0)};
+	real_tn idvx = (real_tn)(0);
+	real_tn idvy = (real_tn)(0);
+	real_tn idvz = (real_tn)(0);
+	real_tn ik = (real_tn)(0);
 
 	uint_t j = 0;
 
@@ -208,49 +191,34 @@ nreg_Vkernel(
 			real_t jax = _jax[k];
 			real_t jay = _jay[k];
 			real_t jaz = _jaz[k];
-			#pragma unroll
-			for (uint_t i = 0; i < IUNROLL; ++i) {
-				nreg_Vkernel_core(
-					dt,
-					im[i], ivx[i], ivy[i], ivz[i],
-					iax[i], iay[i], iaz[i],
-					jm, jvx, jvy, jvz,
-					jax, jay, jaz,
-					&idvx[i], &idvy[i], &idvz[i], &ik[i]);
-			}
+			nreg_Vkernel_core(
+				dt,
+				im, ivx, ivy, ivz, iax, iay, iaz,
+				jm, jvx, jvy, jvz, jax, jay, jaz,
+				&idvx, &idvy, &idvz, &ik);
 		}
 	}
 	#endif
 
 	#pragma unroll
-	for (; j < nj; ++j) {
-		real_t jm = __jm[j];
-		real_t jvx = __jvx[j];
-		real_t jvy = __jvy[j];
-		real_t jvz = __jvz[j];
-		real_t jax = __jax[j];
-		real_t jay = __jay[j];
-		real_t jaz = __jaz[j];
-		#pragma unroll
-		for (uint_t i = 0; i < IUNROLL; ++i) {
-			nreg_Vkernel_core(
-				dt,
-				im[i], ivx[i], ivy[i], ivz[i],
-				iax[i], iay[i], iaz[i],
-				jm, jvx, jvy, jvz,
-				jax, jay, jaz,
-				&idvx[i], &idvy[i], &idvz[i], &ik[i]);
-		}
+	for (uint_t k = j; k < nj; ++k) {
+		real_t jm = __jm[k];
+		real_t jvx = __jvx[k];
+		real_t jvy = __jvy[k];
+		real_t jvz = __jvz[k];
+		real_t jax = __jax[k];
+		real_t jay = __jay[k];
+		real_t jaz = __jaz[k];
+		nreg_Vkernel_core(
+			dt,
+			im, ivx, ivy, ivz, iax, iay, iaz,
+			jm, jvx, jvy, jvz, jax, jay, jaz,
+			&idvx, &idvy, &idvz, &ik);
 	}
 
-	#pragma unroll
-	for (uint_t i = 0; i < IUNROLL; ++i) {
-		ik[i] *= im[i];
-	}
-
-	astoren(idvx, 0, __idvx[gid]);
-	astoren(idvy, 0, __idvy[gid]);
-	astoren(idvz, 0, __idvz[gid]);
-	astoren(ik, 0, __ik[gid]);
+	__idvx[i] = idvx;
+	__idvy[i] = idvy;
+	__idvz[i] = idvz;
+	__ik[i] = im * ik;
 }
 

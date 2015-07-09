@@ -4,13 +4,6 @@
 #include "common.h"
 
 
-static const real_t f3[] =	/* f3_i = (2*i+3)! / (2*i+1)! */
-{1./6, 1./20, 1./42, 1./72, 1./110, 1./156, 1./210, 1./272, 1./342, 1./420};
-
-static const real_t f2[] =	/* f2_i = (2*i+2)! / (2*i+0)! */
-{1./2, 1./12, 1./30, 1./56, 1./90 , 1./132, 1./182, 1./240, 1./306, 1./380};
-
-
 static inline void
 stumpff_cs(
 	real_t z,
@@ -19,8 +12,12 @@ stumpff_cs(
 	uint_t n = 0;
 	while (fabs(z) > 1) {
 		z *= (real_t)(0.25);
-		n++;
+		++n;
 	}
+	static const real_t f3[] =	/* f3_i = (2*i+3)! / (2*i+1)! */
+	{1./6, 1./20, 1./42, 1./72, 1./110, 1./156, 1./210, 1./272, 1./342, 1./420};
+	static const real_t f2[] =	/* f2_i = (2*i+2)! / (2*i+0)! */
+	{1./2, 1./12, 1./30, 1./56, 1./90 , 1./132, 1./182, 1./240, 1./306, 1./380};
 	cs[3] = (((((((((z * f3[9] + 1) *
 					 z * f3[8] + 1) *
 					 z * f3[7] + 1) *
@@ -40,7 +37,7 @@ stumpff_cs(
 					 z * f2[2] + 1) *
 					 z * f2[1] + 1) * f2[0];
 	cs[1] = 1 + z * cs[3];
-	for (; n > 0; n--) {
+	for (; n > 0; --n) {
 		z *= 4;
 		cs[3] = (cs[3] + cs[1] * cs[2]) * (real_t)(0.25);
 		cs[2] = (cs[1] * cs[1]) * (real_t)(0.5);
@@ -178,13 +175,12 @@ rootfinder(
 	real_t olds[MAXITER+1] = {NAN};
 
 	real_t s = *S;
-	real_t f, fp, fpp;
 
 	for (uint_t iter = 0; iter < MAXITER; ++iter) {
 		stiefel_Gs(s, alpha0, Gs);
-		f = kepler_f(s, r0, sigma0, gamma0, Gs) - dt0;
-		fp = kepler_fp(r0, sigma0, gamma0, Gs);
-		fpp = kepler_fpp(sigma0, gamma0, Gs);
+		real_t f = kepler_f(s, r0, sigma0, gamma0, Gs) - dt0;
+		real_t fp = kepler_fp(r0, sigma0, gamma0, Gs);
+		real_t fpp = kepler_fpp(sigma0, gamma0, Gs);
 
 		real_t g = f;
 		real_t h = fp;

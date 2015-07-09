@@ -4,30 +4,30 @@
 kernel void
 phi_kernel(
 	uint_t const ni,
-	global real_tnxm const __im[restrict],
-	global real_tnxm const __irx[restrict],
-	global real_tnxm const __iry[restrict],
-	global real_tnxm const __irz[restrict],
-	global real_tnxm const __ie2[restrict],
+	global real_tn const __im[restrict],
+	global real_tn const __irx[restrict],
+	global real_tn const __iry[restrict],
+	global real_tn const __irz[restrict],
+	global real_tn const __ie2[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
 	global real_t const __jry[restrict],
 	global real_t const __jrz[restrict],
 	global real_t const __je2[restrict],
-	global real_tnxm __iphi[restrict])
+	global real_tn __iphi[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
-	gid %= ni;
+	uint_t i = gid % ni;
 
-	real_tnxm im = aloadn(0, __im[gid]);
-	real_tnxm irx = aloadn(0, __irx[gid]);
-	real_tnxm iry = aloadn(0, __iry[gid]);
-	real_tnxm irz = aloadn(0, __irz[gid]);
-	real_tnxm ie2 = aloadn(0, __ie2[gid]);
+	real_tn im = __im[i];
+	real_tn irx = __irx[i];
+	real_tn iry = __iry[i];
+	real_tn irz = __irz[i];
+	real_tn ie2 = __ie2[i];
 
-	real_tnxm iphi = {(real_tn)(0)};
+	real_tn iphi = (real_tn)(0);
 
 	uint_t j = 0;
 
@@ -53,33 +53,27 @@ phi_kernel(
 			real_t jry = _jry[k];
 			real_t jrz = _jrz[k];
 			real_t je2 = _je2[k];
-			#pragma unroll
-			for (uint_t i = 0; i < IUNROLL; ++i) {
-				phi_kernel_core(
-					im[i], irx[i], iry[i], irz[i], ie2[i],
-					jm, jrx, jry, jrz, je2,
-					&iphi[i]);
-			}
+			phi_kernel_core(
+				im, irx, iry, irz, ie2,
+				jm, jrx, jry, jrz, je2,
+				&iphi);
 		}
 	}
 	#endif
 
 	#pragma unroll
-	for (; j < nj; ++j) {
-		real_t jm = __jm[j];
-		real_t jrx = __jrx[j];
-		real_t jry = __jry[j];
-		real_t jrz = __jrz[j];
-		real_t je2 = __je2[j];
-		#pragma unroll
-		for (uint_t i = 0; i < IUNROLL; ++i) {
-			phi_kernel_core(
-				im[i], irx[i], iry[i], irz[i], ie2[i],
-				jm, jrx, jry, jrz, je2,
-				&iphi[i]);
-		}
+	for (uint_t k = j; k < nj; ++k) {
+		real_t jm = __jm[k];
+		real_t jrx = __jrx[k];
+		real_t jry = __jry[k];
+		real_t jrz = __jrz[k];
+		real_t je2 = __je2[k];
+		phi_kernel_core(
+			im, irx, iry, irz, ie2,
+			jm, jrx, jry, jrz, je2,
+			&iphi);
 	}
 
-	astoren(iphi, 0, __iphi[gid]);
+	__iphi[i] = iphi;
 }
 

@@ -209,13 +209,12 @@ class Program(object):
         vw = (self.cl_device.preferred_vector_width_float
               if fpwidth == 'fp32'
               else self.cl_device.preferred_vector_width_double)
-        iunroll = 2
+        vw *= 2
         lsize = 64
         fast_local_mem = True
 
         # setting program options
         opts = ' -D VW={}'.format(vw)
-        opts += ' -D IUNROLL={}'.format(iunroll)
         opts += ' -D LSIZE={}'.format(lsize)
         opts += ' -D CONFIG_USE_OPENCL'
         if fpwidth == 'fp64':
@@ -237,7 +236,7 @@ class Program(object):
         kernels = self.cl_program.all_kernels()
         for kernel in kernels:
             name = kernel.function_name
-            kernel.stride = (vw if name != 'sakura_kernel' else 1) * iunroll
+            kernel.stride = (vw if name != 'sakura_kernel' else 1)
             kernel.lsize = lsize
             kernel.name = name
             LOGGER.debug(

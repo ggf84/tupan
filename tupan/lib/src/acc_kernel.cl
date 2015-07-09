@@ -4,34 +4,34 @@
 kernel void
 acc_kernel(
 	uint_t const ni,
-	global real_tnxm const __im[restrict],
-	global real_tnxm const __irx[restrict],
-	global real_tnxm const __iry[restrict],
-	global real_tnxm const __irz[restrict],
-	global real_tnxm const __ie2[restrict],
+	global real_tn const __im[restrict],
+	global real_tn const __irx[restrict],
+	global real_tn const __iry[restrict],
+	global real_tn const __irz[restrict],
+	global real_tn const __ie2[restrict],
 	uint_t const nj,
 	global real_t const __jm[restrict],
 	global real_t const __jrx[restrict],
 	global real_t const __jry[restrict],
 	global real_t const __jrz[restrict],
 	global real_t const __je2[restrict],
-	global real_tnxm __iax[restrict],
-	global real_tnxm __iay[restrict],
-	global real_tnxm __iaz[restrict])
+	global real_tn __iax[restrict],
+	global real_tn __iay[restrict],
+	global real_tn __iaz[restrict])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);
-	gid %= ni;
+	uint_t i = gid % ni;
 
-	real_tnxm im = aloadn(0, __im[gid]);
-	real_tnxm irx = aloadn(0, __irx[gid]);
-	real_tnxm iry = aloadn(0, __iry[gid]);
-	real_tnxm irz = aloadn(0, __irz[gid]);
-	real_tnxm ie2 = aloadn(0, __ie2[gid]);
+	real_tn im = __im[i];
+	real_tn irx = __irx[i];
+	real_tn iry = __iry[i];
+	real_tn irz = __irz[i];
+	real_tn ie2 = __ie2[i];
 
-	real_tnxm iax = {(real_tn)(0)};
-	real_tnxm iay = {(real_tn)(0)};
-	real_tnxm iaz = {(real_tn)(0)};
+	real_tn iax = (real_tn)(0);
+	real_tn iay = (real_tn)(0);
+	real_tn iaz = (real_tn)(0);
 
 	uint_t j = 0;
 
@@ -57,35 +57,29 @@ acc_kernel(
 			real_t jry = _jry[k];
 			real_t jrz = _jrz[k];
 			real_t je2 = _je2[k];
-			#pragma unroll
-			for (uint_t i = 0; i < IUNROLL; ++i) {
-				acc_kernel_core(
-					im[i], irx[i], iry[i], irz[i], ie2[i],
-					jm, jrx, jry, jrz, je2,
-					&iax[i], &iay[i], &iaz[i]);
-			}
+			acc_kernel_core(
+				im, irx, iry, irz, ie2,
+				jm, jrx, jry, jrz, je2,
+				&iax, &iay, &iaz);
 		}
 	}
 	#endif
 
 	#pragma unroll
-	for (; j < nj; ++j) {
-		real_t jm = __jm[j];
-		real_t jrx = __jrx[j];
-		real_t jry = __jry[j];
-		real_t jrz = __jrz[j];
-		real_t je2 = __je2[j];
-		#pragma unroll
-		for (uint_t i = 0; i < IUNROLL; ++i) {
-			acc_kernel_core(
-				im[i], irx[i], iry[i], irz[i], ie2[i],
-				jm, jrx, jry, jrz, je2,
-				&iax[i], &iay[i], &iaz[i]);
-		}
+	for (uint_t k = j; k < nj; ++k) {
+		real_t jm = __jm[k];
+		real_t jrx = __jrx[k];
+		real_t jry = __jry[k];
+		real_t jrz = __jrz[k];
+		real_t je2 = __je2[k];
+		acc_kernel_core(
+			im, irx, iry, irz, ie2,
+			jm, jrx, jry, jrz, je2,
+			&iax, &iay, &iaz);
 	}
 
-	astoren(iax, 0, __iax[gid]);
-	astoren(iay, 0, __iay[gid]);
-	astoren(iaz, 0, __iaz[gid]);
+	__iax[i] = iax;
+	__iay[i] = iay;
+	__iaz[i] = iaz;
 }
 
