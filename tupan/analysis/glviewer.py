@@ -38,6 +38,8 @@ attribute float a_psize;
 varying vec4  v_color;
 varying float v_psize;
 
+%s  // declare auxiliary functions
+
 // Main
 // ------------------------------------
 void main (void) {
@@ -45,6 +47,12 @@ void main (void) {
     v_psize  = a_psize * u_psize;
     gl_Position = u_projection * u_view * u_model * vec4(a_position, 1.0);
     gl_PointSize = v_psize;
+}
+""" % ""
+
+ALPHA_FUNCTION = """
+float get_alpha(float r, float a, float b) {
+    return b * (1 - r) / (a + r);
 }
 """
 
@@ -55,18 +63,18 @@ FRAG_SHADER0 = """
 varying vec4  v_color;
 varying float v_psize;
 
+%s  // declare auxiliary functions
+
 // Main
 // ------------------------------------
 void main()
 {
     float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
     if (r > 1) discard;  // kill pixels outside circle
-    float alpha = (1 - r);
-    alpha *= alpha;
-    alpha *= alpha;
-    gl_FragColor = vec4(v_color.rgb * (1 + 0.5 * alpha), alpha);
+    float alpha = get_alpha(r, 0.0625, 0.0625);
+    gl_FragColor = vec4(v_color.rgb * (1 + alpha), alpha);
 }
-"""
+""" % ALPHA_FUNCTION
 
 FRAG_SHADER1 = """
 #version 120
@@ -75,18 +83,18 @@ FRAG_SHADER1 = """
 varying vec4  v_color;
 varying float v_psize;
 
+%s  // declare auxiliary functions
+
 // Main
 // ------------------------------------
 void main()
 {
     float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
     if (r > 1) discard;  // kill pixels outside circle
-    float alpha = (1 - r) / 2;
-    alpha *= alpha;
-    alpha *= alpha;
+    float alpha = get_alpha(r, 64, 1);
     gl_FragColor = vec4(v_color.rgb, alpha);
 }
-"""
+""" % ALPHA_FUNCTION
 
 FRAG_SHADER2 = """
 #version 120
@@ -95,19 +103,22 @@ FRAG_SHADER2 = """
 varying vec4  v_color;
 varying float v_psize;
 
+%s  // declare auxiliary functions
+
 // Main
 // ------------------------------------
 void main()
 {
     float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
+    if (r > 1) discard;  // kill pixels outside ring
     float r1 = r - 0.5;
     float r2 = r - 0.25;
-    r = abs(max(r1, r2)) * v_psize / 2;
-    if (r > 1) discard;  // kill pixels outside ring
-    float alpha = exp(-r * r / 4);
-    gl_FragColor = vec4(1, 0, 0, alpha);
+    r = abs(max(r1, r2)) * v_psize / 8;
+    float alpha = exp(-8 * r * r);
+//    float alpha = get_alpha(3*r, 1, 20);
+    gl_FragColor = vec4(alpha, 0, 0, alpha);
 }
-"""
+""" % ALPHA_FUNCTION
 
 
 class GLviewer(app.Canvas):
@@ -267,8 +278,10 @@ class GLviewer(app.Canvas):
             gloo.set_depth_mask(True)
 
         if 'blackhole' in self.data:
-            gloo.set_state(blend_func=('src_alpha', 'zero'))
+            gloo.set_depth_mask(False)
+            gloo.set_state(blend_func=('dst_alpha', 'one_minus_src_alpha'))
             self.program['blackhole'].draw('points')
+            gloo.set_depth_mask(True)
 
         if self.make_movie:
             self.record_screen()
