@@ -12,7 +12,7 @@ import pickle
 import logging
 from .io import HDF5IO
 from .integrator import Integrator
-from .analysis.glviewer import GLviewer
+from .animation import GLviewer
 from .lib.utils.timing import timings, bind_all, Timer
 
 

@@ -13,6 +13,17 @@
     :backlinks: top
 
 
+:mod:`!tupan.animation` module
+------------------------------
+
+.. automodule:: tupan.animation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+    .. inheritance-diagram:: tupan.animation
+
+
 :mod:`!tupan.config` module
 ---------------------------
 

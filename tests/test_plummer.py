@@ -28,7 +28,7 @@ if __name__ == "__main__":
     with HDF5IO(fname, 'w') as fid:
         fid.write_ic(ps)
 
-    from tupan.analysis.glviewer import GLviewer
+    from tupan.animation import GLviewer
     viewer = GLviewer()
     viewer.show_event(ps)
     viewer.enter_main_loop()

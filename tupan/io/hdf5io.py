@@ -147,7 +147,7 @@ class HDF5IO(object):
         import time
         import numpy as np
         from scipy.interpolate import InterpolatedUnivariateSpline as spline
-        from tupan.analysis.glviewer import GLviewer
+        from tupan.animation import GLviewer
         viewer = GLviewer()
 
         ps = self.read_worldline()
