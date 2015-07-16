@@ -8,7 +8,6 @@ TODO.
 import logging
 import subprocess
 import numpy as np
-from PIL import Image
 from matplotlib import cm
 from vispy import gloo
 from vispy import app
@@ -126,9 +125,9 @@ class GLviewer(app.Canvas):
     TODO.
     """
     def __init__(self):
-        width = 768
+        height = 48 * 9
         aspect = 16.0 / 9.0
-        size = width, int(width / aspect)
+        size = int(height * aspect), height
         super(GLviewer, self).__init__(keys='interactive')
         self.size = size
         self.aspect = aspect
@@ -167,12 +166,16 @@ class GLviewer(app.Canvas):
         if not self.ffwriter:
             cmdline = [
                 "ffmpeg", "-y",
-                "-r", "60",
-                "-f", "image2pipe",
-                "-vcodec", "ppm",
+                "-f", "rawvideo",
+                "-pix_fmt", "rgba",
+                "-s", "{0}x{1}".format(*self.size),
+                "-r", "30",
                 "-i", "-",
-                "-q", "1",
-                "-vcodec", "mpeg4",
+                "-an",  # no audio
+                "-pix_fmt", "yuv420p",
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-qp", "0",
                 "movie.mp4",
             ]
             self.ffwriter = subprocess.Popen(cmdline,
@@ -181,9 +184,7 @@ class GLviewer(app.Canvas):
                                              stderr=subprocess.PIPE)
 
         im = gloo.read_pixels()
-        im = Image.frombuffer('RGBA', self.size, im.tostring(),
-                              'raw', 'RGBA', 0, 1)
-        im.save(self.ffwriter.stdin, format='ppm')
+        self.ffwriter.stdin.write(im.tostring())
 
     def on_initialize(self, event):
         gloo.set_state(depth_test=True, blend=True, clear_color='black')
@@ -308,10 +309,12 @@ class GLviewer(app.Canvas):
 #            def f(arg): return arg**(1/3.0)
 
             cmax, cmin = c.max(), c.min()
-            c = (f(c / cmin) / f(cmax / cmin)) if cmax > cmin else (c / cmax)
+            cc = cmin / cmax
+            c = f(cc + c / cmin) / f(cc + cmax / cmin)
 
             smax, smin = s.max(), s.min()
-            s = (f(s / smin) / f(smax / smin)) if smax > smin else (s / smax)
+            ss = smin / smax
+            s = f(ss + s / smin) / f(ss + smax / smin)
 
             self.data[name]['a_position'][...] = pos.T
             self.data[name]['a_color'][...] = cm.cubehelix(c)

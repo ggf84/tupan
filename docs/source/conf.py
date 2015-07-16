@@ -23,7 +23,6 @@ import time
 #sys.path.insert(0, os.path.abspath('.'))
 
 MOCK_MODULES = [
-    "PIL",
     "cffi",
     "h5py",
     "matplotlib",
