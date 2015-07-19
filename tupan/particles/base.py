@@ -401,12 +401,12 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """
         kernel(self, other)
 
-    def set_pnacc(self, other, kernel=ext.PNAcc()):
+    def set_pnacc(self, other, use_auxvel=False, kernel=ext.PNAcc()):
         """Set individual post-Newtonian gravitational acceleration due to
         other particles.
 
         """
-        kernel(self, other)
+        kernel(self, other, use_auxvel=use_auxvel)
 
     def set_acc_jrk(self, other, kernel=ext.AccJrk()):
         """Set individual gravitational acceleration and jerk due to other

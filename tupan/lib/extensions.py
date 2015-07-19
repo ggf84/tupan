@@ -213,13 +213,22 @@ class PNAcc(AbstractExtension):
         if self.clight is None:
             self.clight = self.kernel.make_struct('CLIGHT', **vars(pn))
 
-        inpargs = (ips.n,
-                   ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
-                   ips.eps2, ips.vel[0], ips.vel[1], ips.vel[2],
-                   jps.n,
-                   jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
-                   jps.eps2, jps.vel[0], jps.vel[1], jps.vel[2],
-                   self.clight)
+        if kwargs['use_auxvel']:
+            inpargs = (ips.n,
+                       ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
+                       ips.eps2, ips.wel[0], ips.wel[1], ips.wel[2],
+                       jps.n,
+                       jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
+                       jps.eps2, jps.wel[0], jps.wel[1], jps.wel[2],
+                       self.clight)
+        else:
+            inpargs = (ips.n,
+                       ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
+                       ips.eps2, ips.vel[0], ips.vel[1], ips.vel[2],
+                       jps.n,
+                       jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
+                       jps.eps2, jps.vel[0], jps.vel[1], jps.vel[2],
+                       self.clight)
 
         outargs = (ips.pnacc[0], ips.pnacc[1], ips.pnacc[2])
 

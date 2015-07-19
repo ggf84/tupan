@@ -103,42 +103,37 @@ def kick_pn(ips, dt):
 
     """
     #
-    ips.set_pnacc(ips)
+    ips.wel[...] = ips.vel
+
+    ips.set_pnacc(ips, use_auxvel=True)
     pnforce = ips.mass * ips.pnacc
-    ips.pn_ke -= (ips.vel * pnforce).sum(0) * (dt / 2)
+    ips.vel += (ips.acc + ips.pnacc) * (dt / 2)
+    ips.pn_ke -= (ips.wel * pnforce).sum(0) * (dt / 2)
     ips.pn_mv -= pnforce * (dt / 2)
     ips.pn_am -= np.cross(ips.pos.T, pnforce.T).T * (dt / 2)
 
-    ips.w[...] = ips.vel
-    ips.w += (ips.acc + ips.pnacc) * (dt / 2)
-
-    ips.vel, ips.w = ips.w, ips.vel
     ips.set_pnacc(ips)
-    ips.vel, ips.w = ips.w, ips.vel
+    ips.wel += (ips.acc + ips.pnacc) * dt
 
-    ips.vel += (ips.acc + ips.pnacc) * dt
-
-    ips.set_pnacc(ips)
-    ips.w += (ips.acc + ips.pnacc) * (dt / 2)
-    ips.vel[...] = ips.w
-
+    ips.set_pnacc(ips, use_auxvel=True)
     pnforce = ips.mass * ips.pnacc
-    ips.pn_ke -= (ips.vel * pnforce).sum(0) * (dt / 2)
+    ips.vel += (ips.acc + ips.pnacc) * (dt / 2)
+    ips.pn_ke -= (ips.wel * pnforce).sum(0) * (dt / 2)
     ips.pn_mv -= pnforce * (dt / 2)
     ips.pn_am -= np.cross(ips.pos.T, pnforce.T).T * (dt / 2)
     #
 
     #
-    # ips.vel += (ips.acc * dt + ips.w) / 2
+    # ips.vel += (ips.acc * dt + ips.wel) / 2
     #
     # ips.set_pnacc(ips)
     # pnforce = ips.mass * ips.pnacc
     # ips.pn_ke -= (ips.vel * pnforce).sum(0) * dt
     # ips.pn_mv -= pnforce * dt
     # ips.pn_am -= np.cross(ips.pos.T, pnforce.T).T * dt
-    # ips.w[...] = 2 * ips.pnacc * dt - ips.w
+    # ips.wel[...] = 2 * ips.pnacc * dt - ips.wel
     #
-    # ips.vel += (ips.acc * dt + ips.w) / 2
+    # ips.vel += (ips.acc * dt + ips.wel) / 2
     #
 
     return ips
@@ -241,42 +236,36 @@ def sf_kick_pn(slow, fast, dt):
 
     """
     #
-    slow.set_pnacc(fast)
-    fast.set_pnacc(slow)
+    for ps in [slow, fast]:
+        ps.wel[...] = ps.vel
+
+    slow.set_pnacc(fast, use_auxvel=True)
+    fast.set_pnacc(slow, use_auxvel=True)
     for ps in [slow, fast]:
         pnforce = ps.mass * ps.pnacc
-        ps.pn_ke -= (ps.vel * pnforce).sum(0) * (dt / 2)
+        ps.vel += (ps.acc + ps.pnacc) * (dt / 2)
+        ps.pn_ke -= (ps.wel * pnforce).sum(0) * (dt / 2)
         ps.pn_mv -= pnforce * (dt / 2)
         ps.pn_am -= np.cross(ps.pos.T, pnforce.T).T * (dt / 2)
 
-        ps.w[...] = ps.vel
-        ps.w += (ps.acc + ps.pnacc) * (dt / 2)
-
-    for ps in [slow, fast]:
-        ps.vel, ps.w = ps.w, ps.vel
     slow.set_pnacc(fast)
     fast.set_pnacc(slow)
     for ps in [slow, fast]:
-        ps.vel, ps.w = ps.w, ps.vel
+        ps.wel += (ps.acc + ps.pnacc) * dt
 
+    slow.set_pnacc(fast, use_auxvel=True)
+    fast.set_pnacc(slow, use_auxvel=True)
     for ps in [slow, fast]:
-        ps.vel += (ps.acc + ps.pnacc) * dt
-
-    slow.set_pnacc(fast)
-    fast.set_pnacc(slow)
-    for ps in [slow, fast]:
-        ps.w += (ps.acc + ps.pnacc) * (dt / 2)
-        ps.vel[...] = ps.w
-
         pnforce = ps.mass * ps.pnacc
-        ps.pn_ke -= (ps.vel * pnforce).sum(0) * (dt / 2)
+        ps.vel += (ps.acc + ps.pnacc) * (dt / 2)
+        ps.pn_ke -= (ps.wel * pnforce).sum(0) * (dt / 2)
         ps.pn_mv -= pnforce * (dt / 2)
         ps.pn_am -= np.cross(ps.pos.T, pnforce.T).T * (dt / 2)
     #
 
     #
     # for ps in [slow, fast]:
-    #    ps.vel += (ps.acc * dt + ps.w) / 2
+    #    ps.vel += (ps.acc * dt + ps.wel) / 2
     #
     # slow.set_pnacc(fast)
     # fast.set_pnacc(slow)
@@ -285,10 +274,10 @@ def sf_kick_pn(slow, fast, dt):
     #     ps.pn_ke -= (ps.vel * pnforce).sum(0) * dt
     #     ps.pn_mv -= pnforce * dt
     #     ps.pn_am -= np.cross(ps.pos.T, pnforce.T).T * dt
-    #     ps.w[...] = 2 * ps.pnacc * dt - ps.w
+    #     ps.wel[...] = 2 * ps.pnacc * dt - ps.wel
     #
     # for ps in [slow, fast]:
-    #     ps.vel += (ps.acc * dt + ps.w) / 2
+    #     ps.vel += (ps.acc * dt + ps.wel) / 2
     #
 
     return slow, fast
@@ -377,10 +366,7 @@ class SIAXX(object):
         evolve = self.dkd
         recurse = self.manager.recurse
 
-        if not fast.n:
-            slow = evolve(slow, dt) if slow.n else slow
-            type(slow).t_curr += dt
-        else:
+        if fast.n:
             coefs = self.coefs
             ck0, cd0 = coefs[-1]
 
@@ -399,6 +385,9 @@ class SIAXX(object):
                               if ck else (slow, fast))
                 slow, fast = (sf_drift(slow, fast, cd * dt, evolve, recurse)
                               if cd else (slow, fast))
+        else:
+            slow = evolve(slow, dt) if slow.n else slow
+            type(slow).t_curr += dt
 
         if slow.n:
             slow.tstep[...] = dt
@@ -415,10 +404,7 @@ class SIAXX(object):
         evolve = self.kdk
         recurse = self.manager.recurse
 
-        if not fast.n:
-            slow = evolve(slow, dt) if slow.n else slow
-            type(slow).t_curr += dt
-        else:
+        if fast.n:
             coefs = self.coefs
             cd0, ck0 = coefs[-1]
 
@@ -437,6 +423,9 @@ class SIAXX(object):
                               if cd else (slow, fast))
                 slow, fast = (sf_kick(slow, fast, ck * dt)
                               if ck else (slow, fast))
+        else:
+            slow = evolve(slow, dt) if slow.n else slow
+            type(slow).t_curr += dt
 
         if slow.n:
             slow.tstep[...] = dt
@@ -571,6 +560,7 @@ class SIA(Base):
 
         if 'c.' in method:
             self.update_tstep = False
+            self.shared_tstep = True
         elif 'a.' in method:
             self.update_tstep = True
             self.shared_tstep = True
@@ -623,7 +613,8 @@ class SIA(Base):
                     self.method, ps.t_curr, t_end)
 
         if ps.include_pn_corrections:
-            ps.register_attribute('w', '3, {n}', 'real_t')
+            ps.register_attribute('wel', '3, {n}', 'real_t',
+                                  doc='auxiliary-velocity for PN integration.')
 
         if self.reporter:
             self.reporter.diagnostic_report(ps)
