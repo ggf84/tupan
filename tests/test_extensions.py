@@ -110,7 +110,7 @@ class TestCase1(unittest.TestCase):
     def test06(self):
         print("\n---------- test06 ----------")
         extensions.pn = extensions.PN(7, 128.0)
-        self.compare_result(extensions.PNAcc, self.ps)
+        self.compare_result(extensions.PNAcc, self.ps, use_auxvel=False)
 
     def test07(self):
         print("\n---------- test07 ----------")
@@ -213,7 +213,7 @@ class TestCase2(unittest.TestCase):
     def test06(self):
         print("\n---------- test06 ----------")
         extensions.pn = extensions.PN(7, 128.0)
-        self.performance(extensions.PNAcc, self.pslist)
+        self.performance(extensions.PNAcc, self.pslist, use_auxvel=False)
 
     def test07(self):
         print("\n---------- test07 ----------")
