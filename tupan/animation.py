@@ -109,11 +109,11 @@ varying float v_psize;
 void main()
 {
     float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
-    if (r > 1) discard;  // kill pixels outside ring
+    if (r > 1) discard;  // kill pixels outside circle
     float r1 = r - 0.5;
     float r2 = r - 0.25;
-    r = abs(max(r1, r2)) * v_psize / 8;
-    float alpha = exp(-8 * r * r);
+    r = abs(max(r1, r2)) * v_psize / 2;
+    float alpha = exp(-r);
 //    float alpha = get_alpha(3*r, 1, 20);
     gl_FragColor = vec4(alpha, 0, 0, alpha);
 }
@@ -126,7 +126,7 @@ class GLviewer(app.Canvas):
     """
     def __init__(self):
         height = 48 * 9
-        aspect = 16.0 / 9.0
+        aspect = 16.0 / 9
         size = int(height * aspect), height
         super(GLviewer, self).__init__(keys='interactive')
         self.size = size
@@ -308,13 +308,11 @@ class GLviewer(app.Canvas):
             def f(arg): return np.log(arg)
 #            def f(arg): return arg**(1/3.0)
 
-            cmax, cmin = c.max(), c.min()
-            cc = cmin / cmax
-            c = f(cc + c / cmin) / f(cc + cmax / cmin)
+            c = f(1 + c / c.min())
+            c = c / c.max()
 
-            smax, smin = s.max(), s.min()
-            ss = smin / smax
-            s = f(ss + s / smin) / f(ss + smax / smin)
+            s = f(1 + s / s.min())
+            s = s / s.max()
 
             self.data[name]['a_position'][...] = pos.T
             self.data[name]['a_color'][...] = cm.cubehelix(c)
