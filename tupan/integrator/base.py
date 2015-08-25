@@ -59,7 +59,6 @@ class Base(object):
         self.viewer = kwargs.pop('viewer', None)
         self.dumpper = kwargs.pop('dumpper', None)
         self.dump_freq = kwargs.pop('dump_freq', 1)
-        self.gl_freq = kwargs.pop('gl_freq', 1)
         if kwargs:
             msg = '{0}.__init__ received unexpected keyword arguments: {1}.'
             raise TypeError(msg.format(type(
@@ -104,7 +103,7 @@ class Base(object):
             if any(slc):
                 self.dumpper.wl.append(ps[slc])
         if self.viewer:
-            slc = abs(ps.time // dt) % self.gl_freq == 0
+            slc = abs(ps.time // dt) % self.viewer.gl_freq == 0
             if any(slc):
                 self.viewer.show_event(ps[slc])
 

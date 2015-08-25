@@ -147,7 +147,6 @@ class Simulation(object):
             viewer=viewer,
             dumpper=io,
             dump_freq=self.args.dump_freq,
-            gl_freq=self.args.gl_freq,
             )
 
         # Initializes some counters
@@ -179,7 +178,7 @@ class Simulation(object):
 
 @timings
 def main_simulation(args):
-    viewer = GLviewer() if args.view else None
+    viewer = GLviewer() if bool(args.view) else None
     mysim = Simulation(args, viewer)
     mysim.evolve()
     return 0
@@ -343,13 +342,6 @@ def add_parsers(subparser, parents=None):
         type=int,
         default=1,
         help=('Number of time-steps between rewrites of the restart file '
-              '(type: %(type)s, default: %(default)s).')
-        )
-    simulation.add_argument(
-        '-g', '--gl_freq',
-        type=int,
-        default=1,
-        help=('Number of time-steps between GLviewer events '
               '(type: %(type)s, default: %(default)s).')
         )
     simulation.set_defaults(func=main_simulation)

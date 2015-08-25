@@ -47,8 +47,19 @@ parser.add_argument(
     )
 parser.add_argument(
     '--view',
+    metavar='FREQ',
+    nargs='?',
+    type=int,
+    const=1,
+    default=0,
+    help=('Enable support for real-time visualization. '
+          'Optionally you can pass an update frequency '
+          '(type: %(type)s, const: %(const)s, default: %(default)s).')
+    )
+parser.add_argument(
+    '--record',
     action='store_true',
-    help='Enable GLviewer support for visualization.'
+    help='Enable recording of visualization.'
     )
 
 # parse known arguments from parser

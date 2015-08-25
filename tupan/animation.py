@@ -12,6 +12,7 @@ from matplotlib import cm
 from vispy import gloo
 from vispy import app
 from vispy.util.transforms import ortho, translate, scale, rotate
+from .config import options
 
 
 LOGGER = logging.getLogger(__name__)
@@ -124,7 +125,7 @@ class GLviewer(app.Canvas):
     """
     TODO.
     """
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         height = 48 * 9
         aspect = 16.0 / 9
         size = int(height * aspect), height
@@ -160,7 +161,8 @@ class GLviewer(app.Canvas):
         self.is_visible = True
 
         self.ffwriter = None
-        self.make_movie = False
+        self.make_movie = options.record
+        self.gl_freq = options.view
 
     def record_screen(self):
         if not self.ffwriter:
