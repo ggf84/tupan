@@ -9,14 +9,21 @@ from __future__ import print_function
 import abc
 import copy
 import numpy as np
+from itertools import count
 from ..lib import extensions as ext
 from ..lib.utils import with_metaclass
 from ..lib.utils.ctype import Ctype
 
 
+part_type = count()
+
+
 class MetaParticle(abc.ABCMeta):
     def __init__(cls, *args, **kwargs):
         super(MetaParticle, cls).__init__(*args, **kwargs)
+
+        if hasattr(cls, 'part_type'):
+            setattr(cls, 'part_type', next(part_type))
 
         if hasattr(cls, 'name'):
             setattr(cls, 'name', cls.__name__.lower())
@@ -383,11 +390,13 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         return 2 * self.kinetic_energy + self.potential_energy
 
     # -- gravity
-    def set_tstep(self, other, eta, kernel=ext.Tstep()):
+    def set_tstep(self, other, eta, shared=False, kernel=ext.Tstep()):
         """Set individual time-steps due to other particles.
 
         """
         kernel(self, other, eta=eta)
+        if shared:
+            self.tstep[...] = np.copysign(abs(self.tstep).min(), self.tstep)
 
     def set_phi(self, other, kernel=ext.Phi()):
         """Set individual gravitational potential due to other particles.

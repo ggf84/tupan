@@ -48,13 +48,13 @@ class HX(with_metaclass(ABCMeta, object)):
         self.initialized = False
         self.manager = manager
 
-    def pec(self, n, ps, eta, dtmax):
+    def pec(self, n, ps, eta, dt_max):
         if not self.initialized:
             self.initialized = True
             ps = self.prepare(ps, eta)
             if self.order > 4:
                 n += 1
-        dt = power_of_two(ps, dtmax) if self.manager.update_tstep else dtmax
+        dt = power_of_two(ps, dt_max) if self.manager.update_tstep else dt_max
         ps0 = ps.copy()
         ps1 = self.predict(ps, dt)
         while n > 0:
@@ -64,7 +64,6 @@ class HX(with_metaclass(ABCMeta, object)):
         ps1.tstep[...] = dt
         ps1.time += dt
         ps1.nstep += 1
-        self.manager.dump(dt, ps1)
         if self.manager.update_tstep:
             self.set_nextstep(ps1, eta)
         return ps1
@@ -459,20 +458,19 @@ class Hermite(Base):
         'hermite8c', 'hermite8a',
     ]
 
-    def __init__(self, eta, time, ps, method, **kwargs):
+    def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
         """
 
         """
-        super(Hermite, self).__init__(eta, time, ps, **kwargs)
-        self.method = method
-
-        if method not in self.PROVIDED_METHODS:
-            raise ValueError('Invalid integration method: {0}'.format(method))
+        super(Hermite, self).__init__(ps, eta, dt_max,
+                                      t_begin, method, **kwargs)
 
         if method.endswith('c'):
             self.update_tstep = False
+            self.shared_tstep = True
         elif method.endswith('a'):
             self.update_tstep = True
+            self.shared_tstep = True
 
         if 'hermite2' in method:
             self.hermite = H2(self)
@@ -483,42 +481,11 @@ class Hermite(Base):
         elif 'hermite8' in method:
             self.hermite = H8(self)
 
-    def initialize(self, t_end):
+    def do_step(self, ps, dt_max):
         """
 
         """
-        ps = self.ps
-        LOGGER.info("Initializing '%s' integrator at "
-                    "t_curr = %g and t_end = %g.",
-                    self.method, ps.t_curr, t_end)
-
-        if self.reporter:
-            self.reporter.diagnostic_report(ps)
-        if self.dumpper:
-            self.dumpper.init_worldline(ps)
-        if self.viewer:
-            self.viewer.show_event(ps)
-
-        self.is_initialized = True
-
-    def finalize(self, t_end):
-        """
-
-        """
-        ps = self.ps
-        LOGGER.info("Finalizing '%s' integrator at "
-                    "t_curr = %g and t_end = %g.",
-                    self.method, ps.t_curr, t_end)
-
-        if self.viewer:
-            self.viewer.show_event(ps)
-            self.viewer.enter_main_loop()
-
-    def do_step(self, ps, dtmax):
-        """
-
-        """
-        return self.hermite.pec(2, ps, self.eta, dtmax)
+        return self.hermite.pec(2, ps, self.eta, dt_max)
 
 
 # -- End of File --

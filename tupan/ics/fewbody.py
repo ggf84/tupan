@@ -12,7 +12,7 @@ from ..lib.utils.timing import timings
 
 
 @timings
-def make_binary(m1, m2, a, e):
+def make_binary(m1, m2, ecc, sma=1):
     """
     Returns initial conditions for a binary system.
     """
@@ -22,15 +22,15 @@ def make_binary(m1, m2, a, e):
     if not m2 > 0:
         raise ValueError("mass out of range (m2 > 0)")
 
-    if not a > 0:
-        raise ValueError("semi-major-axis out of range (a > 0)")
+    if ecc > 1 or ecc < 0:
+        raise ValueError("eccentricity out of range (0 < ecc < 1)")
 
-    if e > 1 or e < 0:
-        raise ValueError("eccentricity out of range (0 < e < 1)")
+    if not sma > 0:
+        raise ValueError("semi-major-axis out of range (sma > 0)")
 
     m = m1 + m2
-    r = a * (1 + e)
-    v = ((m / a) * (1 - e) / (1 + e))**0.5
+    r = sma * (1 + ecc)
+    v = ((m / sma) * (1 - ecc) / (1 + ecc))**0.5
     r1 = (m2 / m) * r
     r2 = -(m1 / m) * r
     v1 = (m2 / m) * v

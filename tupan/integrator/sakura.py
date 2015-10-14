@@ -6,6 +6,7 @@ TODO.
 """
 
 import logging
+import numpy as np
 from .base import Base, power_of_two
 from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
@@ -41,44 +42,21 @@ class Sakura(Base):
     """
     PROVIDED_METHODS = ['sakura', 'asakura', ]
 
-    def __init__(self, eta, time, ps, method, **kwargs):
+    def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
         """
 
         """
-        super(Sakura, self).__init__(eta, time, ps, **kwargs)
-        self.method = method
+        super(Sakura, self).__init__(ps, eta, dt_max,
+                                     t_begin, method, **kwargs)
+
+        if 'asakura' in self.method:
+            self.update_tstep = True
+            self.shared_tstep = True
+        else:
+            self.update_tstep = False
+            self.shared_tstep = True
+
         self.e0 = None
-
-    def initialize(self, t_end):
-        """
-
-        """
-        ps = self.ps
-        LOGGER.info("Initializing '%s' integrator at "
-                    "t_curr = %g and t_end = %g.",
-                    self.method, ps.t_curr, t_end)
-
-        if self.reporter:
-            self.reporter.diagnostic_report(ps)
-        if self.dumpper:
-            self.dumpper.init_worldline(ps)
-        if self.viewer:
-            self.viewer.show_event(ps)
-
-        self.is_initialized = True
-
-    def finalize(self, t_end):
-        """
-
-        """
-        ps = self.ps
-        LOGGER.info("Finalizing '%s' integrator at "
-                    "t_curr = %g and t_end = %g.",
-                    self.method, ps.t_curr, t_end)
-
-        if self.viewer:
-            self.viewer.show_event(ps)
-            self.viewer.enter_main_loop()
 
     def get_sakura_tstep(self, ps, eta, dt):
         """
@@ -86,13 +64,14 @@ class Sakura(Base):
         """
         ps.set_tstep(ps, eta)
 
-        iw2_a = (eta / ps.tstep)**2
-        iw2_b = (eta / ps.tstepij)**2
+        iw_a = 1 / ps.tstep
+        iw_b = 1 / ps.tstepij
 
-        diw2 = (iw2_a - iw2_b)
+        diw = (iw_a - iw_b)
 
-        w2_sakura = diw2.max()
-        dt_sakura = eta / (1 + w2_sakura)**0.5
+        w_sakura = abs(diw).max()
+        w_sakura = np.copysign(w_sakura, eta)
+        dt_sakura = 1 / w_sakura
 
         ps.tstep[...] = dt_sakura
 
@@ -122,7 +101,7 @@ class Sakura(Base):
 # #                   print(nsteps, de, tol)
 #                    break
 
-        if 'asakura' in self.method:
+        if self.update_tstep:
             dt = self.get_sakura_tstep(ps, self.eta, dt)
         ps = sakura_step(ps, dt)
 
@@ -130,7 +109,6 @@ class Sakura(Base):
         ps.time += dt
         ps.nstep += 1
         type(ps).t_curr += dt
-        self.dump(dt, ps)
         return ps
 
 

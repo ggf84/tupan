@@ -148,9 +148,9 @@ initial_guess(
 		*/
 		real_t sqrt_alpha = sqrt(-alpha0);
 		real_t T = TWOPI * m / (-alpha0 * sqrt_alpha);
-		real_t ratio = dt0 / T;
+		real_t ratio = fabs(dt0) / T;
 		real_t rdiff = ratio - floor(ratio);
-		dt = rdiff * T;
+		dt = copysign(rdiff * T, dt0);
 
 		/*
 		** Initial guess for elliptical / nearly parabolical orbits.

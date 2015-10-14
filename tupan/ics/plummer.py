@@ -26,7 +26,8 @@ class Plummer(object):
         self.mfrac = mfrac
         self.softening_type = softening_type
         self.ps = ParticleSystem(n)
-        np.random.seed(seed)
+        if seed:
+            np.random.seed(seed)
 
     def set_eps2(self, mass):
         n = self.n

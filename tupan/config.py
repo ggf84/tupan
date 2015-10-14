@@ -58,8 +58,14 @@ parser.add_argument(
     )
 parser.add_argument(
     '--record',
-    action='store_true',
-    help='Enable recording of visualization.'
+    metavar='FPS',
+    nargs='?',
+    type=int,
+    const=30,
+    default=0,
+    help=('Enable recording of visualization. '
+          'Optionally you can pass the output fps ratio '
+          '(type: %(type)s, const: %(const)s, default: %(default)s).')
     )
 
 # parse known arguments from parser

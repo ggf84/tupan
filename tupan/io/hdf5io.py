@@ -9,6 +9,7 @@ from __future__ import print_function
 import sys
 import h5py
 import pickle
+from itertools import count
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -16,45 +17,39 @@ IS_PY3K = True if sys.version_info.major > 2 else False
 PICKLE_PROTOCOL = 0  # ensures backward compatibility with Python 2.x
 
 
-def dump_ps(root, ps):
-    cls = pickle.dumps(type(ps), protocol=PICKLE_PROTOCOL)
-    cls = cls.decode('utf-8') if IS_PY3K else cls
-    ps_group = root.require_group(ps.name)
-    ps_group.attrs['CLASS'] = cls
+def do_pickle(obj):
+    cls = pickle.dumps(type(obj), protocol=PICKLE_PROTOCOL)
+    return cls.decode('utf-8') if IS_PY3K else cls
+
+
+def dump_ps(parent, ps):
+    psys = parent.create_group('PartSys')
+    psys.attrs['npart'] = ps.n
+    psys.attrs['class'] = do_pickle(ps)
     for member in ps.members.values():
-        if member.n:
-            cls = pickle.dumps(type(member), protocol=PICKLE_PROTOCOL)
-            cls = cls.decode('utf-8') if IS_PY3K else cls
-            member_group = ps_group.require_group(member.name)
-            member_group.attrs['CLASS'] = cls
-            member_group.attrs['N'] = member.n
-            attr_group = member_group.require_group('attributes')
-            for name in member.default_attr_names:
-                ary = getattr(member, name)
-                dset = attr_group.require_dataset(
-                    name,
-                    shape=ary.T.shape,
-                    dtype=ary.dtype,
-                    chunks=True,
-                    shuffle=True,
-                    compression='gzip',
-                    )
-                dset[...] = ary.T
+        ptype = psys.create_group('PartType#' + str(member.part_type))
+        ptype.attrs['npart'] = member.n
+        ptype.attrs['class'] = do_pickle(member)
+        for name in member.default_attr_names:
+            array = getattr(member, name)
+            ptype.create_dataset(name, data=array.T,
+                                 chunks=True, shuffle=True,
+                                 compression='gzip')
 
 
-def load_ps(root):
-    ps_group = list(root.values())[0]
-    ps_cls = pickle.loads(ps_group.attrs['CLASS'])
+def load_ps(parent):
+    psys = parent['PartSys']
     members = {}
-    for member_name, member_group in ps_group.items():
-        n = member_group.attrs['N']
-        member_cls = pickle.loads(member_group.attrs['CLASS'])
-        member = member_cls(n)
-        for name, dset in member_group['attributes'].items():
+    for part_type in psys.values():
+        n = part_type.attrs['npart']
+        cls = pickle.loads(part_type.attrs['class'])
+        member = cls(n)
+        for name, dset in part_type.items():
             attr = getattr(member, name)
             attr[...] = dset[...].T
-        members[member_name] = member
-    return ps_cls.from_members(**members)
+        members[member.name] = member
+    cls = pickle.loads(psys.attrs['class'])
+    return cls.from_members(**members)
 
 
 @bind_all(timings)
@@ -66,133 +61,76 @@ class HDF5IO(object):
         if not fname.endswith('.hdf5'):
             fname += '.hdf5'
         self.file = h5py.File(fname, fmode)
-        self.wl_id = None
-        self.wl = None
+        self.snap_id = count()
+        self.stream_id = count()
+        self.data_stream = []
 
     def __enter__(self):
         return self
 
     def __exit__(self, type, value, traceback):
-        self.close()
-
-    def flush(self):
-        self.file.flush()
-
-    def close(self):
         self.file.close()
 
-    def write_ic(self, ps):
+    def dump_snap(self, ps, tag=0):
+        snap = self.file.create_group('Snap#%d' % tag)
+        dump_ps(snap, ps)
+
+    def load_snap(self, tag=0):
+        snap = self.file['Snap#%d' % tag]
+        return load_ps(snap)
+
+    def dump_stream(self, ps, tag=0):
+        stream = self.file.create_group('Snap#%d/Stream' % tag)
+        dump_ps(stream, ps)
+
+    def load_stream(self, tag=0):
+        stream = self.file['Snap#%d/Stream' % tag]
+        return load_ps(stream)
+
+    def append_data(self, ps):
+        self.data_stream.append(ps.copy())
+
+    def flush_data_stream(self):
+        if self.data_stream:
+            data = self.data_stream.pop(0)
+            for d in self.data_stream:
+                data.append(d)
+            self.dump_stream(data, tag=next(self.stream_id))
+            del self.data_stream[:]
+
+    def init_new_era(self, ps):
+        self.flush_data_stream()
+        self.dump_snap(ps, tag=next(self.snap_id))
+        self.file.flush()
+
+    def load_era(self, tag=0):
+        era = self.load_snap(tag)
+        era.append(self.load_stream(tag))
+        era.append(self.load_snap(tag+1))
+        return era
+
+    def load_full_era(self):
+        era = self.load_snap(0)
+        for i in range(1, len(self.file)):
+            era.append(self.load_stream(i-1))
+            era.append(self.load_snap(i))
+        return era
+
+    def era2snaps(self, output_file_name, times):
         """
-
+        convert from worldline to snapshot layout (experimental!)
         """
-        dump_ps(self.file, ps)
-
-    def read_ic(self):
-        """
-
-        """
-        return load_ps(self.file)
-
-    def write_snapshot(self, ps, snap_id):
-        """
-
-        """
-        snap_name = 'Snapshot_' + str(snap_id).zfill(6)
-        snap_group = self.file.require_group(snap_name)
-        dump_ps(snap_group, ps)
-
-    def read_snapshot(self, snap_id):
-        """
-
-        """
-        snap_name = 'Snapshot_' + str(snap_id).zfill(6)
-        snap_group = self.file[snap_name]
-        return load_ps(snap_group)
-
-    def init_worldline(self, ps):
-        """
-
-        """
-        self.wl = ps.copy()
-        self.wl_id = 0
-
-    def flush_worldline(self):
-        self.write_worldline(self.wl)
-        self.flush()
-        self.wl = type(self.wl)()
-        self.wl_id += 1
-
-    def write_worldline(self, ps):
-        """
-
-        """
-        wl_name = 'Worldline_' + str(self.wl_id).zfill(6)
-        wl_group = self.file.require_group(wl_name)
-        dump_ps(wl_group, ps)
-
-    def read_worldline(self):
-        """
-
-        """
-        wl = None
-        for wl_group in self.file.values():
-            ps = load_ps(wl_group)
-            if wl is None:
-                wl = ps
-            else:
-                wl.append(ps)
-        return wl
-
-    def worldline_to_snapshots(self, t_begin, t_end, nsnaps):
-        import time
-        import numpy as np
         from scipy.interpolate import InterpolatedUnivariateSpline as spline
-        from tupan.animation import GLviewer
-        viewer = GLviewer()
 
-        ps = self.read_worldline()
-
-        times = np.linspace(t_begin, t_end, nsnaps+1)
+        ps = self.load_full_era()
 
         snaps = {}
         for t in times:
             snaps[t] = type(ps)()
 
-#        # ---
-#        start = time.time()
-#        for member in ps.members.values():
-#            if member.n:
-#                pids = set(member.pid)
-#                n = len(pids)
-#                for t in times:
-#                    snap = type(member)(n)
-#                    members = snaps[t].members
-#                    members[snap.name] = snap
-#                    snaps[t].update_members(**members)
-#        pids = set(ps.pid)
-#        n = len(pids)
-#        for i, pid in enumerate(pids):
-#            pstream = ps[ps.pid == pid]
-#            for attr in ps.default_attr_names:
-#                array = getattr(pstream, attr)
-#                if array.ndim > 1:
-#                    for axis in range(array.shape[0]):
-#                        f = spline(pstream.time, array[axis, ...], k=3)
-#                        for t, snap in snaps.items():
-#                            ary = getattr(snap, attr)
-#                            ary[axis, i] = f(t)
-#                else:
-#                    f = spline(pstream.time, array[...], k=3)
-#                    for t, snap in snaps.items():
-#                        ary = getattr(snap, attr)
-#                        ary[i] = pid if attr == 'pid' else f(t)
-#        # ---
-
         # ---
-        start = time.time()
         for member in ps.members.values():
             if member.n:
-                name = member.name
                 pids = set(member.pid)
                 n = len(pids)
                 for t in times:
@@ -200,49 +138,75 @@ class HDF5IO(object):
                     members = snaps[t].members
                     members[snap.name] = snap
                     snaps[t].update_members(**members)
-                for i, pid in enumerate(pids):
-                    pstream = member[member.pid == pid]
-                    for attr in member.default_attr_names:
-                        array = getattr(pstream, attr)
-                        if array.ndim > 1:
-                            for axis in range(array.shape[0]):
-                                f = spline(pstream.time, array[axis, ...], k=3)
-                                for t in times:
-                                    snap = snaps[t]
-                                    obj = getattr(snap.members, name)
-                                    ary = getattr(obj, attr)
-                                    ary[axis, i] = f(t)
-                        else:
-                            f = spline(pstream.time, array[...], k=3)
-                            for t in times:
-                                snap = snaps[t]
-                                obj = getattr(snap.members, name)
-                                ary = getattr(obj, attr)
-                                ary[i] = pid if attr == 'pid' else f(t)
+        pids = set(ps.pid)
+        n = len(pids)
+        for i, pid in enumerate(pids):
+            pstream = ps[ps.pid == pid]
+            for attr in ps.default_attr_names:
+                array = getattr(pstream, attr)
+                alen = len(array.T)
+                kdeg = 3 if alen > 3 else (2 if alen > 2 else 1)
+                if array.ndim > 1:
+                    for axis in range(array.shape[0]):
+                        f = spline(pstream.time, array[axis], k=kdeg)
+                        for t, snap in snaps.items():
+                            ary = getattr(snap, attr)
+                            ary[axis, i] = f(t)
+                else:
+                    f = spline(pstream.time, array, k=kdeg)
+                    for t, snap in snaps.items():
+                        ary = getattr(snap, attr)
+                        ary[i] = pid if attr == 'pid' else f(t)
         # ---
 
-        print('elapsed:', time.time() - start)
+#        # ---
+#        for member in ps.members.values():
+#            if member.n:
+#                name = member.name
+#                pids = set(member.pid)
+#                n = len(pids)
+#                for t in times:
+#                    snap = type(member)(n)
+#                    members = snaps[t].members
+#                    members[snap.name] = snap
+#                    snaps[t].update_members(**members)
+#                for i, pid in enumerate(pids):
+#                    pstream = member[member.pid == pid]
+#                    for attr in member.default_attr_names:
+#                        array = getattr(pstream, attr)
+#                        alen = len(array.T)
+#                        kdeg = 3 if alen > 3 else (2 if alen > 2 else 1)
+#                        if array.ndim > 1:
+#                            for axis in range(array.shape[0]):
+#                                f = spline(pstream.time, array[axis], k=kdeg)
+#                                for t in times:
+#                                    snap = snaps[t]
+#                                    obj = getattr(snap.members, name)
+#                                    ary = getattr(obj, attr)
+#                                    ary[axis, i] = f(t)
+#                        else:
+#                            f = spline(pstream.time, array, k=kdeg)
+#                            for t in times:
+#                                snap = snaps[t]
+#                                obj = getattr(snap.members, name)
+#                                ary = getattr(obj, attr)
+#                                ary[i] = pid if attr == 'pid' else f(t)
+#        # ---
 
-        with HDF5IO('snapshots.hdf5', 'w') as fid:
+        with HDF5IO(output_file_name, 'w') as fid:
             for i, t in enumerate(times):
-                fid.write_snapshot(snaps[t], snap_id=i)
-
-        with HDF5IO('snapshots.hdf5', 'r') as fid:
-            for i, t in enumerate(times):
-                snap = fid.read_snapshot(snap_id=i)
-                viewer.show_event(snap)
-        viewer.enter_main_loop()
+                fid.dump_snap(snaps[t], tag=i)
 
     def compare_wl(self, t_begin, t_end, nsnaps):
         import numpy as np
         import matplotlib.pyplot as plt
         from scipy.interpolate import InterpolatedUnivariateSpline as spline
         with HDF5IO('snap0.hdf5', 'r') as fid:
-            ps0 = fid.read_worldline()
+            ps0 = fid.load_full_era()
         with HDF5IO('snap1.hdf5', 'r') as fid:
-            ps1 = fid.read_worldline()
+            ps1 = fid.load_full_era()
         with HDF5IO('snap2.hdf5', 'r') as fid:
-            ps2 = fid.read_worldline()
+            ps2 = fid.load_full_era()
 
         index = ps0[ps0.nstep == ps0.nstep.max()].pid[0]
         a0 = ps0[ps0.pid == index]
@@ -273,9 +237,12 @@ class HDF5IO(object):
         plt.show()
 
         axis = 0
-        plt.plot(a0.time, a0.pos[axis, ...] - f[axis](a0.time), '-o', label="PBaSS: l=1")
-        plt.plot(a1.time, a1.pos[axis, ...] - f[axis](a1.time), '-o', label="PBaSS: l=4")
-        plt.plot(a2.time, a2.pos[axis, ...] - f[axis](a2.time), '-o', label="PBaSS: l=16")
+        plt.plot(a0.time, a0.pos[axis, ...] - f[axis](a0.time),
+                 '-o', label="PBaSS: l=1")
+        plt.plot(a1.time, a1.pos[axis, ...] - f[axis](a1.time),
+                 '-o', label="PBaSS: l=4")
+        plt.plot(a2.time, a2.pos[axis, ...] - f[axis](a2.time),
+                 '-o', label="PBaSS: l=16")
         plt.legend(loc="best", shadow=True,
                    fancybox=True, borderaxespad=0.75)
         plt.show()

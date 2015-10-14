@@ -7,9 +7,9 @@ TODO.
 
 from __future__ import print_function
 import sys
-import math
 import pickle
 import logging
+from itertools import count
 from .io import HDF5IO
 from .integrator import Integrator
 from .animation import GLviewer
@@ -24,14 +24,10 @@ class Diagnostic(object):
     """
 
     """
-    def __init__(self, time, report_freq=4, pn_order=0):
+    def __init__(self, time):
         self.time = time
-        self.report_freq = report_freq
-        self.include_pn_corrections = True if pn_order else False
-        self.nreport = 0
-        self.is_initialized = False
 
-    def initialize(self, ps):
+    def init_diagnostic_report(self, ps):
         self.ke0 = ps.kinetic_energy
         self.pe0 = ps.potential_energy
         self.te0 = self.ke0 + self.pe0
@@ -41,15 +37,15 @@ class Diagnostic(object):
         self.lmom0 = ps.linear_momentum
         self.amom0 = ps.angular_momentum
 
-        self.count = 0
-        self.ceerr = 0.0
+        self.avr_err_sum = 0.0
+        self.abs_err_sum = 0.0
+        self.nreport = count(1)
 
         self.timer = Timer()
         self.timer.start()
 
         self.print_header()
-
-        self.is_initialized = True
+        self.diagnostic_report(ps)
 
     def __repr__(self):
         return '{0}'.format(self.__dict__)
@@ -59,21 +55,18 @@ class Diagnostic(object):
               '{2:10s} {3:10s} {4:15s} '\
               '{5:10s} {6:10s} {7:10s} '\
               '{8:10s} {9:10s} {10:10s} '\
-              '{11:10s} {12:13s}'
+              '{11:10s} {12:10s} {13:13s}'
         print(fmt.format('#00:time', '#01:dtime',
                          '#02:ke', '#03:pe', '#04:te',
-                         '#05:virial', '#06:eerr', '#07:geerr',
-                         '#08:com_r', '#09:com_v', '#10:lmom',
-                         '#11:amom', '#12:wct'),
+                         '#05:virial', '#06:eerr', '#07:abserr',
+                         '#08:avrerr', '#09:com_r', '#10:com_v',
+                         '#11:lmom', '#12:amom', '#13:wct'),
               file=sys.stdout)
 
     def diagnostic_report(self, ps):
-        if not self.is_initialized:
-            self.initialize(ps)
         t_curr = ps.t_curr
-        if self.nreport % self.report_freq == 0:
-            self.print_diagnostic(t_curr, t_curr - self.time, ps)
-        self.nreport += 1
+        dtime = t_curr - self.time
+        self.print_diagnostic(t_curr, dtime, ps)
 
     def print_diagnostic(self, time, dtime, ps):
         self.time = time
@@ -88,24 +81,27 @@ class Diagnostic(object):
         lmom = ps.linear_momentum
         amom = ps.angular_momentum
 
-        eerr = (te-self.te0)/(-pe)
-        self.count += 1
-        self.ceerr += eerr**2
-        geerr = math.sqrt(self.ceerr / self.count)
-        com_dr = (((com_r-self.com_r0)**2).sum())**0.5
-        com_dv = (((com_v-self.com_v0)**2).sum())**0.5
-        dlmom = (((lmom-self.lmom0)**2).sum())**0.5
-        damom = (((amom-self.amom0)**2).sum())**0.5
+        eerr = (te - self.te0) / (-pe)
+        self.abs_err_sum += abs(eerr)
+        self.avr_err_sum += eerr
+        nreport = next(self.nreport)
+        abs_err = self.abs_err_sum / nreport
+        avr_err = self.avr_err_sum / nreport
+        com_dr = (((com_r - self.com_r0)**2).sum())**0.5
+        com_dv = (((com_v - self.com_v0)**2).sum())**0.5
+        dlmom = (((lmom - self.lmom0)**2).sum())**0.5
+        damom = (((amom - self.amom0)**2).sum())**0.5
 
         fmt = '{time:< 13.6e} {dtime:< 10.3e} '\
               '{ke:< 10.3e} {pe:< 10.3e} {te:< 15.8e} '\
-              '{virial:< 10.3e} {eerr:< 10.3e} {geerr:< 10.3e} '\
-              '{com_r:< 10.3e} {com_v:< 10.3e} {lmom:< 10.3e} '\
-              '{amom:< 10.3e} {wct:< 13.6e}'
+              '{virial:< 10.3e} {eerr:< 10.3e} {abs_err:< 10.3e} '\
+              '{avr_err:< 10.3e} {com_r:< 10.3e} {com_v:< 10.3e} '\
+              '{lmom:< 10.3e} {amom:< 10.3e} {wct:< 13.6e}'
         print(fmt.format(time=time, dtime=dtime,
                          ke=ke, pe=pe,
                          te=te, virial=virial,
-                         eerr=eerr, geerr=geerr, com_r=com_dr,
+                         eerr=eerr, abs_err=abs_err,
+                         avr_err=avr_err, com_r=com_dr,
                          com_v=com_dv, lmom=dlmom, amom=damom,
                          wct=self.timer.elapsed()),
               file=sys.stdout)
@@ -122,35 +118,33 @@ class Simulation(object):
         # Read the initial conditions
         fname = self.args.input_file
         with HDF5IO(fname, 'r') as fid:
-            ps = fid.read_ic()
+            ps = fid.load_snap()
 
         # Initializes output file
         fname = self.args.output_file
         io = HDF5IO(fname, 'w') if fname else None
 
         # Initializes the diagnostic report of the simulation
-        self.dia = Diagnostic(
-            self.args.t_begin,
-            report_freq=self.args.report_freq,
-            pn_order=self.args.pn_order,
-            )
+        self.dia = Diagnostic(self.args.t_begin)
 
         # Initializes the integrator
         self.integrator = Integrator(
-            self.args.eta,
-            self.args.t_begin,
             ps,
-            method=self.args.meth,
+            self.args.eta,
+            self.args.dt_max,
+            self.args.t_begin,
+            self.args.meth,
             pn_order=self.args.pn_order,
             clight=self.args.clight,
             reporter=self.dia,
             viewer=viewer,
             dumpper=io,
             dump_freq=self.args.dump_freq,
-            )
+        )
 
-        # Initializes some counters
-        self.res_steps = 0
+        # Initializes restart file counter
+        self.nrestart = count(1)
+        self.dump_restart_file()
 
     def dump_restart_file(self):
         with open(self.args.restart_file, 'wb') as fobj:
@@ -160,17 +154,17 @@ class Simulation(object):
         """
 
         """
-        while abs(self.integrator.time) < self.args.t_end:
+        t_end = self.args.t_end
+        while abs(self.integrator.time) < t_end:
             # evolve a single time-step
-            self.integrator.evolve_step(self.args.t_end)
+            self.integrator.evolve_step(t_end)
 
             # dump restart file
-            if self.res_steps % self.args.restart_freq == 0:
+            if next(self.nrestart) % self.args.restart_freq == 0:
                 self.dump_restart_file()
-            self.res_steps += 1
 
         # Finalize the integrator
-        self.integrator.finalize(self.args.t_end)
+        self.integrator.finalize(t_end)
 
 
 # ------------------------------------------------------------------------
@@ -232,6 +226,12 @@ def add_parsers(subparser, parents=None):
         type=float,
         required=True,
         help='Time-step parameter (type: %(type)s, required: %(required)s).'
+        )
+    preparser.add_argument(
+        '--dt_max',
+        type=float,
+        default=0.5,
+        help='Maximum time-step size (type: %(type)s, default: %(default)s).'
         )
     preparser.add_argument(
         '-t', '--t_end',
@@ -324,23 +324,16 @@ def add_parsers(subparser, parents=None):
               '(type: %(type)s, default: %(default)s).')
         )
     simulation.add_argument(
-        '-r', '--report_freq',
-        type=int,
-        default=4,
-        help=('Number of time-steps between diagnostic reports of the '
-              'simulation (type: %(type)s, default: %(default)s).')
-        )
-    simulation.add_argument(
         '-d', '--dump_freq',
         type=int,
-        default=16,
+        default=1,
         help=('Number of time-steps between dump of snapshots '
               '(type: %(type)s, default: %(default)s).')
         )
     simulation.add_argument(
         '--restart_freq',
         type=int,
-        default=1,
+        default=4,
         help=('Number of time-steps between rewrites of the restart file '
               '(type: %(type)s, default: %(default)s).')
         )

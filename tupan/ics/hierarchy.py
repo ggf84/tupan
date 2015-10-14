@@ -25,7 +25,8 @@ def make_hierarchy(parent_ps, relative_size, make_subsys, *args, **kwargs):
         subsys.com_to_origin()
         subsys.com_move_to(p.com_r, p.com_v)
         ps.append(subsys)
-    ps.pid = range(ps.n)
+    ps.reset_pid()
+    ps.to_nbody_units()
 
     return ps
 

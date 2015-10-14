@@ -7,7 +7,7 @@ TODO.
 
 import logging
 import numpy as np
-from .base import Base, power_of_two
+from .base import Base
 from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
 
@@ -26,11 +26,16 @@ def split(ps, condition):
     if ps.n <= 2:       # stop recursion and use a few-body solver!
         return ps, type(ps)()
 
-    if all(condition):
+    c_ = condition
+    if all(c_):
         return ps, type(ps)()
 
-    slow = ps[condition]
-    fast = ps[~condition]
+    _c = ~condition
+    if all(_c):
+        return type(ps)(), ps
+
+    slow = ps[c_]
+    fast = ps[_c]
 
     if slow.n + fast.n != ps.n:
         LOGGER.error(
@@ -393,7 +398,8 @@ class SIAXX(object):
             slow.tstep[...] = dt
             slow.time += dt
             slow.nstep += 1
-            self.manager.dump(dt, slow)
+            if not self.manager.shared_tstep:
+                self.manager.dump(dt, slow)
 
         return slow, fast
 
@@ -431,7 +437,8 @@ class SIAXX(object):
             slow.tstep[...] = dt
             slow.time += dt
             slow.nstep += 1
-            self.manager.dump(dt, slow)
+            if not self.manager.shared_tstep:
+                self.manager.dump(dt, slow)
 
         return slow, fast
 
@@ -548,15 +555,12 @@ class SIA(Base):
         'sia69c.kdk', 'sia69a.kdk', 'sia69h.kdk',
     ]
 
-    def __init__(self, eta, time, ps, method, **kwargs):
+    def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
         """
 
         """
-        super(SIA, self).__init__(eta, time, ps, **kwargs)
-        self.method = method
-
-        if method not in self.PROVIDED_METHODS:
-            raise ValueError('Invalid integration method: {0}'.format(method))
+        super(SIA, self).__init__(ps, eta, dt_max,
+                                  t_begin, method, **kwargs)
 
         if 'c.' in method:
             self.update_tstep = False
@@ -603,60 +607,42 @@ class SIA(Base):
             elif 'sia69' in method:
                 self.bridge = SIA69(self, 'kdk')
 
-    def initialize(self, t_end):
-        """
-
-        """
-        ps = self.ps
-        LOGGER.info("Initializing '%s' integrator at "
-                    "t_curr = %g and t_end = %g.",
-                    self.method, ps.t_curr, t_end)
-
         if ps.include_pn_corrections:
-            ps.register_attribute('wel', '3, {n}', 'real_t',
-                                  doc='auxiliary-velocity for PN integration.')
+            ps.register_attribute(
+                'wel', '3, {n}', 'real_t',
+                doc='auxiliary-velocity for PN integration.'
+            )
 
-        if self.reporter:
-            self.reporter.diagnostic_report(ps)
+    def dump(self, dt, ps):
+        tdiff = abs(ps.t_next - ps.t_curr)
+        ratio = tdiff // abs(dt)
+        s0 = tdiff > 0
         if self.dumpper:
-            self.dumpper.init_worldline(ps)
+            s1 = ratio % self.dump_freq == 0
+            if (s0 and s1):
+                self.dumpper.append_data(ps)
         if self.viewer:
-            self.viewer.show_event(ps)
-
-        self.is_initialized = True
-
-    def finalize(self, t_end):
-        """
-
-        """
-        ps = self.ps
-        LOGGER.info("Finalizing '%s' integrator at "
-                    "t_curr = %g and t_end = %g.",
-                    self.method, ps.t_curr, t_end)
-
-        if self.viewer:
-            self.viewer.show_event(ps)
-            self.viewer.enter_main_loop()
+            s1 = ratio % self.viewer.gl_freq == 0
+            if (s0 and s1):
+                self.viewer.show_event(ps)
 
     def do_step(self, ps, dt):
         """
 
         """
+        type(ps).t_next += dt
         return self.recurse(ps, dt)
 
     def recurse(self, ps, dt):
         """
 
         """
+        threshold = -1
         if self.update_tstep:
-            ps.set_tstep(ps, self.eta)
-            if self.shared_tstep:
-                dt = power_of_two(ps, dt)
-            condition = abs(ps.tstep) > abs(dt)
-        else:
-            condition = abs(ps.tstep) > -1
+            threshold = abs(dt)
+            ps.set_tstep(ps, self.eta, shared=self.shared_tstep)
 
-        slow, fast = split(ps, condition)
+        slow, fast = split(ps, abs(ps.tstep) > threshold)
         slow, fast = self.bridge(slow, fast, dt)
         return join(slow, fast)
 

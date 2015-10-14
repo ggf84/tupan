@@ -26,7 +26,7 @@ if __name__ == "__main__":
              '_'.join(str(i) for i in imf))
 
     with HDF5IO(fname, 'w') as fid:
-        fid.write_ic(ps)
+        fid.dump_snap(ps)
 
     from tupan.animation import GLviewer
     viewer = GLviewer()

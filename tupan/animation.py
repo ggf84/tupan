@@ -143,7 +143,7 @@ class GLviewer(app.Canvas):
         self.program['blackhole'] = gloo.Program(VERT_SHADER, FRAG_SHADER2)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        self.psize = 20
+        self.psize = 16
 
         self.translate = [-0.0, -0.0, -0.0]
         self.view = translate(self.translate)
@@ -161,7 +161,7 @@ class GLviewer(app.Canvas):
         self.is_visible = True
 
         self.ffwriter = None
-        self.make_movie = options.record
+        self.make_movie = bool(options.record)
         self.gl_freq = options.view
 
     def record_screen(self):
@@ -171,7 +171,7 @@ class GLviewer(app.Canvas):
                 "-f", "rawvideo",
                 "-pix_fmt", "rgba",
                 "-s", "{0}x{1}".format(*self.size),
-                "-r", "30",
+                "-r", "{}".format(options.record),
                 "-i", "-",
                 "-an",  # no audio
                 "-pix_fmt", "yuv420p",

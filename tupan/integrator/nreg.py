@@ -84,54 +84,30 @@ class NREG(Base):
     """
     PROVIDED_METHODS = ['nreg', 'anreg', ]
 
-    def __init__(self, eta, time, ps, method, **kwargs):
+    def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
         """
 
         """
-        super(NREG, self).__init__(eta, time, ps, **kwargs)
-        self.method = method
+        super(NREG, self).__init__(ps, eta, dt_max,
+                                   t_begin, method, **kwargs)
 
-    def initialize(self, t_end):
-        """
-
-        """
-        ps = self.ps
-        LOGGER.info("Initializing '%s' integrator at "
-                    "t_curr = %g and t_end = %g.",
-                    self.method, ps.t_curr, t_end)
+        if 'anreg' in self.method:
+            self.update_tstep = True
+            self.shared_tstep = True
+        else:
+            self.update_tstep = False
+            self.shared_tstep = True
 
         type(ps).E0 = ps.kinetic_energy + ps.potential_energy
         type(ps).W = -ps.potential_energy
         type(ps).U = -ps.potential_energy
         type(ps).S = -ps.potential_energy
 
-        if self.reporter:
-            self.reporter.diagnostic_report(ps)
-        if self.dumpper:
-            self.dumpper.init_worldline(ps)
-        if self.viewer:
-            self.viewer.show_event(ps)
-
-        self.is_initialized = True
-
-    def finalize(self, t_end):
-        """
-
-        """
-        ps = self.ps
-        LOGGER.info("Finalizing '%s' integrator at "
-                    "t_curr = %g and t_end = %g.",
-                    self.method, ps.t_curr, t_end)
-
-        if self.viewer:
-            self.viewer.show_event(ps)
-            self.viewer.enter_main_loop()
-
     def do_step(self, ps, h):
         """
 
         """
-        if 'anreg' in self.method:
+        if self.update_tstep:
             ps, dt = anreg_step(ps, h / 2)
         else:
             ps, dt = nreg_step(ps, h)
@@ -140,7 +116,6 @@ class NREG(Base):
         ps.time += dt
         ps.nstep += 1
         type(ps).t_curr += dt
-        self.dump(dt, ps)
         return ps
 
 
