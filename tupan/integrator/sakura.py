@@ -105,10 +105,9 @@ class Sakura(Base):
             dt = self.get_sakura_tstep(ps, self.eta, dt)
         ps = sakura_step(ps, dt)
 
-        ps.tstep[...] = dt
+        type(ps).t_curr += dt
         ps.time += dt
         ps.nstep += 1
-        type(ps).t_curr += dt
         return ps
 
 

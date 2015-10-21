@@ -99,6 +99,19 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
                 attrs[name] = np.concatenate(arrays, -1)  # along last dimension
             self.update_attrs(**attrs)
 
+    def split_by(self, predicate):
+        if all(predicate):
+            return self, type(self)()
+
+        d_a, d_b = {}, {}
+        for name in self.attr_names:
+            array = getattr(self, name)
+            v_a, v_b = array[..., predicate], array[..., ~predicate]
+            d_a[name], d_b[name] = (np.array(v_a, copy=False, order='C'),
+                                    np.array(v_b, copy=False, order='C'))
+        return (self.from_attrs(**d_a),
+                self.from_attrs(**d_b))
+
     def __getitem__(self, index):
         index = ((Ellipsis, index, None)
                  if isinstance(index, int)
@@ -163,7 +176,6 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         ('eps2', '{n}', 'real_t', 'squared softening'),
         ('time', '{n}', 'real_t', 'current time'),
         ('nstep', '{n}', 'uint_t', 'step number'),
-        ('tstep', '{n}', 'real_t', 'time step'),
     ]
 
     extra_attr_descr = [
@@ -172,6 +184,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         ('jrk', '3, {n}', 'real_t', 'jerk'),
         ('snp', '3, {n}', 'real_t', 'snap'),
         ('crk', '3, {n}', 'real_t', 'crackle'),
+        ('tstep', '{n}', 'real_t', 'time step'),
         ('tstepij', '{n}', 'real_t', 'auxiliary time step'),
     ]
 

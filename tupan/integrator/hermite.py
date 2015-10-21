@@ -61,7 +61,6 @@ class HX(with_metaclass(ABCMeta, object)):
             ps1 = self.ecorrect(ps1, ps0, dt)
             n -= 1
         type(ps1).t_curr += dt
-        ps1.tstep[...] = dt
         ps1.time += dt
         ps1.nstep += 1
         if self.manager.update_tstep:

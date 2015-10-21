@@ -7,7 +7,7 @@ TODO.
 
 import logging
 import numpy as np
-from .base import Base
+from .base import Base, power_of_two
 from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
 
@@ -19,23 +19,14 @@ LOGGER = logging.getLogger(__name__)
 # split
 #
 @timings
-def split(ps, condition):
+def split(ps, predicate):
     """Splits the particle's system into slow/fast components.
 
     """
     if ps.n <= 2:       # stop recursion and use a few-body solver!
         return ps, type(ps)()
 
-    c_ = condition
-    if all(c_):
-        return ps, type(ps)()
-
-    _c = ~condition
-    if all(_c):
-        return type(ps)(), ps
-
-    slow = ps[c_]
-    fast = ps[_c]
+    slow, fast = ps.split_by(predicate)
 
     if slow.n + fast.n != ps.n:
         LOGGER.error(
@@ -70,6 +61,7 @@ def drift_n(ips, dt):
     """Drift operator for Newtonian quantities.
 
     """
+    ips.time += dt
     ips.pos += ips.vel * dt
     return ips
 
@@ -94,6 +86,7 @@ def drift_pn(ips, dt):
     """Drift operator for post-Newtonian quantities.
 
     """
+    ips.time += dt
     ips.pos += ips.vel * dt
     ips.pn_mr += ips.pn_mv * dt
     return ips
@@ -189,6 +182,7 @@ def twobody_solver(ips, dt, kernel=ext.Kepler()):
                next(iter(ps1.members.values())),
                dt=dt)
         ips = join(ps0, ps1)
+        ips.time += dt
     return ips
 
 
@@ -391,15 +385,13 @@ class SIAXX(object):
                 slow, fast = (sf_drift(slow, fast, cd * dt, evolve, recurse)
                               if cd else (slow, fast))
         else:
-            slow = evolve(slow, dt) if slow.n else slow
             type(slow).t_curr += dt
+            slow = evolve(slow, dt)
 
         if slow.n:
-            slow.tstep[...] = dt
-            slow.time += dt
             slow.nstep += 1
             if not self.manager.shared_tstep:
-                self.manager.dump(dt, slow)
+                self.manager.dump(slow, dt)
 
         return slow, fast
 
@@ -430,15 +422,13 @@ class SIAXX(object):
                 slow, fast = (sf_kick(slow, fast, ck * dt)
                               if ck else (slow, fast))
         else:
-            slow = evolve(slow, dt) if slow.n else slow
             type(slow).t_curr += dt
+            slow = evolve(slow, dt)
 
         if slow.n:
-            slow.tstep[...] = dt
-            slow.time += dt
             slow.nstep += 1
             if not self.manager.shared_tstep:
-                self.manager.dump(dt, slow)
+                self.manager.dump(slow, dt)
 
         return slow, fast
 
@@ -613,7 +603,7 @@ class SIA(Base):
                 doc='auxiliary-velocity for PN integration.'
             )
 
-    def dump(self, dt, ps):
+    def dump(self, ps, dt):
         tdiff = abs(ps.t_next - ps.t_curr)
         ratio = tdiff // abs(dt)
         s0 = tdiff > 0
@@ -630,8 +620,10 @@ class SIA(Base):
         """
 
         """
-        type(ps).t_next += dt
-        return self.recurse(ps, dt)
+        ps = self.recurse(ps, dt)
+        if not self.shared_tstep:
+            type(ps).t_curr = ps.t_next
+        return ps
 
     def recurse(self, ps, dt):
         """
@@ -639,8 +631,9 @@ class SIA(Base):
         """
         threshold = -1
         if self.update_tstep:
-            threshold = abs(dt)
             ps.set_tstep(ps, self.eta, shared=self.shared_tstep)
+            dt = power_of_two(ps, dt) if self.shared_tstep else dt
+            threshold = abs(dt)
 
         slow, fast = split(ps, abs(ps.tstep) > threshold)
         slow, fast = self.bridge(slow, fast, dt)

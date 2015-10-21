@@ -5,6 +5,7 @@
 
 """
 
+import math
 import logging
 import numpy as np
 
@@ -51,7 +52,7 @@ class Base(object):
 
         self.ps = ps
         self.eta = eta
-        self.dt_max = np.copysign(dt_max, eta)
+        self.dt_max = math.copysign(dt_max, eta)
         type(ps).t_curr = t_begin
         type(ps).t_next = t_begin
         self.method = method
@@ -102,17 +103,18 @@ class Base(object):
         dt_max = self.dt_max
         if not self.update_tstep:
             dt_max = min(abs(dt_max), abs(eta))
-            dt_max = np.copysign(dt_max, eta)
+            dt_max = math.copysign(dt_max, eta)
 
-        self.ps = self.do_step(self.ps, dt_max)
+        type(self.ps).t_next += self.dt_max
+        while self.ps.t_next > self.ps.t_curr:
+            self.ps = self.do_step(self.ps, dt_max)
 
-        if self.ps.t_curr % self.dt_max == 0:
-            if self.reporter:
-                self.reporter.diagnostic_report(self.ps)
-            if self.dumpper:
-                self.dumpper.init_new_era(self.ps)
-            if self.viewer:
-                self.viewer.show_event(self.ps)
+        if self.reporter:
+            self.reporter.diagnostic_report(self.ps)
+        if self.dumpper:
+            self.dumpper.init_new_era(self.ps)
+        if self.viewer:
+            self.viewer.show_event(self.ps)
 
     def finalize(self, t_end):
         """
