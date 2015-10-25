@@ -7,66 +7,44 @@
 #define _3_2 (3/(real_t)(2))
 
 
-static inline void
-snp_crk_kernel_core(
-	real_tn const im,
-	real_tn const irx,
-	real_tn const iry,
-	real_tn const irz,
-	real_tn const ie2,
-	real_tn const ivx,
-	real_tn const ivy,
-	real_tn const ivz,
-	real_tn const iax,
-	real_tn const iay,
-	real_tn const iaz,
-	real_tn const ijx,
-	real_tn const ijy,
-	real_tn const ijz,
-	real_tn const jm,
-	real_tn const jrx,
-	real_tn const jry,
-	real_tn const jrz,
-	real_tn const je2,
-	real_tn const jvx,
-	real_tn const jvy,
-	real_tn const jvz,
-	real_tn const jax,
-	real_tn const jay,
-	real_tn const jaz,
-	real_tn const jjx,
-	real_tn const jjy,
-	real_tn const jjz,
-	real_tn *isx,
-	real_tn *isy,
-	real_tn *isz,
-	real_tn *icx,
-	real_tn *icy,
-	real_tn *icz)
+#define SNP_CRK_DECL_STRUCTS(iT, jT)								\
+	typedef struct snp_crk_idata {									\
+		iT sx, sy, sz, cx, cy, cz;									\
+		iT rx, ry, rz, vx, vy, vz, ax, ay, az, jx, jy, jz, e2, m;	\
+	} Snp_Crk_IData;												\
+	typedef struct snp_crk_jdata {									\
+		jT rx, ry, rz, vx, vy, vz, ax, ay, az, jx, jy, jz, e2, m;	\
+	} Snp_Crk_JData;
+
+SNP_CRK_DECL_STRUCTS(real_tn, real_t)
+
+
+static inline Snp_Crk_IData
+snp_crk_kernel_core(Snp_Crk_IData ip, Snp_Crk_JData jp)
 {
-	real_tn rx = irx - jrx;														// 1 FLOPs
-	real_tn ry = iry - jry;														// 1 FLOPs
-	real_tn rz = irz - jrz;														// 1 FLOPs
-	real_tn e2 = ie2 + je2;														// 1 FLOPs
-	real_tn vx = ivx - jvx;														// 1 FLOPs
-	real_tn vy = ivy - jvy;														// 1 FLOPs
-	real_tn vz = ivz - jvz;														// 1 FLOPs
-	real_tn ax = iax - jax;														// 1 FLOPs
-	real_tn ay = iay - jay;														// 1 FLOPs
-	real_tn az = iaz - jaz;														// 1 FLOPs
-	real_tn jx = ijx - jjx;														// 1 FLOPs
-	real_tn jy = ijy - jjy;														// 1 FLOPs
-	real_tn jz = ijz - jjz;														// 1 FLOPs
+	real_tn rx = ip.rx - jp.rx;													// 1 FLOPs
+	real_tn ry = ip.ry - jp.ry;													// 1 FLOPs
+	real_tn rz = ip.rz - jp.rz;													// 1 FLOPs
+	real_tn vx = ip.vx - jp.vx;													// 1 FLOPs
+	real_tn vy = ip.vy - jp.vy;													// 1 FLOPs
+	real_tn vz = ip.vz - jp.vz;													// 1 FLOPs
+	real_tn ax = ip.ax - jp.ax;													// 1 FLOPs
+	real_tn ay = ip.ay - jp.ay;													// 1 FLOPs
+	real_tn az = ip.az - jp.az;													// 1 FLOPs
+	real_tn jx = ip.jx - jp.jx;													// 1 FLOPs
+	real_tn jy = ip.jy - jp.jy;													// 1 FLOPs
+	real_tn jz = ip.jz - jp.jz;													// 1 FLOPs
+	real_tn e2 = ip.e2 + jp.e2;													// 1 FLOPs
 	real_tn r2 = rx * rx + ry * ry + rz * rz;									// 5 FLOPs
 	real_tn rv = rx * vx + ry * vy + rz * vz;									// 5 FLOPs
 	real_tn v2 = vx * vx + vy * vy + vz * vz;									// 5 FLOPs
-	real_tn rj = rx * jx + ry * jy + rz * jz;									// 5 FLOPs
-	real_tn ra = rx * ax + ry * ay + rz * az;									// 5 FLOPs
 	real_tn va = vx * ax + vy * ay + vz * az;									// 5 FLOPs
+	real_tn ra = rx * ax + ry * ay + rz * az;									// 5 FLOPs
+	real_tn rj = rx * jx + ry * jy + rz * jz;									// 5 FLOPs
 	int_tn mask = (r2 > 0);
 
 	real_tn inv_r2;
-	real_tn m_r3 = smoothed_m_r3_inv_r2(jm, r2, e2, mask, &inv_r2);				// 5 FLOPs
+	real_tn m_r3 = smoothed_m_r3_inv_r2(jp.m, r2, e2, mask, &inv_r2);			// 5 FLOPs
 
 	real_tn alpha = rv * inv_r2;												// 1 FLOPs
 	real_tn alpha2 = alpha * alpha;												// 1 FLOPs
@@ -100,12 +78,13 @@ snp_crk_kernel_core(
 	jy -= gamma * ry;															// 2 FLOPs
 	jz -= gamma * rz;															// 2 FLOPs
 
-	*isx -= m_r3 * ax;															// 2 FLOPs
-	*isy -= m_r3 * ay;															// 2 FLOPs
-	*isz -= m_r3 * az;															// 2 FLOPs
-	*icx -= m_r3 * jx;															// 2 FLOPs
-	*icy -= m_r3 * jy;															// 2 FLOPs
-	*icz -= m_r3 * jz;															// 2 FLOPs
+	ip.sx -= m_r3 * ax;															// 2 FLOPs
+	ip.sy -= m_r3 * ay;															// 2 FLOPs
+	ip.sz -= m_r3 * az;															// 2 FLOPs
+	ip.cx -= m_r3 * jx;															// 2 FLOPs
+	ip.cy -= m_r3 * jy;															// 2 FLOPs
+	ip.cz -= m_r3 * jz;															// 2 FLOPs
+	return ip;
 }
 // Total flop count: 114
 

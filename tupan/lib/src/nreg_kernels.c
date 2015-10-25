@@ -31,45 +31,45 @@ nreg_Xkernel(
 	real_t __iu[restrict])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		real_t im = __im[i];
-		real_t irx = __irx[i];
-		real_t iry = __iry[i];
-		real_t irz = __irz[i];
-		real_t ie2 = __ie2[i];
-		real_t ivx = __ivx[i];
-		real_t ivy = __ivy[i];
-		real_t ivz = __ivz[i];
-		real_t idrx = 0;
-		real_t idry = 0;
-		real_t idrz = 0;
-		real_t iax = 0;
-		real_t iay = 0;
-		real_t iaz = 0;
-		real_t iu = 0;
+		Nreg_X_IData ip = (Nreg_X_IData){
+			.drx = 0,
+			.dry = 0,
+			.drz = 0,
+			.ax = 0,
+			.ay = 0,
+			.az = 0,
+			.u = 0,
+			.rx = __irx[i],
+			.ry = __iry[i],
+			.rz = __irz[i],
+			.vx = __ivx[i],
+			.vy = __ivy[i],
+			.vz = __ivz[i],
+			.e2 = __ie2[i],
+			.m = __im[i],
+		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			real_t jm = __jm[j];
-			real_t jrx = __jrx[j];
-			real_t jry = __jry[j];
-			real_t jrz = __jrz[j];
-			real_t je2 = __je2[j];
-			real_t jvx = __jvx[j];
-			real_t jvy = __jvy[j];
-			real_t jvz = __jvz[j];
-			nreg_Xkernel_core(
-				dt,
-				im, irx, iry, irz, ie2, ivx, ivy, ivz,
-				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-				&idrx, &idry, &idrz, &iax, &iay, &iaz, &iu);
+			Nreg_X_JData jp = (Nreg_X_JData){
+				.rx = __jrx[j],
+				.ry = __jry[j],
+				.rz = __jrz[j],
+				.vx = __jvx[j],
+				.vy = __jvy[j],
+				.vz = __jvz[j],
+				.e2 = __je2[j],
+				.m = __jm[j],
+			};
+			ip = nreg_Xkernel_core(ip, jp, dt);
 		}
 
-		__idrx[i] = idrx;
-		__idry[i] = idry;
-		__idrz[i] = idrz;
-		__iax[i] = iax;
-		__iay[i] = iay;
-		__iaz[i] = iaz;
-		__iu[i] = im * iu;
+		__idrx[i] = ip.drx;
+		__idry[i] = ip.dry;
+		__idrz[i] = ip.drz;
+		__iax[i] = ip.ax;
+		__iay[i] = ip.ay;
+		__iaz[i] = ip.az;
+		__iu[i] = ip.m * ip.u;
 	}
 }
 
@@ -99,37 +99,37 @@ nreg_Vkernel(
 	real_t __ik[restrict])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		real_t im = __im[i];
-		real_t ivx = __ivx[i];
-		real_t ivy = __ivy[i];
-		real_t ivz = __ivz[i];
-		real_t iax = __iax[i];
-		real_t iay = __iay[i];
-		real_t iaz = __iaz[i];
-		real_t idvx = 0;
-		real_t idvy = 0;
-		real_t idvz = 0;
-		real_t ik = 0;
+		Nreg_V_IData ip = (Nreg_V_IData){
+			.dvx = 0,
+			.dvy = 0,
+			.dvz = 0,
+			.k = 0,
+			.vx = __ivx[i],
+			.vy = __ivy[i],
+			.vz = __ivz[i],
+			.ax = __iax[i],
+			.ay = __iay[i],
+			.az = __iaz[i],
+			.m = __im[i],
+		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			real_t jm = __jm[j];
-			real_t jvx = __jvx[j];
-			real_t jvy = __jvy[j];
-			real_t jvz = __jvz[j];
-			real_t jax = __jax[j];
-			real_t jay = __jay[j];
-			real_t jaz = __jaz[j];
-			nreg_Vkernel_core(
-				dt,
-				im, ivx, ivy, ivz, iax, iay, iaz,
-				jm, jvx, jvy, jvz, jax, jay, jaz,
-				&idvx, &idvy, &idvz, &ik);
+			Nreg_V_JData jp = (Nreg_V_JData){
+				.vx = __jvx[j],
+				.vy = __jvy[j],
+				.vz = __jvz[j],
+				.ax = __jax[j],
+				.ay = __jay[j],
+				.az = __jaz[j],
+				.m = __jm[j],
+			};
+			ip = nreg_Vkernel_core(ip, jp, dt);
 		}
 
-		__idvx[i] = idvx;
-		__idvy[i] = idvy;
-		__idvz[i] = idvz;
-		__ik[i] = im * ik;
+		__idvx[i] = ip.dvx;
+		__idvy[i] = ip.dvy;
+		__idvz[i] = ip.dvz;
+		__ik[i] = ip.m * ip.k;
 	}
 }
 

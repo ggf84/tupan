@@ -41,56 +41,55 @@ snp_crk_kernel(
 	real_t __icz[restrict])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		real_t im = __im[i];
-		real_t irx = __irx[i];
-		real_t iry = __iry[i];
-		real_t irz = __irz[i];
-		real_t ie2 = __ie2[i];
-		real_t ivx = __ivx[i];
-		real_t ivy = __ivy[i];
-		real_t ivz = __ivz[i];
-		real_t iax = __iax[i];
-		real_t iay = __iay[i];
-		real_t iaz = __iaz[i];
-		real_t ijx = __ijx[i];
-		real_t ijy = __ijy[i];
-		real_t ijz = __ijz[i];
-		real_t isx = 0;
-		real_t isy = 0;
-		real_t isz = 0;
-		real_t icx = 0;
-		real_t icy = 0;
-		real_t icz = 0;
+		Snp_Crk_IData ip = (Snp_Crk_IData){
+			.sx = 0,
+			.sy = 0,
+			.sz = 0,
+			.cx = 0,
+			.cy = 0,
+			.cz = 0,
+			.rx = __irx[i],
+			.ry = __iry[i],
+			.rz = __irz[i],
+			.vx = __ivx[i],
+			.vy = __ivy[i],
+			.vz = __ivz[i],
+			.ax = __iax[i],
+			.ay = __iay[i],
+			.az = __iaz[i],
+			.jx = __ijx[i],
+			.jy = __ijy[i],
+			.jz = __ijz[i],
+			.e2 = __ie2[i],
+			.m = __im[i],
+		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			real_t jm = __jm[j];
-			real_t jrx = __jrx[j];
-			real_t jry = __jry[j];
-			real_t jrz = __jrz[j];
-			real_t je2 = __je2[j];
-			real_t jvx = __jvx[j];
-			real_t jvy = __jvy[j];
-			real_t jvz = __jvz[j];
-			real_t jax = __jax[j];
-			real_t jay = __jay[j];
-			real_t jaz = __jaz[j];
-			real_t jjx = __jjx[j];
-			real_t jjy = __jjy[j];
-			real_t jjz = __jjz[j];
-			snp_crk_kernel_core(
-				im, irx, iry, irz, ie2, ivx, ivy, ivz,
-				iax, iay, iaz, ijx, ijy, ijz,
-				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-				jax, jay, jaz, jjx, jjy, jjz,
-				&isx, &isy, &isz, &icx, &icy, &icz);
+			Snp_Crk_JData jp = (Snp_Crk_JData){
+				.rx = __jrx[j],
+				.ry = __jry[j],
+				.rz = __jrz[j],
+				.vx = __jvx[j],
+				.vy = __jvy[j],
+				.vz = __jvz[j],
+				.ax = __jax[j],
+				.ay = __jay[j],
+				.az = __jaz[j],
+				.jx = __jjx[j],
+				.jy = __jjy[j],
+				.jz = __jjz[j],
+				.e2 = __je2[j],
+				.m = __jm[j],
+			};
+			ip = snp_crk_kernel_core(ip, jp);
 		}
 
-		__isx[i] = isx;
-		__isy[i] = isy;
-		__isz[i] = isz;
-		__icx[i] = icx;
-		__icy[i] = icy;
-		__icz[i] = icz;
+		__isx[i] = ip.sx;
+		__isy[i] = ip.sy;
+		__isz[i] = ip.sz;
+		__icx[i] = ip.cx;
+		__icy[i] = ip.cy;
+		__icz[i] = ip.cz;
 	}
 }
 

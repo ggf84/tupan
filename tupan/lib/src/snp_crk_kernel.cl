@@ -44,118 +44,86 @@ snp_crk_kernel(
 	uint_t gid = get_global_id(0);
 	uint_t i = gid % ni;
 
-	real_tn im = __im[i];
-	real_tn irx = __irx[i];
-	real_tn iry = __iry[i];
-	real_tn irz = __irz[i];
-	real_tn ie2 = __ie2[i];
-	real_tn ivx = __ivx[i];
-	real_tn ivy = __ivy[i];
-	real_tn ivz = __ivz[i];
-	real_tn iax = __iax[i];
-	real_tn iay = __iay[i];
-	real_tn iaz = __iaz[i];
-	real_tn ijx = __ijx[i];
-	real_tn ijy = __ijy[i];
-	real_tn ijz = __ijz[i];
-
-	real_tn isx = (real_tn)(0);
-	real_tn isy = (real_tn)(0);
-	real_tn isz = (real_tn)(0);
-	real_tn icx = (real_tn)(0);
-	real_tn icy = (real_tn)(0);
-	real_tn icz = (real_tn)(0);
+	Snp_Crk_IData ip = (Snp_Crk_IData){
+		.sx = 0,
+		.sy = 0,
+		.sz = 0,
+		.cx = 0,
+		.cy = 0,
+		.cz = 0,
+		.rx = __irx[i],
+		.ry = __iry[i],
+		.rz = __irz[i],
+		.vx = __ivx[i],
+		.vy = __ivy[i],
+		.vz = __ivz[i],
+		.ax = __iax[i],
+		.ay = __iay[i],
+		.az = __iaz[i],
+		.jx = __ijx[i],
+		.jy = __ijy[i],
+		.jz = __ijz[i],
+		.e2 = __ie2[i],
+		.m = __im[i],
+	};
 
 	uint_t j = 0;
 
 	#ifdef FAST_LOCAL_MEM
-	local real_t _jm[LSIZE];
-	local real_t _jrx[LSIZE];
-	local real_t _jry[LSIZE];
-	local real_t _jrz[LSIZE];
-	local real_t _je2[LSIZE];
-	local real_t _jvx[LSIZE];
-	local real_t _jvy[LSIZE];
-	local real_t _jvz[LSIZE];
-	local real_t _jax[LSIZE];
-	local real_t _jay[LSIZE];
-	local real_t _jaz[LSIZE];
-	local real_t _jjx[LSIZE];
-	local real_t _jjy[LSIZE];
-	local real_t _jjz[LSIZE];
+	local Snp_Crk_JData _jp[LSIZE];
 	#pragma unroll
 	for (; (j + LSIZE - 1) < nj; j += LSIZE) {
 		barrier(CLK_LOCAL_MEM_FENCE);
-		_jm[lid] = __jm[j + lid];
-		_jrx[lid] = __jrx[j + lid];
-		_jry[lid] = __jry[j + lid];
-		_jrz[lid] = __jrz[j + lid];
-		_je2[lid] = __je2[j + lid];
-		_jvx[lid] = __jvx[j + lid];
-		_jvy[lid] = __jvy[j + lid];
-		_jvz[lid] = __jvz[j + lid];
-		_jax[lid] = __jax[j + lid];
-		_jay[lid] = __jay[j + lid];
-		_jaz[lid] = __jaz[j + lid];
-		_jjx[lid] = __jjx[j + lid];
-		_jjy[lid] = __jjy[j + lid];
-		_jjz[lid] = __jjz[j + lid];
+		_jp[lid] = (Snp_Crk_JData){
+			.rx = __jrx[j + lid],
+			.ry = __jry[j + lid],
+			.rz = __jrz[j + lid],
+			.vx = __jvx[j + lid],
+			.vy = __jvy[j + lid],
+			.vz = __jvz[j + lid],
+			.ax = __jax[j + lid],
+			.ay = __jay[j + lid],
+			.az = __jaz[j + lid],
+			.jx = __jjx[j + lid],
+			.jy = __jjy[j + lid],
+			.jz = __jjz[j + lid],
+			.e2 = __je2[j + lid],
+			.m = __jm[j + lid],
+		};
 		barrier(CLK_LOCAL_MEM_FENCE);
 		#pragma unroll
 		for (uint_t k = 0; k < LSIZE; ++k) {
-			real_t jm = _jm[k];
-			real_t jrx = _jrx[k];
-			real_t jry = _jry[k];
-			real_t jrz = _jrz[k];
-			real_t je2 = _je2[k];
-			real_t jvx = _jvx[k];
-			real_t jvy = _jvy[k];
-			real_t jvz = _jvz[k];
-			real_t jax = _jax[k];
-			real_t jay = _jay[k];
-			real_t jaz = _jaz[k];
-			real_t jjx = _jjx[k];
-			real_t jjy = _jjy[k];
-			real_t jjz = _jjz[k];
-			snp_crk_kernel_core(
-				im, irx, iry, irz, ie2, ivx, ivy, ivz,
-				iax, iay, iaz, ijx, ijy, ijz,
-				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-				jax, jay, jaz, jjx, jjy, jjz,
-				&isx, &isy, &isz, &icx, &icy, &icz);
+			ip = snp_crk_kernel_core(ip, _jp[k]);
 		}
 	}
 	#endif
 
 	#pragma unroll
 	for (uint_t k = j; k < nj; ++k) {
-		real_t jm = __jm[k];
-		real_t jrx = __jrx[k];
-		real_t jry = __jry[k];
-		real_t jrz = __jrz[k];
-		real_t je2 = __je2[k];
-		real_t jvx = __jvx[k];
-		real_t jvy = __jvy[k];
-		real_t jvz = __jvz[k];
-		real_t jax = __jax[k];
-		real_t jay = __jay[k];
-		real_t jaz = __jaz[k];
-		real_t jjx = __jjx[k];
-		real_t jjy = __jjy[k];
-		real_t jjz = __jjz[k];
-		snp_crk_kernel_core(
-			im, irx, iry, irz, ie2, ivx, ivy, ivz,
-			iax, iay, iaz, ijx, ijy, ijz,
-			jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-			jax, jay, jaz, jjx, jjy, jjz,
-			&isx, &isy, &isz, &icx, &icy, &icz);
+		Snp_Crk_JData jp = (Snp_Crk_JData){
+			.rx = __jrx[k],
+			.ry = __jry[k],
+			.rz = __jrz[k],
+			.vx = __jvx[k],
+			.vy = __jvy[k],
+			.vz = __jvz[k],
+			.ax = __jax[k],
+			.ay = __jay[k],
+			.az = __jaz[k],
+			.jx = __jjx[k],
+			.jy = __jjy[k],
+			.jz = __jjz[k],
+			.e2 = __je2[k],
+			.m = __jm[k],
+		};
+		ip = snp_crk_kernel_core(ip, jp);
 	}
 
-	__isx[i] = isx;
-	__isy[i] = isy;
-	__isz[i] = isz;
-	__icx[i] = icx;
-	__icy[i] = icy;
-	__icz[i] = icz;
+	__isx[i] = ip.sx;
+	__isy[i] = ip.sy;
+	__isz[i] = ip.sz;
+	__icx[i] = ip.cx;
+	__icy[i] = ip.cy;
+	__icz[i] = ip.cz;
 }
 

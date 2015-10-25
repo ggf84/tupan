@@ -27,37 +27,37 @@ pnacc_kernel(
 	real_t __ipnaz[restrict])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		real_t im = __im[i];
-		real_t irx = __irx[i];
-		real_t iry = __iry[i];
-		real_t irz = __irz[i];
-		real_t ie2 = __ie2[i];
-		real_t ivx = __ivx[i];
-		real_t ivy = __ivy[i];
-		real_t ivz = __ivz[i];
-		real_t ipnax = 0;
-		real_t ipnay = 0;
-		real_t ipnaz = 0;
+		PNAcc_IData ip = (PNAcc_IData){
+			.pnax = 0,
+			.pnay = 0,
+			.pnaz = 0,
+			.rx = __irx[i],
+			.ry = __iry[i],
+			.rz = __irz[i],
+			.vx = __ivx[i],
+			.vy = __ivy[i],
+			.vz = __ivz[i],
+			.e2 = __ie2[i],
+			.m = __im[i],
+		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			real_t jm = __jm[j];
-			real_t jrx = __jrx[j];
-			real_t jry = __jry[j];
-			real_t jrz = __jrz[j];
-			real_t je2 = __je2[j];
-			real_t jvx = __jvx[j];
-			real_t jvy = __jvy[j];
-			real_t jvz = __jvz[j];
-			pnacc_kernel_core(
-				im, irx, iry, irz, ie2, ivx, ivy, ivz,
-				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-				clight,
-				&ipnax, &ipnay, &ipnaz);
+			PNAcc_JData jp = (PNAcc_JData){
+				.rx = __jrx[j],
+				.ry = __jry[j],
+				.rz = __jrz[j],
+				.vx = __jvx[j],
+				.vy = __jvy[j],
+				.vz = __jvz[j],
+				.e2 = __je2[j],
+				.m = __jm[j],
+			};
+			ip = pnacc_kernel_core(ip, jp, clight);
 		}
 
-		__ipnax[i] = ipnax;
-		__ipnay[i] = ipnay;
-		__ipnaz[i] = ipnaz;
+		__ipnax[i] = ip.pnax;
+		__ipnay[i] = ip.pnay;
+		__ipnaz[i] = ip.pnaz;
 	}
 }
 

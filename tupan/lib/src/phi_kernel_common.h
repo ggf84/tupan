@@ -5,30 +5,32 @@
 #include "smoothing.h"
 
 
-static inline void
-phi_kernel_core(
-	real_tn const im,
-	real_tn const irx,
-	real_tn const iry,
-	real_tn const irz,
-	real_tn const ie2,
-	real_tn const jm,
-	real_tn const jrx,
-	real_tn const jry,
-	real_tn const jrz,
-	real_tn const je2,
-	real_tn *iphi)
+#define PHI_DECL_STRUCTS(iT, jT)	\
+	typedef struct phi_idata {		\
+		iT phi;						\
+		iT rx, ry, rz, e2, m;		\
+	} Phi_IData;					\
+	typedef struct phi_jdata {		\
+		jT rx, ry, rz, e2, m;		\
+	} Phi_JData;
+
+PHI_DECL_STRUCTS(real_tn, real_t)
+
+
+static inline Phi_IData
+phi_kernel_core(Phi_IData ip, Phi_JData jp)
 {
-	real_tn rx = irx - jrx;														// 1 FLOPs
-	real_tn ry = iry - jry;														// 1 FLOPs
-	real_tn rz = irz - jrz;														// 1 FLOPs
-	real_tn e2 = ie2 + je2;														// 1 FLOPs
+	real_tn rx = ip.rx - jp.rx;													// 1 FLOPs
+	real_tn ry = ip.ry - jp.ry;													// 1 FLOPs
+	real_tn rz = ip.rz - jp.rz;													// 1 FLOPs
+	real_tn e2 = ip.e2 + jp.e2;													// 1 FLOPs
 	real_tn r2 = rx * rx + ry * ry + rz * rz;									// 5 FLOPs
 	int_tn mask = (r2 > 0);
 
-	real_tn m_r1 = smoothed_m_r1(jm, r2, e2, mask);								// 4 FLOPs
+	real_tn m_r1 = smoothed_m_r1(jp.m, r2, e2, mask);							// 4 FLOPs
 
-	*iphi -= m_r1;																// 1 FLOPs
+	ip.phi -= m_r1;																// 1 FLOPs
+	return ip;
 }
 // Total flop count: 14
 

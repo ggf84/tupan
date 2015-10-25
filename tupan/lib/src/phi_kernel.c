@@ -18,26 +18,27 @@ phi_kernel(
 	real_t __iphi[restrict])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		real_t im = __im[i];
-		real_t irx = __irx[i];
-		real_t iry = __iry[i];
-		real_t irz = __irz[i];
-		real_t ie2 = __ie2[i];
-		real_t iphi = 0;
+		Phi_IData ip = (Phi_IData){
+			.phi = 0,
+			.rx = __irx[i],
+			.ry = __iry[i],
+			.rz = __irz[i],
+			.e2 = __ie2[i],
+			.m = __im[i],
+		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			real_t jm = __jm[j];
-			real_t jrx = __jrx[j];
-			real_t jry = __jry[j];
-			real_t jrz = __jrz[j];
-			real_t je2 = __je2[j];
-			phi_kernel_core(
-				im, irx, iry, irz, ie2,
-				jm, jrx, jry, jrz, je2,
-				&iphi);
+			Phi_JData jp = (Phi_JData){
+				.rx = __jrx[j],
+				.ry = __jry[j],
+				.rz = __jrz[j],
+				.e2 = __je2[j],
+				.m = __jm[j],
+			};
+			ip = phi_kernel_core(ip, jp);
 		}
 
-		__iphi[i] = iphi;
+		__iphi[i] = ip.phi;
 	}
 }
 

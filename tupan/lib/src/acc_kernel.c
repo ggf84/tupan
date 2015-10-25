@@ -20,30 +20,31 @@ acc_kernel(
 	real_t __iaz[restrict])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		real_t im = __im[i];
-		real_t irx = __irx[i];
-		real_t iry = __iry[i];
-		real_t irz = __irz[i];
-		real_t ie2 = __ie2[i];
-		real_t iax = 0;
-		real_t iay = 0;
-		real_t iaz = 0;
+		Acc_IData ip = (Acc_IData){
+			.ax = 0,
+			.ay = 0,
+			.az = 0,
+			.rx = __irx[i],
+			.ry = __iry[i],
+			.rz = __irz[i],
+			.e2 = __ie2[i],
+			.m = __im[i],
+		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			real_t jm = __jm[j];
-			real_t jrx = __jrx[j];
-			real_t jry = __jry[j];
-			real_t jrz = __jrz[j];
-			real_t je2 = __je2[j];
-			acc_kernel_core(
-				im, irx, iry, irz, ie2,
-				jm, jrx, jry, jrz, je2,
-				&iax, &iay, &iaz);
+			Acc_JData jp = (Acc_JData){
+				.rx = __jrx[j],
+				.ry = __jry[j],
+				.rz = __jrz[j],
+				.e2 = __je2[j],
+				.m = __jm[j],
+			};
+			ip = acc_kernel_core(ip, jp);
 		}
 
-		__iax[i] = iax;
-		__iay[i] = iay;
-		__iaz[i] = iaz;
+		__iax[i] = ip.ax;
+		__iay[i] = ip.ay;
+		__iaz[i] = ip.az;
 	}
 }
 

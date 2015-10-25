@@ -34,89 +34,71 @@ nreg_Xkernel(
 	uint_t gid = get_global_id(0);
 	uint_t i = gid % ni;
 
-	real_tn im = __im[i];
-	real_tn irx = __irx[i];
-	real_tn iry = __iry[i];
-	real_tn irz = __irz[i];
-	real_tn ie2 = __ie2[i];
-	real_tn ivx = __ivx[i];
-	real_tn ivy = __ivy[i];
-	real_tn ivz = __ivz[i];
-
-	real_tn idrx = (real_tn)(0);
-	real_tn idry = (real_tn)(0);
-	real_tn idrz = (real_tn)(0);
-	real_tn iax = (real_tn)(0);
-	real_tn iay = (real_tn)(0);
-	real_tn iaz = (real_tn)(0);
-	real_tn iu = (real_tn)(0);
+	Nreg_X_IData ip = (Nreg_X_IData){
+		.drx = 0,
+		.dry = 0,
+		.drz = 0,
+		.ax = 0,
+		.ay = 0,
+		.az = 0,
+		.u = 0,
+		.rx = __irx[i],
+		.ry = __iry[i],
+		.rz = __irz[i],
+		.vx = __ivx[i],
+		.vy = __ivy[i],
+		.vz = __ivz[i],
+		.e2 = __ie2[i],
+		.m = __im[i],
+	};
 
 	uint_t j = 0;
 
 	#ifdef FAST_LOCAL_MEM
-	local real_t _jm[LSIZE];
-	local real_t _jrx[LSIZE];
-	local real_t _jry[LSIZE];
-	local real_t _jrz[LSIZE];
-	local real_t _je2[LSIZE];
-	local real_t _jvx[LSIZE];
-	local real_t _jvy[LSIZE];
-	local real_t _jvz[LSIZE];
+	local Nreg_X_JData _jp[LSIZE];
 	#pragma unroll
 	for (; (j + LSIZE - 1) < nj; j += LSIZE) {
 		barrier(CLK_LOCAL_MEM_FENCE);
-		_jm[lid] = __jm[j + lid];
-		_jrx[lid] = __jrx[j + lid];
-		_jry[lid] = __jry[j + lid];
-		_jrz[lid] = __jrz[j + lid];
-		_je2[lid] = __je2[j + lid];
-		_jvx[lid] = __jvx[j + lid];
-		_jvy[lid] = __jvy[j + lid];
-		_jvz[lid] = __jvz[j + lid];
+		_jp[lid] = (Nreg_X_JData){
+			.rx = __jrx[j + lid],
+			.ry = __jry[j + lid],
+			.rz = __jrz[j + lid],
+			.vx = __jvx[j + lid],
+			.vy = __jvy[j + lid],
+			.vz = __jvz[j + lid],
+			.e2 = __je2[j + lid],
+			.m = __jm[j + lid],
+		};
 		barrier(CLK_LOCAL_MEM_FENCE);
 		#pragma unroll
 		for (uint_t k = 0; k < LSIZE; ++k) {
-			real_t jm = _jm[k];
-			real_t jrx = _jrx[k];
-			real_t jry = _jry[k];
-			real_t jrz = _jrz[k];
-			real_t je2 = _je2[k];
-			real_t jvx = _jvx[k];
-			real_t jvy = _jvy[k];
-			real_t jvz = _jvz[k];
-			nreg_Xkernel_core(
-				dt,
-				im, irx, iry, irz, ie2, ivx, ivy, ivz,
-				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-				&idrx, &idry, &idrz, &iax, &iay, &iaz, &iu);
+			ip = nreg_Xkernel_core(ip, _jp[k], dt);
 		}
 	}
 	#endif
 
 	#pragma unroll
 	for (uint_t k = j; k < nj; ++k) {
-		real_t jm = __jm[k];
-		real_t jrx = __jrx[k];
-		real_t jry = __jry[k];
-		real_t jrz = __jrz[k];
-		real_t je2 = __je2[k];
-		real_t jvx = __jvx[k];
-		real_t jvy = __jvy[k];
-		real_t jvz = __jvz[k];
-		nreg_Xkernel_core(
-			dt,
-			im, irx, iry, irz, ie2, ivx, ivy, ivz,
-			jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-			&idrx, &idry, &idrz, &iax, &iay, &iaz, &iu);
+		Nreg_X_JData jp = (Nreg_X_JData){
+			.rx = __jrx[k],
+			.ry = __jry[k],
+			.rz = __jrz[k],
+			.vx = __jvx[k],
+			.vy = __jvy[k],
+			.vz = __jvz[k],
+			.e2 = __je2[k],
+			.m = __jm[k],
+		};
+		ip = nreg_Xkernel_core(ip, jp, dt);
 	}
 
-	__idrx[i] = idrx;
-	__idry[i] = idry;
-	__idrz[i] = idrz;
-	__iax[i] = iax;
-	__iay[i] = iay;
-	__iaz[i] = iaz;
-	__iu[i] = im * iu;
+	__idrx[i] = ip.drx;
+	__idry[i] = ip.dry;
+	__idrz[i] = ip.drz;
+	__iax[i] = ip.ax;
+	__iay[i] = ip.ay;
+	__iaz[i] = ip.az;
+	__iu[i] = ip.m * ip.u;
 }
 
 
@@ -148,77 +130,61 @@ nreg_Vkernel(
 	uint_t gid = get_global_id(0);
 	uint_t i = gid % ni;
 
-	real_tn im = __im[i];
-	real_tn ivx = __ivx[i];
-	real_tn ivy = __ivy[i];
-	real_tn ivz = __ivz[i];
-	real_tn iax = __iax[i];
-	real_tn iay = __iay[i];
-	real_tn iaz = __iaz[i];
-
-	real_tn idvx = (real_tn)(0);
-	real_tn idvy = (real_tn)(0);
-	real_tn idvz = (real_tn)(0);
-	real_tn ik = (real_tn)(0);
+	Nreg_V_IData ip = (Nreg_V_IData){
+		.dvx = 0,
+		.dvy = 0,
+		.dvz = 0,
+		.k = 0,
+		.vx = __ivx[i],
+		.vy = __ivy[i],
+		.vz = __ivz[i],
+		.ax = __iax[i],
+		.ay = __iay[i],
+		.az = __iaz[i],
+		.m = __im[i],
+	};
 
 	uint_t j = 0;
 
 	#ifdef FAST_LOCAL_MEM
-	local real_t _jm[LSIZE];
-	local real_t _jvx[LSIZE];
-	local real_t _jvy[LSIZE];
-	local real_t _jvz[LSIZE];
-	local real_t _jax[LSIZE];
-	local real_t _jay[LSIZE];
-	local real_t _jaz[LSIZE];
+	local Nreg_V_JData _jp[LSIZE];
 	#pragma unroll
 	for (; (j + LSIZE - 1) < nj; j += LSIZE) {
 		barrier(CLK_LOCAL_MEM_FENCE);
-		_jm[lid] = __jm[j + lid];
-		_jvx[lid] = __jvx[j + lid];
-		_jvy[lid] = __jvy[j + lid];
-		_jvz[lid] = __jvz[j + lid];
-		_jax[lid] = __jax[j + lid];
-		_jay[lid] = __jay[j + lid];
-		_jaz[lid] = __jaz[j + lid];
+		_jp[lid] = (Nreg_V_JData){
+			.vx = __jvx[j + lid],
+			.vy = __jvy[j + lid],
+			.vz = __jvz[j + lid],
+			.ax = __jax[j + lid],
+			.ay = __jay[j + lid],
+			.az = __jaz[j + lid],
+			.m = __jm[j + lid],
+		};
 		barrier(CLK_LOCAL_MEM_FENCE);
 		#pragma unroll
 		for (uint_t k = 0; k < LSIZE; ++k) {
-			real_t jm = _jm[k];
-			real_t jvx = _jvx[k];
-			real_t jvy = _jvy[k];
-			real_t jvz = _jvz[k];
-			real_t jax = _jax[k];
-			real_t jay = _jay[k];
-			real_t jaz = _jaz[k];
-			nreg_Vkernel_core(
-				dt,
-				im, ivx, ivy, ivz, iax, iay, iaz,
-				jm, jvx, jvy, jvz, jax, jay, jaz,
-				&idvx, &idvy, &idvz, &ik);
+			ip = nreg_Vkernel_core(ip, _jp[k], dt);
 		}
 	}
 	#endif
 
 	#pragma unroll
 	for (uint_t k = j; k < nj; ++k) {
-		real_t jm = __jm[k];
-		real_t jvx = __jvx[k];
-		real_t jvy = __jvy[k];
-		real_t jvz = __jvz[k];
-		real_t jax = __jax[k];
-		real_t jay = __jay[k];
-		real_t jaz = __jaz[k];
-		nreg_Vkernel_core(
-			dt,
-			im, ivx, ivy, ivz, iax, iay, iaz,
-			jm, jvx, jvy, jvz, jax, jay, jaz,
-			&idvx, &idvy, &idvz, &ik);
+		Nreg_V_JData jp = (Nreg_V_JData){
+			.vx = __jvx[k],
+			.vy = __jvy[k],
+			.vz = __jvz[k],
+			.ax = __jax[k],
+			.ay = __jay[k],
+			.az = __jaz[k],
+			.m = __jm[k],
+		};
+		ip = nreg_Vkernel_core(ip, jp, dt);
 	}
 
-	__idvx[i] = idvx;
-	__idvy[i] = idvy;
-	__idvz[i] = idvz;
-	__ik[i] = im * ik;
+	__idvx[i] = ip.dvx;
+	__idvy[i] = ip.dvy;
+	__idvz[i] = ip.dvz;
+	__ik[i] = ip.m * ip.k;
 }
 

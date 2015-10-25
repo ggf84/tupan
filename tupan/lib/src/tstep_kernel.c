@@ -26,35 +26,35 @@ tstep_kernel(
 	real_t __idt_b[restrict])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		real_t im = __im[i];
-		real_t irx = __irx[i];
-		real_t iry = __iry[i];
-		real_t irz = __irz[i];
-		real_t ie2 = __ie2[i];
-		real_t ivx = __ivx[i];
-		real_t ivy = __ivy[i];
-		real_t ivz = __ivz[i];
-		real_t iw2_a = 0;
-		real_t iw2_b = 0;
+		Tstep_IData ip = (Tstep_IData){
+			.w2_a = 0,
+			.w2_b = 0,
+			.rx = __irx[i],
+			.ry = __iry[i],
+			.rz = __irz[i],
+			.vx = __ivx[i],
+			.vy = __ivy[i],
+			.vz = __ivz[i],
+			.e2 = __ie2[i],
+			.m = __im[i],
+		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			real_t jm = __jm[j];
-			real_t jrx = __jrx[j];
-			real_t jry = __jry[j];
-			real_t jrz = __jrz[j];
-			real_t je2 = __je2[j];
-			real_t jvx = __jvx[j];
-			real_t jvy = __jvy[j];
-			real_t jvz = __jvz[j];
-			tstep_kernel_core(
-				eta,
-				im, irx, iry, irz, ie2, ivx, ivy, ivz,
-				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-				&iw2_a, &iw2_b);
+			Tstep_JData jp = (Tstep_JData){
+				.rx = __jrx[j],
+				.ry = __jry[j],
+				.rz = __jrz[j],
+				.vx = __jvx[j],
+				.vy = __jvy[j],
+				.vz = __jvz[j],
+				.e2 = __je2[j],
+				.m = __jm[j],
+			};
+			ip = tstep_kernel_core(ip, jp, eta);
 		}
 
-		__idt_a[i] = eta / sqrt(fmax((real_tn)(1), iw2_a));
-		__idt_b[i] = eta / sqrt(fmax((real_tn)(1), iw2_b));
+		__idt_a[i] = eta / sqrt(fmax((real_tn)(1), ip.w2_a));
+		__idt_b[i] = eta / sqrt(fmax((real_tn)(1), ip.w2_b));
 	}
 }
 

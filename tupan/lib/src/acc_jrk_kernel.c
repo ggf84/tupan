@@ -29,42 +29,43 @@ acc_jrk_kernel(
 	real_t __ijz[restrict])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		real_t im = __im[i];
-		real_t irx = __irx[i];
-		real_t iry = __iry[i];
-		real_t irz = __irz[i];
-		real_t ie2 = __ie2[i];
-		real_t ivx = __ivx[i];
-		real_t ivy = __ivy[i];
-		real_t ivz = __ivz[i];
-		real_t iax = 0;
-		real_t iay = 0;
-		real_t iaz = 0;
-		real_t ijx = 0;
-		real_t ijy = 0;
-		real_t ijz = 0;
+		Acc_Jrk_IData ip = (Acc_Jrk_IData){
+			.ax = 0,
+			.ay = 0,
+			.az = 0,
+			.jx = 0,
+			.jy = 0,
+			.jz = 0,
+			.rx = __irx[i],
+			.ry = __iry[i],
+			.rz = __irz[i],
+			.vx = __ivx[i],
+			.vy = __ivy[i],
+			.vz = __ivz[i],
+			.e2 = __ie2[i],
+			.m = __im[i],
+		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			real_t jm = __jm[j];
-			real_t jrx = __jrx[j];
-			real_t jry = __jry[j];
-			real_t jrz = __jrz[j];
-			real_t je2 = __je2[j];
-			real_t jvx = __jvx[j];
-			real_t jvy = __jvy[j];
-			real_t jvz = __jvz[j];
-			acc_jrk_kernel_core(
-				im, irx, iry, irz, ie2, ivx, ivy, ivz,
-				jm, jrx, jry, jrz, je2, jvx, jvy, jvz,
-				&iax, &iay, &iaz, &ijx, &ijy, &ijz);
+			Acc_Jrk_JData jp = (Acc_Jrk_JData){
+				.rx = __jrx[j],
+				.ry = __jry[j],
+				.rz = __jrz[j],
+				.vx = __jvx[j],
+				.vy = __jvy[j],
+				.vz = __jvz[j],
+				.e2 = __je2[j],
+				.m = __jm[j],
+			};
+			ip = acc_jrk_kernel_core(ip, jp);
 		}
 
-		__iax[i] = iax;
-		__iay[i] = iay;
-		__iaz[i] = iaz;
-		__ijx[i] = ijx;
-		__ijy[i] = ijy;
-		__ijz[i] = ijz;
+		__iax[i] = ip.ax;
+		__iay[i] = ip.ay;
+		__iaz[i] = ip.az;
+		__ijx[i] = ip.jx;
+		__ijy[i] = ip.jy;
+		__ijz[i] = ip.jz;
 	}
 }
 
