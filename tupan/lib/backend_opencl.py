@@ -209,7 +209,7 @@ class Program(object):
         vw = (self.cl_device.preferred_vector_width_float
               if fpwidth == 'fp32'
               else self.cl_device.preferred_vector_width_double)
-        lsize = 64
+        lsize = 8 if self.cl_device.type == cl.device_type.CPU else 192  # GPU
         fast_local_mem = True
 
         # setting program options
@@ -222,9 +222,6 @@ class Program(object):
             opts += ' -D FAST_LOCAL_MEM'
         opts += ' -I {path}'.format(path=PATH)
         opts += ' -cl-fast-relaxed-math'
-        if 'OpenCL 2.0' in self.cl_device.platform.version:
-            opts += ' -cl-std=CL2.0'
-            opts += ' -cl-uniform-work-group-size'
 #        opts += ' -cl-opt-disable'
 
         self.cl_program.build(options=opts,
