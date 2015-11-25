@@ -3,18 +3,18 @@
 
 void
 phi_kernel(
-	uint_t const ni,
-	real_t const __im[restrict],
-	real_t const __irx[restrict],
-	real_t const __iry[restrict],
-	real_t const __irz[restrict],
-	real_t const __ie2[restrict],
-	uint_t const nj,
-	real_t const __jm[restrict],
-	real_t const __jrx[restrict],
-	real_t const __jry[restrict],
-	real_t const __jrz[restrict],
-	real_t const __je2[restrict],
+	const uint_t ni,
+	const real_t __im[restrict],
+	const real_t __irx[restrict],
+	const real_t __iry[restrict],
+	const real_t __irz[restrict],
+	const real_t __ie2[restrict],
+	const uint_t nj,
+	const real_t __jm[restrict],
+	const real_t __jrx[restrict],
+	const real_t __jry[restrict],
+	const real_t __jrz[restrict],
+	const real_t __je2[restrict],
 	real_t __iphi[restrict])
 {
 	for (uint_t i = 0; i < ni; ++i) {

@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <tgmath.h>
+#include <omp.h>
 
 #define DEFINE_TYPE(TYPEA, TYPEB)	\
 	typedef TYPEA TYPEB;			\

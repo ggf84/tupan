@@ -7,7 +7,6 @@ This module implements highlevel interfaces for C/CL-extensions.
 
 from __future__ import print_function, division
 import logging
-import numpy as np
 from ..config import options
 from .utils.timing import timings, bind_all
 
@@ -40,23 +39,20 @@ class AbstractExtension(object):
         elif backend == 'CL':
             from .backend_opencl import drv
         else:
-            msg = "backend: invalid choice: '{}' (choose from 'C', 'CL')"
+            msg = "invalid backend: '{}' (choose from 'C', 'CL')"
             raise ValueError(msg.format(backend))
         self.kernel = drv.get_kernel(name)
 
     def set_args(self, ips, jps, **kwargs):
         raise NotImplementedError
 
-    def run(self):
-        self.kernel.run()
-
-    def get_result(self):
-        return self.kernel.map_buffers()
+    def map_buffers(self, *args, **kwargs):
+        return self.kernel.map_buffers(*args, **kwargs)
 
     def __call__(self, ips, jps, **kwargs):
         self.set_args(ips, jps, **kwargs)
-        self.run()
-        return self.get_result()
+        self.kernel.run()
+        return self.map_buffers()
 
 
 @bind_all(timings)
@@ -79,20 +75,6 @@ class Phi(AbstractExtension):
 
         self.kernel.set_args(inpargs, outargs)
 
-    def _pycalc(self, ips, jps):
-        # Never use this method for production runs. It is very
-        # slow and it's here only for performance comparisons.
-        for i in range(ips.n):
-            r = (ips.pos[..., i] - jps.pos.T).T
-            e2 = ips.eps2[i] + jps.eps2
-            r2 = (r**2).sum(0)
-            mask = r2 > 0
-            inv_r2 = 1 / (r2 + e2)
-            inv_r = np.sqrt(inv_r2)
-            ips.phi[i] = -(jps.mass * inv_r)[mask].sum(0)
-        return (ips.phi,)
-#    __call__ = _pycalc
-
 
 @bind_all(timings)
 class Acc(AbstractExtension):
@@ -114,20 +96,45 @@ class Acc(AbstractExtension):
 
         self.kernel.set_args(inpargs, outargs)
 
-    def _pycalc(self, ips, jps):
-        # Never use this method for production runs. It is very
-        # slow and it's here only for performance comparisons.
-        for i in range(ips.n):
-            r = (ips.pos[..., i] - jps.pos.T).T
-            e2 = ips.eps2[i] + jps.eps2
-            r2 = (r**2).sum(0)
-            mask = r2 > 0
-            inv_r2 = 1 / (r2 + e2)
-            inv_r = np.sqrt(inv_r2)
-            inv_r3 = jps.mass * inv_r * inv_r2
-            ips.acc[..., i] = -(inv_r3 * r).T[mask].sum(0)
-        return (ips.acc[0], ips.acc[1], ips.acc[2])
-#    __call__ = _pycalc
+
+@bind_all(timings)
+class Acc_rectangle(AbstractExtension):
+    """
+
+    """
+    def __init__(self, backend=options.backend):
+        super(Acc_rectangle, self).__init__('acc_kernel_rectangle', backend)
+
+    def set_args(self, ips, jps, **kwargs):
+        inpargs = (ips.n,
+                   ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
+                   ips.eps2,
+                   jps.n,
+                   jps.mass, jps.pos[0], jps.pos[1], jps.pos[2],
+                   jps.eps2)
+
+        outargs = (ips.acc[0], ips.acc[1], ips.acc[2],
+                   jps.acc[0], jps.acc[1], jps.acc[2])
+
+        self.kernel.set_args(inpargs, outargs)
+
+
+@bind_all(timings)
+class Acc_triangle(AbstractExtension):
+    """
+
+    """
+    def __init__(self, backend=options.backend):
+        super(Acc_triangle, self).__init__('acc_kernel_triangle', backend)
+
+    def set_args(self, ips, jps=None, **kwargs):
+        inpargs = (ips.n,
+                   ips.mass, ips.pos[0], ips.pos[1], ips.pos[2],
+                   ips.eps2)
+
+        outargs = (ips.acc[0], ips.acc[1], ips.acc[2])
+
+        self.kernel.set_args(inpargs, outargs)
 
 
 @bind_all(timings)
@@ -346,6 +353,29 @@ class Kepler(AbstractExtension):
                    jps.vel[0], jps.vel[1], jps.vel[2])
 
         self.kernel.set_args(inpargs, outargs)
+
+
+def get_kernel(name, backend=options.backend):
+    kernel = globals()[name](backend)
+
+    def func(ips, jps, **kwargs):
+        kernel(ips, jps, **kwargs)
+        if ips != jps:
+            kernel(jps, ips, **kwargs)
+
+    if name == 'Acc' and backend == 'C':
+        kernel_r = Acc_rectangle(backend)
+        kernel_t = Acc_triangle(backend)
+
+        def c_func(ips, jps, **kwargs):
+            if ips != jps:
+                kernel_r(jps, ips, **kwargs)
+            else:
+                kernel_t(ips, jps, **kwargs)
+
+        return c_func
+
+    return func
 
 
 # -- End of File --

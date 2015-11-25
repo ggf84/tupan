@@ -239,7 +239,6 @@ def sf_kick_pn(slow, fast, dt):
         ps.wel[...] = ps.vel
 
     slow.set_pnacc(fast, use_auxvel=True)
-    fast.set_pnacc(slow, use_auxvel=True)
     for ps in [slow, fast]:
         pnforce = ps.mass * ps.pnacc
         ps.vel += (ps.acc + ps.pnacc) * (dt / 2)
@@ -248,12 +247,10 @@ def sf_kick_pn(slow, fast, dt):
         ps.pn_am -= np.cross(ps.pos.T, pnforce.T).T * (dt / 2)
 
     slow.set_pnacc(fast)
-    fast.set_pnacc(slow)
     for ps in [slow, fast]:
         ps.wel += (ps.acc + ps.pnacc) * dt
 
     slow.set_pnacc(fast, use_auxvel=True)
-    fast.set_pnacc(slow, use_auxvel=True)
     for ps in [slow, fast]:
         pnforce = ps.mass * ps.pnacc
         ps.vel += (ps.acc + ps.pnacc) * (dt / 2)
@@ -267,7 +264,6 @@ def sf_kick_pn(slow, fast, dt):
     #    ps.vel += (ps.acc * dt + ps.wel) / 2
     #
     # slow.set_pnacc(fast)
-    # fast.set_pnacc(slow)
     # for ps in [slow, fast]:
     #     pnforce = ps.mass * ps.pnacc
     #     ps.pn_ke -= (ps.vel * pnforce).sum(0) * dt
@@ -294,7 +290,6 @@ def sf_kick(slow, fast, dt):
         return slow, fast
 
     slow.set_acc(fast)
-    fast.set_acc(slow)
     if slow.include_pn_corrections:
         return sf_kick_pn(slow, fast, dt)
     return sf_kick_n(slow, fast, dt)

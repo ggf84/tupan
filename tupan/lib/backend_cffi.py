@@ -66,6 +66,8 @@ class CDriver(object):
         if fpwidth == 'fp64':
             define_macros.append(('CONFIG_USE_DOUBLE', 1))
 
+        compiler_flags = ['-O3', '-std=c99', '-march=native', '-fopenmp']
+
         self.lib = self.ffi.verify(
             """
             #include "common.h"
@@ -75,7 +77,8 @@ class CDriver(object):
             define_macros=define_macros,
             include_dirs=[PATH],
             libraries=['m'],
-            extra_compile_args=['-O3', '-std=c99', '-march=native'],
+            extra_compile_args=compiler_flags,
+            extra_link_args=compiler_flags,
             sources=[os.path.join(PATH, fname) for fname in fnames],
         )
 

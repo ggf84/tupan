@@ -18,7 +18,7 @@ NREG_X_DECL_STRUCTS(real_tn, real_t)
 
 
 static inline Nreg_X_IData
-nreg_Xkernel_core(Nreg_X_IData ip, Nreg_X_JData jp, real_tn const dt)
+nreg_Xkernel_core(Nreg_X_IData ip, Nreg_X_JData jp, const real_tn dt)
 {
 	real_tn rx = ip.rx - jp.rx;													// 1 FLOPs
 	real_tn ry = ip.ry - jp.ry;													// 1 FLOPs
@@ -63,7 +63,7 @@ NREG_V_DECL_STRUCTS(real_tn, real_t)
 
 
 static inline Nreg_V_IData
-nreg_Vkernel_core(Nreg_V_IData ip, Nreg_V_JData jp, real_tn const dt)
+nreg_Vkernel_core(Nreg_V_IData ip, Nreg_V_JData jp, const real_tn dt)
 {
 	real_tn vx = ip.vx - jp.vx;													// 1 FLOPs
 	real_tn vy = ip.vy - jp.vy;													// 1 FLOPs

@@ -18,7 +18,7 @@ TSTEP_DECL_STRUCTS(real_tn, real_t)
 
 
 static inline Tstep_IData
-tstep_kernel_core(Tstep_IData ip, Tstep_JData jp, real_t const eta)
+tstep_kernel_core(Tstep_IData ip, Tstep_JData jp, const real_t eta)
 {
 	real_tn rx = ip.rx - jp.rx;													// 1 FLOPs
 	real_tn ry = ip.ry - jp.ry;													// 1 FLOPs

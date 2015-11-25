@@ -52,8 +52,8 @@ stumpff_cs(
 
 static inline void
 stiefel_Gs(
-	real_t const s,
-	real_t const alpha0,
+	const real_t s,
+	const real_t alpha0,
 	real_t Gs[static restrict 4])
 {
 	real_t s2 = s * s;
@@ -66,11 +66,11 @@ stiefel_Gs(
 
 static inline real_t
 kepler_f(
-	real_t const s,
-	real_t const r0,
-	real_t const sigma0,
-	real_t const gamma0,
-	real_t const Gs[static restrict 4])
+	const real_t s,
+	const real_t r0,
+	const real_t sigma0,
+	const real_t gamma0,
+	const real_t Gs[static restrict 4])
 {
 	return r0 * s + sigma0 * Gs[2] + gamma0 * Gs[3];
 }
@@ -78,10 +78,10 @@ kepler_f(
 
 static inline real_t
 kepler_fp(
-	real_t const r0,
-	real_t const sigma0,
-	real_t const gamma0,
-	real_t const Gs[static restrict 4])
+	const real_t r0,
+	const real_t sigma0,
+	const real_t gamma0,
+	const real_t Gs[static restrict 4])
 {
 	return r0 + sigma0 * Gs[1] + gamma0 * Gs[2];
 }
@@ -89,9 +89,9 @@ kepler_fp(
 
 static inline real_t
 kepler_fpp(
-	real_t const sigma0,
-	real_t const gamma0,
-	real_t const Gs[static restrict 4])
+	const real_t sigma0,
+	const real_t gamma0,
+	const real_t Gs[static restrict 4])
 {
 	return sigma0 * Gs[0] + gamma0 * Gs[1];
 }
@@ -99,12 +99,12 @@ kepler_fpp(
 
 static inline void
 update_pos_vel(
-	real_t const m,
-	real_t const r0,
-	real_t const inv_r0,
-	real_t const inv_r1,
-	real_t const sigma0,
-	real_t const Gs[static restrict 4],
+	const real_t m,
+	const real_t r0,
+	const real_t inv_r0,
+	const real_t inv_r1,
+	const real_t sigma0,
+	const real_t Gs[static restrict 4],
 	real_t *rx,
 	real_t *ry,
 	real_t *rz,
@@ -132,10 +132,10 @@ update_pos_vel(
 
 static inline real_t
 initial_guess(
-	real_t const m,
-	real_t const r0,
-	real_t const dt0,
-	real_t const alpha0,
+	const real_t m,
+	const real_t r0,
+	const real_t dt0,
+	const real_t alpha0,
 	real_t *S)
 {
 	real_t s = 0;	// Initial guess for hyperbolic / nearly parabolical orbits.
@@ -166,11 +166,11 @@ initial_guess(
 
 static inline int_t
 rootfinder(
-	real_t const r0,
-	real_t const dt0,
-	real_t const alpha0,
-	real_t const sigma0,
-	real_t const gamma0,
+	const real_t r0,
+	const real_t dt0,
+	const real_t alpha0,
+	const real_t sigma0,
+	const real_t gamma0,
 	real_t Gs[static restrict 4],
 	real_t *S)
 {
@@ -212,9 +212,9 @@ rootfinder(
 
 static inline int_t
 __universal_kepler_solver(
-	real_t const dt0,
-	real_t const m,
-	real_t const e2,
+	const real_t dt0,
+	const real_t m,
+	const real_t e2,
 	real_t *rx,
 	real_t *ry,
 	real_t *rz,
@@ -308,9 +308,9 @@ __universal_kepler_solver(
 
 static inline int_t
 _universal_kepler_solver(
-	real_t const dt,
-	real_t const m,
-	real_t const e2,
+	const real_t dt,
+	const real_t m,
+	const real_t e2,
 	real_t *rx,
 	real_t *ry,
 	real_t *rz,
@@ -351,15 +351,15 @@ _universal_kepler_solver(
 
 static inline int_t
 universal_kepler_solver(
-	real_t const dt,
-	real_t const m,
-	real_t const e2,
-	real_t const r0x,
-	real_t const r0y,
-	real_t const r0z,
-	real_t const v0x,
-	real_t const v0y,
-	real_t const v0z,
+	const real_t dt,
+	const real_t m,
+	const real_t e2,
+	const real_t r0x,
+	const real_t r0y,
+	const real_t r0z,
+	const real_t v0x,
+	const real_t v0y,
+	const real_t v0z,
 	real_t *r1x,
 	real_t *r1y,
 	real_t *r1z,

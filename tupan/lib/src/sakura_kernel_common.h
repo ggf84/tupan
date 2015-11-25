@@ -19,15 +19,15 @@ SAKURA_DECL_STRUCTS(real_t1, real_t)
 
 static inline void
 twobody_solver(
-	real_t const dt,
-	real_t const m,
-	real_t const e2,
-	real_t const r0x,
-	real_t const r0y,
-	real_t const r0z,
-	real_t const v0x,
-	real_t const v0y,
-	real_t const v0z,
+	const real_t dt,
+	const real_t m,
+	const real_t e2,
+	const real_t r0x,
+	const real_t r0y,
+	const real_t r0z,
+	const real_t v0x,
+	const real_t v0y,
+	const real_t v0z,
 	real_t *r1x,
 	real_t *r1y,
 	real_t *r1z,
@@ -46,16 +46,16 @@ twobody_solver(
 
 static inline void
 evolve_twobody(
-	real_t const dt,
-	int_t const flag,
-	real_t const m,
-	real_t const e2,
-	real_t const r0x,
-	real_t const r0y,
-	real_t const r0z,
-	real_t const v0x,
-	real_t const v0y,
-	real_t const v0z,
+	const real_t dt,
+	const int_t flag,
+	const real_t m,
+	const real_t e2,
+	const real_t r0x,
+	const real_t r0y,
+	const real_t r0z,
+	const real_t v0x,
+	const real_t v0y,
+	const real_t v0z,
 	real_t *r1x,
 	real_t *r1y,
 	real_t *r1z,
@@ -120,7 +120,7 @@ evolve_twobody(
 
 static inline Sakura_IData
 sakura_kernel_core(Sakura_IData ip, Sakura_JData jp,
-				   real_t const dt, int_t const flag)
+				   const real_t dt, const int_t flag)
 {
 	real_t r0x = ip.rx - jp.rx;													// 1 FLOPs
 	real_t r0y = ip.ry - jp.ry;													// 1 FLOPs

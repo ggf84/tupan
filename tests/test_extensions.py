@@ -155,8 +155,8 @@ class TestCase2(unittest.TestCase):
 
             # calculating using CL on device
             best['set']["CL"] = best_of(5, krnlCL.set_args, ps, ps, **kwargs)
-            best['run']["CL"] = best_of(3, krnlCL.run)
-            best['get']["CL"] = best_of(5, krnlCL.get_result)
+            best['run']["CL"] = best_of(3, krnlCL.kernel.run)
+            best['get']["CL"] = best_of(5, krnlCL.map_buffers)
 
             if ps.n > 4096:
                 print("  N={0}:".format(ps.n))
@@ -173,8 +173,8 @@ class TestCase2(unittest.TestCase):
             else:
                 # calculating using C on CPU
                 best['set']["C"] = best_of(5, krnlC.set_args, ps, ps, **kwargs)
-                best['run']["C"] = best_of(3, krnlC.run)
-                best['get']["C"] = best_of(5, krnlC.get_result)
+                best['run']["C"] = best_of(3, krnlC.kernel.run)
+                best['get']["C"] = best_of(5, krnlC.map_buffers)
 
                 print("  N={0}:".format(ps.n))
                 for (k, v) in best.items():

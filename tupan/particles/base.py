@@ -403,41 +403,52 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         return 2 * self.kinetic_energy + self.potential_energy
 
     # -- gravity
-    def set_tstep(self, other, eta, shared=False, kernel=ext.Tstep()):
+    def set_tstep(self, other, eta, shared=False,
+                  kernel=ext.get_kernel('Tstep')):
         """Set individual time-steps due to other particles.
 
         """
         kernel(self, other, eta=eta)
-        if shared:
-            self.tstep[...] = np.copysign(abs(self.tstep).min(), self.tstep)
 
-    def set_phi(self, other, kernel=ext.Phi()):
+        if shared:
+            tstep = self.tstep
+            tstep[...] = np.copysign(abs(tstep).min(), tstep)
+            if self != other:
+                tstep = other.tstep
+                tstep[...] = np.copysign(abs(tstep).min(), tstep)
+
+    def set_phi(self, other,
+                kernel=ext.get_kernel('Phi')):
         """Set individual gravitational potential due to other particles.
 
         """
         kernel(self, other)
 
-    def set_acc(self, other, kernel=ext.Acc()):
+    def set_acc(self, other,
+                kernel=ext.get_kernel('Acc')):
         """Set individual gravitational acceleration due to other particles.
 
         """
         kernel(self, other)
 
-    def set_pnacc(self, other, use_auxvel=False, kernel=ext.PNAcc()):
+    def set_pnacc(self, other, use_auxvel=False,
+                  kernel=ext.get_kernel('PNAcc')):
         """Set individual post-Newtonian gravitational acceleration due to
         other particles.
 
         """
         kernel(self, other, use_auxvel=use_auxvel)
 
-    def set_acc_jrk(self, other, kernel=ext.AccJrk()):
+    def set_acc_jrk(self, other,
+                    kernel=ext.get_kernel('AccJrk')):
         """Set individual gravitational acceleration and jerk due to other
         particles.
 
         """
         kernel(self, other)
 
-    def set_snp_crk(self, other, kernel=ext.SnpCrk()):
+    def set_snp_crk(self, other,
+                    kernel=ext.get_kernel('SnpCrk')):
         """Set individual gravitational snap and crackle due to other
         particles.
 
