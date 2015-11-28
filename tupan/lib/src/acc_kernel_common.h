@@ -42,7 +42,7 @@ acc_kernel_core(Acc_IData ip, Acc_JData jp)
 
 
 static inline void
-p2p_acc_kernel_core(Acc_Data * restrict ip, Acc_Data * restrict jp)
+p2p_acc_kernel_core(Acc_Data * ip, Acc_Data * jp)
 {
 	real_tn rx = ip->rx - jp->rx;
 	real_tn ry = ip->ry - jp->ry;
@@ -50,18 +50,16 @@ p2p_acc_kernel_core(Acc_Data * restrict ip, Acc_Data * restrict jp)
 	real_tn e2 = ip->e2 + jp->e2;
 	real_tn r2 = rx * rx + ry * ry + rz * rz;
 	real_tn inv_r3 = smoothed_inv_r3(r2, e2);	// 5 FLOPs
-	{	// i-part
-		real_tn m_r3 = jp->m * inv_r3;
-		ip->ax -= m_r3 * rx;
-		ip->ay -= m_r3 * ry;
-		ip->az -= m_r3 * rz;
-	}
-	{	// j-part
-		real_tn m_r3 = ip->m * inv_r3;
-		jp->ax += m_r3 * rx;
-		jp->ay += m_r3 * ry;
-		jp->az += m_r3 * rz;
-	}
+	// i-part
+	real_tn jm_r3 = jp->m * inv_r3;
+	ip->ax -= jm_r3 * rx;
+	ip->ay -= jm_r3 * ry;
+	ip->az -= jm_r3 * rz;
+	// j-part
+	real_tn im_r3 = ip->m * inv_r3;
+	jp->ax += im_r3 * rx;
+	jp->ay += im_r3 * ry;
+	jp->az += im_r3 * rz;
 }
 // Total flop count: 28
 

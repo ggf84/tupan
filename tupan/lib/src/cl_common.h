@@ -27,12 +27,6 @@
 	DEFINE_TYPE(float, real_t)
 #endif
 
-#define paster(x,y) x##y
-#define concat(x,y) paster(x,y)
-#define vec(x) concat(x, VW)
-
-#define int_tn vec(int_t)
-#define uint_tn vec(uint_t)
-#define real_tn vec(real_t)
+#include "type_defs.h"
 
 #endif	// __CL_COMMON_H__

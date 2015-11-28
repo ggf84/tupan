@@ -1,8 +1,8 @@
 #ifndef __C_COMMON_H__
 #define __C_COMMON_H__
 
-#include <stdio.h>
-#include <tgmath.h>
+#include <iostream>
+#include <cmath>
 #include <omp.h>
 
 #define DEFINE_TYPE(TYPEA, TYPEB)	\
@@ -23,13 +23,10 @@
 	DEFINE_TYPE(float, real_t)
 #endif
 
-#define paster(x,y) x##y
-#define concat(x,y) paster(x,y)
-#define vec(x) concat(x, 1)
-
-#define int_tn vec(int_t)
-#define uint_tn vec(uint_t)
-#define real_tn vec(real_t)
+extern "C" {
+	#include "type_defs.h"
+	#include "libtupan.h"
+}
 
 #define constant const
 #define rsqrt(x) (1 / sqrt(x))

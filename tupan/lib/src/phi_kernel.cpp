@@ -4,18 +4,18 @@
 void
 phi_kernel(
 	const uint_t ni,
-	const real_t __im[restrict],
-	const real_t __irx[restrict],
-	const real_t __iry[restrict],
-	const real_t __irz[restrict],
-	const real_t __ie2[restrict],
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
 	const uint_t nj,
-	const real_t __jm[restrict],
-	const real_t __jrx[restrict],
-	const real_t __jry[restrict],
-	const real_t __jrz[restrict],
-	const real_t __je2[restrict],
-	real_t __iphi[restrict])
+	const real_t __jm[],
+	const real_t __jrx[],
+	const real_t __jry[],
+	const real_t __jrz[],
+	const real_t __je2[],
+	real_t __iphi[])
 {
 	for (uint_t i = 0; i < ni; ++i) {
 		Phi_IData ip = (Phi_IData){

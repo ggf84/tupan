@@ -4,18 +4,18 @@
 kernel void
 phi_kernel(
 	const uint_t ni,
-	global const real_tn __im[restrict],
-	global const real_tn __irx[restrict],
-	global const real_tn __iry[restrict],
-	global const real_tn __irz[restrict],
-	global const real_tn __ie2[restrict],
+	global const real_tn __im[],
+	global const real_tn __irx[],
+	global const real_tn __iry[],
+	global const real_tn __irz[],
+	global const real_tn __ie2[],
 	const uint_t nj,
-	global const real_t __jm[restrict],
-	global const real_t __jrx[restrict],
-	global const real_t __jry[restrict],
-	global const real_t __jrz[restrict],
-	global const real_t __je2[restrict],
-	global real_tn __iphi[restrict])
+	global const real_t __jm[],
+	global const real_t __jrx[],
+	global const real_t __jry[],
+	global const real_t __jrz[],
+	global const real_t __je2[],
+	global real_tn __iphi[])
 {
 	uint_t lid = get_local_id(0);
 	uint_t gid = get_global_id(0);

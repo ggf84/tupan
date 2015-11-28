@@ -213,7 +213,7 @@ class Program(object):
         fast_local_mem = True
 
         # setting program options
-        opts = ' -D VW={}'.format(vw)
+        opts = ' -D SIMD_WIDTH={}'.format(vw)
         opts += ' -D LSIZE={}'.format(lsize)
         opts += ' -D CONFIG_USE_OPENCL'
         if fpwidth == 'fp64':

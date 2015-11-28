@@ -16,7 +16,7 @@ from tupan import version
 PACKAGE_DATA = {}
 PACKAGE_DATA['tupan'] = ['tupan.cfg']
 PACKAGE_DATA['tupan.lib'] = [
-    os.path.join('src', '*.c'),
+    os.path.join('src', '*.cpp'),
     os.path.join('src', '*.h'),
     os.path.join('src', '*.cl'),
 ]

@@ -27,15 +27,17 @@ class CDriver(object):
     def __init__(self, fpwidth=options.fpwidth):
         LOGGER.debug("Building '%s' C extension module.", fpwidth)
 
-        fnames = ('phi_kernel.c',
-                  'acc_kernel.c',
-                  'acc_jrk_kernel.c',
-                  'snp_crk_kernel.c',
-                  'tstep_kernel.c',
-                  'pnacc_kernel.c',
-                  'nreg_kernels.c',
-                  'sakura_kernel.c',
-                  'kepler_solver_kernel.c', )
+        fnames = (
+            'phi_kernel.cpp',
+            'acc_kernel.cpp',
+            'acc_jrk_kernel.cpp',
+            'snp_crk_kernel.cpp',
+            'tstep_kernel.cpp',
+            'pnacc_kernel.cpp',
+            'nreg_kernels.cpp',
+            'sakura_kernel.cpp',
+            'kepler_solver_kernel.cpp',
+        )
 
         src = []
         with open(os.path.join(PATH, 'libtupan.h'), 'r') as fobj:
@@ -62,23 +64,30 @@ class CDriver(object):
 
         self.ffi.cdef(source)
 
-        define_macros = []
+        define_macros = {}
+        define_macros['SIMD_WIDTH'] = 1
         if fpwidth == 'fp64':
-            define_macros.append(('CONFIG_USE_DOUBLE', 1))
+            define_macros['CONFIG_USE_DOUBLE'] = 1
 
-        compiler_flags = ['-O3', '-std=c99', '-march=native', '-fopenmp']
+        compiler_flags = [
+            '-O3',
+            '-std=c++14',
+            '-march=native',
+            '-fpermissive',
+            '-fopenmp',
+        ]
 
         self.lib = self.ffi.verify(
             """
             #include "common.h"
-            #include "libtupan.h"
             """,
             tmpdir=get_cache_dir(fpwidth),
-            define_macros=define_macros,
+            define_macros=list(define_macros.items()),
             include_dirs=[PATH],
             libraries=['m'],
             extra_compile_args=compiler_flags,
             extra_link_args=compiler_flags,
+            source_extension='.cpp',
             sources=[os.path.join(PATH, fname) for fname in fnames],
         )
 

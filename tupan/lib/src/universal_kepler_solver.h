@@ -14,7 +14,7 @@ static constant real_t f2[] =	/* f2_i = (2*i+2)! / (2*i+0)! */
 static inline void
 stumpff_cs(
 	real_t z,
-	real_t cs[static restrict 4])
+	real_t cs[4])
 {
 	uint_t n = 0;
 	while (fabs(z) > 1) {
@@ -54,7 +54,7 @@ static inline void
 stiefel_Gs(
 	const real_t s,
 	const real_t alpha0,
-	real_t Gs[static restrict 4])
+	real_t Gs[4])
 {
 	real_t s2 = s * s;
 	stumpff_cs(alpha0*s2, Gs);
@@ -70,7 +70,7 @@ kepler_f(
 	const real_t r0,
 	const real_t sigma0,
 	const real_t gamma0,
-	const real_t Gs[static restrict 4])
+	const real_t Gs[4])
 {
 	return r0 * s + sigma0 * Gs[2] + gamma0 * Gs[3];
 }
@@ -81,7 +81,7 @@ kepler_fp(
 	const real_t r0,
 	const real_t sigma0,
 	const real_t gamma0,
-	const real_t Gs[static restrict 4])
+	const real_t Gs[4])
 {
 	return r0 + sigma0 * Gs[1] + gamma0 * Gs[2];
 }
@@ -91,7 +91,7 @@ static inline real_t
 kepler_fpp(
 	const real_t sigma0,
 	const real_t gamma0,
-	const real_t Gs[static restrict 4])
+	const real_t Gs[4])
 {
 	return sigma0 * Gs[0] + gamma0 * Gs[1];
 }
@@ -104,7 +104,7 @@ update_pos_vel(
 	const real_t inv_r0,
 	const real_t inv_r1,
 	const real_t sigma0,
-	const real_t Gs[static restrict 4],
+	const real_t Gs[4],
 	real_t *rx,
 	real_t *ry,
 	real_t *rz,
@@ -171,7 +171,7 @@ rootfinder(
 	const real_t alpha0,
 	const real_t sigma0,
 	const real_t gamma0,
-	real_t Gs[static restrict 4],
+	real_t Gs[4],
 	real_t *S)
 {
 	int_t err = -1;
