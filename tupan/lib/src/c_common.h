@@ -2,8 +2,11 @@
 #define __C_COMMON_H__
 
 #include <iostream>
+#include <vector>
 #include <cmath>
 #include <omp.h>
+
+using namespace std;
 
 #define DEFINE_TYPE(TYPEA, TYPEB)	\
 	typedef TYPEA TYPEB;			\
