@@ -50,7 +50,7 @@ smoothed_inv_r3(
 	real_tn inv_r = rsqrt(r2 + e2);
 	return inv_r * inv_r * inv_r;
 }
-// Total flop count: 4
+// Total flop count: 5
 
 
 static inline real_tn
