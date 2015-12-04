@@ -2,39 +2,49 @@ language: python
 
 python:
  - "2.7"
- - "3.3"
  - "3.4"
+ - "3.5"
+
+addons:
+ apt:
+  sources:
+   - ubuntu-toolchain-r-test
+  packages:
+   - clang
+   - g++
+   - gcc
+   - opencl-headers
+#   - fglrx-dev
 
 before_install:
+ - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
+ - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.7" CC="clang-3.7"; fi
+
  # install OpenCL
  - sudo apt-get update -qq
- - sudo apt-get install -qq fglrx-dev opencl-headers
+ - sudo apt-get install -qq fglrx-dev
 
  # install conda
- - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+ - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
  - bash miniconda.sh -b -p $HOME/miniconda
  - export PATH="$HOME/miniconda/bin:$PATH"
  - conda update --all --yes
  - export TESTENV=testenv$TRAVIS_PYTHON_VERSION
 
 install:
- # install requirements using conda (except for [pyopencl, vispy])
- - conda create -n $TESTENV --yes pip python=$TRAVIS_PYTHON_VERSION
+ # install requirements using conda (except for pyopencl)
+ - conda create -n $TESTENV --yes python=$TRAVIS_PYTHON_VERSION
  - source activate $TESTENV
- - conda install --yes $(grep -viE 'pyopencl|vispy' requirements.txt)
+ - conda install --yes $(grep -viE 'pyopencl' requirements.txt)
 
- # install [pyopencl, vispy] using pip
- - pip install vispy
+ # install pyopencl using pip
  - pip install pyopencl
 
  # print useful info
  - pwd
- - which pip
- - which conda
- - which python
- - conda list
  - conda info -a
- 
+ - conda list
+
  # install tupan
  - pip install .
 
