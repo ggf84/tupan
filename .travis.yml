@@ -2,6 +2,7 @@ language: python
 
 python:
  - "2.7"
+ - "3.3"
  - "3.4"
  - "3.5"
 
@@ -27,7 +28,7 @@ notifications:
 addons:
  apt:
   sources:
-   - llvm-toolchain-precise
+   - llvm-toolchain-precise-3.7
    - ubuntu-toolchain-r-test
   packages:
    - gcc-5
@@ -38,7 +39,6 @@ addons:
 
 before_install:
  # setup compiler
- - uname -a
  - $CC --version
  - if [ "$CC" = "gcc" ]; then export CC="gcc-5" CXX="g++-5"; fi
  - if [ "$CC" = "clang" ]; then export CC="clang-3.7" CXX="clang++-3.7"; fi
