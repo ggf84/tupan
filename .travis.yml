@@ -5,6 +5,17 @@ python:
  - "3.4"
  - "3.5"
 
+os:
+ - linux
+
+compiler:
+ - gcc
+ - clang
+
+matrix:
+ allow_failures:
+  - compiler: clang
+
 addons:
  apt:
   sources:
@@ -32,7 +43,6 @@ before_install:
  - conda update --all --yes
  - export TESTENV=testenv$TRAVIS_PYTHON_VERSION
 
-install:
  # install requirements using conda (except for pyopencl)
  - conda create -n $TESTENV --yes python=$TRAVIS_PYTHON_VERSION
  - source activate $TESTENV
@@ -43,10 +53,13 @@ install:
 
  # print useful info
  - pwd
- - "$CXX" --version
+ - uname -a
+ - $CC --version
+ - $CXX --version
  - conda info -a
  - conda list
 
+install:
  # install tupan
  - pip install .
 
