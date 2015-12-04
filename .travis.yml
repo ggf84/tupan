@@ -8,13 +8,21 @@ python:
 os:
  - linux
 
-compiler:
- - gcc
- - clang
+env:
+ - CXX=g++
+ - CXX=clang++
 
 matrix:
  allow_failures:
-  - compiler: clang
+  - env: CXX=clang++
+
+branches:
+ only:
+  - master
+  - dev
+
+notifications:
+ email: false
 
 addons:
  apt:
@@ -29,8 +37,14 @@ addons:
 #   - fglrx-dev
 
 before_install:
+ # setup compiler
+ - uname -a
+ - $CC --version
+ - $CXX --version
  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.7" CC="clang-3.7"; fi
+ - $CC --version
+ - $CXX --version
 
  # install OpenCL
  - sudo apt-get update -qq
@@ -53,24 +67,12 @@ before_install:
 
  # print useful info
  - pwd
- - uname -a
- - $CC --version
- - $CXX --version
  - conda info -a
  - conda list
 
 install:
- # install tupan
  - pip install .
 
 script:
  - python -m unittest discover
-
-branches:
-  only:
-    - master
-    - dev
-
-notifications:
-  email: false
 
