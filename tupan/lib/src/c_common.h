@@ -4,7 +4,6 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include <omp.h>
 
 using namespace std;
 

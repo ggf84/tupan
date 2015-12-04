@@ -1,102 +1,5 @@
+#include "nbody_parallel.h"
 #include "acc_kernel_common.h"
-
-
-struct p2p_acc_kernel_core {
-	// Total flop count: 28
-	void operator()(auto &i, auto &j) {
-		auto rx = i.rx - j.rx;
-		auto ry = i.ry - j.ry;
-		auto rz = i.rz - j.rz;
-		auto e2 = i.e2 + j.e2;
-		auto r2 = rx * rx + ry * ry + rz * rz;
-		auto inv_r3 = smoothed_inv_r3(r2, e2);	// 5 FLOPs
-		{	// i-particle
-			auto m_r3 = j.m * inv_r3;
-			i.ax -= m_r3 * rx;
-			i.ay -= m_r3 * ry;
-			i.az -= m_r3 * rz;
-		}
-		{	// j-particle
-			auto m_r3 = i.m * inv_r3;
-			j.ax += m_r3 * rx;
-			j.ay += m_r3 * ry;
-			j.az += m_r3 * rz;
-		}
-	}
-};
-
-
-template<typename P2P_Function>
-static inline void
-p2p_rectangle(auto i0, auto i1, auto j0, auto j1, P2P_Function f)
-{
-	for (auto i = i0; i < i1; ++i) {
-		for (auto j = j0; j < j1; ++j) {
-			f(*i, *j);
-		}
-	}
-}
-
-
-template<typename P2P_Function>
-static inline void
-p2p_triangle(auto i0, auto i1, P2P_Function f)
-{
-	for (auto i = i0; i < i1; ++i) {
-		for (auto j = i+1; j < i1; ++j) {
-			f(*i, *j);
-		}
-	}
-}
-
-
-template<typename P2P_Function>
-static inline void
-rectangle(auto i0, auto i1, auto j0, auto j1, P2P_Function f)
-{
-	constexpr auto threshold = 256;
-	auto di = i1 - i0;
-	auto dj = j1 - j0;
-
-	if (di > threshold && dj > threshold) {
-		auto im = i0 + di / 2;
-		auto jm = j0 + dj / 2;
-
-		#pragma omp task
-		{ rectangle(i0, im, j0, jm, f); }
-		rectangle(im, i1, jm, j1, f);
-		#pragma omp taskwait
-
-		#pragma omp task
-		{ rectangle(i0, im, jm, j1, f); }
-		rectangle(im, i1, j0, jm, f);
-		#pragma omp taskwait
-	} else {
-		p2p_rectangle(i0, i1, j0, j1, f);
-	}
-}
-
-
-template<typename P2P_Function>
-static inline void
-triangle(auto i0, auto i1, P2P_Function f)
-{
-	constexpr auto threshold = 256;
-	auto di = i1 - i0;
-
-	if (di > threshold) {
-		auto im = i0 + di / 2;
-
-		#pragma omp task
-		{ triangle(i0, im, f); }
-		triangle(im, i1, f);
-		#pragma omp taskwait
-
-		rectangle(i0, im, im, i1, f);
-	} else {
-		p2p_triangle(i0, i1, f);
-	}
-}
 
 
 void
@@ -151,17 +54,17 @@ acc_kernel_rectangle(
 	rectangle(
 		begin(ipart), end(ipart),
 		begin(jpart), end(jpart),
-		p2p_acc_kernel_core()
+		p2p_acc_kernel_core{}
 	);
 
-	for (auto& ip : ipart) {
+	for (const auto& ip : ipart) {
 		auto i = &ip - &ipart[0];
 		__iax[i] = ip.ax;
 		__iay[i] = ip.ay;
 		__iaz[i] = ip.az;
 	}
 
-	for (auto& jp : jpart) {
+	for (const auto& jp : jpart) {
 		auto j = &jp - &jpart[0];
 		__jax[j] = jp.ax;
 		__jay[j] = jp.ay;
@@ -199,10 +102,10 @@ acc_kernel_triangle(
 	#pragma omp single
 	triangle(
 		begin(ipart), end(ipart),
-		p2p_acc_kernel_core()
+		p2p_acc_kernel_core{}
 	);
 
-	for (auto& ip : ipart) {
+	for (const auto& ip : ipart) {
 		auto i = &ip - &ipart[0];
 		__iax[i] = ip.ax;
 		__iay[i] = ip.ay;
