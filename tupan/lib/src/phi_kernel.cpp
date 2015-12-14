@@ -18,7 +18,7 @@ phi_kernel(
 	real_t __iphi[])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		Phi_IData ip = (Phi_IData){
+		Phi_Data ip = (Phi_Data){
 			.phi = 0,
 			.rx = __irx[i],
 			.ry = __iry[i],
@@ -28,7 +28,8 @@ phi_kernel(
 		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			Phi_JData jp = (Phi_JData){
+			Phi_Data jp = (Phi_Data){
+				.phi = 0,
 				.rx = __jrx[j],
 				.ry = __jry[j],
 				.rz = __jrz[j],

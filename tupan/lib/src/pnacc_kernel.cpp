@@ -27,7 +27,7 @@ pnacc_kernel(
 	real_t __ipnaz[])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		PNAcc_IData ip = (PNAcc_IData){
+		PNAcc_Data ip = (PNAcc_Data){
 			.pnax = 0,
 			.pnay = 0,
 			.pnaz = 0,
@@ -42,7 +42,10 @@ pnacc_kernel(
 		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			PNAcc_JData jp = (PNAcc_JData){
+			PNAcc_Data jp = (PNAcc_Data){
+				.pnax = 0,
+				.pnay = 0,
+				.pnaz = 0,
 				.rx = __jrx[j],
 				.ry = __jry[j],
 				.rz = __jrz[j],

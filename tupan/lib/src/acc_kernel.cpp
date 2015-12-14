@@ -133,7 +133,7 @@ acc_kernel(
 	real_t __iaz[])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		Acc_IData ip = (Acc_IData){
+		Acc_Data ip = (Acc_Data){
 			.ax = 0,
 			.ay = 0,
 			.az = 0,
@@ -145,7 +145,10 @@ acc_kernel(
 		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			Acc_JData jp = (Acc_JData){
+			Acc_Data jp = (Acc_Data){
+				.ax = 0,
+				.ay = 0,
+				.az = 0,
 				.rx = __jrx[j],
 				.ry = __jry[j],
 				.rz = __jrz[j],

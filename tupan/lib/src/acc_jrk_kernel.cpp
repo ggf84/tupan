@@ -29,7 +29,7 @@ acc_jrk_kernel(
 	real_t __ijz[])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		Acc_Jrk_IData ip = (Acc_Jrk_IData){
+		Acc_Jrk_Data ip = (Acc_Jrk_Data){
 			.ax = 0,
 			.ay = 0,
 			.az = 0,
@@ -47,7 +47,13 @@ acc_jrk_kernel(
 		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			Acc_Jrk_JData jp = (Acc_Jrk_JData){
+			Acc_Jrk_Data jp = (Acc_Jrk_Data){
+				.ax = 0,
+				.ay = 0,
+				.az = 0,
+				.jx = 0,
+				.jy = 0,
+				.jz = 0,
 				.rx = __jrx[j],
 				.ry = __jry[j],
 				.rz = __jrz[j],

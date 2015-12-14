@@ -7,86 +7,88 @@
 #define _3_2 (3/(real_t)(2))
 
 
-#define SNP_CRK_DECL_STRUCTS(iT, jT)								\
-	typedef struct snp_crk_idata {									\
-		iT sx, sy, sz, cx, cy, cz;									\
-		iT rx, ry, rz, vx, vy, vz, ax, ay, az, jx, jy, jz, e2, m;	\
-	} Snp_Crk_IData;												\
-	typedef struct snp_crk_jdata {									\
-		jT rx, ry, rz, vx, vy, vz, ax, ay, az, jx, jy, jz, e2, m;	\
-	} Snp_Crk_JData;
+#define SNP_CRK_IMPLEMENT_STRUCT(N)												\
+	typedef struct concat(snp_crk_data, N) {									\
+		concat(real_t, N) sx, sy, sz, cx, cy, cz;								\
+		concat(real_t, N) rx, ry, rz, vx, vy, vz, ax, ay, az, jx, jy, jz, e2, m;\
+	} concat(Snp_Crk_Data, N);
 
-SNP_CRK_DECL_STRUCTS(real_tn, real_t)
+SNP_CRK_IMPLEMENT_STRUCT(1)
+#if SIMD > 1
+SNP_CRK_IMPLEMENT_STRUCT(SIMD)
+#endif
+typedef Snp_Crk_Data1 Snp_Crk_Data;
 
 
-static inline Snp_Crk_IData
-snp_crk_kernel_core(Snp_Crk_IData ip, Snp_Crk_JData jp)
+static inline vec(Snp_Crk_Data)
+snp_crk_kernel_core(vec(Snp_Crk_Data) ip, Snp_Crk_Data jp)
+// flop count: 115
 {
-	real_tn rx = ip.rx - jp.rx;													// 1 FLOPs
-	real_tn ry = ip.ry - jp.ry;													// 1 FLOPs
-	real_tn rz = ip.rz - jp.rz;													// 1 FLOPs
-	real_tn vx = ip.vx - jp.vx;													// 1 FLOPs
-	real_tn vy = ip.vy - jp.vy;													// 1 FLOPs
-	real_tn vz = ip.vz - jp.vz;													// 1 FLOPs
-	real_tn ax = ip.ax - jp.ax;													// 1 FLOPs
-	real_tn ay = ip.ay - jp.ay;													// 1 FLOPs
-	real_tn az = ip.az - jp.az;													// 1 FLOPs
-	real_tn jx = ip.jx - jp.jx;													// 1 FLOPs
-	real_tn jy = ip.jy - jp.jy;													// 1 FLOPs
-	real_tn jz = ip.jz - jp.jz;													// 1 FLOPs
-	real_tn e2 = ip.e2 + jp.e2;													// 1 FLOPs
-	real_tn r2 = rx * rx + ry * ry + rz * rz;									// 5 FLOPs
-	real_tn rv = rx * vx + ry * vy + rz * vz;									// 5 FLOPs
-	real_tn v2 = vx * vx + vy * vy + vz * vz;									// 5 FLOPs
-	real_tn va = vx * ax + vy * ay + vz * az;									// 5 FLOPs
-	real_tn ra = rx * ax + ry * ay + rz * az;									// 5 FLOPs
-	real_tn rj = rx * jx + ry * jy + rz * jz;									// 5 FLOPs
-	int_tn mask = (r2 > 0);
+	vec(real_t) rx = ip.rx - jp.rx;
+	vec(real_t) ry = ip.ry - jp.ry;
+	vec(real_t) rz = ip.rz - jp.rz;
+	vec(real_t) vx = ip.vx - jp.vx;
+	vec(real_t) vy = ip.vy - jp.vy;
+	vec(real_t) vz = ip.vz - jp.vz;
+	vec(real_t) ax = ip.ax - jp.ax;
+	vec(real_t) ay = ip.ay - jp.ay;
+	vec(real_t) az = ip.az - jp.az;
+	vec(real_t) jx = ip.jx - jp.jx;
+	vec(real_t) jy = ip.jy - jp.jy;
+	vec(real_t) jz = ip.jz - jp.jz;
+	vec(real_t) e2 = ip.e2 + jp.e2;
+	vec(real_t) r2 = rx * rx + ry * ry + rz * rz;
+	vec(real_t) rv = rx * vx + ry * vy + rz * vz;
+	vec(real_t) v2 = vx * vx + vy * vy + vz * vz;
+	vec(real_t) va = vx * ax + vy * ay + vz * az;
+	vec(real_t) ra = rx * ax + ry * ay + rz * az;
+	vec(real_t) rj = rx * jx + ry * jy + rz * jz;
 
-	real_tn inv_r2;
-	real_tn m_r3 = smoothed_m_r3_inv_r2(jp.m, r2, e2, mask, &inv_r2);			// 5 FLOPs
+	vec(real_t) inv_r2;
+	vec(real_t) m_r3 = jp.m * smoothed_inv_r3_inv_r2(r2, e2, &inv_r2);	// flop count: 6
+	inv_r2 = select((vec(real_t))(0), inv_r2, (r2 > 0));
+	m_r3 = select((vec(real_t))(0), m_r3, (r2 > 0));
 
-	real_tn alpha = rv * inv_r2;												// 1 FLOPs
-	real_tn alpha2 = alpha * alpha;												// 1 FLOPs
-	real_tn beta = 3 * ((v2 + ra) * inv_r2 + alpha2);							// 4 FLOPs
-	real_tn gamma = (3 * va + rj) * inv_r2 + alpha * (beta - 4 * alpha2);		// 7 FLOPs
+	vec(real_t) alpha = rv * inv_r2;
+	vec(real_t) alpha2 = alpha * alpha;
+	vec(real_t) beta = 3 * ((v2 + ra) * inv_r2 + alpha2);
+	vec(real_t) gamma = (3 * va + rj) * inv_r2 + alpha * (beta - 4 * alpha2);
 
-	alpha *= 3;																	// 1 FLOPs
-	gamma *= 3;																	// 1 FLOPs
+	alpha *= 3;
+	gamma *= 3;
 
-	vx -= alpha * rx;															// 2 FLOPs
-	vy -= alpha * ry;															// 2 FLOPs
-	vz -= alpha * rz;															// 2 FLOPs
+	vx -= alpha * rx;
+	vy -= alpha * ry;
+	vz -= alpha * rz;
 
-	alpha *= 2;																	// 1 FLOPs
-	ax -= alpha * vx;															// 2 FLOPs
-	ay -= alpha * vy;															// 2 FLOPs
-	az -= alpha * vz;															// 2 FLOPs
-	ax -= beta * rx;															// 2 FLOPs
-	ay -= beta * ry;															// 2 FLOPs
-	az -= beta * rz;															// 2 FLOPs
+	alpha *= 2;
+	ax -= alpha * vx;
+	ay -= alpha * vy;
+	az -= alpha * vz;
+	ax -= beta * rx;
+	ay -= beta * ry;
+	az -= beta * rz;
 
-	alpha *= _3_2;																// 1 FLOPs
-	beta *= 3;																	// 1 FLOPs
-	jx -= alpha * ax;															// 2 FLOPs
-	jy -= alpha * ay;															// 2 FLOPs
-	jz -= alpha * az;															// 2 FLOPs
-	jx -= beta * vx;															// 2 FLOPs
-	jy -= beta * vy;															// 2 FLOPs
-	jz -= beta * vz;															// 2 FLOPs
-	jx -= gamma * rx;															// 2 FLOPs
-	jy -= gamma * ry;															// 2 FLOPs
-	jz -= gamma * rz;															// 2 FLOPs
+	alpha *= _3_2;
+	beta *= 3;
+	jx -= alpha * ax;
+	jy -= alpha * ay;
+	jz -= alpha * az;
+	jx -= beta * vx;
+	jy -= beta * vy;
+	jz -= beta * vz;
+	jx -= gamma * rx;
+	jy -= gamma * ry;
+	jz -= gamma * rz;
 
-	ip.sx -= m_r3 * ax;															// 2 FLOPs
-	ip.sy -= m_r3 * ay;															// 2 FLOPs
-	ip.sz -= m_r3 * az;															// 2 FLOPs
-	ip.cx -= m_r3 * jx;															// 2 FLOPs
-	ip.cy -= m_r3 * jy;															// 2 FLOPs
-	ip.cz -= m_r3 * jz;															// 2 FLOPs
+	ip.sx -= m_r3 * ax;
+	ip.sy -= m_r3 * ay;
+	ip.sz -= m_r3 * az;
+	ip.cx -= m_r3 * jx;
+	ip.cy -= m_r3 * jy;
+	ip.cz -= m_r3 * jz;
 	return ip;
 }
-// Total flop count: 114
 
 
 #endif	// __SNP_CRK_KERNEL_COMMON_H__

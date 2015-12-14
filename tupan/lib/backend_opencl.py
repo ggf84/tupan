@@ -135,14 +135,16 @@ class Queue(object):
     def enqueue_nd_range_kernel(self, kernel,
                                 global_work_size,
                                 local_work_size,
-                                global_work_offset,
+                                global_work_offset=None,
                                 wait_for=None):
-        event = cl.enqueue_nd_range_kernel(self.cl_queue,
-                                           kernel,
-                                           global_work_size,
-                                           local_work_size,
-                                           global_work_offset,
-                                           wait_for=wait_for)
+        event = cl.enqueue_nd_range_kernel(
+            self.cl_queue,
+            kernel,
+            global_work_size,
+            local_work_size,
+            global_work_offset=global_work_offset,
+            wait_for=wait_for
+        )
         self.cl_queue.flush()
         self.events.append(event)
 
@@ -185,14 +187,16 @@ class Program(object):
 
     """
     def __init__(self, cl_context, cl_device):
-        fnames = ('phi_kernel.cl',
-                  'acc_kernel.cl',
-                  'acc_jrk_kernel.cl',
-                  'snp_crk_kernel.cl',
-                  'tstep_kernel.cl',
-                  'pnacc_kernel.cl',
-                  'nreg_kernels.cl',
-                  'sakura_kernel.cl', )
+        fnames = (
+            'phi_kernel.cl',
+            'acc_kernel.cl',
+            'acc_jrk_kernel.cl',
+            'snp_crk_kernel.cl',
+            'tstep_kernel.cl',
+            'pnacc_kernel.cl',
+            'nreg_kernels.cl',
+            'sakura_kernel.cl',
+        )
 
         fsources = []
         for fname in fnames:
@@ -206,14 +210,15 @@ class Program(object):
         self.kernel = None
 
     def build(self, fpwidth=options.fpwidth):
-        vw = (self.cl_device.preferred_vector_width_float
-              if fpwidth == 'fp32'
-              else self.cl_device.preferred_vector_width_double)
-        lsize = 8 if self.cl_device.type == cl.device_type.CPU else 192  # GPU
+        simd = (self.cl_device.preferred_vector_width_float
+                if fpwidth == 'fp32'
+                else self.cl_device.preferred_vector_width_double)
+        wsize = 8 if self.cl_device.type == cl.device_type.CPU else 1024  # GPU
+        lsize = 8 if self.cl_device.type == cl.device_type.CPU else 256  # GPU
         fast_local_mem = True
 
         # setting program options
-        opts = ' -D SIMD_WIDTH={}'.format(vw)
+        opts = ' -D SIMD={}'.format(simd)
         opts += ' -D LSIZE={}'.format(lsize)
         opts += ' -D CONFIG_USE_OPENCL'
         if fpwidth == 'fp64':
@@ -232,7 +237,7 @@ class Program(object):
         kernels = self.cl_program.all_kernels()
         for kernel in kernels:
             name = kernel.function_name
-            kernel.stride = (vw if name != 'sakura_kernel' else 1)
+            kernel.wsize = wsize
             kernel.lsize = lsize
             kernel.name = name
             LOGGER.debug(
@@ -368,33 +373,24 @@ class CLKernel(object):
         return list(self.oarg.values())
 
     def run(self):
-        offset = 0
         ni = self.iarg[0]
         name = self.name
         uint_t = Ctype.uint_t
-        ndevs = len(drv.context.devices)
+#        ndevs = len(drv.context.devices)
+#        dn = (ni + ndevs - 1) // ndevs
 
         for device in drv.context.devices:
             kernel = device.program.kernel[name]
 
-            stride = kernel.stride
+            wsize = kernel.wsize
             lsize = kernel.lsize
 
-            n = (ni + stride - 1) // stride
-
-            wsize = (n + ndevs * lsize - 1) // (ndevs * lsize)
-            gsize = lsize * wsize
-            offset = (offset + stride - 1) // stride
+            gsize = wsize * lsize
 
             local_work_size = (lsize, 1, 1)
             global_work_size = (gsize, 1, 1)
-            global_work_offset = (offset, 0, 0)
 
-            offset += gsize
-            n = min(offset, n)
-            offset *= stride
-
-            kernel.set_arg(0, uint_t(n))
+            kernel.set_arg(0, uint_t(ni))
             for (j, buf) in enumerate(self.bufs[1:], start=1):
                 kernel.set_arg(j, buf)
 
@@ -402,7 +398,7 @@ class CLKernel(object):
                 kernel,
                 global_work_size,
                 local_work_size,
-                global_work_offset)
+            )
 
         drv.context.default_queue.wait_for_events()
 

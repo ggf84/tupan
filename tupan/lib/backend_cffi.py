@@ -65,7 +65,7 @@ class CDriver(object):
         self.ffi.cdef(source)
 
         define_macros = {}
-        define_macros['SIMD_WIDTH'] = 1
+        define_macros['SIMD'] = 1
         if fpwidth == 'fp64':
             define_macros['CONFIG_USE_DOUBLE'] = 1
 

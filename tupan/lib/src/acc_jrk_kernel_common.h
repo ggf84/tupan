@@ -5,50 +5,52 @@
 #include "smoothing.h"
 
 
-#define ACC_JRK_DECL_STRUCTS(iT, jT)		\
-	typedef struct acc_jrk_idata {			\
-		iT ax, ay, az, jx, jy, jz;			\
-		iT rx, ry, rz, vx, vy, vz, e2, m;	\
-	} Acc_Jrk_IData;						\
-	typedef struct acc_jrk_jdata {			\
-		jT rx, ry, rz, vx, vy, vz, e2, m;	\
-	} Acc_Jrk_JData;
+#define ACC_JRK_IMPLEMENT_STRUCT(N)							\
+	typedef struct concat(acc_jrk_data, N) {				\
+		concat(real_t, N) ax, ay, az, jx, jy, jz;			\
+		concat(real_t, N) rx, ry, rz, vx, vy, vz, e2, m;	\
+	} concat(Acc_Jrk_Data, N);
 
-ACC_JRK_DECL_STRUCTS(real_tn, real_t)
+ACC_JRK_IMPLEMENT_STRUCT(1)
+#if SIMD > 1
+ACC_JRK_IMPLEMENT_STRUCT(SIMD)
+#endif
+typedef Acc_Jrk_Data1 Acc_Jrk_Data;
 
 
-static inline Acc_Jrk_IData
-acc_jrk_kernel_core(Acc_Jrk_IData ip, Acc_Jrk_JData jp)
+static inline vec(Acc_Jrk_Data)
+acc_jrk_kernel_core(vec(Acc_Jrk_Data) ip, Acc_Jrk_Data jp)
+// flop count: 43
 {
-	real_tn rx = ip.rx - jp.rx;													// 1 FLOPs
-	real_tn ry = ip.ry - jp.ry;													// 1 FLOPs
-	real_tn rz = ip.rz - jp.rz;													// 1 FLOPs
-	real_tn vx = ip.vx - jp.vx;													// 1 FLOPs
-	real_tn vy = ip.vy - jp.vy;													// 1 FLOPs
-	real_tn vz = ip.vz - jp.vz;													// 1 FLOPs
-	real_tn e2 = ip.e2 + jp.e2;													// 1 FLOPs
-	real_tn r2 = rx * rx + ry * ry + rz * rz;									// 5 FLOPs
-	real_tn rv = rx * vx + ry * vy + rz * vz;									// 5 FLOPs
-	int_tn mask = (r2 > 0);
+	vec(real_t) rx = ip.rx - jp.rx;
+	vec(real_t) ry = ip.ry - jp.ry;
+	vec(real_t) rz = ip.rz - jp.rz;
+	vec(real_t) vx = ip.vx - jp.vx;
+	vec(real_t) vy = ip.vy - jp.vy;
+	vec(real_t) vz = ip.vz - jp.vz;
+	vec(real_t) e2 = ip.e2 + jp.e2;
+	vec(real_t) r2 = rx * rx + ry * ry + rz * rz;
+	vec(real_t) rv = rx * vx + ry * vy + rz * vz;
 
-	real_tn inv_r2;
-	real_tn m_r3 = smoothed_m_r3_inv_r2(jp.m, r2, e2, mask, &inv_r2);			// 5 FLOPs
+	vec(real_t) inv_r2;
+	vec(real_t) m_r3 = jp.m * smoothed_inv_r3_inv_r2(r2, e2, &inv_r2);	// flop count: 6
+	inv_r2 = select((vec(real_t))(0), inv_r2, (r2 > 0));
+	m_r3 = select((vec(real_t))(0), m_r3, (r2 > 0));
 
-	real_tn alpha = 3 * rv * inv_r2;											// 2 FLOPs
+	vec(real_t) alpha = 3 * rv * inv_r2;
 
-	vx -= alpha * rx;															// 2 FLOPs
-	vy -= alpha * ry;															// 2 FLOPs
-	vz -= alpha * rz;															// 2 FLOPs
+	vx -= alpha * rx;
+	vy -= alpha * ry;
+	vz -= alpha * rz;
 
-	ip.ax -= m_r3 * rx;															// 2 FLOPs
-	ip.ay -= m_r3 * ry;															// 2 FLOPs
-	ip.az -= m_r3 * rz;															// 2 FLOPs
-	ip.jx -= m_r3 * vx;															// 2 FLOPs
-	ip.jy -= m_r3 * vy;															// 2 FLOPs
-	ip.jz -= m_r3 * vz;															// 2 FLOPs
+	ip.ax -= m_r3 * rx;
+	ip.ay -= m_r3 * ry;
+	ip.az -= m_r3 * rz;
+	ip.jx -= m_r3 * vx;
+	ip.jy -= m_r3 * vy;
+	ip.jz -= m_r3 * vz;
 	return ip;
 }
-// Total flop count: 42
 
 
 #endif	// __ACC_JRK_KERNEL_COMMON_H__

@@ -3,7 +3,7 @@
 
 #define paster(x,y) x##y
 #define concat(x,y) paster(x,y)
-#define vec(x) concat(x, SIMD_WIDTH)
+#define vec(x) concat(x, SIMD)
 
 #define int_tn vec(int_t)
 #define uint_tn vec(uint_t)

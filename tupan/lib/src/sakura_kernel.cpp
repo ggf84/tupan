@@ -31,7 +31,7 @@ sakura_kernel(
 	real_t __idvz[])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		Sakura_IData ip = (Sakura_IData){
+		Sakura_Data ip = (Sakura_Data){
 			.drx = 0,
 			.dry = 0,
 			.drz = 0,
@@ -49,7 +49,13 @@ sakura_kernel(
 		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			Sakura_JData jp = (Sakura_JData){
+			Sakura_Data jp = (Sakura_Data){
+				.drx = 0,
+				.dry = 0,
+				.drz = 0,
+				.dvx = 0,
+				.dvy = 0,
+				.dvz = 0,
 				.rx = __jrx[j],
 				.ry = __jry[j],
 				.rz = __jrz[j],

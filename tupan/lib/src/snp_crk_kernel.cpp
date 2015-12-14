@@ -41,7 +41,7 @@ snp_crk_kernel(
 	real_t __icz[])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		Snp_Crk_IData ip = (Snp_Crk_IData){
+		Snp_Crk_Data ip = (Snp_Crk_Data){
 			.sx = 0,
 			.sy = 0,
 			.sz = 0,
@@ -65,7 +65,13 @@ snp_crk_kernel(
 		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			Snp_Crk_JData jp = (Snp_Crk_JData){
+			Snp_Crk_Data jp = (Snp_Crk_Data){
+				.sx = 0,
+				.sy = 0,
+				.sz = 0,
+				.cx = 0,
+				.cy = 0,
+				.cz = 0,
 				.rx = __jrx[j],
 				.ry = __jry[j],
 				.rz = __jrz[j],

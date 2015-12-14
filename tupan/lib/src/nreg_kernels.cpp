@@ -31,7 +31,7 @@ nreg_Xkernel(
 	real_t __iu[])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		Nreg_X_IData ip = (Nreg_X_IData){
+		Nreg_X_Data ip = (Nreg_X_Data){
 			.drx = 0,
 			.dry = 0,
 			.drz = 0,
@@ -50,7 +50,14 @@ nreg_Xkernel(
 		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			Nreg_X_JData jp = (Nreg_X_JData){
+			Nreg_X_Data jp = (Nreg_X_Data){
+				.drx = 0,
+				.dry = 0,
+				.drz = 0,
+				.ax = 0,
+				.ay = 0,
+				.az = 0,
+				.u = 0,
 				.rx = __jrx[j],
 				.ry = __jry[j],
 				.rz = __jrz[j],
@@ -99,7 +106,7 @@ nreg_Vkernel(
 	real_t __ik[])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		Nreg_V_IData ip = (Nreg_V_IData){
+		Nreg_V_Data ip = (Nreg_V_Data){
 			.dvx = 0,
 			.dvy = 0,
 			.dvz = 0,
@@ -114,7 +121,11 @@ nreg_Vkernel(
 		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			Nreg_V_JData jp = (Nreg_V_JData){
+			Nreg_V_Data jp = (Nreg_V_Data){
+				.dvx = 0,
+				.dvy = 0,
+				.dvz = 0,
+				.k = 0,
 				.vx = __jvx[j],
 				.vy = __jvy[j],
 				.vz = __jvz[j],

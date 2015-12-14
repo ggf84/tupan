@@ -5,66 +5,65 @@
 #include "smoothing.h"
 
 
-#define ACC_DECL_STRUCTS(T, iT, jT)	\
-	typedef struct acc_data {		\
-		T ax, ay, az;				\
-		T rx, ry, rz, e2, m;		\
-	} Acc_Data;						\
-	typedef struct acc_idata {		\
-		iT ax, ay, az;				\
-		iT rx, ry, rz, e2, m;		\
-	} Acc_IData;					\
-	typedef struct acc_jdata {		\
-		jT rx, ry, rz, e2, m;		\
-	} Acc_JData;
-
-ACC_DECL_STRUCTS(real_tn, real_tn, real_t)
-
-
-#ifdef __cplusplus	// not for OpenCL
+#ifdef __cplusplus	// cpp only, i.e., not for OpenCL
 struct p2p_acc_kernel_core {
 	// flop count: 28
-	void operator()(auto &i, auto &j) {
-		auto rx = i.rx - j.rx;
-		auto ry = i.ry - j.ry;
-		auto rz = i.rz - j.rz;
-		auto e2 = i.e2 + j.e2;
+	void operator()(auto &ip, auto &jp) {
+		auto rx = ip.rx - jp.rx;
+		auto ry = ip.ry - jp.ry;
+		auto rz = ip.rz - jp.rz;
+		auto e2 = ip.e2 + jp.e2;
 		auto r2 = rx * rx + ry * ry + rz * rz;
 		auto inv_r3 = smoothed_inv_r3(r2, e2);	// flop count: 5
 		{	// i-particle
-			auto m_r3 = j.m * inv_r3;
-			i.ax -= m_r3 * rx;
-			i.ay -= m_r3 * ry;
-			i.az -= m_r3 * rz;
+			auto m_r3 = jp.m * inv_r3;
+			ip.ax -= m_r3 * rx;
+			ip.ay -= m_r3 * ry;
+			ip.az -= m_r3 * rz;
 		}
 		{	// j-particle
-			auto m_r3 = i.m * inv_r3;
-			j.ax += m_r3 * rx;
-			j.ay += m_r3 * ry;
-			j.az += m_r3 * rz;
+			auto m_r3 = ip.m * inv_r3;
+			jp.ax += m_r3 * rx;
+			jp.ay += m_r3 * ry;
+			jp.az += m_r3 * rz;
 		}
 	}
 };
 #endif
 
+// ----------------------------------------------------------------------------
 
-static inline Acc_IData
-acc_kernel_core(Acc_IData ip, Acc_JData jp)
+#define ACC_IMPLEMENT_STRUCT(N)					\
+	typedef struct concat(acc_data, N) {		\
+		concat(real_t, N) ax, ay, az;			\
+		concat(real_t, N) rx, ry, rz, e2, m;	\
+	} concat(Acc_Data, N);
+
+ACC_IMPLEMENT_STRUCT(1)
+#if SIMD > 1
+ACC_IMPLEMENT_STRUCT(SIMD)
+#endif
+typedef Acc_Data1 Acc_Data;
+
+
+static inline vec(Acc_Data)
+acc_kernel_core(vec(Acc_Data) ip, Acc_Data jp)
 // flop count: 21
 {
-	real_tn rx = ip.rx - jp.rx;
-	real_tn ry = ip.ry - jp.ry;
-	real_tn rz = ip.rz - jp.rz;
-	real_tn e2 = ip.e2 + jp.e2;
-	real_tn r2 = rx * rx + ry * ry + rz * rz;
-	int_tn mask = (r2 > 0);
+	vec(real_t) rx = ip.rx - jp.rx;
+	vec(real_t) ry = ip.ry - jp.ry;
+	vec(real_t) rz = ip.rz - jp.rz;
+	vec(real_t) e2 = ip.e2 + jp.e2;
+	vec(real_t) r2 = rx * rx + ry * ry + rz * rz;
 
-	real_tn m_r3 = smoothed_m_r3(jp.m, r2, e2, mask);	// flop count: 6
+	vec(real_t) m_r3 = jp.m * smoothed_inv_r3(r2, e2);	// flop count: 6
+	m_r3 = select((vec(real_t))(0), m_r3, (r2 > 0));
 
 	ip.ax -= m_r3 * rx;
 	ip.ay -= m_r3 * ry;
 	ip.az -= m_r3 * rz;
 	return ip;
 }
+
 
 #endif	// __ACC_KERNEL_COMMON_H__

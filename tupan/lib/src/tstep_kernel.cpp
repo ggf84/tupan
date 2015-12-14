@@ -26,7 +26,7 @@ tstep_kernel(
 	real_t __idt_b[])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		Tstep_IData ip = (Tstep_IData){
+		Tstep_Data ip = (Tstep_Data){
 			.w2_a = 0,
 			.w2_b = 0,
 			.rx = __irx[i],
@@ -40,7 +40,9 @@ tstep_kernel(
 		};
 
 		for (uint_t j = 0; j < nj; ++j) {
-			Tstep_JData jp = (Tstep_JData){
+			Tstep_Data jp = (Tstep_Data){
+				.w2_a = 0,
+				.w2_b = 0,
 				.rx = __jrx[j],
 				.ry = __jry[j],
 				.rz = __jrz[j],
