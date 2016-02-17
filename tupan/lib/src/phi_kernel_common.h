@@ -5,6 +5,25 @@
 #include "smoothing.h"
 
 
+#ifdef __cplusplus	// cpp only, i.e., not for OpenCL
+static inline void
+p2p_phi_kernel_core(auto &ip, auto &jp)
+// flop count: 16
+{
+	auto rx = ip.rx - jp.rx;
+	auto ry = ip.ry - jp.ry;
+	auto rz = ip.rz - jp.rz;
+	auto e2 = ip.e2 + jp.e2;
+	auto r2 = rx * rx + ry * ry + rz * rz;
+	auto inv_r1 = smoothed_inv_r1(r2, e2);	// flop count: 3
+
+	ip.phi -= jp.m * inv_r1;
+	jp.phi -= ip.m * inv_r1;
+}
+#endif
+
+// ----------------------------------------------------------------------------
+
 #define PHI_IMPLEMENT_STRUCT(N)					\
 	typedef struct concat(phi_data, N) {		\
 		concat(real_t, N) phi;					\

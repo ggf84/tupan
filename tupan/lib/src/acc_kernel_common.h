@@ -6,29 +6,31 @@
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
-struct p2p_acc_kernel_core {
-	// flop count: 28
-	void operator()(auto &ip, auto &jp) {
-		auto rx = ip.rx - jp.rx;
-		auto ry = ip.ry - jp.ry;
-		auto rz = ip.rz - jp.rz;
-		auto e2 = ip.e2 + jp.e2;
-		auto r2 = rx * rx + ry * ry + rz * rz;
-		auto inv_r3 = smoothed_inv_r3(r2, e2);	// flop count: 5
-		{	// i-particle
-			auto m_r3 = jp.m * inv_r3;
-			ip.ax -= m_r3 * rx;
-			ip.ay -= m_r3 * ry;
-			ip.az -= m_r3 * rz;
-		}
-		{	// j-particle
-			auto m_r3 = ip.m * inv_r3;
-			jp.ax += m_r3 * rx;
-			jp.ay += m_r3 * ry;
-			jp.az += m_r3 * rz;
-		}
+static inline void
+p2p_acc_kernel_core(auto &ip, auto &jp)
+// flop count: 28
+{
+	auto rx = ip.rx - jp.rx;
+	auto ry = ip.ry - jp.ry;
+	auto rz = ip.rz - jp.rz;
+	auto e2 = ip.e2 + jp.e2;
+	auto r2 = rx * rx + ry * ry + rz * rz;
+
+	auto inv_r3 = smoothed_inv_r3(r2, e2);	// flop count: 5
+
+	{	// i-particle
+		auto m_r3 = jp.m * inv_r3;
+		ip.ax -= m_r3 * rx;
+		ip.ay -= m_r3 * ry;
+		ip.az -= m_r3 * rz;
 	}
-};
+	{	// j-particle
+		auto m_r3 = ip.m * inv_r3;
+		jp.ax += m_r3 * rx;
+		jp.ay += m_r3 * ry;
+		jp.az += m_r3 * rz;
+	}
+}
 #endif
 
 // ----------------------------------------------------------------------------

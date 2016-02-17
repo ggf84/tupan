@@ -5,6 +5,82 @@
 #include "smoothing.h"
 
 
+#ifdef __cplusplus	// cpp only, i.e., not for OpenCL
+static inline void
+p2p_nreg_Xkernel_core(auto &ip, auto &jp, const auto dt)
+// flop count: 53
+{
+	auto rx = ip.rx - jp.rx;
+	auto ry = ip.ry - jp.ry;
+	auto rz = ip.rz - jp.rz;
+	auto vx = ip.vx - jp.vx;
+	auto vy = ip.vy - jp.vy;
+	auto vz = ip.vz - jp.vz;
+	auto e2 = ip.e2 + jp.e2;
+
+	rx += vx * dt;
+	ry += vy * dt;
+	rz += vz * dt;
+
+	auto r2 = rx * rx + ry * ry + rz * rz;
+
+	decltype(r2) inv_r1;
+	auto inv_r3 = smoothed_inv_r3_inv_r1(r2, e2, &inv_r1);	// flop count: 5
+
+	{	// i-particle
+		auto m_r3 = jp.m * inv_r3;
+		ip.drx += jp.m * rx;
+		ip.dry += jp.m * ry;
+		ip.drz += jp.m * rz;
+		ip.ax -= m_r3 * rx;
+		ip.ay -= m_r3 * ry;
+		ip.az -= m_r3 * rz;
+		ip.u += jp.m * inv_r1;
+	}
+	{	// j-particle
+		auto m_r3 = ip.m * inv_r3;
+		jp.drx -= ip.m * rx;
+		jp.dry -= ip.m * ry;
+		jp.drz -= ip.m * rz;
+		jp.ax += m_r3 * rx;
+		jp.ay += m_r3 * ry;
+		jp.az += m_r3 * rz;
+		jp.u += ip.m * inv_r1;
+	}
+}
+
+
+static inline void
+p2p_nreg_Vkernel_core(auto &ip, auto &jp, const auto dt)
+// flop count: 33
+{
+	auto vx = ip.vx - jp.vx;
+	auto vy = ip.vy - jp.vy;
+	auto vz = ip.vz - jp.vz;
+	auto ax = ip.ax - jp.ax;
+	auto ay = ip.ay - jp.ay;
+	auto az = ip.az - jp.az;
+
+	vx += ax * dt;
+	vy += ay * dt;
+	vz += az * dt;
+
+	auto v2 = vx * vx + vy * vy + vz * vz;
+
+	ip.k += jp.m * v2;
+	ip.dvx += jp.m * vx;
+	ip.dvy += jp.m * vy;
+	ip.dvz += jp.m * vz;
+
+	jp.k += ip.m * v2;
+	jp.dvx -= ip.m * vx;
+	jp.dvy -= ip.m * vy;
+	jp.dvz -= ip.m * vz;
+}
+#endif
+
+// ----------------------------------------------------------------------------
+
 #define NREG_X_IMPLEMENT_STRUCT(N)							\
 	typedef struct concat(nreg_x_data, N) {					\
 		concat(real_t, N) drx, dry, drz, ax, ay, az, u;		\

@@ -150,5 +150,55 @@ sakura_kernel_core(Sakura_Data1 ip, Sakura_Data jp,
 	return ip;
 }
 
+// ----------------------------------------------------------------------------
+
+#ifdef __cplusplus	// cpp only, i.e., not for OpenCL
+static inline void
+p2p_sakura_kernel_core(auto &ip, auto &jp, const auto dt, const auto flag)
+// flop count: 41 + ??
+{
+	auto r0x = ip.rx - jp.rx;
+	auto r0y = ip.ry - jp.ry;
+	auto r0z = ip.rz - jp.rz;
+	auto v0x = ip.vx - jp.vx;
+	auto v0y = ip.vy - jp.vy;
+	auto v0z = ip.vz - jp.vz;
+	auto e2 = ip.e2 + jp.e2;
+	auto m = ip.m + jp.m;
+
+	decltype(r0x) r1x, r1y, r1z;
+	decltype(v0x) v1x, v1y, v1z;
+	evolve_twobody(
+		dt, flag, m, e2, r0x, r0y, r0z, v0x, v0y, v0z,
+		&r1x, &r1y, &r1z, &v1x, &v1y, &v1z);	// flop count: ??
+
+	auto inv_m = 1 / m;
+	auto drx = r1x - r0x;
+	auto dry = r1y - r0y;
+	auto drz = r1z - r0z;
+	auto dvx = v1x - v0x;
+	auto dvy = v1y - v0y;
+	auto dvz = v1z - v0z;
+
+	{	// i-particle
+		auto jmu = jp.m * inv_m;
+		ip.drx += jmu * drx;
+		ip.dry += jmu * dry;
+		ip.drz += jmu * drz;
+		ip.dvx += jmu * dvx;
+		ip.dvy += jmu * dvy;
+		ip.dvz += jmu * dvz;
+	}
+	{	// j-particle
+		auto imu = ip.m * inv_m;
+		jp.drx -= imu * drx;
+		jp.dry -= imu * dry;
+		jp.drz -= imu * drz;
+		jp.dvx -= imu * dvx;
+		jp.dvy -= imu * dvy;
+		jp.dvz -= imu * dvz;
+	}
+}
+#endif
 
 #endif	// __SAKURA_KERNEL_COMMON_H__

@@ -36,30 +36,31 @@ kepler_solver_kernel_core(
 	real_t *jv1x,
 	real_t *jv1y,
 	real_t *jv1z)
+// flop count: 59 + ???
 {
-	real_t r0x = irx - jrx;														// 1 FLOPs
-	real_t r0y = iry - jry;														// 1 FLOPs
-	real_t r0z = irz - jrz;														// 1 FLOPs
-	real_t e2 = ie2 + je2;														// 1 FLOPs
-	real_t v0x = ivx - jvx;														// 1 FLOPs
-	real_t v0y = ivy - jvy;														// 1 FLOPs
-	real_t v0z = ivz - jvz;														// 1 FLOPs
-	real_t m = im + jm;															// 1 FLOPs
+	real_t r0x = irx - jrx;
+	real_t r0y = iry - jry;
+	real_t r0z = irz - jrz;
+	real_t e2 = ie2 + je2;
+	real_t v0x = ivx - jvx;
+	real_t v0y = ivy - jvy;
+	real_t v0z = ivz - jvz;
+	real_t m = im + jm;
 
-	real_t inv_m = 1 / m;														// 1 FLOPs
-	real_t imu = im * inv_m;													// 1 FLOPs
-	real_t jmu = jm * inv_m;													// 1 FLOPs
+	real_t inv_m = 1 / m;
+	real_t imu = im * inv_m;
+	real_t jmu = jm * inv_m;
 
-	real_t rcmx = imu * irx + jmu * jrx;										// 3 FLOPs
-	real_t rcmy = imu * iry + jmu * jry;										// 3 FLOPs
-	real_t rcmz = imu * irz + jmu * jrz;										// 3 FLOPs
-	real_t vcmx = imu * ivx + jmu * jvx;										// 3 FLOPs
-	real_t vcmy = imu * ivy + jmu * jvy;										// 3 FLOPs
-	real_t vcmz = imu * ivz + jmu * jvz;										// 3 FLOPs
+	real_t rcmx = imu * irx + jmu * jrx;
+	real_t rcmy = imu * iry + jmu * jry;
+	real_t rcmz = imu * irz + jmu * jrz;
+	real_t vcmx = imu * ivx + jmu * jvx;
+	real_t vcmy = imu * ivy + jmu * jvy;
+	real_t vcmz = imu * ivz + jmu * jvz;
 
-	rcmx += vcmx * dt;															// 2 FLOPs
-	rcmy += vcmy * dt;															// 2 FLOPs
-	rcmz += vcmz * dt;															// 2 FLOPs
+	rcmx += vcmx * dt;
+	rcmy += vcmy * dt;
+	rcmz += vcmz * dt;
 
 	real_t r1x, r1y, r1z;
 	real_t v1x, v1y, v1z;
@@ -68,23 +69,22 @@ kepler_solver_kernel_core(
 		r0x, r0y, r0z,
 		v0x, v0y, v0z,
 		&r1x, &r1y, &r1z,
-		&v1x, &v1y, &v1z);														// ? FLOPs
+		&v1x, &v1y, &v1z);	// flop count: ???
 
-	*ir1x = rcmx + jmu * r1x;													// 2 FLOPs
-	*ir1y = rcmy + jmu * r1y;													// 2 FLOPs
-	*ir1z = rcmz + jmu * r1z;													// 2 FLOPs
-	*iv1x = vcmx + jmu * v1x;													// 2 FLOPs
-	*iv1y = vcmy + jmu * v1y;													// 2 FLOPs
-	*iv1z = vcmz + jmu * v1z;													// 2 FLOPs
+	*ir1x = rcmx + jmu * r1x;
+	*ir1y = rcmy + jmu * r1y;
+	*ir1z = rcmz + jmu * r1z;
+	*iv1x = vcmx + jmu * v1x;
+	*iv1y = vcmy + jmu * v1y;
+	*iv1z = vcmz + jmu * v1z;
 
-	*jr1x = rcmx - imu * r1x;													// 2 FLOPs
-	*jr1y = rcmy - imu * r1y;													// 2 FLOPs
-	*jr1z = rcmz - imu * r1z;													// 2 FLOPs
-	*jv1x = vcmx - imu * v1x;													// 2 FLOPs
-	*jv1y = vcmy - imu * v1y;													// 2 FLOPs
-	*jv1z = vcmz - imu * v1z;													// 2 FLOPs
+	*jr1x = rcmx - imu * r1x;
+	*jr1y = rcmy - imu * r1y;
+	*jr1z = rcmz - imu * r1z;
+	*jv1x = vcmx - imu * v1x;
+	*jv1y = vcmy - imu * v1y;
+	*jv1z = vcmz - imu * v1z;
 }
-// Total flop count: 59 + ?
 
 
 #endif	// __KEPLER_SOLVER_KERNEL_COMMON_H__

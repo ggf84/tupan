@@ -5,6 +5,53 @@
 #include "smoothing.h"
 
 
+#ifdef __cplusplus	// cpp only, i.e., not for OpenCL
+static inline void
+p2p_acc_jrk_kernel_core(auto &ip, auto &jp)
+// flop count: 56
+{
+	auto rx = ip.rx - jp.rx;
+	auto ry = ip.ry - jp.ry;
+	auto rz = ip.rz - jp.rz;
+	auto vx = ip.vx - jp.vx;
+	auto vy = ip.vy - jp.vy;
+	auto vz = ip.vz - jp.vz;
+	auto e2 = ip.e2 + jp.e2;
+	auto r2 = rx * rx + ry * ry + rz * rz;
+	auto rv = rx * vx + ry * vy + rz * vz;
+
+	decltype(r2) inv_r2;
+	auto inv_r3 = smoothed_inv_r3_inv_r2(r2, e2, &inv_r2);	// flop count: 5
+
+	auto alpha = 3 * rv * inv_r2;
+
+	vx -= alpha * rx;
+	vy -= alpha * ry;
+	vz -= alpha * rz;
+
+	{	// i-particle
+		auto m_r3 = jp.m * inv_r3;
+		ip.ax -= m_r3 * rx;
+		ip.ay -= m_r3 * ry;
+		ip.az -= m_r3 * rz;
+		ip.jx -= m_r3 * vx;
+		ip.jy -= m_r3 * vy;
+		ip.jz -= m_r3 * vz;
+	}
+	{	// j-particle
+		auto m_r3 = ip.m * inv_r3;
+		jp.ax += m_r3 * rx;
+		jp.ay += m_r3 * ry;
+		jp.az += m_r3 * rz;
+		jp.jx += m_r3 * vx;
+		jp.jy += m_r3 * vy;
+		jp.jz += m_r3 * vz;
+	}
+}
+#endif
+
+// ----------------------------------------------------------------------------
+
 #define ACC_JRK_IMPLEMENT_STRUCT(N)							\
 	typedef struct concat(acc_jrk_data, N) {				\
 		concat(real_t, N) ax, ay, az, jx, jy, jz;			\

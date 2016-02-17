@@ -5,6 +5,41 @@
 #include "smoothing.h"
 
 
+#ifdef __cplusplus	// cpp only, i.e., not for OpenCL
+static inline void
+p2p_tstep_kernel_core(auto &ip, auto &jp, const auto eta)
+// flop count: 43
+{
+	auto rx = ip.rx - jp.rx;
+	auto ry = ip.ry - jp.ry;
+	auto rz = ip.rz - jp.rz;
+	auto vx = ip.vx - jp.vx;
+	auto vy = ip.vy - jp.vy;
+	auto vz = ip.vz - jp.vz;
+	auto e2 = ip.e2 + jp.e2;
+	auto m = ip.m + jp.m;
+	auto r2 = rx * rx + ry * ry + rz * rz;
+	auto rv = rx * vx + ry * vy + rz * vz;
+	auto v2 = vx * vx + vy * vy + vz * vz;
+
+	decltype(r2) inv_r2;
+	auto m_r3 = 2 * m * smoothed_inv_r3_inv_r2(r2, e2, &inv_r2);	// flop count: 7
+
+	auto m_r5 = m_r3 * inv_r2;
+	auto w2 = m_r3 + v2 * inv_r2;
+	auto gamma = m_r5 + w2 * inv_r2;
+	gamma *= (eta * rsqrt(w2));
+	w2 -= gamma * rv;
+
+	ip.w2_a += w2;
+	jp.w2_a += w2;
+	ip.w2_b = fmax(w2, ip.w2_b);
+	jp.w2_b = fmax(w2, jp.w2_b);
+}
+#endif
+
+// ----------------------------------------------------------------------------
+
 #define TSTEP_IMPLEMENT_STRUCT(N)							\
 	typedef struct concat(tstep_data, N) {					\
 		concat(real_t, N) w2_a, w2_b;						\
@@ -20,7 +55,7 @@ typedef Tstep_Data1 Tstep_Data;
 
 static inline vec(Tstep_Data)
 tstep_kernel_core(vec(Tstep_Data) ip, Tstep_Data jp, const real_t eta)
-// flop count: 44
+// flop count: 42
 {
 	vec(real_t) rx = ip.rx - jp.rx;
 	vec(real_t) ry = ip.ry - jp.ry;
@@ -34,16 +69,12 @@ tstep_kernel_core(vec(Tstep_Data) ip, Tstep_Data jp, const real_t eta)
 	vec(real_t) rv = rx * vx + ry * vy + rz * vz;
 	vec(real_t) v2 = vx * vx + vy * vy + vz * vz;
 
-	vec(real_t) inv_r1;
-	vec(real_t) inv_r2 = smoothed_inv_r2_inv_r1(r2, e2, &inv_r1);	// flop count: 4
+	vec(real_t) inv_r2;
+	vec(real_t) m_r3 = 2 * m * smoothed_inv_r3_inv_r2(r2, e2, &inv_r2);	// flop count: 7
 
-	vec(real_t) m_r1 = m * inv_r1;
-
-	vec(real_t) a = (vec(real_t))(2);
-	vec(real_t) b = (1 + a / 2) * inv_r2;
-
-	vec(real_t) w2 = (v2 + a * m_r1) * inv_r2;
-	vec(real_t) gamma = (w2 + b * m_r1) * inv_r2;
+	vec(real_t) m_r5 = m_r3 * inv_r2;
+	vec(real_t) w2 = m_r3 + v2 * inv_r2;
+	vec(real_t) gamma = m_r5 + w2 * inv_r2;
 	gamma *= (eta * rsqrt(w2));
 	w2 -= gamma * rv;
 

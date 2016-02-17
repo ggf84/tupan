@@ -28,9 +28,11 @@ if __name__ == "__main__":
     with HDF5IO(fname, 'w') as fid:
         fid.dump_snap(ps)
 
-    from tupan.ics.fewbody import make_figure83
+#    from tupan.ics.fewbody import make_figure83
+    from tupan.ics.fewbody import make_pythagorean
     from tupan.particles.blackhole import Blackhole
-    bh = make_figure83().members.body.astype(Blackhole)
+#    bh = make_figure83().members.body.astype(Blackhole)
+    bh = make_pythagorean().members.body.astype(Blackhole)
     bh.dynrescale_total_mass(0.5)
     ps.dynrescale_total_mass(0.5)
     members = ps.members

@@ -54,7 +54,10 @@ acc_kernel_rectangle(
 	rectangle(
 		begin(ipart), end(ipart),
 		begin(jpart), end(jpart),
-		p2p_acc_kernel_core{}
+		[](auto &ip, auto &jp)
+		{
+			p2p_acc_kernel_core(ip, jp);
+		}
 	);
 
 	for (const auto& ip : ipart) {
@@ -102,7 +105,10 @@ acc_kernel_triangle(
 	#pragma omp single
 	triangle(
 		begin(ipart), end(ipart),
-		p2p_acc_kernel_core{}
+		[](auto &ip, auto &jp)
+		{
+			p2p_acc_kernel_core(ip, jp);
+		}
 	);
 
 	for (const auto& ip : ipart) {

@@ -16,7 +16,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 @timings
-def sakura_step(ps, dt, kernel=ext.Sakura()):
+def sakura_step(ps, dt, kernel=ext.get_kernel('Sakura')):
     """
 
     """

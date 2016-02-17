@@ -15,6 +15,33 @@ phi_kernel(
 	real_t __iphi[]);
 
 void
+phi_kernel_rectangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const uint_t nj,
+	const real_t __jm[],
+	const real_t __jrx[],
+	const real_t __jry[],
+	const real_t __jrz[],
+	const real_t __je2[],
+	real_t __iphi[],
+	real_t __jphi[]);
+
+void
+phi_kernel_triangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	real_t __iphi[]);
+
+void
 acc_kernel(
 	const uint_t ni,
 	const real_t __im[],
@@ -93,6 +120,57 @@ acc_jrk_kernel(
 	real_t __ijz[]);
 
 void
+acc_jrk_kernel_rectangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
+	const uint_t nj,
+	const real_t __jm[],
+	const real_t __jrx[],
+	const real_t __jry[],
+	const real_t __jrz[],
+	const real_t __je2[],
+	const real_t __jvx[],
+	const real_t __jvy[],
+	const real_t __jvz[],
+	real_t __iax[],
+	real_t __iay[],
+	real_t __iaz[],
+	real_t __ijx[],
+	real_t __ijy[],
+	real_t __ijz[],
+	real_t __jax[],
+	real_t __jay[],
+	real_t __jaz[],
+	real_t __jjx[],
+	real_t __jjy[],
+	real_t __jjz[]);
+
+void
+acc_jrk_kernel_triangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
+	real_t __iax[],
+	real_t __iay[],
+	real_t __iaz[],
+	real_t __ijx[],
+	real_t __ijy[],
+	real_t __ijz[]);
+
+void
 snp_crk_kernel(
 	const uint_t ni,
 	const real_t __im[],
@@ -132,6 +210,75 @@ snp_crk_kernel(
 	real_t __icz[]);
 
 void
+snp_crk_kernel_rectangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
+	const real_t __iax[],
+	const real_t __iay[],
+	const real_t __iaz[],
+	const real_t __ijx[],
+	const real_t __ijy[],
+	const real_t __ijz[],
+	const uint_t nj,
+	const real_t __jm[],
+	const real_t __jrx[],
+	const real_t __jry[],
+	const real_t __jrz[],
+	const real_t __je2[],
+	const real_t __jvx[],
+	const real_t __jvy[],
+	const real_t __jvz[],
+	const real_t __jax[],
+	const real_t __jay[],
+	const real_t __jaz[],
+	const real_t __jjx[],
+	const real_t __jjy[],
+	const real_t __jjz[],
+	real_t __isx[],
+	real_t __isy[],
+	real_t __isz[],
+	real_t __icx[],
+	real_t __icy[],
+	real_t __icz[],
+	real_t __jsx[],
+	real_t __jsy[],
+	real_t __jsz[],
+	real_t __jcx[],
+	real_t __jcy[],
+	real_t __jcz[]);
+
+void
+snp_crk_kernel_triangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
+	const real_t __iax[],
+	const real_t __iay[],
+	const real_t __iaz[],
+	const real_t __ijx[],
+	const real_t __ijy[],
+	const real_t __ijz[],
+	real_t __isx[],
+	real_t __isy[],
+	real_t __isz[],
+	real_t __icx[],
+	real_t __icy[],
+	real_t __icz[]);
+
+void
 tstep_kernel(
 	const uint_t ni,
 	const real_t __im[],
@@ -156,6 +303,47 @@ tstep_kernel(
 	real_t __idt_b[]);
 
 void
+tstep_kernel_rectangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
+	const uint_t nj,
+	const real_t __jm[],
+	const real_t __jrx[],
+	const real_t __jry[],
+	const real_t __jrz[],
+	const real_t __je2[],
+	const real_t __jvx[],
+	const real_t __jvy[],
+	const real_t __jvz[],
+	const real_t eta,
+	real_t __idt_a[],
+	real_t __idt_b[],
+	real_t __jdt_a[],
+	real_t __jdt_b[]);
+
+void
+tstep_kernel_triangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
+	const real_t eta,
+	real_t __idt_a[],
+	real_t __idt_b[]);
+
+void
 pnacc_kernel(
 	const uint_t ni,
 	const real_t __im[],
@@ -175,6 +363,50 @@ pnacc_kernel(
 	const real_t __jvx[],
 	const real_t __jvy[],
 	const real_t __jvz[],
+	const CLIGHT clight,
+	real_t __ipnax[],
+	real_t __ipnay[],
+	real_t __ipnaz[]);
+
+void
+pnacc_kernel_rectangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
+	const uint_t nj,
+	const real_t __jm[],
+	const real_t __jrx[],
+	const real_t __jry[],
+	const real_t __jrz[],
+	const real_t __je2[],
+	const real_t __jvx[],
+	const real_t __jvy[],
+	const real_t __jvz[],
+	const CLIGHT clight,
+	real_t __ipnax[],
+	real_t __ipnay[],
+	real_t __ipnaz[],
+	real_t __jpnax[],
+	real_t __jpnay[],
+	real_t __jpnaz[]);
+
+void
+pnacc_kernel_triangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
 	const CLIGHT clight,
 	real_t __ipnax[],
 	real_t __ipnay[],
@@ -210,6 +442,62 @@ nreg_Xkernel(
 	real_t __iu[]);
 
 void
+nreg_Xkernel_rectangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
+	const uint_t nj,
+	const real_t __jm[],
+	const real_t __jrx[],
+	const real_t __jry[],
+	const real_t __jrz[],
+	const real_t __je2[],
+	const real_t __jvx[],
+	const real_t __jvy[],
+	const real_t __jvz[],
+	const real_t dt,
+	real_t __idrx[],
+	real_t __idry[],
+	real_t __idrz[],
+	real_t __iax[],
+	real_t __iay[],
+	real_t __iaz[],
+	real_t __iu[],
+	real_t __jdrx[],
+	real_t __jdry[],
+	real_t __jdrz[],
+	real_t __jax[],
+	real_t __jay[],
+	real_t __jaz[],
+	real_t __ju[]);
+
+void
+nreg_Xkernel_triangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
+	const real_t dt,
+	real_t __idrx[],
+	real_t __idry[],
+	real_t __idrz[],
+	real_t __iax[],
+	real_t __iay[],
+	real_t __iaz[],
+	real_t __iu[]);
+
+void
 nreg_Vkernel(
 	const uint_t ni,
 	const real_t __im[],
@@ -227,6 +515,50 @@ nreg_Vkernel(
 	const real_t __jax[],
 	const real_t __jay[],
 	const real_t __jaz[],
+	const real_t dt,
+	real_t __idvx[],
+	real_t __idvy[],
+	real_t __idvz[],
+	real_t __ik[]);
+
+void
+nreg_Vkernel_rectangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
+	const real_t __iax[],
+	const real_t __iay[],
+	const real_t __iaz[],
+	const uint_t nj,
+	const real_t __jm[],
+	const real_t __jvx[],
+	const real_t __jvy[],
+	const real_t __jvz[],
+	const real_t __jax[],
+	const real_t __jay[],
+	const real_t __jaz[],
+	const real_t dt,
+	real_t __idvx[],
+	real_t __idvy[],
+	real_t __idvz[],
+	real_t __ik[],
+	real_t __jdvx[],
+	real_t __jdvy[],
+	real_t __jdvz[],
+	real_t __jk[]);
+
+void
+nreg_Vkernel_triangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
+	const real_t __iax[],
+	const real_t __iay[],
+	const real_t __iaz[],
 	const real_t dt,
 	real_t __idvx[],
 	real_t __idvy[],
@@ -253,6 +585,61 @@ sakura_kernel(
 	const real_t __jvx[],
 	const real_t __jvy[],
 	const real_t __jvz[],
+	const real_t dt,
+	const int_t flag,
+	real_t __idrx[],
+	real_t __idry[],
+	real_t __idrz[],
+	real_t __idvx[],
+	real_t __idvy[],
+	real_t __idvz[]);
+
+void
+sakura_kernel_rectangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
+	const uint_t nj,
+	const real_t __jm[],
+	const real_t __jrx[],
+	const real_t __jry[],
+	const real_t __jrz[],
+	const real_t __je2[],
+	const real_t __jvx[],
+	const real_t __jvy[],
+	const real_t __jvz[],
+	const real_t dt,
+	const int_t flag,
+	real_t __idrx[],
+	real_t __idry[],
+	real_t __idrz[],
+	real_t __idvx[],
+	real_t __idvy[],
+	real_t __idvz[],
+	real_t __jdrx[],
+	real_t __jdry[],
+	real_t __jdrz[],
+	real_t __jdvx[],
+	real_t __jdvy[],
+	real_t __jdvz[]);
+
+void
+sakura_kernel_triangle(
+	const uint_t ni,
+	const real_t __im[],
+	const real_t __irx[],
+	const real_t __iry[],
+	const real_t __irz[],
+	const real_t __ie2[],
+	const real_t __ivx[],
+	const real_t __ivy[],
+	const real_t __ivz[],
 	const real_t dt,
 	const int_t flag,
 	real_t __idrx[],

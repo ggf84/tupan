@@ -475,10 +475,16 @@ p2p_pn7(
 // ??+??+4 == ??? FLOPs
 
 
-static inline void
+static inline PN
 p2p_pnterms(
 	const real_tn im,
+	const real_tn ivx,
+	const real_tn ivy,
+	const real_tn ivz,
 	const real_tn jm,
+	const real_tn jvx,
+	const real_tn jvy,
+	const real_tn jvz,
 	const real_tn nx,
 	const real_tn ny,
 	const real_tn nz,
@@ -486,17 +492,11 @@ p2p_pnterms(
 	const real_tn vy,
 	const real_tn vz,
 	const real_tn v2,
-	const real_tn ivx,
-	const real_tn ivy,
-	const real_tn ivz,
-	const real_tn jvx,
-	const real_tn jvy,
-	const real_tn jvz,
 	const real_tn inv_r,
 	const real_tn inv_r2,
-	const CLIGHT clight,
-	PN *pn)
+	const CLIGHT clight)
 {
+	PN pn = PN_Init(0, 0);
 	PN pn1 = PN_Init(0, 0);
 	PN pn2 = PN_Init(0, 0);
 	PN pn3 = PN_Init(0, 0);
@@ -508,46 +508,46 @@ p2p_pnterms(
 	if (clight.order >= 1) {
 		// XXX: not implemented.
 		if (clight.order >= 2) {
-			real_tn iv2 = ivx * ivx + ivy * ivy + ivz * ivz;					// 5 FLOPs
-			real_tn jv2 = jvx * jvx + jvy * jvy + jvz * jvz;					// 5 FLOPs
-			real_tn niv = nx * ivx + ny * ivy + nz * ivz;						// 5 FLOPs
-			real_tn njv = nx * jvx + ny * jvy + nz * jvz;						// 5 FLOPs
-			real_tn ivjv = ivx * jvx + ivy * jvy + ivz * jvz;					// 5 FLOPs
-			real_tn njv2 = njv * njv;											// 1 FLOPs
+			real_tn iv2 = ivx * ivx + ivy * ivy + ivz * ivz;
+			real_tn jv2 = jvx * jvx + jvy * jvy + jvz * jvz;
+			real_tn niv = nx * ivx + ny * ivy + nz * ivz;
+			real_tn njv = nx * jvx + ny * jvy + nz * jvz;
+			real_tn ivjv = ivx * jvx + ivy * jvy + ivz * jvz;
+			real_tn njv2 = njv * njv;
 			p2p_pn2(
 				im, jm, inv_r,
 				iv2, jv2, ivjv,
 				niv, njv, njv2,
-				clight, &pn2);													// 16 FLOPs
+				clight, &pn2);	// 16 FLOPs
 			if (clight.order >= 3) {
 				// XXX: not implemented.
 				if (clight.order >= 4) {
-					real_tn im2 = im * im;										// 1 FLOPs
-					real_tn jm2 = jm * jm;										// 1 FLOPs
-					real_tn imjm = im * jm;										// 1 FLOPs
-					real_tn jv4 = jv2 * jv2;									// 1 FLOPs
-					real_tn niv2 = niv * niv;									// 1 FLOPs
-					real_tn nivnjv = niv * njv;									// 1 FLOPs
-					real_tn nv = nx * vx + ny * vy + nz * vz;					// 5 FLOPs
+					real_tn im2 = im * im;
+					real_tn jm2 = jm * jm;
+					real_tn imjm = im * jm;
+					real_tn jv4 = jv2 * jv2;
+					real_tn niv2 = niv * niv;
+					real_tn nivnjv = niv * njv;
+					real_tn nv = nx * vx + ny * vy + nz * vz;
 					p2p_pn4(
 						im, jm, im2, jm2, imjm, inv_r, inv_r2,
 						iv2, jv2, jv4, ivjv, nv, niv, njv,
-						niv2, njv2, nivnjv, clight, &pn4);						// 72 FLOPs
+						niv2, njv2, nivnjv, clight, &pn4);	// 72 FLOPs
 					if (clight.order >= 5) {
-						p2p_pn5(im, jm, inv_r, v2, nv, clight, &pn5);			// 16 FLOPs
+						p2p_pn5(im, jm, inv_r, v2, nv, clight, &pn5);	// 16 FLOPs
 						if (clight.order >= 6) {
-							real_tn nvnv = nv * nv;								// 1 FLOPs
+							real_tn nvnv = nv * nv;
 							p2p_pn6(
 								im, jm, im2, jm2, imjm, inv_r, inv_r2,
 								v2, iv2, jv2, jv4, ivjv, nv, nvnv,
 								niv, njv, niv2, njv2, nivnjv, clight, &pn6);	// ??? FLOPs
 							if (clight.order >= 7) {
-								real_tn iv4 = iv2 * iv2;						// 1 FLOPs
+								real_tn iv4 = iv2 * iv2;
 								p2p_pn7(
 									im, jm, im2, jm2, imjm, inv_r, inv_r2,
 									v2, iv2, jv2, iv4, jv4, ivjv,
 									nv, nvnv, niv, njv, niv2, njv2, nivnjv,
-									clight, &pn7);								// ??? FLOPs
+									clight, &pn7);	// ??? FLOPs
 							}
 						}
 					}
@@ -556,14 +556,15 @@ p2p_pnterms(
 		}
 	}
 
-	// Form the 213 terms post-Newtonian
+	// Form the 213 post-Newtonian terms
 	// ----> ((((((65    + 103  ) + 6    ) + 31   ) + 0    ) + 8    ) + 0    )
-	pn->a += ((((((pn7.a + pn6.a) + pn5.a) + pn4.a) + pn3.a) + pn2.a) + pn1.a); // 7 FLOPs
-	pn->b += ((((((pn7.b + pn6.b) + pn5.b) + pn4.b) + pn3.b) + pn2.b) + pn1.b); // 7 FLOPs
+	pn.a += ((((((pn7.a + pn6.a) + pn5.a) + pn4.a) + pn3.a) + pn2.a) + pn1.a);
+	pn.b += ((((((pn7.b + pn6.b) + pn5.b) + pn4.b) + pn3.b) + pn2.b) + pn1.b);
 
-	real_tn m_r2 = jm * inv_r2;													// 1 FLOPs
-	pn->a *= m_r2;																// 1 FLOPs
-	pn->b *= m_r2;																// 1 FLOPs
+	real_tn m_r2 = jm * inv_r2;
+	pn.a *= m_r2;
+	pn.b *= m_r2;
+	return pn;
 }
 // ??+??+?? == ??? FLOPs
 

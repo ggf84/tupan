@@ -15,7 +15,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 @timings
-def nreg_x(ps, dt, kernel=ext.NregX()):
+def nreg_x(ps, dt, kernel=ext.get_kernel('NregX')):
     """
 
     """
@@ -33,7 +33,7 @@ def nreg_x(ps, dt, kernel=ext.NregX()):
 
 
 @timings
-def nreg_v(ps, dt, kernel=ext.NregV()):
+def nreg_v(ps, dt, kernel=ext.get_kernel('NregV')):
     """
 
     """
