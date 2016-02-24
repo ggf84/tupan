@@ -46,13 +46,17 @@ class AbstractExtension(object):
     def set_args(self, ips, jps, **kwargs):
         raise NotImplementedError
 
+    def run(self):
+        return self.kernel.run()
+
     def map_buffers(self, *args, **kwargs):
         return self.kernel.map_buffers(*args, **kwargs)
 
     def __call__(self, ips, jps, **kwargs):
         self.set_args(ips, jps, **kwargs)
-        self.kernel.run()
-        return self.map_buffers()
+        self.run()
+        self.map_buffers()
+        return ips, jps
 
 
 @bind_all(timings)
@@ -61,7 +65,8 @@ class Phi(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(Phi, self).__init__('phi_kernel', backend)
+        name = 'phi_kernel'
+        super(Phi, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -82,7 +87,8 @@ class Phi_rectangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(Phi_rectangle, self).__init__('phi_kernel_rectangle', backend)
+        name = 'phi_kernel_rectangle'
+        super(Phi_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -103,7 +109,8 @@ class Phi_triangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(Phi_triangle, self).__init__('phi_kernel_triangle', backend)
+        name = 'phi_kernel_triangle'
+        super(Phi_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
         inpargs = (ips.n,
@@ -121,7 +128,8 @@ class Acc(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(Acc, self).__init__('acc_kernel', backend)
+        name = 'acc_kernel'
+        super(Acc, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -142,7 +150,8 @@ class Acc_rectangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(Acc_rectangle, self).__init__('acc_kernel_rectangle', backend)
+        name = 'acc_kernel_rectangle'
+        super(Acc_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -164,7 +173,8 @@ class Acc_triangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(Acc_triangle, self).__init__('acc_kernel_triangle', backend)
+        name = 'acc_kernel_triangle'
+        super(Acc_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
         inpargs = (ips.n,
@@ -182,7 +192,8 @@ class AccJrk(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(AccJrk, self).__init__('acc_jrk_kernel', backend)
+        name = 'acc_jrk_kernel'
+        super(AccJrk, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -204,7 +215,8 @@ class AccJrk_rectangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(AccJrk_rectangle, self).__init__('acc_jrk_kernel_rectangle', backend)
+        name = 'acc_jrk_kernel_rectangle'
+        super(AccJrk_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -228,7 +240,8 @@ class AccJrk_triangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(AccJrk_triangle, self).__init__('acc_jrk_kernel_triangle', backend)
+        name = 'acc_jrk_kernel_triangle'
+        super(AccJrk_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
         inpargs = (ips.n,
@@ -247,7 +260,8 @@ class SnpCrk(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(SnpCrk, self).__init__('snp_crk_kernel', backend)
+        name = 'snp_crk_kernel'
+        super(SnpCrk, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -273,7 +287,8 @@ class SnpCrk_rectangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(SnpCrk_rectangle, self).__init__('snp_crk_kernel_rectangle', backend)
+        name = 'snp_crk_kernel_rectangle'
+        super(SnpCrk_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -301,7 +316,8 @@ class SnpCrk_triangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(SnpCrk_triangle, self).__init__('snp_crk_kernel_triangle', backend)
+        name = 'snp_crk_kernel_triangle'
+        super(SnpCrk_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
         inpargs = (ips.n,
@@ -322,7 +338,8 @@ class Tstep(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(Tstep, self).__init__('tstep_kernel', backend)
+        name = 'tstep_kernel'
+        super(Tstep, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -344,7 +361,8 @@ class Tstep_rectangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(Tstep_rectangle, self).__init__('tstep_kernel_rectangle', backend)
+        name = 'tstep_kernel_rectangle'
+        super(Tstep_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -366,7 +384,8 @@ class Tstep_triangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(Tstep_triangle, self).__init__('tstep_kernel_triangle', backend)
+        name = 'tstep_kernel_triangle'
+        super(Tstep_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
         inpargs = (ips.n,
@@ -385,7 +404,8 @@ class PNAcc(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(PNAcc, self).__init__('pnacc_kernel', backend)
+        name = 'pnacc_kernel'
+        super(PNAcc, self).__init__(name, backend)
         self.clight = None
 
     def set_args(self, ips, jps, **kwargs):
@@ -420,7 +440,8 @@ class PNAcc_rectangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(PNAcc_rectangle, self).__init__('pnacc_kernel_rectangle', backend)
+        name = 'pnacc_kernel_rectangle'
+        super(PNAcc_rectangle, self).__init__(name, backend)
         self.clight = None
 
     def set_args(self, ips, jps, **kwargs):
@@ -456,7 +477,8 @@ class PNAcc_triangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(PNAcc_triangle, self).__init__('pnacc_kernel_triangle', backend)
+        name = 'pnacc_kernel_triangle'
+        super(PNAcc_triangle, self).__init__(name, backend)
         self.clight = None
 
     def set_args(self, ips, jps=None, **kwargs):
@@ -485,7 +507,8 @@ class Sakura(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(Sakura, self).__init__('sakura_kernel', backend)
+        name = 'sakura_kernel'
+        super(Sakura, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'dpos'):
@@ -513,7 +536,8 @@ class Sakura_rectangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(Sakura_rectangle, self).__init__('sakura_kernel_rectangle', backend)
+        name = 'sakura_kernel_rectangle'
+        super(Sakura_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'dpos'):
@@ -548,7 +572,8 @@ class Sakura_triangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(Sakura_triangle, self).__init__('sakura_kernel_triangle', backend)
+        name = 'sakura_kernel_triangle'
+        super(Sakura_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
         if not hasattr(ips, 'dpos'):
@@ -573,7 +598,8 @@ class NregX(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(NregX, self).__init__('nreg_Xkernel', backend)
+        name = 'nreg_Xkernel'
+        super(NregX, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'mr'):
@@ -602,7 +628,8 @@ class NregX_rectangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(NregX_rectangle, self).__init__('nreg_Xkernel_rectangle', backend)
+        name = 'nreg_Xkernel_rectangle'
+        super(NregX_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'mr'):
@@ -639,7 +666,8 @@ class NregX_triangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(NregX_triangle, self).__init__('nreg_Xkernel_triangle', backend)
+        name = 'nreg_Xkernel_triangle'
+        super(NregX_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
         if not hasattr(ips, 'mr'):
@@ -665,7 +693,8 @@ class NregV(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(NregV, self).__init__('nreg_Vkernel', backend)
+        name = 'nreg_Vkernel'
+        super(NregV, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'mv'):
@@ -692,7 +721,8 @@ class NregV_rectangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(NregV_rectangle, self).__init__('nreg_Vkernel_rectangle', backend)
+        name = 'nreg_Vkernel_rectangle'
+        super(NregV_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         if not hasattr(ips, 'mv'):
@@ -725,7 +755,8 @@ class NregV_triangle(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-        super(NregV_triangle, self).__init__('nreg_Vkernel_triangle', backend)
+        name = 'nreg_Vkernel_triangle'
+        super(NregV_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
         if not hasattr(ips, 'mv'):
@@ -749,11 +780,11 @@ class Kepler(AbstractExtension):
 
     """
     def __init__(self, backend=options.backend):
-
         if backend == 'CL':    # No need for CL support.
             backend = 'C'      # C is fast enough!
 
-        super(Kepler, self).__init__('kepler_solver_kernel', backend)
+        name = 'kepler_solver_kernel'
+        super(Kepler, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
         inpargs = (ips.n,
@@ -776,19 +807,18 @@ def get_kernel(name, backend=options.backend):
     kernel = globals()[name](backend)
 
     def func(ips, jps, **kwargs):
-        kernel(ips, jps, **kwargs)
         if ips != jps:
             kernel(jps, ips, **kwargs)
+        return kernel(ips, jps, **kwargs)
 
-    if backend == 'C' and name in ('Phi', 'Acc', 'AccJrk', 'SnpCrk', 'Tstep', 'PNAcc', 'NregX', 'NregV', 'Sakura'):
+    if backend == 'C' and name not in ('Kepler',):
         kernel_r = globals()[name+'_rectangle'](backend)
         kernel_t = globals()[name+'_triangle'](backend)
 
         def c_func(ips, jps, **kwargs):
             if ips != jps:
-                kernel_r(ips, jps, **kwargs)
-            else:
-                kernel_t(ips, ips, **kwargs)
+                return kernel_r(ips, jps, **kwargs)
+            return kernel_t(ips, ips, **kwargs)
 
         return c_func
 

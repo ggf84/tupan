@@ -6,229 +6,176 @@ Test suite for extensions module.
 """
 
 from __future__ import print_function
-import sys
 import unittest
-from collections import OrderedDict, defaultdict
-from tupan.lib import extensions
+import numpy as np
+from tupan.lib import extensions as ext
 from tupan.lib.utils.timing import Timer
 
 
-def best_of(n, func, *args, **kwargs):
-    timer = Timer()
-    elapsed = []
-    for i in range(n):
-        timer.start()
-        func(*args, **kwargs)
-        elapsed.append(timer.elapsed())
-    return min(elapsed)
+ext.pn = ext.PN(7, 128.0)
 
 
 def set_particles(n):
-    import numpy as np
     from tupan.particles import ParticleSystem
 
-    np.random.seed(987654321)
-    ps = ParticleSystem(n-n//2, n//2)
+    ps = ParticleSystem(n)
 
-    ps.mass[...] = np.random.random((n,))
-    ps.eps2[...] = np.zeros((n,))
     ps.pos[...] = np.random.random((3, n)) * 10
     ps.vel[...] = np.random.random((3, n)) * 10
+    ps.mass[...] = np.random.random((n,))
+    ps.eps2[...] = np.zeros((n,))
 
     return ps
 
 
-class TestCase1(unittest.TestCase):
+def compare_result(test_number, kernel_name, **kwargs):
+    np.random.seed(0)
+    Ckernel = ext.get_kernel(kernel_name, backend='C')
+    CLkernel = ext.get_kernel(kernel_name, backend='CL')
 
+    deviations = []
+    c_ips, c_jps = set_particles(32), set_particles(2048)
+    cl_ips, cl_jps = c_ips.copy(), c_jps.copy()
+    for (c_ip, c_jp), (cl_ip, cl_jp) in [((c_ips, c_ips), (cl_ips, cl_ips)),
+                                         ((c_ips, c_jps), (cl_ips, cl_jps)),
+                                         ((c_jps, c_ips), (cl_jps, cl_ips)),
+                                         ((c_jps, c_jps), (cl_jps, cl_jps))]:
+
+        res = [Ckernel(c_ip, c_jp, **kwargs), CLkernel(cl_ip, cl_jp, **kwargs)]
+
+        for vc, vcl in zip(*res):
+            for attr in vc.attr_names:
+                array_c = getattr(vc, attr)
+                array_cl = getattr(vcl, attr)
+                dev = abs(array_c - array_cl).max()
+                deviations.append(dev)
+
+    msg = "\ntest{0:02d}: maxdev({1}): {2}"
+    print(msg.format(test_number, kernel_name, max(deviations)))
+
+
+def benchmark(test_number, kernel_name, imax=12, **kwargs):
+    def best_of(n, func, *args, **kwargs):
+        timer = Timer()
+        elapsed = []
+        for i in range(n):
+            timer.start()
+            func(*args, **kwargs)
+            elapsed.append(timer.elapsed())
+        return min(elapsed)
+
+    np.random.seed(0)
+    Ckernel = getattr(ext, kernel_name+'_triangle')(backend='C')
+    CLkernel = getattr(ext, kernel_name)(backend='CL')
+
+    msg = "\ntest{0:02d}: {1}"
+    print(msg.format(test_number, kernel_name))
+
+    for ps in [set_particles(2**(i+1)) for i in range(imax)]:
+        smalln = ps.n <= 2**12  # 4096
+
+        print("  N={0}:".format(ps.n))
+
+        res = [best_of(5, Ckernel.set_args, ps, ps, **kwargs) if smalln else 0,
+               best_of(5, CLkernel.set_args, ps, ps, **kwargs)]
+        ratio = res[0] / res[1]
+        print("    {meth} time (s): 'C': {res[0]:.4e},"
+              " 'CL': {res[1]:.4e} | ratio(C/CL): {ratio:.4f}"
+              .format(meth='set', res=res, ratio=ratio))
+
+        res = [best_of(3, Ckernel.run) if smalln else 0,
+               best_of(3, CLkernel.run)]
+        ratio = res[0] / res[1]
+        print("    {meth} time (s): 'C': {res[0]:.4e},"
+              " 'CL': {res[1]:.4e} | ratio(C/CL): {ratio:.4f}"
+              .format(meth='run', res=res, ratio=ratio))
+
+        res = [best_of(5, Ckernel.map_buffers) if smalln else 0,
+               best_of(5, CLkernel.map_buffers)]
+        ratio = res[0] / res[1]
+        print("    {meth} time (s): 'C': {res[0]:.4e},"
+              " 'CL': {res[1]:.4e} | ratio(C/CL): {ratio:.4f}"
+              .format(meth='get', res=res, ratio=ratio))
+
+
+class TestCase1(unittest.TestCase):
+    """
+
+    """
     @classmethod
     def setUpClass(cls):
-        cls.ps = set_particles(128)
-
-    def compare_result(self, kernel, ps, **kwargs):
-        msg = ("extensions.{0}: max deviation of results "
-               "calculated using C(CPU) vs CL(device):")
-        print(msg.format(kernel.__name__))
-
-        n = ps.n
-        deviations = []
-
-        krnlC = kernel("C")
-        krnlCL = kernel("CL")
-
-        iobj = ps
-        for jdx in range(1, n+1):
-            res = {}
-
-            # setup data
-            jobj = ps[:jdx]
-
-            # calculating using C on CPU
-            res["C"] = krnlC(iobj, jobj, **kwargs)
-
-            # calculating using CL on device
-            res["CL"] = krnlCL(iobj, jobj, **kwargs)
-
-            # estimate deviation
-            deviation = max(abs(c_res-cl_res).max()
-                            for (c_res, cl_res) in zip(res["C"], res["CL"]))
-            deviations.append(deviation)
-
-            # calculating using C on CPU
-            res["C"] = krnlC(jobj, iobj, **kwargs)
-
-            # calculating using CL on device
-            res["CL"] = krnlCL(jobj, iobj, **kwargs)
-
-            # estimate deviation
-            deviation = max(abs(resC - resCL).max()
-                            for (resC, resCL) in zip(res["C"], res["CL"]))
-            deviations.append(deviation)
-
-        print(max(deviations))
+        print("\n" + cls.__name__ + ": "
+              "compare results calculated using C / CL extensions.")
 
     def test01(self):
-        print("\n---------- test01 ----------")
-        self.compare_result(extensions.Phi, self.ps)
+        compare_result(1, 'Phi')
 
     def test02(self):
-        print("\n---------- test02 ----------")
-        self.compare_result(extensions.Acc, self.ps)
+        compare_result(2, 'Acc')
 
     def test03(self):
-        print("\n---------- test03 ----------")
-        self.compare_result(extensions.AccJrk, self.ps)
+        compare_result(3, 'AccJrk')
 
     def test04(self):
-        print("\n---------- test04 ----------")
-        self.compare_result(extensions.SnpCrk, self.ps)
+        compare_result(4, 'SnpCrk')
 
     def test05(self):
-        print("\n---------- test05 ----------")
         eta = 1.0/64
-        self.compare_result(extensions.Tstep, self.ps, eta=eta)
+        compare_result(5, 'Tstep', eta=eta)
 
     def test06(self):
-        print("\n---------- test06 ----------")
-        extensions.pn = extensions.PN(7, 128.0)
-        self.compare_result(extensions.PNAcc, self.ps, use_auxvel=False)
+        compare_result(6, 'PNAcc', use_auxvel=False)
 
     def test07(self):
-        print("\n---------- test07 ----------")
         dt = 1.0/64
-        self.compare_result(extensions.Sakura, self.ps, dt=dt, flag=-2)
+        compare_result(7, 'Sakura', dt=dt, flag=-2)
 
     def test08(self):
-        print("\n---------- test08 ----------")
         dt = 1.0/64
-        self.compare_result(extensions.NregX, self.ps, dt=dt)
+        compare_result(8, 'NregX', dt=dt)
 
     def test09(self):
-        print("\n---------- test09 ----------")
         dt = 1.0/64
-        self.compare_result(extensions.NregV, self.ps, dt=dt)
-
-
-highN = True if "--highN" in sys.argv else False
+        compare_result(9, 'NregV', dt=dt)
 
 
 class TestCase2(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        imax = 12
-        if highN:
-            imax = 14
-        cls.pslist = [set_particles(2**(i+1)) for i in range(imax)]
-
-    def performance(self, kernel, pslist, **kwargs):
-        msg = ("extensions.{0}: performance measurement:")
-        print(msg.format(kernel.__name__))
-
-        krnlC = kernel("C")
-        krnlCL = kernel("CL")
-
-        for ps in pslist:
-            best = OrderedDict()
-            best["set"] = defaultdict(float)
-            best["get"] = defaultdict(float)
-            best["run"] = defaultdict(float)
-
-            # calculating using CL on device
-            best['set']["CL"] = best_of(5, krnlCL.set_args, ps, ps, **kwargs)
-            best['run']["CL"] = best_of(3, krnlCL.kernel.run)
-            best['get']["CL"] = best_of(5, krnlCL.map_buffers)
-
-            if ps.n > 4096:
-                print("  N={0}:".format(ps.n))
-                for (k, v) in best.items():
-                    print("    {k} time (s): 'C': ----------, 'CL': {CL:.4e} "
-                          "| ratio(C/CL): ------".format(k=k, CL=v["CL"]))
-
-                overhead = {}
-                for k, v in best["run"].items():
-                    overhead[k] = (best["set"][k] + best["get"][k]) / v
-                    overhead[k] *= 100
-                print("    overhead (%): 'C': ----------, "
-                      "'CL': {CL:.4e}".format(CL=overhead["CL"]))
-            else:
-                # calculating using C on CPU
-                best['set']["C"] = best_of(5, krnlC.set_args, ps, ps, **kwargs)
-                best['run']["C"] = best_of(3, krnlC.kernel.run)
-                best['get']["C"] = best_of(5, krnlC.map_buffers)
-
-                print("  N={0}:".format(ps.n))
-                for (k, v) in best.items():
-                    r = v["C"] / v["CL"]
-                    print("    {k} time (s): 'C': {C:.4e}, 'CL': {CL:.4e} "
-                          "| ratio(C/CL): {r:.4f}".format(k=k, r=r, **v))
-
-                overhead = {}
-                for k, v in best["run"].items():
-                    overhead[k] = (best["set"][k] + best["get"][k]) / v
-                    overhead[k] *= 100
-                print("    overhead (%): 'C': {C:.4e}, "
-                      "'CL': {CL:.4e}".format(**overhead))
+        print("\n" + cls.__name__ + ": "
+              "benchmark kernels using C / CL extensions.")
 
     def test01(self):
-        print("\n---------- test01 ----------")
-        self.performance(extensions.Phi, self.pslist)
+        benchmark(1, 'Phi')
 
     def test02(self):
-        print("\n---------- test02 ----------")
-        self.performance(extensions.Acc, self.pslist)
+        benchmark(2, 'Acc')
 
     def test03(self):
-        print("\n---------- test03 ----------")
-        self.performance(extensions.AccJrk, self.pslist)
+        benchmark(3, 'AccJrk')
 
     def test04(self):
-        print("\n---------- test04 ----------")
-        self.performance(extensions.SnpCrk, self.pslist)
+        benchmark(4, 'SnpCrk')
 
     def test05(self):
-        print("\n---------- test05 ----------")
         eta = 1.0/64
-        self.performance(extensions.Tstep, self.pslist, eta=eta)
+        benchmark(5, 'Tstep', eta=eta)
 
     def test06(self):
-        print("\n---------- test06 ----------")
-        extensions.pn = extensions.PN(7, 128.0)
-        self.performance(extensions.PNAcc, self.pslist, use_auxvel=False)
+        benchmark(6, 'PNAcc', use_auxvel=False)
 
     def test07(self):
-        print("\n---------- test07 ----------")
         dt = 1.0/64
-        self.performance(extensions.Sakura, self.pslist, dt=dt, flag=-2)
+        benchmark(7, 'Sakura', dt=dt, flag=-2)
 
     def test08(self):
-        print("\n---------- test08 ----------")
         dt = 1.0/64
-        self.performance(extensions.NregX, self.pslist, dt=dt)
+        benchmark(8, 'NregX', dt=dt)
 
     def test09(self):
-        print("\n---------- test09 ----------")
         dt = 1.0/64
-        self.performance(extensions.NregV, self.pslist, dt=dt)
+        benchmark(9, 'NregV', dt=dt)
 
 
 if __name__ == "__main__":
