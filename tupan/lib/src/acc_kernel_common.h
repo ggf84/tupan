@@ -59,7 +59,7 @@ acc_kernel_core(vec(Acc_Data) ip, Acc_Data jp)
 	vec(real_t) r2 = rx * rx + ry * ry + rz * rz;
 
 	vec(real_t) m_r3 = jp.m * smoothed_inv_r3(r2, e2);	// flop count: 6
-	m_r3 = select((vec(real_t))(0), m_r3, (r2 > 0));
+	m_r3 = select((vec(real_t))(0), m_r3, (vec(int_t))(r2 > 0));
 
 	ip.ax -= m_r3 * rx;
 	ip.ay -= m_r3 * ry;

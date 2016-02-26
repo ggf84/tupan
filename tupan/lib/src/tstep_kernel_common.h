@@ -78,7 +78,7 @@ tstep_kernel_core(vec(Tstep_Data) ip, Tstep_Data jp, const real_t eta)
 	gamma *= (eta * rsqrt(w2));
 	w2 -= gamma * rv;
 
-	w2 = select((vec(real_t))(0), w2, (r2 > 0));
+	w2 = select((vec(real_t))(0), w2, (vec(int_t))(r2 > 0));
 
 	ip.w2_a += w2;
 	ip.w2_b = fmax(w2, ip.w2_b);

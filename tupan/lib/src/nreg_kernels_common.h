@@ -114,8 +114,8 @@ nreg_Xkernel_core(vec(Nreg_X_Data) ip, Nreg_X_Data jp, const real_t dt)
 
 	vec(real_t) inv_r1;
 	vec(real_t) m_r3 = jp.m * smoothed_inv_r3_inv_r1(r2, e2, &inv_r1);	// flop count: 6
-	inv_r1 = select((vec(real_t))(0), inv_r1, (r2 > 0));
-	m_r3 = select((vec(real_t))(0), m_r3, (r2 > 0));
+	inv_r1 = select((vec(real_t))(0), inv_r1, (vec(int_t))(r2 > 0));
+	m_r3 = select((vec(real_t))(0), m_r3, (vec(int_t))(r2 > 0));
 
 	ip.drx += jp.m * rx;
 	ip.dry += jp.m * ry;

@@ -48,7 +48,7 @@ phi_kernel_core(vec(Phi_Data) ip, Phi_Data jp)
 	vec(real_t) r2 = rx * rx + ry * ry + rz * rz;
 
 	vec(real_t) inv_r1 = smoothed_inv_r1(r2, e2);	// flop count: 3
-	inv_r1 = select((vec(real_t))(0), inv_r1, (r2 > 0));
+	inv_r1 = select((vec(real_t))(0), inv_r1, (vec(int_t))(r2 > 0));
 
 	ip.phi -= jp.m * inv_r1;
 	return ip;

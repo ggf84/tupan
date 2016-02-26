@@ -81,8 +81,8 @@ acc_jrk_kernel_core(vec(Acc_Jrk_Data) ip, Acc_Jrk_Data jp)
 
 	vec(real_t) inv_r2;
 	vec(real_t) m_r3 = jp.m * smoothed_inv_r3_inv_r2(r2, e2, &inv_r2);	// flop count: 6
-	inv_r2 = select((vec(real_t))(0), inv_r2, (r2 > 0));
-	m_r3 = select((vec(real_t))(0), m_r3, (r2 > 0));
+	inv_r2 = select((vec(real_t))(0), inv_r2, (vec(int_t))(r2 > 0));
+	m_r3 = select((vec(real_t))(0), m_r3, (vec(int_t))(r2 > 0));
 
 	vec(real_t) alpha = 3 * rv * inv_r2;
 

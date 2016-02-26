@@ -86,8 +86,8 @@ pnacc_kernel_core(vec(PNAcc_Data) ip, PNAcc_Data jp, const CLIGHT clight)
 
 	vec(real_t) inv_r1;
 	vec(real_t) inv_r2 = smoothed_inv_r2_inv_r1(r2, e2, &inv_r1);	// flop count: 4
-	inv_r1 = select((vec(real_t))(0), inv_r1, (r2 > 0));
-	inv_r2 = select((vec(real_t))(0), inv_r2, (r2 > 0));
+	inv_r1 = select((vec(real_t))(0), inv_r1, (vec(int_t))(r2 > 0));
+	inv_r2 = select((vec(real_t))(0), inv_r2, (vec(int_t))(r2 > 0));
 
 	vec(real_t) nx = rx * inv_r1;
 	vec(real_t) ny = ry * inv_r1;
