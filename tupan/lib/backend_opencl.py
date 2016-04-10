@@ -27,6 +27,7 @@ class Context(object):
 
     """
     def __init__(self, cl_platform):
+        self.alignment = 128    # Minimum alignment (bytes) for any datatype
         cl_devices = cl_platform.get_devices()
 
 #        # emulate multiple devices
@@ -65,7 +66,8 @@ class Context(object):
         return buf
 
     def get_ibuf(self, ary, flags=cl.mem_flags.READ_ONLY):
-        size = ary.nbytes
+        align = self.alignment
+        size = ((ary.nbytes + align - 1) // align) * align
         buf = self.ibuf[self.ibuf_count]
         if size > buf.size:
             buf = cl.Buffer(self.cl_context, flags, size=size)
@@ -74,7 +76,8 @@ class Context(object):
         return buf
 
     def get_obuf(self, ary, flags=cl.mem_flags.WRITE_ONLY):
-        size = ary.nbytes
+        align = self.alignment
+        size = ((ary.nbytes + align - 1) // align) * align
         buf = self.obuf[self.obuf_count]
         if size > buf.size:
             buf = cl.Buffer(self.cl_context, flags, size=size)
@@ -95,7 +98,7 @@ class Queue(object):
     events = []
 
     def __init__(self, cl_context, cl_device=None,
-                 out_of_order=True, profiling=False):
+                 out_of_order=False, profiling=False):
         properties = 0
         cqp = cl.command_queue_properties
         if out_of_order:
@@ -233,33 +236,33 @@ class Program(object):
                               devices=[self.cl_device],
                               cache_dir=get_cache_dir(fpwidth))
 
-        kwgi = cl.kernel_work_group_info
         kernels = self.cl_program.all_kernels()
         for kernel in kernels:
             name = kernel.function_name
             kernel.wsize = wsize
             kernel.lsize = lsize
             kernel.name = name
-            LOGGER.debug(
-                "CL '%s' info: %s %s %s %s %s on %s",
-                name,
-                kernel.get_work_group_info(
-                    kwgi.COMPILE_WORK_GROUP_SIZE,
-                    self.cl_device),
-                kernel.get_work_group_info(
-                    kwgi.LOCAL_MEM_SIZE,
-                    self.cl_device),
-                kernel.get_work_group_info(
-                    kwgi.PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
-                    self.cl_device),
-                kernel.get_work_group_info(
-                    kwgi.PRIVATE_MEM_SIZE,
-                    self.cl_device),
-                kernel.get_work_group_info(
-                    kwgi.WORK_GROUP_SIZE,
-                    self.cl_device),
-                self.cl_device
-            )
+#            kwgi = cl.kernel_work_group_info
+#            LOGGER.debug(
+#                "CL '%s' info: %s %s %s %s %s on %s",
+#                name,
+#                kernel.get_work_group_info(
+#                    kwgi.COMPILE_WORK_GROUP_SIZE,
+#                    self.cl_device),
+#                kernel.get_work_group_info(
+#                    kwgi.LOCAL_MEM_SIZE,
+#                    self.cl_device),
+#                kernel.get_work_group_info(
+#                    kwgi.PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
+#                    self.cl_device),
+#                kernel.get_work_group_info(
+#                    kwgi.PRIVATE_MEM_SIZE,
+#                    self.cl_device),
+#                kernel.get_work_group_info(
+#                    kwgi.WORK_GROUP_SIZE,
+#                    self.cl_device),
+#                self.cl_device
+#            )
 
         self.kernel = {kernel.name: kernel for kernel in kernels}
 
