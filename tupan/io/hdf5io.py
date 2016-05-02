@@ -10,6 +10,7 @@ import sys
 import h5py
 import pickle
 from itertools import count
+from collections import OrderedDict
 from ..lib.utils.timing import timings, bind_all
 
 
@@ -116,15 +117,18 @@ class HDF5IO(object):
             era.append(self.load_snap(i))
         return era
 
-    def era2snaps(self, output_file_name, times):
+    def era2snaps(self, era, n_snaps):
         """
         convert from worldline to snapshot layout (experimental!)
         """
+        import numpy as np
         from scipy.interpolate import InterpolatedUnivariateSpline as spline
 
-        ps = self.load_full_era()
+        ps = self.load_era(era)
+        t_begin, t_end = np.min(ps.time), np.max(ps.time)
+        times = np.arange(t_begin, t_end, (t_end - t_begin)/n_snaps)
 
-        snaps = {}
+        snaps = OrderedDict()
         for t in times:
             snaps[t] = type(ps)()
 
@@ -193,9 +197,7 @@ class HDF5IO(object):
 #                                ary[i] = pid if attr == 'pid' else f(t)
 #        # ---
 
-        with HDF5IO(output_file_name, 'w') as fid:
-            for i, t in enumerate(times):
-                fid.dump_snap(snaps[t], tag=i)
+        return snaps
 
     def compare_wl(self, t_begin, t_end, nsnaps):
         import numpy as np
