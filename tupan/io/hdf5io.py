@@ -6,7 +6,6 @@ TODO.
 """
 
 from __future__ import print_function
-import sys
 import h5py
 import pickle
 from itertools import count
@@ -14,13 +13,11 @@ from collections import OrderedDict
 from ..lib.utils.timing import timings, bind_all
 
 
-IS_PY3K = True if sys.version_info.major > 2 else False
 PICKLE_PROTOCOL = 0  # ensures backward compatibility with Python 2.x
 
 
 def do_pickle(obj):
-    cls = pickle.dumps(type(obj), protocol=PICKLE_PROTOCOL)
-    return cls.decode('utf-8') if IS_PY3K else cls
+    return pickle.dumps(type(obj), protocol=PICKLE_PROTOCOL)
 
 
 def dump_ps(parent, ps):
