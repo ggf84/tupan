@@ -175,10 +175,9 @@ class GLviewer(app.Canvas):
                 "-i", "-",
                 "-an",  # no audio
                 "-pix_fmt", "yuv420p",
-                "-c:v", "libx264",
-                "-preset", "ultrafast",
-                "-qp", "0",
-                "movie.mp4",
+                "-c:v", "libx265",
+                "-b:v", "300000k",
+                "movie.mkv",
             ]
             self.ffwriter = subprocess.Popen(cmdline,
                                              stdin=subprocess.PIPE,

@@ -22,8 +22,8 @@ eps = 4.0/n
 
 # Initial Mass Function for particles, min/max mass.
 #
-imf = ("equalmass",)
-# imf = ("salpeter1955", 0.5, 120.0)
+# imf = ("equalmass",)
+imf = ("salpeter1955", 0.5, 5.0)
 # imf = ("parravano2011", 0.075, 120.0)
 # imf = ("padoan2007", 0.075, 120.0)
 
