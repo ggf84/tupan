@@ -10,4 +10,6 @@ MANIFEST
 *.pkl
 *.psdf
 *.pyc
+*.mp4
+*.mkv
 tupan/test/*.png
