@@ -5,18 +5,15 @@
 This module implements the CFFI backend to call C-extensions.
 """
 
-import os
-import cffi
-import logging
-from ..config import options, get_cache_dir
-from .utils.ctype import Ctype
+import importlib
+from ..config import options
 from .utils.timing import timings, bind_all
 
 
-LOGGER = logging.getLogger(__name__)
-
-DIRNAME = os.path.dirname(__file__)
-PATH = os.path.join(DIRNAME, 'src')
+libtupan = importlib.import_module(
+    '.libtupan'+options.fpwidth,
+    package=__package__
+)
 
 
 @bind_all(timings)
@@ -24,82 +21,16 @@ class CDriver(object):
     """
 
     """
-    def __init__(self, fpwidth=options.fpwidth):
-        LOGGER.debug("Building '%s' C extension module.", fpwidth)
-
-        fnames = (
-            'phi_kernel.cpp',
-            'acc_kernel.cpp',
-            'acc_jrk_kernel.cpp',
-            'snp_crk_kernel.cpp',
-            'tstep_kernel.cpp',
-            'pnacc_kernel.cpp',
-            'nreg_kernels.cpp',
-            'sakura_kernel.cpp',
-            'kepler_solver_kernel.cpp',
-        )
-
-        src = []
-        with open(os.path.join(PATH, 'libtupan.h'), 'r') as fobj:
-            src.append('typedef {} int_t;'.format(Ctype.c_int))
-            src.append('typedef {} uint_t;'.format(Ctype.c_uint))
-            src.append('typedef {} real_t;'.format(Ctype.c_real))
-            src.append(
-                '''
-                typedef struct clight_struct {
-                    real_t inv1;
-                    real_t inv2;
-                    real_t inv3;
-                    real_t inv4;
-                    real_t inv5;
-                    real_t inv6;
-                    real_t inv7;
-                    uint_t order;
-                } CLIGHT;
-                ''')
-            src.append(fobj.read())
-        source = '\n'.join(src)
-
-        self.ffi = cffi.FFI()
-
-        self.ffi.cdef(source)
-
-        define_macros = {}
-        define_macros['SIMD'] = 1
-        if fpwidth == 'fp64':
-            define_macros['CONFIG_USE_DOUBLE'] = 1
-
-        compiler_flags = [
-            '-O3',
-            '-std=c++14',
-            '-march=native',
-            '-fpermissive',
-            '-fopenmp',
-        ]
-
-        self.lib = self.ffi.verify(
-            """
-            #include "common.h"
-            """,
-            tmpdir=get_cache_dir(fpwidth),
-            define_macros=list(define_macros.items()),
-            include_dirs=[PATH],
-            libraries=['m'],
-            extra_compile_args=compiler_flags,
-            extra_link_args=compiler_flags,
-            source_extension='.cpp',
-            sources=[os.path.join(PATH, fname) for fname in fnames],
-        )
-
-        LOGGER.debug('C extension module loaded.')
+    def __init__(self, libtupan):
+        self.lib = libtupan.lib
+        self.ffi = libtupan.ffi
 
     def get_kernel(self, name):
-        LOGGER.debug("Using '%s' function from 'C' backend.", name)
         kernel = getattr(self.lib, name)
         return CKernel(kernel)
 
 
-drv = CDriver()
+drv = CDriver(libtupan)
 
 
 @bind_all(timings)

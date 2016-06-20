@@ -3,60 +3,68 @@
 #
 
 """
-Setup Script
+Setup script
 """
 
 
 import os
-from distutils.core import setup
-
-from tupan import version
+from setuptools import setup, find_packages
 
 
-PACKAGE_DATA = {}
-PACKAGE_DATA['tupan'] = ['tupan.cfg']
-PACKAGE_DATA['tupan.lib'] = [
-    os.path.join('src', '*.cpp'),
-    os.path.join('src', '*.h'),
-    os.path.join('src', '*.cl'),
-]
-
-
-LONG_DESCRIPTION = open(os.path.join(
-    os.path.dirname(__file__), 'README.rst')).read()
+PATH = os.path.dirname(__file__)
 
 
 CLASSIFIERS = """
-Development Status :: 1 - Planning
+Development Status :: 3 - Alpha
+Intended Audience :: Education
 Intended Audience :: Science/Research
 License :: OSI Approved :: MIT License
-Programming Language :: C
+Operating System :: POSIX :: Linux
+Programming Language :: C++
 Programming Language :: Python
+Programming Language :: Python :: 2.7
+Programming Language :: Python :: 3
+Programming Language :: Python :: Implementation :: CPython
 Topic :: Scientific/Engineering
+Topic :: Scientific/Engineering :: Astronomy
+Topic :: Scientific/Engineering :: Mathematics
+Topic :: Scientific/Engineering :: Physics
 """
+
+
+def version():
+    d = {}
+    fname = os.path.join(PATH, 'tupan', 'version.py')
+    with open(fname) as f:
+        exec(f.read(), d)
+    return d['VERSION']
+
+
+def readme():
+    fname = os.path.join(PATH, 'README.rst')
+    with open(fname) as f:
+        return f.read()
 
 
 setup(
     name='tupan',
-    version=version.VERSION,
+    version=version(),
+    description="A Python Toolkit for Astrophysical N-Body Simulations.",
+    long_description=readme(),
+    classifiers=[c for c in CLASSIFIERS.split('\n') if c],
+    url='https://github.com/ggf84/tupan',
     author='Guilherme G. Ferrari',
     author_email='gg.ferrari@gmail.com',
-    description="A Python Toolkit for Astrophysical N-Body Simulations.",
-    long_description=LONG_DESCRIPTION,
-    packages=['tupan',
-              'tupan.analysis',
-              'tupan.ics',
-              'tupan.integrator',
-              'tupan.io',
-              'tupan.lib',
-              'tupan.lib.utils',
-              'tupan.particles',
-              ],
-    package_data=PACKAGE_DATA,
-    scripts=['bin/tupan'],
-    url='https://github.com/ggf84/tupan',
     license='MIT License',
-    classifiers=[c for c in CLASSIFIERS.split('\n') if c],
+    packages=find_packages(),
+    include_package_data=True,
+    scripts=['bin/tupan'],
+    setup_requires=['cffi>=1.6.0'],
+    cffi_modules=[
+        'backend_cffi_build.py:ffibuilder32',
+        'backend_cffi_build.py:ffibuilder64',
+    ],
+    install_requires=['cffi>=1.6.0'],
 )
 
 
