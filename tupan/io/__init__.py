@@ -5,7 +5,5 @@
 TODO.
 """
 
-from .hdf5io import HDF5IO
-
 
 # -- End of File --

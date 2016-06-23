@@ -51,21 +51,22 @@ class Context(object):
 
         self.reset_buf_counts()
 
-    def to_ibuf(self, ary,
-                flags=cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR):
+    def to_ibuf(self, ary):
+        flags = cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR
         buf = cl.Buffer(self.cl_context, flags, hostbuf=ary)
         self.ibuf[self.ibuf_count] = buf
         self.ibuf_count += 1
         return buf
 
-    def to_obuf(self, ary,
-                flags=cl.mem_flags.WRITE_ONLY | cl.mem_flags.COPY_HOST_PTR):
+    def to_obuf(self, ary):
+        flags = cl.mem_flags.WRITE_ONLY | cl.mem_flags.COPY_HOST_PTR
         buf = cl.Buffer(self.cl_context, flags, hostbuf=ary)
         self.obuf[self.obuf_count] = buf
         self.obuf_count += 1
         return buf
 
-    def get_ibuf(self, ary, flags=cl.mem_flags.READ_ONLY):
+    def get_ibuf(self, ary):
+        flags = cl.mem_flags.READ_ONLY
         align = self.alignment
         size = ((ary.nbytes + align - 1) // align) * align
         buf = self.ibuf[self.ibuf_count]
@@ -75,7 +76,8 @@ class Context(object):
         self.ibuf_count += 1
         return buf
 
-    def get_obuf(self, ary, flags=cl.mem_flags.WRITE_ONLY):
+    def get_obuf(self, ary):
+        flags = cl.mem_flags.WRITE_ONLY
         align = self.alignment
         size = ((ary.nbytes + align - 1) // align) * align
         buf = self.obuf[self.obuf_count]

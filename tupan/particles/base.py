@@ -94,9 +94,10 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
     def append(self, other):
         if other.n:
             attrs = {}
+            concatenate = np.concatenate
             for name in self.attr_names:
                 arrays = [getattr(self, name), getattr(other, name)]
-                attrs[name] = np.concatenate(arrays, -1)  # along last dimension
+                attrs[name] = concatenate(arrays, -1)  # along last dimension
             self.update_attrs(**attrs)
 
     def split_by(self, predicate):

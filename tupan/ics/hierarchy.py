@@ -5,7 +5,7 @@
 TODO.
 """
 
-from ..particles import ParticleSystem
+from ..particles.system import ParticleSystem
 from ..lib.utils.timing import timings
 
 

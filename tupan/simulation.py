@@ -10,7 +10,7 @@ import sys
 import pickle
 import logging
 from itertools import count
-from .io import HDF5IO
+from .io.hdf5io import HDF5IO
 from .integrator import Integrator
 from .animation import GLviewer
 from .lib.utils.timing import timings, bind_all, Timer

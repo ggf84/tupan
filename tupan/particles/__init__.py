@@ -5,7 +5,5 @@
 This package implements particle types.
 """
 
-from .system import ParticleSystem
-
 
 # -- End of File --

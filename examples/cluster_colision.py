@@ -10,7 +10,7 @@ a Plummer density profile initially in virial equilibrium.
 
 
 import numpy as np
-from tupan.io import HDF5IO
+from tupan.io.hdf5io import HDF5IO
 from tupan.animation import GLviewer
 from tupan.ics.fewbody import make_binary
 from tupan.ics.plummer import make_plummer

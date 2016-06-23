@@ -9,7 +9,7 @@ To record the animation into a 'movie.mp4' file, please add the option
 """
 
 
-from tupan.io import HDF5IO
+from tupan.io.hdf5io import HDF5IO
 from tupan.animation import GLviewer
 
 

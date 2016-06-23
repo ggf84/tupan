@@ -16,7 +16,7 @@ ext.pn = ext.PN(7, 128.0)
 
 
 def set_particles(n):
-    from tupan.particles import ParticleSystem
+    from tupan.particles.system import ParticleSystem
 
     ps = ParticleSystem(n)
 

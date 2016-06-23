@@ -11,7 +11,7 @@ import os
 from setuptools import setup, find_packages
 
 
-PATH = os.path.dirname(__file__)
+CWD = os.path.dirname(__file__)
 
 
 CLASSIFIERS = """
@@ -34,14 +34,14 @@ Topic :: Scientific/Engineering :: Physics
 
 def version():
     d = {}
-    fname = os.path.join(PATH, 'tupan', 'version.py')
+    fname = os.path.join(CWD, 'tupan', 'version.py')
     with open(fname) as f:
         exec(f.read(), d)
     return d['VERSION']
 
 
 def readme():
-    fname = os.path.join(PATH, 'README.rst')
+    fname = os.path.join(CWD, 'README.rst')
     with open(fname) as f:
         return f.read()
 
@@ -58,13 +58,17 @@ setup(
     license='MIT License',
     packages=find_packages(),
     include_package_data=True,
-    scripts=['bin/tupan'],
-    setup_requires=['cffi>=1.6.0'],
+    entry_points={
+        'console_scripts': [
+            'tupan = tupan:main',
+        ],
+    },
+    setup_requires=['cffi'],
     cffi_modules=[
         'backend_cffi_build.py:ffibuilder32',
         'backend_cffi_build.py:ffibuilder64',
     ],
-    install_requires=['cffi>=1.6.0'],
+    install_requires=['cffi'],
 )
 
 

@@ -9,7 +9,7 @@ This script converts a simulation data stream into a serie of snapshots.
 
 from __future__ import print_function
 import time
-from tupan.io import HDF5IO
+from tupan.io.hdf5io import HDF5IO
 
 
 # number of snapshots per era.

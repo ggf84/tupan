@@ -10,7 +10,7 @@ from __future__ import print_function
 
 if __name__ == "__main__":
     from tupan.ics.plummer import make_plummer
-    from tupan.io import HDF5IO
+    from tupan.io.hdf5io import HDF5IO
 
     n = 256
     eps = 4.0/n

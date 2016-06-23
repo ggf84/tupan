@@ -7,7 +7,7 @@ known numerical solutions.
 """
 
 from __future__ import division
-from ..particles import ParticleSystem
+from ..particles.system import ParticleSystem
 from ..lib.utils.timing import timings
 
 
