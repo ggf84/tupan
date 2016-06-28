@@ -1,80 +1,62 @@
-:mod:`!tupan.particles` package
-===============================
+tupan.particles package
+=======================
 
-.. automodule:: tupan.particles
-    :members:
-    :undoc-members:
-    :show-inheritance:
+Submodules
+----------
 
-    .. inheritance-diagram:: tupan.particles
-
-.. contents:: Contents
-    :local:
-    :backlinks: top
-
-
-:mod:`!tupan.particles.base` module
------------------------------------
+tupan.particles.base module
+---------------------------
 
 .. automodule:: tupan.particles.base
     :members:
     :undoc-members:
     :show-inheritance:
 
-    .. inheritance-diagram:: tupan.particles.base
-
-
-:mod:`!tupan.particles.blackhole` module
-----------------------------------------
+tupan.particles.blackhole module
+--------------------------------
 
 .. automodule:: tupan.particles.blackhole
     :members:
     :undoc-members:
     :show-inheritance:
 
-    .. inheritance-diagram:: tupan.particles.blackhole
-
-
-:mod:`!tupan.particles.body` module
------------------------------------
+tupan.particles.body module
+---------------------------
 
 .. automodule:: tupan.particles.body
     :members:
     :undoc-members:
     :show-inheritance:
 
-    .. inheritance-diagram:: tupan.particles.body
-
-
-:mod:`!tupan.particles.sph` module
-----------------------------------
+tupan.particles.sph module
+--------------------------
 
 .. automodule:: tupan.particles.sph
     :members:
     :undoc-members:
     :show-inheritance:
 
-    .. inheritance-diagram:: tupan.particles.sph
-
-
-:mod:`!tupan.particles.star` module
------------------------------------
+tupan.particles.star module
+---------------------------
 
 .. automodule:: tupan.particles.star
     :members:
     :undoc-members:
     :show-inheritance:
 
-    .. inheritance-diagram:: tupan.particles.star
-
-
-:mod:`!tupan.particles.system` module
--------------------------------------
+tupan.particles.system module
+-----------------------------
 
 .. automodule:: tupan.particles.system
     :members:
     :undoc-members:
     :show-inheritance:
 
-    .. inheritance-diagram:: tupan.particles.system
 
+Module contents
+---------------
+
+.. automodule:: tupan.particles
+    :members:
+    :undoc-members:
+    :show-inheritance:

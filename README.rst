@@ -1,42 +1,35 @@
-tupan
-=====
+Overview
+--------
 
-Status
-------
+**Warning:** This is a work in progress. Some of the material is not fully organized, and several aspects of |tupan| are not yet covered in sufficient detail. If you are interested in contributing, please see :ref:`The Contributor Guide <The Contributor Guide>`.
 
-Work in progress.
+.. start-badges
 
-+------------------------+------------------------------+
-| Project                | tupan                        |
-+========================+==============================+
-| License                | MIT_                         |
-+------------------------+------------------------------+
-| Mailing list           | TODO                         |
-+------------------------+----------------+-------------+
-| Source code            | master_        | dev_        |
-+------------------------+----------------+-------------+
-| Documentation          | |docmaster|    | |docdev|    |
-+------------------------+----------------+-------------+
-| Requirements           | |reqmaster|    | |reqdev|    |
-+------------------------+----------------+-------------+
-| Code health            | |healthmaster| | |healthdev| |
-+------------------------+----------------+-------------+
-| Continuous integration | |cimaster|     | |cidev|     |
-+------------------------+----------------+-------------+
+.. list-table::
+    :stub-columns: 1
 
-Installing
-----------
+    * - Project Name
+      - tupan
+    * - Licence
+      - MIT
+    * - Mailing List
+      - TODO
+    * - Source Code
+      - https://github.com/ggf84/tupan
+    * - Documentation
+      - |docmaster| |docdev|
+    * - Requirements
+      - |reqmaster| |reqdev|
+    * - Code Health
+      - |healthmaster| |healthdev|
+    * - Continuous Integration
+      - |cimaster| |cidev|
 
-TODO
-
-
-
-.. _MIT: ./LICENSE.rst
 
 .. _master: https://github.com/ggf84/tupan/tree/master
-.. |docmaster| image:: https://readthedocs.org/projects/tupan/badge/?version=master
-    :target: http://tupan.readthedocs.org/en/master/
-    :alt: Documentation Status
+.. |docmaster| image:: http://readthedocs.org/projects/tupan/badge/?version=master
+   :target: http://tupan.readthedocs.io/en/master/?badge=master
+   :alt: Documentation Status
 .. |cimaster| image:: https://travis-ci.org/ggf84/tupan.svg?branch=master
     :target: https://travis-ci.org/ggf84/tupan
 .. |reqmaster| image:: https://requires.io/github/ggf84/tupan/requirements.png?branch=master
@@ -47,9 +40,9 @@ TODO
     :alt: Code Health
 
 .. _dev: https://github.com/ggf84/tupan/tree/dev
-.. |docdev| image:: https://readthedocs.org/projects/tupan/badge/?version=latest
-    :target: http://tupan.readthedocs.org/en/latest/
-    :alt: Documentation Status
+.. |docdev| image:: http://readthedocs.org/projects/tupan/badge/?version=latest
+   :target: http://tupan.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 .. |cidev| image:: https://travis-ci.org/ggf84/tupan.svg?branch=dev
     :target: https://travis-ci.org/ggf84/tupan
 .. |reqdev| image:: https://requires.io/github/ggf84/tupan/requirements.png?branch=dev
@@ -59,3 +52,4 @@ TODO
     :target: https://landscape.io/github/ggf84/tupan/dev
     :alt: Code Health
 
+.. end-badges

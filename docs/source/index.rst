@@ -1,30 +1,55 @@
+.. tupan documentation master file, created by
+   sphinx-quickstart on Thu Jun 23 15:29:00 2016.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
 Welcome to |tupan|'s documentation!
 ===================================
 
 |tupan| is a toolbox for Astrophysical N-Body Simulations. This guide
 is intended as an introductory overview of |tupan| and explains how to
-install and make use of its most important features. Those who want to
-contribute to the development of |tupan| might also take a look at the
-API documentation.
+install and make use of its most important features.
 
-.. warning::
-    This is a work in progress. Some of the material is not fully organized,
-    and several aspects of |tupan| are not yet covered in sufficient detail.
+.. include:: ../../README.rst
 
+.. _`The User Guide`:
 
-Contents
-========
+The User Guide
+--------------
 
 .. toctree::
-    :titlesonly:
+   :maxdepth: 3
 
-    user/index
-    api/index
-    license
+   intro
+   install
+   quickstart
 
+.. _`The Contributor Guide`:
+
+The Contributor Guide
+---------------------
+
+.. toctree::
+   :maxdepth: 3
+
+   contributing
+   authors
+   changelog
+
+.. _`The API Guide`:
+
+The API Guide
+-------------
+
+.. toctree::
+   :maxdepth: 3
+
+   api/modules
+
+.. include:: ../../LICENSE.rst
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

@@ -1,5 +1,5 @@
-Installing
-==========
+Introduction
+============
 
 .. todo:: Write this section.
 

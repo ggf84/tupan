@@ -1,57 +1,45 @@
-:mod:`!tupan.lib` package
-=========================
+tupan.lib package
+=================
 
-.. automodule:: tupan.lib
-    :members:
-    :undoc-members:
-    :show-inheritance:
+Subpackages
+-----------
 
-    .. inheritance-diagram:: tupan.lib
+.. toctree::
 
-.. contents:: Contents
-    :local:
-    :backlinks: top
+    tupan.lib.utils
 
+Submodules
+----------
 
-:mod:`!tupan.lib.backend_cffi` module
--------------------------------------
+tupan.lib.backend_cffi module
+-----------------------------
 
 .. automodule:: tupan.lib.backend_cffi
     :members:
     :undoc-members:
     :show-inheritance:
 
-    .. inheritance-diagram:: tupan.lib.backend_cffi
-
-
-:mod:`!tupan.lib.backend_opencl` module
----------------------------------------
+tupan.lib.backend_opencl module
+-------------------------------
 
 .. automodule:: tupan.lib.backend_opencl
     :members:
     :undoc-members:
     :show-inheritance:
 
-    .. inheritance-diagram:: tupan.lib.backend_opencl
-
-
-:mod:`!tupan.lib.extensions` module
------------------------------------
+tupan.lib.extensions module
+---------------------------
 
 .. automodule:: tupan.lib.extensions
     :members:
     :undoc-members:
     :show-inheritance:
 
-    .. inheritance-diagram:: tupan.lib.extensions
 
+Module contents
+---------------
 
-Subpackages
------------
-
-.. toctree::
-    :glob:
-    :titlesonly:
-
-    tupan.lib.*
-
+.. automodule:: tupan.lib
+    :members:
+    :undoc-members:
+    :show-inheritance:

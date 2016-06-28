@@ -1,14 +1,10 @@
-:mod:`!tupan.analysis` package
-==============================
+tupan.analysis package
+======================
+
+Module contents
+---------------
 
 .. automodule:: tupan.analysis
     :members:
     :undoc-members:
     :show-inheritance:
-
-    .. inheritance-diagram:: tupan.analysis
-
-.. contents:: Contents
-    :local:
-    :backlinks: top
-

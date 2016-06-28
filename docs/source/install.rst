@@ -1,5 +1,5 @@
-Usage
-=====
+Installation
+============
 
 .. todo:: Write this section.
 

@@ -1,3 +1,8 @@
+.. |currentyear| date:: %Y
+
+License
+-------
+
 Copyright (c) 2010-|currentyear| Guilherme G. Ferrari
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
