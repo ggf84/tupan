@@ -1,3 +1,5 @@
+.. |tupan| replace:: ``tupan``
+
 Overview
 --------
 
@@ -53,3 +55,4 @@ Overview
     :alt: Code Health
 
 .. end-badges
+

@@ -1,3 +1,5 @@
+.. |tupan| replace:: ``tupan``
+
 Contributing [#]_
 =================
 

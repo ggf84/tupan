@@ -10,7 +10,7 @@ Welcome to |tupan|'s documentation!
 is intended as an introductory overview of |tupan| and explains how to
 install and make use of its most important features.
 
-.. include:: ../../README.rst
+.. include:: overview.rst
 
 .. _`The User Guide`:
 
@@ -33,8 +33,6 @@ The Contributor Guide
    :maxdepth: 3
 
    contributing
-   authors
-   changelog
 
 .. _`The API Guide`:
 
@@ -46,7 +44,9 @@ The API Guide
 
    api/modules
 
-.. include:: ../../LICENSE.rst
+.. include:: authors.rst
+.. include:: changelog.rst
+.. include:: license.rst
 
 Indices and tables
 ------------------
