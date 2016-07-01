@@ -42,7 +42,7 @@ The API Guide
 .. toctree::
    :maxdepth: 3
 
-   api/modules
+   api/tupan
 
 .. include:: authors.rst
 .. include:: changelog.rst

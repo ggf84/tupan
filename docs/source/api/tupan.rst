@@ -1,6 +1,11 @@
 tupan package
 =============
 
+.. automodule:: tupan
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -16,43 +21,10 @@ Subpackages
 Submodules
 ----------
 
-tupan.animation module
-----------------------
+.. toctree::
 
-.. automodule:: tupan.animation
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   tupan.animation
+   tupan.config
+   tupan.simulation
+   tupan.version
 
-tupan.config module
--------------------
-
-.. automodule:: tupan.config
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-tupan.simulation module
------------------------
-
-.. automodule:: tupan.simulation
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-tupan.version module
---------------------
-
-.. automodule:: tupan.version
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: tupan
-    :members:
-    :undoc-members:
-    :show-inheritance:

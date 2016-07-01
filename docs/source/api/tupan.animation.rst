@@ -1,8 +1,7 @@
-tupan.analysis package
+tupan.animation module
 ======================
 
-.. automodule:: tupan.analysis
+.. automodule:: tupan.animation
     :members:
     :undoc-members:
     :show-inheritance:
-

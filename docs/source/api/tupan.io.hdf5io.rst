@@ -1,8 +1,7 @@
-tupan.analysis package
+tupan.io.hdf5io module
 ======================
 
-.. automodule:: tupan.analysis
+.. automodule:: tupan.io.hdf5io
     :members:
     :undoc-members:
     :show-inheritance:
-
