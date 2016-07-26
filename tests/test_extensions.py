@@ -20,8 +20,8 @@ def set_particles(n):
 
     ps = ParticleSystem(n)
 
-    ps.pos[...] = np.random.random((3, n)) * 10
-    ps.vel[...] = np.random.random((3, n)) * 10
+    ps.rdot[0][...] = np.random.random((3, n)) * 10
+    ps.rdot[1][...] = np.random.random((3, n)) * 10
     ps.mass[...] = np.random.random((n,))
     ps.eps2[...] = np.zeros((n,))
 

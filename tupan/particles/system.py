@@ -101,15 +101,12 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
                     members[name] = member.copy()
             self.update_members(**members)
 
-    def split_by(self, predicate):
-        if all(predicate):
-            return self, type(self)()
-
+    def split_by(self, mask):
         ns, nf = 0, 0
         d_a, d_b = {}, {}
         for name, member in self.members.items():
             nf += member.n
-            d_a[name], d_b[name] = member.split_by(predicate[ns:nf])
+            d_a[name], d_b[name] = member.split_by(mask[ns:nf])
             ns += member.n
         return (self.from_members(**d_a),
                 self.from_members(**d_b))

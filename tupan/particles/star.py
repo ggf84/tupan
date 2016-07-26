@@ -17,10 +17,10 @@ class Star(AbstractParticle, AbstractNbodyMethods):
     name = None
     part_type = None
     default_attr_descr = AbstractNbodyMethods.default_attr_descr + [
-        ('age', '{n}', 'real_t', 'age'),
-        ('spin', '3, {n}', 'real_t', 'spin'),
-        ('radius', '{n}', 'real_t', 'radius'),
-        ('metallicity', '{n}', 'real_t', 'metallicity'),
+        ('age', '{nb}', 'real_t', 'age'),
+        ('spin', '{nd}, {nb}', 'real_t', 'spin'),
+        ('radius', '{nb}', 'real_t', 'radius'),
+        ('metallicity', '{nb}', 'real_t', 'metallicity'),
     ]
 
 

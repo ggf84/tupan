@@ -43,12 +43,12 @@ def make_binary(m1, m2, ecc, sma=1):
     rx = [r1, r2]
     ry = [0.0, 0.0]
     rz = [0.0, 0.0]
-    ps.pos[...] = [rx, ry, rz]
+    ps.rdot[0][...] = [rx, ry, rz]
 
     vx = [0.0, 0.0]
     vy = [v1, v2]
     vz = [0.0, 0.0]
-    ps.vel[...] = [vx, vy, vz]
+    ps.rdot[1][...] = [vx, vy, vz]
 
     ps.pid[...] = range(ps.n)
     return ps
@@ -66,12 +66,12 @@ def make_pythagorean():
     rx = [+1.0, -2.0, +1.0]
     ry = [+3.0, -1.0, -1.0]
     rz = [0.0, 0.0, 0.0]
-    ps.pos[...] = [rx, ry, rz]
+    ps.rdot[0][...] = [rx, ry, rz]
 
     vx = [0.0, 0.0, 0.0]
     vy = [0.0, 0.0, 0.0]
     vz = [0.0, 0.0, 0.0]
-    ps.vel[...] = [vx, vy, vz]
+    ps.rdot[1][...] = [vx, vy, vz]
 
     ps.pid[...] = range(ps.n)
     return ps
@@ -89,12 +89,12 @@ def make_circular3():
     rx = [0.0, +1.0, +0.5]
     ry = [0.0, 0.0, +0.8660254037844386]
     rz = [0.0, 0.0, 0.0]
-    ps.pos[...] = [rx, ry, rz]
+    ps.rdot[0][...] = [rx, ry, rz]
 
     vx = [-0.5, -0.5, +1.0]
     vy = [+0.8660254037844386, -0.8660254037844386, 0.0]
     vz = [0.0, 0.0, 0.0]
-    ps.vel[...] = [vx, vy, vz]
+    ps.rdot[1][...] = [vx, vy, vz]
 
     ps.pid[...] = range(ps.n)
     return ps
@@ -112,12 +112,12 @@ def make_figure83():
     rx = [+0.9700436, -0.9700436, 0.0]
     ry = [-0.24308753, +0.24308753, 0.0]
     rz = [0.0, 0.0, 0.0]
-    ps.pos[...] = [rx, ry, rz]
+    ps.rdot[0][...] = [rx, ry, rz]
 
     vx = [+0.466203685, +0.466203685, -0.93240737]
     vy = [+0.43236573, +0.43236573, -0.86473146]
     vz = [0.0, 0.0, 0.0]
-    ps.vel[...] = [vx, vy, vz]
+    ps.rdot[1][...] = [vx, vy, vz]
 
     ps.pid[...] = range(ps.n)
     return ps
@@ -135,12 +135,12 @@ def make_figure84():
     rx = [+1.382857, 0.0, -1.382857, 0.0]
     ry = [0.0, +0.157030, 0.0, -0.157030]
     rz = [0.0, 0.0, 0.0, 0.0]
-    ps.pos[...] = [rx, ry, rz]
+    ps.rdot[0][...] = [rx, ry, rz]
 
     vx = [0.0, +1.871935, 0.0, -1.871935]
     vy = [+0.584873, 0.0, -0.584873, 0.0]
     vz = [0.0, 0.0, 0.0, 0.0]
-    ps.vel[...] = [vx, vy, vz]
+    ps.rdot[1][...] = [vx, vy, vz]
 
     ps.pid[...] = range(ps.n)
     return ps
@@ -194,7 +194,7 @@ def make_solar_system():
           +0.0266710693728891,
           +0.360719859921208,
           +5.35614463977912, ]
-    ps.pos[...] = [rx, ry, rz]
+    ps.rdot[0][...] = [rx, ry, rz]
 
     vx = [+0.0003150431297530473,
           +1.24765113964416,
@@ -226,7 +226,7 @@ def make_solar_system():
           +0.00394092485741823,
           -0.000776459933629997,
           -0.0375021230229398, ]
-    ps.vel[...] = [vx, vy, vz]
+    ps.rdot[1][...] = [vx, vy, vz]
 
     ps.pid[...] = range(ps.n)
     return ps

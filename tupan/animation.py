@@ -304,7 +304,7 @@ class GLviewer(app.Canvas):
         else:
             self.ps[np.in1d(self.ps.pid, ps.pid)] = ps
         for name, member in self.ps.members.items():
-            pos, c, s = member.pos, member.mass, member.mass
+            pos, c, s = member.rdot[0], member.mass, member.mass
 
             def f(arg): return np.log(arg)
 #            def f(arg): return arg**(1/3.0)

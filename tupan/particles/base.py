@@ -100,14 +100,11 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
                 attrs[name] = concatenate(arrays, -1)  # along last dimension
             self.update_attrs(**attrs)
 
-    def split_by(self, predicate):
-        if all(predicate):
-            return self, type(self)()
-
+    def split_by(self, mask):
         d_a, d_b = {}, {}
         for name in self.attr_names:
             array = getattr(self, name)
-            v_a, v_b = array[..., predicate], array[..., ~predicate]
+            v_a, v_b = array[..., mask], array[..., ~mask]
             d_a[name], d_b[name] = (np.array(v_a, copy=False, order='C'),
                                     np.array(v_b, copy=False, order='C'))
         return (self.from_attrs(**d_a),
@@ -125,16 +122,15 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
         return self.from_attrs(**attrs)
 
     def __setitem__(self, index, value):
-        index = (Ellipsis, index)
         for name in self.attr_names:
             attr = getattr(self, name)
-            attr[index] = getattr(value, name)
+            attr[..., index] = getattr(value, name)
 
     def __getattr__(self, name):
         if name not in self.attr_names:
             raise AttributeError(name)
         shape, sctype, _ = self.attr_names[name]
-        shape = eval(shape.format(n=self.n))
+        shape = eval(shape.format(nd=3, nb=self.n))
         dtype = vars(Ctype)[sctype]
         value = np.zeros(shape, dtype=dtype)
         setattr(self, name, value)
@@ -146,17 +142,17 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
         return obj
 
     def get_state(self):
-        arrays = {}
+        data = {}
         for name in self.attr_names:
             value = getattr(self, name)
-            arrays[name] = value
-        return arrays
+            data[name] = value
+        return data
 
-    def set_state(self, arrays):
+    def set_state(self, data):
         for name in self.attr_names:
-            if name in arrays:
+            if name in data:
                 value = getattr(self, name)
-                value[...] = arrays[name]
+                value[...] = data[name]
 
 
 ###############################################################################
@@ -170,33 +166,28 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
 
     # name, shape, sctype, doc
     default_attr_descr = [
-        ('pid', '{n}', 'uint_t', 'particle id'),
-        ('mass', '{n}', 'real_t', 'mass'),
-        ('pos', '3, {n}', 'real_t', 'position'),
-        ('vel', '3, {n}', 'real_t', 'velocity'),
-        ('eps2', '{n}', 'real_t', 'squared softening'),
-        ('time', '{n}', 'real_t', 'current time'),
-        ('nstep', '{n}', 'uint_t', 'step number'),
+        ('pid', '{nb}', 'uint_t', 'particle id'),
+        ('mass', '{nb}', 'real_t', 'particle mass'),
+        ('rdot', '10, {nd}, {nb}', 'real_t', 'position and its time derivatives'),
+        ('eps2', '{nb}', 'real_t', 'squared softening'),
+        ('time', '{nb}', 'real_t', 'current time'),
+        ('nstep', '{nb}', 'uint_t', 'step number'),
     ]
 
     extra_attr_descr = [
-        ('phi', '{n}', 'real_t', 'gravitational potential'),
-        ('acc', '3, {n}', 'real_t', 'acceleration'),
-        ('jrk', '3, {n}', 'real_t', 'jerk'),
-        ('snp', '3, {n}', 'real_t', 'snap'),
-        ('crk', '3, {n}', 'real_t', 'crackle'),
-        ('tstep', '{n}', 'real_t', 'time step'),
-        ('tstepij', '{n}', 'real_t', 'auxiliary time step'),
+        ('phi', '{nb}', 'real_t', 'gravitational potential'),
+        ('tstep', '{nb}', 'real_t', 'time step'),
+        ('tstepij', '{nb}', 'real_t', 'auxiliary time step'),
     ]
 
     pn_default_attr_descr = []
 
     pn_extra_attr_descr = [
-        ('pnacc', '3, {n}', 'real_t', 'PN acceleration'),
-        ('pn_mr', '3, {n}', 'real_t', 'PN correction for com_r'),
-        ('pn_mv', '3, {n}', 'real_t', 'PN correction for com_v'),
-        ('pn_am', '3, {n}', 'real_t', 'PN correction for angular momentum'),
-        ('pn_ke', '{n}', 'real_t', 'PN correction for kinectic energy.'),
+        ('pnacc', '{nd}, {nb}', 'real_t', 'PN acceleration'),
+        ('pn_mr', '{nd}, {nb}', 'real_t', 'PN correction for com_r'),
+        ('pn_mv', '{nd}, {nb}', 'real_t', 'PN correction for com_v'),
+        ('pn_am', '{nd}, {nb}', 'real_t', 'PN correction for angular momentum'),
+        ('pn_ke', '{nb}', 'real_t', 'PN correction for kinectic energy.'),
     ]
 
     # -- total mass and center-of-mass methods
@@ -216,7 +207,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
             Post-Newtonian corrections, if enabled, are included.
 
         """
-        mr = self.mass * self.pos
+        mr = self.mass * self.rdot[0]
         rcom = mr.sum(1) / self.total_mass
         if self.include_pn_corrections:
             rcom += self.pn_mr.sum(1) / self.total_mass
@@ -231,7 +222,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
             Post-Newtonian corrections, if enabled, are included.
 
         """
-        mv = self.mass * self.vel
+        mv = self.mass * self.rdot[1]
         vcom = mv.sum(1) / self.total_mass
         if self.include_pn_corrections:
             vcom += self.pn_mv.sum(1) / self.total_mass
@@ -269,8 +260,8 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """Moves the center-of-mass to the given coordinates.
 
         """
-        self.pos.T[...] += com_r
-        self.vel.T[...] += com_v
+        self.rdot[0].T[...] += com_r
+        self.rdot[1].T[...] += com_v
 
     def com_to_origin(self):
         """Moves the center-of-mass to the origin of coordinates.
@@ -288,7 +279,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
             Post-Newtonian corrections, if enabled, are included.
 
         """
-        mv = self.mass * self.vel
+        mv = self.mass * self.rdot[1]
         if self.include_pn_corrections:
             mv += self.pn_mv
         return mv
@@ -319,8 +310,8 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
             Post-Newtonian corrections, if enabled, are included.
 
         """
-        mv = self.mass * self.vel
-        am = np.cross(self.pos.T, mv.T).T
+        mv = self.mass * self.rdot[1]
+        am = np.cross(self.rdot[0].T, mv.T).T
         if self.include_pn_corrections:
             am += self.pn_am
         return am
@@ -351,7 +342,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
             Post-Newtonian corrections, if enabled, are included.
 
         """
-        ke = 0.5 * self.mass * (self.vel**2).sum(0)
+        ke = 0.5 * self.mass * (self.rdot[1]**2).sum(0)
         if self.include_pn_corrections:
             ke += self.pn_ke
         return ke
@@ -477,7 +468,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
 
         """
         com_r = self.com_r
-        pos = (self.pos.T - com_r).T
+        pos = (self.rdot[0].T - com_r).T
         mr2 = (self.mass * pos**2).sum()
         r2 = mr2 / self.total_mass
         return r2**0.5
@@ -490,7 +481,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """
         m_ratio = total_mass / self.total_mass
         self.mass *= m_ratio
-        self.pos *= m_ratio
+        self.rdot[0] *= m_ratio
 
     def dynrescale_radial_size(self, size):
         """Rescales the radial size of the system while maintaining its
@@ -499,8 +490,8 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """
         r_scale = size / self.radial_size
         v_scale = 1 / r_scale**0.5
-        self.pos *= r_scale
-        self.vel *= v_scale
+        self.rdot[0] *= r_scale
+        self.rdot[1] *= v_scale
 
     def dynrescale_virial_radius(self, rvir):
         """Rescales the virial radius of the system while maintaining its
@@ -509,8 +500,8 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """
         r_scale = rvir / self.virial_radius
         v_scale = 1 / r_scale**0.5
-        self.pos *= r_scale
-        self.vel *= v_scale
+        self.rdot[0] *= r_scale
+        self.rdot[1] *= v_scale
 
     def scale_to_virial(self):
         """Rescale system to virial equilibrium (2K + U = 0).
@@ -519,7 +510,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         ke = self.kinetic_energy
         pe = self.potential_energy
         v_scale = ((-0.5 * pe) / ke)**0.5
-        self.vel *= v_scale
+        self.rdot[1] *= v_scale
 
     def to_nbody_units(self):
         """Rescales system to nbody units while maintaining its dynamics

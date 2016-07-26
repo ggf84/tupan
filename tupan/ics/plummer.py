@@ -111,14 +111,14 @@ class Plummer(object):
 
         # set pos
         pos = self.set_pos(np.random.permutation(ilist))
-        self.ps.pos[...] = pos
+        self.ps.rdot[0][...] = pos
 
         # set phi
         self.ps.set_phi(self.ps)
 
         # set vel
         vel = self.set_vel(self.ps.phi)
-        self.ps.vel[...] = vel
+        self.ps.rdot[1][...] = vel
 
     def make_model(self):
         self.set_bodies()
@@ -171,8 +171,7 @@ class Plummer(object):
 
         b = self.ps
         n = b.n
-        rx = b.pos[0]
-        ry = b.pos[1]
+        r = b.rdot[0]
         radius = 2 * n * b.mass
         color = n * b.mass
 
@@ -181,7 +180,7 @@ class Plummer(object):
 
         ax2 = fig.add_subplot(1, 2, 2)
 #        ax.set_axis_bgcolor('0.75')
-        ax2.scatter(rx, ry, c=color, s=radius, cmap='gist_rainbow',
+        ax2.scatter(r[0], r[1], c=color, s=radius, cmap='gist_rainbow',
                     alpha=0.75, label=r'$Stars$')
         circle = Circle(
             (0, 0), 1,

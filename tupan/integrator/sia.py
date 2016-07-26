@@ -19,14 +19,17 @@ LOGGER = logging.getLogger(__name__)
 # split
 #
 @timings
-def split(ps, predicate):
+def split(ps, mask):
     """Splits the particle's system into slow/fast components.
 
     """
     if ps.n <= 2:       # stop recursion and use a few-body solver!
         return ps, type(ps)()
 
-    slow, fast = ps.split_by(predicate)
+    if all(mask):
+        return ps, type(ps)()
+
+    slow, fast = ps.split_by(mask)
 
     if slow.n + fast.n != ps.n:
         LOGGER.error(
@@ -62,7 +65,7 @@ def drift_n(ips, dt):
 
     """
     ips.time += dt
-    ips.pos += ips.vel * dt
+    ips.rdot[0] += ips.rdot[1] * dt
     return ips
 
 
@@ -74,7 +77,7 @@ def kick_n(ips, dt):
     """Kick operator for Newtonian quantities.
 
     """
-    ips.vel += ips.acc * dt
+    ips.rdot[1] += ips.rdot[2] * dt
     return ips
 
 
@@ -87,7 +90,7 @@ def drift_pn(ips, dt):
 
     """
     ips.time += dt
-    ips.pos += ips.vel * dt
+    ips.rdot[0] += ips.rdot[1] * dt
     ips.pn_mr += ips.pn_mv * dt
     return ips
 
@@ -101,37 +104,37 @@ def kick_pn(ips, dt):
 
     """
     #
-    ips.wel[...] = ips.vel
+    ips.pnvel[...] = ips.rdot[1]
 
     ips.set_pnacc(ips, use_auxvel=True)
     pnforce = ips.mass * ips.pnacc
-    ips.vel += (ips.acc + ips.pnacc) * (dt / 2)
-    ips.pn_ke -= (ips.wel * pnforce).sum(0) * (dt / 2)
+    ips.rdot[1] += (ips.rdot[2] + ips.pnacc) * (dt / 2)
+    ips.pn_ke -= (ips.pnvel * pnforce).sum(0) * (dt / 2)
     ips.pn_mv -= pnforce * (dt / 2)
-    ips.pn_am -= np.cross(ips.pos.T, pnforce.T).T * (dt / 2)
+    ips.pn_am -= np.cross(ips.rdot[0].T, pnforce.T).T * (dt / 2)
 
     ips.set_pnacc(ips)
-    ips.wel += (ips.acc + ips.pnacc) * dt
+    ips.pnvel += (ips.rdot[2] + ips.pnacc) * dt
 
     ips.set_pnacc(ips, use_auxvel=True)
     pnforce = ips.mass * ips.pnacc
-    ips.vel += (ips.acc + ips.pnacc) * (dt / 2)
-    ips.pn_ke -= (ips.wel * pnforce).sum(0) * (dt / 2)
+    ips.rdot[1] += (ips.rdot[2] + ips.pnacc) * (dt / 2)
+    ips.pn_ke -= (ips.pnvel * pnforce).sum(0) * (dt / 2)
     ips.pn_mv -= pnforce * (dt / 2)
-    ips.pn_am -= np.cross(ips.pos.T, pnforce.T).T * (dt / 2)
+    ips.pn_am -= np.cross(ips.rdot[0].T, pnforce.T).T * (dt / 2)
     #
 
     #
-    # ips.vel += (ips.acc * dt + ips.wel) / 2
+    # ips.rdot[1] += (ips.rdot[2] * dt + ips.pnvel) / 2
     #
     # ips.set_pnacc(ips)
     # pnforce = ips.mass * ips.pnacc
-    # ips.pn_ke -= (ips.vel * pnforce).sum(0) * dt
+    # ips.pn_ke -= (ips.rdot[1] * pnforce).sum(0) * dt
     # ips.pn_mv -= pnforce * dt
-    # ips.pn_am -= np.cross(ips.pos.T, pnforce.T).T * dt
-    # ips.wel[...] = 2 * ips.pnacc * dt - ips.wel
+    # ips.pn_am -= np.cross(ips.rdot[0].T, pnforce.T).T * dt
+    # ips.pnvel[...] = 2 * ips.pnacc * dt - ips.pnvel
     #
-    # ips.vel += (ips.acc * dt + ips.wel) / 2
+    # ips.rdot[1] += (ips.rdot[2] * dt + ips.pnvel) / 2
     #
 
     return ips
@@ -236,43 +239,43 @@ def sf_kick_pn(slow, fast, dt):
     """
     #
     for ps in [slow, fast]:
-        ps.wel[...] = ps.vel
+        ps.pnvel[...] = ps.rdot[1]
 
     slow.set_pnacc(fast, use_auxvel=True)
     for ps in [slow, fast]:
         pnforce = ps.mass * ps.pnacc
-        ps.vel += (ps.acc + ps.pnacc) * (dt / 2)
-        ps.pn_ke -= (ps.wel * pnforce).sum(0) * (dt / 2)
+        ps.rdot[1] += (ps.rdot[2] + ps.pnacc) * (dt / 2)
+        ps.pn_ke -= (ps.pnvel * pnforce).sum(0) * (dt / 2)
         ps.pn_mv -= pnforce * (dt / 2)
-        ps.pn_am -= np.cross(ps.pos.T, pnforce.T).T * (dt / 2)
+        ps.pn_am -= np.cross(ps.rdot[0].T, pnforce.T).T * (dt / 2)
 
     slow.set_pnacc(fast)
     for ps in [slow, fast]:
-        ps.wel += (ps.acc + ps.pnacc) * dt
+        ps.pnvel += (ps.rdot[2] + ps.pnacc) * dt
 
     slow.set_pnacc(fast, use_auxvel=True)
     for ps in [slow, fast]:
         pnforce = ps.mass * ps.pnacc
-        ps.vel += (ps.acc + ps.pnacc) * (dt / 2)
-        ps.pn_ke -= (ps.wel * pnforce).sum(0) * (dt / 2)
+        ps.rdot[1] += (ps.rdot[2] + ps.pnacc) * (dt / 2)
+        ps.pn_ke -= (ps.pnvel * pnforce).sum(0) * (dt / 2)
         ps.pn_mv -= pnforce * (dt / 2)
-        ps.pn_am -= np.cross(ps.pos.T, pnforce.T).T * (dt / 2)
+        ps.pn_am -= np.cross(ps.rdot[0].T, pnforce.T).T * (dt / 2)
     #
 
     #
     # for ps in [slow, fast]:
-    #    ps.vel += (ps.acc * dt + ps.wel) / 2
+    #    ps.rdot[1] += (ps.rdot[2] * dt + ps.pnvel) / 2
     #
     # slow.set_pnacc(fast)
     # for ps in [slow, fast]:
     #     pnforce = ps.mass * ps.pnacc
-    #     ps.pn_ke -= (ps.vel * pnforce).sum(0) * dt
+    #     ps.pn_ke -= (ps.rdot[1] * pnforce).sum(0) * dt
     #     ps.pn_mv -= pnforce * dt
-    #     ps.pn_am -= np.cross(ps.pos.T, pnforce.T).T * dt
-    #     ps.wel[...] = 2 * ps.pnacc * dt - ps.wel
+    #     ps.pn_am -= np.cross(ps.rdot[0].T, pnforce.T).T * dt
+    #     ps.pnvel[...] = 2 * ps.pnacc * dt - ps.pnvel
     #
     # for ps in [slow, fast]:
-    #     ps.vel += (ps.acc * dt + ps.wel) / 2
+    #     ps.rdot[1] += (ps.rdot[2] * dt + ps.pnvel) / 2
     #
 
     return slow, fast
@@ -594,7 +597,7 @@ class SIA(Base):
 
         if ps.include_pn_corrections:
             ps.register_attribute(
-                'wel', '3, {n}', 'real_t',
+                'pnvel', '{nd}, {nb}', 'real_t',
                 doc='auxiliary-velocity for PN integration.'
             )
 

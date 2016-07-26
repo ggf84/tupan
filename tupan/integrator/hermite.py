@@ -79,7 +79,7 @@ class H2(HX):
     def prepare(ps, eta):
         ps.set_tstep(ps, eta)
         ps.set_acc(ps)
-        ps.jrk = ps.vel * 0
+        ps.rdot[3] = ps.rdot[1] * 0
         return ps
 
     @staticmethod
@@ -89,7 +89,7 @@ class H2(HX):
         """
         h = dt
 
-        ps.pos += h * (ps.vel)
+        ps.rdot[0] += h * (ps.rdot[1])
 
         return ps
 
@@ -103,28 +103,28 @@ class H2(HX):
 
         ps1.set_acc(ps1)
 
-        acc_p = (ps0.acc + ps1.acc)
+        acc_p = (ps0.rdot[2] + ps1.rdot[2])
 
-        ps1.vel[...] = ps0.vel + h2 * (acc_p)
+        ps1.rdot[1][...] = ps0.rdot[1] + h2 * (acc_p)
 
-        vel_p = (ps0.vel + ps1.vel)
+        vel_p = (ps0.rdot[1] + ps1.rdot[1])
 
-        ps1.pos[...] = ps0.pos + h2 * (vel_p)
+        ps1.rdot[0][...] = ps0.rdot[0] + h2 * (vel_p)
 
         hinv = 1 / h
 
-        acc_m = (ps0.acc - ps1.acc)
+        acc_m = (ps0.rdot[2] - ps1.rdot[2])
 
         jrk = -hinv * (acc_m)
 
-        ps1.jrk[...] = jrk
+        ps1.rdot[3][...] = jrk
 
         return ps1
 
     @staticmethod
     def set_nextstep(ps, eta):
-        s0 = (ps.acc**2).sum(0)
-        s1 = (ps.jrk**2).sum(0)
+        s0 = (ps.rdot[2]**2).sum(0)
+        s1 = (ps.rdot[3]**2).sum(0)
 
         u = s0
         l = s1
@@ -143,8 +143,8 @@ class H4(HX):
     def prepare(ps, eta):
         ps.set_tstep(ps, eta)
         ps.set_acc_jrk(ps)
-        ps.snp = ps.acc * 0
-        ps.crk = ps.jrk * 0
+        ps.rdot[4] = ps.rdot[2] * 0
+        ps.rdot[5] = ps.rdot[3] * 0
         return ps
 
     @staticmethod
@@ -156,8 +156,8 @@ class H4(HX):
         h2 = h / 2
         h3 = h / 3
 
-        ps.pos += h * (ps.vel + h2 * (ps.acc + h3 * (ps.jrk)))
-        ps.vel += h * (ps.acc + h2 * (ps.jrk))
+        ps.rdot[0] += h * (ps.rdot[1] + h2 * (ps.rdot[2] + h3 * (ps.rdot[3])))
+        ps.rdot[1] += h * (ps.rdot[2] + h2 * (ps.rdot[3]))
 
         return ps
 
@@ -172,37 +172,37 @@ class H4(HX):
 
         ps1.set_acc_jrk(ps1)
 
-        jrk_m = (ps0.jrk - ps1.jrk)
-        acc_p = (ps0.acc + ps1.acc)
+        jrk_m = (ps0.rdot[3] - ps1.rdot[3])
+        acc_p = (ps0.rdot[2] + ps1.rdot[2])
 
-        ps1.vel[...] = ps0.vel + h2 * (acc_p + h6 * (jrk_m))
+        ps1.rdot[1][...] = ps0.rdot[1] + h2 * (acc_p + h6 * (jrk_m))
 
-        acc_m = (ps0.acc - ps1.acc)
-        vel_p = (ps0.vel + ps1.vel)
+        acc_m = (ps0.rdot[2] - ps1.rdot[2])
+        vel_p = (ps0.rdot[1] + ps1.rdot[1])
 
-        ps1.pos[...] = ps0.pos + h2 * (vel_p + h6 * (acc_m))
+        ps1.rdot[0][...] = ps0.rdot[0] + h2 * (vel_p + h6 * (acc_m))
 
         hinv = 1 / h
         hinv2 = hinv * hinv
         hinv3 = hinv * hinv2
 
-        jrk_p = (ps0.jrk + ps1.jrk)
+        jrk_p = (ps0.rdot[3] + ps1.rdot[3])
 
         snp = -hinv * (jrk_m)
         crk = 6 * hinv3 * (2 * acc_m + h * jrk_p)
         snp += h2 * (crk)
 
-        ps1.snp[...] = snp
-        ps1.crk[...] = crk
+        ps1.rdot[4][...] = snp
+        ps1.rdot[5][...] = crk
 
         return ps1
 
     @staticmethod
     def set_nextstep(ps, eta):
-        s0 = (ps.acc**2).sum(0)
-        s1 = (ps.jrk**2).sum(0)
-        s2 = (ps.snp**2).sum(0)
-        s3 = (ps.crk**2).sum(0)
+        s0 = (ps.rdot[2]**2).sum(0)
+        s1 = (ps.rdot[3]**2).sum(0)
+        s2 = (ps.rdot[4]**2).sum(0)
+        s3 = (ps.rdot[5]**2).sum(0)
 
         u = (s0 * s2)**0.5 + s1
         l = (s1 * s3)**0.5 + s2
@@ -222,9 +222,9 @@ class H6(HX):
         ps.set_tstep(ps, eta)
         ps.set_acc_jrk(ps)
         ps.set_snp_crk(ps)
-        ps.crk = ps.jrk * 0
-        ps.d4a = ps.snp * 0
-        ps.d5a = ps.crk * 0
+        ps.rdot[5] = ps.rdot[3] * 0
+        ps.rdot[6] = ps.rdot[4] * 0
+        ps.rdot[7] = ps.rdot[5] * 0
         return ps
 
     @staticmethod
@@ -238,13 +238,16 @@ class H6(HX):
         h4 = h / 4
         h5 = h / 5
 
-        ps.pos += h * (ps.vel +
-                       h2 * (ps.acc +
-                             h3 * (ps.jrk +
-                                   h4 * (ps.snp +
-                                         h5 * (ps.crk)))))
-        ps.vel += h * (ps.acc + h2 * (ps.jrk + h3 * (ps.snp + h4 * (ps.crk))))
-        ps.acc += h * (ps.jrk + h2 * (ps.snp + h3 * (ps.crk)))
+        ps.rdot[0] += h * (ps.rdot[1] +
+                           h2 * (ps.rdot[2] +
+                                 h3 * (ps.rdot[3] +
+                                       h4 * (ps.rdot[4] +
+                                             h5 * (ps.rdot[5])))))
+        ps.rdot[1] += h * (ps.rdot[2] +
+                           h2 * (ps.rdot[3] +
+                                 h3 * (ps.rdot[4] +
+                                       h4 * (ps.rdot[5]))))
+        ps.rdot[2] += h * (ps.rdot[3] + h2 * (ps.rdot[4] + h3 * (ps.rdot[5])))
 
         return ps
 
@@ -261,24 +264,28 @@ class H6(HX):
         ps1.set_snp_crk(ps1)
         ps1.set_acc_jrk(ps1)
 
-        snp_p = (ps0.snp + ps1.snp)
-        jrk_m = (ps0.jrk - ps1.jrk)
-        acc_p = (ps0.acc + ps1.acc)
+        snp_p = (ps0.rdot[4] + ps1.rdot[4])
+        jrk_m = (ps0.rdot[3] - ps1.rdot[3])
+        acc_p = (ps0.rdot[2] + ps1.rdot[2])
 
-        ps1.vel[...] = ps0.vel + h2 * (acc_p + h5 * (jrk_m + h12 * (snp_p)))
+        ps1.rdot[1][...] = ps0.rdot[1] + h2 * (acc_p +
+                                               h5 * (jrk_m +
+                                                     h12 * (snp_p)))
 
-        jrk_p = (ps0.jrk + ps1.jrk)
-        acc_m = (ps0.acc - ps1.acc)
-        vel_p = (ps0.vel + ps1.vel)
+        jrk_p = (ps0.rdot[3] + ps1.rdot[3])
+        acc_m = (ps0.rdot[2] - ps1.rdot[2])
+        vel_p = (ps0.rdot[1] + ps1.rdot[1])
 
-        ps1.pos[...] = ps0.pos + h2 * (vel_p + h5 * (acc_m + h12 * (jrk_p)))
+        ps1.rdot[0][...] = ps0.rdot[0] + h2 * (vel_p +
+                                               h5 * (acc_m +
+                                                     h12 * (jrk_p)))
 
         hinv = 1 / h
         hinv2 = hinv * hinv
         hinv3 = hinv * hinv2
         hinv5 = hinv2 * hinv3
 
-        snp_m = (ps0.snp - ps1.snp)
+        snp_m = (ps0.rdot[4] - ps1.rdot[4])
 
         crk = 3 * hinv3 * (10 * acc_m + h * (5 * jrk_p + h2 * snp_m))
         d4a = 6 * hinv3 * (2 * jrk_m + h * snp_p)
@@ -288,20 +295,20 @@ class H6(HX):
         crk += h2 * (d4a + h4 * d5a)
         d4a += h2 * (d5a)
 
-        ps1.crk[...] = crk
-        ps1.d4a[...] = d4a
-        ps1.d5a[...] = d5a
+        ps1.rdot[5][...] = crk
+        ps1.rdot[6][...] = d4a
+        ps1.rdot[7][...] = d5a
 
         return ps1
 
     @staticmethod
     def set_nextstep(ps, eta):
-        s0 = (ps.acc**2).sum(0)
-        s1 = (ps.jrk**2).sum(0)
-        s2 = (ps.snp**2).sum(0)
-        s3 = (ps.crk**2).sum(0)
-        s4 = (ps.d4a**2).sum(0)
-        s5 = (ps.d5a**2).sum(0)
+        s0 = (ps.rdot[2]**2).sum(0)
+        s1 = (ps.rdot[3]**2).sum(0)
+        s2 = (ps.rdot[4]**2).sum(0)
+        s3 = (ps.rdot[5]**2).sum(0)
+        s4 = (ps.rdot[6]**2).sum(0)
+        s5 = (ps.rdot[7]**2).sum(0)
 
         u = (s0 * s2)**0.5 + s1
         l = (s3 * s5)**0.5 + s4
@@ -321,10 +328,10 @@ class H8(HX):
         ps.set_tstep(ps, eta)
         ps.set_acc_jrk(ps)
         ps.set_snp_crk(ps)
-        ps.d4a = ps.snp * 0
-        ps.d5a = ps.crk * 0
-        ps.d6a = ps.d4a * 0
-        ps.d7a = ps.d5a * 0
+        ps.rdot[6] = ps.rdot[4] * 0
+        ps.rdot[7] = ps.rdot[5] * 0
+        ps.rdot[8] = ps.rdot[6] * 0
+        ps.rdot[9] = ps.rdot[7] * 0
         return ps
 
     @staticmethod
@@ -340,25 +347,28 @@ class H8(HX):
         h6 = h / 6
         h7 = h / 7
 
-        ps.pos += h * (ps.vel +
-                       h2 * (ps.acc +
-                             h3 * (ps.jrk +
-                                   h4 * (ps.snp +
-                                         h5 * (ps.crk +
-                                               h6 * (ps.d4a +
-                                                     h7 * (ps.d5a)))))))
-        ps.vel += h * (ps.acc +
-                       h2 * (ps.jrk +
-                             h3 * (ps.snp +
-                                   h4 * (ps.crk +
-                                         h5 * (ps.d4a +
-                                               h6 * (ps.d5a))))))
-        ps.acc += h * (ps.jrk +
-                       h2 * (ps.snp +
-                             h3 * (ps.crk +
-                                   h4 * (ps.d4a +
-                                         h5 * (ps.d5a)))))
-        ps.jrk += h * (ps.snp + h2 * (ps.crk + h3 * (ps.d4a + h4 * (ps.d5a))))
+        ps.rdot[0] += h * (ps.rdot[1] +
+                           h2 * (ps.rdot[2] +
+                                 h3 * (ps.rdot[3] +
+                                       h4 * (ps.rdot[4] +
+                                             h5 * (ps.rdot[5] +
+                                                   h6 * (ps.rdot[6] +
+                                                         h7 * (ps.rdot[7])))))))
+        ps.rdot[1] += h * (ps.rdot[2] +
+                           h2 * (ps.rdot[3] +
+                                 h3 * (ps.rdot[4] +
+                                       h4 * (ps.rdot[5] +
+                                             h5 * (ps.rdot[6] +
+                                                   h6 * (ps.rdot[7]))))))
+        ps.rdot[2] += h * (ps.rdot[3] +
+                           h2 * (ps.rdot[4] +
+                                 h3 * (ps.rdot[5] +
+                                       h4 * (ps.rdot[6] +
+                                             h5 * (ps.rdot[7])))))
+        ps.rdot[3] += h * (ps.rdot[4] +
+                           h2 * (ps.rdot[5] +
+                                 h3 * (ps.rdot[6] +
+                                       h4 * (ps.rdot[7]))))
 
         return ps
 
@@ -376,25 +386,25 @@ class H8(HX):
         ps1.set_snp_crk(ps1)
         ps1.set_acc_jrk(ps1)
 
-        crk_m = (ps0.crk - ps1.crk)
-        snp_p = (ps0.snp + ps1.snp)
-        jrk_m = (ps0.jrk - ps1.jrk)
-        acc_p = (ps0.acc + ps1.acc)
+        crk_m = (ps0.rdot[5] - ps1.rdot[5])
+        snp_p = (ps0.rdot[4] + ps1.rdot[4])
+        jrk_m = (ps0.rdot[3] - ps1.rdot[3])
+        acc_p = (ps0.rdot[2] + ps1.rdot[2])
 
-        ps1.vel[...] = ps0.vel + h2 * (acc_p +
-                                       h14 * (3 * jrk_m +
-                                              h3 * (snp_p +
-                                                    h20 * (crk_m))))
+        ps1.rdot[1][...] = ps0.rdot[1] + h2 * (acc_p +
+                                               h14 * (3 * jrk_m +
+                                                      h3 * (snp_p +
+                                                            h20 * (crk_m))))
 
-        snp_m = (ps0.snp - ps1.snp)
-        jrk_p = (ps0.jrk + ps1.jrk)
-        acc_m = (ps0.acc - ps1.acc)
-        vel_p = (ps0.vel + ps1.vel)
+        snp_m = (ps0.rdot[4] - ps1.rdot[4])
+        jrk_p = (ps0.rdot[3] + ps1.rdot[3])
+        acc_m = (ps0.rdot[2] - ps1.rdot[2])
+        vel_p = (ps0.rdot[1] + ps1.rdot[1])
 
-        ps1.pos[...] = ps0.pos + h2 * (vel_p +
-                                       h14 * (3 * acc_m +
-                                              h3 * (jrk_p +
-                                                    h20 * (snp_m))))
+        ps1.rdot[0][...] = ps0.rdot[0] + h2 * (vel_p +
+                                               h14 * (3 * acc_m +
+                                                      h3 * (jrk_p +
+                                                            h20 * (snp_m))))
 
         hinv = 1 / h
         hinv2 = hinv * hinv
@@ -402,7 +412,7 @@ class H8(HX):
         hinv5 = hinv2 * hinv3
         hinv7 = hinv2 * hinv5
 
-        crk_p = (ps0.crk + ps1.crk)
+        crk_p = (ps0.rdot[5] + ps1.rdot[5])
 
         d4a = 3 * hinv3 * (10 * jrk_m + h * (5 * snp_p + h2 * crk_m))
         d5a = -15 * hinv5 * (168 * acc_m +
@@ -421,23 +431,23 @@ class H8(HX):
         d5a += h2 * (d6a + h4 * d7a)
         d6a += h2 * (d7a)
 
-        ps1.d4a[...] = d4a
-        ps1.d5a[...] = d5a
-        ps1.d6a[...] = d6a
-        ps1.d7a[...] = d7a
+        ps1.rdot[6][...] = d4a
+        ps1.rdot[7][...] = d5a
+        ps1.rdot[8][...] = d6a
+        ps1.rdot[9][...] = d7a
 
         return ps1
 
     @staticmethod
     def set_nextstep(ps, eta):
-        s0 = (ps.acc**2).sum(0)
-        s1 = (ps.jrk**2).sum(0)
-        s2 = (ps.snp**2).sum(0)
-#        s3 = (ps.crk**2).sum(0)
-#        s4 = (ps.d4a**2).sum(0)
-        s5 = (ps.d5a**2).sum(0)
-        s6 = (ps.d6a**2).sum(0)
-        s7 = (ps.d7a**2).sum(0)
+        s0 = (ps.rdot[2]**2).sum(0)
+        s1 = (ps.rdot[3]**2).sum(0)
+        s2 = (ps.rdot[4]**2).sum(0)
+#        s3 = (ps.rdot[5]**2).sum(0)
+#        s4 = (ps.rdot[6]**2).sum(0)
+        s5 = (ps.rdot[7]**2).sum(0)
+        s6 = (ps.rdot[8]**2).sum(0)
+        s7 = (ps.rdot[9]**2).sum(0)
 
         u = (s0 * s2)**0.5 + s1
         l = (s5 * s7)**0.5 + s6

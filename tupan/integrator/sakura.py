@@ -20,17 +20,17 @@ def sakura_step(ps, dt, kernel=ext.get_kernel('Sakura')):
     """
 
     """
-    ps.pos += ps.vel * dt / 2
+    ps.rdot[0] += ps.rdot[1] * dt / 2
 
     kernel(ps, ps, dt=dt/2, flag=-1)
-    ps.pos += ps.dpos
-    ps.vel += ps.dvel
+    ps.rdot[0] += ps.dpos
+    ps.rdot[1] += ps.dvel
 
     kernel(ps, ps, dt=dt/2, flag=+1)
-    ps.pos += ps.dpos
-    ps.vel += ps.dvel
+    ps.rdot[0] += ps.dpos
+    ps.rdot[1] += ps.dvel
 
-    ps.pos += ps.vel * dt / 2
+    ps.rdot[0] += ps.rdot[1] * dt / 2
 
     return ps
 
