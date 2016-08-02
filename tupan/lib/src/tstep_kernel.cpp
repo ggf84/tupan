@@ -71,14 +71,14 @@ tstep_kernel_rectangle(
 
 	for (const auto& ip : ipart) {
 		auto i = &ip - &ipart[0];
-		__idt_a[i] = eta / sqrt(fmax((real_t)(1), ip.w2_a));
-		__idt_b[i] = eta / sqrt(fmax((real_t)(1), ip.w2_b));
+		__idt_a[i] = eta / sqrt(ip.w2_a);
+		__idt_b[i] = eta / sqrt(ip.w2_b);
 	}
 
 	for (const auto& jp : jpart) {
 		auto j = &jp - &jpart[0];
-		__jdt_a[j] = eta / sqrt(fmax((real_t)(1), jp.w2_a));
-		__jdt_b[j] = eta / sqrt(fmax((real_t)(1), jp.w2_b));
+		__jdt_a[j] = eta / sqrt(jp.w2_a);
+		__jdt_b[j] = eta / sqrt(jp.w2_b);
 	}
 }
 
@@ -125,8 +125,8 @@ tstep_kernel_triangle(
 
 	for (const auto& ip : ipart) {
 		auto i = &ip - &ipart[0];
-		__idt_a[i] = eta / sqrt(fmax((real_t)(1), ip.w2_a));
-		__idt_b[i] = eta / sqrt(fmax((real_t)(1), ip.w2_b));
+		__idt_a[i] = eta / sqrt(ip.w2_a);
+		__idt_b[i] = eta / sqrt(ip.w2_b);
 	}
 }
 
@@ -185,8 +185,8 @@ tstep_kernel(
 			ip = tstep_kernel_core(ip, jp, eta);
 		}
 
-		__idt_a[i] = eta / sqrt(fmax((real_t)(1), ip.w2_a));
-		__idt_b[i] = eta / sqrt(fmax((real_t)(1), ip.w2_b));
+		__idt_a[i] = eta / sqrt(ip.w2_a);
+		__idt_b[i] = eta / sqrt(ip.w2_b);
 	}
 }
 

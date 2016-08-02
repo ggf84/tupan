@@ -6,6 +6,7 @@ TODO.
 """
 
 import logging
+from operator import add, sub
 from abc import ABCMeta, abstractmethod
 from .base import Base, power_of_two
 from ..lib.utils import with_metaclass
@@ -13,6 +14,7 @@ from ..lib.utils.timing import timings, bind_all
 
 
 LOGGER = logging.getLogger(__name__)
+PM = [add, sub]  # plus/minus operator.
 
 
 class HX(with_metaclass(ABCMeta, object)):
@@ -24,47 +26,129 @@ class HX(with_metaclass(ABCMeta, object)):
     def order(self):
         raise NotImplementedError
 
-    @staticmethod
+    @property
     @abstractmethod
-    def prepare(ps, eta):
+    def coefs(self):
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def predict(ps, dt):
-        raise NotImplementedError
-
-    @staticmethod
-    @abstractmethod
-    def ecorrect(ps1, ps0, dt):
-        raise NotImplementedError
-
-    @staticmethod
-    @abstractmethod
-    def set_nextstep(ps, eta):
+    def evaluate(ps):
         raise NotImplementedError
 
     def __init__(self, manager):
         self.initialized = False
-        self.manager = manager
+        self.update_tstep = manager.update_tstep
 
-    def pec(self, n, ps, eta, dt_max):
+    def timestep_criterion(self, ps, eta):
+        def A(a2, k):
+            return (a2[k-1] * a2[k+1])**0.5 + a2[k]
+
+        p = self.order
+        a2 = (ps.rdot[2:p+2]**2).sum(1)
+        ps.tstep[...] = eta * (A(a2, 1) / A(a2, p-2))**(0.5/(p-3))
+
+    def set_nextstep(self, ps, eta, dt_max):
         if not self.initialized:
             self.initialized = True
-            ps = self.prepare(ps, eta)
+            ps.set_acc_jrk(ps)
             if self.order > 4:
-                n += 1
-        dt = power_of_two(ps, dt_max) if self.manager.update_tstep else dt_max
-        ps0 = ps.copy()
-        ps1 = self.predict(ps, dt)
+                ps.set_snp_crk(ps)
+            if self.update_tstep:
+                ps.set_tstep(ps, eta)
+                return power_of_two(ps, dt_max)
+        else:
+            if self.update_tstep:
+                self.timestep_criterion(ps, eta)
+                return power_of_two(ps, dt_max)
+        return dt_max
+
+    def predict(self, ps, dt):
+        """
+        Predict the positions and necessary time derivatives of all particles
+        at time t to the next time t+dt.
+        """
+        order = self.order
+        for i in range(order//2):
+            drdot = 0
+            for j in reversed(range(i+1, order)):
+                drdot += ps.rdot[j]
+                drdot *= dt / (j-i)
+            ps.rdot[i] += drdot
+        return ps
+
+    def correct(self, ps1, ps0, dt):
+        """
+        Correct the positions and velocities of particles based on the new
+        values of acceleration and its time derivatives at t+dt and those at
+        the previous time t.
+        """
+        order = self.order
+        coefs = self.coefs[0]
+
+        h = dt / 2
+        for i in reversed(range(2)):
+            drdot = 0
+            for j in reversed(range(order//2)):
+                k = j % 2
+                c = coefs[j]
+                ff = PM[k](ps0.rdot[j+i+1], ps1.rdot[j+i+1])
+                j += 1 if j == 0 else 0
+                drdot += c * ff
+                drdot *= h / j
+            ps1.rdot[i, ...] = ps0.rdot[i] + drdot
+        return ps1
+
+    def interpolate(self, ps1, ps0, dt):
+        """
+        Interpolate polynomial.
+        """
+        order = self.order
+        coefs = self.coefs[1]
+
+        h = dt / 2
+        hinv = [1.0, 1/h]
+        for i in range(2, order):
+            hinv.append(i * hinv[1] * hinv[-1])
+
+        p = order//2
+        A = [
+            ps0.rdot[2:2+p] + ps1.rdot[2:2+p],
+            ps0.rdot[2:2+p] - ps1.rdot[2:2+p],
+        ]
+
+        for i in reversed(range(order//2)):
+            s = 0
+            for j in reversed(range(order//2)):
+                c = coefs[i][j]
+                if c != 0:
+                    k = (i+j+order//2) % 2
+                    s += c * A[k][j]
+                if j != 0:
+                    s *= h / j
+            i += order//2
+            ps1.rdot[i+2, ...] = s * hinv[i]
+
+        for i in range(order//2):
+            drdot = 0
+            i += order//2
+            for j in reversed(range(i+1, order)):
+                drdot += ps1.rdot[j+2]
+                drdot *= h / (j-i)
+            ps1.rdot[i+2] += drdot
+        return ps1
+
+    def pec(self, n, ps0, eta, dt):
+        dt = self.set_nextstep(ps0, eta, dt)
+        ps1 = self.predict(ps0.copy(), dt)
         while n > 0:
-            ps1 = self.ecorrect(ps1, ps0, dt)
+            self.evaluate(ps1)
+            ps1 = self.correct(ps1, ps0, dt)
             n -= 1
+        ps1 = self.interpolate(ps1, ps0, dt)
         type(ps1).t_curr += dt
         ps1.time += dt
         ps1.nstep += 1
-        if self.manager.update_tstep:
-            self.set_nextstep(ps1, eta)
         return ps1
 
 
@@ -74,62 +158,23 @@ class H2(HX):
 
     """
     order = 2
+    coefs = [
+        [1],
+        [
+            [-1],
+        ],
+    ]
+    coefs[0] = [1.0/i for i in coefs[0]]
+    coefs[1] = [[i/2.0 for i in j] for j in coefs[1]]
 
     @staticmethod
-    def prepare(ps, eta):
-        ps.set_tstep(ps, eta)
+    def evaluate(ps):
         ps.set_acc(ps)
-        ps.rdot[3] = ps.rdot[1] * 0
-        return ps
 
-    @staticmethod
-    def predict(ps, dt):
-        """
-
-        """
-        h = dt
-
-        ps.rdot[0] += h * (ps.rdot[1])
-
-        return ps
-
-    @staticmethod
-    def ecorrect(ps1, ps0, dt):
-        """
-
-        """
-        h = dt
-        h2 = h / 2
-
-        ps1.set_acc(ps1)
-
-        acc_p = (ps0.rdot[2] + ps1.rdot[2])
-
-        ps1.rdot[1][...] = ps0.rdot[1] + h2 * (acc_p)
-
-        vel_p = (ps0.rdot[1] + ps1.rdot[1])
-
-        ps1.rdot[0][...] = ps0.rdot[0] + h2 * (vel_p)
-
-        hinv = 1 / h
-
-        acc_m = (ps0.rdot[2] - ps1.rdot[2])
-
-        jrk = -hinv * (acc_m)
-
-        ps1.rdot[3][...] = jrk
-
-        return ps1
-
-    @staticmethod
-    def set_nextstep(ps, eta):
-        s0 = (ps.rdot[2]**2).sum(0)
-        s1 = (ps.rdot[3]**2).sum(0)
-
-        u = s0
-        l = s1
-
-        ps.tstep[...] = eta * (u / l)**0.5
+    def timestep_criterion(self, ps, eta):
+        p = self.order
+        a2 = (ps.rdot[2:p+2]**2).sum(1)
+        ps.tstep[...] = eta * (a2[0] / a2[1])**0.5
 
 
 @bind_all(timings)
@@ -138,76 +183,19 @@ class H4(HX):
 
     """
     order = 4
+    coefs = [
+        [1, 3],
+        [
+            [ 0, -1],
+            [ 1,  1],
+        ],
+    ]
+    coefs[0] = [1.0/i for i in coefs[0]]
+    coefs[1] = [[i/4.0 for i in j] for j in coefs[1]]
 
     @staticmethod
-    def prepare(ps, eta):
-        ps.set_tstep(ps, eta)
+    def evaluate(ps):
         ps.set_acc_jrk(ps)
-        ps.rdot[4] = ps.rdot[2] * 0
-        ps.rdot[5] = ps.rdot[3] * 0
-        return ps
-
-    @staticmethod
-    def predict(ps, dt):
-        """
-
-        """
-        h = dt
-        h2 = h / 2
-        h3 = h / 3
-
-        ps.rdot[0] += h * (ps.rdot[1] + h2 * (ps.rdot[2] + h3 * (ps.rdot[3])))
-        ps.rdot[1] += h * (ps.rdot[2] + h2 * (ps.rdot[3]))
-
-        return ps
-
-    @staticmethod
-    def ecorrect(ps1, ps0, dt):
-        """
-
-        """
-        h = dt
-        h2 = h / 2
-        h6 = h / 6
-
-        ps1.set_acc_jrk(ps1)
-
-        jrk_m = (ps0.rdot[3] - ps1.rdot[3])
-        acc_p = (ps0.rdot[2] + ps1.rdot[2])
-
-        ps1.rdot[1][...] = ps0.rdot[1] + h2 * (acc_p + h6 * (jrk_m))
-
-        acc_m = (ps0.rdot[2] - ps1.rdot[2])
-        vel_p = (ps0.rdot[1] + ps1.rdot[1])
-
-        ps1.rdot[0][...] = ps0.rdot[0] + h2 * (vel_p + h6 * (acc_m))
-
-        hinv = 1 / h
-        hinv2 = hinv * hinv
-        hinv3 = hinv * hinv2
-
-        jrk_p = (ps0.rdot[3] + ps1.rdot[3])
-
-        snp = -hinv * (jrk_m)
-        crk = 6 * hinv3 * (2 * acc_m + h * jrk_p)
-        snp += h2 * (crk)
-
-        ps1.rdot[4][...] = snp
-        ps1.rdot[5][...] = crk
-
-        return ps1
-
-    @staticmethod
-    def set_nextstep(ps, eta):
-        s0 = (ps.rdot[2]**2).sum(0)
-        s1 = (ps.rdot[3]**2).sum(0)
-        s2 = (ps.rdot[4]**2).sum(0)
-        s3 = (ps.rdot[5]**2).sum(0)
-
-        u = (s0 * s2)**0.5 + s1
-        l = (s1 * s3)**0.5 + s2
-
-        ps.tstep[...] = eta * (u / l)**0.5
 
 
 @bind_all(timings)
@@ -216,104 +204,21 @@ class H6(HX):
 
     """
     order = 6
+    coefs = [
+        [1, 5/2., 15/2.],
+        [
+            [ 10, 10,  4],
+            [  0,  1,  2],
+            [ -3, -3, -2],
+        ],
+    ]
+    coefs[0] = [1.0/i for i in coefs[0]]
+    coefs[1] = [[i/16.0 for i in j] for j in coefs[1]]
 
     @staticmethod
-    def prepare(ps, eta):
-        ps.set_tstep(ps, eta)
-        ps.set_acc_jrk(ps)
+    def evaluate(ps):
         ps.set_snp_crk(ps)
-        ps.rdot[5] = ps.rdot[3] * 0
-        ps.rdot[6] = ps.rdot[4] * 0
-        ps.rdot[7] = ps.rdot[5] * 0
-        return ps
-
-    @staticmethod
-    def predict(ps, dt):
-        """
-
-        """
-        h = dt
-        h2 = h / 2
-        h3 = h / 3
-        h4 = h / 4
-        h5 = h / 5
-
-        ps.rdot[0] += h * (ps.rdot[1] +
-                           h2 * (ps.rdot[2] +
-                                 h3 * (ps.rdot[3] +
-                                       h4 * (ps.rdot[4] +
-                                             h5 * (ps.rdot[5])))))
-        ps.rdot[1] += h * (ps.rdot[2] +
-                           h2 * (ps.rdot[3] +
-                                 h3 * (ps.rdot[4] +
-                                       h4 * (ps.rdot[5]))))
-        ps.rdot[2] += h * (ps.rdot[3] + h2 * (ps.rdot[4] + h3 * (ps.rdot[5])))
-
-        return ps
-
-    @staticmethod
-    def ecorrect(ps1, ps0, dt):
-        """
-
-        """
-        h = dt
-        h2 = h / 2
-        h5 = h / 5
-        h12 = h / 12
-
-        ps1.set_snp_crk(ps1)
-        ps1.set_acc_jrk(ps1)
-
-        snp_p = (ps0.rdot[4] + ps1.rdot[4])
-        jrk_m = (ps0.rdot[3] - ps1.rdot[3])
-        acc_p = (ps0.rdot[2] + ps1.rdot[2])
-
-        ps1.rdot[1][...] = ps0.rdot[1] + h2 * (acc_p +
-                                               h5 * (jrk_m +
-                                                     h12 * (snp_p)))
-
-        jrk_p = (ps0.rdot[3] + ps1.rdot[3])
-        acc_m = (ps0.rdot[2] - ps1.rdot[2])
-        vel_p = (ps0.rdot[1] + ps1.rdot[1])
-
-        ps1.rdot[0][...] = ps0.rdot[0] + h2 * (vel_p +
-                                               h5 * (acc_m +
-                                                     h12 * (jrk_p)))
-
-        hinv = 1 / h
-        hinv2 = hinv * hinv
-        hinv3 = hinv * hinv2
-        hinv5 = hinv2 * hinv3
-
-        snp_m = (ps0.rdot[4] - ps1.rdot[4])
-
-        crk = 3 * hinv3 * (10 * acc_m + h * (5 * jrk_p + h2 * snp_m))
-        d4a = 6 * hinv3 * (2 * jrk_m + h * snp_p)
-        d5a = -60 * hinv5 * (12 * acc_m + h * (6 * jrk_p + h * snp_m))
-
-        h4 = h / 4
-        crk += h2 * (d4a + h4 * d5a)
-        d4a += h2 * (d5a)
-
-        ps1.rdot[5][...] = crk
-        ps1.rdot[6][...] = d4a
-        ps1.rdot[7][...] = d5a
-
-        return ps1
-
-    @staticmethod
-    def set_nextstep(ps, eta):
-        s0 = (ps.rdot[2]**2).sum(0)
-        s1 = (ps.rdot[3]**2).sum(0)
-        s2 = (ps.rdot[4]**2).sum(0)
-        s3 = (ps.rdot[5]**2).sum(0)
-        s4 = (ps.rdot[6]**2).sum(0)
-        s5 = (ps.rdot[7]**2).sum(0)
-
-        u = (s0 * s2)**0.5 + s1
-        l = (s3 * s5)**0.5 + s4
-
-        ps.tstep[...] = eta * (u / l)**(1.0 / 6)
+        ps.set_acc_jrk(ps)
 
 
 @bind_all(timings)
@@ -322,137 +227,22 @@ class H8(HX):
 
     """
     order = 8
+    coefs = [
+        [1, 7/3., 21/4., 35/2.],
+        [
+            [  0,   5,  10,  6],
+            [-21, -21, -16, -6],
+            [  0,  -1,  -2, -2],
+            [  5,   5,   4,  2],
+        ],
+    ]
+    coefs[0] = [1.0/i for i in coefs[0]]
+    coefs[1] = [[i/32.0 for i in j] for j in coefs[1]]
 
     @staticmethod
-    def prepare(ps, eta):
-        ps.set_tstep(ps, eta)
-        ps.set_acc_jrk(ps)
+    def evaluate(ps):
         ps.set_snp_crk(ps)
-        ps.rdot[6] = ps.rdot[4] * 0
-        ps.rdot[7] = ps.rdot[5] * 0
-        ps.rdot[8] = ps.rdot[6] * 0
-        ps.rdot[9] = ps.rdot[7] * 0
-        return ps
-
-    @staticmethod
-    def predict(ps, dt):
-        """
-
-        """
-        h = dt
-        h2 = h / 2
-        h3 = h / 3
-        h4 = h / 4
-        h5 = h / 5
-        h6 = h / 6
-        h7 = h / 7
-
-        ps.rdot[0] += h * (ps.rdot[1] +
-                           h2 * (ps.rdot[2] +
-                                 h3 * (ps.rdot[3] +
-                                       h4 * (ps.rdot[4] +
-                                             h5 * (ps.rdot[5] +
-                                                   h6 * (ps.rdot[6] +
-                                                         h7 * (ps.rdot[7])))))))
-        ps.rdot[1] += h * (ps.rdot[2] +
-                           h2 * (ps.rdot[3] +
-                                 h3 * (ps.rdot[4] +
-                                       h4 * (ps.rdot[5] +
-                                             h5 * (ps.rdot[6] +
-                                                   h6 * (ps.rdot[7]))))))
-        ps.rdot[2] += h * (ps.rdot[3] +
-                           h2 * (ps.rdot[4] +
-                                 h3 * (ps.rdot[5] +
-                                       h4 * (ps.rdot[6] +
-                                             h5 * (ps.rdot[7])))))
-        ps.rdot[3] += h * (ps.rdot[4] +
-                           h2 * (ps.rdot[5] +
-                                 h3 * (ps.rdot[6] +
-                                       h4 * (ps.rdot[7]))))
-
-        return ps
-
-    @staticmethod
-    def ecorrect(ps1, ps0, dt):
-        """
-
-        """
-        h = dt
-        h2 = h / 2
-        h3 = h / 3
-        h14 = h / 14
-        h20 = h / 20
-
-        ps1.set_snp_crk(ps1)
-        ps1.set_acc_jrk(ps1)
-
-        crk_m = (ps0.rdot[5] - ps1.rdot[5])
-        snp_p = (ps0.rdot[4] + ps1.rdot[4])
-        jrk_m = (ps0.rdot[3] - ps1.rdot[3])
-        acc_p = (ps0.rdot[2] + ps1.rdot[2])
-
-        ps1.rdot[1][...] = ps0.rdot[1] + h2 * (acc_p +
-                                               h14 * (3 * jrk_m +
-                                                      h3 * (snp_p +
-                                                            h20 * (crk_m))))
-
-        snp_m = (ps0.rdot[4] - ps1.rdot[4])
-        jrk_p = (ps0.rdot[3] + ps1.rdot[3])
-        acc_m = (ps0.rdot[2] - ps1.rdot[2])
-        vel_p = (ps0.rdot[1] + ps1.rdot[1])
-
-        ps1.rdot[0][...] = ps0.rdot[0] + h2 * (vel_p +
-                                               h14 * (3 * acc_m +
-                                                      h3 * (jrk_p +
-                                                            h20 * (snp_m))))
-
-        hinv = 1 / h
-        hinv2 = hinv * hinv
-        hinv3 = hinv * hinv2
-        hinv5 = hinv2 * hinv3
-        hinv7 = hinv2 * hinv5
-
-        crk_p = (ps0.rdot[5] + ps1.rdot[5])
-
-        d4a = 3 * hinv3 * (10 * jrk_m + h * (5 * snp_p + h2 * crk_m))
-        d5a = -15 * hinv5 * (168 * acc_m +
-                             h * (84 * jrk_p +
-                                  h * (16 * snp_m +
-                                       h * crk_p)))
-        d6a = -60 * hinv5 * (12 * jrk_m + h * (6 * snp_p + h * crk_m))
-        d7a = 840 * hinv7 * (120 * acc_m +
-                             h * (60 * jrk_p +
-                                  h * (12 * snp_m +
-                                       h * crk_p)))
-
-        h4 = h / 4
-        h6 = h / 6
-        d4a += h2 * (d5a + h4 * (d6a + h6 * d7a))
-        d5a += h2 * (d6a + h4 * d7a)
-        d6a += h2 * (d7a)
-
-        ps1.rdot[6][...] = d4a
-        ps1.rdot[7][...] = d5a
-        ps1.rdot[8][...] = d6a
-        ps1.rdot[9][...] = d7a
-
-        return ps1
-
-    @staticmethod
-    def set_nextstep(ps, eta):
-        s0 = (ps.rdot[2]**2).sum(0)
-        s1 = (ps.rdot[3]**2).sum(0)
-        s2 = (ps.rdot[4]**2).sum(0)
-#        s3 = (ps.rdot[5]**2).sum(0)
-#        s4 = (ps.rdot[6]**2).sum(0)
-        s5 = (ps.rdot[7]**2).sum(0)
-        s6 = (ps.rdot[8]**2).sum(0)
-        s7 = (ps.rdot[9]**2).sum(0)
-
-        u = (s0 * s2)**0.5 + s1
-        l = (s5 * s7)**0.5 + s6
-
-        ps.tstep[...] = eta * (u / l)**(1.0 / 10)
+        ps.set_acc_jrk(ps)
 
 
 @bind_all(timings)
@@ -494,7 +284,7 @@ class Hermite(Base):
         """
 
         """
-        return self.hermite.pec(2, ps, self.eta, dt_max)
+        return self.hermite.pec(1, ps, self.eta, dt_max)
 
 
 # -- End of File --

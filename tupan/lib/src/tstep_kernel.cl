@@ -84,8 +84,8 @@ tstep_kernel(
 			ip = tstep_kernel_core(ip, jp, eta);
 		}
 
-		__idt_a[i] = eta / sqrt(fmax((real_tn)(1), ip.w2_a));
-		__idt_b[i] = eta / sqrt(fmax((real_tn)(1), ip.w2_b));
+		__idt_a[i] = eta / sqrt(ip.w2_a);
+		__idt_b[i] = eta / sqrt(ip.w2_b);
 	}
 }
 
