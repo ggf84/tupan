@@ -6,8 +6,9 @@
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
+template<typename I, typename J, typename PARAM>
 static inline void
-p2p_nreg_Xkernel_core(auto &ip, auto &jp, const auto dt)
+p2p_nreg_Xkernel_core(I &ip, J &jp, const PARAM dt)
 // flop count: 53
 {
 	auto rx = ip.rx - jp.rx;
@@ -50,8 +51,9 @@ p2p_nreg_Xkernel_core(auto &ip, auto &jp, const auto dt)
 }
 
 
+template<typename I, typename J, typename PARAM>
 static inline void
-p2p_nreg_Vkernel_core(auto &ip, auto &jp, const auto dt)
+p2p_nreg_Vkernel_core(I &ip, J &jp, const PARAM dt)
 // flop count: 33
 {
 	auto vx = ip.vx - jp.vx;

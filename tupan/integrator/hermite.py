@@ -218,7 +218,6 @@ class H6(HX):
     @staticmethod
     def evaluate(ps):
         ps.set_snp_crk(ps)
-        ps.set_acc_jrk(ps)
 
 
 @bind_all(timings)
@@ -242,7 +241,6 @@ class H8(HX):
     @staticmethod
     def evaluate(ps):
         ps.set_snp_crk(ps)
-        ps.set_acc_jrk(ps)
 
 
 @bind_all(timings)

@@ -6,22 +6,12 @@ void
 tstep_kernel_rectangle(
 	const uint_t ni,
 	const real_t __im[],
-	const real_t __irx[],
-	const real_t __iry[],
-	const real_t __irz[],
 	const real_t __ie2[],
-	const real_t __ivx[],
-	const real_t __ivy[],
-	const real_t __ivz[],
+	const real_t __irdot[],
 	const uint_t nj,
 	const real_t __jm[],
-	const real_t __jrx[],
-	const real_t __jry[],
-	const real_t __jrz[],
 	const real_t __je2[],
-	const real_t __jvx[],
-	const real_t __jvy[],
-	const real_t __jvz[],
+	const real_t __jrdot[],
 	const real_t eta,
 	real_t __idt_a[],
 	real_t __idt_b[],
@@ -31,31 +21,29 @@ tstep_kernel_rectangle(
 	vector<Tstep_Data> ipart{ni};
 	for (auto& ip : ipart) {
 		auto i = &ip - &ipart[0];
-		ip.w2_a = 0;
-		ip.w2_b = 0;
-		ip.rx = __irx[i];
-		ip.ry = __iry[i];
-		ip.rz = __irz[i];
-		ip.vx = __ivx[i];
-		ip.vy = __ivy[i];
-		ip.vz = __ivz[i];
-		ip.e2 = __ie2[i];
 		ip.m = __im[i];
+		ip.e2 = __ie2[i];
+		for (uint_t kdot = 0; kdot < 2; ++kdot) {
+			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
+				const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
+				ip.rdot[kdot][kdim] = ptr[i];
+			}
+			ip.w2[kdot] = 0;
+		}
 	}
 
 	vector<Tstep_Data> jpart{nj};
 	for (auto& jp : jpart) {
 		auto j = &jp - &jpart[0];
-		jp.w2_a = 0;
-		jp.w2_b = 0;
-		jp.rx = __jrx[j];
-		jp.ry = __jry[j];
-		jp.rz = __jrz[j];
-		jp.vx = __jvx[j];
-		jp.vy = __jvy[j];
-		jp.vz = __jvz[j];
-		jp.e2 = __je2[j];
 		jp.m = __jm[j];
+		jp.e2 = __je2[j];
+		for (uint_t kdot = 0; kdot < 2; ++kdot) {
+			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
+				const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
+				jp.rdot[kdot][kdim] = ptr[j];
+			}
+			jp.w2[kdot] = 0;
+		}
 	}
 
 	#pragma omp parallel
@@ -71,14 +59,14 @@ tstep_kernel_rectangle(
 
 	for (const auto& ip : ipart) {
 		auto i = &ip - &ipart[0];
-		__idt_a[i] = eta / sqrt(ip.w2_a);
-		__idt_b[i] = eta / sqrt(ip.w2_b);
+		__idt_a[i] = eta / sqrt(ip.w2[0]);
+		__idt_b[i] = eta / sqrt(ip.w2[1]);
 	}
 
 	for (const auto& jp : jpart) {
 		auto j = &jp - &jpart[0];
-		__jdt_a[j] = eta / sqrt(jp.w2_a);
-		__jdt_b[j] = eta / sqrt(jp.w2_b);
+		__jdt_a[j] = eta / sqrt(jp.w2[0]);
+		__jdt_b[j] = eta / sqrt(jp.w2[1]);
 	}
 }
 
@@ -87,13 +75,8 @@ void
 tstep_kernel_triangle(
 	const uint_t ni,
 	const real_t __im[],
-	const real_t __irx[],
-	const real_t __iry[],
-	const real_t __irz[],
 	const real_t __ie2[],
-	const real_t __ivx[],
-	const real_t __ivy[],
-	const real_t __ivz[],
+	const real_t __irdot[],
 	const real_t eta,
 	real_t __idt_a[],
 	real_t __idt_b[])
@@ -101,16 +84,15 @@ tstep_kernel_triangle(
 	vector<Tstep_Data> ipart{ni};
 	for (auto& ip : ipart) {
 		auto i = &ip - &ipart[0];
-		ip.w2_a = 0;
-		ip.w2_b = 0;
-		ip.rx = __irx[i];
-		ip.ry = __iry[i];
-		ip.rz = __irz[i];
-		ip.vx = __ivx[i];
-		ip.vy = __ivy[i];
-		ip.vz = __ivz[i];
-		ip.e2 = __ie2[i];
 		ip.m = __im[i];
+		ip.e2 = __ie2[i];
+		for (uint_t kdot = 0; kdot < 2; ++kdot) {
+			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
+				const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
+				ip.rdot[kdot][kdim] = ptr[i];
+			}
+			ip.w2[kdot] = 0;
+		}
 	}
 
 	#pragma omp parallel
@@ -125,8 +107,8 @@ tstep_kernel_triangle(
 
 	for (const auto& ip : ipart) {
 		auto i = &ip - &ipart[0];
-		__idt_a[i] = eta / sqrt(ip.w2_a);
-		__idt_b[i] = eta / sqrt(ip.w2_b);
+		__idt_a[i] = eta / sqrt(ip.w2[0]);
+		__idt_b[i] = eta / sqrt(ip.w2[1]);
 	}
 }
 
@@ -135,58 +117,44 @@ void
 tstep_kernel(
 	const uint_t ni,
 	const real_t __im[],
-	const real_t __irx[],
-	const real_t __iry[],
-	const real_t __irz[],
 	const real_t __ie2[],
-	const real_t __ivx[],
-	const real_t __ivy[],
-	const real_t __ivz[],
+	const real_t __irdot[],
 	const uint_t nj,
 	const real_t __jm[],
-	const real_t __jrx[],
-	const real_t __jry[],
-	const real_t __jrz[],
 	const real_t __je2[],
-	const real_t __jvx[],
-	const real_t __jvy[],
-	const real_t __jvz[],
+	const real_t __jrdot[],
 	const real_t eta,
 	real_t __idt_a[],
 	real_t __idt_b[])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		Tstep_Data ip = (Tstep_Data){
-			.w2_a = 0,
-			.w2_b = 0,
-			.rx = __irx[i],
-			.ry = __iry[i],
-			.rz = __irz[i],
-			.vx = __ivx[i],
-			.vy = __ivy[i],
-			.vz = __ivz[i],
-			.e2 = __ie2[i],
-			.m = __im[i],
-		};
+		Tstep_Data ip;
+		ip.m = __im[i];
+		ip.e2 = __ie2[i];
+		for (uint_t kdot = 0; kdot < 2; ++kdot) {
+			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
+				const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
+				ip.rdot[kdot][kdim] = ptr[i];
+			}
+			ip.w2[kdot] = 0;
+		}
 
 		for (uint_t j = 0; j < nj; ++j) {
-			Tstep_Data jp = (Tstep_Data){
-				.w2_a = 0,
-				.w2_b = 0,
-				.rx = __jrx[j],
-				.ry = __jry[j],
-				.rz = __jrz[j],
-				.vx = __jvx[j],
-				.vy = __jvy[j],
-				.vz = __jvz[j],
-				.e2 = __je2[j],
-				.m = __jm[j],
-			};
+			Tstep_Data jp;
+			jp.m = __jm[j];
+			jp.e2 = __je2[j];
+			for (uint_t kdot = 0; kdot < 2; ++kdot) {
+				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
+					const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
+					jp.rdot[kdot][kdim] = ptr[j];
+				}
+				jp.w2[kdot] = 0;
+			}
 			ip = tstep_kernel_core(ip, jp, eta);
 		}
 
-		__idt_a[i] = eta / sqrt(ip.w2_a);
-		__idt_b[i] = eta / sqrt(ip.w2_b);
+		__idt_a[i] = eta / sqrt(ip.w2[0]);
+		__idt_b[i] = eta / sqrt(ip.w2[1]);
 	}
 }
 

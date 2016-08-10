@@ -6,39 +6,41 @@ void
 phi_kernel_rectangle(
 	const uint_t ni,
 	const real_t __im[],
-	const real_t __irx[],
-	const real_t __iry[],
-	const real_t __irz[],
 	const real_t __ie2[],
+	const real_t __irdot[],
 	const uint_t nj,
 	const real_t __jm[],
-	const real_t __jrx[],
-	const real_t __jry[],
-	const real_t __jrz[],
 	const real_t __je2[],
+	const real_t __jrdot[],
 	real_t __iphi[],
 	real_t __jphi[])
 {
 	vector<Phi_Data> ipart{ni};
 	for (auto& ip : ipart) {
 		auto i = &ip - &ipart[0];
-		ip.phi = 0;
-		ip.rx = __irx[i];
-		ip.ry = __iry[i];
-		ip.rz = __irz[i];
-		ip.e2 = __ie2[i];
 		ip.m = __im[i];
+		ip.e2 = __ie2[i];
+		for (auto kdot = 0; kdot < 1; ++kdot) {
+			for (auto kdim = 0; kdim < NDIM; ++kdim) {
+				const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
+				ip.rdot[kdot][kdim] = ptr[i];
+			}
+		}
+		ip.phi = 0;
 	}
 
 	vector<Phi_Data> jpart{nj};
 	for (auto& jp : jpart) {
 		auto j = &jp - &jpart[0];
-		jp.phi = 0;
-		jp.rx = __jrx[j];
-		jp.ry = __jry[j];
-		jp.rz = __jrz[j];
-		jp.e2 = __je2[j];
 		jp.m = __jm[j];
+		jp.e2 = __je2[j];
+		for (auto kdot = 0; kdot < 1; ++kdot) {
+			for (auto kdim = 0; kdim < NDIM; ++kdim) {
+				const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
+				jp.rdot[kdot][kdim] = ptr[j];
+			}
+		}
+		jp.phi = 0;
 	}
 
 	#pragma omp parallel
@@ -68,21 +70,22 @@ void
 phi_kernel_triangle(
 	const uint_t ni,
 	const real_t __im[],
-	const real_t __irx[],
-	const real_t __iry[],
-	const real_t __irz[],
 	const real_t __ie2[],
+	const real_t __irdot[],
 	real_t __iphi[])
 {
 	vector<Phi_Data> ipart{ni};
 	for (auto& ip : ipart) {
 		auto i = &ip - &ipart[0];
-		ip.phi = 0;
-		ip.rx = __irx[i];
-		ip.ry = __iry[i];
-		ip.rz = __irz[i];
-		ip.e2 = __ie2[i];
 		ip.m = __im[i];
+		ip.e2 = __ie2[i];
+		for (auto kdot = 0; kdot < 1; ++kdot) {
+			for (auto kdim = 0; kdim < NDIM; ++kdim) {
+				const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
+				ip.rdot[kdot][kdim] = ptr[i];
+			}
+		}
+		ip.phi = 0;
 	}
 
 	#pragma omp parallel
@@ -106,37 +109,37 @@ void
 phi_kernel(
 	const uint_t ni,
 	const real_t __im[],
-	const real_t __irx[],
-	const real_t __iry[],
-	const real_t __irz[],
 	const real_t __ie2[],
+	const real_t __irdot[],
 	const uint_t nj,
 	const real_t __jm[],
-	const real_t __jrx[],
-	const real_t __jry[],
-	const real_t __jrz[],
 	const real_t __je2[],
+	const real_t __jrdot[],
 	real_t __iphi[])
 {
 	for (uint_t i = 0; i < ni; ++i) {
-		Phi_Data ip = (Phi_Data){
-			.phi = 0,
-			.rx = __irx[i],
-			.ry = __iry[i],
-			.rz = __irz[i],
-			.e2 = __ie2[i],
-			.m = __im[i],
-		};
+		Phi_Data ip;
+		ip.m = __im[i];
+		ip.e2 = __ie2[i];
+		for (auto kdot = 0; kdot < 1; ++kdot) {
+			for (auto kdim = 0; kdim < NDIM; ++kdim) {
+				const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
+				ip.rdot[kdot][kdim] = ptr[i];
+			}
+		}
+		ip.phi = 0;
 
 		for (uint_t j = 0; j < nj; ++j) {
-			Phi_Data jp = (Phi_Data){
-				.phi = 0,
-				.rx = __jrx[j],
-				.ry = __jry[j],
-				.rz = __jrz[j],
-				.e2 = __je2[j],
-				.m = __jm[j],
-			};
+			Phi_Data jp;
+			jp.m = __jm[j];
+			jp.e2 = __je2[j];
+			for (auto kdot = 0; kdot < 1; ++kdot) {
+				for (auto kdim = 0; kdim < NDIM; ++kdim) {
+					const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
+					jp.rdot[kdot][kdim] = ptr[j];
+				}
+			}
+			jp.phi = 0;
 			ip = phi_kernel_core(ip, jp);
 		}
 

@@ -32,6 +32,7 @@ COMPILER_FLAGS = [
     '-O3',
     '-std=c++14',
     '-march=native',
+    '-funroll-loops',
     '-fpermissive',
     '-fopenmp',
 ]

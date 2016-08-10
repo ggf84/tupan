@@ -52,38 +52,42 @@ class Context(object):
         self.reset_buf_counts()
 
     def to_ibuf(self, ary):
-        flags = cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR
+        flags = cl.mem_flags.READ_ONLY | cl.mem_flags.USE_HOST_PTR
+#        flags = cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR
         buf = cl.Buffer(self.cl_context, flags, hostbuf=ary)
         self.ibuf[self.ibuf_count] = buf
         self.ibuf_count += 1
         return buf
 
     def to_obuf(self, ary):
-        flags = cl.mem_flags.WRITE_ONLY | cl.mem_flags.COPY_HOST_PTR
+        flags = cl.mem_flags.WRITE_ONLY | cl.mem_flags.USE_HOST_PTR
+#        flags = cl.mem_flags.WRITE_ONLY | cl.mem_flags.COPY_HOST_PTR
         buf = cl.Buffer(self.cl_context, flags, hostbuf=ary)
         self.obuf[self.obuf_count] = buf
         self.obuf_count += 1
         return buf
 
     def get_ibuf(self, ary):
-        flags = cl.mem_flags.READ_ONLY
+        flags = cl.mem_flags.READ_WRITE
         align = self.alignment
         size = ((ary.nbytes + align - 1) // align) * align
         buf = self.ibuf[self.ibuf_count]
         if size > buf.size:
             buf = cl.Buffer(self.cl_context, flags, size=size)
-            self.ibuf[self.ibuf_count] = buf
+        self.default_queue.enqueue_write_buffer(buf, ary, is_blocking=True)
+        self.ibuf[self.ibuf_count] = buf
         self.ibuf_count += 1
         return buf
 
     def get_obuf(self, ary):
-        flags = cl.mem_flags.WRITE_ONLY
+        flags = cl.mem_flags.READ_WRITE
         align = self.alignment
         size = ((ary.nbytes + align - 1) // align) * align
         buf = self.obuf[self.obuf_count]
         if size > buf.size:
             buf = cl.Buffer(self.cl_context, flags, size=size)
-            self.obuf[self.obuf_count] = buf
+        self.default_queue.enqueue_write_buffer(buf, ary, is_blocking=True)
+        self.obuf[self.obuf_count] = buf
         self.obuf_count += 1
         return buf
 
@@ -112,8 +116,9 @@ class Queue(object):
                                         properties=properties)
 
     def wait_for_events(self):
-        cl.wait_for_events(self.events)
-        del self.events[:]
+        if self.events:
+            cl.wait_for_events(self.events)
+            del self.events[:]
 
     def enqueue_read_buffer(self, buf, ary,
                             device_offset=0,
@@ -218,8 +223,14 @@ class Program(object):
         simd = (self.cl_device.preferred_vector_width_float
                 if fpwidth == 'fp32'
                 else self.cl_device.preferred_vector_width_double)
-        wsize = 8 if self.cl_device.type == cl.device_type.CPU else 1024  # GPU
-        lsize = 8 if self.cl_device.type == cl.device_type.CPU else 256  # GPU
+        lsize = 1
+        wsize = 8
+        if self.cl_device.type == cl.device_type.CPU:
+            lsize *= 2
+            wsize *= 2
+        if self.cl_device.type == cl.device_type.GPU:
+            lsize *= 256
+            wsize *= 256
         fast_local_mem = True
 
         # setting program options
@@ -349,7 +360,7 @@ class CLKernel(object):
             self.inptypes = types
 
         if self.outtypes is None:
-            optr = drv.context.get_obuf
+            optr = drv.context.to_obuf
             self.outtypes = [optr for _ in outargs]
 
         # set inpargs
@@ -371,9 +382,11 @@ class CLKernel(object):
         self.bufs = bufs
 
     def map_buffers(self):
+        flags = cl.mem_flags.WRITE_ONLY | cl.mem_flags.COPY_HOST_PTR
         for (key, arg) in self.oarg.items():
             buf = self.obuf[key]
-            drv.context.default_queue.enqueue_read_buffer(buf, arg)
+            if buf.flags == flags:
+                drv.context.default_queue.enqueue_read_buffer(buf, arg)
         drv.context.default_queue.wait_for_events()
         return list(self.oarg.values())
 

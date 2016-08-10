@@ -7,8 +7,9 @@
 constexpr auto threshold = 256;
 
 
+template<typename I, typename J, typename F>
 static inline void
-p2p_interaction(auto i0, auto i1, auto j0, auto j1, auto fn)
+p2p_interaction(I i0, I i1, J j0, J j1, F fn)
 {
 	for (auto i = i0; i < i1; ++i) {
 		for (auto j = j0; j < j1; ++j) {
@@ -18,8 +19,9 @@ p2p_interaction(auto i0, auto i1, auto j0, auto j1, auto fn)
 }
 
 
+template<typename I, typename J, typename F>
 static inline void
-rectangle(auto i0, auto i1, auto j0, auto j1, auto fn)
+rectangle(I i0, I i1, J j0, J j1, F fn)
 {
 	const auto di = i1 - i0;
 	const auto dj = j1 - j0;
@@ -42,8 +44,9 @@ rectangle(auto i0, auto i1, auto j0, auto j1, auto fn)
 }
 
 
+template<typename I, typename F>
 static inline void
-triangle(auto i0, auto i1, auto fn)
+triangle(I i0, I i1, F fn)
 {
 	const auto di = i1 - i0;
 	if (di < 2) return;

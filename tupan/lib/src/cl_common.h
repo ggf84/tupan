@@ -29,4 +29,11 @@
 
 #include "type_defs.h"
 
+#define vload1(_offset_, _ptr_)				\
+		(_ptr_)[_offset_]
+#define vstore1(_data_, _offset_, _ptr_)	\
+		do {								\
+			(_ptr_)[_offset_] = _data_;		\
+		} while(0)
+
 #endif	// __CL_COMMON_H__

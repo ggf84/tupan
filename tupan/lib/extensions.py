@@ -69,12 +69,9 @@ class Phi(AbstractExtension):
         super(Phi, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2,
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2)
+        p = 1
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
 
         outargs = (ips.phi,)
 
@@ -91,12 +88,9 @@ class Phi_rectangle(AbstractExtension):
         super(Phi_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2,
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2)
+        p = 1
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
 
         outargs = (ips.phi, jps.phi)
 
@@ -113,9 +107,8 @@ class Phi_triangle(AbstractExtension):
         super(Phi_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2)
+        p = 1
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
 
         outargs = (ips.phi,)
 
@@ -132,14 +125,11 @@ class Acc(AbstractExtension):
         super(Acc, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2,
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2)
+        p = 1
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
 
-        outargs = (ips.rdot[2][0], ips.rdot[2][1], ips.rdot[2][2])
+        outargs = (ips.rdot[2:2+p],)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -154,15 +144,11 @@ class Acc_rectangle(AbstractExtension):
         super(Acc_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2,
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2)
+        p = 1
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
 
-        outargs = (ips.rdot[2][0], ips.rdot[2][1], ips.rdot[2][2],
-                   jps.rdot[2][0], jps.rdot[2][1], jps.rdot[2][2])
+        outargs = (ips.rdot[2:2+p], jps.rdot[2:2+p])
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -177,11 +163,10 @@ class Acc_triangle(AbstractExtension):
         super(Acc_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2)
+        p = 1
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
 
-        outargs = (ips.rdot[2][0], ips.rdot[2][1], ips.rdot[2][2])
+        outargs = (ips.rdot[2:2+p],)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -196,15 +181,11 @@ class AccJrk(AbstractExtension):
         super(AccJrk, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2])
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
 
-        outargs = (ips.rdot[2][0], ips.rdot[2][1], ips.rdot[2][2],
-                   ips.rdot[3][0], ips.rdot[3][1], ips.rdot[3][2])
+        outargs = (ips.rdot[2:2+p],)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -219,17 +200,11 @@ class AccJrk_rectangle(AbstractExtension):
         super(AccJrk_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2])
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
 
-        outargs = (ips.rdot[2][0], ips.rdot[2][1], ips.rdot[2][2],
-                   ips.rdot[3][0], ips.rdot[3][1], ips.rdot[3][2],
-                   jps.rdot[2][0], jps.rdot[2][1], jps.rdot[2][2],
-                   jps.rdot[3][0], jps.rdot[3][1], jps.rdot[3][2])
+        outargs = (ips.rdot[2:2+p], jps.rdot[2:2+p])
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -244,12 +219,10 @@ class AccJrk_triangle(AbstractExtension):
         super(AccJrk_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2])
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
 
-        outargs = (ips.rdot[2][0], ips.rdot[2][1], ips.rdot[2][2],
-                   ips.rdot[3][0], ips.rdot[3][1], ips.rdot[3][2])
+        outargs = (ips.rdot[2:2+p],)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -264,19 +237,12 @@ class SnpCrk(AbstractExtension):
         super(SnpCrk, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   ips.rdot[2][0], ips.rdot[2][1], ips.rdot[2][2],
-                   ips.rdot[3][0], ips.rdot[3][1], ips.rdot[3][2],
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
-                   jps.rdot[2][0], jps.rdot[2][1], jps.rdot[2][2],
-                   jps.rdot[3][0], jps.rdot[3][1], jps.rdot[3][2])
+        p = 4
+        jps = jps.copy()
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
 
-        outargs = (ips.rdot[4][0], ips.rdot[4][1], ips.rdot[4][2],
-                   ips.rdot[5][0], ips.rdot[5][1], ips.rdot[5][2])
+        outargs = (ips.rdot[2:2+p],)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -291,21 +257,11 @@ class SnpCrk_rectangle(AbstractExtension):
         super(SnpCrk_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   ips.rdot[2][0], ips.rdot[2][1], ips.rdot[2][2],
-                   ips.rdot[3][0], ips.rdot[3][1], ips.rdot[3][2],
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
-                   jps.rdot[2][0], jps.rdot[2][1], jps.rdot[2][2],
-                   jps.rdot[3][0], jps.rdot[3][1], jps.rdot[3][2])
+        p = 4
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
 
-        outargs = (ips.rdot[4][0], ips.rdot[4][1], ips.rdot[4][2],
-                   ips.rdot[5][0], ips.rdot[5][1], ips.rdot[5][2],
-                   jps.rdot[4][0], jps.rdot[4][1], jps.rdot[4][2],
-                   jps.rdot[5][0], jps.rdot[5][1], jps.rdot[5][2])
+        outargs = (ips.rdot[2:2+p], jps.rdot[2:2+p])
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -320,14 +276,10 @@ class SnpCrk_triangle(AbstractExtension):
         super(SnpCrk_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   ips.rdot[2][0], ips.rdot[2][1], ips.rdot[2][2],
-                   ips.rdot[3][0], ips.rdot[3][1], ips.rdot[3][2])
+        p = 4
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
 
-        outargs = (ips.rdot[4][0], ips.rdot[4][1], ips.rdot[4][2],
-                   ips.rdot[5][0], ips.rdot[5][1], ips.rdot[5][2])
+        outargs = (ips.rdot[2:2+p],)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -342,12 +294,9 @@ class Tstep(AbstractExtension):
         super(Tstep, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
                    kwargs['eta'])
 
         outargs = (ips.tstep, ips.tstepij)
@@ -365,15 +314,13 @@ class Tstep_rectangle(AbstractExtension):
         super(Tstep_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
                    kwargs['eta'])
 
-        outargs = (ips.tstep, ips.tstepij, jps.tstep, jps.tstepij)
+        outargs = (ips.tstep, ips.tstepij,
+                   jps.tstep, jps.tstepij)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -388,9 +335,8 @@ class Tstep_triangle(AbstractExtension):
         super(Tstep_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
                    kwargs['eta'])
 
         outargs = (ips.tstep, ips.tstepij)

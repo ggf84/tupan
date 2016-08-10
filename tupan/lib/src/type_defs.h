@@ -5,9 +5,9 @@
 #define concat(x,y) paster(x,y)
 #define vec(x) concat(x, SIMD)
 
-#define int_tn vec(int_t)
-#define uint_tn vec(uint_t)
-#define real_tn vec(real_t)
+typedef vec(int_t) int_tn;
+typedef vec(uint_t) uint_tn;
+typedef vec(real_t) real_tn;
 
 #define PI ((real_t)(3.14159265358979323846))
 #define PI2 ((real_t)(9.86960440108935861883))

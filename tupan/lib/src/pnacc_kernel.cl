@@ -4,14 +4,14 @@
 kernel void
 pnacc_kernel(
 	const uint_t ni,
-	global const real_tn __im[],
-	global const real_tn __irx[],
-	global const real_tn __iry[],
-	global const real_tn __irz[],
-	global const real_tn __ie2[],
-	global const real_tn __ivx[],
-	global const real_tn __ivy[],
-	global const real_tn __ivz[],
+	global const real_t __im[],
+	global const real_t __irx[],
+	global const real_t __iry[],
+	global const real_t __irz[],
+	global const real_t __ie2[],
+	global const real_t __ivx[],
+	global const real_t __ivy[],
+	global const real_t __ivz[],
 	const uint_t nj,
 	global const real_t __jm[],
 	global const real_t __jrx[],
@@ -23,29 +23,31 @@ pnacc_kernel(
 	global const real_t __jvz[],
 //	const CLIGHT clight,
 	constant const CLIGHT *  clight,
-	global real_tn __ipnax[],
-	global real_tn __ipnay[],
-	global real_tn __ipnaz[])
+	global real_t __ipnax[],
+	global real_t __ipnay[],
+	global real_t __ipnaz[])
 {
 	uint_t lid = get_local_id(0);
 	uint_t start = get_group_id(0) * get_local_size(0);
 	uint_t stride = get_num_groups(0) * get_local_size(0);
 	for (uint_t ii = start; ii * SIMD < ni; ii += stride) {
 		uint_t i = ii + lid;
-		i *= (i * SIMD < ni);
+		i *= SIMD;
+		i = (i+SIMD < ni) ? (i):(ni-SIMD);
+		i *= (SIMD < ni);
 
 		vec(PNAcc_Data) ip = (vec(PNAcc_Data)){
 			.pnax = (real_tn)(0),
 			.pnay = (real_tn)(0),
 			.pnaz = (real_tn)(0),
-			.rx = __irx[i],
-			.ry = __iry[i],
-			.rz = __irz[i],
-			.vx = __ivx[i],
-			.vy = __ivy[i],
-			.vz = __ivz[i],
-			.e2 = __ie2[i],
-			.m = __im[i],
+			.rx = vec(vload)(0, __irx + i),
+			.ry = vec(vload)(0, __iry + i),
+			.rz = vec(vload)(0, __irz + i),
+			.vx = vec(vload)(0, __ivx + i),
+			.vy = vec(vload)(0, __ivy + i),
+			.vz = vec(vload)(0, __ivz + i),
+			.e2 = vec(vload)(0, __ie2 + i),
+			.m = vec(vload)(0, __im + i),
 		};
 
 		uint_t j = 0;
@@ -87,9 +89,9 @@ pnacc_kernel(
 			ip = pnacc_kernel_core(ip, jp, *clight);
 		}
 
-		__ipnax[i] = ip.pnax;
-		__ipnay[i] = ip.pnay;
-		__ipnaz[i] = ip.pnaz;
+		vec(vstore)(ip.pnax, 0, __ipnax + i);
+		vec(vstore)(ip.pnay, 0, __ipnay + i);
+		vec(vstore)(ip.pnaz, 0, __ipnaz + i);
 	}
 }
 

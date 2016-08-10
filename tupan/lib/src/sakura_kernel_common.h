@@ -153,8 +153,9 @@ sakura_kernel_core(Sakura_Data1 ip, Sakura_Data jp,
 // ----------------------------------------------------------------------------
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
+template<typename I, typename J, typename PARAM, typename FLAG>
 static inline void
-p2p_sakura_kernel_core(auto &ip, auto &jp, const auto dt, const auto flag)
+p2p_sakura_kernel_core(I &ip, J &jp, const PARAM dt, const FLAG flag)
 // flop count: 41 + ??
 {
 	auto r0x = ip.rx - jp.rx;

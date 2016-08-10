@@ -6,56 +6,65 @@
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
+template<typename I, typename J>
 static inline void
-p2p_acc_jrk_kernel_core(auto &ip, auto &jp)
+p2p_acc_jrk_kernel_core(I &ip, J &jp)
 // flop count: 56
 {
-	auto rx = ip.rx - jp.rx;
-	auto ry = ip.ry - jp.ry;
-	auto rz = ip.rz - jp.rz;
-	auto vx = ip.vx - jp.vx;
-	auto vy = ip.vy - jp.vy;
-	auto vz = ip.vz - jp.vz;
+	decltype(ip.rdot) rdot;
+	for (auto kdot = 0; kdot < 2; ++kdot) {
+		for (auto kdim = 0; kdim < NDIM; ++kdim) {
+			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
+		}
+	}
 	auto e2 = ip.e2 + jp.e2;
-	auto r2 = rx * rx + ry * ry + rz * rz;
-	auto rv = rx * vx + ry * vy + rz * vz;
 
-	decltype(r2) inv_r2;
-	auto inv_r3 = smoothed_inv_r3_inv_r2(r2, e2, &inv_r2);	// flop count: 5
+	auto rr = rdot[0][0] * rdot[0][0]
+			+ rdot[0][1] * rdot[0][1]
+			+ rdot[0][2] * rdot[0][2];
+	auto rv = rdot[0][0] * rdot[1][0]
+			+ rdot[0][1] * rdot[1][1]
+			+ rdot[0][2] * rdot[1][2];
 
-	auto alpha = 3 * rv * inv_r2;
+	auto s1 = rv;
 
-	vx -= alpha * rx;
-	vy -= alpha * ry;
-	vz -= alpha * rz;
+	decltype(rr) inv_r2;
+	auto inv_r3 = smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 5
+
+	inv_r2 *= -3;
+
+	const auto q1 = inv_r2 * (s1);
+
+	for (auto kdim = 0; kdim < NDIM; ++kdim) {
+		rdot[1][kdim] += q1 * rdot[0][kdim];
+	}
 
 	{	// i-particle
-		auto m_r3 = jp.m * inv_r3;
-		ip.ax -= m_r3 * rx;
-		ip.ay -= m_r3 * ry;
-		ip.az -= m_r3 * rz;
-		ip.jx -= m_r3 * vx;
-		ip.jy -= m_r3 * vy;
-		ip.jz -= m_r3 * vz;
+		const auto m_r3 = jp.m * inv_r3;
+		for (auto kdot = 0; kdot < 2; ++kdot) {
+			for (auto kdim = 0; kdim < NDIM; ++kdim) {
+				ip.adot[kdot][kdim] -= m_r3 * rdot[kdot][kdim];
+			}
+		}
 	}
 	{	// j-particle
-		auto m_r3 = ip.m * inv_r3;
-		jp.ax += m_r3 * rx;
-		jp.ay += m_r3 * ry;
-		jp.az += m_r3 * rz;
-		jp.jx += m_r3 * vx;
-		jp.jy += m_r3 * vy;
-		jp.jz += m_r3 * vz;
+		const auto m_r3 = ip.m * inv_r3;
+		for (auto kdot = 0; kdot < 2; ++kdot) {
+			for (auto kdim = 0; kdim < NDIM; ++kdim) {
+				jp.adot[kdot][kdim] += m_r3 * rdot[kdot][kdim];
+			}
+		}
 	}
 }
 #endif
 
 // ----------------------------------------------------------------------------
 
-#define ACC_JRK_IMPLEMENT_STRUCT(N)							\
-	typedef struct concat(acc_jrk_data, N) {				\
-		concat(real_t, N) ax, ay, az, jx, jy, jz;			\
-		concat(real_t, N) rx, ry, rz, vx, vy, vz, e2, m;	\
+#define ACC_JRK_IMPLEMENT_STRUCT(N)				\
+	typedef struct concat(acc_jrk_data, N) {	\
+		concat(real_t, N) m, e2;				\
+		concat(real_t, N) rdot[2][NDIM];		\
+		concat(real_t, N) adot[2][NDIM];		\
 	} concat(Acc_Jrk_Data, N);
 
 ACC_JRK_IMPLEMENT_STRUCT(1)
@@ -69,33 +78,41 @@ static inline vec(Acc_Jrk_Data)
 acc_jrk_kernel_core(vec(Acc_Jrk_Data) ip, Acc_Jrk_Data jp)
 // flop count: 43
 {
-	vec(real_t) rx = ip.rx - jp.rx;
-	vec(real_t) ry = ip.ry - jp.ry;
-	vec(real_t) rz = ip.rz - jp.rz;
-	vec(real_t) vx = ip.vx - jp.vx;
-	vec(real_t) vy = ip.vy - jp.vy;
-	vec(real_t) vz = ip.vz - jp.vz;
+	vec(real_t) rdot[2][NDIM];
+	for (uint_t kdot = 0; kdot < 2; ++kdot) {
+		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
+			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
+		}
+	}
 	vec(real_t) e2 = ip.e2 + jp.e2;
-	vec(real_t) r2 = rx * rx + ry * ry + rz * rz;
-	vec(real_t) rv = rx * vx + ry * vy + rz * vz;
+
+	vec(real_t) rr = rdot[0][0] * rdot[0][0]
+			+ rdot[0][1] * rdot[0][1]
+			+ rdot[0][2] * rdot[0][2];
+	vec(real_t) rv = rdot[0][0] * rdot[1][0]
+			+ rdot[0][1] * rdot[1][1]
+			+ rdot[0][2] * rdot[1][2];
+
+	vec(real_t) s1 = rv;
 
 	vec(real_t) inv_r2;
-	vec(real_t) m_r3 = jp.m * smoothed_inv_r3_inv_r2(r2, e2, &inv_r2);	// flop count: 6
-	inv_r2 = select((vec(real_t))(0), inv_r2, (vec(int_t))(r2 > 0));
-	m_r3 = select((vec(real_t))(0), m_r3, (vec(int_t))(r2 > 0));
+	vec(real_t) m_r3 = jp.m * smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 6
+	inv_r2 = select((vec(real_t))(0), inv_r2, (vec(int_t))(rr > 0));
+	m_r3 = select((vec(real_t))(0), m_r3, (vec(int_t))(rr > 0));
 
-	vec(real_t) alpha = 3 * rv * inv_r2;
+	inv_r2 *= -3;
 
-	vx -= alpha * rx;
-	vy -= alpha * ry;
-	vz -= alpha * rz;
+	const vec(real_t) q1 = inv_r2 * (s1);
 
-	ip.ax -= m_r3 * rx;
-	ip.ay -= m_r3 * ry;
-	ip.az -= m_r3 * rz;
-	ip.jx -= m_r3 * vx;
-	ip.jy -= m_r3 * vy;
-	ip.jz -= m_r3 * vz;
+	for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
+		rdot[1][kdim] += q1 * rdot[0][kdim];
+	}
+
+	for (uint_t kdot = 0; kdot < 2; ++kdot) {
+		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
+			ip.adot[kdot][kdim] -= m_r3 * rdot[kdot][kdim];
+		}
+	}
 	return ip;
 }
 

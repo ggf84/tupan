@@ -7,8 +7,9 @@
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
+template<typename I, typename J, typename PARAM>
 static inline void
-p2p_pnacc_kernel_core(auto &ip, auto &jp, const auto clight)
+p2p_pnacc_kernel_core(I &ip, J &jp, const PARAM clight)
 // flop count: 48 + ???
 {
 	auto rx = ip.rx - jp.rx;

@@ -6,39 +6,51 @@
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
+template<typename I, typename J>
 static inline void
-p2p_acc_kernel_core(auto &ip, auto &jp)
+p2p_acc_kernel_core(I &ip, J &jp)
 // flop count: 28
 {
-	auto rx = ip.rx - jp.rx;
-	auto ry = ip.ry - jp.ry;
-	auto rz = ip.rz - jp.rz;
+	decltype(ip.rdot) rdot;
+	for (auto kdot = 0; kdot < 1; ++kdot) {
+		for (auto kdim = 0; kdim < NDIM; ++kdim) {
+			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
+		}
+	}
 	auto e2 = ip.e2 + jp.e2;
-	auto r2 = rx * rx + ry * ry + rz * rz;
 
-	auto inv_r3 = smoothed_inv_r3(r2, e2);	// flop count: 5
+	auto rr = rdot[0][0] * rdot[0][0]
+			+ rdot[0][1] * rdot[0][1]
+			+ rdot[0][2] * rdot[0][2];
+
+	auto inv_r3 = smoothed_inv_r3(rr, e2);	// flop count: 5
 
 	{	// i-particle
 		auto m_r3 = jp.m * inv_r3;
-		ip.ax -= m_r3 * rx;
-		ip.ay -= m_r3 * ry;
-		ip.az -= m_r3 * rz;
+		for (auto kdot = 0; kdot < 1; ++kdot) {
+			for (auto kdim = 0; kdim < NDIM; ++kdim) {
+				ip.adot[kdot][kdim] -= m_r3 * rdot[kdot][kdim];
+			}
+		}
 	}
 	{	// j-particle
 		auto m_r3 = ip.m * inv_r3;
-		jp.ax += m_r3 * rx;
-		jp.ay += m_r3 * ry;
-		jp.az += m_r3 * rz;
+		for (auto kdot = 0; kdot < 1; ++kdot) {
+			for (auto kdim = 0; kdim < NDIM; ++kdim) {
+				jp.adot[kdot][kdim] += m_r3 * rdot[kdot][kdim];
+			}
+		}
 	}
 }
 #endif
 
 // ----------------------------------------------------------------------------
 
-#define ACC_IMPLEMENT_STRUCT(N)					\
-	typedef struct concat(acc_data, N) {		\
-		concat(real_t, N) ax, ay, az;			\
-		concat(real_t, N) rx, ry, rz, e2, m;	\
+#define ACC_IMPLEMENT_STRUCT(N)				\
+	typedef struct concat(acc_data, N) {	\
+		concat(real_t, N) m, e2;			\
+		concat(real_t, N) rdot[1][NDIM];	\
+		concat(real_t, N) adot[1][NDIM];	\
 	} concat(Acc_Data, N);
 
 ACC_IMPLEMENT_STRUCT(1)
@@ -52,18 +64,26 @@ static inline vec(Acc_Data)
 acc_kernel_core(vec(Acc_Data) ip, Acc_Data jp)
 // flop count: 21
 {
-	vec(real_t) rx = ip.rx - jp.rx;
-	vec(real_t) ry = ip.ry - jp.ry;
-	vec(real_t) rz = ip.rz - jp.rz;
+	vec(real_t) rdot[1][NDIM];
+	for (uint_t kdot = 0; kdot < 1; ++kdot) {
+		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
+			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
+		}
+	}
 	vec(real_t) e2 = ip.e2 + jp.e2;
-	vec(real_t) r2 = rx * rx + ry * ry + rz * rz;
 
-	vec(real_t) m_r3 = jp.m * smoothed_inv_r3(r2, e2);	// flop count: 6
-	m_r3 = select((vec(real_t))(0), m_r3, (vec(int_t))(r2 > 0));
+	vec(real_t) rr = rdot[0][0] * rdot[0][0]
+			+ rdot[0][1] * rdot[0][1]
+			+ rdot[0][2] * rdot[0][2];
 
-	ip.ax -= m_r3 * rx;
-	ip.ay -= m_r3 * ry;
-	ip.az -= m_r3 * rz;
+	vec(real_t) m_r3 = jp.m * smoothed_inv_r3(rr, e2);	// flop count: 6
+	m_r3 = select((vec(real_t))(0), m_r3, (vec(int_t))(rr > 0));
+
+	for (uint_t kdot = 0; kdot < 1; ++kdot) {
+		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
+			ip.adot[kdot][kdim] -= m_r3 * rdot[kdot][kdim];
+		}
+	}
 	return ip;
 }
 

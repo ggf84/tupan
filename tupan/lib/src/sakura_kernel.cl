@@ -4,14 +4,14 @@
 kernel void
 sakura_kernel(
 	const uint_t ni,
-	global real_t1 const __im[],
-	global real_t1 const __irx[],
-	global real_t1 const __iry[],
-	global real_t1 const __irz[],
-	global real_t1 const __ie2[],
-	global real_t1 const __ivx[],
-	global real_t1 const __ivy[],
-	global real_t1 const __ivz[],
+	global const real_t __im[],
+	global const real_t __irx[],
+	global const real_t __iry[],
+	global const real_t __irz[],
+	global const real_t __ie2[],
+	global const real_t __ivx[],
+	global const real_t __ivy[],
+	global const real_t __ivz[],
 	const uint_t nj,
 	global const real_t __jm[],
 	global const real_t __jrx[],
@@ -23,27 +23,29 @@ sakura_kernel(
 	global const real_t __jvz[],
 	const real_t dt,
 	const int_t flag,
-	global real_t1 __idrx[],
-	global real_t1 __idry[],
-	global real_t1 __idrz[],
-	global real_t1 __idvx[],
-	global real_t1 __idvy[],
-	global real_t1 __idvz[])
+	global real_t __idrx[],
+	global real_t __idry[],
+	global real_t __idrz[],
+	global real_t __idvx[],
+	global real_t __idvy[],
+	global real_t __idvz[])
 {
 	uint_t lid = get_local_id(0);
 	uint_t start = get_group_id(0) * get_local_size(0);
 	uint_t stride = get_num_groups(0) * get_local_size(0);
 	for (uint_t ii = start; ii * 1 < ni; ii += stride) {
 		uint_t i = ii + lid;
-		i *= (i * 1 < ni);
+		i *= 1;
+		i = (i+1 < ni) ? (i):(ni-1);
+		i *= (1 < ni);
 
 		Sakura_Data1 ip = (Sakura_Data1){
-			.drx = (real_t1)(0),
-			.dry = (real_t1)(0),
-			.drz = (real_t1)(0),
-			.dvx = (real_t1)(0),
-			.dvy = (real_t1)(0),
-			.dvz = (real_t1)(0),
+			.drx = (real_t)(0),
+			.dry = (real_t)(0),
+			.drz = (real_t)(0),
+			.dvx = (real_t)(0),
+			.dvy = (real_t)(0),
+			.dvz = (real_t)(0),
 			.rx = __irx[i],
 			.ry = __iry[i],
 			.rz = __irz[i],
