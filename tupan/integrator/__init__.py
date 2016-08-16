@@ -45,7 +45,7 @@ class Integrator(object):
 
     @property
     def time(self):
-        return self.integrator.ps.t_curr
+        return self.integrator.ps.time[0]
 
 
 # -- End of File --

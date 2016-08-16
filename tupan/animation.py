@@ -32,6 +32,7 @@ uniform float u_psize;
 attribute vec3  a_position;
 attribute vec4  a_color;
 attribute float a_psize;
+attribute int a_pid;
 
 // Varyings
 // ------------------------------------
@@ -133,7 +134,8 @@ class GLviewer(app.Canvas):
         self.size = size
         self.aspect = aspect
 
-        self.ps = None
+        self.mmin = {}
+        self.mmax = {}
         self.data = {}
         self.vdata = {}
         self.program = {}
@@ -288,37 +290,49 @@ class GLviewer(app.Canvas):
         if self.make_movie:
             self.record_screen()
 
-    def init_vertex_buffers(self):
-        for name, member in self.ps.members.items():
+    def init_vertex_buffers(self, ps):
+        for name, member in ps.members.items():
             n = member.n
+            pid = member.pid
+            mass = member.mass
+
+            self.mmin[name] = mass.min()
+            self.mmax[name] = mass.max()
+
             self.data[name] = np.zeros(n, [('a_position', np.float32, 3),
                                            ('a_color',    np.float32, 4),
-                                           ('a_psize', np.float32, 1)])
+                                           ('a_psize', np.float32, 1),
+                                           ('a_pid', np.int32, 1)])
+
+            self.data[name]['a_pid'][...] = pid
+
             self.vdata[name] = gloo.VertexBuffer(self.data[name])
             self.program[name].bind(self.vdata[name])
 
     def show_event(self, ps):
-        if self.ps is None:
-            self.ps = ps.copy()
-            self.init_vertex_buffers()
-        else:
-            self.ps[np.in1d(self.ps.pid, ps.pid)] = ps
-        for name, member in self.ps.members.items():
-            pos, c, s = member.rdot[0], member.mass, member.mass
+        def f(arg): return np.log(1 + arg)
 
-            def f(arg): return np.log(arg)
-#            def f(arg): return arg**(1/3.0)
+        if not self.data:
+            self.init_vertex_buffers(ps)
 
-            c = f(1 + c / c.min())
-            c = c / c.max()
+        for name, member in ps.members.items():
+            pid = member.pid
+            pos = member.rdot[0]
+            mask = np.in1d(self.data[name]['a_pid'], pid, assume_unique=True)
 
-            s = f(1 + s / s.min())
-            s = s / s.max()
+            self.data[name]['a_pid'][mask] = pid
+            self.data[name]['a_position'][mask] = pos.T
 
-            self.data[name]['a_position'][...] = pos.T
-            self.data[name]['a_color'][...] = cm.cubehelix(c)
-            self.data[name]['a_psize'][...] = s
+            mmin, mmax = self.mmin[name], self.mmax[name]
+
+            c = f(member.mass / mmin) / f(mmax / mmin)
+            self.data[name]['a_color'][mask] = cm.cubehelix(c)
+
+            s = f(member.mass / mmin) / f(mmax / mmin)
+            self.data[name]['a_psize'][mask] = s
+
             self.vdata[name].set_data(self.data[name])
+
         self.app.process_events()
         self.update()
 

@@ -38,6 +38,7 @@ class HX(with_metaclass(ABCMeta, object)):
 
     def __init__(self, manager):
         self.initialized = False
+        self.eta = manager.eta
         self.update_tstep = manager.update_tstep
 
     def timestep_criterion(self, ps, eta):
@@ -48,20 +49,20 @@ class HX(with_metaclass(ABCMeta, object)):
         a2 = (ps.rdot[2:p+2]**2).sum(1)
         ps.tstep[...] = eta * (A(a2, 1) / A(a2, p-2))**(0.5/(p-3))
 
-    def set_nextstep(self, ps, eta, dt_max):
+    def set_nextstep(self, ps, dt):
         if not self.initialized:
             self.initialized = True
             ps.set_acc_jrk(ps)
             if self.order > 4:
                 ps.set_snp_crk(ps)
             if self.update_tstep:
-                ps.set_tstep(ps, eta)
-                return power_of_two(ps, dt_max)
+                ps.set_tstep(ps, self.eta)
+                return power_of_two(ps, dt)
         else:
             if self.update_tstep:
-                self.timestep_criterion(ps, eta)
-                return power_of_two(ps, dt_max)
-        return dt_max
+                self.timestep_criterion(ps, self.eta)
+                return power_of_two(ps, dt)
+        return dt
 
     def predict(self, ps, dt):
         """
@@ -138,15 +139,14 @@ class HX(with_metaclass(ABCMeta, object)):
             ps1.rdot[i+2] += drdot
         return ps1
 
-    def pec(self, n, ps0, eta, dt):
-        dt = self.set_nextstep(ps0, eta, dt)
+    def pec(self, n, ps0, dt):
+        dt = self.set_nextstep(ps0, dt)
         ps1 = self.predict(ps0.copy(), dt)
         while n > 0:
             self.evaluate(ps1)
             ps1 = self.correct(ps1, ps0, dt)
             n -= 1
         ps1 = self.interpolate(ps1, ps0, dt)
-        type(ps1).t_curr += dt
         ps1.time += dt
         ps1.nstep += 1
         return ps1
@@ -278,11 +278,11 @@ class Hermite(Base):
         elif 'hermite8' in method:
             self.hermite = H8(self)
 
-    def do_step(self, ps, dt_max):
+    def do_step(self, ps, dt):
         """
 
         """
-        return self.hermite.pec(1, ps, self.eta, dt_max)
+        return self.hermite.pec(1, ps, dt)
 
 
 # -- End of File --

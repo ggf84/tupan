@@ -112,7 +112,6 @@ class NREG(Base):
         else:
             ps, dt = nreg_step(ps, h)
 
-        type(ps).t_curr += dt
         ps.time += dt
         ps.nstep += 1
         return ps

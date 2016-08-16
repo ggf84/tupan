@@ -299,7 +299,7 @@ class Tstep(AbstractExtension):
                    jps.n, jps.mass, jps.eps2, jps.rdot[:p],
                    kwargs['eta'])
 
-        outargs = (ips.tstep, ips.tstepij)
+        outargs = (ips.tstep, ips.tstep_sum)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -319,8 +319,8 @@ class Tstep_rectangle(AbstractExtension):
                    jps.n, jps.mass, jps.eps2, jps.rdot[:p],
                    kwargs['eta'])
 
-        outargs = (ips.tstep, ips.tstepij,
-                   jps.tstep, jps.tstepij)
+        outargs = (ips.tstep, ips.tstep_sum,
+                   jps.tstep, jps.tstep_sum)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -339,7 +339,7 @@ class Tstep_triangle(AbstractExtension):
         inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
                    kwargs['eta'])
 
-        outargs = (ips.tstep, ips.tstepij)
+        outargs = (ips.tstep, ips.tstep_sum)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -358,22 +358,13 @@ class PNAcc(AbstractExtension):
         if self.clight is None:
             self.clight = self.kernel.make_struct('CLIGHT', **vars(pn))
 
-        if kwargs['use_auxvel']:
-            inpargs = (ips.n,
-                       ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                       ips.eps2, ips.pnvel[0], ips.pnvel[1], ips.pnvel[2],
-                       jps.n,
-                       jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                       jps.eps2, jps.pnvel[0], jps.pnvel[1], jps.pnvel[2],
-                       self.clight)
-        else:
-            inpargs = (ips.n,
-                       ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                       ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                       jps.n,
-                       jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                       jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
-                       self.clight)
+        inpargs = (ips.n,
+                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
+                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
+                   jps.n,
+                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
+                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
+                   self.clight)
 
         outargs = (ips.pnacc[0], ips.pnacc[1], ips.pnacc[2])
 
@@ -394,22 +385,13 @@ class PNAcc_rectangle(AbstractExtension):
         if self.clight is None:
             self.clight = self.kernel.make_struct('CLIGHT', **vars(pn))
 
-        if kwargs['use_auxvel']:
-            inpargs = (ips.n,
-                       ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                       ips.eps2, ips.pnvel[0], ips.pnvel[1], ips.pnvel[2],
-                       jps.n,
-                       jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                       jps.eps2, jps.pnvel[0], jps.pnvel[1], jps.pnvel[2],
-                       self.clight)
-        else:
-            inpargs = (ips.n,
-                       ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                       ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                       jps.n,
-                       jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                       jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
-                       self.clight)
+        inpargs = (ips.n,
+                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
+                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
+                   jps.n,
+                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
+                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
+                   self.clight)
 
         outargs = (ips.pnacc[0], ips.pnacc[1], ips.pnacc[2],
                    jps.pnacc[0], jps.pnacc[1], jps.pnacc[2])
@@ -431,16 +413,10 @@ class PNAcc_triangle(AbstractExtension):
         if self.clight is None:
             self.clight = self.kernel.make_struct('CLIGHT', **vars(pn))
 
-        if kwargs['use_auxvel']:
-            inpargs = (ips.n,
-                       ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                       ips.eps2, ips.pnvel[0], ips.pnvel[1], ips.pnvel[2],
-                       self.clight)
-        else:
-            inpargs = (ips.n,
-                       ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                       ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                       self.clight)
+        inpargs = (ips.n,
+                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
+                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
+                   self.clight)
 
         outargs = (ips.pnacc[0], ips.pnacc[1], ips.pnacc[2])
 

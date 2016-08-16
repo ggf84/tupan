@@ -17,16 +17,14 @@ def power_of_two(ps, dt_max):
     """
 
     """
-    tcurr = ps.t_curr
     dt = abs(ps.tstep).min()
 
-    power = int(np.log2(abs(dt)) - 1)
+    power = int(np.log2(dt) - 1)
     dtq = 2.0**power
     dtq = min(dtq, abs(dt_max))
     dtq = np.copysign(dtq, dt_max)
 
-    tnext = tcurr + dtq
-    while tnext % dtq != 0:
+    while ps.time[0] % dtq != 0:
         dtq /= 2
 
     return dtq
@@ -53,7 +51,7 @@ class Base(object):
         self.ps = ps
         self.eta = eta
         self.dt_max = math.copysign(dt_max, eta)
-        type(ps).t_curr = t_begin
+        ps.time[...] = t_begin
         type(ps).t_next = t_begin
         self.method = method
 
@@ -100,14 +98,14 @@ class Base(object):
 
         """
         eta = self.eta
-        dt_max = self.dt_max
+        dt = self.dt_max
         if not self.update_tstep:
-            dt_max = min(abs(dt_max), abs(eta))
-            dt_max = math.copysign(dt_max, eta)
+            dt = min(abs(dt), abs(eta))
+            dt = math.copysign(dt, eta)
 
         type(self.ps).t_next += self.dt_max
-        while self.ps.t_next > self.ps.t_curr:
-            self.ps = self.do_step(self.ps, dt_max)
+        while self.ps.t_next > self.ps.time[0]:
+            self.ps = self.do_step(self.ps, dt)
 
         if self.reporter:
             self.reporter.diagnostic_report(self.ps)

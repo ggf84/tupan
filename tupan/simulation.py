@@ -64,11 +64,11 @@ class Diagnostic(object):
               file=sys.stdout)
 
     def diagnostic_report(self, ps):
-        t_curr = ps.t_curr
-        dtime = t_curr - self.time
-        self.print_diagnostic(t_curr, dtime, ps)
+        time = ps.time[0]
+        self.print_diagnostic(time, ps)
 
-    def print_diagnostic(self, time, dtime, ps):
+    def print_diagnostic(self, time, ps):
+        dtime = time - self.time
         self.time = time
 
         ke = ps.kinetic_energy
@@ -193,7 +193,7 @@ def main_restart(args):
     mysim.integrator.integrator.eta = args.eta
 
     # reset t_end
-    type(ps).t_curr = mysim.args.t_end
+    ps.time[...] = mysim.args.t_end
     mysim.args.t_end = args.t_end
 
     # reset timer

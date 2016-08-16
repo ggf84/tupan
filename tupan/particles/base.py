@@ -177,7 +177,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
     extra_attr_descr = [
         ('phi', '{nb}', 'real_t', 'gravitational potential'),
         ('tstep', '{nb}', 'real_t', 'time step'),
-        ('tstepij', '{nb}', 'real_t', 'auxiliary time step'),
+        ('tstep_sum', '{nb}', 'real_t', 'auxiliary time step'),
     ]
 
     pn_default_attr_descr = []
@@ -429,7 +429,22 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         other particles.
 
         """
-        kernel(self, other, use_auxvel=use_auxvel)
+        def swap_vel(ips, jps):
+            if ips != jps:
+                v, w = jps.rdot[1], jps.pnvel
+                vv, ww = v.copy(), w.copy()
+                v[...], w[...] = ww, vv
+            v, w = ips.rdot[1], ips.pnvel
+            vv, ww = v.copy(), w.copy()
+            v[...], w[...] = ww, vv
+
+        if use_auxvel:
+            swap_vel(self, other)
+
+        kernel(self, other)
+
+        if use_auxvel:
+            swap_vel(self, other)
 
     def set_acc_jrk(self, other,
                     kernel=ext.get_kernel('AccJrk')):

@@ -64,10 +64,10 @@ class Sakura(Base):
         """
         ps.set_tstep(ps, eta)
 
-        iw_a = 1 / ps.tstep
-        iw_b = 1 / ps.tstepij
+        iw_a = 1 / ps.tstep_sum
+        iw_b = 1 / ps.tstep
 
-        diw = (iw_a - iw_b)
+        diw = (iw_a**0.5 - iw_b**0.5)**2
 
         w_sakura = abs(diw).max()
         w_sakura = np.copysign(w_sakura, eta)
@@ -105,7 +105,6 @@ class Sakura(Base):
             dt = self.get_sakura_tstep(ps, self.eta, dt)
         ps = sakura_step(ps, dt)
 
-        type(ps).t_curr += dt
         ps.time += dt
         ps.nstep += 1
         return ps

@@ -5,14 +5,10 @@
 TODO.
 """
 
-import logging
 import numpy as np
-from .base import Base, power_of_two
+from .base import Base
 from ..lib import extensions as ext
 from ..lib.utils.timing import timings, bind_all
-
-
-LOGGER = logging.getLogger(__name__)
 
 
 #
@@ -20,23 +16,14 @@ LOGGER = logging.getLogger(__name__)
 #
 @timings
 def split(ps, mask):
-    """Splits the particle's system into slow/fast components.
+    """Splits the particle's system into slow<->fast components.
 
     """
-    if ps.n <= 2:       # stop recursion and use a few-body solver!
-        return ps, type(ps)()
-
     if all(mask):
         return ps, type(ps)()
-
-    slow, fast = ps.split_by(mask)
-
-    if slow.n + fast.n != ps.n:
-        LOGGER.error(
-            'slow.n + fast.n != ps.n: %d, %d, %d.',
-            slow.n, fast.n, ps.n)
-
-    return slow, fast
+    if not any(mask):
+        return type(ps)(), ps
+    return ps.split_by(mask)
 
 
 #
@@ -44,24 +31,23 @@ def split(ps, mask):
 #
 @timings
 def join(slow, fast):
-    """Joins the slow/fast components of a particle's system.
+    """Joins the slow<->fast components of a particle's system.
 
     """
     if not fast.n:
         return slow
     if not slow.n:
         return fast
-    ps = slow
-    ps.append(fast)
-    return ps
+    slow.append(fast)
+    return slow
 
 
 #
-# drift_n
+# n_drift
 #
 @timings
-def drift_n(ips, dt):
-    """Drift operator for Newtonian quantities.
+def n_drift(ips, dt):
+    """Newtonian drift operator.
 
     """
     ips.time += dt
@@ -70,73 +56,16 @@ def drift_n(ips, dt):
 
 
 #
-# kick_n
+# pn_drift
 #
 @timings
-def kick_n(ips, dt):
-    """Kick operator for Newtonian quantities.
-
-    """
-    ips.rdot[1] += ips.rdot[2] * dt
-    return ips
-
-
-#
-# drift_pn
-#
-@timings
-def drift_pn(ips, dt):
-    """Drift operator for post-Newtonian quantities.
+def pn_drift(ips, dt):
+    """Post-Newtonian drift operator.
 
     """
     ips.time += dt
     ips.rdot[0] += ips.rdot[1] * dt
     ips.pn_mr += ips.pn_mv * dt
-    return ips
-
-
-#
-# kick_pn
-#
-@timings
-def kick_pn(ips, dt):
-    """Kick operator for post-Newtonian quantities.
-
-    """
-    #
-    ips.pnvel[...] = ips.rdot[1]
-
-    ips.set_pnacc(ips, use_auxvel=True)
-    pnforce = ips.mass * ips.pnacc
-    ips.rdot[1] += (ips.rdot[2] + ips.pnacc) * (dt / 2)
-    ips.pn_ke -= (ips.pnvel * pnforce).sum(0) * (dt / 2)
-    ips.pn_mv -= pnforce * (dt / 2)
-    ips.pn_am -= np.cross(ips.rdot[0].T, pnforce.T).T * (dt / 2)
-
-    ips.set_pnacc(ips)
-    ips.pnvel += (ips.rdot[2] + ips.pnacc) * dt
-
-    ips.set_pnacc(ips, use_auxvel=True)
-    pnforce = ips.mass * ips.pnacc
-    ips.rdot[1] += (ips.rdot[2] + ips.pnacc) * (dt / 2)
-    ips.pn_ke -= (ips.pnvel * pnforce).sum(0) * (dt / 2)
-    ips.pn_mv -= pnforce * (dt / 2)
-    ips.pn_am -= np.cross(ips.rdot[0].T, pnforce.T).T * (dt / 2)
-    #
-
-    #
-    # ips.rdot[1] += (ips.rdot[2] * dt + ips.pnvel) / 2
-    #
-    # ips.set_pnacc(ips)
-    # pnforce = ips.mass * ips.pnacc
-    # ips.pn_ke -= (ips.rdot[1] * pnforce).sum(0) * dt
-    # ips.pn_mv -= pnforce * dt
-    # ips.pn_am -= np.cross(ips.rdot[0].T, pnforce.T).T * dt
-    # ips.pnvel[...] = 2 * ips.pnacc * dt - ips.pnvel
-    #
-    # ips.rdot[1] += (ips.rdot[2] * dt + ips.pnvel) / 2
-    #
-
     return ips
 
 
@@ -149,8 +78,45 @@ def drift(ips, dt):
 
     """
     if ips.include_pn_corrections:
-        return drift_pn(ips, dt)
-    return drift_n(ips, dt)
+        return pn_drift(ips, dt)
+    return n_drift(ips, dt)
+
+
+#
+# n_kick
+#
+@timings
+def n_kick(ips, dt):
+    """Newtonian kick operator.
+
+    """
+    ips.rdot[1] += ips.rdot[2] * dt
+    return ips
+
+
+#
+# pn_kick
+#
+@timings
+def pn_kick(ips, dt):
+    """Post-Newtonian kick operator.
+
+    """
+    #
+    ips.set_pnacc(ips)
+    ips.pnvel += (ips.rdot[2] + ips.pnacc) * (dt / 2)
+
+    ips.set_pnacc(ips, use_auxvel=True)
+    pnforce = ips.mass * ips.pnacc
+    ips.pn_mv -= pnforce * dt
+    ips.pn_am -= np.cross(ips.rdot[0].T, pnforce.T).T * dt
+    ips.pn_ke -= (ips.pnvel * pnforce).sum(0) * dt
+    ips.rdot[1] += (ips.rdot[2] + ips.pnacc) * dt
+
+    ips.set_pnacc(ips)
+    ips.pnvel += (ips.rdot[2] + ips.pnacc) * (dt / 2)
+    #
+    return ips
 
 
 #
@@ -163,8 +129,8 @@ def kick(ips, dt):
     """
     ips.set_acc(ips)
     if ips.include_pn_corrections:
-        return kick_pn(ips, dt)
-    return kick_n(ips, dt)
+        return pn_kick(ips, dt)
+    return n_kick(ips, dt)
 
 
 #
@@ -190,112 +156,44 @@ def twobody_solver(ips, dt, kernel=ext.Kepler()):
 
 
 #
-# fewbody_solver
+# sf_n_kick
 #
 @timings
-def fewbody_solver(ips, dt):
-    """
+def sf_n_kick(slow, fast, dt):
+    """Newtonian slow<->fast kick operator.
 
     """
-    if ips.n == 1:
-        return drift(ips, dt)
-    return twobody_solver(ips, dt)
-
-
-#
-# sf_drift
-#
-@timings
-def sf_drift(slow, fast, dt, evolve, recurse):
-    """Slow<->Fast Drift operator.
-
-    """
-    fast = recurse(fast, 0.5 * dt) if fast.n else fast
-    slow = evolve(slow, dt) if slow.n else slow
-    fast = recurse(fast, 0.5 * dt) if fast.n else fast
+    for ps in [slow, fast]:
+        ps.rdot[1] += ps.rdot[2] * dt
     return slow, fast
 
 
 #
-# sf_kick_n
+# sf_pn_kick
 #
 @timings
-def sf_kick_n(slow, fast, dt):
-    """Slow<->Fast Kick operator for Newtonian quantities.
-
-    """
-    slow = kick_n(slow, dt)
-    fast = kick_n(fast, dt)
-    return slow, fast
-
-
-#
-# sf_kick_pn
-#
-@timings
-def sf_kick_pn(slow, fast, dt):
-    """Slow<->Fast Kick operator for post-Newtonian quantities.
+def sf_pn_kick(slow, fast, dt):
+    """Post-Newtonian slow<->fast kick operator.
 
     """
     #
+    slow.set_pnacc(fast)
     for ps in [slow, fast]:
-        ps.pnvel[...] = ps.rdot[1]
+        ps.pnvel += (ps.rdot[2] + ps.pnacc) * (dt / 2)
 
     slow.set_pnacc(fast, use_auxvel=True)
     for ps in [slow, fast]:
         pnforce = ps.mass * ps.pnacc
-        ps.rdot[1] += (ps.rdot[2] + ps.pnacc) * (dt / 2)
-        ps.pn_ke -= (ps.pnvel * pnforce).sum(0) * (dt / 2)
-        ps.pn_mv -= pnforce * (dt / 2)
-        ps.pn_am -= np.cross(ps.rdot[0].T, pnforce.T).T * (dt / 2)
+        ps.pn_mv -= pnforce * dt
+        ps.pn_am -= np.cross(ps.rdot[0].T, pnforce.T).T * dt
+        ps.pn_ke -= (ps.pnvel * pnforce).sum(0) * dt
+        ps.rdot[1] += (ps.rdot[2] + ps.pnacc) * dt
 
     slow.set_pnacc(fast)
     for ps in [slow, fast]:
-        ps.pnvel += (ps.rdot[2] + ps.pnacc) * dt
-
-    slow.set_pnacc(fast, use_auxvel=True)
-    for ps in [slow, fast]:
-        pnforce = ps.mass * ps.pnacc
-        ps.rdot[1] += (ps.rdot[2] + ps.pnacc) * (dt / 2)
-        ps.pn_ke -= (ps.pnvel * pnforce).sum(0) * (dt / 2)
-        ps.pn_mv -= pnforce * (dt / 2)
-        ps.pn_am -= np.cross(ps.rdot[0].T, pnforce.T).T * (dt / 2)
+        ps.pnvel += (ps.rdot[2] + ps.pnacc) * (dt / 2)
     #
-
-    #
-    # for ps in [slow, fast]:
-    #    ps.rdot[1] += (ps.rdot[2] * dt + ps.pnvel) / 2
-    #
-    # slow.set_pnacc(fast)
-    # for ps in [slow, fast]:
-    #     pnforce = ps.mass * ps.pnacc
-    #     ps.pn_ke -= (ps.rdot[1] * pnforce).sum(0) * dt
-    #     ps.pn_mv -= pnforce * dt
-    #     ps.pn_am -= np.cross(ps.rdot[0].T, pnforce.T).T * dt
-    #     ps.pnvel[...] = 2 * ps.pnacc * dt - ps.pnvel
-    #
-    # for ps in [slow, fast]:
-    #     ps.rdot[1] += (ps.rdot[2] * dt + ps.pnvel) / 2
-    #
-
     return slow, fast
-
-
-#
-# sf_kick
-#
-@timings
-def sf_kick(slow, fast, dt):
-    """Slow<->Fast Kick operator.
-
-    """
-    if not (slow.n and fast.n):
-        return slow, fast
-
-    slow.set_acc(fast)
-    if slow.include_pn_corrections:
-        return sf_kick_pn(slow, fast, dt)
-    return sf_kick_n(slow, fast, dt)
 
 
 class SIAXX(object):
@@ -305,128 +203,145 @@ class SIAXX(object):
     coefs = [(None, None)]
 
     def __init__(self, manager, meth):
-        self.manager = manager
+        self.dump = manager.dump
+        self.recurse = manager.recurse
+        self.shared_tstep = manager.shared_tstep
+        self.evolve = getattr(self, meth)
         type(self).__call__ = getattr(self, 'sf_' + meth)
 
     def dkd(self, ips, dt):
-        """Standard DKD-type propagator.
+        """Arbitrary order DKD-type operator.
 
         """
-        if ips.n <= 2:
-            return fewbody_solver(ips, dt)
+        if ips.n:
+            if ips.n == 1:
+                ips = drift(ips, dt)
+#            elif ips.n == 2:
+#                ips = twobody_solver(ips, dt)
+            else:
+                coefs = self.coefs
+                ck0, cd0 = coefs[-1]
 
-        coefs = self.coefs
-        ck0, cd0 = coefs[-1]
+                for ck, cd in coefs[:-1]:
+                    ips = drift(ips, cd * dt) if cd else ips
+                    ips = kick(ips, ck * dt) if ck else ips
 
-        for ck, cd in coefs[:-1]:
-            ips = drift(ips, cd * dt) if cd else ips
-            ips = kick(ips, ck * dt) if ck else ips
+                ips = drift(ips, cd0 * dt)
+                ips = kick(ips, ck0 * dt)
+                ips = drift(ips, cd0 * dt)
 
-        ips = drift(ips, cd0 * dt)
-        ips = kick(ips, ck0 * dt)
-        ips = drift(ips, cd0 * dt)
+                for ck, cd in reversed(coefs[:-1]):
+                    ips = kick(ips, ck * dt) if ck else ips
+                    ips = drift(ips, cd * dt) if cd else ips
 
-        for ck, cd in reversed(coefs[:-1]):
-            ips = kick(ips, ck * dt) if ck else ips
-            ips = drift(ips, cd * dt) if cd else ips
+            ips.nstep += 1
+            if not self.shared_tstep:
+                self.dump(ips, dt)
 
         return ips
 
     def kdk(self, ips, dt):
-        """Standard KDK-type propagator.
+        """Arbitrary order KDK-type operator.
 
         """
-        if ips.n <= 2:
-            return fewbody_solver(ips, dt)
+        if ips.n:
+            if ips.n == 1:
+                ips = drift(ips, dt)
+#            elif ips.n == 2:
+#                ips = twobody_solver(ips, dt)
+            else:
+                coefs = self.coefs
+                cd0, ck0 = coefs[-1]
 
-        coefs = self.coefs
-        cd0, ck0 = coefs[-1]
+                for cd, ck in coefs[:-1]:
+                    ips = kick(ips, ck * dt) if ck else ips
+                    ips = drift(ips, cd * dt) if cd else ips
 
-        for cd, ck in coefs[:-1]:
-            ips = kick(ips, ck * dt) if ck else ips
-            ips = drift(ips, cd * dt) if cd else ips
+                ips = kick(ips, ck0 * dt)
+                ips = drift(ips, cd0 * dt)
+                ips = kick(ips, ck0 * dt)
 
-        ips = kick(ips, ck0 * dt)
-        ips = drift(ips, cd0 * dt)
-        ips = kick(ips, ck0 * dt)
+                for cd, ck in reversed(coefs[:-1]):
+                    ips = drift(ips, cd * dt) if cd else ips
+                    ips = kick(ips, ck * dt) if ck else ips
 
-        for cd, ck in reversed(coefs[:-1]):
-            ips = drift(ips, cd * dt) if cd else ips
-            ips = kick(ips, ck * dt) if ck else ips
+            ips.nstep += 1
+            if not self.shared_tstep:
+                self.dump(ips, dt)
 
         return ips
 
+    def sf_drift(self, slow, fast, dt):
+        """Slow<->fast drift operator.
+
+        """
+        fast = self.recurse(fast, dt)
+        slow = self.evolve(slow, dt)
+        return slow, fast
+
+    @staticmethod
+    def sf_kick(slow, fast, dt):
+        """Slow<->fast kick operator.
+
+        """
+        if slow.n and fast.n:
+            slow.set_acc(fast)
+            if slow.include_pn_corrections:
+                return sf_pn_kick(slow, fast, dt)
+            return sf_n_kick(slow, fast, dt)
+        return slow, fast
+
     def sf_dkd(self, slow, fast, dt):
-        """
+        """Arbitrary order slow<->fast DKD-type operator.
 
         """
-        evolve = self.dkd
-        recurse = self.manager.recurse
+        if not fast.n:
+            slow = self.evolve(slow, dt)
+            return slow, fast
 
-        if fast.n:
-            coefs = self.coefs
-            ck0, cd0 = coefs[-1]
+        coefs = self.coefs
+        sf_kick = self.sf_kick
+        sf_drift = self.sf_drift
+        ck0, cd0 = coefs[-1]
 
-            for ck, cd in coefs[:-1]:
-                slow, fast = (sf_drift(slow, fast, cd * dt, evolve, recurse)
-                              if cd else (slow, fast))
-                slow, fast = (sf_kick(slow, fast, ck * dt)
-                              if ck else (slow, fast))
+        for ck, cd in coefs[:-1]:
+            slow, fast = sf_drift(slow, fast, cd * dt) if cd else (slow, fast)
+            slow, fast = sf_kick(slow, fast, ck * dt) if ck else (slow, fast)
 
-            slow, fast = sf_drift(slow, fast, cd0 * dt, evolve, recurse)
-            slow, fast = sf_kick(slow, fast, ck0 * dt)
-            slow, fast = sf_drift(slow, fast, cd0 * dt, evolve, recurse)
+        slow, fast = sf_drift(slow, fast, cd0 * dt)
+        slow, fast = sf_kick(slow, fast, ck0 * dt)
+        slow, fast = sf_drift(slow, fast, cd0 * dt)
 
-            for ck, cd in reversed(coefs[:-1]):
-                slow, fast = (sf_kick(slow, fast, ck * dt)
-                              if ck else (slow, fast))
-                slow, fast = (sf_drift(slow, fast, cd * dt, evolve, recurse)
-                              if cd else (slow, fast))
-        else:
-            type(slow).t_curr += dt
-            slow = evolve(slow, dt)
-
-        if slow.n:
-            slow.nstep += 1
-            if not self.manager.shared_tstep:
-                self.manager.dump(slow, dt)
+        for ck, cd in reversed(coefs[:-1]):
+            slow, fast = sf_kick(slow, fast, ck * dt) if ck else (slow, fast)
+            slow, fast = sf_drift(slow, fast, cd * dt) if cd else (slow, fast)
 
         return slow, fast
 
     def sf_kdk(self, slow, fast, dt):
-        """
+        """Arbitrary order slow<->fast KDK-type operator.
 
         """
-        evolve = self.kdk
-        recurse = self.manager.recurse
+        if not fast.n:
+            slow = self.evolve(slow, dt)
+            return slow, fast
 
-        if fast.n:
-            coefs = self.coefs
-            cd0, ck0 = coefs[-1]
+        coefs = self.coefs
+        sf_kick = self.sf_kick
+        sf_drift = self.sf_drift
+        cd0, ck0 = coefs[-1]
 
-            for cd, ck in coefs[:-1]:
-                slow, fast = (sf_kick(slow, fast, ck * dt)
-                              if ck else (slow, fast))
-                slow, fast = (sf_drift(slow, fast, cd * dt, evolve, recurse)
-                              if cd else (slow, fast))
+        for cd, ck in coefs[:-1]:
+            slow, fast = sf_kick(slow, fast, ck * dt) if ck else (slow, fast)
+            slow, fast = sf_drift(slow, fast, cd * dt) if cd else (slow, fast)
 
-            slow, fast = sf_kick(slow, fast, ck0 * dt)
-            slow, fast = sf_drift(slow, fast, cd0 * dt, evolve, recurse)
-            slow, fast = sf_kick(slow, fast, ck0 * dt)
+        slow, fast = sf_kick(slow, fast, ck0 * dt)
+        slow, fast = sf_drift(slow, fast, cd0 * dt)
+        slow, fast = sf_kick(slow, fast, ck0 * dt)
 
-            for cd, ck in reversed(coefs[:-1]):
-                slow, fast = (sf_drift(slow, fast, cd * dt, evolve, recurse)
-                              if cd else (slow, fast))
-                slow, fast = (sf_kick(slow, fast, ck * dt)
-                              if ck else (slow, fast))
-        else:
-            type(slow).t_curr += dt
-            slow = evolve(slow, dt)
-
-        if slow.n:
-            slow.nstep += 1
-            if not self.manager.shared_tstep:
-                self.manager.dump(slow, dt)
+        for cd, ck in reversed(coefs[:-1]):
+            slow, fast = sf_drift(slow, fast, cd * dt) if cd else (slow, fast)
+            slow, fast = sf_kick(slow, fast, ck * dt) if ck else (slow, fast)
 
         return slow, fast
 
@@ -595,14 +510,17 @@ class SIA(Base):
             elif 'sia69' in method:
                 self.bridge = SIA69(self, 'kdk')
 
-        if ps.include_pn_corrections:
-            ps.register_attribute(
-                'pnvel', '{nd}, {nb}', 'real_t',
-                doc='auxiliary-velocity for PN integration.'
-            )
+        ps.tstep[...] = dt_max
+        if self.update_tstep:
+            ps.set_tstep(ps, self.eta)
+            if self.shared_tstep:
+                ps.tstep[...] = ps.tstep.min()
 
     def dump(self, ps, dt):
-        tdiff = abs(ps.t_next - ps.t_curr)
+        """
+
+        """
+        tdiff = abs(ps.t_next - ps.time[0])
         ratio = tdiff // abs(dt)
         s0 = tdiff > 0
         if self.dumpper:
@@ -618,24 +536,26 @@ class SIA(Base):
         """
 
         """
-        ps = self.recurse(ps, dt)
-        if not self.shared_tstep:
-            type(ps).t_curr = ps.t_next
-        return ps
+        if ps.include_pn_corrections:
+            if not hasattr(ps, 'pnvel'):
+                ps.register_attribute('pnvel', '{nd}, {nb}', 'real_t')
+                ps.pnvel[...] = ps.rdot[1]
+
+        return self.recurse(ps, dt)
 
     def recurse(self, ps, dt):
         """
 
         """
-        threshold = -1
-        if self.update_tstep:
-            ps.set_tstep(ps, self.eta, shared=self.shared_tstep)
-            dt = power_of_two(ps, dt) if self.shared_tstep else dt
-            threshold = abs(dt)
-
-        slow, fast = split(ps, abs(ps.tstep) > threshold)
-        slow, fast = self.bridge(slow, fast, dt)
-        return join(slow, fast)
+        if ps.n:
+            slow, fast = split(ps, ps.tstep > abs(dt))
+            slow, fast = self.bridge(slow, fast, dt)
+            ps = join(slow, fast)
+            if self.update_tstep:
+                ps.set_tstep(ps, self.eta)
+                if self.shared_tstep:
+                    ps.tstep[...] = ps.tstep.min()
+        return ps
 
 
 # -- End of File --

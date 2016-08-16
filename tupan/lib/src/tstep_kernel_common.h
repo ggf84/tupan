@@ -39,10 +39,10 @@ p2p_tstep_kernel_core(I &ip, J &jp, const PARAM eta)
 	gamma *= (eta * rsqrt(w2));
 	w2 -= gamma * rv;
 
-	ip.w2[0] += w2;
-	jp.w2[0] += w2;
-	ip.w2[1] = fmax(w2, ip.w2[1]);
-	jp.w2[1] = fmax(w2, jp.w2[1]);
+	ip.w2[0] = fmax(w2, ip.w2[0]);
+	ip.w2[1] += w2;
+	jp.w2[0] = fmax(w2, jp.w2[0]);
+	jp.w2[1] += w2;
 }
 #endif
 
@@ -96,8 +96,8 @@ tstep_kernel_core(vec(Tstep_Data) ip, Tstep_Data jp, const real_t eta)
 
 	w2 = select((vec(real_t))(0), w2, (vec(int_t))(rr > 0));
 
-	ip.w2[0] += w2;
-	ip.w2[1] = fmax(w2, ip.w2[1]);
+	ip.w2[0] = fmax(w2, ip.w2[0]);
+	ip.w2[1] += w2;
 	return ip;
 }
 
