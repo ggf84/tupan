@@ -109,7 +109,9 @@ snp_crk_kernel_core(vec(Snp_Crk_Data) ip, Snp_Crk_Data jp)
 // flop count: 128
 {
 	vec(real_t) rdot[4][NDIM];
+	#pragma unroll
 	for (uint_t kdot = 0; kdot < 4; ++kdot) {
+		#pragma unroll
 		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
 		}
@@ -157,6 +159,8 @@ snp_crk_kernel_core(vec(Snp_Crk_Data) ip, Snp_Crk_Data jp)
 	const vec(real_t) c1 = 3 * q1;
 	const vec(real_t) c2 = 3 * q2;
 	const vec(real_t) c3 = 2 * q1;
+
+	#pragma unroll
 	for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 		rdot[3][kdim] += c1 * rdot[2][kdim];
 		rdot[3][kdim] += c2 * rdot[1][kdim];
@@ -168,7 +172,9 @@ snp_crk_kernel_core(vec(Snp_Crk_Data) ip, Snp_Crk_Data jp)
 		rdot[1][kdim] += q1 * rdot[0][kdim];
 	}
 
+	#pragma unroll
 	for (uint_t kdot = 0; kdot < 4; ++kdot) {
+		#pragma unroll
 		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 			ip.adot[kdot][kdim] -= m_r3 * rdot[kdot][kdim];
 		}

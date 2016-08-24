@@ -67,7 +67,9 @@ tstep_kernel_core(vec(Tstep_Data) ip, Tstep_Data jp, const real_t eta)
 // flop count: 42
 {
 	vec(real_t) rdot[2][NDIM];
+	#pragma unroll
 	for (uint_t kdot = 0; kdot < 2; ++kdot) {
+		#pragma unroll
 		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
 		}

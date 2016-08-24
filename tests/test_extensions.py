@@ -12,18 +12,16 @@ from tupan.lib import extensions as ext
 from tupan.lib.utils.timing import Timer
 
 
-ext.pn = ext.PN(7, 128.0)
-
-
 def set_particles(n):
     from tupan.particles.system import ParticleSystem
 
     ps = ParticleSystem(n)
 
+    ps.eps2[...] = np.zeros((n,))
+    ps.mass[...] = np.random.random((n,))
     ps.rdot[0][...] = np.random.random((3, n)) * 10
     ps.rdot[1][...] = np.random.random((3, n)) * 10
-    ps.mass[...] = np.random.random((n,))
-    ps.eps2[...] = np.zeros((n,))
+    ps.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
 
     return ps
 
@@ -65,33 +63,40 @@ def benchmark(test_number, kernel_name, imax=12, **kwargs):
         return min(elapsed)
 
     np.random.seed(0)
-    Ckernel = getattr(ext, kernel_name+'_triangle')(backend='C')
+    Ckernel = getattr(ext, kernel_name+'_rectangle')(backend='C')
     CLkernel = getattr(ext, kernel_name)(backend='CL')
 
     msg = "\ntest{0:02d}: {1}"
     print(msg.format(test_number, kernel_name))
 
-    for ps in [set_particles(2**(i+1)) for i in range(imax)]:
-        smalln = ps.n <= 2**12  # 4096
+    for (ips, jps) in [(set_particles(2**(i+1)), set_particles(2**(i+1)))
+                       for i in range(imax)]:
+        smalln = ips.n <= 2**12  # 4096
 
-        print("  N={0}:".format(ps.n))
+        print("  N={0}:".format(ips.n))
 
-        res = [best_of(5, Ckernel.set_args, ps, ps, **kwargs) if smalln else 0,
-               best_of(5, CLkernel.set_args, ps, ps, **kwargs)]
+        res = [
+            best_of(5, Ckernel.set_args, ips, jps, **kwargs) if smalln else 0,
+            best_of(5, CLkernel.set_args, ips, jps, **kwargs)
+        ]
         ratio = res[0] / res[1]
         print("    {meth} time (s): 'C': {res[0]:.4e},"
               " 'CL': {res[1]:.4e} | ratio(C/CL): {ratio:.4f}"
               .format(meth='set', res=res, ratio=ratio))
 
-        res = [best_of(3, Ckernel.run) if smalln else 0,
-               best_of(3, CLkernel.run)]
+        res = [
+            best_of(3, Ckernel.run) if smalln else 0,
+            best_of(3, CLkernel.run)
+        ]
         ratio = res[0] / res[1]
         print("    {meth} time (s): 'C': {res[0]:.4e},"
               " 'CL': {res[1]:.4e} | ratio(C/CL): {ratio:.4f}"
               .format(meth='run', res=res, ratio=ratio))
 
-        res = [best_of(5, Ckernel.map_buffers) if smalln else 0,
-               best_of(5, CLkernel.map_buffers)]
+        res = [
+            best_of(5, Ckernel.map_buffers) if smalln else 0,
+            best_of(5, CLkernel.map_buffers)
+        ]
         ratio = res[0] / res[1]
         print("    {meth} time (s): 'C': {res[0]:.4e},"
               " 'CL': {res[1]:.4e} | ratio(C/CL): {ratio:.4f}"
@@ -124,7 +129,8 @@ class TestCase1(unittest.TestCase):
         compare_result(5, 'Tstep', eta=eta)
 
     def test06(self):
-        compare_result(6, 'PNAcc', use_auxvel=False)
+        pn = {'order': 7, 'clight': 128.0}
+        compare_result(6, 'PNAcc', pn=pn)
 
     def test07(self):
         dt = 1.0/64
@@ -163,7 +169,8 @@ class TestCase2(unittest.TestCase):
         benchmark(5, 'Tstep', eta=eta)
 
     def test06(self):
-        benchmark(6, 'PNAcc', use_auxvel=False)
+        pn = {'order': 7, 'clight': 128.0}
+        benchmark(6, 'PNAcc', pn=pn)
 
     def test07(self):
         dt = 1.0/64

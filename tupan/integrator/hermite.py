@@ -249,10 +249,10 @@ class Hermite(Base):
 
     """
     PROVIDED_METHODS = [
-        'hermite2c', 'hermite2a',
-        'hermite4c', 'hermite4a',
-        'hermite6c', 'hermite6a',
-        'hermite8c', 'hermite8a',
+        'c.hermite2', 'a.hermite2',
+        'c.hermite4', 'a.hermite4',
+        'c.hermite6', 'a.hermite6',
+        'c.hermite8', 'a.hermite8',
     ]
 
     def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
@@ -262,10 +262,10 @@ class Hermite(Base):
         super(Hermite, self).__init__(ps, eta, dt_max,
                                       t_begin, method, **kwargs)
 
-        if method.endswith('c'):
+        if 'c.' in method:
             self.update_tstep = False
             self.shared_tstep = True
-        elif method.endswith('a'):
+        elif 'a.' in method:
             self.update_tstep = True
             self.shared_tstep = True
 

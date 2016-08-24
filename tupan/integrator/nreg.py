@@ -1,88 +1,73 @@
 # -*- coding: utf-8 -*-
 #
 
-"""
-TODO.
+"""This module implements the N-body formulation of the algorithmic
+regularization procedure by Mikkola & Tanikawa, MNRAS, 310, 745-749 (1999).
 """
 
-import logging
 from .base import Base
-from ..lib import extensions as ext
-from ..lib.utils.timing import timings, bind_all
 
 
-LOGGER = logging.getLogger(__name__)
-
-
-@timings
-def nreg_x(ps, dt, kernel=ext.get_kernel('NregX')):
+def drift(ps, h):
     """
 
     """
-    mtot = ps.total_mass
-    kernel(ps, ps, dt=dt)
-    ps.rdot[0][...] = ps.mr / mtot
-    pe = 0.5 * ps.u.sum()
-    type(ps).U = pe
-    return ps, dt
-
-#    ps.rdot[0] += dt * ps.rdot[1]
-#    type(ps).U = -ps.potential_energy
-#    ps.set_acc(ps)
-#    return ps, dt
+    W = ps.kinetic_energy + ps.B
+    dt = h / W
+    ps.time += dt
+    ps.rdot[0] += ps.rdot[1] * dt
+    return ps, W
 
 
-@timings
-def nreg_v(ps, dt, kernel=ext.get_kernel('NregV')):
+def kick(ps, h):
     """
 
     """
-#    type(ps).W += 0.5 * dt * (ps.mass * ps.rdot[1] * ps.rdot[2]).sum()
-    mtot = ps.total_mass
-    kernel(ps, ps, dt=dt)
-    ps.rdot[1][...] = ps.mv / mtot
-    ke = 0.25 * ps.mk.sum() / mtot
-    type(ps).W = (ke - ps.E0)
-#    type(ps).W += 0.5 * dt * (ps.mass * ps.rdot[1] * ps.rdot[2]).sum()
+    ps.set_acc(ps)
+    U = -ps.potential_energy
+    dt = h / U
+    ps.rdot[1] += ps.rdot[2] * dt
+    return ps, U
+
+
+def a_nreg_step(ps, h):
+    """
+
+    """
+    ps, _ = drift(ps, h/2)
+    ps, _ = kick(ps, h)
+    ps, _ = drift(ps, h/2)
+
+    ps.nstep += 1
     return ps
 
-# #    type(ps).W += 0.5 * dt * (ps.mass * ps.rdot[1] * ps.rdot[2]).sum()
-#     ps.rdot[1] += dt * ps.rdot[2]
-#     type(ps).W = (ps.kinetic_energy - ps.E0)
-# #    type(ps).W += 0.5 * dt * (ps.mass * ps.rdot[1] * ps.rdot[2]).sum()
-#     return ps
 
-
-@timings
-def anreg_step(ps, h):
+def c_nreg_step(ps, h):
     """
 
     """
-    ps, dt0 = nreg_x(ps, 0.5 * (h / ps.W))
-    ps = nreg_v(ps, (h / ps.U))
-    ps, dt1 = nreg_x(ps, 0.5 * (h / ps.W))
+    try:
+        U = ps.U
+    except:
+        U = -ps.potential_energy
+        type(ps).U = U
 
-    return ps, (dt0 + dt1)
+    ps, _ = drift(ps, U * h/2)
+    ps, _ = kick(ps, U * h)
+    ps, W = drift(ps, U * h/2)
+    type(ps).U = U = (W**2) / ps.U
 
-
-@timings
-def nreg_step(ps, h):
-    """
-
-    """
-    ps, dt0 = anreg_step(ps, 0.5 * (h * ps.S))
-    type(ps).S = 1 / (2 / ps.W - 1 / ps.S)
-    ps, dt1 = anreg_step(ps, 0.5 * (h * ps.S))
-
-    return ps, (dt0 + dt1)
+    ps.nstep += 1
+    return ps
 
 
-@bind_all(timings)
 class NREG(Base):
     """
 
     """
-    PROVIDED_METHODS = ['nreg', 'anreg', ]
+    PROVIDED_METHODS = [
+        'c.nreg', 'a.nreg',
+    ]
 
     def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
         """
@@ -91,30 +76,23 @@ class NREG(Base):
         super(NREG, self).__init__(ps, eta, dt_max,
                                    t_begin, method, **kwargs)
 
-        if 'anreg' in self.method:
-            self.update_tstep = True
-            self.shared_tstep = True
-        else:
-            self.update_tstep = False
-            self.shared_tstep = True
+        self.update_tstep = False
+        self.shared_tstep = True
 
-        type(ps).E0 = ps.kinetic_energy + ps.potential_energy
-        type(ps).W = -ps.potential_energy
-        type(ps).U = -ps.potential_energy
-        type(ps).S = -ps.potential_energy
+        T = ps.kinetic_energy
+        U = -ps.potential_energy
+        type(ps).B = U - T
 
     def do_step(self, ps, h):
         """
 
         """
-        if self.update_tstep:
-            ps, dt = anreg_step(ps, h / 2)
+        if 'c.' in self.method:
+            return c_nreg_step(ps, h)
+        elif 'a.' in self.method:
+            return a_nreg_step(ps, h)
         else:
-            ps, dt = nreg_step(ps, h)
-
-        ps.time += dt
-        ps.nstep += 1
-        return ps
+            raise NotImplemented(self.method)
 
 
 # -- End of File --

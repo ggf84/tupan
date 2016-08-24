@@ -92,7 +92,7 @@ class HDF5IO(object):
         if self.data_stream:
             data = self.data_stream.pop(0)
             for d in self.data_stream:
-                data.append(d)
+                data += d
             self.dump_stream(data, tag=next(self.stream_id))
             del self.data_stream[:]
 
@@ -103,15 +103,15 @@ class HDF5IO(object):
 
     def load_era(self, tag=0):
         era = self.load_snap(tag)
-        era.append(self.load_stream(tag))
-        era.append(self.load_snap(tag+1))
+        era += self.load_stream(tag)
+        era += self.load_snap(tag+1)
         return era
 
     def load_full_era(self):
         era = self.load_snap(0)
         for i in range(1, len(self.file)):
-            era.append(self.load_stream(i-1))
-            era.append(self.load_snap(i))
+            era += self.load_stream(i-1)
+            era += self.load_snap(i)
         return era
 
     def era2snaps(self, era, n_snaps):

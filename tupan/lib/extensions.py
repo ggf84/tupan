@@ -14,19 +14,13 @@ from .utils.timing import timings, bind_all
 LOGGER = logging.getLogger(__name__)
 
 
-@bind_all(timings)
-class PN(object):
-    """This class holds the values of the PN parameters.
-
-    """
-    def __init__(self, order=0, clight='inf'):
-        self.order = int(order)
-        clight = float(clight)
-        for i in range(1, 8):
-            setattr(self, 'inv'+str(i), clight**(-i))
-
-
-pn = PN()
+def pn_struct(pn):
+    order = pn['order']
+    clight = pn['clight']
+    d = {'order': order}
+    for i in range(1, 8):
+        d['inv'+str(i)] = clight**(-i)
+    return d
 
 
 class AbstractExtension(object):
@@ -352,21 +346,21 @@ class PNAcc(AbstractExtension):
     def __init__(self, backend=options.backend):
         name = 'pnacc_kernel'
         super(PNAcc, self).__init__(name, backend)
-        self.clight = None
 
     def set_args(self, ips, jps, **kwargs):
-        if self.clight is None:
-            self.clight = self.kernel.make_struct('CLIGHT', **vars(pn))
+        try:
+            clight = self.clight
+        except AttributeError:
+            pn = pn_struct(kwargs['pn'])
+            clight = self.kernel.make_struct('CLIGHT', **pn)
+            self.clight = clight
 
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
-                   self.clight)
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
+                   clight)
 
-        outargs = (ips.pnacc[0], ips.pnacc[1], ips.pnacc[2])
+        outargs = (ips.pnacc,)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -379,22 +373,21 @@ class PNAcc_rectangle(AbstractExtension):
     def __init__(self, backend=options.backend):
         name = 'pnacc_kernel_rectangle'
         super(PNAcc_rectangle, self).__init__(name, backend)
-        self.clight = None
 
     def set_args(self, ips, jps, **kwargs):
-        if self.clight is None:
-            self.clight = self.kernel.make_struct('CLIGHT', **vars(pn))
+        try:
+            clight = self.clight
+        except AttributeError:
+            pn = pn_struct(kwargs['pn'])
+            clight = self.kernel.make_struct('CLIGHT', **pn)
+            self.clight = clight
 
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
-                   self.clight)
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
+                   clight)
 
-        outargs = (ips.pnacc[0], ips.pnacc[1], ips.pnacc[2],
-                   jps.pnacc[0], jps.pnacc[1], jps.pnacc[2])
+        outargs = (ips.pnacc, jps.pnacc)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -407,18 +400,20 @@ class PNAcc_triangle(AbstractExtension):
     def __init__(self, backend=options.backend):
         name = 'pnacc_kernel_triangle'
         super(PNAcc_triangle, self).__init__(name, backend)
-        self.clight = None
 
     def set_args(self, ips, jps=None, **kwargs):
-        if self.clight is None:
-            self.clight = self.kernel.make_struct('CLIGHT', **vars(pn))
+        try:
+            clight = self.clight
+        except AttributeError:
+            pn = pn_struct(kwargs['pn'])
+            clight = self.kernel.make_struct('CLIGHT', **pn)
+            self.clight = clight
 
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   self.clight)
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   clight)
 
-        outargs = (ips.pnacc[0], ips.pnacc[1], ips.pnacc[2])
+        outargs = (ips.pnacc,)
 
         self.kernel.set_args(inpargs, outargs)
 

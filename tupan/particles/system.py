@@ -91,23 +91,23 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
     def __len__(self):
         return sum(len(member) for member in self.members.values())
 
-    def append(self, other):
+    def __add__(self, other):
         if other.n:
             members = self.members
             for name, member in other.members.items():
                 try:
-                    members[name].append(member)
+                    members[name] += member
                 except KeyError:
                     members[name] = member.copy()
             self.update_members(**members)
+        return self
 
-    def split_by(self, mask):
-        ns, nf = 0, 0
+    __radd__ = __add__
+
+    def split_by(self, mask_function):
         d_a, d_b = {}, {}
         for name, member in self.members.items():
-            nf += member.n
-            d_a[name], d_b[name] = member.split_by(mask[ns:nf])
-            ns += member.n
+            d_a[name], d_b[name] = member.split_by(mask_function)
         return (self.from_members(**d_a),
                 self.from_members(**d_b))
 
@@ -198,17 +198,17 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
     def __getattr__(self, name):
         if name not in self.attr_names:
             raise AttributeError(name)
-        members = list(self.members.values())
+        members = self.members
         if len(members) == 1:
-            member = next(iter(members))
+            member = next(iter(members.values()))
             value = getattr(member, name)
             setattr(self, name, value)
             return value
-        arrays = [getattr(member, name) for member in members
+        arrays = [getattr(member, name) for member in members.values()
                   if name in member.attr_names]
         value = np.concatenate(arrays, -1)  # along last dimension
         ns, nf = 0, 0
-        for member in members:
+        for member in members.values():
             if name in member.attr_names:
                 nf += member.n
                 setattr(member, name, value[..., ns:nf])

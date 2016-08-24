@@ -65,7 +65,9 @@ acc_kernel_core(vec(Acc_Data) ip, Acc_Data jp)
 // flop count: 21
 {
 	vec(real_t) rdot[1][NDIM];
+	#pragma unroll
 	for (uint_t kdot = 0; kdot < 1; ++kdot) {
+		#pragma unroll
 		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
 		}
@@ -79,7 +81,9 @@ acc_kernel_core(vec(Acc_Data) ip, Acc_Data jp)
 	vec(real_t) m_r3 = jp.m * smoothed_inv_r3(rr, e2);	// flop count: 6
 	m_r3 = select((vec(real_t))(0), m_r3, (vec(int_t))(rr > 0));
 
+	#pragma unroll
 	for (uint_t kdot = 0; kdot < 1; ++kdot) {
+		#pragma unroll
 		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 			ip.adot[kdot][kdim] -= m_r3 * rdot[kdot][kdim];
 		}

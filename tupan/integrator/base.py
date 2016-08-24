@@ -55,22 +55,7 @@ class Base(object):
         type(ps).t_next = t_begin
         self.method = method
 
-        pn_order = kwargs.pop('pn_order', 0)
-        clight = kwargs.pop('clight', float('inf'))
-        if pn_order > 0:
-            if clight == float('inf'):
-                raise ValueError(
-                    "By default 'clight' == float('inf'). Please set "
-                    "the speed of light argument 'clight' to a finite "
-                    "value if you chose 'pn_order' > 0."
-                )
-            else:
-                from ..lib import extensions
-                extensions.pn = extensions.PN(pn_order, clight)
-                type(self.ps).include_pn_corrections = True
-                for member in self.ps.members.values():
-                    type(member).include_pn_corrections = True
-
+        self.pn = kwargs.pop('pn', None)
         self.viewer = kwargs.pop('viewer', None)
         self.dumpper = kwargs.pop('dumpper', None)
         self.reporter = kwargs.pop('reporter', None)

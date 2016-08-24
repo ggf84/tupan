@@ -485,9 +485,9 @@ p2p_pnterms(
 	const real_tn jvx,
 	const real_tn jvy,
 	const real_tn jvz,
-	const real_tn nx,
-	const real_tn ny,
-	const real_tn nz,
+	const real_tn rx,
+	const real_tn ry,
+	const real_tn rz,
 	const real_tn vx,
 	const real_tn vy,
 	const real_tn vz,
@@ -510,9 +510,11 @@ p2p_pnterms(
 		if (clight.order >= 2) {
 			real_tn iv2 = ivx * ivx + ivy * ivy + ivz * ivz;
 			real_tn jv2 = jvx * jvx + jvy * jvy + jvz * jvz;
-			real_tn niv = nx * ivx + ny * ivy + nz * ivz;
-			real_tn njv = nx * jvx + ny * jvy + nz * jvz;
 			real_tn ivjv = ivx * jvx + ivy * jvy + ivz * jvz;
+			real_tn niv = rx * ivx + ry * ivy + rz * ivz;
+			real_tn njv = rx * jvx + ry * jvy + rz * jvz;
+			niv *= inv_r;
+			njv *= inv_r;
 			real_tn njv2 = njv * njv;
 			p2p_pn2(
 				im, jm, inv_r,
@@ -528,7 +530,8 @@ p2p_pnterms(
 					real_tn jv4 = jv2 * jv2;
 					real_tn niv2 = niv * niv;
 					real_tn nivnjv = niv * njv;
-					real_tn nv = nx * vx + ny * vy + nz * vz;
+					real_tn nv = rx * vx + ry * vy + rz * vz;
+					nv *= inv_r;
 					p2p_pn4(
 						im, jm, im2, jm2, imjm, inv_r, inv_r2,
 						iv2, jv2, jv4, ivjv, nv, niv, njv,
@@ -562,6 +565,7 @@ p2p_pnterms(
 	pn.b += ((((((pn7.b + pn6.b) + pn5.b) + pn4.b) + pn3.b) + pn2.b) + pn1.b);
 
 	real_tn m_r2 = jm * inv_r2;
+	pn.a *= inv_r;
 	pn.a *= m_r2;
 	pn.b *= m_r2;
 	return pn;

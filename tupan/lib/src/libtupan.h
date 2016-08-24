@@ -174,70 +174,37 @@ void
 pnacc_kernel(
 	const uint_t ni,
 	const real_t __im[],
-	const real_t __irx[],
-	const real_t __iry[],
-	const real_t __irz[],
 	const real_t __ie2[],
-	const real_t __ivx[],
-	const real_t __ivy[],
-	const real_t __ivz[],
+	const real_t __irdot[],
 	const uint_t nj,
 	const real_t __jm[],
-	const real_t __jrx[],
-	const real_t __jry[],
-	const real_t __jrz[],
 	const real_t __je2[],
-	const real_t __jvx[],
-	const real_t __jvy[],
-	const real_t __jvz[],
+	const real_t __jrdot[],
 	const CLIGHT clight,
-	real_t __ipnax[],
-	real_t __ipnay[],
-	real_t __ipnaz[]);
+	real_t __ipnacc[]);
 
 void
 pnacc_kernel_rectangle(
 	const uint_t ni,
 	const real_t __im[],
-	const real_t __irx[],
-	const real_t __iry[],
-	const real_t __irz[],
 	const real_t __ie2[],
-	const real_t __ivx[],
-	const real_t __ivy[],
-	const real_t __ivz[],
+	const real_t __irdot[],
 	const uint_t nj,
 	const real_t __jm[],
-	const real_t __jrx[],
-	const real_t __jry[],
-	const real_t __jrz[],
 	const real_t __je2[],
-	const real_t __jvx[],
-	const real_t __jvy[],
-	const real_t __jvz[],
+	const real_t __jrdot[],
 	const CLIGHT clight,
-	real_t __ipnax[],
-	real_t __ipnay[],
-	real_t __ipnaz[],
-	real_t __jpnax[],
-	real_t __jpnay[],
-	real_t __jpnaz[]);
+	real_t __ipnacc[],
+	real_t __jpnacc[]);
 
 void
 pnacc_kernel_triangle(
 	const uint_t ni,
 	const real_t __im[],
-	const real_t __irx[],
-	const real_t __iry[],
-	const real_t __irz[],
 	const real_t __ie2[],
-	const real_t __ivx[],
-	const real_t __ivy[],
-	const real_t __ivz[],
+	const real_t __irdot[],
 	const CLIGHT clight,
-	real_t __ipnax[],
-	real_t __ipnay[],
-	real_t __ipnaz[]);
+	real_t __ipnacc[]);
 
 void
 nreg_Xkernel(

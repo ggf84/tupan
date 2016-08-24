@@ -25,7 +25,9 @@ snp_crk_kernel(
 		vec(Snp_Crk_Data) ip;
 		ip.m = vec(vload)(0, __im + i);
 		ip.e2 = vec(vload)(0, __ie2 + i);
+		#pragma unroll
 		for (uint_t kdot = 0; kdot < 4; ++kdot) {
+			#pragma unroll
 			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 				global const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
 				ip.rdot[kdot][kdim] = vec(vload)(0, ptr + i);
@@ -40,7 +42,9 @@ snp_crk_kernel(
 			Snp_Crk_Data jp;
 			jp.m = __jm[j + lid];
 			jp.e2 = __je2[j + lid];
+			#pragma unroll
 			for (uint_t kdot = 0; kdot < 4; ++kdot) {
+				#pragma unroll
 				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
 					jp.rdot[kdot][kdim] = ptr[j + lid];
@@ -62,7 +66,9 @@ snp_crk_kernel(
 			Snp_Crk_Data jp;
 			jp.m = __jm[j];
 			jp.e2 = __je2[j];
+			#pragma unroll
 			for (uint_t kdot = 0; kdot < 4; ++kdot) {
+				#pragma unroll
 				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
 					jp.rdot[kdot][kdim] = ptr[j];
@@ -72,7 +78,9 @@ snp_crk_kernel(
 			ip = snp_crk_kernel_core(ip, jp);
 		}
 
+		#pragma unroll
 		for (uint_t kdot = 0; kdot < 4; ++kdot) {
+			#pragma unroll
 			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 				global real_t *ptr = &__iadot[(kdot*NDIM+kdim)*ni];
 				vec(vstore)(ip.adot[kdot][kdim], 0, ptr + i);

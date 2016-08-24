@@ -38,10 +38,6 @@ class MetaParticle(abc.ABCMeta):
 
             if hasattr(cls, 'extra_attr_descr'):
                 attr_descrs += cls.extra_attr_descr
-            if hasattr(cls, 'pn_default_attr_descr'):
-                attr_descrs += cls.pn_default_attr_descr
-            if hasattr(cls, 'pn_extra_attr_descr'):
-                attr_descrs += cls.pn_extra_attr_descr
 
             attr_names = {name: (shape, sctype, doc)
                           for name, shape, sctype, doc in attr_descrs}
@@ -91,7 +87,7 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
     def __len__(self):
         return self.n
 
-    def append(self, other):
+    def __add__(self, other):
         if other.n:
             attrs = {}
             concatenate = np.concatenate
@@ -99,8 +95,17 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
                 arrays = [getattr(self, name), getattr(other, name)]
                 attrs[name] = concatenate(arrays, -1)  # along last dimension
             self.update_attrs(**attrs)
+        return self
 
-    def split_by(self, mask):
+    __radd__ = __add__
+
+    def split_by(self, mask_function):
+        mask = mask_function(self)
+        if all(mask):
+            return self, type(self)()
+        if not any(mask):
+            return type(self)(), self
+
         d_a, d_b = {}, {}
         for name in self.attr_names:
             array = getattr(self, name)
@@ -162,14 +167,12 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
     """This class holds common methods for particles in n-body systems.
 
     """
-    include_pn_corrections = False
-
     # name, shape, sctype, doc
     default_attr_descr = [
         ('pid', '{nb}', 'uint_t', 'particle id'),
         ('mass', '{nb}', 'real_t', 'particle mass'),
+        ('eps2', '{nb}', 'real_t', 'particle squared softening'),
         ('rdot', '10, {nd}, {nb}', 'real_t', 'position and its time derivatives'),
-        ('eps2', '{nb}', 'real_t', 'squared softening'),
         ('time', '{nb}', 'real_t', 'current time'),
         ('nstep', '{nb}', 'uint_t', 'step number'),
     ]
@@ -178,16 +181,6 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         ('phi', '{nb}', 'real_t', 'gravitational potential'),
         ('tstep', '{nb}', 'real_t', 'time step'),
         ('tstep_sum', '{nb}', 'real_t', 'auxiliary time step'),
-    ]
-
-    pn_default_attr_descr = []
-
-    pn_extra_attr_descr = [
-        ('pnacc', '{nd}, {nb}', 'real_t', 'PN acceleration'),
-        ('pn_mr', '{nd}, {nb}', 'real_t', 'PN correction for com_r'),
-        ('pn_mv', '{nd}, {nb}', 'real_t', 'PN correction for com_v'),
-        ('pn_am', '{nd}, {nb}', 'real_t', 'PN correction for angular momentum'),
-        ('pn_ke', '{nb}', 'real_t', 'PN correction for kinectic energy.'),
     ]
 
     # -- total mass and center-of-mass methods
@@ -209,7 +202,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """
         mr = self.mass * self.rdot[0]
         rcom = mr.sum(1) / self.total_mass
-        if self.include_pn_corrections:
+        if hasattr(self, 'pn_mr'):
             rcom += self.pn_mr.sum(1) / self.total_mass
         return rcom
 
@@ -224,7 +217,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """
         mv = self.mass * self.rdot[1]
         vcom = mv.sum(1) / self.total_mass
-        if self.include_pn_corrections:
+        if hasattr(self, 'pn_mv'):
             vcom += self.pn_mv.sum(1) / self.total_mass
         return vcom
 
@@ -280,7 +273,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
 
         """
         mv = self.mass * self.rdot[1]
-        if self.include_pn_corrections:
+        if hasattr(self, 'pn_mv'):
             mv += self.pn_mv
         return mv
 
@@ -312,7 +305,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """
         mv = self.mass * self.rdot[1]
         am = np.cross(self.rdot[0].T, mv.T).T
-        if self.include_pn_corrections:
+        if hasattr(self, 'pn_am'):
             am += self.pn_am
         return am
 
@@ -343,7 +336,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
 
         """
         ke = 0.5 * self.mass * (self.rdot[1]**2).sum(0)
-        if self.include_pn_corrections:
+        if hasattr(self, 'pn_ke'):
             ke += self.pn_ke
         return ke
 
@@ -423,7 +416,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """
         kernel(self, other)
 
-    def set_pnacc(self, other, use_auxvel=False,
+    def set_pnacc(self, other, pn=None, use_auxvel=False,
                   kernel=ext.get_kernel('PNAcc')):
         """Set individual post-Newtonian gravitational acceleration due to
         other particles.
@@ -441,7 +434,7 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         if use_auxvel:
             swap_vel(self, other)
 
-        kernel(self, other)
+        kernel(self, other, pn=pn)
 
         if use_auxvel:
             swap_vel(self, other)

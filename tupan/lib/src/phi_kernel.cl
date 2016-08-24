@@ -25,7 +25,9 @@ phi_kernel(
 		vec(Phi_Data) ip;
 		ip.m = vec(vload)(0, __im + i);
 		ip.e2 = vec(vload)(0, __ie2 + i);
+		#pragma unroll
 		for (uint_t kdot = 0; kdot < 1; ++kdot) {
+			#pragma unroll
 			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 				global const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
 				ip.rdot[kdot][kdim] = vec(vload)(0, ptr + i);
@@ -40,7 +42,9 @@ phi_kernel(
 			Phi_Data jp;
 			jp.m = __jm[j + lid];
 			jp.e2 = __je2[j + lid];
+			#pragma unroll
 			for (uint_t kdot = 0; kdot < 1; ++kdot) {
+				#pragma unroll
 				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
 					jp.rdot[kdot][kdim] = ptr[j + lid];
@@ -62,7 +66,9 @@ phi_kernel(
 			Phi_Data jp;
 			jp.m = __jm[j];
 			jp.e2 = __je2[j];
+			#pragma unroll
 			for (uint_t kdot = 0; kdot < 1; ++kdot) {
+				#pragma unroll
 				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
 					jp.rdot[kdot][kdim] = ptr[j];

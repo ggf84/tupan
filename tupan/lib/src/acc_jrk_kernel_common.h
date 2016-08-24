@@ -79,7 +79,9 @@ acc_jrk_kernel_core(vec(Acc_Jrk_Data) ip, Acc_Jrk_Data jp)
 // flop count: 43
 {
 	vec(real_t) rdot[2][NDIM];
+	#pragma unroll
 	for (uint_t kdot = 0; kdot < 2; ++kdot) {
+		#pragma unroll
 		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
 		}
@@ -104,11 +106,14 @@ acc_jrk_kernel_core(vec(Acc_Jrk_Data) ip, Acc_Jrk_Data jp)
 
 	const vec(real_t) q1 = inv_r2 * (s1);
 
+	#pragma unroll
 	for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 		rdot[1][kdim] += q1 * rdot[0][kdim];
 	}
 
+	#pragma unroll
 	for (uint_t kdot = 0; kdot < 2; ++kdot) {
+		#pragma unroll
 		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 			ip.adot[kdot][kdim] -= m_r3 * rdot[kdot][kdim];
 		}

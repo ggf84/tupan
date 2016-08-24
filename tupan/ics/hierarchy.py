@@ -20,7 +20,7 @@ def make_hierarchy(parent, make_subsys, *args, **kwargs):
         subsys.dynrescale_total_mass(p.mass)
         subsys.com_to_origin()
         subsys.com_move_to(p.com_r, p.com_v)
-        ps.append(subsys)
+        ps += subsys
     ps.reset_pid()
     ps.to_nbody_units()
 

@@ -45,10 +45,18 @@ def main():
     # add specific parsers to subparser
     from . import config
     from . import simulation
-    simulation.add_parsers(subparser, parents=[config.parser, preparser])
+    sim = simulation.add_parsers(subparser, parents=[config.parser, preparser])
 
     # parse args from the main parser
     args = parser.parse_args()
+    args.pn = {}
+    if args.pn_order > 0:
+        if not args.clight:
+            sim.error('The --clight argument is required if --pn_order > 0.')
+        args.pn = {'order': args.pn_order, 'clight': args.clight}
+    del args.clight
+    del args.pn_order
+
     print('#' * 25, file=sys.stderr)
     print(pprint.pformat(vars(args)), file=sys.stderr)
     print('#' * 25, file=sys.stderr)

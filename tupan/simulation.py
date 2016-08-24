@@ -134,8 +134,7 @@ class Simulation(object):
             self.args.dt_max,
             self.args.t_begin,
             self.args.meth,
-            pn_order=self.args.pn_order,
-            clight=self.args.clight,
+            pn=self.args.pn,
             reporter=self.dia,
             viewer=viewer,
             dumpper=io,
@@ -319,9 +318,7 @@ def add_parsers(subparser, parents=None):
     simulation.add_argument(
         '--clight',
         type=float,
-        default=float('inf'),
-        help=('Speed of light value to use in Post-Newtonian corrections '
-              '(type: %(type)s, default: %(default)s).')
+        help=('Speed of light (type: %(type)s), default: %(default)s).')
         )
     simulation.add_argument(
         '-d', '--dump_freq',
@@ -338,6 +335,7 @@ def add_parsers(subparser, parents=None):
               '(type: %(type)s, default: %(default)s).')
         )
     simulation.set_defaults(func=main_simulation)
+    return simulation
 
 
 # -- End of File --

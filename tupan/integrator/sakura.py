@@ -40,7 +40,9 @@ class Sakura(Base):
     """
 
     """
-    PROVIDED_METHODS = ['sakura', 'asakura', ]
+    PROVIDED_METHODS = [
+        'c.sakura', 'a.sakura',
+    ]
 
     def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
         """
@@ -49,11 +51,11 @@ class Sakura(Base):
         super(Sakura, self).__init__(ps, eta, dt_max,
                                      t_begin, method, **kwargs)
 
-        if 'asakura' in self.method:
-            self.update_tstep = True
-            self.shared_tstep = True
-        else:
+        if 'c.' in self.method:
             self.update_tstep = False
+            self.shared_tstep = True
+        elif 'a.' in self.method:
+            self.update_tstep = True
             self.shared_tstep = True
 
         self.e0 = None

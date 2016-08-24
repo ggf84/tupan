@@ -51,7 +51,9 @@ phi_kernel_core(vec(Phi_Data) ip, Phi_Data jp)
 // flop count: 14
 {
 	vec(real_t) rdot[1][NDIM];
+	#pragma unroll
 	for (uint_t kdot = 0; kdot < 1; ++kdot) {
+		#pragma unroll
 		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
 		}
