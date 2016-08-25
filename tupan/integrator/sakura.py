@@ -9,13 +9,11 @@ import logging
 import numpy as np
 from .base import Base, power_of_two
 from ..lib import extensions as ext
-from ..lib.utils.timing import timings, bind_all
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-@timings
 def sakura_step(ps, dt, kernel=ext.get_kernel('Sakura')):
     """
 
@@ -35,7 +33,6 @@ def sakura_step(ps, dt, kernel=ext.get_kernel('Sakura')):
     return ps
 
 
-@bind_all(timings)
 class Sakura(Base):
     """
 

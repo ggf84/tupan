@@ -10,7 +10,6 @@ from operator import add, sub
 from abc import ABCMeta, abstractmethod
 from .base import Base, power_of_two
 from ..lib.utils import with_metaclass
-from ..lib.utils.timing import timings, bind_all
 
 
 LOGGER = logging.getLogger(__name__)
@@ -152,7 +151,6 @@ class HX(with_metaclass(ABCMeta, object)):
         return ps1
 
 
-@bind_all(timings)
 class H2(HX):
     """
 
@@ -177,7 +175,6 @@ class H2(HX):
         ps.tstep[...] = eta * (a2[0] / a2[1])**0.5
 
 
-@bind_all(timings)
 class H4(HX):
     """
 
@@ -198,7 +195,6 @@ class H4(HX):
         ps.set_acc_jrk(ps)
 
 
-@bind_all(timings)
 class H6(HX):
     """
 
@@ -220,7 +216,6 @@ class H6(HX):
         ps.set_snp_crk(ps)
 
 
-@bind_all(timings)
 class H8(HX):
     """
 
@@ -243,7 +238,6 @@ class H8(HX):
         ps.set_snp_crk(ps)
 
 
-@bind_all(timings)
 class Hermite(Base):
     """
 

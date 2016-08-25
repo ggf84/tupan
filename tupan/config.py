@@ -41,11 +41,6 @@ parser.add_argument(
           'choices: {%(choices)s}).')
     )
 parser.add_argument(
-    '--profile',
-    action='store_true',
-    help='Enable execution profile.'
-    )
-parser.add_argument(
     '--view',
     metavar='FREQ',
     nargs='?',

@@ -9,13 +9,11 @@ from __future__ import (print_function, division)
 import logging
 import numpy as np
 from ..particles.system import ParticleSystem
-from ..lib.utils.timing import timings, bind_all
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-@bind_all(timings)
 class Plummer(object):
     """  """
 
@@ -207,7 +205,6 @@ class Plummer(object):
         plt.close()
 
 
-@timings
 def make_plummer(n, eps, imf,
                  seed=None, mfrac=0.999,
                  softening_type=0, show=False):

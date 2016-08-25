@@ -14,17 +14,14 @@ from .star import Star
 from .blackhole import Blackhole
 from .base import MetaParticle, AbstractNbodyMethods
 from ..lib.utils import with_metaclass
-from ..lib.utils.timing import timings, bind_all
 
 
-@bind_all(timings)
 class Members(dict):
     def __init__(self, **members):
         super(Members, self).__init__(**members)
         self.__dict__ = self
 
 
-@bind_all(timings)
 class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
     """
     This class holds the particle types in the simulation.

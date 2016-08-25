@@ -8,7 +8,6 @@ This module implements highlevel interfaces for C/CL-extensions.
 from __future__ import print_function, division
 import logging
 from ..config import options
-from .utils.timing import timings, bind_all
 
 
 LOGGER = logging.getLogger(__name__)
@@ -53,7 +52,6 @@ class AbstractExtension(object):
         return ips, jps
 
 
-@bind_all(timings)
 class Phi(AbstractExtension):
     """
 
@@ -72,7 +70,6 @@ class Phi(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class Phi_rectangle(AbstractExtension):
     """
 
@@ -91,7 +88,6 @@ class Phi_rectangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class Phi_triangle(AbstractExtension):
     """
 
@@ -109,7 +105,6 @@ class Phi_triangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class Acc(AbstractExtension):
     """
 
@@ -128,7 +123,6 @@ class Acc(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class Acc_rectangle(AbstractExtension):
     """
 
@@ -147,7 +141,6 @@ class Acc_rectangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class Acc_triangle(AbstractExtension):
     """
 
@@ -165,7 +158,6 @@ class Acc_triangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class AccJrk(AbstractExtension):
     """
 
@@ -184,7 +176,6 @@ class AccJrk(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class AccJrk_rectangle(AbstractExtension):
     """
 
@@ -203,7 +194,6 @@ class AccJrk_rectangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class AccJrk_triangle(AbstractExtension):
     """
 
@@ -221,7 +211,6 @@ class AccJrk_triangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class SnpCrk(AbstractExtension):
     """
 
@@ -241,7 +230,6 @@ class SnpCrk(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class SnpCrk_rectangle(AbstractExtension):
     """
 
@@ -260,7 +248,6 @@ class SnpCrk_rectangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class SnpCrk_triangle(AbstractExtension):
     """
 
@@ -278,7 +265,6 @@ class SnpCrk_triangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class Tstep(AbstractExtension):
     """
 
@@ -298,7 +284,6 @@ class Tstep(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class Tstep_rectangle(AbstractExtension):
     """
 
@@ -319,7 +304,6 @@ class Tstep_rectangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class Tstep_triangle(AbstractExtension):
     """
 
@@ -338,7 +322,6 @@ class Tstep_triangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class PNAcc(AbstractExtension):
     """
 
@@ -365,7 +348,6 @@ class PNAcc(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class PNAcc_rectangle(AbstractExtension):
     """
 
@@ -392,7 +374,6 @@ class PNAcc_rectangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class PNAcc_triangle(AbstractExtension):
     """
 
@@ -418,7 +399,6 @@ class PNAcc_triangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class Sakura(AbstractExtension):
     """
 
@@ -447,7 +427,6 @@ class Sakura(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class Sakura_rectangle(AbstractExtension):
     """
 
@@ -483,7 +462,6 @@ class Sakura_rectangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class Sakura_triangle(AbstractExtension):
     """
 
@@ -509,7 +487,6 @@ class Sakura_triangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class NregX(AbstractExtension):
     """
 
@@ -539,7 +516,6 @@ class NregX(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class NregX_rectangle(AbstractExtension):
     """
 
@@ -577,7 +553,6 @@ class NregX_rectangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class NregX_triangle(AbstractExtension):
     """
 
@@ -604,7 +579,6 @@ class NregX_triangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class NregV(AbstractExtension):
     """
 
@@ -632,7 +606,6 @@ class NregV(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class NregV_rectangle(AbstractExtension):
     """
 
@@ -666,7 +639,6 @@ class NregV_rectangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class NregV_triangle(AbstractExtension):
     """
 
@@ -691,7 +663,6 @@ class NregV_triangle(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-@bind_all(timings)
 class Kepler(AbstractExtension):
     """
 

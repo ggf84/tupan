@@ -10,7 +10,6 @@ import h5py
 import pickle
 from itertools import count
 from collections import OrderedDict
-from ..lib.utils.timing import timings, bind_all
 
 
 PICKLE_PROTOCOL = 0  # ensures backward compatibility with Python 2.x
@@ -50,7 +49,6 @@ def load_ps(parent):
     return cls.from_members(**members)
 
 
-@bind_all(timings)
 class HDF5IO(object):
     """
 

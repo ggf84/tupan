@@ -9,10 +9,8 @@ from __future__ import print_function
 import numpy as np
 from scipy.integrate import quad
 from scipy.optimize import fminbound
-from ..lib.utils.timing import timings, bind_all
 
 
-@bind_all(timings)
 class IMFSample(object):
     """
 
@@ -62,7 +60,6 @@ class IMFSample(object):
         return self._sample
 
 
-@bind_all(timings)
 class IMF(object):
     """
 

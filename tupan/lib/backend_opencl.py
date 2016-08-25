@@ -12,7 +12,6 @@ from functools import partial
 from collections import defaultdict
 from ..config import options, get_cache_dir
 from .utils.ctype import Ctype
-from .utils.timing import timings, bind_all
 
 
 LOGGER = logging.getLogger(__name__)
@@ -21,7 +20,6 @@ DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, 'src')
 
 
-@bind_all(timings)
 class Context(object):
     """
 
@@ -96,7 +94,6 @@ class Context(object):
         self.obuf_count = 0
 
 
-@bind_all(timings)
 class Queue(object):
     """
 
@@ -159,7 +156,6 @@ class Queue(object):
         self.events.append(event)
 
 
-@bind_all(timings)
 class Device(object):
     """
 
@@ -191,7 +187,6 @@ class Device(object):
         type(self).idx += 1
 
 
-@bind_all(timings)
 class Program(object):
     """
 
@@ -286,7 +281,6 @@ class Program(object):
         return self
 
 
-@bind_all(timings)
 class Platform(object):
     """
 
@@ -311,7 +305,6 @@ class Platform(object):
 drv = Platform()
 
 
-@bind_all(timings)
 class CLKernel(object):
     """
 

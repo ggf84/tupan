@@ -6,10 +6,8 @@ TODO.
 """
 
 from ..particles.system import ParticleSystem
-from ..lib.utils.timing import timings
 
 
-@timings
 def make_hierarchy(parent, make_subsys, *args, **kwargs):
     """
 

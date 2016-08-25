@@ -13,13 +13,12 @@ from itertools import count
 from .io.hdf5io import HDF5IO
 from .integrator import Integrator
 from .animation import GLviewer
-from .lib.utils.timing import timings, bind_all, Timer
+from .lib.utils.timing import Timer
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-@bind_all(timings)
 class Diagnostic(object):
     """
 
@@ -107,7 +106,6 @@ class Diagnostic(object):
               file=sys.stdout)
 
 
-@bind_all(timings)
 class Simulation(object):
     """
     The Simulation class is the top level class for N-body simulations.
@@ -169,7 +167,6 @@ class Simulation(object):
 # ------------------------------------------------------------------------
 
 
-@timings
 def main_simulation(args):
     viewer = GLviewer() if bool(args.view) else None
     mysim = Simulation(args, viewer)
@@ -177,7 +174,6 @@ def main_simulation(args):
     return 0
 
 
-@timings
 def main_restart(args):
     with open(args.restart_file, 'rb') as fobj:
         mysim = pickle.load(fobj)
@@ -213,7 +209,6 @@ def main_restart(args):
     return 0
 
 
-@timings
 def add_parsers(subparser, parents=None):
     """Here we process the command line arguments to run a new N-body
     simulation or restart from a previous run.

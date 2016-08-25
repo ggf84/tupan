@@ -6,10 +6,8 @@ TODO.
 """
 
 from .base import AbstractParticle, AbstractNbodyMethods
-from ..lib.utils.timing import timings, bind_all
 
 
-@bind_all(timings)
 class Blackhole(AbstractParticle, AbstractNbodyMethods):
     """
 
