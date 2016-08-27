@@ -147,7 +147,7 @@ class GLviewer(app.Canvas):
         self.projection = np.eye(4, dtype=np.float32)
         self.psize = 16
 
-        self.translate = [-0.0, -0.0, -0.0]
+        self.translate = [0.0, 0.0, 0.0]
         self.view = translate(self.translate)
 
         for prog in self.program.values():
@@ -339,6 +339,8 @@ class GLviewer(app.Canvas):
     def enter_main_loop(self):
         if self.is_visible:
             self.app.run()
+        if self.ffwriter:
+            self.ffwriter.stdin.close()
 
 
 # -- End of File --
