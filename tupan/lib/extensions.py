@@ -408,21 +408,12 @@ class Sakura(AbstractExtension):
         super(Sakura, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
-        if not hasattr(ips, 'dpos'):
-            ips.register_attribute('dpos', '{nd}, {nb}', 'real_t')
-        if not hasattr(ips, 'dvel'):
-            ips.register_attribute('dvel', '{nd}, {nb}', 'real_t')
-
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
                    kwargs['dt'], kwargs['flag'])
 
-        outargs = (ips.dpos[0], ips.dpos[1], ips.dpos[2],
-                   ips.dvel[0], ips.dvel[1], ips.dvel[2])
+        outargs = (ips.drdot,)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -436,28 +427,12 @@ class Sakura_rectangle(AbstractExtension):
         super(Sakura_rectangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps, **kwargs):
-        if not hasattr(ips, 'dpos'):
-            ips.register_attribute('dpos', '{nd}, {nb}', 'real_t')
-        if not hasattr(ips, 'dvel'):
-            ips.register_attribute('dvel', '{nd}, {nb}', 'real_t')
-
-        if not hasattr(jps, 'dpos'):
-            jps.register_attribute('dpos', '{nd}, {nb}', 'real_t')
-        if not hasattr(jps, 'dvel'):
-            jps.register_attribute('dvel', '{nd}, {nb}', 'real_t')
-
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
                    kwargs['dt'], kwargs['flag'])
 
-        outargs = (ips.dpos[0], ips.dpos[1], ips.dpos[2],
-                   ips.dvel[0], ips.dvel[1], ips.dvel[2],
-                   jps.dpos[0], jps.dpos[1], jps.dpos[2],
-                   jps.dvel[0], jps.dvel[1], jps.dvel[2])
+        outargs = (ips.drdot, jps.drdot)
 
         self.kernel.set_args(inpargs, outargs)
 
@@ -471,18 +446,11 @@ class Sakura_triangle(AbstractExtension):
         super(Sakura_triangle, self).__init__(name, backend)
 
     def set_args(self, ips, jps=None, **kwargs):
-        if not hasattr(ips, 'dpos'):
-            ips.register_attribute('dpos', '{nd}, {nb}', 'real_t')
-        if not hasattr(ips, 'dvel'):
-            ips.register_attribute('dvel', '{nd}, {nb}', 'real_t')
-
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
                    kwargs['dt'], kwargs['flag'])
 
-        outargs = (ips.dpos[0], ips.dpos[1], ips.dpos[2],
-                   ips.dvel[0], ips.dvel[1], ips.dvel[2])
+        outargs = (ips.drdot,)
 
         self.kernel.set_args(inpargs, outargs)
 

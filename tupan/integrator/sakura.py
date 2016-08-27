@@ -21,12 +21,12 @@ def sakura_step(ps, dt, kernel=ext.get_kernel('Sakura')):
     ps.rdot[0] += ps.rdot[1] * dt / 2
 
     kernel(ps, ps, dt=dt/2, flag=-1)
-    ps.rdot[0] += ps.dpos
-    ps.rdot[1] += ps.dvel
+    ps.rdot[0] += ps.drdot[0]
+    ps.rdot[1] += ps.drdot[1]
 
     kernel(ps, ps, dt=dt/2, flag=+1)
-    ps.rdot[0] += ps.dpos
-    ps.rdot[1] += ps.dvel
+    ps.rdot[0] += ps.drdot[0]
+    ps.rdot[1] += ps.drdot[1]
 
     ps.rdot[0] += ps.rdot[1] * dt / 2
 
@@ -54,6 +54,9 @@ class Sakura(Base):
         elif 'a.' in self.method:
             self.update_tstep = True
             self.shared_tstep = True
+
+        if not hasattr(ps, 'drdot'):
+            ps.register_attribute('drdot', '2, {nd}, {nb}', 'real_t')
 
         self.e0 = None
 
