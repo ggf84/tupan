@@ -218,13 +218,13 @@ class Program(object):
         simd = (self.cl_device.preferred_vector_width_float
                 if fpwidth == 'fp32'
                 else self.cl_device.preferred_vector_width_double)
-        lsize = 1
+        lsize = 8
         wsize = 8
         if self.cl_device.type == cl.device_type.CPU:
             lsize *= 2
-            wsize *= 2
+            wsize *= 1
         if self.cl_device.type == cl.device_type.GPU:
-            lsize *= 256
+            lsize *= 32
             wsize *= 256
         fast_local_mem = True
 

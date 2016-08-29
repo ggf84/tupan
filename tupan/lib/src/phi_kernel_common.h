@@ -47,7 +47,7 @@ typedef Phi_Data1 Phi_Data;
 
 
 static inline vec(Phi_Data)
-phi_kernel_core(vec(Phi_Data) ip, Phi_Data jp)
+phi_kernel_core(vec(Phi_Data) ip, vec(Phi_Data) jp)
 // flop count: 14
 {
 	vec(real_t) rdot[1][NDIM];

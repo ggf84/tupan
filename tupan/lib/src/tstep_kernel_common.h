@@ -63,7 +63,7 @@ typedef Tstep_Data1 Tstep_Data;
 
 
 static inline vec(Tstep_Data)
-tstep_kernel_core(vec(Tstep_Data) ip, Tstep_Data jp, const real_t eta)
+tstep_kernel_core(vec(Tstep_Data) ip, vec(Tstep_Data) jp, const real_t eta)
 // flop count: 42
 {
 	vec(real_t) rdot[2][NDIM];

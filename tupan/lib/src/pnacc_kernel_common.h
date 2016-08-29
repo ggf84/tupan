@@ -76,7 +76,7 @@ typedef PNAcc_Data1 PNAcc_Data;
 
 
 static inline vec(PNAcc_Data)
-pnacc_kernel_core(vec(PNAcc_Data) ip, PNAcc_Data jp, const CLIGHT clight)
+pnacc_kernel_core(vec(PNAcc_Data) ip, vec(PNAcc_Data) jp, const CLIGHT clight)
 // flop count: 36+???
 {
 	vec(real_t) rdot[2][NDIM];

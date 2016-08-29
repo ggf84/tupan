@@ -105,7 +105,7 @@ typedef Snp_Crk_Data1 Snp_Crk_Data;
 
 
 static inline vec(Snp_Crk_Data)
-snp_crk_kernel_core(vec(Snp_Crk_Data) ip, Snp_Crk_Data jp)
+snp_crk_kernel_core(vec(Snp_Crk_Data) ip, vec(Snp_Crk_Data) jp)
 // flop count: 128
 {
 	vec(real_t) rdot[4][NDIM];

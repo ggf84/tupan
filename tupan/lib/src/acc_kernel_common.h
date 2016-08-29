@@ -61,7 +61,7 @@ typedef Acc_Data1 Acc_Data;
 
 
 static inline vec(Acc_Data)
-acc_kernel_core(vec(Acc_Data) ip, Acc_Data jp)
+acc_kernel_core(vec(Acc_Data) ip, vec(Acc_Data) jp)
 // flop count: 21
 {
 	vec(real_t) rdot[1][NDIM];

@@ -22,6 +22,7 @@ def set_particles(n):
     ps.rdot[0][...] = np.random.random((3, n)) * 10
     ps.rdot[1][...] = np.random.random((3, n)) * 10
     ps.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
+    ps.register_attribute('drdot', '2, {nd}, {nb}', 'real_t')
 
     return ps
 

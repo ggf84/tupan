@@ -75,7 +75,7 @@ typedef Acc_Jrk_Data1 Acc_Jrk_Data;
 
 
 static inline vec(Acc_Jrk_Data)
-acc_jrk_kernel_core(vec(Acc_Jrk_Data) ip, Acc_Jrk_Data jp)
+acc_jrk_kernel_core(vec(Acc_Jrk_Data) ip, vec(Acc_Jrk_Data) jp)
 // flop count: 43
 {
 	vec(real_t) rdot[2][NDIM];

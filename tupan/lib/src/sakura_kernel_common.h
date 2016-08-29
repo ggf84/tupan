@@ -121,7 +121,7 @@ evolve_twobody(
 
 
 static inline Sakura_Data1
-sakura_kernel_core(Sakura_Data1 ip, Sakura_Data jp,
+sakura_kernel_core(Sakura_Data1 ip, Sakura_Data1 jp,
 				   const real_t dt, const int_t flag)
 // flop count: 27 + ??
 {

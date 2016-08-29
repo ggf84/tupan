@@ -15,13 +15,12 @@ sakura_kernel(
 	const int_t flag,
 	global real_t __idrdot[])
 {
-	uint_t lid = get_local_id(0);
-	uint_t start = get_group_id(0) * get_local_size(0);
-	uint_t stride = get_num_groups(0) * get_local_size(0);
-	for (uint_t ii = start; ii * 1 < ni; ii += stride) {
-		uint_t i = ii + lid;
-		i *= 1;
-		i = (i+1 < ni) ? (i):(ni-1);
+	for (uint_t ii = 1 * get_group_id(0) * get_local_size(0);
+				ii < ni;
+				ii += 1 * get_num_groups(0) * get_local_size(0)) {
+		uint_t lid = get_local_id(0);
+		uint_t i = ii + 1 * lid;
+		i = min(i, ni-1);
 		i *= (1 < ni);
 
 		Sakura_Data1 ip;
@@ -33,48 +32,49 @@ sakura_kernel(
 			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 				global const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
 				ip.rdot[kdot][kdim] = vload1(0, ptr + i);
-				ip.drdot[kdot][kdim] = (real_t)(0);
+				ip.drdot[kdot][kdim] = (real_t1)(0);
 			}
 		}
 
 		uint_t j = 0;
 
 		#ifdef FAST_LOCAL_MEM
-		for (; ((j + LSIZE) - 1) < nj; j += LSIZE) {
-			Sakura_Data jp;
-			jp.m = __jm[j + lid];
-			jp.e2 = __je2[j + lid];
+		for (; (j + LSIZE - 1) < nj; j += LSIZE) {
+			Sakura_Data1 jp;
+			jp.m = (real_t1)(__jm[j + lid]);
+			jp.e2 = (real_t1)(__je2[j + lid]);
 			#pragma unroll
 			for (uint_t kdot = 0; kdot < 2; ++kdot) {
 				#pragma unroll
 				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
-					jp.rdot[kdot][kdim] = ptr[j + lid];
-					jp.drdot[kdot][kdim] = 0;
+					jp.rdot[kdot][kdim] = (real_t1)(ptr[j + lid]);
+					jp.drdot[kdot][kdim] = (real_t1)(0);
 				}
 			}
 			barrier(CLK_LOCAL_MEM_FENCE);
-			local Sakura_Data _jp[LSIZE];
+			local Sakura_Data1 _jp[LSIZE];
 			_jp[lid] = jp;
 			barrier(CLK_LOCAL_MEM_FENCE);
 			#pragma unroll
 			for (uint_t k = 0; k < LSIZE; ++k) {
-				ip = sakura_kernel_core(ip, _jp[k], dt, flag);
+				jp = _jp[k];
+				ip = sakura_kernel_core(ip, jp, dt, flag);
 			}
 		}
 		#endif
 
-		for (; ((j + 1) - 1) < nj; j += 1) {
-			Sakura_Data jp;
-			jp.m = __jm[j];
-			jp.e2 = __je2[j];
+		for (; j < nj; ++j) {
+			Sakura_Data1 jp;
+			jp.m = (real_t1)(__jm[j]);
+			jp.e2 = (real_t1)(__je2[j]);
 			#pragma unroll
 			for (uint_t kdot = 0; kdot < 2; ++kdot) {
 				#pragma unroll
 				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
 					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
-					jp.rdot[kdot][kdim] = ptr[j];
-					jp.drdot[kdot][kdim] = 0;
+					jp.rdot[kdot][kdim] = (real_t1)(ptr[j]);
+					jp.drdot[kdot][kdim] = (real_t1)(0);
 				}
 			}
 			ip = sakura_kernel_core(ip, jp, dt, flag);
