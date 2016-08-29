@@ -12,7 +12,6 @@ import logging
 from itertools import count
 from .io.hdf5io import HDF5IO
 from .integrator import Integrator
-from .animation import GLviewer
 from .lib.utils.timing import Timer
 
 
@@ -110,8 +109,9 @@ class Simulation(object):
     """
     The Simulation class is the top level class for N-body simulations.
     """
-    def __init__(self, args, viewer):
+    def __init__(self, args, viewer=None):
         self.args = args
+        self.viewer = viewer
 
         # Read the initial conditions
         fname = self.args.input_file
@@ -134,7 +134,7 @@ class Simulation(object):
             self.args.meth,
             pn=self.args.pn,
             reporter=self.dia,
-            viewer=viewer,
+            viewer=self.viewer,
             dumpper=io,
             dump_freq=self.args.dump_freq,
         )
@@ -143,8 +143,13 @@ class Simulation(object):
         self.nrestart = count(1)
         self.dump_restart_file()
 
+    def __getstate__(self):  # apparently vispy objects can't be pickled!
+        dct = vars(self).copy()
+        dct['viewer'] = None
+        return dct
+
     def dump_restart_file(self):
-        with open(self.args.restart_file, 'wb') as fobj:
+        with open('restart.pkl', 'wb') as fobj:
             pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
 
     def evolve(self):
@@ -163,50 +168,60 @@ class Simulation(object):
         # Finalize the integrator
         self.integrator.finalize(t_end)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.dump_restart_file()
+
 
 # ------------------------------------------------------------------------
 
 
 def main_simulation(args):
-    viewer = GLviewer() if bool(args.view) else None
-    mysim = Simulation(args, viewer)
-    mysim.evolve()
-    return 0
+    args.pn = {}
+    if args.pn_order > 0:
+        if not args.clight:
+            sim = args.sim
+            sim.error('The --clight argument is required if --pn_order > 0.')
+        args.pn = {'order': args.pn_order, 'clight': args.clight}
+    del args.sim
+
+    if args.view:
+        from .animation import GLviewer
+        with GLviewer() as viewer:
+            with Simulation(args, viewer=viewer) as mysim:
+                mysim.evolve()
+    else:
+        with Simulation(args) as mysim:
+            mysim.evolve()
 
 
 def main_restart(args):
-    with open(args.restart_file, 'rb') as fobj:
-        mysim = pickle.load(fobj)
-
-    ps = mysim.integrator.integrator.ps
-
-    if args.fpwidth == 'fp32':
-        # FIXME: recast particles' attributes to fp32
-        pass
+    del args.sim
+    with open('restart.pkl', 'rb') as fobj:
+        restart = pickle.load(fobj)
 
     # reset eta
-    mysim.integrator.integrator.eta = args.eta
+    restart.integrator.integrator.eta = args.eta
 
     # reset t_end
-    ps.time[...] = mysim.args.t_end
-    mysim.args.t_end = args.t_end
+    restart.args.t_end = args.t_end
 
     # reset timer
-    mysim.dia.timer.reset_at(mysim.dia.timer.toc)
+    restart.dia.timer.reset_at(restart.dia.timer.toc)
 
-    viewer = None
     if args.view:
-        viewer = mysim.integrator.integrator.viewer
-        if not viewer:
-            viewer = GLviewer()
-    mysim.integrator.integrator.viewer = viewer
-    if viewer:
-        viewer.exitgl = False
-        viewer.is_initialized = False
-        viewer.show_event(ps)
-
-    mysim.evolve()
-    return 0
+        from .animation import GLviewer
+        with GLviewer() as viewer:
+            ps = restart.integrator.integrator.ps
+            viewer.show_event(ps)
+            restart.integrator.integrator.viewer = viewer
+            with restart as mysim:
+                mysim.evolve()
+    else:
+        with restart as mysim:
+            mysim.evolve()
 
 
 def add_parsers(subparser, parents=None):
@@ -220,25 +235,13 @@ def add_parsers(subparser, parents=None):
         type=float,
         required=True,
         help='Time-step parameter (type: %(type)s, required: %(required)s).'
-        )
-    preparser.add_argument(
-        '--dt_max',
-        type=float,
-        default=0.5,
-        help='Maximum time-step size (type: %(type)s, default: %(default)s).'
-        )
+    )
     preparser.add_argument(
         '-t', '--t_end',
         type=float,
         required=True,
         help='Simulation end time (type: %(type)s, required: %(required)s).'
-        )
-    preparser.add_argument(
-        '--restart_file',
-        type=str,
-        default='restart.pkl',
-        help='Restart filename (type: %(type)s, default: %(default)s).'
-        )
+    )
 
     if parents is None:
         parents = []
@@ -253,7 +256,7 @@ def add_parsers(subparser, parents=None):
         description=description,
         help=description,
         parents=parents
-        )
+    )
     # add the arguments to restart
     restart.set_defaults(func=main_restart)
 
@@ -268,7 +271,7 @@ def add_parsers(subparser, parents=None):
         description=description,
         help=description,
         parents=parents
-        )
+    )
     # add the arguments to simulation
     simulation.add_argument(
         '-i', '--input_file',
@@ -276,7 +279,7 @@ def add_parsers(subparser, parents=None):
         required=True,
         help=('Initial conditions filename '
               '(type: %(type)s, required: %(required)s).')
-        )
+    )
     simulation.add_argument(
         '-m', '--meth',
         metavar='METH',
@@ -286,20 +289,26 @@ def add_parsers(subparser, parents=None):
         help=('Integration method name '
               '(type: %(type)s, required: %(required)s, '
               'choices: {%(choices)s}).')
-        )
+    )
+    simulation.add_argument(
+        '--dt_max',
+        type=float,
+        default=0.5,
+        help='Maximum time-step size (type: %(type)s, default: %(default)s).'
+    )
     simulation.add_argument(
         '-o', '--output_file',
         type=str,
         default='',
         help=('Output filename to store the simulation data '
               '(type: %(type)s, default: %(default)s).')
-        )
+    )
     simulation.add_argument(
         '--t_begin',
         type=float,
         default=0.0,
         help='Simulation begin time (type: %(type)s, default: %(default)s).'
-        )
+    )
     simulation.add_argument(
         '--pn_order',
         metavar='PN_ORDER',
@@ -309,26 +318,26 @@ def add_parsers(subparser, parents=None):
         help=('Order of the Post-Newtonian corrections '
               '(type: %(type)s, default: %(default)s, '
               'choices: {%(choices)s}).')
-        )
+    )
     simulation.add_argument(
         '--clight',
         type=float,
         help=('Speed of light (type: %(type)s), default: %(default)s).')
-        )
+    )
     simulation.add_argument(
         '-d', '--dump_freq',
         type=int,
         default=1,
         help=('Number of time-steps between dump of snapshots '
               '(type: %(type)s, default: %(default)s).')
-        )
+    )
     simulation.add_argument(
         '--restart_freq',
         type=int,
         default=4,
         help=('Number of time-steps between rewrites of the restart file '
               '(type: %(type)s, default: %(default)s).')
-        )
+    )
     simulation.set_defaults(func=main_simulation)
     return simulation
 

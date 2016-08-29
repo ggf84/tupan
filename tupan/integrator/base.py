@@ -38,7 +38,7 @@ class Base(object):
 
     def __getstate__(self):  # apparently vispy objects can't be pickled!
         dct = vars(self).copy()
-        del dct['viewer']
+        dct['viewer'] = None
         return dct
 
     def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
@@ -51,8 +51,8 @@ class Base(object):
         self.ps = ps
         self.eta = eta
         self.dt_max = math.copysign(dt_max, eta)
+        self.t_next = t_begin
         ps.time[...] = t_begin
-        type(ps).t_next = t_begin
         self.method = method
 
         self.pn = kwargs.pop('pn', None)
@@ -88,8 +88,8 @@ class Base(object):
             dt = min(abs(dt), abs(eta))
             dt = math.copysign(dt, eta)
 
-        type(self.ps).t_next += self.dt_max
-        while self.ps.t_next > self.ps.time[0]:
+        self.t_next += self.dt_max
+        while self.t_next > self.ps.time[0]:
             self.ps = self.do_step(self.ps, dt)
 
         if self.reporter:
@@ -105,10 +105,6 @@ class Base(object):
         """
         LOGGER.info("Finalizing '%s' integrator at "
                     "t_end = %g.", self.method, t_end)
-
-        if self.viewer:
-            self.viewer.show_event(self.ps)
-            self.viewer.enter_main_loop()
 
 
 # -- End of File --

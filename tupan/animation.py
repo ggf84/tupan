@@ -336,7 +336,10 @@ class GLviewer(app.Canvas):
         self.app.process_events()
         self.update()
 
-    def enter_main_loop(self):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
         if self.is_visible:
             self.app.run()
         if self.ffwriter:

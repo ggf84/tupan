@@ -22,14 +22,14 @@ parser.add_argument(
     help=('Extension modules backend '
           '(type: %(type)s, default: %(default)s, '
           'choices: {%(choices)s}).')
-    )
+)
 parser.add_argument(
     '--cache_prefix',
     type=str,
     default=os.path.expanduser('~'),
     help=('Cache dir prefix '
           '(type: %(type)s, default: %(default)s).')
-    )
+)
 parser.add_argument(
     '--fpwidth',
     metavar='FPWIDTH',
@@ -39,7 +39,7 @@ parser.add_argument(
     help=('Floating-point width '
           '(type: %(type)s, default: %(default)s, '
           'choices: {%(choices)s}).')
-    )
+)
 parser.add_argument(
     '--view',
     metavar='FREQ',
@@ -50,7 +50,7 @@ parser.add_argument(
     help=('Enable support for real-time visualization. '
           'Optionally you can pass an update frequency '
           '(type: %(type)s, const: %(const)s, default: %(default)s).')
-    )
+)
 parser.add_argument(
     '--record',
     metavar='FPS',
@@ -61,7 +61,7 @@ parser.add_argument(
     help=('Enable recording of visualization. '
           'Optionally you can pass the output fps ratio '
           '(type: %(type)s, const: %(const)s, default: %(default)s).')
-    )
+)
 
 # parse known arguments from parser
 options, _ = parser.parse_known_args()

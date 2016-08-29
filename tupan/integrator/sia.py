@@ -504,7 +504,7 @@ class SIA(Base):
         """
 
         """
-        tdiff = abs(ps.t_next - ps.time[0])
+        tdiff = abs(self.t_next - ps.time[0])
         ratio = tdiff // abs(dt)
         if self.dumpper:
             s0 = tdiff > 0

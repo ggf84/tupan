@@ -41,9 +41,8 @@ fname = ("plummer" + '-n' + str(n) + '-' +
 with HDF5IO(fname, 'w') as fid:
     fid.dump_snap(ps)
 
-viewer = GLviewer()
-viewer.show_event(ps)
-viewer.enter_main_loop()
+with GLviewer() as viewer:
+    viewer.show_event(ps)
 
 
 # -- End of File --

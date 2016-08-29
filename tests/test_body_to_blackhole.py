@@ -50,9 +50,8 @@ if __name__ == "__main__":
         fid.dump_snap(ps)
 
     from tupan.animation import GLviewer
-    viewer = GLviewer()
-    viewer.show_event(ps)
-    viewer.enter_main_loop()
+    with GLviewer() as viewer:
+        viewer.show_event(ps)
 
 
 # -- End of File --
