@@ -137,14 +137,6 @@ class TestCase1(unittest.TestCase):
         dt = 1.0/64
         compare_result(7, 'Sakura', dt=dt, flag=-2)
 
-    def test08(self):
-        dt = 1.0/64
-        compare_result(8, 'NregX', dt=dt)
-
-    def test09(self):
-        dt = 1.0/64
-        compare_result(9, 'NregV', dt=dt)
-
 
 class TestCase2(unittest.TestCase):
 
@@ -176,14 +168,6 @@ class TestCase2(unittest.TestCase):
     def test07(self):
         dt = 1.0/64
         benchmark(7, 'Sakura', dt=dt, flag=-2)
-
-    def test08(self):
-        dt = 1.0/64
-        benchmark(8, 'NregX', dt=dt)
-
-    def test09(self):
-        dt = 1.0/64
-        benchmark(9, 'NregV', dt=dt)
 
 
 if __name__ == "__main__":

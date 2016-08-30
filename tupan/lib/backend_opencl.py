@@ -199,7 +199,6 @@ class Program(object):
             'snp_crk_kernel.cl',
             'tstep_kernel.cl',
             'pnacc_kernel.cl',
-            'nreg_kernels.cl',
             'sakura_kernel.cl',
         )
 

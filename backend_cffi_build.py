@@ -22,7 +22,6 @@ FILE_NAMES = [
     'snp_crk_kernel.cpp',
     'tstep_kernel.cpp',
     'pnacc_kernel.cpp',
-    'nreg_kernels.cpp',
     'sakura_kernel.cpp',
     'kepler_solver_kernel.cpp',
 ]
