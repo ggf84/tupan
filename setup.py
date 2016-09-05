@@ -40,6 +40,14 @@ def version():
     return d['VERSION']
 
 
+def description():
+    d = {}
+    fname = os.path.join(CWD, 'tupan', '__init__.py')
+    with open(fname) as f:
+        exec(f.read(), d)
+    return d['__doc__']
+
+
 def readme():
     fname = os.path.join(CWD, 'README.rst')
     with open(fname) as f:
@@ -49,7 +57,7 @@ def readme():
 setup(
     name='tupan',
     version=version(),
-    description="A Python Toolkit for Astrophysical N-Body Simulations.",
+    description=description(),
     long_description=readme(),
     classifiers=[c for c in CLASSIFIERS.split('\n') if c],
     url='https://github.com/ggf84/tupan',

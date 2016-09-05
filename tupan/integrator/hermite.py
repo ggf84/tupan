@@ -5,9 +5,9 @@
 TODO.
 """
 
+import abc
 import logging
 from operator import add, sub
-from abc import ABCMeta, abstractmethod
 from .base import Base, power_of_two
 from ..lib.utils import with_metaclass
 
@@ -16,28 +16,28 @@ LOGGER = logging.getLogger(__name__)
 PM = [add, sub]  # plus/minus operator.
 
 
-class HX(with_metaclass(ABCMeta, object)):
+class HX(with_metaclass(abc.ABCMeta, object)):
     """
 
     """
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def order(self):
         raise NotImplementedError
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def coefs(self):
         raise NotImplementedError
 
     @staticmethod
-    @abstractmethod
+    @abc.abstractmethod
     def evaluate(ps):
         raise NotImplementedError
 
     def __init__(self, manager):
         self.initialized = False
-        self.eta = manager.eta
+        self.cli = manager.cli
         self.update_tstep = manager.update_tstep
 
     def timestep_criterion(self, ps, eta):
@@ -55,11 +55,11 @@ class HX(with_metaclass(ABCMeta, object)):
             if self.order > 4:
                 ps.set_snp_crk(ps)
             if self.update_tstep:
-                ps.set_tstep(ps, self.eta)
+                ps.set_tstep(ps, self.cli.eta)
                 return power_of_two(ps, dt)
         else:
             if self.update_tstep:
-                self.timestep_criterion(ps, self.eta)
+                self.timestep_criterion(ps, self.cli.eta)
                 return power_of_two(ps, dt)
         return dt
 
@@ -249,12 +249,13 @@ class Hermite(Base):
         'c.hermite8', 'a.hermite8',
     ]
 
-    def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
+    def __init__(self, ps, cli, *args, **kwargs):
         """
 
         """
-        super(Hermite, self).__init__(ps, eta, dt_max,
-                                      t_begin, method, **kwargs)
+        super(Hermite, self).__init__(ps, cli, *args, **kwargs)
+
+        method = cli.method
 
         if 'c.' in method:
             self.update_tstep = False

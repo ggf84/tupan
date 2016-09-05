@@ -15,8 +15,8 @@ from tupan.animation import GLviewer
 
 with GLviewer() as viewer:
     with HDF5IO('snapshots.hdf5', 'r') as fid:
-        for i in range(len(fid.file)):
-            snap = fid.load_snap(tag=i)
+        for tag in range(fid.n_snaps):
+            snap = fid.load_snap(tag=tag)
             viewer.show_event(snap)
 
 

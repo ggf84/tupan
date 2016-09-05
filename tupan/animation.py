@@ -12,7 +12,7 @@ from matplotlib import cm
 from vispy import gloo
 from vispy import app
 from vispy.util.transforms import ortho, translate, scale, rotate
-from .config import options
+from .config import cli
 
 
 LOGGER = logging.getLogger(__name__)
@@ -162,18 +162,17 @@ class GLviewer(app.Canvas):
         self.show(True)
         self.is_visible = True
 
-        self.ffwriter = None
-        self.make_movie = bool(options.record)
-        self.gl_freq = options.view
-
     def record_screen(self):
-        if not self.ffwriter:
+        try:
+            im = gloo.read_pixels()
+            self.ffwriter.stdin.write(im.tostring())
+        except AttributeError:
             cmdline = [
                 "ffmpeg", "-y",
                 "-f", "rawvideo",
                 "-pix_fmt", "rgba",
                 "-s", "{0}x{1}".format(*self.size),
-                "-r", "{}".format(options.record),
+                "-r", "{}".format(cli.record),
                 "-i", "-",
                 "-an",  # no audio
                 "-pix_fmt", "yuv420p",
@@ -181,13 +180,13 @@ class GLviewer(app.Canvas):
                 "-b:v", "300000k",
                 "movie.mkv",
             ]
-            self.ffwriter = subprocess.Popen(cmdline,
-                                             stdin=subprocess.PIPE,
-                                             stdout=subprocess.PIPE,
-                                             stderr=subprocess.PIPE)
-
-        im = gloo.read_pixels()
-        self.ffwriter.stdin.write(im.tostring())
+            self.ffwriter = subprocess.Popen(
+                cmdline,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            self.record_screen()
 
     def on_initialize(self, event):
         gloo.set_state(depth_test=True, blend=True, clear_color='black')
@@ -287,7 +286,7 @@ class GLviewer(app.Canvas):
             self.program['blackhole'].draw('points')
             gloo.set_depth_mask(True)
 
-        if self.make_movie:
+        if cli.record:
             self.record_screen()
 
     def init_vertex_buffers(self, ps):
@@ -337,12 +336,14 @@ class GLviewer(app.Canvas):
         self.update()
 
     def __enter__(self):
+        LOGGER.debug(type(self).__name__+'.__enter__')
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):
+        LOGGER.debug(type(self).__name__+'.__exit__')
         if self.is_visible:
             self.app.run()
-        if self.ffwriter:
+        if hasattr(self, 'ffwriter'):
             self.ffwriter.stdin.close()
 
 

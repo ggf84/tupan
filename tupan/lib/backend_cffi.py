@@ -6,11 +6,11 @@ This module implements the CFFI backend to call C-extensions.
 """
 
 import importlib
-from ..config import options
+from ..config import cli
 
 
 libtupan = importlib.import_module(
-    '.libtupan'+options.fpwidth,
+    '.libtupan'+cli.fpwidth,
     package=__package__
 )
 

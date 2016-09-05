@@ -8,15 +8,16 @@ TODO.
 from __future__ import print_function
 import h5py
 import pickle
-from itertools import count
+import logging
 from collections import OrderedDict
 
 
-PICKLE_PROTOCOL = 0  # ensures backward compatibility with Python 2.x
+LOGGER = logging.getLogger(__name__)
 
 
 def do_pickle(obj):
-    return pickle.dumps(type(obj), protocol=PICKLE_PROTOCOL)
+    protocol = 0  # ensures backward compatibility with Python 2.x
+    return pickle.dumps(type(obj), protocol=protocol)
 
 
 def dump_ps(parent, ps):
@@ -29,9 +30,14 @@ def dump_ps(parent, ps):
         ptype.attrs['class'] = do_pickle(member)
         for name in member.default_attr_names:
             array = getattr(member, name)
-            ptype.create_dataset(name, data=array.T,
-                                 chunks=True, shuffle=True,
-                                 compression='gzip')
+            ptype.create_dataset(
+                name,
+                data=array.T,
+                chunks=True,
+                shuffle=True,
+                compression='gzip',
+                compression_opts=9,
+            )
 
 
 def load_ps(parent):
@@ -56,48 +62,64 @@ class HDF5IO(object):
     def __init__(self, fname, fmode='r'):
         if not fname.endswith('.hdf5'):
             fname += '.hdf5'
-        self.file = h5py.File(fname, fmode)
-        self.snap_id = count()
-        self.stream_id = count()
-        self.data_stream = []
+        self.fname = fname
+        self.fmode = fmode
 
     def __enter__(self):
+        msg = "{clsname}('{fname}', '{fmode}').__enter__"
+        LOGGER.debug(
+            msg.format(
+                clsname=type(self).__name__,
+                fname=self.fname,
+                fmode=self.fmode
+            )
+        )
+        self.open_file = h5py.File(self.fname, self.fmode)
         return self
 
-    def __exit__(self, type, value, traceback):
-        self.file.close()
+    def __exit__(self, exc_type, exc_value, traceback):
+        msg = "{clsname}('{fname}', '{fmode}').__exit__"
+        LOGGER.debug(
+            msg.format(
+                clsname=type(self).__name__,
+                fname=self.fname,
+                fmode=self.fmode
+            )
+        )
+        self.open_file.close()
+        del self.open_file
 
-    def dump_snap(self, ps, tag=0):
-        snap = self.file.create_group('Snap#%d' % tag)
-        dump_ps(snap, ps)
-
-    def load_snap(self, tag=0):
-        snap = self.file['Snap#%d' % tag]
-        return load_ps(snap)
-
-    def dump_stream(self, ps, tag=0):
-        stream = self.file.create_group('Snap#%d/Stream' % tag)
-        dump_ps(stream, ps)
-
-    def load_stream(self, tag=0):
-        stream = self.file['Snap#%d/Stream' % tag]
-        return load_ps(stream)
+    @property
+    def n_eras(self):
+        return len(self.open_file)
+    n_snaps = n_eras
 
     def append_data(self, ps):
-        self.data_stream.append(ps.copy())
+        try:
+            self.stream += ps
+        except:
+            self.stream = ps.copy()
 
-    def flush_data_stream(self):
-        if self.data_stream:
-            data = self.data_stream.pop(0)
-            for d in self.data_stream:
-                data += d
-            self.dump_stream(data, tag=next(self.stream_id))
-            del self.data_stream[:]
+    def dump_snap(self, snap, tag=0):
+        group = self.open_file.create_group('Era#%d/Snap' % tag)
+        dump_ps(group, snap)
 
-    def init_new_era(self, ps):
-        self.flush_data_stream()
-        self.dump_snap(ps, tag=next(self.snap_id))
-        self.file.flush()
+    def load_snap(self, tag=0):
+        group = self.open_file['Era#%d/Snap' % tag]
+        return load_ps(group)
+
+    def dump_stream(self, stream, tag=0):
+        group = self.open_file.create_group('Era#%d/Stream' % tag)
+        dump_ps(group, stream)
+
+    def load_stream(self, tag=0):
+        group = self.open_file['Era#%d/Stream' % tag]
+        return load_ps(group)
+
+    def flush_stream(self, tag=0):
+        if hasattr(self, 'stream'):
+            self.dump_stream(self.stream, tag=tag)
+            del self.stream
 
     def load_era(self, tag=0):
         era = self.load_snap(tag)
@@ -107,9 +129,9 @@ class HDF5IO(object):
 
     def load_full_era(self):
         era = self.load_snap(0)
-        for i in range(1, len(self.file)):
-            era += self.load_stream(i-1)
-            era += self.load_snap(i)
+        for tag in range(self.n_eras-1):
+            era += self.load_stream(tag)
+            era += self.load_snap(tag+1)
         return era
 
     def era2snaps(self, era, n_snaps):

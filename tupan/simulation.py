@@ -7,7 +7,6 @@ TODO.
 
 from __future__ import print_function
 import sys
-import pickle
 import logging
 from itertools import count
 from .io.hdf5io import HDF5IO
@@ -22,31 +21,33 @@ class Diagnostic(object):
     """
 
     """
-    def __init__(self, time):
-        self.time = time
-
-    def init_diagnostic_report(self, ps):
-        self.ke0 = ps.kinetic_energy
-        self.pe0 = ps.potential_energy
-        self.te0 = self.ke0 + self.pe0
+    def __init__(self, ps, cli):
+        self.ps = ps
+        self.cli = cli
+        self.wct = Timer()
+        self.wct.start()
 
         self.com_r0 = ps.com_r
         self.com_v0 = ps.com_v
+        self.ke0 = ps.kinetic_energy
+        self.pe0 = ps.potential_energy
+        self.te0 = self.ke0 + self.pe0
         self.lmom0 = ps.linear_momentum
         self.amom0 = ps.angular_momentum
 
+        self.time = cli.t_begin
         self.avr_err_sum = 0.0
         self.abs_err_sum = 0.0
-        self.nreport = count(1)
+        self.counter = count(1)
 
-        self.timer = Timer()
-        self.timer.start()
-
+    def __enter__(self):
+        LOGGER.debug(type(self).__name__+'.__enter__')
         self.print_header()
-        self.diagnostic_report(ps)
+        self.print_diagnostic(self.ps)
+        return self
 
-    def __repr__(self):
-        return '{0}'.format(self.__dict__)
+    def __exit__(self, exc_type, exc_value, traceback):
+        LOGGER.debug(type(self).__name__+'.__exit__')
 
     def print_header(self):
         fmt = '{0:13s} {1:10s} '\
@@ -61,30 +62,27 @@ class Diagnostic(object):
                          '#11:lmom', '#12:amom', '#13:wct'),
               file=sys.stdout)
 
-    def diagnostic_report(self, ps):
+    def print_diagnostic(self, ps):
+        self.ps = ps
         time = ps.time[0]
-        self.print_diagnostic(time, ps)
-
-    def print_diagnostic(self, time, ps):
         dtime = time - self.time
         self.time = time
 
+        com_r = ps.com_r
+        com_v = ps.com_v
         ke = ps.kinetic_energy
         pe = ps.potential_energy
         te = ke + pe
         virial = ps.virial_energy
-
-        com_r = ps.com_r
-        com_v = ps.com_v
         lmom = ps.linear_momentum
         amom = ps.angular_momentum
 
         eerr = (te - self.te0) / (-pe)
         self.abs_err_sum += abs(eerr)
         self.avr_err_sum += eerr
-        nreport = next(self.nreport)
-        abs_err = self.abs_err_sum / nreport
-        avr_err = self.avr_err_sum / nreport
+        counter = next(self.counter)
+        abs_err = self.abs_err_sum / counter
+        avr_err = self.avr_err_sum / counter
         com_dr = (((com_r - self.com_r0)**2).sum())**0.5
         com_dv = (((com_v - self.com_v0)**2).sum())**0.5
         dlmom = (((lmom - self.lmom0)**2).sum())**0.5
@@ -101,245 +99,189 @@ class Diagnostic(object):
                          eerr=eerr, abs_err=abs_err,
                          avr_err=avr_err, com_r=com_dr,
                          com_v=com_dv, lmom=dlmom, amom=damom,
-                         wct=self.timer.elapsed()),
+                         wct=self.wct.elapsed()),
               file=sys.stdout)
-
-
-class Simulation(object):
-    """
-    The Simulation class is the top level class for N-body simulations.
-    """
-    def __init__(self, args, viewer=None):
-        self.args = args
-        self.viewer = viewer
-
-        # Read the initial conditions
-        fname = self.args.input_file
-        with HDF5IO(fname, 'r') as fid:
-            ps = fid.load_snap()
-
-        # Initializes output file
-        fname = self.args.output_file
-        io = HDF5IO(fname, 'w') if fname else None
-
-        # Initializes the diagnostic report of the simulation
-        self.dia = Diagnostic(self.args.t_begin)
-
-        # Initializes the integrator
-        self.integrator = Integrator(
-            ps,
-            self.args.eta,
-            self.args.dt_max,
-            self.args.t_begin,
-            self.args.meth,
-            pn=self.args.pn,
-            reporter=self.dia,
-            viewer=self.viewer,
-            dumpper=io,
-            dump_freq=self.args.dump_freq,
-        )
-
-        # Initializes restart file counter
-        self.nrestart = count(1)
-        self.dump_restart_file()
-
-    def __getstate__(self):  # apparently vispy objects can't be pickled!
-        dct = vars(self).copy()
-        dct['viewer'] = None
-        return dct
-
-    def dump_restart_file(self):
-        with open('restart.pkl', 'wb') as fobj:
-            pickle.dump(self, fobj, protocol=pickle.HIGHEST_PROTOCOL)
-
-    def evolve(self):
-        """
-
-        """
-        t_end = self.args.t_end
-        while abs(self.integrator.time) < t_end:
-            # evolve a single time-step
-            self.integrator.evolve_step(t_end)
-
-            # dump restart file
-            if next(self.nrestart) % self.args.restart_freq == 0:
-                self.dump_restart_file()
-
-        # Finalize the integrator
-        self.integrator.finalize(t_end)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.dump_restart_file()
 
 
 # ------------------------------------------------------------------------
 
 
-def main_simulation(args):
-    args.pn = {}
-    if args.pn_order > 0:
-        if not args.clight:
-            sim = args.sim
-            sim.error('The --clight argument is required if --pn_order > 0.')
-        args.pn = {'order': args.pn_order, 'clight': args.clight}
-    del args.sim
-
-    if args.view:
-        from .animation import GLviewer
-        with GLviewer() as viewer:
-            with Simulation(args, viewer=viewer) as mysim:
-                mysim.evolve()
-    else:
-        with Simulation(args) as mysim:
-            mysim.evolve()
-
-
-def main_restart(args):
-    del args.sim
-    with open('restart.pkl', 'rb') as fobj:
-        restart = pickle.load(fobj)
-
-    # reset eta
-    restart.integrator.integrator.eta = args.eta
-
-    # reset t_end
-    restart.args.t_end = args.t_end
-
-    # reset timer
-    restart.dia.timer.reset_at(restart.dia.timer.toc)
-
-    if args.view:
-        from .animation import GLviewer
-        with GLviewer() as viewer:
-            ps = restart.integrator.integrator.ps
-            viewer.show_event(ps)
-            restart.integrator.integrator.viewer = viewer
-            with restart as mysim:
-                mysim.evolve()
-    else:
-        with restart as mysim:
-            mysim.evolve()
-
-
-def add_parsers(subparser, parents=None):
-    """Here we process the command line arguments to run a new N-body
-    simulation or restart from a previous run.
+class Run(object):
     """
-    import argparse
-    preparser = argparse.ArgumentParser(add_help=False)
-    preparser.add_argument(
-        '-e', '--eta',
-        type=float,
-        required=True,
-        help='Time-step parameter (type: %(type)s, required: %(required)s).'
-    )
-    preparser.add_argument(
-        '-t', '--t_end',
-        type=float,
-        required=True,
-        help='Simulation end time (type: %(type)s, required: %(required)s).'
-    )
+    Run a new N-body simulation
+    """
+    def __init__(self, subparser):
+        from . import config
+        parser = subparser.add_parser(
+            'run',
+            parents=[config.parser],
+            description=self.__doc__,
+        )
+        parser.add_argument(
+            '-e', '--eta',
+            type=float,
+            required=True,
+            help='Time-step parameter (type: %(type)s, required: %(required)s)'
+        )
+        parser.add_argument(
+            '-t', '--t_end',
+            type=float,
+            required=True,
+            help='Simulation end time (type: %(type)s, required: %(required)s)'
+        )
+        parser.add_argument(
+            '-i', '--input_file',
+            type=str,
+            required=True,
+            help=('Initial conditions filename '
+                  '(type: %(type)s, required: %(required)s)')
+        )
+        parser.add_argument(
+            '-m', '--method',
+            metavar='NAME',
+            type=str,
+            required=True,
+            choices=Integrator.PROVIDED_METHODS,
+            help=('Integration method '
+                  '(type: %(type)s, required: %(required)s, '
+                  'choices: {%(choices)s})')
+        )
+        parser.add_argument(
+            '--dt_max',
+            type=float,
+            default=0.5,
+            help=('Maximum time-step size '
+                  '(type: %(type)s, default: %(default)s)')
+        )
+        parser.add_argument(
+            '-o', '--output_file',
+            type=str,
+            help=('Output filename to store the simulation data '
+                  '(type: %(type)s, default: %(default)s)')
+        )
+        parser.add_argument(
+            '--t_begin',
+            type=float,
+            default=0.0,
+            help='Simulation begin time (type: %(type)s, default: %(default)s)'
+        )
+        parser.add_argument(
+            '--pn_order',
+            metavar='PN_ORDER',
+            type=int,
+            default=0,
+            choices=[0, 2, 4, 5, 6, 7],
+            help=('Order of the Post-Newtonian corrections '
+                  '(type: %(type)s, default: %(default)s, '
+                  'choices: {%(choices)s})')
+        )
+        parser.add_argument(
+            '--clight',
+            type=float,
+            help='Speed of light (type: %(type)s), default: %(default)s)'
+        )
+        parser.add_argument(
+            '-d', '--dump_freq',
+            metavar='NSTEPS',
+            type=int,
+            default=1,
+            help=('Number of time-steps between simulation data dumps '
+                  '(type: %(type)s, default: %(default)s)')
+        )
+        self.parser = parser
 
-    if parents is None:
-        parents = []
-    parents.append(preparser)
+    def __call__(self, cli):
+        # pre-process some args
+        cli.pn = {}
+        if cli.pn_order > 0:
+            if not cli.clight:
+                self.parser.error(
+                    'the --clight argument is required if --pn_order > 0'
+                )
+            cli.pn = {'order': cli.pn_order, 'clight': cli.clight}
 
-    # --- subparser restart ---
-    description = 'Restart a simulation from a previous run.'
+        # read initial conditions
+        with HDF5IO(cli.input_file, 'r') as fid:
+            ps = fid.load_snap()
+            ps.time[...] = cli.t_begin
 
-    # add subparser restart
-    restart = subparser.add_parser(
-        'restart',
-        description=description,
-        help=description,
-        parents=parents
-    )
-    # add the arguments to restart
-    restart.set_defaults(func=main_restart)
+        # main function
+        def run(ps, cli, viewer=None):
+            dumpper = None
+            if cli.output_file:
+                with HDF5IO(cli.output_file, 'w') as io:
+                    io.dump_snap(ps, tag=0)
+                dumpper = HDF5IO(cli.output_file, 'a')
 
-    # -------------------------------------------------------------------------
+            with Diagnostic(ps, cli) as checker:
+                with Integrator(ps, cli,
+                                viewer=viewer,
+                                dumpper=dumpper,
+                                checker=checker) as mysim:
+                    mysim.evolve(cli.t_end)
 
-    # --- subparser simulation ---
-    description = 'Performs a new N-body simulation.'
+        # call main function!
+        if cli.view:
+            from .animation import GLviewer
+            with GLviewer() as viewer:
+                run(ps, cli, viewer=viewer)
+        else:
+            run(ps, cli)
 
-    # add subparser simulation
-    simulation = subparser.add_parser(
-        'simulation',
-        description=description,
-        help=description,
-        parents=parents
-    )
-    # add the arguments to simulation
-    simulation.add_argument(
-        '-i', '--input_file',
-        type=str,
-        required=True,
-        help=('Initial conditions filename '
-              '(type: %(type)s, required: %(required)s).')
-    )
-    simulation.add_argument(
-        '-m', '--meth',
-        metavar='METH',
-        type=str,
-        required=True,
-        choices=Integrator.PROVIDED_METHODS,
-        help=('Integration method name '
-              '(type: %(type)s, required: %(required)s, '
-              'choices: {%(choices)s}).')
-    )
-    simulation.add_argument(
-        '--dt_max',
-        type=float,
-        default=0.5,
-        help='Maximum time-step size (type: %(type)s, default: %(default)s).'
-    )
-    simulation.add_argument(
-        '-o', '--output_file',
-        type=str,
-        default='',
-        help=('Output filename to store the simulation data '
-              '(type: %(type)s, default: %(default)s).')
-    )
-    simulation.add_argument(
-        '--t_begin',
-        type=float,
-        default=0.0,
-        help='Simulation begin time (type: %(type)s, default: %(default)s).'
-    )
-    simulation.add_argument(
-        '--pn_order',
-        metavar='PN_ORDER',
-        type=int,
-        default=0,
-        choices=[0, 2, 4, 5, 6, 7],
-        help=('Order of the Post-Newtonian corrections '
-              '(type: %(type)s, default: %(default)s, '
-              'choices: {%(choices)s}).')
-    )
-    simulation.add_argument(
-        '--clight',
-        type=float,
-        help=('Speed of light (type: %(type)s), default: %(default)s).')
-    )
-    simulation.add_argument(
-        '-d', '--dump_freq',
-        type=int,
-        default=1,
-        help=('Number of time-steps between dump of snapshots '
-              '(type: %(type)s, default: %(default)s).')
-    )
-    simulation.add_argument(
-        '--restart_freq',
-        type=int,
-        default=4,
-        help=('Number of time-steps between rewrites of the restart file '
-              '(type: %(type)s, default: %(default)s).')
-    )
-    simulation.set_defaults(func=main_simulation)
-    return simulation
+
+class Restart(object):
+    """
+    Restart from a previous simulation
+    """
+    def __init__(self, subparser):
+        from . import config
+        parser = subparser.add_parser(
+            'restart',
+            parents=[config.parser],
+            description=self.__doc__,
+        )
+        parser.add_argument(
+            '-e', '--eta',
+            type=float,
+            help=('Time-step parameter. If None, it defaults to the value in '
+                  'restart file (type: %(type)s, default: %(default)s)')
+        )
+        parser.add_argument(
+            '-t', '--t_end',
+            type=float,
+            required=True,
+            help='Simulation end time (type: %(type)s, required: %(required)s)'
+        )
+        self.parser = parser
+
+    def __call__(self, cli):
+        import pickle
+
+        # read restart file
+        with open('restart.pkl', 'rb') as fobj:
+            simulation = pickle.load(fobj)
+
+        # reset cli arguments
+        eta = vars(cli).pop('eta')
+        if eta:
+            vars(simulation.cli).update({'eta': eta})
+        vars(simulation.cli).update(vars(cli))
+
+        # main function
+        def restart(simulation, cli):
+            wct = simulation.checker.wct    # reset wall-clock-time to
+            wct.reset_at(wct.toc)           # the point where it stopped
+            with simulation as mysim:
+                mysim.evolve(cli.t_end)
+
+        # call main function!
+        if cli.view:
+            from .animation import GLviewer
+            with GLviewer() as viewer:
+                simulation.viewer = viewer
+                restart(simulation, cli)
+        else:
+            restart(simulation, cli)
 
 
 # -- End of File --

@@ -50,12 +50,12 @@ def c_nreg_step(ps, h):
         U = ps.U
     except:
         U = -ps.potential_energy
-        type(ps).U = U
+        ps.U = U
 
     ps, _ = drift(ps, U * h/2)
     ps, _ = kick(ps, U * h)
     ps, W = drift(ps, U * h/2)
-    type(ps).U = U = (W**2) / ps.U
+    ps.U = U = (W**2) / ps.U
 
     ps.nstep += 1
     return ps
@@ -69,30 +69,29 @@ class NREG(Base):
         'c.nreg', 'a.nreg',
     ]
 
-    def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
+    def __init__(self, ps, cli, *args, **kwargs):
         """
 
         """
-        super(NREG, self).__init__(ps, eta, dt_max,
-                                   t_begin, method, **kwargs)
+        super(NREG, self).__init__(ps, cli, *args, **kwargs)
 
         self.update_tstep = False
         self.shared_tstep = True
 
         T = ps.kinetic_energy
         U = -ps.potential_energy
-        type(ps).B = U - T
+        ps.B = U - T
 
     def do_step(self, ps, h):
         """
 
         """
-        if 'c.' in self.method:
+        if 'c.' in self.cli.method:
             return c_nreg_step(ps, h)
-        elif 'a.' in self.method:
+        elif 'a.' in self.cli.method:
             return a_nreg_step(ps, h)
         else:
-            raise NotImplemented(self.method)
+            raise NotImplemented(self.cli.method)
 
 
 # -- End of File --

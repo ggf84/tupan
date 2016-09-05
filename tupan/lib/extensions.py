@@ -7,7 +7,7 @@ This module implements highlevel interfaces for C/CL-extensions.
 
 from __future__ import print_function, division
 import logging
-from ..config import options
+from ..config import cli
 
 
 LOGGER = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ class Phi(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'phi_kernel'
         super(Phi, self).__init__(name, backend)
 
@@ -74,7 +74,7 @@ class Phi_rectangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'phi_kernel_rectangle'
         super(Phi_rectangle, self).__init__(name, backend)
 
@@ -92,7 +92,7 @@ class Phi_triangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'phi_kernel_triangle'
         super(Phi_triangle, self).__init__(name, backend)
 
@@ -109,7 +109,7 @@ class Acc(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'acc_kernel'
         super(Acc, self).__init__(name, backend)
 
@@ -127,7 +127,7 @@ class Acc_rectangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'acc_kernel_rectangle'
         super(Acc_rectangle, self).__init__(name, backend)
 
@@ -145,7 +145,7 @@ class Acc_triangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'acc_kernel_triangle'
         super(Acc_triangle, self).__init__(name, backend)
 
@@ -162,7 +162,7 @@ class AccJrk(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'acc_jrk_kernel'
         super(AccJrk, self).__init__(name, backend)
 
@@ -180,7 +180,7 @@ class AccJrk_rectangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'acc_jrk_kernel_rectangle'
         super(AccJrk_rectangle, self).__init__(name, backend)
 
@@ -198,7 +198,7 @@ class AccJrk_triangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'acc_jrk_kernel_triangle'
         super(AccJrk_triangle, self).__init__(name, backend)
 
@@ -215,7 +215,7 @@ class SnpCrk(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'snp_crk_kernel'
         super(SnpCrk, self).__init__(name, backend)
 
@@ -234,7 +234,7 @@ class SnpCrk_rectangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'snp_crk_kernel_rectangle'
         super(SnpCrk_rectangle, self).__init__(name, backend)
 
@@ -252,7 +252,7 @@ class SnpCrk_triangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'snp_crk_kernel_triangle'
         super(SnpCrk_triangle, self).__init__(name, backend)
 
@@ -269,7 +269,7 @@ class Tstep(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'tstep_kernel'
         super(Tstep, self).__init__(name, backend)
 
@@ -288,7 +288,7 @@ class Tstep_rectangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'tstep_kernel_rectangle'
         super(Tstep_rectangle, self).__init__(name, backend)
 
@@ -308,7 +308,7 @@ class Tstep_triangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'tstep_kernel_triangle'
         super(Tstep_triangle, self).__init__(name, backend)
 
@@ -326,7 +326,7 @@ class PNAcc(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'pnacc_kernel'
         super(PNAcc, self).__init__(name, backend)
 
@@ -352,7 +352,7 @@ class PNAcc_rectangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'pnacc_kernel_rectangle'
         super(PNAcc_rectangle, self).__init__(name, backend)
 
@@ -378,7 +378,7 @@ class PNAcc_triangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'pnacc_kernel_triangle'
         super(PNAcc_triangle, self).__init__(name, backend)
 
@@ -403,7 +403,7 @@ class Sakura(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'sakura_kernel'
         super(Sakura, self).__init__(name, backend)
 
@@ -422,7 +422,7 @@ class Sakura_rectangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'sakura_kernel_rectangle'
         super(Sakura_rectangle, self).__init__(name, backend)
 
@@ -441,7 +441,7 @@ class Sakura_triangle(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         name = 'sakura_kernel_triangle'
         super(Sakura_triangle, self).__init__(name, backend)
 
@@ -459,7 +459,7 @@ class Kepler(AbstractExtension):
     """
 
     """
-    def __init__(self, backend=options.backend):
+    def __init__(self, backend=cli.backend):
         if backend == 'CL':    # No need for CL support.
             backend = 'C'      # C is fast enough!
 
@@ -483,7 +483,7 @@ class Kepler(AbstractExtension):
         self.kernel.set_args(inpargs, outargs)
 
 
-def get_kernel(name, backend=options.backend):
+def get_kernel(name, backend=cli.backend):
     kernel = globals()[name](backend)
 
     def func(ips, jps, **kwargs):

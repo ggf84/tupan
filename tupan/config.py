@@ -5,9 +5,7 @@
 TODO.
 """
 
-import os
-import sys
-import getpass
+import logging
 import argparse
 
 
@@ -21,14 +19,7 @@ parser.add_argument(
     choices=['C', 'CL'],
     help=('Extension modules backend '
           '(type: %(type)s, default: %(default)s, '
-          'choices: {%(choices)s}).')
-)
-parser.add_argument(
-    '--cache_prefix',
-    type=str,
-    default=os.path.expanduser('~'),
-    help=('Cache dir prefix '
-          '(type: %(type)s, default: %(default)s).')
+          'choices: {%(choices)s})')
 )
 parser.add_argument(
     '--fpwidth',
@@ -38,46 +29,45 @@ parser.add_argument(
     choices=['fp32', 'fp64'],
     help=('Floating-point width '
           '(type: %(type)s, default: %(default)s, '
-          'choices: {%(choices)s}).')
+          'choices: {%(choices)s})')
 )
 parser.add_argument(
     '--view',
-    metavar='FREQ',
+    metavar='NSTEPS',
     nargs='?',
     type=int,
     const=1,
-    default=0,
-    help=('Enable support for real-time visualization. '
-          'Optionally you can pass an update frequency '
-          '(type: %(type)s, const: %(const)s, default: %(default)s).')
+    help=('Enable real-time visualization. NSTEPS is the '
+          '(const: %(const)s) number of time-steps between '
+          'updates (type: %(type)s, default: %(default)s)')
 )
 parser.add_argument(
     '--record',
     metavar='FPS',
     nargs='?',
     type=int,
-    const=30,
-    default=0,
-    help=('Enable recording of visualization. '
-          'Optionally you can pass the output fps ratio '
-          '(type: %(type)s, const: %(const)s, default: %(default)s).')
+    const=24,
+    help=('Record visualization at a given (const: %(const)s) '
+          'FPS ratio (type: %(type)s, default: %(default)s)')
+)
+parser.add_argument(
+    '--log',
+    metavar='LEVEL',
+    type=str,
+    default='critical',
+    choices=[logging.getLevelName(i).lower() for i in range(0, 60, 10)],
+    help=('Set the logging level '
+          '(type: %(type)s, default: %(default)s, '
+          'choices: {%(choices)s})')
 )
 
 # parse known arguments from parser
-options, _ = parser.parse_known_args()
+cli, _ = parser.parse_known_args()
 
-
-def get_cache_dir(*postfix):
-    user = getpass.getuser()
-    sys_version = '.'.join(str(i) for i in sys.version_info)
-    basename = '.tupan-cache-uid{0}-py{1}'.format(user, sys_version)
-    prefix = options.cache_prefix
-    cache_dir = os.path.abspath(os.path.join(prefix, basename, *postfix))
-    try:
-        os.makedirs(cache_dir)
-    except OSError:
-        pass
-    return cache_dir
+# set logging config
+level = getattr(logging, cli.log.upper())
+fmt = '# %(asctime)s - %(levelname)s - %(name)s - %(message)s'
+logging.basicConfig(level=level, format=fmt)
 
 
 # -- End of File --

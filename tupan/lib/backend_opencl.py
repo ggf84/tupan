@@ -10,7 +10,7 @@ import logging
 import pyopencl as cl
 from functools import partial
 from collections import defaultdict
-from ..config import options, get_cache_dir
+from ..config import cli
 from .utils.ctype import Ctype
 
 
@@ -213,7 +213,7 @@ class Program(object):
         self.cl_program = cl.Program(cl_context, source)
         self.kernel = None
 
-    def build(self, fpwidth=options.fpwidth):
+    def build(self, fpwidth=cli.fpwidth):
         simd = (self.cl_device.preferred_vector_width_float
                 if fpwidth == 'fp32'
                 else self.cl_device.preferred_vector_width_double)
@@ -228,20 +228,18 @@ class Program(object):
         fast_local_mem = True
 
         # setting program options
-        opts = ' -D SIMD={}'.format(simd)
-        opts += ' -D LSIZE={}'.format(lsize)
-        opts += ' -D CONFIG_USE_OPENCL'
+        options = ' -D SIMD={}'.format(simd)
+        options += ' -D LSIZE={}'.format(lsize)
+        options += ' -D CONFIG_USE_OPENCL'
         if fpwidth == 'fp64':
-            opts += ' -D CONFIG_USE_DOUBLE'
+            options += ' -D CONFIG_USE_DOUBLE'
         if fast_local_mem:
-            opts += ' -D FAST_LOCAL_MEM'
-        opts += ' -I {path}'.format(path=PATH)
-        opts += ' -cl-fast-relaxed-math'
-#        opts += ' -cl-opt-disable'
+            options += ' -D FAST_LOCAL_MEM'
+        options += ' -I {path}'.format(path=PATH)
+        options += ' -cl-fast-relaxed-math'
+#        options += ' -cl-opt-disable'
 
-        self.cl_program.build(options=opts,
-                              devices=[self.cl_device],
-                              cache_dir=get_cache_dir(fpwidth))
+        self.cl_program.build(options=options, devices=[self.cl_device])
 
         kernels = self.cl_program.all_kernels()
         for kernel in kernels:

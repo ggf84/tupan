@@ -137,8 +137,7 @@ class SIAXX(object):
     coefs = [(None, None)]
 
     def __init__(self, manager, meth):
-        self.pn = manager.pn
-        self.eta = manager.eta
+        self.cli = manager.cli
         self.dump = manager.dump
         self.update_tstep = manager.update_tstep
         self.shared_tstep = manager.shared_tstep
@@ -149,7 +148,7 @@ class SIAXX(object):
         """Drift operator.
 
         """
-        if self.pn:
+        if self.cli.pn:
             return pn_drift(ips, dt)
         return n_drift(ips, dt)
 
@@ -158,8 +157,8 @@ class SIAXX(object):
 
         """
         ips.set_acc(ips)
-        if self.pn:
-            return pn_kick(ips, dt, pn=self.pn)
+        if self.cli.pn:
+            return pn_kick(ips, dt, pn=self.cli.pn)
         return n_kick(ips, dt)
 
     def dkd(self, ips, dt):
@@ -173,7 +172,7 @@ class SIAXX(object):
             return drift(ips, dt)
 
 #        if ips.n == 2:
-#            return twobody_solver(ips, dt, pn=self.pn)
+#            return twobody_solver(ips, dt, pn=self.cli.pn)
 
         coefs = self.coefs
         ck0, cd0 = coefs[-1]
@@ -203,7 +202,7 @@ class SIAXX(object):
             return drift(ips, dt)
 
 #        if ips.n == 2:
-#            return twobody_solver(ips, dt, pn=self.pn)
+#            return twobody_solver(ips, dt, pn=self.cli.pn)
 
         coefs = self.coefs
         cd0, ck0 = coefs[-1]
@@ -229,7 +228,7 @@ class SIAXX(object):
         slow, fast = ps.split_by(lambda obj: obj.tstep > abs(dt))
         ps = self.bridge(slow, fast, dt)
         if self.update_tstep:
-            ps.set_tstep(ps, self.eta)
+            ps.set_tstep(ps, self.cli.eta)
             if self.shared_tstep:
                 ps.tstep[...] = ps.tstep.min()
         return ps
@@ -247,8 +246,8 @@ class SIAXX(object):
 
         """
         slow.set_acc(fast)
-        if self.pn:
-            return sf_pn_kick(slow, fast, dt, pn=self.pn)
+        if self.cli.pn:
+            return sf_pn_kick(slow, fast, dt, pn=self.cli.pn)
         return sf_n_kick(slow, fast, dt)
 
     def sf_dkd(self, slow, fast, dt):
@@ -329,7 +328,7 @@ class SIAXX(object):
 #
 class SIA21(SIAXX):
     # REF.: Yoshida, Phys. Lett. A 150 (1990)
-    coefs = [(1.0, 0.5)]
+    coefs = [(+1.0, +0.5)]
 
 
 #
@@ -337,8 +336,8 @@ class SIA21(SIAXX):
 #
 class SIA22(SIAXX):
     # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
-    coefs = [(0.1931833275037836, None),
-             (0.6136333449924328, 0.5)]
+    coefs = [(+0.1931833275037836, None),
+             (+0.6136333449924328, +0.5)]
 
 
 #
@@ -346,8 +345,8 @@ class SIA22(SIAXX):
 #
 class SIA43(SIAXX):
     # REF.: Yoshida, Phys. Lett. A 150 (1990)
-    coefs = [(1.3512071919596575, 0.6756035959798288),
-             (-1.702414383919315, -0.17560359597982877)]
+    coefs = [(+1.3512071919596575, +0.67560359597982880),
+             (-1.7024143839193150, -0.17560359597982877)]
 
 
 #
@@ -355,9 +354,9 @@ class SIA43(SIAXX):
 #
 class SIA44(SIAXX):
     # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
-    coefs = [(0.1786178958448091, None),
-             (-0.06626458266981843, 0.7123418310626056),
-             (0.7752933736500186, -0.21234183106260562)]
+    coefs = [(+0.17861789584480910, None),
+             (-0.06626458266981843, +0.71234183106260560),
+             (+0.77529337365001860, -0.21234183106260562)]
 
 
 #
@@ -365,9 +364,9 @@ class SIA44(SIAXX):
 #
 class SIA45(SIAXX):
     # REF.: Omelyan, Mryglod & Folk, Comput. Phys. Comm. 151 (2003)
-    coefs = [(-0.0844296195070715, 0.2750081212332419),
-             (0.354900057157426, -0.1347950099106792),
-             (0.459059124699291, 0.35978688867743724)]
+    coefs = [(-0.0844296195070715, +0.27500812123324190),
+             (+0.3549000571574260, -0.13479500991067920),
+             (+0.4590591246992910, +0.35978688867743724)]
 
 
 #
@@ -375,10 +374,10 @@ class SIA45(SIAXX):
 #
 class SIA46(SIAXX):
     # REF.: Blanes & Moan, J. Comp. Appl. Math. 142 (2002)
-    coefs = [(0.0792036964311957, None),
-             (0.353172906049774, 0.209515106613362),
-             (-0.0420650803577195, -0.143851773179818),
-             (0.21937695575349958, 0.434336666566456)]
+    coefs = [(+0.07920369643119570, None),
+             (+0.35317290604977400, +0.209515106613362),
+             (-0.04206508035771950, -0.143851773179818),
+             (+0.21937695575349958, +0.434336666566456)]
 
 
 #
@@ -386,10 +385,10 @@ class SIA46(SIAXX):
 #
 class SIA67(SIAXX):
     # REF.: Yoshida, Phys. Lett. A 150 (1990)
-    coefs = [(0.7845136104775573, 0.39225680523877865),
-             (0.23557321335935813, 0.5100434119184577),
-             (-1.177679984178871, -0.47105338540975644),
-             (1.3151863206839112, 0.06875316825252015)]
+    coefs = [(+0.78451361047755730, +0.39225680523877865),
+             (+0.23557321335935813, +0.51004341191845770),
+             (-1.17767998417887100, -0.47105338540975644),
+             (+1.31518632068391120, +0.06875316825252015)]
 
 
 #
@@ -397,11 +396,11 @@ class SIA67(SIAXX):
 #
 class SIA69(SIAXX):
     # REF.: Kahan & Li, Math. Comput. 66 (1997)
-    coefs = [(0.39103020330868477, 0.19551510165434238),
-             (0.334037289611136, 0.3625337464599104),
-             (-0.7062272811875614, -0.1860949957882127),
-             (0.08187754964805945, -0.31217486576975095),
-             (0.7985644772393624, 0.44022101344371095)]
+    coefs = [(+0.39103020330868477, +0.19551510165434238),
+             (+0.33403728961113600, +0.36253374645991040),
+             (-0.70622728118756140, -0.18609499578821270),
+             (+0.08187754964805945, -0.31217486576975095),
+             (+0.79856447723936240, +0.44022101344371095)]
 
 
 class SIA(Base):
@@ -427,12 +426,13 @@ class SIA(Base):
         'c.sia69.kdk', 'a.sia69.kdk', 'h.sia69.kdk',
     ]
 
-    def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
+    def __init__(self, ps, cli, *args, **kwargs):
         """
 
         """
-        super(SIA, self).__init__(ps, eta, dt_max,
-                                  t_begin, method, **kwargs)
+        super(SIA, self).__init__(ps, cli, *args, **kwargs)
+
+        method = cli.method
 
         if 'c.' in method:
             self.update_tstep = False
@@ -479,7 +479,7 @@ class SIA(Base):
             elif 'sia69' in method:
                 self.sia = SIA69(self, 'kdk')
 
-        if self.pn:
+        if self.cli.pn:
             if not hasattr(ps, 'pn_ke'):
                 ps.register_attribute('pn_ke', '{nb}', 'real_t')
             if not hasattr(ps, 'pn_mr'):
@@ -494,9 +494,9 @@ class SIA(Base):
                 ps.register_attribute('pnvel', '{nd}, {nb}', 'real_t')
                 ps.pnvel[...] = ps.rdot[1]
 
-        ps.tstep[...] = dt_max
+        ps.tstep[...] = self.cli.dt_max
         if self.update_tstep:
-            ps.set_tstep(ps, self.eta)
+            ps.set_tstep(ps, self.cli.eta)
             if self.shared_tstep:
                 ps.tstep[...] = ps.tstep.min()
 
@@ -506,15 +506,13 @@ class SIA(Base):
         """
         tdiff = abs(self.t_next - ps.time[0])
         ratio = tdiff // abs(dt)
-        if self.dumpper:
-            s0 = tdiff > 0
-            s1 = ratio % self.dump_freq == 0
-            if (s0 and s1):
-                self.dumpper.append_data(ps)
-        if self.viewer:
-            s1 = ratio % self.viewer.gl_freq == 0
-            if s1:
-                self.viewer.show_event(ps)
+        if ratio > 0:
+            if self.viewer:
+                if ratio % self.cli.view == 0:
+                    self.viewer.show_event(ps)
+            if self.dumpper:
+                if ratio % self.cli.dump_freq == 0:
+                    self.dumpper.append_data(ps)
 
     def do_step(self, ps, dt):
         """

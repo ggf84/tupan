@@ -41,17 +41,18 @@ class Sakura(Base):
         'c.sakura', 'a.sakura',
     ]
 
-    def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
+    def __init__(self, ps, cli, *args, **kwargs):
         """
 
         """
-        super(Sakura, self).__init__(ps, eta, dt_max,
-                                     t_begin, method, **kwargs)
+        super(Sakura, self).__init__(ps, cli, *args, **kwargs)
 
-        if 'c.' in self.method:
+        method = cli.method
+
+        if 'c.' in method:
             self.update_tstep = False
             self.shared_tstep = True
-        elif 'a.' in self.method:
+        elif 'a.' in method:
             self.update_tstep = True
             self.shared_tstep = True
 
@@ -104,7 +105,7 @@ class Sakura(Base):
 #                    break
 
         if self.update_tstep:
-            dt = self.get_sakura_tstep(ps, self.eta, dt)
+            dt = self.get_sakura_tstep(ps, self.cli.eta, dt)
         ps = sakura_step(ps, dt)
 
         ps.time += dt

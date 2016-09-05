@@ -5,12 +5,10 @@
 
 """
 
-import math
+import pickle
 import logging
 import numpy as np
-
-
-LOGGER = logging.getLogger(__name__)
+from itertools import count
 
 
 def power_of_two(ps, dt_max):
@@ -36,41 +34,32 @@ class Base(object):
     """
     PROVIDED_METHODS = None
 
-    def __getstate__(self):  # apparently vispy objects can't be pickled!
+    def __init__(self, ps, cli, viewer=None, dumpper=None, checker=None):
+        self.ps = ps
+        self.cli = cli
+        self.viewer = viewer
+        self.dumpper = dumpper
+        self.checker = checker
+
+        self.step = count(0)
+        self.t_next = cli.t_begin + cli.dt_max
+
+    def __enter__(self):
+        LOGGER = logging.getLogger(self.__module__)
+        LOGGER.debug(type(self).__name__+'.__enter__')
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        LOGGER = logging.getLogger(self.__module__)
+        LOGGER.debug(type(self).__name__+'.__exit__')
+        with open('restart.pkl', 'wb') as fid:
+            protocol = pickle.HIGHEST_PROTOCOL
+            pickle.dump(self, fid, protocol=protocol)
+
+    def __getstate__(self):  # viewer can't be pickled!
         dct = vars(self).copy()
         dct['viewer'] = None
         return dct
-
-    def __init__(self, ps, eta, dt_max, t_begin, method, **kwargs):
-        if method not in self.PROVIDED_METHODS:
-            raise ValueError('Invalid integration method: {0}'.format(method))
-
-        LOGGER.info("Initializing '%s' integrator at "
-                    "t_begin = %g.", method, t_begin)
-
-        self.ps = ps
-        self.eta = eta
-        self.dt_max = math.copysign(dt_max, eta)
-        self.t_next = t_begin
-        ps.time[...] = t_begin
-        self.method = method
-
-        self.pn = kwargs.pop('pn', None)
-        self.viewer = kwargs.pop('viewer', None)
-        self.dumpper = kwargs.pop('dumpper', None)
-        self.reporter = kwargs.pop('reporter', None)
-        self.dump_freq = kwargs.pop('dump_freq', 1)
-        if kwargs:
-            msg = '{0}.__init__ received unexpected keyword arguments: {1}.'
-            raise TypeError(msg.format(type(
-                self).__name__, ', '.join(kwargs.keys())))
-
-        if self.reporter:
-            self.reporter.init_diagnostic_report(ps)
-        if self.dumpper:
-            self.dumpper.init_new_era(ps)
-        if self.viewer:
-            self.viewer.show_event(ps)
 
     def do_step(self, ps, dt):
         """
@@ -78,33 +67,40 @@ class Base(object):
         """
         raise NotImplementedError
 
-    def evolve_step(self, t_end):
+    def evolve_step(self, dt, step):
         """
 
         """
-        eta = self.eta
-        dt = self.dt_max
-        if not self.update_tstep:
-            dt = min(abs(dt), abs(eta))
-            dt = math.copysign(dt, eta)
-
-        self.t_next += self.dt_max
-        while self.t_next > self.ps.time[0]:
+        while abs(self.time) < self.t_next:
             self.ps = self.do_step(self.ps, dt)
+        self.t_next += self.cli.dt_max
 
-        if self.reporter:
-            self.reporter.diagnostic_report(self.ps)
+        if self.viewer:
+            self.viewer.show_event(self.ps)
+        if self.checker:
+            self.checker.print_diagnostic(self.ps)
         if self.dumpper:
-            self.dumpper.init_new_era(self.ps)
+            with self.dumpper as io:
+                io.flush_stream(tag=step)
+                io.dump_snap(self.ps, tag=step+1)
+
+    def evolve(self, t_end):
+        """
+
+        """
+        dt = self.cli.dt_max
+        if not self.update_tstep:
+            dt *= self.cli.eta
+
         if self.viewer:
             self.viewer.show_event(self.ps)
 
-    def finalize(self, t_end):
-        """
+        while abs(self.time) < t_end:
+            self.evolve_step(dt, next(self.step))
 
-        """
-        LOGGER.info("Finalizing '%s' integrator at "
-                    "t_end = %g.", self.method, t_end)
+    @property
+    def time(self):
+        return self.ps.time[0]
 
 
 # -- End of File --
