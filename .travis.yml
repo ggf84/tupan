@@ -59,7 +59,7 @@ before_install:
  - conda create -n $TESTENV --yes python=$TRAVIS_PYTHON_VERSION
  - source activate $TESTENV
  - conda install --yes $(grep -viE 'pyopencl' requirements.txt)
- - conda install pytest
+ - conda install --yes pytest
 
  # install pyopencl using pip
  - pip install pyopencl
