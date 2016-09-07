@@ -8,8 +8,6 @@ This module implements the OpenCL backend to call CL-extensions.
 import os
 import logging
 import pyopencl as cl
-from functools import partial
-from collections import defaultdict
 from ..config import cli
 from .utils.ctype import Ctype
 
@@ -19,13 +17,16 @@ LOGGER = logging.getLogger(__name__)
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, 'src')
 
+MEM_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.USE_HOST_PTR
+# MEM_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR
+COPY_HOST_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR
+
 
 class Context(object):
     """
 
     """
     def __init__(self, cl_platform):
-        self.alignment = 128    # Minimum alignment (bytes) for any datatype
         cl_devices = cl_platform.get_devices()
 
 #        # emulate multiple devices
@@ -39,59 +40,8 @@ class Context(object):
         self.devices = [Device(self.cl_context, cl_device)
                         for cl_device in cl_devices]
 
-        self.ibuf = defaultdict(partial(cl.Buffer, self.cl_context,
-                                        cl.mem_flags.READ_ONLY,
-                                        size=1))
-
-        self.obuf = defaultdict(partial(cl.Buffer, self.cl_context,
-                                        cl.mem_flags.WRITE_ONLY,
-                                        size=1))
-
-        self.reset_buf_counts()
-
-    def to_ibuf(self, ary):
-        flags = cl.mem_flags.READ_ONLY | cl.mem_flags.USE_HOST_PTR
-#        flags = cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR
-        buf = cl.Buffer(self.cl_context, flags, hostbuf=ary)
-        self.ibuf[self.ibuf_count] = buf
-        self.ibuf_count += 1
-        return buf
-
-    def to_obuf(self, ary):
-        flags = cl.mem_flags.WRITE_ONLY | cl.mem_flags.USE_HOST_PTR
-#        flags = cl.mem_flags.WRITE_ONLY | cl.mem_flags.COPY_HOST_PTR
-        buf = cl.Buffer(self.cl_context, flags, hostbuf=ary)
-        self.obuf[self.obuf_count] = buf
-        self.obuf_count += 1
-        return buf
-
-    def get_ibuf(self, ary):
-        flags = cl.mem_flags.READ_WRITE
-        align = self.alignment
-        size = ((ary.nbytes + align - 1) // align) * align
-        buf = self.ibuf[self.ibuf_count]
-        if size > buf.size:
-            buf = cl.Buffer(self.cl_context, flags, size=size)
-        self.default_queue.enqueue_write_buffer(buf, ary, is_blocking=True)
-        self.ibuf[self.ibuf_count] = buf
-        self.ibuf_count += 1
-        return buf
-
-    def get_obuf(self, ary):
-        flags = cl.mem_flags.READ_WRITE
-        align = self.alignment
-        size = ((ary.nbytes + align - 1) // align) * align
-        buf = self.obuf[self.obuf_count]
-        if size > buf.size:
-            buf = cl.Buffer(self.cl_context, flags, size=size)
-        self.default_queue.enqueue_write_buffer(buf, ary, is_blocking=True)
-        self.obuf[self.obuf_count] = buf
-        self.obuf_count += 1
-        return buf
-
-    def reset_buf_counts(self):
-        self.ibuf_count = 0
-        self.obuf_count = 0
+    def to_buf(self, array):
+        return cl.Buffer(self.cl_context, MEM_FLAG, hostbuf=array)
 
 
 class Queue(object):
@@ -295,9 +245,6 @@ class Platform(object):
         self.cl_platform = cl_platforms[idx]
         self.context = Context(self.cl_platform)
 
-    def get_kernel(self, name):
-        return CLKernel(name)
-
 
 drv = Platform()
 
@@ -308,8 +255,6 @@ class CLKernel(object):
     """
     def __init__(self, name):
         self.name = name
-        self.inptypes = None
-        self.outtypes = None
         self.iarg = {}
         self.ibuf = {}
         self.oarg = {}
@@ -330,64 +275,55 @@ class CLKernel(object):
         return np.array(fields, dtype=dtype)
 
     def set_args(self, inpargs, outargs):
-        bufs = []
-
-        drv.context.reset_buf_counts()
-
-        if self.inptypes is None:
+        try:
+            bufs = []
+            # set inpargs
+            for (i, argtype) in enumerate(self.inptypes):
+                arg = inpargs[i]
+                buf = argtype(arg)
+                self.iarg[i] = arg
+                self.ibuf[i] = buf
+                bufs.append(buf)
+            # set outargs
+            for (i, argtype) in enumerate(self.outtypes):
+                arg = outargs[i]
+                buf = argtype(arg)
+                self.oarg[i] = arg
+                self.obuf[i] = buf
+                bufs.append(buf)
+            self.bufs = bufs
+        except AttributeError:
             types = []
             for arg in inpargs:
                 if isinstance(arg, int):
-                    # sizeof(int_t) == sizeof(uint_t)
                     types.append(Ctype.uint_t)
                 elif isinstance(arg, float):
                     types.append(Ctype.real_t)
 #                elif isinstance(arg, dict):
 #                    types.append(lambda x: x['struct'])
                 else:
-                    iptr = drv.context.to_ibuf
-                    types.append(iptr)
+                    types.append(drv.context.to_buf)
             self.inptypes = types
-
-        if self.outtypes is None:
-            optr = drv.context.to_obuf
-            self.outtypes = [optr for _ in outargs]
-
-        # set inpargs
-        for (i, argtype) in enumerate(self.inptypes):
-            arg = inpargs[i]
-            buf = argtype(arg)
-            self.iarg[i] = arg
-            self.ibuf[i] = buf
-            bufs.append(buf)
-
-        # set outargs
-        for (i, argtype) in enumerate(self.outtypes):
-            arg = outargs[i]
-            buf = argtype(arg)
-            self.oarg[i] = arg
-            self.obuf[i] = buf
-            bufs.append(buf)
-
-        self.bufs = bufs
+            self.outtypes = [drv.context.to_buf for _ in outargs]
+            CLKernel.set_args(self, inpargs, outargs)
 
     def map_buffers(self):
-        flags = cl.mem_flags.WRITE_ONLY | cl.mem_flags.COPY_HOST_PTR
-        for (key, arg) in self.oarg.items():
-            buf = self.obuf[key]
-            if buf.flags == flags:
-                drv.context.default_queue.enqueue_read_buffer(buf, arg)
-        drv.context.default_queue.wait_for_events()
-        return list(self.oarg.values())
+        if MEM_FLAG == COPY_HOST_FLAG:
+            queue = drv.context.default_queue
+            for (key, arg) in self.oarg.items():
+                buf = self.obuf[key]
+                queue.enqueue_read_buffer(buf, arg)
+            queue.wait_for_events()
 
     def run(self):
-        ni = self.iarg[0]
         name = self.name
-        uint_t = Ctype.uint_t
+#        ni = self.iarg[0]
+#        uint_t = Ctype.uint_t
 #        ndevs = len(drv.context.devices)
 #        dn = (ni + ndevs - 1) // ndevs
 
-        for device in drv.context.devices:
+        ctx = drv.context
+        for device in ctx.devices:
             kernel = device.program.kernel[name]
 
             wsize = kernel.wsize
@@ -398,9 +334,8 @@ class CLKernel(object):
             local_work_size = (lsize, 1, 1)
             global_work_size = (gsize, 1, 1)
 
-            kernel.set_arg(0, uint_t(ni))
-            for (j, buf) in enumerate(self.bufs[1:], start=1):
-                kernel.set_arg(j, buf)
+            for (i, buf) in enumerate(self.bufs):
+                kernel.set_arg(i, buf)
 
             device.queue.enqueue_nd_range_kernel(
                 kernel,
@@ -408,7 +343,7 @@ class CLKernel(object):
                 local_work_size,
             )
 
-        drv.context.default_queue.wait_for_events()
+        ctx.default_queue.wait_for_events()
 
 
 # -- End of File --

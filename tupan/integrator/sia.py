@@ -112,7 +112,7 @@ def sf_pn_kick(slow, fast, dt, pn=None):
 #
 # twobody_solver
 #
-def twobody_solver(ips, dt, pn=None, kernel=ext.Kepler()):
+def twobody_solver(ips, dt, pn=None, kernel=ext.get_kernel('Kepler')):
     """
 
     """

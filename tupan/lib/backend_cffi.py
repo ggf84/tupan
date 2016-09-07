@@ -23,10 +23,6 @@ class CDriver(object):
         self.lib = libtupan.lib
         self.ffi = libtupan.ffi
 
-    def get_kernel(self, name):
-        kernel = getattr(self.lib, name)
-        return CKernel(kernel)
-
 
 drv = CDriver(libtupan)
 
@@ -35,10 +31,8 @@ class CKernel(object):
     """
 
     """
-    def __init__(self, kernel):
-        self.kernel = kernel
-        self.inptypes = None
-        self.outtypes = None
+    def __init__(self, name):
+        self.kernel = getattr(libtupan.lib, name)
         self.iarg = {}
         self.ibuf = {}
         self.oarg = {}
@@ -48,9 +42,24 @@ class CKernel(object):
         return {'struct': drv.ffi.new(name+' *', kwargs)}
 
     def set_args(self, inpargs, outargs):
-        bufs = []
-
-        if self.inptypes is None:
+        try:
+            bufs = []
+            # set inpargs
+            for (i, argtype) in enumerate(self.inptypes):
+                arg = inpargs[i]
+                buf = argtype(arg)
+                self.iarg[i] = arg
+                self.ibuf[i] = buf
+                bufs.append(buf)
+            # set outargs
+            for (i, argtype) in enumerate(self.outtypes):
+                arg = outargs[i]
+                buf = argtype(arg)
+                self.oarg[i] = arg
+                self.obuf[i] = buf
+                bufs.append(buf)
+            self.bufs = bufs
+        except AttributeError:
             types = []
             for arg in inpargs:
                 if isinstance(arg, int):
@@ -62,30 +71,11 @@ class CKernel(object):
                 else:
                     types.append(drv.ffi.from_buffer)
             self.inptypes = types
-
-        if self.outtypes is None:
             self.outtypes = [drv.ffi.from_buffer for _ in outargs]
-
-        # set inpargs
-        for (i, argtype) in enumerate(self.inptypes):
-            arg = inpargs[i]
-            buf = argtype(arg)
-            self.iarg[i] = arg
-            self.ibuf[i] = buf
-            bufs.append(buf)
-
-        # set outargs
-        for (i, argtype) in enumerate(self.outtypes):
-            arg = outargs[i]
-            buf = argtype(arg)
-            self.oarg[i] = arg
-            self.obuf[i] = buf
-            bufs.append(buf)
-
-        self.bufs = bufs
+            CKernel.set_args(self, inpargs, outargs)
 
     def map_buffers(self):
-        return list(self.oarg.values())
+        pass
 
     def run(self):
         self.kernel(*self.bufs)

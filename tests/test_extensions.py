@@ -64,8 +64,8 @@ def benchmark(test_number, kernel_name, imax=12, **kwargs):
         return min(elapsed)
 
     np.random.seed(0)
-    Ckernel = getattr(ext, kernel_name+'_rectangle')(backend='C')
-    CLkernel = getattr(ext, kernel_name)(backend='CL')
+    Ckernel = ext.make_extension(kernel_name+'_rectangle', 'C')
+    CLkernel = ext.make_extension(kernel_name, 'CL')
 
     msg = "\ntest{0:02d}: {1}"
     print(msg.format(test_number, kernel_name))

@@ -5,12 +5,395 @@
 This module implements highlevel interfaces for C/CL-extensions.
 """
 
-from __future__ import print_function, division
 import logging
 from ..config import cli
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+class Phi(object):
+    """
+
+    """
+    name = 'phi_kernel'
+
+    def set_args(self, ips, jps):
+        p = 1
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
+
+        outargs = (ips.phi,)
+
+        super(Phi, self).set_args(inpargs, outargs)
+
+
+class Phi_rectangle(object):
+    """
+
+    """
+    name = 'phi_kernel_rectangle'
+
+    def set_args(self, ips, jps):
+        p = 1
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
+
+        outargs = (ips.phi, jps.phi)
+
+        super(Phi_rectangle, self).set_args(inpargs, outargs)
+
+
+class Phi_triangle(object):
+    """
+
+    """
+    name = 'phi_kernel_triangle'
+
+    def set_args(self, ips):
+        p = 1
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
+
+        outargs = (ips.phi,)
+
+        super(Phi_triangle, self).set_args(inpargs, outargs)
+
+
+class Acc(object):
+    """
+
+    """
+    name = 'acc_kernel'
+
+    def set_args(self, ips, jps):
+        p = 1
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
+
+        outargs = (ips.rdot[2:2+p],)
+
+        super(Acc, self).set_args(inpargs, outargs)
+
+
+class Acc_rectangle(object):
+    """
+
+    """
+    name = 'acc_kernel_rectangle'
+
+    def set_args(self, ips, jps):
+        p = 1
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
+
+        outargs = (ips.rdot[2:2+p], jps.rdot[2:2+p])
+
+        super(Acc_rectangle, self).set_args(inpargs, outargs)
+
+
+class Acc_triangle(object):
+    """
+
+    """
+    name = 'acc_kernel_triangle'
+
+    def set_args(self, ips):
+        p = 1
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
+
+        outargs = (ips.rdot[2:2+p],)
+
+        super(Acc_triangle, self).set_args(inpargs, outargs)
+
+
+class AccJrk(object):
+    """
+
+    """
+    name = 'acc_jrk_kernel'
+
+    def set_args(self, ips, jps):
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
+
+        outargs = (ips.rdot[2:2+p],)
+
+        super(AccJrk, self).set_args(inpargs, outargs)
+
+
+class AccJrk_rectangle(object):
+    """
+
+    """
+    name = 'acc_jrk_kernel_rectangle'
+
+    def set_args(self, ips, jps):
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
+
+        outargs = (ips.rdot[2:2+p], jps.rdot[2:2+p])
+
+        super(AccJrk_rectangle, self).set_args(inpargs, outargs)
+
+
+class AccJrk_triangle(object):
+    """
+
+    """
+    name = 'acc_jrk_kernel_triangle'
+
+    def set_args(self, ips):
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
+
+        outargs = (ips.rdot[2:2+p],)
+
+        super(AccJrk_triangle, self).set_args(inpargs, outargs)
+
+
+class SnpCrk(object):
+    """
+
+    """
+    name = 'snp_crk_kernel'
+
+    def set_args(self, ips, jps):
+        p = 4
+        jps = jps.copy()
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
+
+        outargs = (ips.rdot[2:2+p],)
+
+        super(SnpCrk, self).set_args(inpargs, outargs)
+
+
+class SnpCrk_rectangle(object):
+    """
+
+    """
+    name = 'snp_crk_kernel_rectangle'
+
+    def set_args(self, ips, jps):
+        p = 4
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
+
+        outargs = (ips.rdot[2:2+p], jps.rdot[2:2+p])
+
+        super(SnpCrk_rectangle, self).set_args(inpargs, outargs)
+
+
+class SnpCrk_triangle(object):
+    """
+
+    """
+    name = 'snp_crk_kernel_triangle'
+
+    def set_args(self, ips):
+        p = 4
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
+
+        outargs = (ips.rdot[2:2+p],)
+
+        super(SnpCrk_triangle, self).set_args(inpargs, outargs)
+
+
+class Tstep(object):
+    """
+
+    """
+    name = 'tstep_kernel'
+
+    def set_args(self, ips, jps, eta=None):
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
+                   eta)
+
+        outargs = (ips.tstep, ips.tstep_sum)
+
+        super(Tstep, self).set_args(inpargs, outargs)
+
+
+class Tstep_rectangle(object):
+    """
+
+    """
+    name = 'tstep_kernel_rectangle'
+
+    def set_args(self, ips, jps, eta=None):
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
+                   eta)
+
+        outargs = (ips.tstep, ips.tstep_sum,
+                   jps.tstep, jps.tstep_sum)
+
+        super(Tstep_rectangle, self).set_args(inpargs, outargs)
+
+
+class Tstep_triangle(object):
+    """
+
+    """
+    name = 'tstep_kernel_triangle'
+
+    def set_args(self, ips, eta=None):
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   eta)
+
+        outargs = (ips.tstep, ips.tstep_sum)
+
+        super(Tstep_triangle, self).set_args(inpargs, outargs)
+
+
+class PNAcc(object):
+    """
+
+    """
+    name = 'pnacc_kernel'
+
+    def set_args(self, ips, jps, pn=None):
+        try:
+            clight = self.clight
+        except AttributeError:
+            pn = pn_struct(pn)
+            clight = self.make_struct('CLIGHT', **pn)
+            self.clight = clight
+
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
+                   clight)
+
+        outargs = (ips.pnacc,)
+
+        super(PNAcc, self).set_args(inpargs, outargs)
+
+
+class PNAcc_rectangle(object):
+    """
+
+    """
+    name = 'pnacc_kernel_rectangle'
+
+    def set_args(self, ips, jps, pn=None):
+        try:
+            clight = self.clight
+        except AttributeError:
+            pn = pn_struct(pn)
+            clight = self.make_struct('CLIGHT', **pn)
+            self.clight = clight
+
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
+                   clight)
+
+        outargs = (ips.pnacc, jps.pnacc)
+
+        super(PNAcc_rectangle, self).set_args(inpargs, outargs)
+
+
+class PNAcc_triangle(object):
+    """
+
+    """
+    name = 'pnacc_kernel_triangle'
+
+    def set_args(self, ips, pn=None):
+        try:
+            clight = self.clight
+        except AttributeError:
+            pn = pn_struct(pn)
+            clight = self.make_struct('CLIGHT', **pn)
+            self.clight = clight
+
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   clight)
+
+        outargs = (ips.pnacc,)
+
+        super(PNAcc_triangle, self).set_args(inpargs, outargs)
+
+
+class Sakura(object):
+    """
+
+    """
+    name = 'sakura_kernel'
+
+    def set_args(self, ips, jps, dt=None, flag=None):
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
+                   dt, flag)
+
+        outargs = (ips.drdot,)
+
+        super(Sakura, self).set_args(inpargs, outargs)
+
+
+class Sakura_rectangle(object):
+    """
+
+    """
+    name = 'sakura_kernel_rectangle'
+
+    def set_args(self, ips, jps, dt=None, flag=None):
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
+                   dt, flag)
+
+        outargs = (ips.drdot, jps.drdot)
+
+        super(Sakura_rectangle, self).set_args(inpargs, outargs)
+
+
+class Sakura_triangle(object):
+    """
+
+    """
+    name = 'sakura_kernel_triangle'
+
+    def set_args(self, ips, dt=None, flag=None):
+        p = 2
+        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
+                   dt, flag)
+
+        outargs = (ips.drdot,)
+
+        super(Sakura_triangle, self).set_args(inpargs, outargs)
+
+
+class Kepler(object):
+    """
+
+    """
+    name = 'kepler_solver_kernel'
+
+    def set_args(self, ips, jps, dt=None):
+        inpargs = (ips.n,
+                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
+                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
+                   jps.n,
+                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
+                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
+                   dt)
+
+        outargs = (ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
+                   ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
+                   jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
+                   jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2])
+
+        super(Kepler, self).set_args(inpargs, outargs)
 
 
 def pn_struct(pn):
@@ -22,486 +405,55 @@ def pn_struct(pn):
     return d
 
 
-class AbstractExtension(object):
-    """
+def get_backend(backend):
+    if backend == 'C':
+        from .backend_cffi import CKernel as Kernel
+    elif backend == 'CL':
+        from .backend_opencl import CLKernel as Kernel
+    else:
+        msg = "Invalid backend: '{}'. Choices are: ('C', 'CL')"
+        raise ValueError(msg.format(backend))
+    return Kernel
 
-    """
-    def __init__(self, name, backend):
-        if backend == 'C':
-            from .backend_cffi import drv
-        elif backend == 'CL':
-            from .backend_opencl import drv
-        else:
-            msg = "invalid backend: '{}' (choose from 'C', 'CL')"
-            raise ValueError(msg.format(backend))
-        self.kernel = drv.get_kernel(name)
 
-    def set_args(self, ips, jps, **kwargs):
-        raise NotImplementedError
+def make_extension(name, backend):
+    cls = globals()[name]
+    Kernel = get_backend(backend)
 
-    def run(self):
-        return self.kernel.run()
-
-    def map_buffers(self, *args, **kwargs):
-        return self.kernel.map_buffers(*args, **kwargs)
-
-    def __call__(self, ips, jps, **kwargs):
-        self.set_args(ips, jps, **kwargs)
+    def __call__(self, *args, **kwargs):
+        self.set_args(*args, **kwargs)
         self.run()
         self.map_buffers()
-        return ips, jps
+        return args
 
-
-class Phi(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'phi_kernel'
-        super(Phi, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        p = 1
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
-
-        outargs = (ips.phi,)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class Phi_rectangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'phi_kernel_rectangle'
-        super(Phi_rectangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        p = 1
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
-
-        outargs = (ips.phi, jps.phi)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class Phi_triangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'phi_kernel_triangle'
-        super(Phi_triangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps=None, **kwargs):
-        p = 1
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
-
-        outargs = (ips.phi,)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class Acc(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'acc_kernel'
-        super(Acc, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        p = 1
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
-
-        outargs = (ips.rdot[2:2+p],)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class Acc_rectangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'acc_kernel_rectangle'
-        super(Acc_rectangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        p = 1
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
-
-        outargs = (ips.rdot[2:2+p], jps.rdot[2:2+p])
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class Acc_triangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'acc_kernel_triangle'
-        super(Acc_triangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps=None, **kwargs):
-        p = 1
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
-
-        outargs = (ips.rdot[2:2+p],)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class AccJrk(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'acc_jrk_kernel'
-        super(AccJrk, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
-
-        outargs = (ips.rdot[2:2+p],)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class AccJrk_rectangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'acc_jrk_kernel_rectangle'
-        super(AccJrk_rectangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
-
-        outargs = (ips.rdot[2:2+p], jps.rdot[2:2+p])
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class AccJrk_triangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'acc_jrk_kernel_triangle'
-        super(AccJrk_triangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps=None, **kwargs):
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
-
-        outargs = (ips.rdot[2:2+p],)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class SnpCrk(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'snp_crk_kernel'
-        super(SnpCrk, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        p = 4
-        jps = jps.copy()
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
-
-        outargs = (ips.rdot[2:2+p],)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class SnpCrk_rectangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'snp_crk_kernel_rectangle'
-        super(SnpCrk_rectangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        p = 4
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
-
-        outargs = (ips.rdot[2:2+p], jps.rdot[2:2+p])
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class SnpCrk_triangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'snp_crk_kernel_triangle'
-        super(SnpCrk_triangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps=None, **kwargs):
-        p = 4
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
-
-        outargs = (ips.rdot[2:2+p],)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class Tstep(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'tstep_kernel'
-        super(Tstep, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
-                   kwargs['eta'])
-
-        outargs = (ips.tstep, ips.tstep_sum)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class Tstep_rectangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'tstep_kernel_rectangle'
-        super(Tstep_rectangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
-                   kwargs['eta'])
-
-        outargs = (ips.tstep, ips.tstep_sum,
-                   jps.tstep, jps.tstep_sum)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class Tstep_triangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'tstep_kernel_triangle'
-        super(Tstep_triangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps=None, **kwargs):
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   kwargs['eta'])
-
-        outargs = (ips.tstep, ips.tstep_sum)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class PNAcc(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'pnacc_kernel'
-        super(PNAcc, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        try:
-            clight = self.clight
-        except AttributeError:
-            pn = pn_struct(kwargs['pn'])
-            clight = self.kernel.make_struct('CLIGHT', **pn)
-            self.clight = clight
-
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
-                   clight)
-
-        outargs = (ips.pnacc,)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class PNAcc_rectangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'pnacc_kernel_rectangle'
-        super(PNAcc_rectangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        try:
-            clight = self.clight
-        except AttributeError:
-            pn = pn_struct(kwargs['pn'])
-            clight = self.kernel.make_struct('CLIGHT', **pn)
-            self.clight = clight
-
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
-                   clight)
-
-        outargs = (ips.pnacc, jps.pnacc)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class PNAcc_triangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'pnacc_kernel_triangle'
-        super(PNAcc_triangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps=None, **kwargs):
-        try:
-            clight = self.clight
-        except AttributeError:
-            pn = pn_struct(kwargs['pn'])
-            clight = self.kernel.make_struct('CLIGHT', **pn)
-            self.clight = clight
-
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   clight)
-
-        outargs = (ips.pnacc,)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class Sakura(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'sakura_kernel'
-        super(Sakura, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
-                   kwargs['dt'], kwargs['flag'])
-
-        outargs = (ips.drdot,)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class Sakura_rectangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'sakura_kernel_rectangle'
-        super(Sakura_rectangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
-                   kwargs['dt'], kwargs['flag'])
-
-        outargs = (ips.drdot, jps.drdot)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class Sakura_triangle(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        name = 'sakura_kernel_triangle'
-        super(Sakura_triangle, self).__init__(name, backend)
-
-    def set_args(self, ips, jps=None, **kwargs):
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   kwargs['dt'], kwargs['flag'])
-
-        outargs = (ips.drdot,)
-
-        self.kernel.set_args(inpargs, outargs)
-
-
-class Kepler(AbstractExtension):
-    """
-
-    """
-    def __init__(self, backend=cli.backend):
-        if backend == 'CL':    # No need for CL support.
-            backend = 'C'      # C is fast enough!
-
-        name = 'kepler_solver_kernel'
-        super(Kepler, self).__init__(name, backend)
-
-    def set_args(self, ips, jps, **kwargs):
-        inpargs = (ips.n,
-                   ips.mass, ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.eps2, ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   jps.n,
-                   jps.mass, jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.eps2, jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2],
-                   kwargs['dt'])
-
-        outargs = (ips.rdot[0][0], ips.rdot[0][1], ips.rdot[0][2],
-                   ips.rdot[1][0], ips.rdot[1][1], ips.rdot[1][2],
-                   jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
-                   jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2])
-
-        self.kernel.set_args(inpargs, outargs)
+    Extension = type(name, (cls, Kernel), {'__call__': __call__})
+    return Extension(cls.name)
 
 
 def get_kernel(name, backend=cli.backend):
-    kernel = globals()[name](backend)
+    if name == 'Kepler':
+        kernel = make_extension(name, 'C')
 
-    def func(ips, jps, **kwargs):
-        if ips != jps:
-            kernel(jps, ips, **kwargs)
-        return kernel(ips, jps, **kwargs)
+        def func(ips, jps, *args, **kwargs):
+            return kernel(ips, jps, *args, **kwargs)
+        return func
 
-    if backend == 'C' and name not in ('Kepler',):
-        kernel_r = globals()[name+'_rectangle'](backend)
-        kernel_t = globals()[name+'_triangle'](backend)
+    if backend == 'C':
+        kernel_r = make_extension(name+'_rectangle', backend)
+        kernel_t = make_extension(name+'_triangle', backend)
 
-        def c_func(ips, jps, **kwargs):
+        def c_func(ips, jps, *args, **kwargs):
             if ips != jps:
-                return kernel_r(ips, jps, **kwargs)
-            return kernel_t(ips, ips, **kwargs)
-
+                return kernel_r(ips, jps, *args, **kwargs)
+            return kernel_t(ips, *args, **kwargs)
         return c_func
 
+    kernel = make_extension(name, backend)
+
+    def func(ips, jps, *args, **kwargs):
+        if ips != jps:
+            kernel(jps, ips, *args, **kwargs)
+        return kernel(ips, jps, *args, **kwargs)
     return func
 
 
