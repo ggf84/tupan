@@ -17,8 +17,8 @@ LOGGER = logging.getLogger(__name__)
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, 'src')
 
-MEM_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.USE_HOST_PTR
-# MEM_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR
+# MEM_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.USE_HOST_PTR
+MEM_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR
 COPY_HOST_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR
 
 
@@ -167,14 +167,14 @@ class Program(object):
         simd = (self.cl_device.preferred_vector_width_float
                 if fpwidth == 'fp32'
                 else self.cl_device.preferred_vector_width_double)
-        lsize = 8
-        wsize = 8
+        lsize = 1
+        wsize = 1
         if self.cl_device.type == cl.device_type.CPU:
-            lsize *= 1
-            wsize *= 2
+            lsize *= 8
+            wsize *= 8
         if self.cl_device.type == cl.device_type.GPU:
-            lsize *= 32
-            wsize *= 256
+            lsize *= 128
+            wsize *= 1024
         fast_local_mem = True
 
         # setting program options
