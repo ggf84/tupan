@@ -28,12 +28,11 @@ FILE_NAMES = [
 
 
 COMPILER_FLAGS = [
-    '-O3',
-    '-std=c++14',
-    '-march=native',
-    '-funroll-loops',
-    '-fpermissive',
     '-fopenmp',
+    '-funroll-loops',
+    '-march=native',
+    '-std=c++14',
+    '-O3',
 ]
 
 
