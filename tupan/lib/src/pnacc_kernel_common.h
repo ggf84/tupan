@@ -7,56 +7,111 @@
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
-template<typename I, typename J, typename PARAM>
-static inline void
-p2p_pnacc_kernel_core(I &ip, J &jp, const PARAM clight)
-// flop count: 48 + ???
-{
-	decltype(ip.rdot) rdot;
-	for (auto kdot = 0; kdot < 2; ++kdot) {
-		for (auto kdim = 0; kdim < NDIM; ++kdim) {
-			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
+template<size_t TILE>
+struct PNAcc_Data_SoA {
+	real_t m[TILE];
+	real_t e2[TILE];
+	real_t rx[TILE];
+	real_t ry[TILE];
+	real_t rz[TILE];
+	real_t vx[TILE];
+	real_t vy[TILE];
+	real_t vz[TILE];
+	real_t pnax[TILE];
+	real_t pnay[TILE];
+	real_t pnaz[TILE];
+};
+
+template<size_t TILE>
+struct P2P_pnacc_kernel_core {
+	const CLIGHT clight;
+	P2P_pnacc_kernel_core(const CLIGHT& clight) : clight(clight) {}
+
+	template<typename IP, typename JP>
+	void operator()(IP&& ip, JP&& jp) {
+		// flop count: 45 + ???
+		for (size_t i = 0; i < TILE; ++i) {
+			#pragma unroll
+			for (size_t j = 0; j < TILE; ++j) {
+				auto e2 = ip.e2[i] + jp.e2[j];
+				auto rx = ip.rx[i] - jp.rx[j];
+				auto ry = ip.ry[i] - jp.ry[j];
+				auto rz = ip.rz[i] - jp.rz[j];
+				auto vx = ip.vx[i] - jp.vx[j];
+				auto vy = ip.vy[i] - jp.vy[j];
+				auto vz = ip.vz[i] - jp.vz[j];
+
+				auto rr = rx * rx + ry * ry + rz * rz;
+				auto vv = vx * vx + vy * vy + vz * vz;
+
+				decltype(rr) inv_r1;
+				auto inv_r2 = smoothed_inv_r2_inv_r1(rr, e2, &inv_r1);	// flop count: 4
+
+				{	// i-particle
+					auto pn = p2p_pnterms(
+						ip.m[i], ip.vx[i], ip.vy[i], ip.vz[i],
+						jp.m[j], jp.vx[j], jp.vy[j], jp.vz[j],
+						rx, ry, rz, vx, vy, vz,
+						vv, inv_r1, inv_r2, clight
+					);	// flop count: ???
+
+					ip.pnax[i] += pn.a * rx + pn.b * vx;
+					ip.pnay[i] += pn.a * ry + pn.b * vy;
+					ip.pnaz[i] += pn.a * rz + pn.b * vz;
+				}
+				{	// j-particle
+					auto pn = p2p_pnterms(
+						jp.m[j], jp.vx[j], jp.vy[j], jp.vz[j],
+						ip.m[i], ip.vx[i], ip.vy[i], ip.vz[i],
+						-rx, -ry, -rz, -vx, -vy, -vz,
+						vv, inv_r1, inv_r2, clight
+					);	// flop count: ???
+
+					jp.pnax[j] -= pn.a * rx + pn.b * vx;
+					jp.pnay[j] -= pn.a * ry + pn.b * vy;
+					jp.pnaz[j] -= pn.a * rz + pn.b * vz;
+				}
+			}
 		}
 	}
-	auto e2 = ip.e2 + jp.e2;
 
-	auto rr = rdot[0][0] * rdot[0][0]
-			+ rdot[0][1] * rdot[0][1]
-			+ rdot[0][2] * rdot[0][2];
-	auto vv = rdot[1][0] * rdot[1][0]
-			+ rdot[1][1] * rdot[1][1]
-			+ rdot[1][2] * rdot[1][2];
+	template<typename P>
+	void operator()(P&& p) {
+		// flop count: 33 + ???
+		for (size_t i = 0; i < TILE; ++i) {
+			#pragma unroll
+			for (size_t j = 0; j < TILE; ++j) {
+				auto e2 = p.e2[i] + p.e2[j];
+				auto rx = p.rx[i] - p.rx[j];
+				auto ry = p.ry[i] - p.ry[j];
+				auto rz = p.rz[i] - p.rz[j];
+				auto vx = p.vx[i] - p.vx[j];
+				auto vy = p.vy[i] - p.vy[j];
+				auto vz = p.vz[i] - p.vz[j];
 
-	decltype(rr) inv_r1;
-	auto inv_r2 = smoothed_inv_r2_inv_r1(rr, e2, &inv_r1);	// flop count: 4
+				auto rr = rx * rx + ry * ry + rz * rz;
+				auto vv = vx * vx + vy * vy + vz * vz;
 
-	{	// i-particle
-		auto pn = p2p_pnterms(
-			ip.m, ip.rdot[1][0], ip.rdot[1][1], ip.rdot[1][2],
-			jp.m, jp.rdot[1][0], jp.rdot[1][1], jp.rdot[1][2],
-			rdot[0][0], rdot[0][1], rdot[0][2],
-			rdot[1][0], rdot[1][1], rdot[1][2],
-			vv, inv_r1, inv_r2, clight
-		);	// flop count: ???
+				decltype(rr) inv_r1;
+				auto inv_r2 = smoothed_inv_r2_inv_r1(rr, e2, &inv_r1);	// flop count: 4
 
-		for (auto kdim = 0; kdim < NDIM; ++kdim) {
-			ip.pnacc[kdim] += (pn.a * rdot[0][kdim] + pn.b * rdot[1][kdim]);
+				inv_r1 = (rr > 0) ? (inv_r1):(0);
+				inv_r2 = (rr > 0) ? (inv_r2):(0);
+
+				auto pn = p2p_pnterms(
+					p.m[i], p.vx[i], p.vy[i], p.vz[i],
+					p.m[j], p.vx[j], p.vy[j], p.vz[j],
+					rx, ry, rz, vx, vy, vz,
+					vv, inv_r1, inv_r2, clight
+				);	// flop count: ???
+
+				p.pnax[i] += pn.a * rx + pn.b * vx;
+				p.pnay[i] += pn.a * ry + pn.b * vy;
+				p.pnaz[i] += pn.a * rz + pn.b * vz;
+			}
 		}
 	}
-	{	// j-particle
-		auto pn = p2p_pnterms(
-			jp.m, jp.rdot[1][0], jp.rdot[1][1], jp.rdot[1][2],
-			ip.m, ip.rdot[1][0], ip.rdot[1][1], ip.rdot[1][2],
-			-rdot[0][0], -rdot[0][1], -rdot[0][2],
-			-rdot[1][0], -rdot[1][1], -rdot[1][2],
-			vv, inv_r1, inv_r2, clight
-		);	// flop count: ???
-
-		for (auto kdim = 0; kdim < NDIM; ++kdim) {
-			jp.pnacc[kdim] -= (pn.a * rdot[0][kdim] + pn.b * rdot[1][kdim]);
-		}
-	}
-}
+};
 #endif
 
 // ----------------------------------------------------------------------------

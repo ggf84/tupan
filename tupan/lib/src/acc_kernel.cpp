@@ -100,7 +100,7 @@ acc_kernel_triangle(
 
 	#pragma omp parallel
 	#pragma omp single
-	triangle2(
+	triangle(
 		begin(ipart), end(ipart),
 		P2P_acc_kernel_core<tile>()
 	);

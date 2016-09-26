@@ -6,44 +6,97 @@
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
-template<typename I, typename J, typename PARAM>
-static inline void
-p2p_tstep_kernel_core(I &ip, J &jp, const PARAM eta)
-// flop count: 43
-{
-	decltype(ip.rdot) rdot;
-	for (auto kdot = 0; kdot < 2; ++kdot) {
-		for (auto kdim = 0; kdim < NDIM; ++kdim) {
-			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
+template<size_t TILE>
+struct Tstep_Data_SoA {
+	real_t m[TILE];
+	real_t e2[TILE];
+	real_t rx[TILE];
+	real_t ry[TILE];
+	real_t rz[TILE];
+	real_t vx[TILE];
+	real_t vy[TILE];
+	real_t vz[TILE];
+	real_t w2_a[TILE];
+	real_t w2_b[TILE];
+};
+
+template<size_t TILE>
+struct P2P_tstep_kernel_core {
+	const real_t eta;
+	P2P_tstep_kernel_core(const real_t& eta) : eta(eta) {}
+
+	template<typename IP, typename JP>
+	void operator()(IP&& ip, JP&& jp) {
+		// flop count: 43
+		for (size_t i = 0; i < TILE; ++i) {
+			#pragma unroll
+			for (size_t j = 0; j < TILE; ++j) {
+				auto m = ip.m[i] + jp.m[j];
+				auto e2 = ip.e2[i] + jp.e2[j];
+				auto rx = ip.rx[i] - jp.rx[j];
+				auto ry = ip.ry[i] - jp.ry[j];
+				auto rz = ip.rz[i] - jp.rz[j];
+				auto vx = ip.vx[i] - jp.vx[j];
+				auto vy = ip.vy[i] - jp.vy[j];
+				auto vz = ip.vz[i] - jp.vz[j];
+
+				auto rr = rx * rx + ry * ry + rz * rz;
+				auto rv = rx * vx + ry * vy + rz * vz;
+				auto vv = vx * vx + vy * vy + vz * vz;
+
+				decltype(rr) inv_r2;
+				auto m_r3 = 2 * m * smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 7
+
+				auto m_r5 = m_r3 * inv_r2;
+				auto w2 = m_r3 + vv * inv_r2;
+				auto gamma = m_r5 + w2 * inv_r2;
+				gamma *= (eta * rsqrt(w2));
+				w2 -= gamma * rv;
+
+				ip.w2_a[i] = fmax(w2, ip.w2_a[i]);
+				ip.w2_b[i] += w2;
+				jp.w2_a[j] = fmax(w2, jp.w2_a[j]);
+				jp.w2_b[j] += w2;
+			}
 		}
 	}
-	auto m = ip.m + jp.m;
-	auto e2 = ip.e2 + jp.e2;
 
-	auto rr = rdot[0][0] * rdot[0][0]
-			+ rdot[0][1] * rdot[0][1]
-			+ rdot[0][2] * rdot[0][2];
-	auto rv = rdot[0][0] * rdot[1][0]
-			+ rdot[0][1] * rdot[1][1]
-			+ rdot[0][2] * rdot[1][2];
-	auto vv = rdot[1][0] * rdot[1][0]
-			+ rdot[1][1] * rdot[1][1]
-			+ rdot[1][2] * rdot[1][2];
+	template<typename P>
+	void operator()(P&& p) {
+		// flop count: 42
+		for (size_t i = 0; i < TILE; ++i) {
+			#pragma unroll
+			for (size_t j = 0; j < TILE; ++j) {
+				auto m = p.m[i] + p.m[j];
+				auto e2 = p.e2[i] + p.e2[j];
+				auto rx = p.rx[i] - p.rx[j];
+				auto ry = p.ry[i] - p.ry[j];
+				auto rz = p.rz[i] - p.rz[j];
+				auto vx = p.vx[i] - p.vx[j];
+				auto vy = p.vy[i] - p.vy[j];
+				auto vz = p.vz[i] - p.vz[j];
 
-	decltype(rr) inv_r2;
-	auto m_r3 = 2 * m * smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 7
+				auto rr = rx * rx + ry * ry + rz * rz;
+				auto rv = rx * vx + ry * vy + rz * vz;
+				auto vv = vx * vx + vy * vy + vz * vz;
 
-	auto m_r5 = m_r3 * inv_r2;
-	auto w2 = m_r3 + vv * inv_r2;
-	auto gamma = m_r5 + w2 * inv_r2;
-	gamma *= (eta * rsqrt(w2));
-	w2 -= gamma * rv;
+				decltype(rr) inv_r2;
+				auto m_r3 = 2 * m * smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 7
 
-	ip.w2[0] = fmax(w2, ip.w2[0]);
-	ip.w2[1] += w2;
-	jp.w2[0] = fmax(w2, jp.w2[0]);
-	jp.w2[1] += w2;
-}
+				auto m_r5 = m_r3 * inv_r2;
+				auto w2 = m_r3 + vv * inv_r2;
+				auto gamma = m_r5 + w2 * inv_r2;
+				gamma *= (eta * rsqrt(w2));
+				w2 -= gamma * rv;
+
+				w2 = (rr > 0) ? (w2):(0);
+
+				p.w2_a[i] = fmax(w2, p.w2_a[i]);
+				p.w2_b[i] += w2;
+			}
+		}
+	}
+};
 #endif
 
 // ----------------------------------------------------------------------------

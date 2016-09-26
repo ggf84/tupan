@@ -21,15 +21,15 @@ struct Acc_Data_SoA {
 template<size_t TILE>
 struct P2P_acc_kernel_core {
 	template<typename IP, typename JP>
-	void operator()(IP& ip, JP& jp) {
+	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 28
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
+				auto e2 = ip.e2[i] + jp.e2[j];
 				auto rx = ip.rx[i] - jp.rx[j];
 				auto ry = ip.ry[i] - jp.ry[j];
 				auto rz = ip.rz[i] - jp.rz[j];
-				auto e2 = ip.e2[i] + jp.e2[j];
 
 				auto rr = rx * rx + ry * ry + rz * rz;
 
@@ -51,16 +51,16 @@ struct P2P_acc_kernel_core {
 		}
 	}
 
-	template<typename IP, typename JP>
-	void iblock(IP& ip, JP& jp) {
+	template<typename P>
+	void operator()(P&& p) {
 		// flop count: 21
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
-				auto rx = ip.rx[i] - jp.rx[j];
-				auto ry = ip.ry[i] - jp.ry[j];
-				auto rz = ip.rz[i] - jp.rz[j];
-				auto e2 = ip.e2[i] + jp.e2[j];
+				auto e2 = p.e2[i] + p.e2[j];
+				auto rx = p.rx[i] - p.rx[j];
+				auto ry = p.ry[i] - p.ry[j];
+				auto rz = p.rz[i] - p.rz[j];
 
 				auto rr = rx * rx + ry * ry + rz * rz;
 
@@ -68,10 +68,10 @@ struct P2P_acc_kernel_core {
 
 				inv_r3 = (rr > 0) ? (inv_r3):(0);
 
-				auto m_r3 = jp.m[j] * inv_r3;
-				ip.ax[i] -= m_r3 * rx;
-				ip.ay[i] -= m_r3 * ry;
-				ip.az[i] -= m_r3 * rz;
+				auto m_r3 = p.m[j] * inv_r3;
+				p.ax[i] -= m_r3 * rx;
+				p.ay[i] -= m_r3 * ry;
+				p.az[i] -= m_r3 * rz;
 			}
 		}
 	}

@@ -6,28 +6,61 @@
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
-template<typename I, typename J>
-static inline void
-p2p_phi_kernel_core(I &ip, J &jp)
-// flop count: 16
-{
-	decltype(ip.rdot) rdot;
-	for (auto kdot = 0; kdot < 1; ++kdot) {
-		for (auto kdim = 0; kdim < NDIM; ++kdim) {
-			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
+template<size_t TILE>
+struct Phi_Data_SoA {
+	real_t m[TILE];
+	real_t e2[TILE];
+	real_t rx[TILE];
+	real_t ry[TILE];
+	real_t rz[TILE];
+	real_t phi[TILE];
+};
+
+template<size_t TILE>
+struct P2P_phi_kernel_core {
+	template<typename IP, typename JP>
+	void operator()(IP&& ip, JP&& jp) {
+		// flop count: 16
+		for (size_t i = 0; i < TILE; ++i) {
+			#pragma unroll
+			for (size_t j = 0; j < TILE; ++j) {
+				auto e2 = ip.e2[i] + jp.e2[j];
+				auto rx = ip.rx[i] - jp.rx[j];
+				auto ry = ip.ry[i] - jp.ry[j];
+				auto rz = ip.rz[i] - jp.rz[j];
+
+				auto rr = rx * rx + ry * ry + rz * rz;
+
+				auto inv_r1 = smoothed_inv_r1(rr, e2);	// flop count: 3
+
+				ip.phi[i] -= jp.m[j] * inv_r1;
+				jp.phi[j] -= ip.m[i] * inv_r1;
+			}
 		}
 	}
-	auto e2 = ip.e2 + jp.e2;
 
-	auto rr = rdot[0][0] * rdot[0][0]
-			+ rdot[0][1] * rdot[0][1]
-			+ rdot[0][2] * rdot[0][2];
+	template<typename P>
+	void operator()(P&& p) {
+		// flop count: 14
+		for (size_t i = 0; i < TILE; ++i) {
+			#pragma unroll
+			for (size_t j = 0; j < TILE; ++j) {
+				auto e2 = p.e2[i] + p.e2[j];
+				auto rx = p.rx[i] - p.rx[j];
+				auto ry = p.ry[i] - p.ry[j];
+				auto rz = p.rz[i] - p.rz[j];
 
-	auto inv_r1 = smoothed_inv_r1(rr, e2);	// flop count: 3
+				auto rr = rx * rx + ry * ry + rz * rz;
 
-	ip.phi -= jp.m * inv_r1;
-	jp.phi -= ip.m * inv_r1;
-}
+				auto inv_r1 = smoothed_inv_r1(rr, e2);	// flop count: 3
+
+				inv_r1 = (rr > 0) ? (inv_r1):(0);
+
+				p.phi[i] -= p.m[j] * inv_r1;
+			}
+		}
+	}
+};
 #endif
 
 // ----------------------------------------------------------------------------
