@@ -16,6 +16,37 @@ struct Phi_Data_SoA {
 	real_t phi[TILE];
 };
 
+template<size_t TILE, typename T = Phi_Data_SoA<TILE>>
+auto setup(
+	const uint_t n,
+	const real_t __m[],
+	const real_t __e2[],
+	const real_t __rdot[])
+{
+	auto ntiles = (n + TILE - 1) / TILE;
+	vector<T> part(ntiles);
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		p.m[kk] = __m[k];
+		p.e2[kk] = __e2[k];
+		p.rx[kk] = __rdot[(0*NDIM+0)*n + k];
+		p.ry[kk] = __rdot[(0*NDIM+1)*n + k];
+		p.rz[kk] = __rdot[(0*NDIM+2)*n + k];
+	}
+	return part;
+}
+
+template<size_t TILE, typename PART>
+void commit(const uint_t n, const PART& part, real_t __phi[])
+{
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		__phi[k] = p.phi[kk];
+	}
+}
+
 template<size_t TILE>
 struct P2P_phi_kernel_core {
 	template<typename IP, typename JP>
@@ -24,14 +55,14 @@ struct P2P_phi_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
-				auto e2 = ip.e2[i] + jp.e2[j];
+				auto rr = ip.e2[i] + jp.e2[j];
 				auto rx = ip.rx[i] - jp.rx[j];
 				auto ry = ip.ry[i] - jp.ry[j];
 				auto rz = ip.rz[i] - jp.rz[j];
 
-				auto rr = rx * rx + ry * ry + rz * rz;
+				rr += rx * rx + ry * ry + rz * rz;
 
-				auto inv_r1 = smoothed_inv_r1(rr, e2);	// flop count: 3
+				auto inv_r1 = rsqrt(rr);
 
 				ip.phi[i] -= jp.m[j] * inv_r1;
 				jp.phi[j] -= ip.m[i] * inv_r1;
@@ -45,16 +76,15 @@ struct P2P_phi_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
-				auto e2 = p.e2[i] + p.e2[j];
+				auto rr = p.e2[i] + p.e2[j];
 				auto rx = p.rx[i] - p.rx[j];
 				auto ry = p.ry[i] - p.ry[j];
 				auto rz = p.rz[i] - p.rz[j];
 
-				auto rr = rx * rx + ry * ry + rz * rz;
+				rr += rx * rx + ry * ry + rz * rz;
 
-				auto inv_r1 = smoothed_inv_r1(rr, e2);	// flop count: 3
-
-				inv_r1 = (rr > 0) ? (inv_r1):(0);
+				auto inv_r1 = rsqrt(rr);
+				inv_r1 = (i != j) ? (inv_r1):(0);
 
 				p.phi[i] -= p.m[j] * inv_r1;
 			}

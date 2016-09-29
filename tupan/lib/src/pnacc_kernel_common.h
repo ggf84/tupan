@@ -22,6 +22,42 @@ struct PNAcc_Data_SoA {
 	real_t pnaz[TILE];
 };
 
+template<size_t TILE, typename T = PNAcc_Data_SoA<TILE>>
+auto setup(
+	const uint_t n,
+	const real_t __m[],
+	const real_t __e2[],
+	const real_t __rdot[])
+{
+	auto ntiles = (n + TILE - 1) / TILE;
+	vector<T> part(ntiles);
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		p.m[kk] = __m[k];
+		p.e2[kk] = __e2[k];
+		p.rx[kk] = __rdot[(0*NDIM+0)*n + k];
+		p.ry[kk] = __rdot[(0*NDIM+1)*n + k];
+		p.rz[kk] = __rdot[(0*NDIM+2)*n + k];
+		p.vx[kk] = __rdot[(1*NDIM+0)*n + k];
+		p.vy[kk] = __rdot[(1*NDIM+1)*n + k];
+		p.vz[kk] = __rdot[(1*NDIM+2)*n + k];
+	}
+	return part;
+}
+
+template<size_t TILE, typename PART>
+void commit(const uint_t n, const PART& part, real_t __pnacc[])
+{
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		__pnacc[(0*NDIM+0)*n + k] = p.pnax[kk];
+		__pnacc[(0*NDIM+1)*n + k] = p.pnay[kk];
+		__pnacc[(0*NDIM+2)*n + k] = p.pnaz[kk];
+	}
+}
+
 template<size_t TILE>
 struct P2P_pnacc_kernel_core {
 	const CLIGHT clight;
@@ -33,7 +69,7 @@ struct P2P_pnacc_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
-				auto e2 = ip.e2[i] + jp.e2[j];
+				auto rr = ip.e2[i] + jp.e2[j];
 				auto rx = ip.rx[i] - jp.rx[j];
 				auto ry = ip.ry[i] - jp.ry[j];
 				auto rz = ip.rz[i] - jp.rz[j];
@@ -41,36 +77,33 @@ struct P2P_pnacc_kernel_core {
 				auto vy = ip.vy[i] - jp.vy[j];
 				auto vz = ip.vz[i] - jp.vz[j];
 
-				auto rr = rx * rx + ry * ry + rz * rz;
+				rr += rx * rx + ry * ry + rz * rz;
 				auto vv = vx * vx + vy * vy + vz * vz;
 
-				decltype(rr) inv_r1;
-				auto inv_r2 = smoothed_inv_r2_inv_r1(rr, e2, &inv_r1);	// flop count: 4
+				auto inv_r1 = rsqrt(rr);
+				auto inv_r2 = inv_r1 * inv_r1;
 
-				{	// i-particle
-					auto pn = p2p_pnterms(
-						ip.m[i], ip.vx[i], ip.vy[i], ip.vz[i],
-						jp.m[j], jp.vx[j], jp.vy[j], jp.vz[j],
-						rx, ry, rz, vx, vy, vz,
-						vv, inv_r1, inv_r2, clight
-					);	// flop count: ???
+				// i-particle
+				auto jpn = p2p_pnterms(
+					ip.m[i], ip.vx[i], ip.vy[i], ip.vz[i],
+					jp.m[j], jp.vx[j], jp.vy[j], jp.vz[j],
+					rx, ry, rz, vx, vy, vz,
+					vv, inv_r1, inv_r2, clight
+				);	// flop count: ???
+				ip.pnax[i] += jpn.a * rx + jpn.b * vx;
+				ip.pnay[i] += jpn.a * ry + jpn.b * vy;
+				ip.pnaz[i] += jpn.a * rz + jpn.b * vz;
 
-					ip.pnax[i] += pn.a * rx + pn.b * vx;
-					ip.pnay[i] += pn.a * ry + pn.b * vy;
-					ip.pnaz[i] += pn.a * rz + pn.b * vz;
-				}
-				{	// j-particle
-					auto pn = p2p_pnterms(
-						jp.m[j], jp.vx[j], jp.vy[j], jp.vz[j],
-						ip.m[i], ip.vx[i], ip.vy[i], ip.vz[i],
-						-rx, -ry, -rz, -vx, -vy, -vz,
-						vv, inv_r1, inv_r2, clight
-					);	// flop count: ???
-
-					jp.pnax[j] -= pn.a * rx + pn.b * vx;
-					jp.pnay[j] -= pn.a * ry + pn.b * vy;
-					jp.pnaz[j] -= pn.a * rz + pn.b * vz;
-				}
+				// j-particle
+				auto ipn = p2p_pnterms(
+					jp.m[j], jp.vx[j], jp.vy[j], jp.vz[j],
+					ip.m[i], ip.vx[i], ip.vy[i], ip.vz[i],
+					-rx, -ry, -rz, -vx, -vy, -vz,
+					vv, inv_r1, inv_r2, clight
+				);	// flop count: ???
+				jp.pnax[j] -= ipn.a * rx + ipn.b * vx;
+				jp.pnay[j] -= ipn.a * ry + ipn.b * vy;
+				jp.pnaz[j] -= ipn.a * rz + ipn.b * vz;
 			}
 		}
 	}
@@ -81,7 +114,7 @@ struct P2P_pnacc_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
-				auto e2 = p.e2[i] + p.e2[j];
+				auto rr = p.e2[i] + p.e2[j];
 				auto rx = p.rx[i] - p.rx[j];
 				auto ry = p.ry[i] - p.ry[j];
 				auto rz = p.rz[i] - p.rz[j];
@@ -89,25 +122,22 @@ struct P2P_pnacc_kernel_core {
 				auto vy = p.vy[i] - p.vy[j];
 				auto vz = p.vz[i] - p.vz[j];
 
-				auto rr = rx * rx + ry * ry + rz * rz;
+				rr += rx * rx + ry * ry + rz * rz;
 				auto vv = vx * vx + vy * vy + vz * vz;
 
-				decltype(rr) inv_r1;
-				auto inv_r2 = smoothed_inv_r2_inv_r1(rr, e2, &inv_r1);	// flop count: 4
+				auto inv_r1 = rsqrt(rr);
+				inv_r1 = (i != j) ? (inv_r1):(0);
+				auto inv_r2 = inv_r1 * inv_r1;
 
-				inv_r1 = (rr > 0) ? (inv_r1):(0);
-				inv_r2 = (rr > 0) ? (inv_r2):(0);
-
-				auto pn = p2p_pnterms(
+				auto jpn = p2p_pnterms(
 					p.m[i], p.vx[i], p.vy[i], p.vz[i],
 					p.m[j], p.vx[j], p.vy[j], p.vz[j],
 					rx, ry, rz, vx, vy, vz,
 					vv, inv_r1, inv_r2, clight
 				);	// flop count: ???
-
-				p.pnax[i] += pn.a * rx + pn.b * vx;
-				p.pnay[i] += pn.a * ry + pn.b * vy;
-				p.pnaz[i] += pn.a * rz + pn.b * vz;
+				p.pnax[i] += jpn.a * rx + jpn.b * vx;
+				p.pnay[i] += jpn.a * ry + jpn.b * vy;
+				p.pnaz[i] += jpn.a * rz + jpn.b * vz;
 			}
 		}
 	}

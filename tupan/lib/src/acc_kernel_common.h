@@ -18,6 +18,39 @@ struct Acc_Data_SoA {
 	real_t az[TILE];
 };
 
+template<size_t TILE, typename T = Acc_Data_SoA<TILE>>
+auto setup(
+	const uint_t n,
+	const real_t __m[],
+	const real_t __e2[],
+	const real_t __rdot[])
+{
+	auto ntiles = (n + TILE - 1) / TILE;
+	vector<T> part(ntiles);
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		p.m[kk] = __m[k];
+		p.e2[kk] = __e2[k];
+		p.rx[kk] = __rdot[(0*NDIM+0)*n + k];
+		p.ry[kk] = __rdot[(0*NDIM+1)*n + k];
+		p.rz[kk] = __rdot[(0*NDIM+2)*n + k];
+	}
+	return part;
+}
+
+template<size_t TILE, typename PART>
+void commit(const uint_t n, const PART& part, real_t __adot[])
+{
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		__adot[(0*NDIM+0)*n + k] = p.ax[kk];
+		__adot[(0*NDIM+1)*n + k] = p.ay[kk];
+		__adot[(0*NDIM+2)*n + k] = p.az[kk];
+	}
+}
+
 template<size_t TILE>
 struct P2P_acc_kernel_core {
 	template<typename IP, typename JP>
@@ -26,27 +59,27 @@ struct P2P_acc_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
-				auto e2 = ip.e2[i] + jp.e2[j];
+				auto rr = ip.e2[i] + jp.e2[j];
 				auto rx = ip.rx[i] - jp.rx[j];
 				auto ry = ip.ry[i] - jp.ry[j];
 				auto rz = ip.rz[i] - jp.rz[j];
 
-				auto rr = rx * rx + ry * ry + rz * rz;
+				rr += rx * rx + ry * ry + rz * rz;
 
-				auto inv_r3 = smoothed_inv_r3(rr, e2);	// flop count: 5
+				auto inv_r3 = rsqrt(rr);
+				inv_r3 *= inv_r3 * inv_r3;
 
-				{	// i-particle
-					auto m_r3 = jp.m[j] * inv_r3;
-					ip.ax[i] -= m_r3 * rx;
-					ip.ay[i] -= m_r3 * ry;
-					ip.az[i] -= m_r3 * rz;
-				}
-				{	// j-particle
-					auto m_r3 = ip.m[i] * inv_r3;
-					jp.ax[j] += m_r3 * rx;
-					jp.ay[j] += m_r3 * ry;
-					jp.az[j] += m_r3 * rz;
-				}
+				// i-particle
+				auto jm_r3 = jp.m[j] * inv_r3;
+				ip.ax[i] -= jm_r3 * rx;
+				ip.ay[i] -= jm_r3 * ry;
+				ip.az[i] -= jm_r3 * rz;
+
+				// j-particle
+				auto im_r3 = ip.m[i] * inv_r3;
+				jp.ax[j] += im_r3 * rx;
+				jp.ay[j] += im_r3 * ry;
+				jp.az[j] += im_r3 * rz;
 			}
 		}
 	}
@@ -57,21 +90,21 @@ struct P2P_acc_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
-				auto e2 = p.e2[i] + p.e2[j];
+				auto rr = p.e2[i] + p.e2[j];
 				auto rx = p.rx[i] - p.rx[j];
 				auto ry = p.ry[i] - p.ry[j];
 				auto rz = p.rz[i] - p.rz[j];
 
-				auto rr = rx * rx + ry * ry + rz * rz;
+				rr += rx * rx + ry * ry + rz * rz;
 
-				auto inv_r3 = smoothed_inv_r3(rr, e2);	// flop count: 5
+				auto inv_r3 = rsqrt(rr);
+				inv_r3 = (i != j) ? (inv_r3):(0);
+				inv_r3 *= inv_r3 * inv_r3;
 
-				inv_r3 = (rr > 0) ? (inv_r3):(0);
-
-				auto m_r3 = p.m[j] * inv_r3;
-				p.ax[i] -= m_r3 * rx;
-				p.ay[i] -= m_r3 * ry;
-				p.az[i] -= m_r3 * rz;
+				auto jm_r3 = p.m[j] * inv_r3;
+				p.ax[i] -= jm_r3 * rx;
+				p.ay[i] -= jm_r3 * ry;
+				p.az[i] -= jm_r3 * rz;
 			}
 		}
 	}

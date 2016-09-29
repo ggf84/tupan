@@ -17,31 +17,8 @@ phi_kernel_rectangle(
 {
 	constexpr auto tile = 16;
 
-	auto isize = (ni + tile - 1) / tile;
-	vector<Phi_Data_SoA<tile>> ipart(isize);
-	for (size_t i = 0; i < ni; ++i) {
-		auto ii = i%tile;
-		auto& ip = ipart[i/tile];
-		ip.m[ii] = __im[i];
-		ip.e2[ii] = __ie2[i];
-		ip.rx[ii] = __irdot[(0*NDIM+0)*ni + i];
-		ip.ry[ii] = __irdot[(0*NDIM+1)*ni + i];
-		ip.rz[ii] = __irdot[(0*NDIM+2)*ni + i];
-		ip.phi[ii] = 0;
-	}
-
-	auto jsize = (nj + tile - 1) / tile;
-	vector<Phi_Data_SoA<tile>> jpart(jsize);
-	for (size_t j = 0; j < nj; ++j) {
-		auto jj = j%tile;
-		auto& jp = jpart[j/tile];
-		jp.m[jj] = __jm[j];
-		jp.e2[jj] = __je2[j];
-		jp.rx[jj] = __jrdot[(0*NDIM+0)*nj + j];
-		jp.ry[jj] = __jrdot[(0*NDIM+1)*nj + j];
-		jp.rz[jj] = __jrdot[(0*NDIM+2)*nj + j];
-		jp.phi[jj] = 0;
-	}
+	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
+	auto jpart = setup<tile>(nj, __jm, __je2, __jrdot);
 
 	#pragma omp parallel
 	#pragma omp single
@@ -51,17 +28,8 @@ phi_kernel_rectangle(
 		P2P_phi_kernel_core<tile>()
 	);
 
-	for (size_t i = 0; i < ni; ++i) {
-		auto ii = i%tile;
-		auto& ip = ipart[i/tile];
-		__iphi[i] = ip.phi[ii];
-	}
-
-	for (size_t j = 0; j < nj; ++j) {
-		auto jj = j%tile;
-		auto& jp = jpart[j/tile];
-		__jphi[j] = jp.phi[jj];
-	}
+	commit<tile>(ni, ipart, __iphi);
+	commit<tile>(nj, jpart, __jphi);
 }
 
 
@@ -75,18 +43,7 @@ phi_kernel_triangle(
 {
 	constexpr auto tile = 16;
 
-	auto isize = (ni + tile - 1) / tile;
-	vector<Phi_Data_SoA<tile>> ipart(isize);
-	for (size_t i = 0; i < ni; ++i) {
-		auto ii = i%tile;
-		auto& ip = ipart[i/tile];
-		ip.m[ii] = __im[i];
-		ip.e2[ii] = __ie2[i];
-		ip.rx[ii] = __irdot[(0*NDIM+0)*ni + i];
-		ip.ry[ii] = __irdot[(0*NDIM+1)*ni + i];
-		ip.rz[ii] = __irdot[(0*NDIM+2)*ni + i];
-		ip.phi[ii] = 0;
-	}
+	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
 
 	#pragma omp parallel
 	#pragma omp single
@@ -95,11 +52,7 @@ phi_kernel_triangle(
 		P2P_phi_kernel_core<tile>()
 	);
 
-	for (size_t i = 0; i < ni; ++i) {
-		auto ii = i%tile;
-		auto& ip = ipart[i/tile];
-		__iphi[i] = ip.phi[ii];
-	}
+	commit<tile>(ni, ipart, __iphi);
 }
 
 

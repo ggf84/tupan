@@ -24,6 +24,45 @@ struct Acc_Jrk_Data_SoA {
 	real_t jz[TILE];
 };
 
+template<size_t TILE, typename T = Acc_Jrk_Data_SoA<TILE>>
+auto setup(
+	const uint_t n,
+	const real_t __m[],
+	const real_t __e2[],
+	const real_t __rdot[])
+{
+	auto ntiles = (n + TILE - 1) / TILE;
+	vector<T> part(ntiles);
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		p.m[kk] = __m[k];
+		p.e2[kk] = __e2[k];
+		p.rx[kk] = __rdot[(0*NDIM+0)*n + k];
+		p.ry[kk] = __rdot[(0*NDIM+1)*n + k];
+		p.rz[kk] = __rdot[(0*NDIM+2)*n + k];
+		p.vx[kk] = __rdot[(1*NDIM+0)*n + k];
+		p.vy[kk] = __rdot[(1*NDIM+1)*n + k];
+		p.vz[kk] = __rdot[(1*NDIM+2)*n + k];
+	}
+	return part;
+}
+
+template<size_t TILE, typename PART>
+void commit(const uint_t n, const PART& part, real_t __adot[])
+{
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		__adot[(0*NDIM+0)*n + k] = p.ax[kk];
+		__adot[(0*NDIM+1)*n + k] = p.ay[kk];
+		__adot[(0*NDIM+2)*n + k] = p.az[kk];
+		__adot[(1*NDIM+0)*n + k] = p.jx[kk];
+		__adot[(1*NDIM+1)*n + k] = p.jy[kk];
+		__adot[(1*NDIM+2)*n + k] = p.jz[kk];
+	}
+}
+
 template<size_t TILE>
 struct P2P_acc_jrk_kernel_core {
 	template<typename IP, typename JP>
@@ -32,7 +71,7 @@ struct P2P_acc_jrk_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
-				auto e2 = ip.e2[i] + jp.e2[j];
+				auto rr = ip.e2[i] + jp.e2[j];
 				auto rx = ip.rx[i] - jp.rx[j];
 				auto ry = ip.ry[i] - jp.ry[j];
 				auto rz = ip.rz[i] - jp.rz[j];
@@ -40,14 +79,14 @@ struct P2P_acc_jrk_kernel_core {
 				auto vy = ip.vy[i] - jp.vy[j];
 				auto vz = ip.vz[i] - jp.vz[j];
 
-				auto rr = rx * rx + ry * ry + rz * rz;
+				rr += rx * rx + ry * ry + rz * rz;
 				auto rv = rx * vx + ry * vy + rz * vz;
 
 				auto s1 = rv;
 
-				decltype(rr) inv_r2;
-				auto inv_r3 = smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 5
-
+				auto inv_r3 = rsqrt(rr);
+				auto inv_r2 = inv_r3 * inv_r3;
+				inv_r3 *= inv_r2;
 				inv_r2 *= -3;
 
 				const auto q1 = inv_r2 * (s1);
@@ -55,24 +94,23 @@ struct P2P_acc_jrk_kernel_core {
 				vy += q1 * ry;
 				vz += q1 * rz;
 
-				{	// i-particle
-					auto m_r3 = jp.m[j] * inv_r3;
-					ip.ax[i] -= m_r3 * rx;
-					ip.ay[i] -= m_r3 * ry;
-					ip.az[i] -= m_r3 * rz;
-					ip.jx[i] -= m_r3 * vx;
-					ip.jy[i] -= m_r3 * vy;
-					ip.jz[i] -= m_r3 * vz;
-				}
-				{	// j-particle
-					auto m_r3 = ip.m[i] * inv_r3;
-					jp.ax[j] += m_r3 * rx;
-					jp.ay[j] += m_r3 * ry;
-					jp.az[j] += m_r3 * rz;
-					jp.jx[j] += m_r3 * vx;
-					jp.jy[j] += m_r3 * vy;
-					jp.jz[j] += m_r3 * vz;
-				}
+				// i-particle
+				auto jm_r3 = jp.m[j] * inv_r3;
+				ip.ax[i] -= jm_r3 * rx;
+				ip.ay[i] -= jm_r3 * ry;
+				ip.az[i] -= jm_r3 * rz;
+				ip.jx[i] -= jm_r3 * vx;
+				ip.jy[i] -= jm_r3 * vy;
+				ip.jz[i] -= jm_r3 * vz;
+
+				// j-particle
+				auto im_r3 = ip.m[i] * inv_r3;
+				jp.ax[j] += im_r3 * rx;
+				jp.ay[j] += im_r3 * ry;
+				jp.az[j] += im_r3 * rz;
+				jp.jx[j] += im_r3 * vx;
+				jp.jy[j] += im_r3 * vy;
+				jp.jz[j] += im_r3 * vz;
 			}
 		}
 	}
@@ -83,7 +121,7 @@ struct P2P_acc_jrk_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
-				auto e2 = p.e2[i] + p.e2[j];
+				auto rr = p.e2[i] + p.e2[j];
 				auto rx = p.rx[i] - p.rx[j];
 				auto ry = p.ry[i] - p.ry[j];
 				auto rz = p.rz[i] - p.rz[j];
@@ -91,17 +129,15 @@ struct P2P_acc_jrk_kernel_core {
 				auto vy = p.vy[i] - p.vy[j];
 				auto vz = p.vz[i] - p.vz[j];
 
-				auto rr = rx * rx + ry * ry + rz * rz;
+				rr += rx * rx + ry * ry + rz * rz;
 				auto rv = rx * vx + ry * vy + rz * vz;
 
 				auto s1 = rv;
 
-				decltype(rr) inv_r2;
-				auto inv_r3 = smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 5
-
-				inv_r2 = (rr > 0) ? (inv_r2):(0);
-				inv_r3 = (rr > 0) ? (inv_r3):(0);
-
+				auto inv_r3 = rsqrt(rr);
+				inv_r3 = (i != j) ? (inv_r3):(0);
+				auto inv_r2 = inv_r3 * inv_r3;
+				inv_r3 *= inv_r2;
 				inv_r2 *= -3;
 
 				const auto q1 = inv_r2 * (s1);
@@ -109,13 +145,13 @@ struct P2P_acc_jrk_kernel_core {
 				vy += q1 * ry;
 				vz += q1 * rz;
 
-				auto m_r3 = p.m[j] * inv_r3;
-				p.ax[i] -= m_r3 * rx;
-				p.ay[i] -= m_r3 * ry;
-				p.az[i] -= m_r3 * rz;
-				p.jx[i] -= m_r3 * vx;
-				p.jy[i] -= m_r3 * vy;
-				p.jz[i] -= m_r3 * vz;
+				auto jm_r3 = p.m[j] * inv_r3;
+				p.ax[i] -= jm_r3 * rx;
+				p.ay[i] -= jm_r3 * ry;
+				p.az[i] -= jm_r3 * rz;
+				p.jx[i] -= jm_r3 * vx;
+				p.jy[i] -= jm_r3 * vy;
+				p.jz[i] -= jm_r3 * vz;
 			}
 		}
 	}

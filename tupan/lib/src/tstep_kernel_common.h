@@ -20,6 +20,41 @@ struct Tstep_Data_SoA {
 	real_t w2_b[TILE];
 };
 
+template<size_t TILE, typename T = Tstep_Data_SoA<TILE>>
+auto setup(
+	const uint_t n,
+	const real_t __m[],
+	const real_t __e2[],
+	const real_t __rdot[])
+{
+	auto ntiles = (n + TILE - 1) / TILE;
+	vector<T> part(ntiles);
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		p.m[kk] = __m[k];
+		p.e2[kk] = __e2[k];
+		p.rx[kk] = __rdot[(0*NDIM+0)*n + k];
+		p.ry[kk] = __rdot[(0*NDIM+1)*n + k];
+		p.rz[kk] = __rdot[(0*NDIM+2)*n + k];
+		p.vx[kk] = __rdot[(1*NDIM+0)*n + k];
+		p.vy[kk] = __rdot[(1*NDIM+1)*n + k];
+		p.vz[kk] = __rdot[(1*NDIM+2)*n + k];
+	}
+	return part;
+}
+
+template<size_t TILE, typename PART>
+void commit(const uint_t n, const PART& part, real_t __dt_a[], real_t __dt_b[], const real_t eta)
+{
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		__dt_a[k] = eta / sqrt(p.w2_a[kk]);
+		__dt_b[k] = eta / sqrt(p.w2_b[kk]);
+	}
+}
+
 template<size_t TILE>
 struct P2P_tstep_kernel_core {
 	const real_t eta;
@@ -32,7 +67,7 @@ struct P2P_tstep_kernel_core {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
 				auto m = ip.m[i] + jp.m[j];
-				auto e2 = ip.e2[i] + jp.e2[j];
+				auto rr = ip.e2[i] + jp.e2[j];
 				auto rx = ip.rx[i] - jp.rx[j];
 				auto ry = ip.ry[i] - jp.ry[j];
 				auto rz = ip.rz[i] - jp.rz[j];
@@ -40,12 +75,14 @@ struct P2P_tstep_kernel_core {
 				auto vy = ip.vy[i] - jp.vy[j];
 				auto vz = ip.vz[i] - jp.vz[j];
 
-				auto rr = rx * rx + ry * ry + rz * rz;
+				rr += rx * rx + ry * ry + rz * rz;
 				auto rv = rx * vx + ry * vy + rz * vz;
 				auto vv = vx * vx + vy * vy + vz * vz;
 
-				decltype(rr) inv_r2;
-				auto m_r3 = 2 * m * smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 7
+				auto m_r3 = rsqrt(rr);
+				auto inv_r2 = m_r3 * m_r3;
+				m_r3 *= inv_r2;
+				m_r3 *= 2 * m;
 
 				auto m_r5 = m_r3 * inv_r2;
 				auto w2 = m_r3 + vv * inv_r2;
@@ -68,7 +105,7 @@ struct P2P_tstep_kernel_core {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
 				auto m = p.m[i] + p.m[j];
-				auto e2 = p.e2[i] + p.e2[j];
+				auto rr = p.e2[i] + p.e2[j];
 				auto rx = p.rx[i] - p.rx[j];
 				auto ry = p.ry[i] - p.ry[j];
 				auto rz = p.rz[i] - p.rz[j];
@@ -76,20 +113,21 @@ struct P2P_tstep_kernel_core {
 				auto vy = p.vy[i] - p.vy[j];
 				auto vz = p.vz[i] - p.vz[j];
 
-				auto rr = rx * rx + ry * ry + rz * rz;
+				rr += rx * rx + ry * ry + rz * rz;
 				auto rv = rx * vx + ry * vy + rz * vz;
 				auto vv = vx * vx + vy * vy + vz * vz;
 
-				decltype(rr) inv_r2;
-				auto m_r3 = 2 * m * smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 7
+				auto m_r3 = rsqrt(rr);
+				m_r3 = (i != j) ? (m_r3):(0);
+				auto inv_r2 = m_r3 * m_r3;
+				m_r3 *= inv_r2;
+				m_r3 *= 2 * m;
 
 				auto m_r5 = m_r3 * inv_r2;
 				auto w2 = m_r3 + vv * inv_r2;
 				auto gamma = m_r5 + w2 * inv_r2;
 				gamma *= (eta * rsqrt(w2));
 				w2 -= gamma * rv;
-
-				w2 = (rr > 0) ? (w2):(0);
 
 				p.w2_a[i] = fmax(w2, p.w2_a[i]);
 				p.w2_b[i] += w2;

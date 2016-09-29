@@ -187,6 +187,45 @@ struct Sakura_Data_SoA {
 	real_t dvz[TILE];
 };
 
+template<size_t TILE, typename T = Sakura_Data_SoA<TILE>>
+auto setup(
+	const uint_t n,
+	const real_t __m[],
+	const real_t __e2[],
+	const real_t __rdot[])
+{
+	auto ntiles = (n + TILE - 1) / TILE;
+	vector<T> part(ntiles);
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		p.m[kk] = __m[k];
+		p.e2[kk] = __e2[k];
+		p.rx[kk] = __rdot[(0*NDIM+0)*n + k];
+		p.ry[kk] = __rdot[(0*NDIM+1)*n + k];
+		p.rz[kk] = __rdot[(0*NDIM+2)*n + k];
+		p.vx[kk] = __rdot[(1*NDIM+0)*n + k];
+		p.vy[kk] = __rdot[(1*NDIM+1)*n + k];
+		p.vz[kk] = __rdot[(1*NDIM+2)*n + k];
+	}
+	return part;
+}
+
+template<size_t TILE, typename PART>
+void commit(const uint_t n, const PART& part, real_t __drdot[])
+{
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		__drdot[(0*NDIM+0)*n + k] = p.drx[kk];
+		__drdot[(0*NDIM+1)*n + k] = p.dry[kk];
+		__drdot[(0*NDIM+2)*n + k] = p.drz[kk];
+		__drdot[(1*NDIM+0)*n + k] = p.dvx[kk];
+		__drdot[(1*NDIM+1)*n + k] = p.dvy[kk];
+		__drdot[(1*NDIM+2)*n + k] = p.dvz[kk];
+	}
+}
+
 template<size_t TILE>
 struct P2P_sakura_kernel_core {
 	const real_t dt;
@@ -226,24 +265,23 @@ struct P2P_sakura_kernel_core {
 				auto dvy = v1y - v0y;
 				auto dvz = v1z - v0z;
 
-				{	// i-particle
-					auto jmu = jp.m[j] * inv_m;
-					ip.drx[i] += jmu * drx;
-					ip.dry[i] += jmu * dry;
-					ip.drz[i] += jmu * drz;
-					ip.dvx[i] += jmu * dvx;
-					ip.dvy[i] += jmu * dvy;
-					ip.dvz[i] += jmu * dvz;
-				}
-				{	// j-particle
-					auto imu = ip.m[i] * inv_m;
-					jp.drx[j] -= imu * drx;
-					jp.dry[j] -= imu * dry;
-					jp.drz[j] -= imu * drz;
-					jp.dvx[j] -= imu * dvx;
-					jp.dvy[j] -= imu * dvy;
-					jp.dvz[j] -= imu * dvz;
-				}
+				// i-particle
+				auto jmu = jp.m[j] * inv_m;
+				ip.drx[i] += jmu * drx;
+				ip.dry[i] += jmu * dry;
+				ip.drz[i] += jmu * drz;
+				ip.dvx[i] += jmu * dvx;
+				ip.dvy[i] += jmu * dvy;
+				ip.dvz[i] += jmu * dvz;
+
+				// j-particle
+				auto imu = ip.m[i] * inv_m;
+				jp.drx[j] -= imu * drx;
+				jp.dry[j] -= imu * dry;
+				jp.drz[j] -= imu * drz;
+				jp.dvx[j] -= imu * dvx;
+				jp.dvy[j] -= imu * dvy;
+				jp.dvz[j] -= imu * dvz;
 			}
 		}
 	}

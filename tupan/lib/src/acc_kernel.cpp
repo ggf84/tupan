@@ -17,35 +17,8 @@ acc_kernel_rectangle(
 {
 	constexpr auto tile = 16;
 
-	auto isize = (ni + tile - 1) / tile;
-	vector<Acc_Data_SoA<tile>> ipart(isize);
-	for (size_t i = 0; i < ni; ++i) {
-		auto ii = i%tile;
-		auto& ip = ipart[i/tile];
-		ip.m[ii] = __im[i];
-		ip.e2[ii] = __ie2[i];
-		ip.rx[ii] = __irdot[(0*NDIM+0)*ni + i];
-		ip.ry[ii] = __irdot[(0*NDIM+1)*ni + i];
-		ip.rz[ii] = __irdot[(0*NDIM+2)*ni + i];
-		ip.ax[ii] = 0;
-		ip.ay[ii] = 0;
-		ip.az[ii] = 0;
-	}
-
-	auto jsize = (nj + tile - 1) / tile;
-	vector<Acc_Data_SoA<tile>> jpart(jsize);
-	for (size_t j = 0; j < nj; ++j) {
-		auto jj = j%tile;
-		auto& jp = jpart[j/tile];
-		jp.m[jj] = __jm[j];
-		jp.e2[jj] = __je2[j];
-		jp.rx[jj] = __jrdot[(0*NDIM+0)*nj + j];
-		jp.ry[jj] = __jrdot[(0*NDIM+1)*nj + j];
-		jp.rz[jj] = __jrdot[(0*NDIM+2)*nj + j];
-		jp.ax[jj] = 0;
-		jp.ay[jj] = 0;
-		jp.az[jj] = 0;
-	}
+	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
+	auto jpart = setup<tile>(nj, __jm, __je2, __jrdot);
 
 	#pragma omp parallel
 	#pragma omp single
@@ -55,21 +28,8 @@ acc_kernel_rectangle(
 		P2P_acc_kernel_core<tile>()
 	);
 
-	for (size_t i = 0; i < ni; ++i) {
-		auto ii = i%tile;
-		auto& ip = ipart[i/tile];
-		__iadot[(0*NDIM+0)*ni + i] = ip.ax[ii];
-		__iadot[(0*NDIM+1)*ni + i] = ip.ay[ii];
-		__iadot[(0*NDIM+2)*ni + i] = ip.az[ii];
-	}
-
-	for (size_t j = 0; j < nj; ++j) {
-		auto jj = j%tile;
-		auto& jp = jpart[j/tile];
-		__jadot[(0*NDIM+0)*nj + j] = jp.ax[jj];
-		__jadot[(0*NDIM+1)*nj + j] = jp.ay[jj];
-		__jadot[(0*NDIM+2)*nj + j] = jp.az[jj];
-	}
+	commit<tile>(ni, ipart, __iadot);
+	commit<tile>(nj, jpart, __jadot);
 }
 
 
@@ -83,20 +43,7 @@ acc_kernel_triangle(
 {
 	constexpr auto tile = 16;
 
-	auto isize = (ni + tile - 1) / tile;
-	vector<Acc_Data_SoA<tile>> ipart(isize);
-	for (size_t i = 0; i < ni; ++i) {
-		auto ii = i%tile;
-		auto& ip = ipart[i/tile];
-		ip.m[ii] = __im[i];
-		ip.e2[ii] = __ie2[i];
-		ip.rx[ii] = __irdot[(0*NDIM+0)*ni + i];
-		ip.ry[ii] = __irdot[(0*NDIM+1)*ni + i];
-		ip.rz[ii] = __irdot[(0*NDIM+2)*ni + i];
-		ip.ax[ii] = 0;
-		ip.ay[ii] = 0;
-		ip.az[ii] = 0;
-	}
+	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
 
 	#pragma omp parallel
 	#pragma omp single
@@ -105,13 +52,7 @@ acc_kernel_triangle(
 		P2P_acc_kernel_core<tile>()
 	);
 
-	for (size_t i = 0; i < ni; ++i) {
-		auto ii = i%tile;
-		auto& ip = ipart[i/tile];
-		__iadot[(0*NDIM+0)*ni + i] = ip.ax[ii];
-		__iadot[(0*NDIM+1)*ni + i] = ip.ay[ii];
-		__iadot[(0*NDIM+2)*ni + i] = ip.az[ii];
-	}
+	commit<tile>(ni, ipart, __iadot);
 }
 
 

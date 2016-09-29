@@ -20,39 +20,8 @@ tstep_kernel_rectangle(
 {
 	constexpr auto tile = 16;
 
-	auto isize = (ni + tile - 1) / tile;
-	vector<Tstep_Data_SoA<tile>> ipart(isize);
-	for (size_t i = 0; i < ni; ++i) {
-		auto ii = i%tile;
-		auto& ip = ipart[i/tile];
-		ip.m[ii] = __im[i];
-		ip.e2[ii] = __ie2[i];
-		ip.rx[ii] = __irdot[(0*NDIM+0)*ni + i];
-		ip.ry[ii] = __irdot[(0*NDIM+1)*ni + i];
-		ip.rz[ii] = __irdot[(0*NDIM+2)*ni + i];
-		ip.vx[ii] = __irdot[(1*NDIM+0)*ni + i];
-		ip.vy[ii] = __irdot[(1*NDIM+1)*ni + i];
-		ip.vz[ii] = __irdot[(1*NDIM+2)*ni + i];
-		ip.w2_a[ii] = 0;
-		ip.w2_b[ii] = 0;
-	}
-
-	auto jsize = (nj + tile - 1) / tile;
-	vector<Tstep_Data_SoA<tile>> jpart(jsize);
-	for (size_t j = 0; j < nj; ++j) {
-		auto jj = j%tile;
-		auto& jp = jpart[j/tile];
-		jp.m[jj] = __jm[j];
-		jp.e2[jj] = __je2[j];
-		jp.rx[jj] = __jrdot[(0*NDIM+0)*nj + j];
-		jp.ry[jj] = __jrdot[(0*NDIM+1)*nj + j];
-		jp.rz[jj] = __jrdot[(0*NDIM+2)*nj + j];
-		jp.vx[jj] = __jrdot[(1*NDIM+0)*nj + j];
-		jp.vy[jj] = __jrdot[(1*NDIM+1)*nj + j];
-		jp.vz[jj] = __jrdot[(1*NDIM+2)*nj + j];
-		jp.w2_a[jj] = 0;
-		jp.w2_b[jj] = 0;
-	}
+	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
+	auto jpart = setup<tile>(nj, __jm, __je2, __jrdot);
 
 	#pragma omp parallel
 	#pragma omp single
@@ -62,19 +31,8 @@ tstep_kernel_rectangle(
 		P2P_tstep_kernel_core<tile>(eta)
 	);
 
-	for (size_t i = 0; i < ni; ++i) {
-		auto ii = i%tile;
-		auto& ip = ipart[i/tile];
-		__idt_a[i] = eta / sqrt(ip.w2_a[ii]);
-		__idt_b[i] = eta / sqrt(ip.w2_b[ii]);
-	}
-
-	for (size_t j = 0; j < nj; ++j) {
-		auto jj = j%tile;
-		auto& jp = jpart[j/tile];
-		__jdt_a[j] = eta / sqrt(jp.w2_a[jj]);
-		__jdt_b[j] = eta / sqrt(jp.w2_b[jj]);
-	}
+	commit<tile>(ni, ipart, __idt_a, __idt_b, eta);
+	commit<tile>(nj, jpart, __jdt_a, __jdt_b, eta);
 }
 
 
@@ -90,22 +48,7 @@ tstep_kernel_triangle(
 {
 	constexpr auto tile = 16;
 
-	auto isize = (ni + tile - 1) / tile;
-	vector<Tstep_Data_SoA<tile>> ipart(isize);
-	for (size_t i = 0; i < ni; ++i) {
-		auto ii = i%tile;
-		auto& ip = ipart[i/tile];
-		ip.m[ii] = __im[i];
-		ip.e2[ii] = __ie2[i];
-		ip.rx[ii] = __irdot[(0*NDIM+0)*ni + i];
-		ip.ry[ii] = __irdot[(0*NDIM+1)*ni + i];
-		ip.rz[ii] = __irdot[(0*NDIM+2)*ni + i];
-		ip.vx[ii] = __irdot[(1*NDIM+0)*ni + i];
-		ip.vy[ii] = __irdot[(1*NDIM+1)*ni + i];
-		ip.vz[ii] = __irdot[(1*NDIM+2)*ni + i];
-		ip.w2_a[ii] = 0;
-		ip.w2_b[ii] = 0;
-	}
+	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
 
 	#pragma omp parallel
 	#pragma omp single
@@ -114,12 +57,7 @@ tstep_kernel_triangle(
 		P2P_tstep_kernel_core<tile>(eta)
 	);
 
-	for (size_t i = 0; i < ni; ++i) {
-		auto ii = i%tile;
-		auto& ip = ipart[i/tile];
-		__idt_a[i] = eta / sqrt(ip.w2_a[ii]);
-		__idt_b[i] = eta / sqrt(ip.w2_b[ii]);
-	}
+	commit<tile>(ni, ipart, __idt_a, __idt_b, eta);
 }
 
 

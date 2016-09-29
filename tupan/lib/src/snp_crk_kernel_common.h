@@ -36,6 +36,57 @@ struct Snp_Crk_Data_SoA {
 	real_t Cz[TILE];
 };
 
+template<size_t TILE, typename T = Snp_Crk_Data_SoA<TILE>>
+auto setup(
+	const uint_t n,
+	const real_t __m[],
+	const real_t __e2[],
+	const real_t __rdot[])
+{
+	auto ntiles = (n + TILE - 1) / TILE;
+	vector<T> part(ntiles);
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		p.m[kk] = __m[k];
+		p.e2[kk] = __e2[k];
+		p.rx[kk] = __rdot[(0*NDIM+0)*n + k];
+		p.ry[kk] = __rdot[(0*NDIM+1)*n + k];
+		p.rz[kk] = __rdot[(0*NDIM+2)*n + k];
+		p.vx[kk] = __rdot[(1*NDIM+0)*n + k];
+		p.vy[kk] = __rdot[(1*NDIM+1)*n + k];
+		p.vz[kk] = __rdot[(1*NDIM+2)*n + k];
+		p.ax[kk] = __rdot[(2*NDIM+0)*n + k];
+		p.ay[kk] = __rdot[(2*NDIM+1)*n + k];
+		p.az[kk] = __rdot[(2*NDIM+2)*n + k];
+		p.jx[kk] = __rdot[(3*NDIM+0)*n + k];
+		p.jy[kk] = __rdot[(3*NDIM+1)*n + k];
+		p.jz[kk] = __rdot[(3*NDIM+2)*n + k];
+	}
+	return part;
+}
+
+template<size_t TILE, typename PART>
+void commit(const uint_t n, const PART& part, real_t __adot[])
+{
+	for (size_t k = 0; k < n; ++k) {
+		auto kk = k%TILE;
+		auto& p = part[k/TILE];
+		__adot[(0*NDIM+0)*n + k] = p.Ax[kk];
+		__adot[(0*NDIM+1)*n + k] = p.Ay[kk];
+		__adot[(0*NDIM+2)*n + k] = p.Az[kk];
+		__adot[(1*NDIM+0)*n + k] = p.Jx[kk];
+		__adot[(1*NDIM+1)*n + k] = p.Jy[kk];
+		__adot[(1*NDIM+2)*n + k] = p.Jz[kk];
+		__adot[(2*NDIM+0)*n + k] = p.Sx[kk];
+		__adot[(2*NDIM+1)*n + k] = p.Sy[kk];
+		__adot[(2*NDIM+2)*n + k] = p.Sz[kk];
+		__adot[(3*NDIM+0)*n + k] = p.Cx[kk];
+		__adot[(3*NDIM+1)*n + k] = p.Cy[kk];
+		__adot[(3*NDIM+2)*n + k] = p.Cz[kk];
+	}
+}
+
 template<size_t TILE>
 struct P2P_snp_crk_kernel_core {
 	template<typename IP, typename JP>
@@ -44,7 +95,7 @@ struct P2P_snp_crk_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
-				auto e2 = ip.e2[i] + jp.e2[j];
+				auto rr = ip.e2[i] + jp.e2[j];
 				auto rx = ip.rx[i] - jp.rx[j];
 				auto ry = ip.ry[i] - jp.ry[j];
 				auto rz = ip.rz[i] - jp.rz[j];
@@ -58,7 +109,7 @@ struct P2P_snp_crk_kernel_core {
 				auto jy = ip.jy[i] - jp.jy[j];
 				auto jz = ip.jz[i] - jp.jz[j];
 
-				auto rr = rx * rx + ry * ry + rz * rz;
+				rr += rx * rx + ry * ry + rz * rz;
 				auto rv = rx * vx + ry * vy + rz * vz;
 				auto ra = rx * ax + ry * ay + rz * az;
 				auto rj = rx * jx + ry * jy + rz * jz;
@@ -69,9 +120,9 @@ struct P2P_snp_crk_kernel_core {
 				auto s2 = ra + vv;
 				auto s3 = rj + 3 * va;
 
-				decltype(rr) inv_r2;
-				auto inv_r3 = smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 5
-
+				auto inv_r3 = rsqrt(rr);
+				auto inv_r2 = inv_r3 * inv_r3;
+				inv_r3 *= inv_r2;
 				inv_r2 *= -3;
 
 				constexpr auto cq21 = static_cast<decltype(rr)>(5.0/3.0);
@@ -106,36 +157,35 @@ struct P2P_snp_crk_kernel_core {
 				vy += q1 * ry;
 				vz += q1 * rz;
 
-				{	// i-particle
-					auto m_r3 = jp.m[j] * inv_r3;
-					ip.Ax[i] -= m_r3 * rx;
-					ip.Ay[i] -= m_r3 * ry;
-					ip.Az[i] -= m_r3 * rz;
-					ip.Jx[i] -= m_r3 * vx;
-					ip.Jy[i] -= m_r3 * vy;
-					ip.Jz[i] -= m_r3 * vz;
-					ip.Sx[i] -= m_r3 * ax;
-					ip.Sy[i] -= m_r3 * ay;
-					ip.Sz[i] -= m_r3 * az;
-					ip.Cx[i] -= m_r3 * jx;
-					ip.Cy[i] -= m_r3 * jy;
-					ip.Cz[i] -= m_r3 * jz;
-				}
-				{	// j-particle
-					auto m_r3 = ip.m[i] * inv_r3;
-					jp.Ax[j] += m_r3 * rx;
-					jp.Ay[j] += m_r3 * ry;
-					jp.Az[j] += m_r3 * rz;
-					jp.Jx[j] += m_r3 * vx;
-					jp.Jy[j] += m_r3 * vy;
-					jp.Jz[j] += m_r3 * vz;
-					jp.Sx[j] += m_r3 * ax;
-					jp.Sy[j] += m_r3 * ay;
-					jp.Sz[j] += m_r3 * az;
-					jp.Cx[j] += m_r3 * jx;
-					jp.Cy[j] += m_r3 * jy;
-					jp.Cz[j] += m_r3 * jz;
-				}
+				// i-particle
+				auto jm_r3 = jp.m[j] * inv_r3;
+				ip.Ax[i] -= jm_r3 * rx;
+				ip.Ay[i] -= jm_r3 * ry;
+				ip.Az[i] -= jm_r3 * rz;
+				ip.Jx[i] -= jm_r3 * vx;
+				ip.Jy[i] -= jm_r3 * vy;
+				ip.Jz[i] -= jm_r3 * vz;
+				ip.Sx[i] -= jm_r3 * ax;
+				ip.Sy[i] -= jm_r3 * ay;
+				ip.Sz[i] -= jm_r3 * az;
+				ip.Cx[i] -= jm_r3 * jx;
+				ip.Cy[i] -= jm_r3 * jy;
+				ip.Cz[i] -= jm_r3 * jz;
+
+				// j-particle
+				auto im_r3 = ip.m[i] * inv_r3;
+				jp.Ax[j] += im_r3 * rx;
+				jp.Ay[j] += im_r3 * ry;
+				jp.Az[j] += im_r3 * rz;
+				jp.Jx[j] += im_r3 * vx;
+				jp.Jy[j] += im_r3 * vy;
+				jp.Jz[j] += im_r3 * vz;
+				jp.Sx[j] += im_r3 * ax;
+				jp.Sy[j] += im_r3 * ay;
+				jp.Sz[j] += im_r3 * az;
+				jp.Cx[j] += im_r3 * jx;
+				jp.Cy[j] += im_r3 * jy;
+				jp.Cz[j] += im_r3 * jz;
 			}
 		}
 	}
@@ -146,7 +196,7 @@ struct P2P_snp_crk_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma unroll
 			for (size_t j = 0; j < TILE; ++j) {
-				auto e2 = p.e2[i] + p.e2[j];
+				auto rr = p.e2[i] + p.e2[j];
 				auto rx = p.rx[i] - p.rx[j];
 				auto ry = p.ry[i] - p.ry[j];
 				auto rz = p.rz[i] - p.rz[j];
@@ -160,7 +210,7 @@ struct P2P_snp_crk_kernel_core {
 				auto jy = p.jy[i] - p.jy[j];
 				auto jz = p.jz[i] - p.jz[j];
 
-				auto rr = rx * rx + ry * ry + rz * rz;
+				rr += rx * rx + ry * ry + rz * rz;
 				auto rv = rx * vx + ry * vy + rz * vz;
 				auto ra = rx * ax + ry * ay + rz * az;
 				auto rj = rx * jx + ry * jy + rz * jz;
@@ -171,12 +221,10 @@ struct P2P_snp_crk_kernel_core {
 				auto s2 = ra + vv;
 				auto s3 = rj + 3 * va;
 
-				decltype(rr) inv_r2;
-				auto inv_r3 = smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 5
-
-				inv_r2 = (rr > 0) ? (inv_r2):(0);
-				inv_r3 = (rr > 0) ? (inv_r3):(0);
-
+				auto inv_r3 = rsqrt(rr);
+				inv_r3 = (i != j) ? (inv_r3):(0);
+				auto inv_r2 = inv_r3 * inv_r3;
+				inv_r3 *= inv_r2;
 				inv_r2 *= -3;
 
 				constexpr auto cq21 = static_cast<decltype(rr)>(5.0/3.0);
@@ -211,19 +259,19 @@ struct P2P_snp_crk_kernel_core {
 				vy += q1 * ry;
 				vz += q1 * rz;
 
-				auto m_r3 = p.m[j] * inv_r3;
-				p.Ax[i] -= m_r3 * rx;
-				p.Ay[i] -= m_r3 * ry;
-				p.Az[i] -= m_r3 * rz;
-				p.Jx[i] -= m_r3 * vx;
-				p.Jy[i] -= m_r3 * vy;
-				p.Jz[i] -= m_r3 * vz;
-				p.Sx[i] -= m_r3 * ax;
-				p.Sy[i] -= m_r3 * ay;
-				p.Sz[i] -= m_r3 * az;
-				p.Cx[i] -= m_r3 * jx;
-				p.Cy[i] -= m_r3 * jy;
-				p.Cz[i] -= m_r3 * jz;
+				auto jm_r3 = p.m[j] * inv_r3;
+				p.Ax[i] -= jm_r3 * rx;
+				p.Ay[i] -= jm_r3 * ry;
+				p.Az[i] -= jm_r3 * rz;
+				p.Jx[i] -= jm_r3 * vx;
+				p.Jy[i] -= jm_r3 * vy;
+				p.Jz[i] -= jm_r3 * vz;
+				p.Sx[i] -= jm_r3 * ax;
+				p.Sy[i] -= jm_r3 * ay;
+				p.Sz[i] -= jm_r3 * az;
+				p.Cx[i] -= jm_r3 * jx;
+				p.Cy[i] -= jm_r3 * jy;
+				p.Cz[i] -= jm_r3 * jz;
 			}
 		}
 	}
