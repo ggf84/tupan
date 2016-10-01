@@ -31,7 +31,10 @@ COMPILER_FLAGS = [
     '-O3',
     '-flto',
     '-fopenmp',
-    '-march=native',
+    '-funroll-loops',
+    '-fno-math-errno',
+#    '-ffinite-math-only',
+    '-ffp-contract=fast',
     '-std=c++14',
 ]
 

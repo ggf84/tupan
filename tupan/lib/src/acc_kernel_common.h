@@ -56,30 +56,43 @@ struct P2P_acc_kernel_core {
 	template<typename IP, typename JP>
 	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 28
+		decltype(jp.m) rr, rx, ry, rz, inv_r3, jm_r3, im_r3;
 		for (size_t i = 0; i < TILE; ++i) {
-			#pragma unroll
+			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto rr = ip.e2[i] + jp.e2[j];
-				auto rx = ip.rx[i] - jp.rx[j];
-				auto ry = ip.ry[i] - jp.ry[j];
-				auto rz = ip.rz[i] - jp.rz[j];
-
-				rr += rx * rx + ry * ry + rz * rz;
-
-				auto inv_r3 = rsqrt(rr);
-				inv_r3 *= inv_r3 * inv_r3;
-
-				// i-particle
-				auto jm_r3 = jp.m[j] * inv_r3;
-				ip.ax[i] -= jm_r3 * rx;
-				ip.ay[i] -= jm_r3 * ry;
-				ip.az[i] -= jm_r3 * rz;
-
-				// j-particle
-				auto im_r3 = ip.m[i] * inv_r3;
-				jp.ax[j] += im_r3 * rx;
-				jp.ay[j] += im_r3 * ry;
-				jp.az[j] += im_r3 * rz;
+				rr[j] = ip.e2[i] + jp.e2[j];
+				rx[j] = ip.rx[i] - jp.rx[j];
+				ry[j] = ip.ry[i] - jp.ry[j];
+				rz[j] = ip.rz[i] - jp.rz[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				rr[j] += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				inv_r3[j] = rsqrt(rr[j]);
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				inv_r3[j] *= inv_r3[j] * inv_r3[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				jm_r3[j] = jp.m[j] * inv_r3[j];
+				im_r3[j] = ip.m[i] * inv_r3[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				ip.ax[i] -= jm_r3[j] * rx[j];
+				ip.ay[i] -= jm_r3[j] * ry[j];
+				ip.az[i] -= jm_r3[j] * rz[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				jp.ax[j] += im_r3[j] * rx[j];
+				jp.ay[j] += im_r3[j] * ry[j];
+				jp.az[j] += im_r3[j] * rz[j];
 			}
 		}
 	}
@@ -87,24 +100,40 @@ struct P2P_acc_kernel_core {
 	template<typename P>
 	void operator()(P&& p) {
 		// flop count: 21
+		decltype(p.m) rr, rx, ry, rz, inv_r3, jm_r3;
 		for (size_t i = 0; i < TILE; ++i) {
-			#pragma unroll
+			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto rr = p.e2[i] + p.e2[j];
-				auto rx = p.rx[i] - p.rx[j];
-				auto ry = p.ry[i] - p.ry[j];
-				auto rz = p.rz[i] - p.rz[j];
-
-				rr += rx * rx + ry * ry + rz * rz;
-
-				auto inv_r3 = rsqrt(rr);
-				inv_r3 = (i != j) ? (inv_r3):(0);
-				inv_r3 *= inv_r3 * inv_r3;
-
-				auto jm_r3 = p.m[j] * inv_r3;
-				p.ax[i] -= jm_r3 * rx;
-				p.ay[i] -= jm_r3 * ry;
-				p.az[i] -= jm_r3 * rz;
+				rr[j] = p.e2[i] + p.e2[j];
+				rx[j] = p.rx[i] - p.rx[j];
+				ry[j] = p.ry[i] - p.ry[j];
+				rz[j] = p.rz[i] - p.rz[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				rr[j] += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				inv_r3[j] = rsqrt(rr[j]);
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				inv_r3[j] = (i != j) ? (inv_r3[j]):(0);
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				inv_r3[j] *= inv_r3[j] * inv_r3[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				jm_r3[j] = p.m[j] * inv_r3[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				p.ax[i] -= jm_r3[j] * rx[j];
+				p.ay[i] -= jm_r3[j] * ry[j];
+				p.az[i] -= jm_r3[j] * rz[j];
 			}
 		}
 	}
