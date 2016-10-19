@@ -33,9 +33,11 @@ COMPILER_FLAGS = [
     '-fopenmp',
     '-funroll-loops',
     '-fno-math-errno',
-#    '-ffinite-math-only',
+    '-ffinite-math-only',
     '-ffp-contract=fast',
     '-std=c++14',
+#    '-fopt-info-vec',              # gcc
+#    '-Rpass=loop-vectorize',       # clang
 ]
 
 

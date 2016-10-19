@@ -18,7 +18,7 @@ tstep_kernel_rectangle(
 	real_t __jdt_a[],
 	real_t __jdt_b[])
 {
-	constexpr auto tile = 16;
+	constexpr auto tile = 64 / sizeof(real_t);
 
 	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
 	auto jpart = setup<tile>(nj, __jm, __je2, __jrdot);
@@ -46,7 +46,7 @@ tstep_kernel_triangle(
 	real_t __idt_a[],
 	real_t __idt_b[])
 {
-	constexpr auto tile = 16;
+	constexpr auto tile = 64 / sizeof(real_t);
 
 	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
 

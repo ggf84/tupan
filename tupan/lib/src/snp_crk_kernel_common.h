@@ -92,100 +92,98 @@ struct P2P_snp_crk_kernel_core {
 	template<typename IP, typename JP>
 	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 153
+		decltype(jp.m) rx, ry, rz, vx, vy, vz;
+		decltype(jp.m) ax, ay, az, jx, jy, jz;
+		decltype(jp.m) inv_r3, im_r3, jm_r3;
 		for (size_t i = 0; i < TILE; ++i) {
-			#pragma unroll
+			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
 				auto rr = ip.e2[i] + jp.e2[j];
-				auto rx = ip.rx[i] - jp.rx[j];
-				auto ry = ip.ry[i] - jp.ry[j];
-				auto rz = ip.rz[i] - jp.rz[j];
-				auto vx = ip.vx[i] - jp.vx[j];
-				auto vy = ip.vy[i] - jp.vy[j];
-				auto vz = ip.vz[i] - jp.vz[j];
-				auto ax = ip.ax[i] - jp.ax[j];
-				auto ay = ip.ay[i] - jp.ay[j];
-				auto az = ip.az[i] - jp.az[j];
-				auto jx = ip.jx[i] - jp.jx[j];
-				auto jy = ip.jy[i] - jp.jy[j];
-				auto jz = ip.jz[i] - jp.jz[j];
+				rx[j] = ip.rx[i] - jp.rx[j];
+				ry[j] = ip.ry[i] - jp.ry[j];
+				rz[j] = ip.rz[i] - jp.rz[j];
+				vx[j] = ip.vx[i] - jp.vx[j];
+				vy[j] = ip.vy[i] - jp.vy[j];
+				vz[j] = ip.vz[i] - jp.vz[j];
+				ax[j] = ip.ax[i] - jp.ax[j];
+				ay[j] = ip.ay[i] - jp.ay[j];
+				az[j] = ip.az[i] - jp.az[j];
+				jx[j] = ip.jx[i] - jp.jx[j];
+				jy[j] = ip.jy[i] - jp.jy[j];
+				jz[j] = ip.jz[i] - jp.jz[j];
 
-				rr += rx * rx + ry * ry + rz * rz;
-				auto rv = rx * vx + ry * vy + rz * vz;
-				auto ra = rx * ax + ry * ay + rz * az;
-				auto rj = rx * jx + ry * jy + rz * jz;
-				auto vv = vx * vx + vy * vy + vz * vz;
-				auto va = vx * ax + vy * ay + vz * az;
+				rr += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
 
-				auto s1 = rv;
-				auto s2 = ra + vv;
-				auto s3 = rj + 3 * va;
-
-				auto inv_r3 = rsqrt(rr);
-				auto inv_r2 = inv_r3 * inv_r3;
-				inv_r3 *= inv_r2;
+				inv_r3[j] = rsqrt(rr);
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				auto inv_r2 = inv_r3[j] * inv_r3[j];
+				inv_r3[j] *= inv_r2;
 				inv_r2 *= -3;
 
-				constexpr auto cq21 = static_cast<decltype(rr)>(5.0/3.0);
-				constexpr auto cq31 = static_cast<decltype(rr)>(8.0/3.0);
-				constexpr auto cq32 = static_cast<decltype(rr)>(7.0/3.0);
+				auto s1 = rx[j] * vx[j] + ry[j] * vy[j] + rz[j] * vz[j];
+				auto s2 = vx[j] * vx[j] + vy[j] * vy[j] + vz[j] * vz[j];
+				auto s3 = vx[j] * ax[j] + vy[j] * ay[j] + vz[j] * az[j];
+				s3 *= 3;
+				s2 += rx[j] * ax[j] + ry[j] * ay[j] + rz[j] * az[j];
+				s3 += rx[j] * jx[j] + ry[j] * jy[j] + rz[j] * jz[j];
+
+				constexpr auto cq21 = static_cast<decltype(s1)>(5.0/3.0);
+				constexpr auto cq31 = static_cast<decltype(s1)>(8.0/3.0);
+				constexpr auto cq32 = static_cast<decltype(s1)>(7.0/3.0);
 
 				const auto q1 = inv_r2 * (s1);
 				const auto q2 = inv_r2 * (s2 + (cq21 * s1) * q1);
 				const auto q3 = inv_r2 * (s3 + (cq31 * s2) * q1 + (cq32 * s1) * q2);
 
-				const auto c1 = 3 * q1;
-				const auto c2 = 3 * q2;
-				const auto c3 = 2 * q1;
-				jx += c1 * ax;
-				jy += c1 * ay;
-				jz += c1 * az;
-				jx += c2 * vx;
-				jy += c2 * vy;
-				jz += c2 * vz;
-				jx += q3 * rx;
-				jy += q3 * ry;
-				jz += q3 * rz;
+				const auto b3 = 3 * q1;
+				const auto c3 = 3 * q2;
+				const auto c2 = 2 * q1;
+				jx[j] += b3 * ax[j] + c3 * vx[j] + q3 * rx[j];
+				jy[j] += b3 * ay[j] + c3 * vy[j] + q3 * ry[j];
+				jz[j] += b3 * az[j] + c3 * vz[j] + q3 * rz[j];
 
-				ax += c3 * vx;
-				ay += c3 * vy;
-				az += c3 * vz;
-				ax += q2 * rx;
-				ay += q2 * ry;
-				az += q2 * rz;
+				ax[j] += c2 * vx[j] + q2 * rx[j];
+				ay[j] += c2 * vy[j] + q2 * ry[j];
+				az[j] += c2 * vz[j] + q2 * rz[j];
 
-				vx += q1 * rx;
-				vy += q1 * ry;
-				vz += q1 * rz;
+				vx[j] += q1 * rx[j];
+				vy[j] += q1 * ry[j];
+				vz[j] += q1 * rz[j];
 
-				// i-particle
-				auto jm_r3 = jp.m[j] * inv_r3;
-				ip.Ax[i] -= jm_r3 * rx;
-				ip.Ay[i] -= jm_r3 * ry;
-				ip.Az[i] -= jm_r3 * rz;
-				ip.Jx[i] -= jm_r3 * vx;
-				ip.Jy[i] -= jm_r3 * vy;
-				ip.Jz[i] -= jm_r3 * vz;
-				ip.Sx[i] -= jm_r3 * ax;
-				ip.Sy[i] -= jm_r3 * ay;
-				ip.Sz[i] -= jm_r3 * az;
-				ip.Cx[i] -= jm_r3 * jx;
-				ip.Cy[i] -= jm_r3 * jy;
-				ip.Cz[i] -= jm_r3 * jz;
-
-				// j-particle
-				auto im_r3 = ip.m[i] * inv_r3;
-				jp.Ax[j] += im_r3 * rx;
-				jp.Ay[j] += im_r3 * ry;
-				jp.Az[j] += im_r3 * rz;
-				jp.Jx[j] += im_r3 * vx;
-				jp.Jy[j] += im_r3 * vy;
-				jp.Jz[j] += im_r3 * vz;
-				jp.Sx[j] += im_r3 * ax;
-				jp.Sy[j] += im_r3 * ay;
-				jp.Sz[j] += im_r3 * az;
-				jp.Cx[j] += im_r3 * jx;
-				jp.Cy[j] += im_r3 * jy;
-				jp.Cz[j] += im_r3 * jz;
+				im_r3[j] = ip.m[i] * inv_r3[j];
+				jm_r3[j] = jp.m[j] * inv_r3[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				jp.Ax[j] += im_r3[j] * rx[j];
+				jp.Ay[j] += im_r3[j] * ry[j];
+				jp.Az[j] += im_r3[j] * rz[j];
+				jp.Jx[j] += im_r3[j] * vx[j];
+				jp.Jy[j] += im_r3[j] * vy[j];
+				jp.Jz[j] += im_r3[j] * vz[j];
+				jp.Sx[j] += im_r3[j] * ax[j];
+				jp.Sy[j] += im_r3[j] * ay[j];
+				jp.Sz[j] += im_r3[j] * az[j];
+				jp.Cx[j] += im_r3[j] * jx[j];
+				jp.Cy[j] += im_r3[j] * jy[j];
+				jp.Cz[j] += im_r3[j] * jz[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				ip.Ax[i] -= jm_r3[j] * rx[j];
+				ip.Ay[i] -= jm_r3[j] * ry[j];
+				ip.Az[i] -= jm_r3[j] * rz[j];
+				ip.Jx[i] -= jm_r3[j] * vx[j];
+				ip.Jy[i] -= jm_r3[j] * vy[j];
+				ip.Jz[i] -= jm_r3[j] * vz[j];
+				ip.Sx[i] -= jm_r3[j] * ax[j];
+				ip.Sy[i] -= jm_r3[j] * ay[j];
+				ip.Sz[i] -= jm_r3[j] * az[j];
+				ip.Cx[i] -= jm_r3[j] * jx[j];
+				ip.Cy[i] -= jm_r3[j] * jy[j];
+				ip.Cz[i] -= jm_r3[j] * jz[j];
 			}
 		}
 	}
@@ -193,85 +191,86 @@ struct P2P_snp_crk_kernel_core {
 	template<typename P>
 	void operator()(P&& p) {
 		// flop count: 128
+		decltype(p.m) rx, ry, rz, vx, vy, vz;
+		decltype(p.m) ax, ay, az, jx, jy, jz;
+		decltype(p.m) inv_r3, im_r3;
 		for (size_t i = 0; i < TILE; ++i) {
-			#pragma unroll
+			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
 				auto rr = p.e2[i] + p.e2[j];
-				auto rx = p.rx[i] - p.rx[j];
-				auto ry = p.ry[i] - p.ry[j];
-				auto rz = p.rz[i] - p.rz[j];
-				auto vx = p.vx[i] - p.vx[j];
-				auto vy = p.vy[i] - p.vy[j];
-				auto vz = p.vz[i] - p.vz[j];
-				auto ax = p.ax[i] - p.ax[j];
-				auto ay = p.ay[i] - p.ay[j];
-				auto az = p.az[i] - p.az[j];
-				auto jx = p.jx[i] - p.jx[j];
-				auto jy = p.jy[i] - p.jy[j];
-				auto jz = p.jz[i] - p.jz[j];
+				rx[j] = p.rx[i] - p.rx[j];
+				ry[j] = p.ry[i] - p.ry[j];
+				rz[j] = p.rz[i] - p.rz[j];
+				vx[j] = p.vx[i] - p.vx[j];
+				vy[j] = p.vy[i] - p.vy[j];
+				vz[j] = p.vz[i] - p.vz[j];
+				ax[j] = p.ax[i] - p.ax[j];
+				ay[j] = p.ay[i] - p.ay[j];
+				az[j] = p.az[i] - p.az[j];
+				jx[j] = p.jx[i] - p.jx[j];
+				jy[j] = p.jy[i] - p.jy[j];
+				jz[j] = p.jz[i] - p.jz[j];
 
-				rr += rx * rx + ry * ry + rz * rz;
-				auto rv = rx * vx + ry * vy + rz * vz;
-				auto ra = rx * ax + ry * ay + rz * az;
-				auto rj = rx * jx + ry * jy + rz * jz;
-				auto vv = vx * vx + vy * vy + vz * vz;
-				auto va = vx * ax + vy * ay + vz * az;
+				rr += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
 
-				auto s1 = rv;
-				auto s2 = ra + vv;
-				auto s3 = rj + 3 * va;
-
-				auto inv_r3 = rsqrt(rr);
-				inv_r3 = (i != j) ? (inv_r3):(0);
-				auto inv_r2 = inv_r3 * inv_r3;
-				inv_r3 *= inv_r2;
+				inv_r3[j] = rsqrt(rr);
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				inv_r3[j] = (i == j) ? (0):(inv_r3[j]);
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				auto inv_r2 = inv_r3[j] * inv_r3[j];
+				inv_r3[j] *= inv_r2;
 				inv_r2 *= -3;
 
-				constexpr auto cq21 = static_cast<decltype(rr)>(5.0/3.0);
-				constexpr auto cq31 = static_cast<decltype(rr)>(8.0/3.0);
-				constexpr auto cq32 = static_cast<decltype(rr)>(7.0/3.0);
+				auto s1 = rx[j] * vx[j] + ry[j] * vy[j] + rz[j] * vz[j];
+				auto s2 = vx[j] * vx[j] + vy[j] * vy[j] + vz[j] * vz[j];
+				auto s3 = vx[j] * ax[j] + vy[j] * ay[j] + vz[j] * az[j];
+				s3 *= 3;
+				s2 += rx[j] * ax[j] + ry[j] * ay[j] + rz[j] * az[j];
+				s3 += rx[j] * jx[j] + ry[j] * jy[j] + rz[j] * jz[j];
+
+				constexpr auto cq21 = static_cast<decltype(s1)>(5.0/3.0);
+				constexpr auto cq31 = static_cast<decltype(s1)>(8.0/3.0);
+				constexpr auto cq32 = static_cast<decltype(s1)>(7.0/3.0);
 
 				const auto q1 = inv_r2 * (s1);
 				const auto q2 = inv_r2 * (s2 + (cq21 * s1) * q1);
 				const auto q3 = inv_r2 * (s3 + (cq31 * s2) * q1 + (cq32 * s1) * q2);
 
-				const auto c1 = 3 * q1;
-				const auto c2 = 3 * q2;
-				const auto c3 = 2 * q1;
-				jx += c1 * ax;
-				jy += c1 * ay;
-				jz += c1 * az;
-				jx += c2 * vx;
-				jy += c2 * vy;
-				jz += c2 * vz;
-				jx += q3 * rx;
-				jy += q3 * ry;
-				jz += q3 * rz;
+				const auto b3 = 3 * q1;
+				const auto c3 = 3 * q2;
+				const auto c2 = 2 * q1;
+				jx[j] += b3 * ax[j] + c3 * vx[j] + q3 * rx[j];
+				jy[j] += b3 * ay[j] + c3 * vy[j] + q3 * ry[j];
+				jz[j] += b3 * az[j] + c3 * vz[j] + q3 * rz[j];
 
-				ax += c3 * vx;
-				ay += c3 * vy;
-				az += c3 * vz;
-				ax += q2 * rx;
-				ay += q2 * ry;
-				az += q2 * rz;
+				ax[j] += c2 * vx[j] + q2 * rx[j];
+				ay[j] += c2 * vy[j] + q2 * ry[j];
+				az[j] += c2 * vz[j] + q2 * rz[j];
 
-				vx += q1 * rx;
-				vy += q1 * ry;
-				vz += q1 * rz;
+				vx[j] += q1 * rx[j];
+				vy[j] += q1 * ry[j];
+				vz[j] += q1 * rz[j];
 
-				auto jm_r3 = p.m[j] * inv_r3;
-				p.Ax[i] -= jm_r3 * rx;
-				p.Ay[i] -= jm_r3 * ry;
-				p.Az[i] -= jm_r3 * rz;
-				p.Jx[i] -= jm_r3 * vx;
-				p.Jy[i] -= jm_r3 * vy;
-				p.Jz[i] -= jm_r3 * vz;
-				p.Sx[i] -= jm_r3 * ax;
-				p.Sy[i] -= jm_r3 * ay;
-				p.Sz[i] -= jm_r3 * az;
-				p.Cx[i] -= jm_r3 * jx;
-				p.Cy[i] -= jm_r3 * jy;
-				p.Cz[i] -= jm_r3 * jz;
+				im_r3[j] = p.m[i] * inv_r3[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				p.Ax[j] += im_r3[j] * rx[j];
+				p.Ay[j] += im_r3[j] * ry[j];
+				p.Az[j] += im_r3[j] * rz[j];
+				p.Jx[j] += im_r3[j] * vx[j];
+				p.Jy[j] += im_r3[j] * vy[j];
+				p.Jz[j] += im_r3[j] * vz[j];
+				p.Sx[j] += im_r3[j] * ax[j];
+				p.Sy[j] += im_r3[j] * ay[j];
+				p.Sz[j] += im_r3[j] * az[j];
+				p.Cx[j] += im_r3[j] * jx[j];
+				p.Cy[j] += im_r3[j] * jy[j];
+				p.Cz[j] += im_r3[j] * jz[j];
 			}
 		}
 	}

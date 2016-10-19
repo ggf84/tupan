@@ -15,7 +15,7 @@ phi_kernel_rectangle(
 	real_t __iphi[],
 	real_t __jphi[])
 {
-	constexpr auto tile = 16;
+	constexpr auto tile = 64 / sizeof(real_t);
 
 	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
 	auto jpart = setup<tile>(nj, __jm, __je2, __jrdot);
@@ -41,7 +41,7 @@ phi_kernel_triangle(
 	const real_t __irdot[],
 	real_t __iphi[])
 {
-	constexpr auto tile = 16;
+	constexpr auto tile = 64 / sizeof(real_t);
 
 	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
 

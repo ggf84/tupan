@@ -15,7 +15,7 @@ snp_crk_kernel_rectangle(
 	real_t __iadot[],
 	real_t __jadot[])
 {
-	constexpr auto tile = 16;
+	constexpr auto tile = 64 / sizeof(real_t);
 
 	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
 	auto jpart = setup<tile>(nj, __jm, __je2, __jrdot);
@@ -41,7 +41,7 @@ snp_crk_kernel_triangle(
 	const real_t __irdot[],
 	real_t __iadot[])
 {
-	constexpr auto tile = 16;
+	constexpr auto tile = 64 / sizeof(real_t);
 
 	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
 

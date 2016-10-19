@@ -39,10 +39,4 @@ typedef struct clight_struct {
 			 .inv4=(real_t)(INV4), .inv5=(real_t)(INV5),				\
 			 .inv6=(real_t)(INV6), .inv7=(real_t)(INV7)}
 
-typedef struct pn_terms {
-	real_tn a;
-	real_tn b;
-} PN;
-#define PN_Init(A, B) (PN){.a=(real_tn)(A), .b=(real_tn)(B)}
-
 #endif	// __TYPE_DEFS_H__

@@ -63,10 +63,11 @@ struct P2P_tstep_kernel_core {
 	template<typename IP, typename JP>
 	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 43
+		decltype(jp.m) rv, vv, m_r3, inv_r2;
 		for (size_t i = 0; i < TILE; ++i) {
-			#pragma unroll
+			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto m = ip.m[i] + jp.m[j];
+				m_r3[j] = ip.m[i] + jp.m[j];
 				auto rr = ip.e2[i] + jp.e2[j];
 				auto rx = ip.rx[i] - jp.rx[j];
 				auto ry = ip.ry[i] - jp.ry[j];
@@ -75,25 +76,33 @@ struct P2P_tstep_kernel_core {
 				auto vy = ip.vy[i] - jp.vy[j];
 				auto vz = ip.vz[i] - jp.vz[j];
 
-				rr += rx * rx + ry * ry + rz * rz;
-				auto rv = rx * vx + ry * vy + rz * vz;
-				auto vv = vx * vx + vy * vy + vz * vz;
+				rr   += rx * rx + ry * ry + rz * rz;
+				rv[j] = rx * vx + ry * vy + rz * vz;
+				vv[j] = vx * vx + vy * vy + vz * vz;
 
-				auto m_r3 = rsqrt(rr);
-				auto inv_r2 = m_r3 * m_r3;
-				m_r3 *= inv_r2;
-				m_r3 *= 2 * m;
+				inv_r2[j] = rsqrt(rr);
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				m_r3[j] *= inv_r2[j];
+				inv_r2[j] *= inv_r2[j];
+				m_r3[j] *= 2 * inv_r2[j];
 
-				auto m_r5 = m_r3 * inv_r2;
-				auto w2 = m_r3 + vv * inv_r2;
-				auto gamma = m_r5 + w2 * inv_r2;
-				gamma *= (eta * rsqrt(w2));
-				w2 -= gamma * rv;
-
-				ip.w2_a[i] = fmax(w2, ip.w2_a[i]);
-				ip.w2_b[i] += w2;
-				jp.w2_a[j] = fmax(w2, jp.w2_a[j]);
-				jp.w2_b[j] += w2;
+				auto m_r5 = m_r3[j] * inv_r2[j];
+				m_r3[j] += vv[j] * inv_r2[j];
+				rv[j] *= eta * rsqrt(m_r3[j]);
+				m_r5 += m_r3[j] * inv_r2[j];
+				m_r3[j] -= m_r5 * rv[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				jp.w2_a[j] = fmax(m_r3[j], jp.w2_a[j]);
+				jp.w2_b[j] += m_r3[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				ip.w2_a[i] = fmax(m_r3[j], ip.w2_a[i]);
+				ip.w2_b[i] += m_r3[j];
 			}
 		}
 	}
@@ -101,10 +110,11 @@ struct P2P_tstep_kernel_core {
 	template<typename P>
 	void operator()(P&& p) {
 		// flop count: 42
+		decltype(p.m) rv, vv, m_r3, inv_r2;
 		for (size_t i = 0; i < TILE; ++i) {
-			#pragma unroll
+			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto m = p.m[i] + p.m[j];
+				m_r3[j] = p.m[i] + p.m[j];
 				auto rr = p.e2[i] + p.e2[j];
 				auto rx = p.rx[i] - p.rx[j];
 				auto ry = p.ry[i] - p.ry[j];
@@ -113,24 +123,32 @@ struct P2P_tstep_kernel_core {
 				auto vy = p.vy[i] - p.vy[j];
 				auto vz = p.vz[i] - p.vz[j];
 
-				rr += rx * rx + ry * ry + rz * rz;
-				auto rv = rx * vx + ry * vy + rz * vz;
-				auto vv = vx * vx + vy * vy + vz * vz;
+				rr   += rx * rx + ry * ry + rz * rz;
+				rv[j] = rx * vx + ry * vy + rz * vz;
+				vv[j] = vx * vx + vy * vy + vz * vz;
 
-				auto m_r3 = rsqrt(rr);
-				m_r3 = (i != j) ? (m_r3):(0);
-				auto inv_r2 = m_r3 * m_r3;
-				m_r3 *= inv_r2;
-				m_r3 *= 2 * m;
+				inv_r2[j] = rsqrt(rr);
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				m_r3[j] *= inv_r2[j];
+				inv_r2[j] *= inv_r2[j];
+				m_r3[j] *= 2 * inv_r2[j];
 
-				auto m_r5 = m_r3 * inv_r2;
-				auto w2 = m_r3 + vv * inv_r2;
-				auto gamma = m_r5 + w2 * inv_r2;
-				gamma *= (eta * rsqrt(w2));
-				w2 -= gamma * rv;
-
-				p.w2_a[i] = fmax(w2, p.w2_a[i]);
-				p.w2_b[i] += w2;
+				auto m_r5 = m_r3[j] * inv_r2[j];
+				m_r3[j] += vv[j] * inv_r2[j];
+				rv[j] *= eta * rsqrt(m_r3[j]);
+				m_r5 += m_r3[j] * inv_r2[j];
+				m_r3[j] -= m_r5 * rv[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				m_r3[j] = (i == j) ? (0):(m_r3[j]);
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				p.w2_a[j] = fmax(m_r3[j], p.w2_a[j]);
+				p.w2_b[j] += m_r3[j];
 			}
 		}
 	}

@@ -237,51 +237,60 @@ struct P2P_sakura_kernel_core {
 	template<typename IP, typename JP>
 	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 41 + ???
+		decltype(jp.m) m, e2, imu, jmu;
+		decltype(jp.m) r0x, r0y, r0z, v0x, v0y, v0z;
+		decltype(jp.m) r1x, r1y, r1z, v1x, v1y, v1z;
+		decltype(jp.m) drx, dry, drz, dvx, dvy, dvz;
 		for (size_t i = 0; i < TILE; ++i) {
-			#pragma unroll
+			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto m = ip.m[i] + jp.m[j];
-				auto e2 = ip.e2[i] + jp.e2[j];
-				auto r0x = ip.rx[i] - jp.rx[j];
-				auto r0y = ip.ry[i] - jp.ry[j];
-				auto r0z = ip.rz[i] - jp.rz[j];
-				auto v0x = ip.vx[i] - jp.vx[j];
-				auto v0y = ip.vy[i] - jp.vy[j];
-				auto v0z = ip.vz[i] - jp.vz[j];
-
-				decltype(r0x) r1x, r1y, r1z;
-				decltype(v0x) v1x, v1y, v1z;
+				m[j] = ip.m[i] + jp.m[j];
+				e2[j] = ip.e2[i] + jp.e2[j];
+				r0x[j] = ip.rx[i] - jp.rx[j];
+				r0y[j] = ip.ry[i] - jp.ry[j];
+				r0z[j] = ip.rz[i] - jp.rz[j];
+				v0x[j] = ip.vx[i] - jp.vx[j];
+				v0y[j] = ip.vy[i] - jp.vy[j];
+				v0z[j] = ip.vz[i] - jp.vz[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
 				evolve_twobody(
-					dt, flag, m, e2,
-					r0x, r0y, r0z, v0x, v0y, v0z,
-					&r1x, &r1y, &r1z, &v1x, &v1y, &v1z
+					dt, flag, m[j], e2[j],
+					r0x[j], r0y[j], r0z[j], v0x[j], v0y[j], v0z[j],
+					&r1x[j], &r1y[j], &r1z[j], &v1x[j], &v1y[j], &v1z[j]
 				);	// flop count: ??
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				auto inv_m = 1 / m[j];
+				drx[j] = r1x[j] - r0x[j];
+				dry[j] = r1y[j] - r0y[j];
+				drz[j] = r1z[j] - r0z[j];
+				dvx[j] = v1x[j] - v0x[j];
+				dvy[j] = v1y[j] - v0y[j];
+				dvz[j] = v1z[j] - v0z[j];
 
-				auto inv_m = 1 / m;
-				auto drx = r1x - r0x;
-				auto dry = r1y - r0y;
-				auto drz = r1z - r0z;
-				auto dvx = v1x - v0x;
-				auto dvy = v1y - v0y;
-				auto dvz = v1z - v0z;
-
-				// i-particle
-				auto jmu = jp.m[j] * inv_m;
-				ip.drx[i] += jmu * drx;
-				ip.dry[i] += jmu * dry;
-				ip.drz[i] += jmu * drz;
-				ip.dvx[i] += jmu * dvx;
-				ip.dvy[i] += jmu * dvy;
-				ip.dvz[i] += jmu * dvz;
-
-				// j-particle
-				auto imu = ip.m[i] * inv_m;
-				jp.drx[j] -= imu * drx;
-				jp.dry[j] -= imu * dry;
-				jp.drz[j] -= imu * drz;
-				jp.dvx[j] -= imu * dvx;
-				jp.dvy[j] -= imu * dvy;
-				jp.dvz[j] -= imu * dvz;
+				imu[j] = ip.m[i] * inv_m;
+				jmu[j] = jp.m[j] * inv_m;
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				jp.drx[j] -= imu[j] * drx[j];
+				jp.dry[j] -= imu[j] * dry[j];
+				jp.drz[j] -= imu[j] * drz[j];
+				jp.dvx[j] -= imu[j] * dvx[j];
+				jp.dvy[j] -= imu[j] * dvy[j];
+				jp.dvz[j] -= imu[j] * dvz[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				ip.drx[i] += jmu[j] * drx[j];
+				ip.dry[i] += jmu[j] * dry[j];
+				ip.drz[i] += jmu[j] * drz[j];
+				ip.dvx[i] += jmu[j] * dvx[j];
+				ip.dvy[i] += jmu[j] * dvy[j];
+				ip.dvz[i] += jmu[j] * dvz[j];
 			}
 		}
 	}
@@ -289,42 +298,59 @@ struct P2P_sakura_kernel_core {
 	template<typename P>
 	void operator()(P&& p) {
 		// flop count: 28 + ???
+		decltype(p.m) m, e2, imu;
+		decltype(p.m) r0x, r0y, r0z, v0x, v0y, v0z;
+		decltype(p.m) r1x, r1y, r1z, v1x, v1y, v1z;
+		decltype(p.m) drx, dry, drz, dvx, dvy, dvz;
 		for (size_t i = 0; i < TILE; ++i) {
-			#pragma unroll
+			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				if (i == j) continue;
-				auto m = p.m[i] + p.m[j];
-				auto e2 = p.e2[i] + p.e2[j];
-				auto r0x = p.rx[i] - p.rx[j];
-				auto r0y = p.ry[i] - p.ry[j];
-				auto r0z = p.rz[i] - p.rz[j];
-				auto v0x = p.vx[i] - p.vx[j];
-				auto v0y = p.vy[i] - p.vy[j];
-				auto v0z = p.vz[i] - p.vz[j];
+				m[j] = p.m[i] + p.m[j];
+				e2[j] = p.e2[i] + p.e2[j];
+				r0x[j] = p.rx[i] - p.rx[j];
+				r0y[j] = p.ry[i] - p.ry[j];
+				r0z[j] = p.rz[i] - p.rz[j];
+				v0x[j] = p.vx[i] - p.vx[j];
+				v0y[j] = p.vy[i] - p.vy[j];
+				v0z[j] = p.vz[i] - p.vz[j];
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				if (i == j) {
+					r1x[j] = r0x[j];
+					r1y[j] = r0y[j];
+					r1z[j] = r0z[j];
+					v1x[j] = v0x[j];
+					v1y[j] = v0y[j];
+					v1z[j] = v0z[j];
+				} else {
+					evolve_twobody(
+						dt, flag, m[j], e2[j],
+						r0x[j], r0y[j], r0z[j], v0x[j], v0y[j], v0z[j],
+						&r1x[j], &r1y[j], &r1z[j], &v1x[j], &v1y[j], &v1z[j]
+					);	// flop count: ??
+				}
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				auto inv_m = 1 / m[j];
+				drx[j] = r1x[j] - r0x[j];
+				dry[j] = r1y[j] - r0y[j];
+				drz[j] = r1z[j] - r0z[j];
+				dvx[j] = v1x[j] - v0x[j];
+				dvy[j] = v1y[j] - v0y[j];
+				dvz[j] = v1z[j] - v0z[j];
 
-				decltype(r0x) r1x, r1y, r1z;
-				decltype(v0x) v1x, v1y, v1z;
-				evolve_twobody(
-					dt, flag, m, e2,
-					r0x, r0y, r0z, v0x, v0y, v0z,
-					&r1x, &r1y, &r1z, &v1x, &v1y, &v1z
-				);	// flop count: ??
-
-				auto inv_m = 1 / m;
-				auto drx = r1x - r0x;
-				auto dry = r1y - r0y;
-				auto drz = r1z - r0z;
-				auto dvx = v1x - v0x;
-				auto dvy = v1y - v0y;
-				auto dvz = v1z - v0z;
-
-				auto jmu = p.m[j] * inv_m;
-				p.drx[i] += jmu * drx;
-				p.dry[i] += jmu * dry;
-				p.drz[i] += jmu * drz;
-				p.dvx[i] += jmu * dvx;
-				p.dvy[i] += jmu * dvy;
-				p.dvz[i] += jmu * dvz;
+				imu[j] = p.m[i] * inv_m;
+			}
+			#pragma omp simd
+			for (size_t j = 0; j < TILE; ++j) {
+				p.drx[j] -= imu[j] * drx[j];
+				p.dry[j] -= imu[j] * dry[j];
+				p.drz[j] -= imu[j] * drz[j];
+				p.dvx[j] -= imu[j] * dvx[j];
+				p.dvy[j] -= imu[j] * dvy[j];
+				p.dvz[j] -= imu[j] * dvz[j];
 			}
 		}
 	}
