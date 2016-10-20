@@ -1,16 +1,4 @@
 void
-phi_kernel(
-	const uint_t ni,
-	const real_t __im[],
-	const real_t __ie2[],
-	const real_t __irdot[],
-	const uint_t nj,
-	const real_t __jm[],
-	const real_t __je2[],
-	const real_t __jrdot[],
-	real_t __iphi[]);
-
-void
 phi_kernel_rectangle(
 	const uint_t ni,
 	const real_t __im[],
@@ -32,18 +20,6 @@ phi_kernel_triangle(
 	real_t __iphi[]);
 
 void
-acc_kernel(
-	const uint_t ni,
-	const real_t __im[],
-	const real_t __ie2[],
-	const real_t __irdot[],
-	const uint_t nj,
-	const real_t __jm[],
-	const real_t __je2[],
-	const real_t __jrdot[],
-	real_t __iadot[]);
-
-void
 acc_kernel_rectangle(
 	const uint_t ni,
 	const real_t __im[],
@@ -62,18 +38,6 @@ acc_kernel_triangle(
 	const real_t __im[],
 	const real_t __ie2[],
 	const real_t __irdot[],
-	real_t __iadot[]);
-
-void
-acc_jrk_kernel(
-	const uint_t ni,
-	const real_t __im[],
-	const real_t __ie2[],
-	const real_t __irdot[],
-	const uint_t nj,
-	const real_t __jm[],
-	const real_t __je2[],
-	const real_t __jrdot[],
 	real_t __iadot[]);
 
 void
@@ -98,18 +62,6 @@ acc_jrk_kernel_triangle(
 	real_t __iadot[]);
 
 void
-snp_crk_kernel(
-	const uint_t ni,
-	const real_t __im[],
-	const real_t __ie2[],
-	const real_t __irdot[],
-	const uint_t nj,
-	const real_t __jm[],
-	const real_t __je2[],
-	const real_t __jrdot[],
-	real_t __iadot[]);
-
-void
 snp_crk_kernel_rectangle(
 	const uint_t ni,
 	const real_t __im[],
@@ -129,20 +81,6 @@ snp_crk_kernel_triangle(
 	const real_t __ie2[],
 	const real_t __irdot[],
 	real_t __iadot[]);
-
-void
-tstep_kernel(
-	const uint_t ni,
-	const real_t __im[],
-	const real_t __ie2[],
-	const real_t __irdot[],
-	const uint_t nj,
-	const real_t __jm[],
-	const real_t __je2[],
-	const real_t __jrdot[],
-	const real_t eta,
-	real_t __idt_a[],
-	real_t __idt_b[]);
 
 void
 tstep_kernel_rectangle(
@@ -171,19 +109,6 @@ tstep_kernel_triangle(
 	real_t __idt_b[]);
 
 void
-pnacc_kernel(
-	const uint_t ni,
-	const real_t __im[],
-	const real_t __ie2[],
-	const real_t __irdot[],
-	const uint_t nj,
-	const real_t __jm[],
-	const real_t __je2[],
-	const real_t __jrdot[],
-	const CLIGHT clight,
-	real_t __ipnacc[]);
-
-void
 pnacc_kernel_rectangle(
 	const uint_t ni,
 	const real_t __im[],
@@ -205,20 +130,6 @@ pnacc_kernel_triangle(
 	const real_t __irdot[],
 	const CLIGHT clight,
 	real_t __ipnacc[]);
-
-void
-sakura_kernel(
-	const uint_t ni,
-	const real_t __im[],
-	const real_t __ie2[],
-	const real_t __irdot[],
-	const uint_t nj,
-	const real_t __jm[],
-	const real_t __je2[],
-	const real_t __jrdot[],
-	const real_t dt,
-	const int_t flag,
-	real_t __idrdot[]);
 
 void
 sakura_kernel_rectangle(
