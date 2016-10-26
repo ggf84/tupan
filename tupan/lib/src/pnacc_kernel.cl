@@ -23,43 +23,37 @@ pnacc_kernel(
 		i = min(i, ni-SIMD);
 		i *= (SIMD < ni);
 
-		vec(PNAcc_Data) ip;
+		PNAcc_Data ip;
 		ip.m = vec(vload)(0, __im + i);
 		ip.e2 = vec(vload)(0, __ie2 + i);
-		#pragma unroll
-		for (uint_t kdot = 0; kdot < 2; ++kdot) {
-			#pragma unroll
-			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-				global const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
-				ip.rdot[kdot][kdim] = vec(vload)(0, ptr + i);
-			}
-		}
-		#pragma unroll
-		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-			ip.pnacc[kdim] = (real_tn)(0);
-		}
+		ip.rx = vec(vload)(0, &__irdot[(0*NDIM+0)*ni + i]);
+		ip.ry = vec(vload)(0, &__irdot[(0*NDIM+1)*ni + i]);
+		ip.rz = vec(vload)(0, &__irdot[(0*NDIM+2)*ni + i]);
+		ip.vx = vec(vload)(0, &__irdot[(1*NDIM+0)*ni + i]);
+		ip.vy = vec(vload)(0, &__irdot[(1*NDIM+1)*ni + i]);
+		ip.vz = vec(vload)(0, &__irdot[(1*NDIM+2)*ni + i]);
+		ip.pnax = (real_tn)(0);
+		ip.pnay = (real_tn)(0);
+		ip.pnaz = (real_tn)(0);
 
 		uint_t j = 0;
 
 		#ifdef FAST_LOCAL_MEM
 		for (; (j + LSIZE - 1) < nj; j += LSIZE) {
-			vec(PNAcc_Data) jp;
+			PNAcc_Data jp;
 			jp.m = (real_tn)(__jm[j + lid]);
 			jp.e2 = (real_tn)(__je2[j + lid]);
-			#pragma unroll
-			for (uint_t kdot = 0; kdot < 2; ++kdot) {
-				#pragma unroll
-				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
-					jp.rdot[kdot][kdim] = (real_tn)(ptr[j + lid]);
-				}
-			}
-			#pragma unroll
-			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-				jp.pnacc[kdim] = (real_tn)(0);
-			}
+			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + j + lid]);
+			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + j + lid]);
+			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + j + lid]);
+			jp.vx = (real_tn)(__jrdot[(1*NDIM+0)*nj + j + lid]);
+			jp.vy = (real_tn)(__jrdot[(1*NDIM+1)*nj + j + lid]);
+			jp.vz = (real_tn)(__jrdot[(1*NDIM+2)*nj + j + lid]);
+			jp.pnax = (real_tn)(0);
+			jp.pnay = (real_tn)(0);
+			jp.pnaz = (real_tn)(0);
 			barrier(CLK_LOCAL_MEM_FENCE);
-			local vec(PNAcc_Data) _jp[LSIZE];
+			local PNAcc_Data _jp[LSIZE];
 			_jp[lid] = jp;
 			barrier(CLK_LOCAL_MEM_FENCE);
 			#pragma unroll
@@ -71,29 +65,24 @@ pnacc_kernel(
 		#endif
 
 		for (; j < nj; ++j) {
-			vec(PNAcc_Data) jp;
+			PNAcc_Data jp;
 			jp.m = (real_tn)(__jm[j]);
 			jp.e2 = (real_tn)(__je2[j]);
-			#pragma unroll
-			for (uint_t kdot = 0; kdot < 2; ++kdot) {
-				#pragma unroll
-				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
-					jp.rdot[kdot][kdim] = (real_tn)(ptr[j]);
-				}
-			}
-			#pragma unroll
-			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-				jp.pnacc[kdim] = (real_tn)(0);
-			}
+			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + j]);
+			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + j]);
+			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + j]);
+			jp.vx = (real_tn)(__jrdot[(1*NDIM+0)*nj + j]);
+			jp.vy = (real_tn)(__jrdot[(1*NDIM+1)*nj + j]);
+			jp.vz = (real_tn)(__jrdot[(1*NDIM+2)*nj + j]);
+			jp.pnax = (real_tn)(0);
+			jp.pnay = (real_tn)(0);
+			jp.pnaz = (real_tn)(0);
 			ip = pnacc_kernel_core(ip, jp, *clight);
 		}
 
-		#pragma unroll
-		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-			global real_t *ptr = &__ipnacc[kdim*ni];
-			vec(vstore)(ip.pnacc[kdim], 0, ptr + i);
-		}
+		vec(vstore)(ip.pnax, 0, &__ipnacc[(0*NDIM+0)*ni + i]);
+		vec(vstore)(ip.pnay, 0, &__ipnacc[(0*NDIM+1)*ni + i]);
+		vec(vstore)(ip.pnaz, 0, &__ipnacc[(0*NDIM+2)*ni + i]);
 	}
 }
 

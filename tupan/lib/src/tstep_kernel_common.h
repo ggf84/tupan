@@ -1,8 +1,8 @@
 #ifndef __TSTEP_KERNEL_COMMON_H__
 #define __TSTEP_KERNEL_COMMON_H__
 
+
 #include "common.h"
-#include "smoothing.h"
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
@@ -50,8 +50,8 @@ void commit(const uint_t n, const PART& part, real_t __dt_a[], real_t __dt_b[], 
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
-		__dt_a[k] = eta / sqrt(p.w2_a[kk]);
-		__dt_b[k] = eta / sqrt(p.w2_b[kk]);
+		__dt_a[k] = eta * rsqrt(p.w2_a[kk]);
+		__dt_b[k] = eta * rsqrt(p.w2_b[kk]);
 	}
 }
 
@@ -68,7 +68,7 @@ struct P2P_tstep_kernel_core {
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
 				m_r3[j] = ip.m[i] + jp.m[j];
-				auto rr = ip.e2[i] + jp.e2[j];
+				auto ee = ip.e2[i] + jp.e2[j];
 				auto rx = ip.rx[i] - jp.rx[j];
 				auto ry = ip.ry[i] - jp.ry[j];
 				auto rz = ip.rz[i] - jp.rz[j];
@@ -76,6 +76,7 @@ struct P2P_tstep_kernel_core {
 				auto vy = ip.vy[i] - jp.vy[j];
 				auto vz = ip.vz[i] - jp.vz[j];
 
+				auto rr = ee;
 				rr   += rx * rx + ry * ry + rz * rz;
 				rv[j] = rx * vx + ry * vy + rz * vz;
 				vv[j] = vx * vx + vy * vy + vz * vz;
@@ -110,12 +111,11 @@ struct P2P_tstep_kernel_core {
 	template<typename P>
 	void operator()(P&& p) {
 		// flop count: 42
-		decltype(p.m) rv, vv, m_r3, inv_r2;
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				m_r3[j] = p.m[i] + p.m[j];
-				auto rr = p.e2[i] + p.e2[j];
+				auto m_r3 = p.m[i] + p.m[j];
+				auto ee = p.e2[i] + p.e2[j];
 				auto rx = p.rx[i] - p.rx[j];
 				auto ry = p.ry[i] - p.ry[j];
 				auto rz = p.rz[i] - p.rz[j];
@@ -123,92 +123,83 @@ struct P2P_tstep_kernel_core {
 				auto vy = p.vy[i] - p.vy[j];
 				auto vz = p.vz[i] - p.vz[j];
 
-				rr   += rx * rx + ry * ry + rz * rz;
-				rv[j] = rx * vx + ry * vy + rz * vz;
-				vv[j] = vx * vx + vy * vy + vz * vz;
+				auto rr = ee;
+				rr     += rx * rx + ry * ry + rz * rz;
+				auto rv = rx * vx + ry * vy + rz * vz;
+				auto vv = vx * vx + vy * vy + vz * vz;
 
-				inv_r2[j] = rsqrt(rr);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				m_r3[j] *= inv_r2[j];
-				inv_r2[j] *= inv_r2[j];
-				m_r3[j] *= 2 * inv_r2[j];
+				auto inv_r2 = rsqrt(rr);
+				m_r3 *= inv_r2;
+				inv_r2 *= inv_r2;
+				m_r3 *= 2 * inv_r2;
 
-				auto m_r5 = m_r3[j] * inv_r2[j];
-				m_r3[j] += vv[j] * inv_r2[j];
-				rv[j] *= eta * rsqrt(m_r3[j]);
-				m_r5 += m_r3[j] * inv_r2[j];
-				m_r3[j] -= m_r5 * rv[j];
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				m_r3[j] = (i == j) ? (0):(m_r3[j]);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				p.w2_a[j] = fmax(m_r3[j], p.w2_a[j]);
-				p.w2_b[j] += m_r3[j];
+				auto m_r5 = m_r3 * inv_r2;
+				m_r3 += vv * inv_r2;
+				rv *= eta * rsqrt(m_r3);
+				m_r5 += m_r3 * inv_r2;
+				m_r3 -= m_r5 * rv;
+
+				m_r3 = (rr > ee) ? (m_r3):(0);
+
+				p.w2_a[j] = fmax(m_r3, p.w2_a[j]);
+				p.w2_b[j] += m_r3;
 			}
 		}
 	}
 };
 #endif
 
+
 // ----------------------------------------------------------------------------
 
-#define TSTEP_IMPLEMENT_STRUCT(N)			\
-	typedef struct concat(tstep_data, N) {	\
-		concat(real_t, N) m, e2;			\
-		concat(real_t, N) rdot[2][NDIM];	\
-		concat(real_t, N) w2[2];			\
-	} concat(Tstep_Data, N);
 
-TSTEP_IMPLEMENT_STRUCT(1)
-#if SIMD > 1
-TSTEP_IMPLEMENT_STRUCT(SIMD)
-#endif
-typedef Tstep_Data1 Tstep_Data;
+typedef struct tstep_data {
+	real_tn m;
+	real_tn e2;
+	real_tn rx;
+	real_tn ry;
+	real_tn rz;
+	real_tn vx;
+	real_tn vy;
+	real_tn vz;
+	real_tn w2_a;
+	real_tn w2_b;
+} Tstep_Data;
 
 
-static inline vec(Tstep_Data)
-tstep_kernel_core(vec(Tstep_Data) ip, vec(Tstep_Data) jp, const real_t eta)
+static inline Tstep_Data
+tstep_kernel_core(Tstep_Data ip, Tstep_Data jp, const real_t eta)
 // flop count: 42
 {
-	vec(real_t) rdot[2][NDIM];
-	#pragma unroll
-	for (uint_t kdot = 0; kdot < 2; ++kdot) {
-		#pragma unroll
-		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
-		}
-	}
-	vec(real_t) m = ip.m + jp.m;
-	vec(real_t) e2 = ip.e2 + jp.e2;
+	real_tn m_r3 = ip.m + jp.m;
+	real_tn ee = ip.e2 + jp.e2;
+	real_tn rx = ip.rx - jp.rx;
+	real_tn ry = ip.ry - jp.ry;
+	real_tn rz = ip.rz - jp.rz;
+	real_tn vx = ip.vx - jp.vx;
+	real_tn vy = ip.vy - jp.vy;
+	real_tn vz = ip.vz - jp.vz;
 
-	vec(real_t) rr = rdot[0][0] * rdot[0][0]
-			+ rdot[0][1] * rdot[0][1]
-			+ rdot[0][2] * rdot[0][2];
-	vec(real_t) rv = rdot[0][0] * rdot[1][0]
-			+ rdot[0][1] * rdot[1][1]
-			+ rdot[0][2] * rdot[1][2];
-	vec(real_t) vv = rdot[1][0] * rdot[1][0]
-			+ rdot[1][1] * rdot[1][1]
-			+ rdot[1][2] * rdot[1][2];
+	real_tn rr = ee;
+	rr        += rx * rx + ry * ry + rz * rz;
+	real_tn rv = rx * vx + ry * vy + rz * vz;
+	real_tn vv = vx * vx + vy * vy + vz * vz;
 
-	vec(real_t) inv_r2;
-	vec(real_t) m_r3 = 2 * m * smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 7
+	real_tn inv_r2 = rsqrt(rr);
+	m_r3 *= inv_r2;
+	inv_r2 *= inv_r2;
+	m_r3 *= 2 * inv_r2;
 
-	vec(real_t) m_r5 = m_r3 * inv_r2;
-	vec(real_t) w2 = m_r3 + vv * inv_r2;
-	vec(real_t) gamma = m_r5 + w2 * inv_r2;
-	gamma *= (eta * rsqrt(w2));
-	w2 -= gamma * rv;
+	real_tn m_r5 = m_r3 * inv_r2;
+	m_r3 += vv * inv_r2;
+	rv *= eta * rsqrt(m_r3);
+	m_r5 += m_r3 * inv_r2;
+	m_r3 -= m_r5 * rv;
 
-	w2 = select((vec(real_t))(0), w2, (vec(int_t))(rr > 0));
+	m_r3 = (rr > ee) ? (m_r3):(0);
 
-	ip.w2[0] = fmax(w2, ip.w2[0]);
-	ip.w2[1] += w2;
+	ip.w2_a = fmax(m_r3, ip.w2_a);
+	ip.w2_b += m_r3;
 	return ip;
 }
 

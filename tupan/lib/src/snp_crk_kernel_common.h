@@ -1,8 +1,8 @@
 #ifndef __SNP_CRK_KERNEL_COMMON_H__
 #define __SNP_CRK_KERNEL_COMMON_H__
 
+
 #include "common.h"
-#include "smoothing.h"
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
@@ -98,7 +98,7 @@ struct P2P_snp_crk_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto rr = ip.e2[i] + jp.e2[j];
+				auto ee = ip.e2[i] + jp.e2[j];
 				rx[j] = ip.rx[i] - jp.rx[j];
 				ry[j] = ip.ry[i] - jp.ry[j];
 				rz[j] = ip.rz[i] - jp.rz[j];
@@ -112,6 +112,7 @@ struct P2P_snp_crk_kernel_core {
 				jy[j] = ip.jy[i] - jp.jy[j];
 				jz[j] = ip.jz[i] - jp.jz[j];
 
+				auto rr = ee;
 				rr += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
 
 				inv_r3[j] = rsqrt(rr);
@@ -140,6 +141,7 @@ struct P2P_snp_crk_kernel_core {
 				const auto b3 = 3 * q1;
 				const auto c3 = 3 * q2;
 				const auto c2 = 2 * q1;
+
 				jx[j] += b3 * ax[j] + c3 * vx[j] + q3 * rx[j];
 				jy[j] += b3 * ay[j] + c3 * vy[j] + q3 * ry[j];
 				jz[j] += b3 * az[j] + c3 * vz[j] + q3 * rz[j];
@@ -191,46 +193,38 @@ struct P2P_snp_crk_kernel_core {
 	template<typename P>
 	void operator()(P&& p) {
 		// flop count: 128
-		decltype(p.m) rx, ry, rz, vx, vy, vz;
-		decltype(p.m) ax, ay, az, jx, jy, jz;
-		decltype(p.m) inv_r3, im_r3;
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto rr = p.e2[i] + p.e2[j];
-				rx[j] = p.rx[i] - p.rx[j];
-				ry[j] = p.ry[i] - p.ry[j];
-				rz[j] = p.rz[i] - p.rz[j];
-				vx[j] = p.vx[i] - p.vx[j];
-				vy[j] = p.vy[i] - p.vy[j];
-				vz[j] = p.vz[i] - p.vz[j];
-				ax[j] = p.ax[i] - p.ax[j];
-				ay[j] = p.ay[i] - p.ay[j];
-				az[j] = p.az[i] - p.az[j];
-				jx[j] = p.jx[i] - p.jx[j];
-				jy[j] = p.jy[i] - p.jy[j];
-				jz[j] = p.jz[i] - p.jz[j];
+				auto ee = p.e2[i] + p.e2[j];
+				auto rx = p.rx[i] - p.rx[j];
+				auto ry = p.ry[i] - p.ry[j];
+				auto rz = p.rz[i] - p.rz[j];
+				auto vx = p.vx[i] - p.vx[j];
+				auto vy = p.vy[i] - p.vy[j];
+				auto vz = p.vz[i] - p.vz[j];
+				auto ax = p.ax[i] - p.ax[j];
+				auto ay = p.ay[i] - p.ay[j];
+				auto az = p.az[i] - p.az[j];
+				auto jx = p.jx[i] - p.jx[j];
+				auto jy = p.jy[i] - p.jy[j];
+				auto jz = p.jz[i] - p.jz[j];
 
-				rr += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
+				auto rr = ee;
+				rr += rx * rx + ry * ry + rz * rz;
 
-				inv_r3[j] = rsqrt(rr);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				inv_r3[j] = (i == j) ? (0):(inv_r3[j]);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				auto inv_r2 = inv_r3[j] * inv_r3[j];
-				inv_r3[j] *= inv_r2;
+				auto inv_r3 = rsqrt(rr);
+				inv_r3 = (rr > ee) ? (inv_r3):(0);
+				auto inv_r2 = inv_r3 * inv_r3;
+				inv_r3 *= inv_r2;
 				inv_r2 *= -3;
 
-				auto s1 = rx[j] * vx[j] + ry[j] * vy[j] + rz[j] * vz[j];
-				auto s2 = vx[j] * vx[j] + vy[j] * vy[j] + vz[j] * vz[j];
-				auto s3 = vx[j] * ax[j] + vy[j] * ay[j] + vz[j] * az[j];
+				auto s1 = rx * vx + ry * vy + rz * vz;
+				auto s2 = vx * vx + vy * vy + vz * vz;
+				auto s3 = vx * ax + vy * ay + vz * az;
 				s3 *= 3;
-				s2 += rx[j] * ax[j] + ry[j] * ay[j] + rz[j] * az[j];
-				s3 += rx[j] * jx[j] + ry[j] * jy[j] + rz[j] * jz[j];
+				s2 += rx * ax + ry * ay + rz * az;
+				s3 += rx * jx + ry * jy + rz * jz;
 
 				constexpr auto cq21 = static_cast<decltype(s1)>(5.0/3.0);
 				constexpr auto cq31 = static_cast<decltype(s1)>(8.0/3.0);
@@ -243,131 +237,145 @@ struct P2P_snp_crk_kernel_core {
 				const auto b3 = 3 * q1;
 				const auto c3 = 3 * q2;
 				const auto c2 = 2 * q1;
-				jx[j] += b3 * ax[j] + c3 * vx[j] + q3 * rx[j];
-				jy[j] += b3 * ay[j] + c3 * vy[j] + q3 * ry[j];
-				jz[j] += b3 * az[j] + c3 * vz[j] + q3 * rz[j];
 
-				ax[j] += c2 * vx[j] + q2 * rx[j];
-				ay[j] += c2 * vy[j] + q2 * ry[j];
-				az[j] += c2 * vz[j] + q2 * rz[j];
+				jx += b3 * ax + c3 * vx + q3 * rx;
+				jy += b3 * ay + c3 * vy + q3 * ry;
+				jz += b3 * az + c3 * vz + q3 * rz;
 
-				vx[j] += q1 * rx[j];
-				vy[j] += q1 * ry[j];
-				vz[j] += q1 * rz[j];
+				ax += c2 * vx + q2 * rx;
+				ay += c2 * vy + q2 * ry;
+				az += c2 * vz + q2 * rz;
 
-				im_r3[j] = p.m[i] * inv_r3[j];
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				p.Ax[j] += im_r3[j] * rx[j];
-				p.Ay[j] += im_r3[j] * ry[j];
-				p.Az[j] += im_r3[j] * rz[j];
-				p.Jx[j] += im_r3[j] * vx[j];
-				p.Jy[j] += im_r3[j] * vy[j];
-				p.Jz[j] += im_r3[j] * vz[j];
-				p.Sx[j] += im_r3[j] * ax[j];
-				p.Sy[j] += im_r3[j] * ay[j];
-				p.Sz[j] += im_r3[j] * az[j];
-				p.Cx[j] += im_r3[j] * jx[j];
-				p.Cy[j] += im_r3[j] * jy[j];
-				p.Cz[j] += im_r3[j] * jz[j];
+				vx += q1 * rx;
+				vy += q1 * ry;
+				vz += q1 * rz;
+
+				auto im_r3 = p.m[i] * inv_r3;
+
+				p.Ax[j] += im_r3 * rx;
+				p.Ay[j] += im_r3 * ry;
+				p.Az[j] += im_r3 * rz;
+				p.Jx[j] += im_r3 * vx;
+				p.Jy[j] += im_r3 * vy;
+				p.Jz[j] += im_r3 * vz;
+				p.Sx[j] += im_r3 * ax;
+				p.Sy[j] += im_r3 * ay;
+				p.Sz[j] += im_r3 * az;
+				p.Cx[j] += im_r3 * jx;
+				p.Cy[j] += im_r3 * jy;
+				p.Cz[j] += im_r3 * jz;
 			}
 		}
 	}
 };
 #endif
 
+
 // ----------------------------------------------------------------------------
 
-#define SNP_CRK_IMPLEMENT_STRUCT(N)				\
-	typedef struct concat(snp_crk_data, N) {	\
-		concat(real_t, N) m, e2;				\
-		concat(real_t, N) rdot[4][NDIM];		\
-		concat(real_t, N) adot[4][NDIM];		\
-	} concat(Snp_Crk_Data, N);
 
-SNP_CRK_IMPLEMENT_STRUCT(1)
-#if SIMD > 1
-SNP_CRK_IMPLEMENT_STRUCT(SIMD)
-#endif
-typedef Snp_Crk_Data1 Snp_Crk_Data;
+typedef struct snp_crk_data {
+	real_tn m;
+	real_tn e2;
+	real_tn rx;
+	real_tn ry;
+	real_tn rz;
+	real_tn vx;
+	real_tn vy;
+	real_tn vz;
+	real_tn ax;
+	real_tn ay;
+	real_tn az;
+	real_tn jx;
+	real_tn jy;
+	real_tn jz;
+	real_tn Ax;
+	real_tn Ay;
+	real_tn Az;
+	real_tn Jx;
+	real_tn Jy;
+	real_tn Jz;
+	real_tn Sx;
+	real_tn Sy;
+	real_tn Sz;
+	real_tn Cx;
+	real_tn Cy;
+	real_tn Cz;
+} Snp_Crk_Data;
 
 
-static inline vec(Snp_Crk_Data)
-snp_crk_kernel_core(vec(Snp_Crk_Data) ip, vec(Snp_Crk_Data) jp)
+static inline Snp_Crk_Data
+snp_crk_kernel_core(Snp_Crk_Data ip, Snp_Crk_Data jp)
 // flop count: 128
 {
-	vec(real_t) rdot[4][NDIM];
-	#pragma unroll
-	for (uint_t kdot = 0; kdot < 4; ++kdot) {
-		#pragma unroll
-		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
-		}
-	}
-	vec(real_t) e2 = ip.e2 + jp.e2;
+	real_tn ee = ip.e2 + jp.e2;
+	real_tn rx = ip.rx - jp.rx;
+	real_tn ry = ip.ry - jp.ry;
+	real_tn rz = ip.rz - jp.rz;
+	real_tn vx = ip.vx - jp.vx;
+	real_tn vy = ip.vy - jp.vy;
+	real_tn vz = ip.vz - jp.vz;
+	real_tn ax = ip.ax - jp.ax;
+	real_tn ay = ip.ay - jp.ay;
+	real_tn az = ip.az - jp.az;
+	real_tn jx = ip.jx - jp.jx;
+	real_tn jy = ip.jy - jp.jy;
+	real_tn jz = ip.jz - jp.jz;
 
-	vec(real_t) rr = rdot[0][0] * rdot[0][0]
-			+ rdot[0][1] * rdot[0][1]
-			+ rdot[0][2] * rdot[0][2];
-	vec(real_t) rv = rdot[0][0] * rdot[1][0]
-			+ rdot[0][1] * rdot[1][1]
-			+ rdot[0][2] * rdot[1][2];
-	vec(real_t) ra = rdot[0][0] * rdot[2][0]
-			+ rdot[0][1] * rdot[2][1]
-			+ rdot[0][2] * rdot[2][2];
-	vec(real_t) rj = rdot[0][0] * rdot[3][0]
-			+ rdot[0][1] * rdot[3][1]
-			+ rdot[0][2] * rdot[3][2];
-	vec(real_t) vv = rdot[1][0] * rdot[1][0]
-			+ rdot[1][1] * rdot[1][1]
-			+ rdot[1][2] * rdot[1][2];
-	vec(real_t) va = rdot[1][0] * rdot[2][0]
-			+ rdot[1][1] * rdot[2][1]
-			+ rdot[1][2] * rdot[2][2];
+	real_tn rr = ee;
+	rr += rx * rx + ry * ry + rz * rz;
 
-	vec(real_t) s1 = rv;
-	vec(real_t) s2 = ra + vv;
-	vec(real_t) s3 = rj + 3 * va;
-
-	vec(real_t) inv_r2;
-	vec(real_t) m_r3 = jp.m * smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 6
-	inv_r2 = select((vec(real_t))(0), inv_r2, (vec(int_t))(rr > 0));
-	m_r3 = select((vec(real_t))(0), m_r3, (vec(int_t))(rr > 0));
-
+	real_tn inv_r3 = rsqrt(rr);
+	inv_r3 = (rr > ee) ? (inv_r3):(0);
+	real_tn inv_r2 = inv_r3 * inv_r3;
+	inv_r3 *= inv_r2;
 	inv_r2 *= -3;
 
-	#define _cq21 ((real_t)(5.0/3.0))
-	#define _cq31 ((real_t)(8.0/3.0))
-	#define _cq32 ((real_t)(7.0/3.0))
+	real_tn s1 = rx * vx + ry * vy + rz * vz;
+	real_tn s2 = vx * vx + vy * vy + vz * vz;
+	real_tn s3 = vx * ax + vy * ay + vz * az;
+	s3 *= 3;
+	s2 += rx * ax + ry * ay + rz * az;
+	s3 += rx * jx + ry * jy + rz * jz;
 
-	const vec(real_t) q1 = inv_r2 * (s1);
-	const vec(real_t) q2 = inv_r2 * (s2 + (_cq21 * s1) * q1);
-	const vec(real_t) q3 = inv_r2 * (s3 + (_cq31 * s2) * q1 + (_cq32 * s1) * q2);
+	#define cq21 ((real_t)(5.0/3.0))
+	#define cq31 ((real_t)(8.0/3.0))
+	#define cq32 ((real_t)(7.0/3.0))
 
-	const vec(real_t) c1 = 3 * q1;
-	const vec(real_t) c2 = 3 * q2;
-	const vec(real_t) c3 = 2 * q1;
+	const real_tn q1 = inv_r2 * (s1);
+	const real_tn q2 = inv_r2 * (s2 + (cq21 * s1) * q1);
+	const real_tn q3 = inv_r2 * (s3 + (cq31 * s2) * q1 + (cq32 * s1) * q2);
 
-	#pragma unroll
-	for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-		rdot[3][kdim] += c1 * rdot[2][kdim];
-		rdot[3][kdim] += c2 * rdot[1][kdim];
-		rdot[3][kdim] += q3 * rdot[0][kdim];
+	const real_tn b3 = 3 * q1;
+	const real_tn c3 = 3 * q2;
+	const real_tn c2 = 2 * q1;
 
-		rdot[2][kdim] += c3 * rdot[1][kdim];
-		rdot[2][kdim] += q2 * rdot[0][kdim];
+	jx += b3 * ax + c3 * vx + q3 * rx;
+	jy += b3 * ay + c3 * vy + q3 * ry;
+	jz += b3 * az + c3 * vz + q3 * rz;
 
-		rdot[1][kdim] += q1 * rdot[0][kdim];
-	}
+	ax += c2 * vx + q2 * rx;
+	ay += c2 * vy + q2 * ry;
+	az += c2 * vz + q2 * rz;
 
-	#pragma unroll
-	for (uint_t kdot = 0; kdot < 4; ++kdot) {
-		#pragma unroll
-		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-			ip.adot[kdot][kdim] -= m_r3 * rdot[kdot][kdim];
-		}
-	}
+	vx += q1 * rx;
+	vy += q1 * ry;
+	vz += q1 * rz;
+
+	real_tn jm_r3 = jp.m * inv_r3;
+
+	ip.Ax -= jm_r3 * rx;
+	ip.Ay -= jm_r3 * ry;
+	ip.Az -= jm_r3 * rz;
+	ip.Jx -= jm_r3 * vx;
+	ip.Jy -= jm_r3 * vy;
+	ip.Jz -= jm_r3 * vz;
+	ip.Sx -= jm_r3 * ax;
+	ip.Sy -= jm_r3 * ay;
+	ip.Sz -= jm_r3 * az;
+	ip.Cx -= jm_r3 * jx;
+	ip.Cy -= jm_r3 * jy;
+	ip.Cz -= jm_r3 * jz;
 	return ip;
 }
 

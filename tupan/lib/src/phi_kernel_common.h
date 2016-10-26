@@ -1,8 +1,8 @@
 #ifndef __PHI_KERNEL_COMMON_H__
 #define __PHI_KERNEL_COMMON_H__
 
+
 #include "common.h"
-#include "smoothing.h"
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
@@ -56,11 +56,12 @@ struct P2P_phi_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto rr = ip.e2[i] + jp.e2[j];
+				auto ee = ip.e2[i] + jp.e2[j];
 				auto rx = ip.rx[i] - jp.rx[j];
 				auto ry = ip.ry[i] - jp.ry[j];
 				auto rz = ip.rz[i] - jp.rz[j];
 
+				auto rr = ee;
 				rr += rx * rx + ry * ry + rz * rz;
 
 				inv_r1[j] = rsqrt(rr);
@@ -79,68 +80,55 @@ struct P2P_phi_kernel_core {
 	template<typename P>
 	void operator()(P&& p) {
 		// flop count: 14
-		decltype(p.m) inv_r1;
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto rr = p.e2[i] + p.e2[j];
+				auto ee = p.e2[i] + p.e2[j];
 				auto rx = p.rx[i] - p.rx[j];
 				auto ry = p.ry[i] - p.ry[j];
 				auto rz = p.rz[i] - p.rz[j];
 
+				auto rr = ee;
 				rr += rx * rx + ry * ry + rz * rz;
 
-				inv_r1[j] = rsqrt(rr);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				inv_r1[j] = (i == j) ? (0):(inv_r1[j]);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				p.phi[j] -= p.m[i] * inv_r1[j];
+				auto inv_r1 = rsqrt(rr);
+				inv_r1 = (rr > ee) ? (inv_r1):(0);
+
+				p.phi[j] -= p.m[i] * inv_r1;
 			}
 		}
 	}
 };
 #endif
 
+
 // ----------------------------------------------------------------------------
 
-#define PHI_IMPLEMENT_STRUCT(N)				\
-	typedef struct concat(phi_data, N) {	\
-		concat(real_t, N) m, e2;			\
-		concat(real_t, N) rdot[1][NDIM];	\
-		concat(real_t, N) phi;				\
-	} concat(Phi_Data, N);
 
-PHI_IMPLEMENT_STRUCT(1)
-#if SIMD > 1
-PHI_IMPLEMENT_STRUCT(SIMD)
-#endif
-typedef Phi_Data1 Phi_Data;
+typedef struct phi_data {
+	real_tn m;
+	real_tn e2;
+	real_tn rx;
+	real_tn ry;
+	real_tn rz;
+	real_tn phi;
+} Phi_Data;
 
 
-static inline vec(Phi_Data)
-phi_kernel_core(vec(Phi_Data) ip, vec(Phi_Data) jp)
+static inline Phi_Data
+phi_kernel_core(Phi_Data ip, Phi_Data jp)
 // flop count: 14
 {
-	vec(real_t) rdot[1][NDIM];
-	#pragma unroll
-	for (uint_t kdot = 0; kdot < 1; ++kdot) {
-		#pragma unroll
-		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
-		}
-	}
-	vec(real_t) e2 = ip.e2 + jp.e2;
+	real_tn ee = ip.e2 + jp.e2;
+	real_tn rx = ip.rx - jp.rx;
+	real_tn ry = ip.ry - jp.ry;
+	real_tn rz = ip.rz - jp.rz;
 
-	vec(real_t) rr = rdot[0][0] * rdot[0][0]
-			+ rdot[0][1] * rdot[0][1]
-			+ rdot[0][2] * rdot[0][2];
+	real_tn rr = ee;
+	rr += rx * rx + ry * ry + rz * rz;
 
-	vec(real_t) inv_r1 = smoothed_inv_r1(rr, e2);	// flop count: 3
-	inv_r1 = select((vec(real_t))(0), inv_r1, (vec(int_t))(rr > 0));
+	real_tn inv_r1 = rsqrt(rr);
+	inv_r1 = select((real_tn)(0), inv_r1, (int_tn)(rr > ee));
 
 	ip.phi -= jp.m * inv_r1;
 	return ip;

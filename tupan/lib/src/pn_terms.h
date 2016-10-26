@@ -562,185 +562,114 @@ pn7_B(
 static inline real_tn
 pnterms_A(
 	const real_tn im,
-	const real_tn ivx,
-	const real_tn ivy,
-	const real_tn ivz,
+	const real_tn im2,
+	const real_tn im_r,
+	const real_tn iv2,
+	const real_tn iv4,
+	const real_tn niv,
+	const real_tn niv2,
 	const real_tn jm,
-	const real_tn jvx,
-	const real_tn jvy,
-	const real_tn jvz,
-	const real_tn rx,
-	const real_tn ry,
-	const real_tn rz,
-	const real_tn vx,
-	const real_tn vy,
-	const real_tn vz,
-	const real_tn v2,
+	const real_tn jm2,
+	const real_tn jm_r,
+	const real_tn jv2,
+	const real_tn jv4,
+	const real_tn njv,
+	const real_tn njv2,
+	const real_tn imjm,
 	const real_tn inv_r,
 	const real_tn inv_r2,
+	const real_tn vv,
+	const real_tn ivjv,
+	const real_tn nv,
+	const real_tn nvnv,
+	const real_tn nivnjv,
 	const uint_t order,
 	const real_t inv_c)
 {
-	real_tn A = (real_tn)(0);
+	real_tn A0 = (real_tn)(0);
 	real_tn A1 = (real_tn)(0);
-	real_tn A2 = (real_tn)(0);
+	real_tn A2 = pn2_A(im, jm, inv_r, iv2, jv2, ivjv, njv2);
 	real_tn A3 = (real_tn)(0);
-	real_tn A4 = (real_tn)(0);
-	real_tn A5 = (real_tn)(0);
-	real_tn A6 = (real_tn)(0);
-	real_tn A7 = (real_tn)(0);
-
-	real_tn iv2 = ivx * ivx + ivy * ivy + ivz * ivz;
-	real_tn jv2 = jvx * jvx + jvy * jvy + jvz * jvz;
-	real_tn ivjv = ivx * jvx + ivy * jvy + ivz * jvz;
-	real_tn niv = rx * ivx + ry * ivy + rz * ivz;
-	real_tn njv = rx * jvx + ry * jvy + rz * jvz;
-	niv *= inv_r;
-	njv *= inv_r;
-	real_tn njv2 = njv * njv;
-	A2 = pn2_A(im, jm, inv_r, iv2, jv2, ivjv, njv2);
-//	if (order >= 4) {
-		real_tn im2 = im * im;
-		real_tn jm2 = jm * jm;
-		real_tn imjm = im * jm;
-		real_tn jv4 = jv2 * jv2;
-		real_tn niv2 = niv * niv;
-		real_tn nivnjv = niv * njv;
-		real_tn nv = rx * vx + ry * vy + rz * vz;
-		nv *= inv_r;
-		A4 = pn4_A(im, jm, im2, jm2, imjm, inv_r, inv_r2,
-					iv2, jv2, jv4, ivjv, niv2, njv2, nivnjv);
-//		if (order >= 5) {
-			real_tn im_r = im * inv_r;
-			A5 = pn5_A(im, jm, im_r, inv_r, v2, nv);
-//			if (order >= 6) {
-				real_tn nvnv = nv * nv;
-				A6 = pn6_A(im, jm, im2, jm2, imjm,
-							inv_r, inv_r2, v2, iv2, jv2, jv4, ivjv,
-							nvnv, niv, njv, niv2, njv2, nivnjv);
-//				if (order >= 7) {
-					real_tn iv4 = iv2 * iv2;
-					A7 = pn7_A(im, jm, im2, jm2, imjm, im_r,
-								inv_r, inv_r2, v2, iv2, jv2,
-								iv4, jv4, ivjv, nv, niv, njv,
-								nvnv, niv2, njv2, nivnjv);
-//				}
-//			}
-//		}
-//	}
+	real_tn A4 = pn4_A(im, jm, im2, jm2, imjm, inv_r, inv_r2,
+					   iv2, jv2, jv4, ivjv, niv2, njv2, nivnjv);
+	real_tn A5 = pn5_A(im, jm, im_r, inv_r, vv, nv);
+	real_tn A6 = pn6_A(im, jm, im2, jm2, imjm,
+					   inv_r, inv_r2, vv, iv2, jv2, jv4, ivjv,
+					   nvnv, niv, njv, niv2, njv2, nivnjv);
+	real_tn A7 = pn7_A(im, jm, im2, jm2, imjm, im_r,
+					   inv_r, inv_r2, vv, iv2, jv2,
+					   iv4, jv4, ivjv, nv, niv, njv,
+					   nvnv, niv2, njv2, nivnjv);
 
 	// Form the 136 post-Newtonian terms
-	// ---->     (0  +
-	//           (6  +
-	//           (0  +
-	//           (21 +
-	//           (3  +
-	//           (66 +
-	//           (40)))))))
-	A += inv_c * (A1 + inv_c *
-				 (A2 + inv_c *
-				 (A3 + inv_c *
-				 (A4 + inv_c *
-				 (A5 + inv_c *
-				 (A6 + inv_c *
-				 (A7)))))));
+	A6 += inv_c * A7;	// 40
+	A5 += inv_c * A6;	// 66
+	A4 += inv_c * A5;	// 3
+	A3 += inv_c * A4;	// 21
+	A2 += inv_c * A3;	// 0
+	A1 += inv_c * A2;	// 6
+	A0 += inv_c * A1;	// 0
 
-	real_tn jm_r2 = jm * inv_r2;
-	A *= inv_r;
-	A *= jm_r2;
-	return A;
+	A0 *= inv_r2;
+	A0 *= jm_r;
+	return A0;
 }
 
 
 static inline real_tn
 pnterms_B(
 	const real_tn im,
-	const real_tn ivx,
-	const real_tn ivy,
-	const real_tn ivz,
+	const real_tn im2,
+	const real_tn im_r,
+	const real_tn iv2,
+	const real_tn iv4,
+	const real_tn niv,
+	const real_tn niv2,
 	const real_tn jm,
-	const real_tn jvx,
-	const real_tn jvy,
-	const real_tn jvz,
-	const real_tn rx,
-	const real_tn ry,
-	const real_tn rz,
-	const real_tn vx,
-	const real_tn vy,
-	const real_tn vz,
-	const real_tn v2,
+	const real_tn jm2,
+	const real_tn jm_r,
+	const real_tn jv2,
+	const real_tn jv4,
+	const real_tn njv,
+	const real_tn njv2,
+	const real_tn imjm,
 	const real_tn inv_r,
 	const real_tn inv_r2,
+	const real_tn vv,
+	const real_tn ivjv,
+	const real_tn nv,
+	const real_tn nvnv,
+	const real_tn nivnjv,
 	const uint_t order,
 	const real_t inv_c)
 {
-	real_tn B = (real_tn)(0);
+	real_tn B0 = (real_tn)(0);
 	real_tn B1 = (real_tn)(0);
-	real_tn B2 = (real_tn)(0);
+	real_tn B2 = pn2_B(niv, njv);
 	real_tn B3 = (real_tn)(0);
-	real_tn B4 = (real_tn)(0);
-	real_tn B5 = (real_tn)(0);
-	real_tn B6 = (real_tn)(0);
-	real_tn B7 = (real_tn)(0);
-
-	real_tn iv2 = ivx * ivx + ivy * ivy + ivz * ivz;
-	real_tn jv2 = jvx * jvx + jvy * jvy + jvz * jvz;
-	real_tn ivjv = ivx * jvx + ivy * jvy + ivz * jvz;
-	real_tn niv = rx * ivx + ry * ivy + rz * ivz;
-	real_tn njv = rx * jvx + ry * jvy + rz * jvz;
-	niv *= inv_r;
-	njv *= inv_r;
-	real_tn njv2 = njv * njv;
-	B2 = pn2_B(niv, njv);
-//	if (order >= 4) {
-		real_tn im2 = im * im;
-		real_tn jm2 = jm * jm;
-		real_tn imjm = im * jm;
-		real_tn jv4 = jv2 * jv2;
-		real_tn niv2 = niv * niv;
-		real_tn nivnjv = niv * njv;
-		real_tn nv = rx * vx + ry * vy + rz * vz;
-		nv *= inv_r;
-		B4 = pn4_B(im, jm, inv_r, iv2, jv2,
-					ivjv, nv, niv, njv, njv2);
-//		if (order >= 5) {
-			real_tn im_r = im * inv_r;
-			B5 = pn5_B(im, jm, im_r, inv_r, v2);
-//			if (order >= 6) {
-				real_tn nvnv = nv * nv;
-				B6 = pn6_B(im, jm, im2, jm2, imjm,
-							inv_r, inv_r2, iv2, jv2, jv4, ivjv,
-							nv, niv, njv, niv2, njv2);
-//				if (order >= 7) {
-					real_tn iv4 = iv2 * iv2;
-					B7 = pn7_B(im, jm, im2, jm2, imjm, im_r,
-								inv_r, inv_r2, v2, iv2, jv2,
-								iv4, jv4, ivjv, nvnv, niv2, njv2,
-								nivnjv);
-//				}
-//			}
-//		}
-//	}
+	real_tn B4 = pn4_B(im, jm, inv_r, iv2, jv2,
+					   ivjv, nv, niv, njv, njv2);
+	real_tn B5 = pn5_B(im, jm, im_r, inv_r, vv);
+	real_tn B6 = pn6_B(im, jm, im2, jm2, imjm,
+					   inv_r, inv_r2, iv2, jv2, jv4, ivjv,
+					   nv, niv, njv, niv2, njv2);
+	real_tn B7 = pn7_B(im, jm, im2, jm2, imjm, im_r,
+					   inv_r, inv_r2, vv, iv2, jv2,
+					   iv4, jv4, ivjv, nvnv, niv2, njv2,
+					   nivnjv);
 
 	// Form the 77 post-Newtonian terms
-	// ---->     (0  +
-	//           (2  +
-	//           (0  +
-	//           (10 +
-	//           (3  +
-	//           (37 +
-	//           (25)))))))
-	B += inv_c * (B1 + inv_c *
-				 (B2 + inv_c *
-				 (B3 + inv_c *
-				 (B4 + inv_c *
-				 (B5 + inv_c *
-				 (B6 + inv_c *
-				 (B7)))))));
+	B6 += inv_c * B7;	// 25
+	B5 += inv_c * B6;	// 37
+	B4 += inv_c * B5;	// 3
+	B3 += inv_c * B4;	// 10
+	B2 += inv_c * B3;	// 0
+	B1 += inv_c * B2;	// 2
+	B0 += inv_c * B1;	// 0
 
-	real_tn jm_r2 = jm * inv_r2;
-	B *= jm_r2;
-	return B;
+	B0 *= inv_r;
+	B0 *= jm_r;
+	return B0;
 }
 
 

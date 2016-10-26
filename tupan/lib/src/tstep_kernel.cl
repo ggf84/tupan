@@ -23,37 +23,35 @@ tstep_kernel(
 		i = min(i, ni-SIMD);
 		i *= (SIMD < ni);
 
-		vec(Tstep_Data) ip;
+		Tstep_Data ip;
 		ip.m = vec(vload)(0, __im + i);
 		ip.e2 = vec(vload)(0, __ie2 + i);
-		#pragma unroll
-		for (uint_t kdot = 0; kdot < 2; ++kdot) {
-			#pragma unroll
-			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-				global const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
-				ip.rdot[kdot][kdim] = vec(vload)(0, ptr + i);
-			}
-			ip.w2[kdot] = (real_tn)(0);
-		}
+		ip.rx = vec(vload)(0, &__irdot[(0*NDIM+0)*ni + i]);
+		ip.ry = vec(vload)(0, &__irdot[(0*NDIM+1)*ni + i]);
+		ip.rz = vec(vload)(0, &__irdot[(0*NDIM+2)*ni + i]);
+		ip.vx = vec(vload)(0, &__irdot[(1*NDIM+0)*ni + i]);
+		ip.vy = vec(vload)(0, &__irdot[(1*NDIM+1)*ni + i]);
+		ip.vz = vec(vload)(0, &__irdot[(1*NDIM+2)*ni + i]);
+		ip.w2_a = (real_tn)(0);
+		ip.w2_b = (real_tn)(0);
 
 		uint_t j = 0;
 
 		#ifdef FAST_LOCAL_MEM
 		for (; (j + LSIZE - 1) < nj; j += LSIZE) {
-			vec(Tstep_Data) jp;
+			Tstep_Data jp;
 			jp.m = (real_tn)(__jm[j + lid]);
 			jp.e2 = (real_tn)(__je2[j + lid]);
-			#pragma unroll
-			for (uint_t kdot = 0; kdot < 2; ++kdot) {
-				#pragma unroll
-				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
-					jp.rdot[kdot][kdim] = (real_tn)(ptr[j + lid]);
-				}
-				jp.w2[kdot] = (real_tn)(0);
-			}
+			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + j + lid]);
+			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + j + lid]);
+			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + j + lid]);
+			jp.vx = (real_tn)(__jrdot[(1*NDIM+0)*nj + j + lid]);
+			jp.vy = (real_tn)(__jrdot[(1*NDIM+1)*nj + j + lid]);
+			jp.vz = (real_tn)(__jrdot[(1*NDIM+2)*nj + j + lid]);
+			jp.w2_a = (real_tn)(0);
+			jp.w2_b = (real_tn)(0);
 			barrier(CLK_LOCAL_MEM_FENCE);
-			local vec(Tstep_Data) _jp[LSIZE];
+			local Tstep_Data _jp[LSIZE];
 			_jp[lid] = jp;
 			barrier(CLK_LOCAL_MEM_FENCE);
 			#pragma unroll
@@ -65,23 +63,22 @@ tstep_kernel(
 		#endif
 
 		for (; j < nj; ++j) {
-			vec(Tstep_Data) jp;
+			Tstep_Data jp;
 			jp.m = (real_tn)(__jm[j]);
 			jp.e2 = (real_tn)(__je2[j]);
-			#pragma unroll
-			for (uint_t kdot = 0; kdot < 2; ++kdot) {
-				#pragma unroll
-				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
-					jp.rdot[kdot][kdim] = (real_tn)(ptr[j]);
-				}
-				jp.w2[kdot] = (real_tn)(0);
-			}
+			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + j]);
+			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + j]);
+			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + j]);
+			jp.vx = (real_tn)(__jrdot[(1*NDIM+0)*nj + j]);
+			jp.vy = (real_tn)(__jrdot[(1*NDIM+1)*nj + j]);
+			jp.vz = (real_tn)(__jrdot[(1*NDIM+2)*nj + j]);
+			jp.w2_a = (real_tn)(0);
+			jp.w2_b = (real_tn)(0);
 			ip = tstep_kernel_core(ip, jp, eta);
 		}
 
-		vec(vstore)(eta / sqrt(ip.w2[0]), 0, __idt_a + i);
-		vec(vstore)(eta / sqrt(ip.w2[1]), 0, __idt_b + i);
+		vec(vstore)(eta * rsqrt(ip.w2_a), 0, __idt_a + i);
+		vec(vstore)(eta * rsqrt(ip.w2_b), 0, __idt_b + i);
 	}
 }
 

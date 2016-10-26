@@ -5,18 +5,22 @@
 #include "universal_kepler_solver.h"
 
 
-#define SAKURA_IMPLEMENT_STRUCT(N)				\
-	typedef struct concat(sakura_data, N) {		\
-		concat(real_t, N) m, e2;				\
-		concat(real_t, N) rdot[2][NDIM];		\
-		concat(real_t, N) drdot[2][NDIM];		\
-	} concat(Sakura_Data, N);
-
-SAKURA_IMPLEMENT_STRUCT(1)
-#if SIMD > 1
-SAKURA_IMPLEMENT_STRUCT(SIMD)
-#endif
-typedef Sakura_Data1 Sakura_Data;
+typedef struct sakura_data {
+	real_t m;
+	real_t e2;
+	real_t rx;
+	real_t ry;
+	real_t rz;
+	real_t vx;
+	real_t vy;
+	real_t vz;
+	real_t drx;
+	real_t dry;
+	real_t drz;
+	real_t dvx;
+	real_t dvy;
+	real_t dvz;
+} Sakura_Data;
 
 
 static inline void
@@ -120,53 +124,54 @@ evolve_twobody(
 }
 
 
-static inline Sakura_Data1
-sakura_kernel_core(Sakura_Data1 ip, Sakura_Data1 jp,
+static inline Sakura_Data
+sakura_kernel_core(Sakura_Data ip, Sakura_Data jp,
 				   const real_t dt, const int_t flag)
 // flop count: 27 + ??
 {
-	real_t r0dot[2][NDIM];
-	#pragma unroll
-	for (uint_t kdot = 0; kdot < 2; ++kdot) {
-		#pragma unroll
-		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-			r0dot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
-		}
-	}
-	real_t e2 = ip.e2 + jp.e2;
 	real_t m = ip.m + jp.m;
+	real_t e2 = ip.e2 + jp.e2;
+	real_t r0x = ip.rx - jp.rx;
+	real_t r0y = ip.ry - jp.ry;
+	real_t r0z = ip.rz - jp.rz;
+	real_t v0x = ip.vx - jp.vx;
+	real_t v0y = ip.vy - jp.vy;
+	real_t v0z = ip.vz - jp.vz;
 
-	real_t r1dot[2][NDIM];
+	real_t r1x = r0x;
+	real_t r1y = r0y;
+	real_t r1z = r0z;
+	real_t v1x = v0x;
+	real_t v1y = v0y;
+	real_t v1z = v0z;
 	evolve_twobody(
 		dt, flag, m, e2,
-		r0dot[0][0], r0dot[0][1], r0dot[0][2],
-		r0dot[1][0], r0dot[1][1], r0dot[1][2],
-		&r1dot[0][0], &r1dot[0][1], &r1dot[0][2],
-		&r1dot[1][0], &r1dot[1][1], &r1dot[1][2]
+		r0x, r0y, r0z, v0x, v0y, v0z,
+		&r1x, &r1y, &r1z, &v1x, &v1y, &v1z
 	);	// flop count: ??
 
-	real_t drdot[2][NDIM];
-	#pragma unroll
-	for (uint_t kdot = 0; kdot < 2; ++kdot) {
-		#pragma unroll
-		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-			drdot[kdot][kdim] = r1dot[kdot][kdim] - r0dot[kdot][kdim];
-		}
-	}
-
 	real_t inv_m = 1 / m;
+	real_t drx = r1x - r0x;
+	real_t dry = r1y - r0y;
+	real_t drz = r1z - r0z;
+	real_t dvx = v1x - v0x;
+	real_t dvy = v1y - v0y;
+	real_t dvz = v1z - v0z;
+
 	real_t jmu = jp.m * inv_m;
-	#pragma unroll
-	for (uint_t kdot = 0; kdot < 2; ++kdot) {
-		#pragma unroll
-		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-			ip.drdot[kdot][kdim] += jmu * drdot[kdot][kdim];
-		}
-	}
+
+	ip.drx += jmu * drx;
+	ip.dry += jmu * dry;
+	ip.drz += jmu * drz;
+	ip.dvx += jmu * dvx;
+	ip.dvy += jmu * dvy;
+	ip.dvz += jmu * dvz;
 	return ip;
 }
 
+
 // ----------------------------------------------------------------------------
+
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
 template<size_t TILE>
@@ -255,6 +260,12 @@ struct P2P_sakura_kernel_core {
 			}
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
+				r1x[j] = r0x[j];
+				r1y[j] = r0y[j];
+				r1z[j] = r0z[j];
+				v1x[j] = v0x[j];
+				v1y[j] = v0y[j];
+				v1z[j] = v0z[j];
 				evolve_twobody(
 					dt, flag, m[j], e2[j],
 					r0x[j], r0y[j], r0z[j], v0x[j], v0y[j], v0z[j],
@@ -298,63 +309,53 @@ struct P2P_sakura_kernel_core {
 	template<typename P>
 	void operator()(P&& p) {
 		// flop count: 28 + ???
-		decltype(p.m) m, e2, imu;
-		decltype(p.m) r0x, r0y, r0z, v0x, v0y, v0z;
-		decltype(p.m) r1x, r1y, r1z, v1x, v1y, v1z;
-		decltype(p.m) drx, dry, drz, dvx, dvy, dvz;
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				m[j] = p.m[i] + p.m[j];
-				e2[j] = p.e2[i] + p.e2[j];
-				r0x[j] = p.rx[i] - p.rx[j];
-				r0y[j] = p.ry[i] - p.ry[j];
-				r0z[j] = p.rz[i] - p.rz[j];
-				v0x[j] = p.vx[i] - p.vx[j];
-				v0y[j] = p.vy[i] - p.vy[j];
-				v0z[j] = p.vz[i] - p.vz[j];
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				if (i == j) {
-					r1x[j] = r0x[j];
-					r1y[j] = r0y[j];
-					r1z[j] = r0z[j];
-					v1x[j] = v0x[j];
-					v1y[j] = v0y[j];
-					v1z[j] = v0z[j];
-				} else {
+				auto m = p.m[i] + p.m[j];
+				auto e2 = p.e2[i] + p.e2[j];
+				auto r0x = p.rx[i] - p.rx[j];
+				auto r0y = p.ry[i] - p.ry[j];
+				auto r0z = p.rz[i] - p.rz[j];
+				auto v0x = p.vx[i] - p.vx[j];
+				auto v0y = p.vy[i] - p.vy[j];
+				auto v0z = p.vz[i] - p.vz[j];
+
+				auto r1x = r0x;
+				auto r1y = r0y;
+				auto r1z = r0z;
+				auto v1x = v0x;
+				auto v1y = v0y;
+				auto v1z = v0z;
+				if (i != j) {
 					evolve_twobody(
-						dt, flag, m[j], e2[j],
-						r0x[j], r0y[j], r0z[j], v0x[j], v0y[j], v0z[j],
-						&r1x[j], &r1y[j], &r1z[j], &v1x[j], &v1y[j], &v1z[j]
+						dt, flag, m, e2,
+						r0x, r0y, r0z, v0x, v0y, v0z,
+						&r1x, &r1y, &r1z, &v1x, &v1y, &v1z
 					);	// flop count: ??
 				}
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				auto inv_m = 1 / m[j];
-				drx[j] = r1x[j] - r0x[j];
-				dry[j] = r1y[j] - r0y[j];
-				drz[j] = r1z[j] - r0z[j];
-				dvx[j] = v1x[j] - v0x[j];
-				dvy[j] = v1y[j] - v0y[j];
-				dvz[j] = v1z[j] - v0z[j];
 
-				imu[j] = p.m[i] * inv_m;
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				p.drx[j] -= imu[j] * drx[j];
-				p.dry[j] -= imu[j] * dry[j];
-				p.drz[j] -= imu[j] * drz[j];
-				p.dvx[j] -= imu[j] * dvx[j];
-				p.dvy[j] -= imu[j] * dvy[j];
-				p.dvz[j] -= imu[j] * dvz[j];
+				auto inv_m = 1 / m;
+				auto drx = r1x - r0x;
+				auto dry = r1y - r0y;
+				auto drz = r1z - r0z;
+				auto dvx = v1x - v0x;
+				auto dvy = v1y - v0y;
+				auto dvz = v1z - v0z;
+
+				auto imu = p.m[i] * inv_m;
+
+				p.drx[j] -= imu * drx;
+				p.dry[j] -= imu * dry;
+				p.drz[j] -= imu * drz;
+				p.dvx[j] -= imu * dvx;
+				p.dvy[j] -= imu * dvy;
+				p.dvz[j] -= imu * dvz;
 			}
 		}
 	}
 };
 #endif
+
 
 #endif	// __SAKURA_KERNEL_COMMON_H__

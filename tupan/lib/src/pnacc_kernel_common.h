@@ -1,8 +1,8 @@
 #ifndef __PNACC_KERNEL_COMMON_H__
 #define __PNACC_KERNEL_COMMON_H__
 
+
 #include "common.h"
-#include "smoothing.h"
 #include "pn_terms.h"
 
 
@@ -71,7 +71,7 @@ struct P2P_pnacc_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto rr = ip.e2[i] + jp.e2[j];
+				auto ee = ip.e2[i] + jp.e2[j];
 				rx[j] = ip.rx[i] - jp.rx[j];
 				ry[j] = ip.ry[i] - jp.ry[j];
 				rz[j] = ip.rz[i] - jp.rz[j];
@@ -79,43 +79,78 @@ struct P2P_pnacc_kernel_core {
 				vy[j] = ip.vy[i] - jp.vy[j];
 				vz[j] = ip.vz[i] - jp.vz[j];
 
+				auto rr = ee;
 				rr += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
 
 				inv_r1[j] = rsqrt(rr);
 			}
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto inv_r2 = inv_r1[j] * inv_r1[j];
+				auto inv_r = inv_r1[j];
+				auto inv_r2 = inv_r * inv_r;
 
-				auto vv = vx[j] * vx[j] + vy[j] * vy[j] + vz[j] * vz[j];
+				auto im = ip.m[i];
+				auto im2 = im * im;
+				auto im_r = im * inv_r;
+				auto iv2 = ip.vx[i] * ip.vx[i]
+						 + ip.vy[i] * ip.vy[i]
+						 + ip.vz[i] * ip.vz[i];
+				auto iv4 = iv2 * iv2;
+				auto niv = rx[j] * ip.vx[i]
+						 + ry[j] * ip.vy[i]
+						 + rz[j] * ip.vz[i];
+				niv *= inv_r;
+				auto niv2 = niv * niv;
 
-				ipnA[j] = pnterms_A(
-					jp.m[j], jp.vx[j], jp.vy[j], jp.vz[j],
-					ip.m[i], ip.vx[i], ip.vy[i], ip.vz[i],
-					-rx[j], -ry[j], -rz[j], -vx[j], -vy[j], -vz[j],
-					vv, inv_r1[j], inv_r2, clight.order, clight.inv1
-				);	// flop count: ???
+				auto jm = jp.m[j];
+				auto jm2 = jm * jm;
+				auto jm_r = jm * inv_r;
+				auto jv2 = jp.vx[j] * jp.vx[j]
+						 + jp.vy[j] * jp.vy[j]
+						 + jp.vz[j] * jp.vz[j];
+				auto jv4 = jv2 * jv2;
+				auto njv = rx[j] * jp.vx[j]
+						 + ry[j] * jp.vy[j]
+						 + rz[j] * jp.vz[j];
+				njv *= inv_r;
+				auto njv2 = njv * njv;
 
-				ipnB[j] = pnterms_B(
-					jp.m[j], jp.vx[j], jp.vy[j], jp.vz[j],
-					ip.m[i], ip.vx[i], ip.vy[i], ip.vz[i],
-					-rx[j], -ry[j], -rz[j], -vx[j], -vy[j], -vz[j],
-					vv, inv_r1[j], inv_r2, clight.order, clight.inv1
-				);	// flop count: ???
+				auto imjm = im * jm;
+				auto vv = vx[j] * vx[j]
+						+ vy[j] * vy[j]
+						+ vz[j] * vz[j];
+				auto ivjv = ip.vx[i] * jp.vx[j]
+						  + ip.vy[i] * jp.vy[j]
+						  + ip.vz[i] * jp.vz[j];
+				auto nv = rx[j] * vx[j]
+						+ ry[j] * vy[j]
+						+ rz[j] * vz[j];
+				nv *= inv_r;
+				auto nvnv = nv * nv;
+				auto nivnjv = niv * njv;
 
-				jpnA[j] = pnterms_A(
-					ip.m[i], ip.vx[i], ip.vy[i], ip.vz[i],
-					jp.m[j], jp.vx[j], jp.vy[j], jp.vz[j],
-					rx[j], ry[j], rz[j], vx[j], vy[j], vz[j],
-					vv, inv_r1[j], inv_r2, clight.order, clight.inv1
-				);	// flop count: ???
+				auto order = clight.order;
+				auto inv_c = clight.inv1;
 
-				jpnB[j] = pnterms_B(
-					ip.m[i], ip.vx[i], ip.vy[i], ip.vz[i],
-					jp.m[j], jp.vx[j], jp.vy[j], jp.vz[j],
-					rx[j], ry[j], rz[j], vx[j], vy[j], vz[j],
-					vv, inv_r1[j], inv_r2, clight.order, clight.inv1
-				);	// flop count: ???
+				ipnA[j] = pnterms_A(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
+									im, im2, im_r, iv2, iv4, -niv, niv2,
+									imjm, inv_r, inv_r2, vv, ivjv,
+									nv, nvnv, nivnjv, order, inv_c);
+
+				ipnB[j] = pnterms_B(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
+									im, im2, im_r, iv2, iv4, -niv, niv2,
+									imjm, inv_r, inv_r2, vv, ivjv,
+									nv, nvnv, nivnjv, order, inv_c);
+
+				jpnA[j] = pnterms_A(im, im2, im_r, iv2, iv4, +niv, niv2,
+									jm, jm2, jm_r, jv2, jv4, +njv, njv2,
+									imjm, inv_r, inv_r2, vv, ivjv,
+									nv, nvnv, nivnjv, order, inv_c);
+
+				jpnB[j] = pnterms_B(im, im2, im_r, iv2, iv4, +niv, niv2,
+									jm, jm2, jm_r, jv2, jv4, +njv, njv2,
+									imjm, inv_r, inv_r2, vv, ivjv,
+									nv, nvnv, nivnjv, order, inv_c);
 			}
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
@@ -135,120 +170,182 @@ struct P2P_pnacc_kernel_core {
 	template<typename P>
 	void operator()(P&& p) {
 		// flop count: 33 + ???
-		decltype(p.m) rx, ry, rz, vx, vy, vz, inv_r1;
-		decltype(p.m) ipnA, ipnB;
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto rr = p.e2[i] + p.e2[j];
-				rx[j] = p.rx[i] - p.rx[j];
-				ry[j] = p.ry[i] - p.ry[j];
-				rz[j] = p.rz[i] - p.rz[j];
-				vx[j] = p.vx[i] - p.vx[j];
-				vy[j] = p.vy[i] - p.vy[j];
-				vz[j] = p.vz[i] - p.vz[j];
+				auto ee = p.e2[i] + p.e2[j];
+				auto rx = p.rx[i] - p.rx[j];
+				auto ry = p.ry[i] - p.ry[j];
+				auto rz = p.rz[i] - p.rz[j];
+				auto vx = p.vx[i] - p.vx[j];
+				auto vy = p.vy[i] - p.vy[j];
+				auto vz = p.vz[i] - p.vz[j];
 
-				rr += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
+				auto rr = ee;
+				rr += rx * rx + ry * ry + rz * rz;
 
-				inv_r1[j] = rsqrt(rr);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				inv_r1[j] = (i == j) ? (0):(inv_r1[j]);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				auto inv_r2 = inv_r1[j] * inv_r1[j];
+				auto inv_r1 = rsqrt(rr);
+				inv_r1 = (rr > ee) ? (inv_r1):(0);
+				auto inv_r = inv_r1;
+				auto inv_r2 = inv_r * inv_r;
 
-				auto vv = vx[j] * vx[j] + vy[j] * vy[j] + vz[j] * vz[j];
+				auto im = p.m[i];
+				auto im2 = im * im;
+				auto im_r = im * inv_r;
+				auto iv2 = p.vx[i] * p.vx[i]
+						 + p.vy[i] * p.vy[i]
+						 + p.vz[i] * p.vz[i];
+				auto iv4 = iv2 * iv2;
+				auto niv = rx * p.vx[i]
+						 + ry * p.vy[i]
+						 + rz * p.vz[i];
+				niv *= inv_r;
+				auto niv2 = niv * niv;
 
-				ipnA[j] = pnterms_A(
-					p.m[j], p.vx[j], p.vy[j], p.vz[j],
-					p.m[i], p.vx[i], p.vy[i], p.vz[i],
-					-rx[j], -ry[j], -rz[j], -vx[j], -vy[j], -vz[j],
-					vv, inv_r1[j], inv_r2, clight.order, clight.inv1
-				);	// flop count: ???
+				auto jm = p.m[j];
+				auto jm2 = jm * jm;
+				auto jm_r = jm * inv_r;
+				auto jv2 = p.vx[j] * p.vx[j]
+						 + p.vy[j] * p.vy[j]
+						 + p.vz[j] * p.vz[j];
+				auto jv4 = jv2 * jv2;
+				auto njv = rx * p.vx[j]
+						 + ry * p.vy[j]
+						 + rz * p.vz[j];
+				njv *= inv_r;
+				auto njv2 = njv * njv;
 
-				ipnB[j] = pnterms_B(
-					p.m[j], p.vx[j], p.vy[j], p.vz[j],
-					p.m[i], p.vx[i], p.vy[i], p.vz[i],
-					-rx[j], -ry[j], -rz[j], -vx[j], -vy[j], -vz[j],
-					vv, inv_r1[j], inv_r2, clight.order, clight.inv1
-				);	// flop count: ???
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				p.pnax[j] -= ipnA[j] * rx[j] + ipnB[j] * vx[j];
-				p.pnay[j] -= ipnA[j] * ry[j] + ipnB[j] * vy[j];
-				p.pnaz[j] -= ipnA[j] * rz[j] + ipnB[j] * vz[j];
+				auto imjm = im * jm;
+				auto vv = vx * vx
+						+ vy * vy
+						+ vz * vz;
+				auto ivjv = p.vx[i] * p.vx[j]
+						  + p.vy[i] * p.vy[j]
+						  + p.vz[i] * p.vz[j];
+				auto nv = rx * vx
+						+ ry * vy
+						+ rz * vz;
+				nv *= inv_r;
+				auto nvnv = nv * nv;
+				auto nivnjv = niv * njv;
+
+				auto order = clight.order;
+				auto inv_c = clight.inv1;
+
+				auto ipnA = pnterms_A(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
+									  im, im2, im_r, iv2, iv4, -niv, niv2,
+									  imjm, inv_r, inv_r2, vv, ivjv,
+									  nv, nvnv, nivnjv, order, inv_c);
+
+				auto ipnB = pnterms_B(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
+									  im, im2, im_r, iv2, iv4, -niv, niv2,
+									  imjm, inv_r, inv_r2, vv, ivjv,
+									  nv, nvnv, nivnjv, order, inv_c);
+
+				p.pnax[j] -= ipnA * rx + ipnB * vx;
+				p.pnay[j] -= ipnA * ry + ipnB * vy;
+				p.pnaz[j] -= ipnA * rz + ipnB * vz;
 			}
 		}
 	}
 };
 #endif
 
+
 // ----------------------------------------------------------------------------
 
-#define PNACC_IMPLEMENT_STRUCT(N)			\
-	typedef struct concat(pnacc_data, N) {	\
-		concat(real_t, N) m, e2;			\
-		concat(real_t, N) rdot[2][NDIM];	\
-		concat(real_t, N) pnacc[NDIM];		\
-	} concat(PNAcc_Data, N);
 
-PNACC_IMPLEMENT_STRUCT(1)
-#if SIMD > 1
-PNACC_IMPLEMENT_STRUCT(SIMD)
-#endif
-typedef PNAcc_Data1 PNAcc_Data;
+typedef struct pnacc_data {
+	real_tn m;
+	real_tn e2;
+	real_tn rx;
+	real_tn ry;
+	real_tn rz;
+	real_tn vx;
+	real_tn vy;
+	real_tn vz;
+	real_tn pnax;
+	real_tn pnay;
+	real_tn pnaz;
+} PNAcc_Data;
 
 
-static inline vec(PNAcc_Data)
-pnacc_kernel_core(vec(PNAcc_Data) ip, vec(PNAcc_Data) jp, const CLIGHT clight)
+static inline PNAcc_Data
+pnacc_kernel_core(PNAcc_Data ip, PNAcc_Data jp, const CLIGHT clight)
 // flop count: 36+???
 {
-	vec(real_t) rdot[2][NDIM];
-	#pragma unroll
-	for (uint_t kdot = 0; kdot < 2; ++kdot) {
-		#pragma unroll
-		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
-		}
-	}
-	vec(real_t) e2 = ip.e2 + jp.e2;
+	real_tn ee = ip.e2 + jp.e2;
+	real_tn rx = ip.rx - jp.rx;
+	real_tn ry = ip.ry - jp.ry;
+	real_tn rz = ip.rz - jp.rz;
+	real_tn vx = ip.vx - jp.vx;
+	real_tn vy = ip.vy - jp.vy;
+	real_tn vz = ip.vz - jp.vz;
 
-	vec(real_t) rr = rdot[0][0] * rdot[0][0]
-			+ rdot[0][1] * rdot[0][1]
-			+ rdot[0][2] * rdot[0][2];
-	vec(real_t) vv = rdot[1][0] * rdot[1][0]
-			+ rdot[1][1] * rdot[1][1]
-			+ rdot[1][2] * rdot[1][2];
+	real_tn rr = ee;
+	rr += rx * rx + ry * ry + rz * rz;
 
-	vec(real_t) inv_r1;
-	vec(real_t) inv_r2 = smoothed_inv_r2_inv_r1(rr, e2, &inv_r1);	// flop count: 4
-	inv_r1 = select((vec(real_t))(0), inv_r1, (vec(int_t))(rr > 0));
-	inv_r2 = select((vec(real_t))(0), inv_r2, (vec(int_t))(rr > 0));
+	real_tn inv_r1 = rsqrt(rr);
+	inv_r1 = (rr > ee) ? (inv_r1):(0);
+	real_tn inv_r = inv_r1;
+	real_tn inv_r2 = inv_r * inv_r;
 
-	vec(real_t) pnA = pnterms_A(
-		ip.m, ip.rdot[1][0], ip.rdot[1][1], ip.rdot[1][2],
-		jp.m, jp.rdot[1][0], jp.rdot[1][1], jp.rdot[1][2],
-		rdot[0][0], rdot[0][1], rdot[0][2],
-		rdot[1][0], rdot[1][1], rdot[1][2],
-		vv, inv_r1, inv_r2, clight.order, clight.inv1
-	);	// flop count: ???
+	real_tn im = ip.m;
+	real_tn im2 = im * im;
+	real_tn im_r = im * inv_r;
+	real_tn iv2 = ip.vx * ip.vx
+				+ ip.vy * ip.vy
+				+ ip.vz * ip.vz;
+	real_tn iv4 = iv2 * iv2;
+	real_tn niv = rx * ip.vx
+				+ ry * ip.vy
+				+ rz * ip.vz;
+	niv *= inv_r;
+	real_tn niv2 = niv * niv;
 
-	vec(real_t) pnB = pnterms_B(
-		ip.m, ip.rdot[1][0], ip.rdot[1][1], ip.rdot[1][2],
-		jp.m, jp.rdot[1][0], jp.rdot[1][1], jp.rdot[1][2],
-		rdot[0][0], rdot[0][1], rdot[0][2],
-		rdot[1][0], rdot[1][1], rdot[1][2],
-		vv, inv_r1, inv_r2, clight.order, clight.inv1
-	);	// flop count: ???
+	real_tn jm = jp.m;
+	real_tn jm2 = jm * jm;
+	real_tn jm_r = jm * inv_r;
+	real_tn jv2 = jp.vx * jp.vx
+				+ jp.vy * jp.vy
+				+ jp.vz * jp.vz;
+	real_tn jv4 = jv2 * jv2;
+	real_tn njv = rx * jp.vx
+				+ ry * jp.vy
+				+ rz * jp.vz;
+	njv *= inv_r;
+	real_tn njv2 = njv * njv;
 
-	#pragma unroll
-	for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-		ip.pnacc[kdim] += (pnA * rdot[0][kdim] + pnB * rdot[1][kdim]);
-	}
+	real_tn imjm = im * jm;
+	real_tn vv = vx * vx
+			   + vy * vy
+			   + vz * vz;
+	real_tn ivjv = ip.vx * jp.vx
+				 + ip.vy * jp.vy
+				 + ip.vz * jp.vz;
+	real_tn nv = rx * vx
+			   + ry * vy
+			   + rz * vz;
+	nv *= inv_r;
+	real_tn nvnv = nv * nv;
+	real_tn nivnjv = niv * njv;
+
+	uint_t order = clight.order;
+	real_t inv_c = clight.inv1;
+
+	real_tn jpnA = pnterms_A(im, im2, im_r, iv2, iv4, +niv, niv2,
+							 jm, jm2, jm_r, jv2, jv4, +njv, njv2,
+							 imjm, inv_r, inv_r2, vv, ivjv,
+							 nv, nvnv, nivnjv, order, inv_c);
+
+	real_tn jpnB = pnterms_B(im, im2, im_r, iv2, iv4, +niv, niv2,
+							 jm, jm2, jm_r, jv2, jv4, +njv, njv2,
+							 imjm, inv_r, inv_r2, vv, ivjv,
+							 nv, nvnv, nivnjv, order, inv_c);
+
+	ip.pnax += jpnA * rx + jpnB * vx;
+	ip.pnay += jpnA * ry + jpnB * vy;
+	ip.pnaz += jpnA * rz + jpnB * vz;
 	return ip;
 }
 

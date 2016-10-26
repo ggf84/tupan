@@ -21,37 +21,27 @@ phi_kernel(
 		i = min(i, ni-SIMD);
 		i *= (SIMD < ni);
 
-		vec(Phi_Data) ip;
+		Phi_Data ip;
 		ip.m = vec(vload)(0, __im + i);
 		ip.e2 = vec(vload)(0, __ie2 + i);
-		#pragma unroll
-		for (uint_t kdot = 0; kdot < 1; ++kdot) {
-			#pragma unroll
-			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-				global const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
-				ip.rdot[kdot][kdim] = vec(vload)(0, ptr + i);
-			}
-		}
+		ip.rx = vec(vload)(0, &__irdot[(0*NDIM+0)*ni + i]);
+		ip.ry = vec(vload)(0, &__irdot[(0*NDIM+1)*ni + i]);
+		ip.rz = vec(vload)(0, &__irdot[(0*NDIM+2)*ni + i]);
 		ip.phi = (real_tn)(0);
 
 		uint_t j = 0;
 
 		#ifdef FAST_LOCAL_MEM
 		for (; (j + LSIZE - 1) < nj; j += LSIZE) {
-			vec(Phi_Data) jp;
+			Phi_Data jp;
 			jp.m = (real_tn)(__jm[j + lid]);
 			jp.e2 = (real_tn)(__je2[j + lid]);
-			#pragma unroll
-			for (uint_t kdot = 0; kdot < 1; ++kdot) {
-				#pragma unroll
-				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
-					jp.rdot[kdot][kdim] = (real_tn)(ptr[j + lid]);
-				}
-			}
+			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + j + lid]);
+			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + j + lid]);
+			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + j + lid]);
 			jp.phi = (real_tn)(0);
 			barrier(CLK_LOCAL_MEM_FENCE);
-			local vec(Phi_Data) _jp[LSIZE];
+			local Phi_Data _jp[LSIZE];
 			_jp[lid] = jp;
 			barrier(CLK_LOCAL_MEM_FENCE);
 			#pragma unroll
@@ -63,17 +53,12 @@ phi_kernel(
 		#endif
 
 		for (; j < nj; ++j) {
-			vec(Phi_Data) jp;
+			Phi_Data jp;
 			jp.m = (real_tn)(__jm[j]);
 			jp.e2 = (real_tn)(__je2[j]);
-			#pragma unroll
-			for (uint_t kdot = 0; kdot < 1; ++kdot) {
-				#pragma unroll
-				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
-					jp.rdot[kdot][kdim] = (real_tn)(ptr[j]);
-				}
-			}
+			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + j]);
+			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + j]);
+			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + j]);
 			jp.phi = (real_tn)(0);
 			ip = phi_kernel_core(ip, jp);
 		}

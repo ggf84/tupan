@@ -21,37 +21,31 @@ acc_kernel(
 		i = min(i, ni-SIMD);
 		i *= (SIMD < ni);
 
-		vec(Acc_Data) ip;
+		Acc_Data ip;
 		ip.m = vec(vload)(0, __im + i);
 		ip.e2 = vec(vload)(0, __ie2 + i);
-		#pragma unroll
-		for (uint_t kdot = 0; kdot < 1; ++kdot) {
-			#pragma unroll
-			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-				global const real_t *ptr = &__irdot[(kdot*NDIM+kdim)*ni];
-				ip.rdot[kdot][kdim] = vec(vload)(0, ptr + i);
-				ip.adot[kdot][kdim] = (real_tn)(0);
-			}
-		}
+		ip.rx = vec(vload)(0, &__irdot[(0*NDIM+0)*ni + i]);
+		ip.ry = vec(vload)(0, &__irdot[(0*NDIM+1)*ni + i]);
+		ip.rz = vec(vload)(0, &__irdot[(0*NDIM+2)*ni + i]);
+		ip.ax = (real_tn)(0);
+		ip.ay = (real_tn)(0);
+		ip.az = (real_tn)(0);
 
 		uint_t j = 0;
 
 		#ifdef FAST_LOCAL_MEM
 		for (; (j + LSIZE - 1) < nj; j += LSIZE) {
-			vec(Acc_Data) jp;
+			Acc_Data jp;
 			jp.m = (real_tn)(__jm[j + lid]);
 			jp.e2 = (real_tn)(__je2[j + lid]);
-			#pragma unroll
-			for (uint_t kdot = 0; kdot < 1; ++kdot) {
-				#pragma unroll
-				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
-					jp.rdot[kdot][kdim] = (real_tn)(ptr[j + lid]);
-					jp.adot[kdot][kdim] = (real_tn)(0);
-				}
-			}
+			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + j + lid]);
+			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + j + lid]);
+			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + j + lid]);
+			jp.ax = (real_tn)(0);
+			jp.ay = (real_tn)(0);
+			jp.az = (real_tn)(0);
 			barrier(CLK_LOCAL_MEM_FENCE);
-			local vec(Acc_Data) _jp[LSIZE];
+			local Acc_Data _jp[LSIZE];
 			_jp[lid] = jp;
 			barrier(CLK_LOCAL_MEM_FENCE);
 			#pragma unroll
@@ -63,29 +57,21 @@ acc_kernel(
 		#endif
 
 		for (; j < nj; ++j) {
-			vec(Acc_Data) jp;
+			Acc_Data jp;
 			jp.m = (real_tn)(__jm[j]);
 			jp.e2 = (real_tn)(__je2[j]);
-			#pragma unroll
-			for (uint_t kdot = 0; kdot < 1; ++kdot) {
-				#pragma unroll
-				for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-					global const real_t *ptr = &__jrdot[(kdot*NDIM+kdim)*nj];
-					jp.rdot[kdot][kdim] = (real_tn)(ptr[j]);
-					jp.adot[kdot][kdim] = (real_tn)(0);
-				}
-			}
+			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + j]);
+			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + j]);
+			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + j]);
+			jp.ax = (real_tn)(0);
+			jp.ay = (real_tn)(0);
+			jp.az = (real_tn)(0);
 			ip = acc_kernel_core(ip, jp);
 		}
 
-		#pragma unroll
-		for (uint_t kdot = 0; kdot < 1; ++kdot) {
-			#pragma unroll
-			for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-				global real_t *ptr = &__iadot[(kdot*NDIM+kdim)*ni];
-				vec(vstore)(ip.adot[kdot][kdim], 0, ptr + i);
-			}
-		}
+		vec(vstore)(ip.ax, 0, &__iadot[(0*NDIM+0)*ni + i]);
+		vec(vstore)(ip.ay, 0, &__iadot[(0*NDIM+1)*ni + i]);
+		vec(vstore)(ip.az, 0, &__iadot[(0*NDIM+2)*ni + i]);
 	}
 }
 

@@ -1,8 +1,8 @@
 #ifndef __ACC_JRK_KERNEL_COMMON_H__
 #define __ACC_JRK_KERNEL_COMMON_H__
 
+
 #include "common.h"
-#include "smoothing.h"
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
@@ -73,7 +73,7 @@ struct P2P_acc_jrk_kernel_core {
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto rr = ip.e2[i] + jp.e2[j];
+				auto ee = ip.e2[i] + jp.e2[j];
 				rx[j] = ip.rx[i] - jp.rx[j];
 				ry[j] = ip.ry[i] - jp.ry[j];
 				rz[j] = ip.rz[i] - jp.rz[j];
@@ -81,6 +81,7 @@ struct P2P_acc_jrk_kernel_core {
 				vy[j] = ip.vy[i] - jp.vy[j];
 				vz[j] = ip.vz[i] - jp.vz[j];
 
+				auto rr = ee;
 				rr += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
 
 				inv_r3[j] = rsqrt(rr);
@@ -125,116 +126,105 @@ struct P2P_acc_jrk_kernel_core {
 	template<typename P>
 	void operator()(P&& p) {
 		// flop count: 43
-		decltype(p.m) rx, ry, rz, vx, vy, vz;
-		decltype(p.m) inv_r3, im_r3;
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto rr = p.e2[i] + p.e2[j];
-				rx[j] = p.rx[i] - p.rx[j];
-				ry[j] = p.ry[i] - p.ry[j];
-				rz[j] = p.rz[i] - p.rz[j];
-				vx[j] = p.vx[i] - p.vx[j];
-				vy[j] = p.vy[i] - p.vy[j];
-				vz[j] = p.vz[i] - p.vz[j];
+				auto ee = p.e2[i] + p.e2[j];
+				auto rx = p.rx[i] - p.rx[j];
+				auto ry = p.ry[i] - p.ry[j];
+				auto rz = p.rz[i] - p.rz[j];
+				auto vx = p.vx[i] - p.vx[j];
+				auto vy = p.vy[i] - p.vy[j];
+				auto vz = p.vz[i] - p.vz[j];
 
-				rr   += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
+				auto rr = ee;
+				rr += rx * rx + ry * ry + rz * rz;
 
-				inv_r3[j] = rsqrt(rr);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				inv_r3[j] = (i == j) ? (0):(inv_r3[j]);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				auto inv_r2 = inv_r3[j] * inv_r3[j];
-				inv_r3[j] *= inv_r2;
+				auto inv_r3 = rsqrt(rr);
+				inv_r3 = (rr > ee) ? (inv_r3):(0);
+				auto inv_r2 = inv_r3 * inv_r3;
+				inv_r3 *= inv_r2;
 				inv_r2 *= -3;
 
-				auto s1 = rx[j] * vx[j] + ry[j] * vy[j] + rz[j] * vz[j];
+				auto s1 = rx * vx + ry * vy + rz * vz;
 
 				auto q1 = inv_r2 * (s1);
-				vx[j] += q1 * rx[j];
-				vy[j] += q1 * ry[j];
-				vz[j] += q1 * rz[j];
+				vx += q1 * rx;
+				vy += q1 * ry;
+				vz += q1 * rz;
 
-				im_r3[j] = p.m[i] * inv_r3[j];
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				p.ax[j] += im_r3[j] * rx[j];
-				p.ay[j] += im_r3[j] * ry[j];
-				p.az[j] += im_r3[j] * rz[j];
-				p.jx[j] += im_r3[j] * vx[j];
-				p.jy[j] += im_r3[j] * vy[j];
-				p.jz[j] += im_r3[j] * vz[j];
+				auto im_r3 = p.m[i] * inv_r3;
+
+				p.ax[j] += im_r3 * rx;
+				p.ay[j] += im_r3 * ry;
+				p.az[j] += im_r3 * rz;
+				p.jx[j] += im_r3 * vx;
+				p.jy[j] += im_r3 * vy;
+				p.jz[j] += im_r3 * vz;
 			}
 		}
 	}
 };
 #endif
 
+
 // ----------------------------------------------------------------------------
 
-#define ACC_JRK_IMPLEMENT_STRUCT(N)				\
-	typedef struct concat(acc_jrk_data, N) {	\
-		concat(real_t, N) m, e2;				\
-		concat(real_t, N) rdot[2][NDIM];		\
-		concat(real_t, N) adot[2][NDIM];		\
-	} concat(Acc_Jrk_Data, N);
 
-ACC_JRK_IMPLEMENT_STRUCT(1)
-#if SIMD > 1
-ACC_JRK_IMPLEMENT_STRUCT(SIMD)
-#endif
-typedef Acc_Jrk_Data1 Acc_Jrk_Data;
+typedef struct acc_jrk_data {
+	real_tn m;
+	real_tn e2;
+	real_tn rx;
+	real_tn ry;
+	real_tn rz;
+	real_tn vx;
+	real_tn vy;
+	real_tn vz;
+	real_tn ax;
+	real_tn ay;
+	real_tn az;
+	real_tn jx;
+	real_tn jy;
+	real_tn jz;
+} Acc_Jrk_Data;
 
 
-static inline vec(Acc_Jrk_Data)
-acc_jrk_kernel_core(vec(Acc_Jrk_Data) ip, vec(Acc_Jrk_Data) jp)
+static inline Acc_Jrk_Data
+acc_jrk_kernel_core(Acc_Jrk_Data ip, Acc_Jrk_Data jp)
 // flop count: 43
 {
-	vec(real_t) rdot[2][NDIM];
-	#pragma unroll
-	for (uint_t kdot = 0; kdot < 2; ++kdot) {
-		#pragma unroll
-		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-			rdot[kdot][kdim] = ip.rdot[kdot][kdim] - jp.rdot[kdot][kdim];
-		}
-	}
-	vec(real_t) e2 = ip.e2 + jp.e2;
+	real_tn ee = ip.e2 + jp.e2;
+	real_tn rx = ip.rx - jp.rx;
+	real_tn ry = ip.ry - jp.ry;
+	real_tn rz = ip.rz - jp.rz;
+	real_tn vx = ip.vx - jp.vx;
+	real_tn vy = ip.vy - jp.vy;
+	real_tn vz = ip.vz - jp.vz;
 
-	vec(real_t) rr = rdot[0][0] * rdot[0][0]
-			+ rdot[0][1] * rdot[0][1]
-			+ rdot[0][2] * rdot[0][2];
-	vec(real_t) rv = rdot[0][0] * rdot[1][0]
-			+ rdot[0][1] * rdot[1][1]
-			+ rdot[0][2] * rdot[1][2];
+	real_tn rr = ee;
+	rr += rx * rx + ry * ry + rz * rz;
 
-	vec(real_t) s1 = rv;
-
-	vec(real_t) inv_r2;
-	vec(real_t) m_r3 = jp.m * smoothed_inv_r3_inv_r2(rr, e2, &inv_r2);	// flop count: 6
-	inv_r2 = select((vec(real_t))(0), inv_r2, (vec(int_t))(rr > 0));
-	m_r3 = select((vec(real_t))(0), m_r3, (vec(int_t))(rr > 0));
-
+	real_tn inv_r3 = rsqrt(rr);
+	inv_r3 = (rr > ee) ? (inv_r3):(0);
+	real_tn inv_r2 = inv_r3 * inv_r3;
+	inv_r3 *= inv_r2;
 	inv_r2 *= -3;
 
-	const vec(real_t) q1 = inv_r2 * (s1);
+	real_tn s1 = rx * vx + ry * vy + rz * vz;
 
-	#pragma unroll
-	for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-		rdot[1][kdim] += q1 * rdot[0][kdim];
-	}
+	real_tn q1 = inv_r2 * (s1);
+	vx += q1 * rx;
+	vy += q1 * ry;
+	vz += q1 * rz;
 
-	#pragma unroll
-	for (uint_t kdot = 0; kdot < 2; ++kdot) {
-		#pragma unroll
-		for (uint_t kdim = 0; kdim < NDIM; ++kdim) {
-			ip.adot[kdot][kdim] -= m_r3 * rdot[kdot][kdim];
-		}
-	}
+	real_tn jm_r3 = jp.m * inv_r3;
+
+	ip.ax -= jm_r3 * rx;
+	ip.ay -= jm_r3 * ry;
+	ip.az -= jm_r3 * rz;
+	ip.jx -= jm_r3 * vx;
+	ip.jy -= jm_r3 * vy;
+	ip.jz -= jm_r3 * vz;
 	return ip;
 }
 
