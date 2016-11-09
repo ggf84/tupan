@@ -150,7 +150,7 @@ acc_kernel_core(Acc_Data ip, Acc_Data jp)
 	rr += rx * rx + ry * ry + rz * rz;
 
 	real_tn inv_r3 = rsqrt(rr);
-	inv_r3 = select((real_tn)(0), inv_r3, (int_tn)(rr > ee));
+	inv_r3 = (rr > ee) ? (inv_r3):(0);
 	inv_r3 *= inv_r3 * inv_r3;
 
 	real_tn jm_r3 = jp.m * inv_r3;

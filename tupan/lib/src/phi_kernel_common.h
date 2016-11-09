@@ -128,7 +128,7 @@ phi_kernel_core(Phi_Data ip, Phi_Data jp)
 	rr += rx * rx + ry * ry + rz * rz;
 
 	real_tn inv_r1 = rsqrt(rr);
-	inv_r1 = select((real_tn)(0), inv_r1, (int_tn)(rr > ee));
+	inv_r1 = (rr > ee) ? (inv_r1):(0);
 
 	ip.phi -= jp.m * inv_r1;
 	return ip;

@@ -54,7 +54,7 @@ tstep_kernel(
 			local Tstep_Data _jp[LSIZE];
 			_jp[lid] = jp;
 			barrier(CLK_LOCAL_MEM_FENCE);
-			#pragma unroll
+			#pragma unroll 8
 			for (uint_t k = 0; k < LSIZE; ++k) {
 				jp = _jp[k];
 				ip = tstep_kernel_core(ip, jp, eta);

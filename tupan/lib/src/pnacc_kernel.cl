@@ -56,7 +56,7 @@ pnacc_kernel(
 			local PNAcc_Data _jp[LSIZE];
 			_jp[lid] = jp;
 			barrier(CLK_LOCAL_MEM_FENCE);
-			#pragma unroll
+			#pragma unroll 8
 			for (uint_t k = 0; k < LSIZE; ++k) {
 				jp = _jp[k];
 				ip = pnacc_kernel_core(ip, jp, *clight);
