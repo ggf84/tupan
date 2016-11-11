@@ -22,14 +22,14 @@ np.random.seed(seed=1)
 #
 m1 = 0.5
 m2 = 0.5
-ecc = 0.9
+ecc = 0.7
 sma = 4.0
 
 
-# Number of particles per cluster and softening parameter (here N_total=2*n).
+# Number of particles per cluster and softening parameter.
 #
 n = 256
-eps = 4.0/(2*n)
+eps = 4.0/n
 
 
 # Initial Mass Function for particles, min/max mass.

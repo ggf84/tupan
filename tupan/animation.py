@@ -208,8 +208,6 @@ class GLviewer(app.Canvas):
             self.model = np.dot(self.model, rotate(+1, [0, 0, 1]))
         elif event.key == '<':
             self.model = np.dot(self.model, rotate(-1, [0, 0, 1]))
-        elif event.text == 'm':
-            self.make_movie = not self.make_movie
         elif event.text == 'z':
             self.model = np.dot(self.model, scale([1/1.03125]*3))
         elif event.text == 'Z':
@@ -317,18 +315,21 @@ class GLviewer(app.Canvas):
         for name, member in ps.members.items():
             pid = member.pid
             pos = member.rdot[0]
-            mask = np.in1d(self.data[name]['a_pid'], pid, assume_unique=True)
-
-            self.data[name]['a_pid'][mask] = pid
-            self.data[name]['a_position'][mask] = pos.T
-
             mmin, mmax = self.mmin[name], self.mmax[name]
-
             c = f(member.mass / mmin) / f(mmax / mmin)
-            self.data[name]['a_color'][mask] = cm.cubehelix(c)
-
             s = f(member.mass / mmin) / f(mmax / mmin)
-            self.data[name]['a_psize'][mask] = s
+
+            if len(self.data[name]['a_pid']) == len(pid):
+                self.data[name]['a_pid'] = pid
+                self.data[name]['a_position'] = pos.T
+                self.data[name]['a_color'] = cm.cubehelix(c)
+                self.data[name]['a_psize'] = s
+            else:
+                mask = np.in1d(self.data[name]['a_pid'], pid, assume_unique=True)
+                self.data[name]['a_pid'][mask] = pid
+                self.data[name]['a_position'][mask] = pos.T
+                self.data[name]['a_color'][mask] = cm.cubehelix(c)
+                self.data[name]['a_psize'][mask] = s
 
             self.vdata[name].set_data(self.data[name])
 

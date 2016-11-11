@@ -237,7 +237,7 @@ __universal_kepler_solver(
 	real_t lagr0 = v0sqr + phi0;
 	real_t abs_alpha0 = fabs(alpha0);
 
-	#ifndef CONFIG_USE_OPENCL
+	#ifdef CONFIG_DEBUG
 	if ((abs_alpha0 < TOLERANCE * lagr0)
 			&& (r0 * abs_alpha0 < TOLERANCE * m)) {
 		fprintf(stderr, "#---WARNING: Please use higher "
@@ -277,7 +277,7 @@ __universal_kepler_solver(
 		&(*rx), &(*ry), &(*rz),
 		&(*vx), &(*vy), &(*vz));
 
-	#ifndef CONFIG_USE_OPENCL
+	#ifdef CONFIG_DEBUG
 	if (err != 0) {
 		fprintf(stderr, "#---WARNING: Maximum iteration steps "
 						"reached in 'rootfinder' function. Trying "
@@ -375,7 +375,7 @@ universal_kepler_solver(
 					&(*r1x), &(*r1y), &(*r1z),
 					&(*v1x), &(*v1y), &(*v1z));
 
-	#ifndef CONFIG_USE_OPENCL
+	#ifdef CONFIG_DEBUG
 	if (err != 0) {
 		fprintf(stderr, "#---ERROR: The solution "
 						"have not converged.\n");

@@ -48,6 +48,7 @@ def ffibuilder(fpwidth):
 
     define_macros = {}
     define_macros['SIMD'] = 1
+#    define_macros['CONFIG_DEBUG'] = 1
     if fpwidth == 'fp64':
         define_macros['CONFIG_USE_DOUBLE'] = 1
 
