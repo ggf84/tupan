@@ -33,6 +33,10 @@ def main():
     from .simulation import Restart
     restart = Restart(subparser)
 
+    # setup 'benchmark'
+    from .benchmarks import Benchmark
+    benchmark = Benchmark(subparser)
+
     # parse arguments
     cli = parser.parse_args()
     if cli.command is None:
@@ -49,6 +53,8 @@ def main():
         return run(cli)
     if cli.command == 'restart':
         return restart(cli)
+    if cli.command == 'benchmark':
+        return benchmark(cli)
 
 
 # -- End of File --

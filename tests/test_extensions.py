@@ -9,7 +9,6 @@ from __future__ import print_function
 import unittest
 import numpy as np
 from tupan.lib import extensions as ext
-from tupan.lib.utils.timing import Timer
 
 
 def set_particles(n):
@@ -53,57 +52,6 @@ def compare_result(test_number, kernel_name, **kwargs):
     print(msg.format(test_number, kernel_name, max(deviations)))
 
 
-def benchmark(test_number, kernel_name, imax=12, **kwargs):
-    def best_of(n, func, *args, **kwargs):
-        timer = Timer()
-        elapsed = []
-        for i in range(n):
-            timer.start()
-            func(*args, **kwargs)
-            elapsed.append(timer.elapsed())
-        return min(elapsed)
-
-    np.random.seed(0)
-    Ckernel = ext.make_extension(kernel_name+'_rectangle', 'C')
-    CLkernel = ext.make_extension(kernel_name, 'CL')
-
-    msg = "\ntest{0:02d}: {1}"
-    print(msg.format(test_number, kernel_name))
-
-    for (ips, jps) in [(set_particles(2**(i+1)), set_particles(2**(i+1)))
-                       for i in range(imax)]:
-        smalln = ips.n <= 2**12  # 4096
-
-        print("  N={0}:".format(ips.n))
-
-        res = [
-            best_of(5, Ckernel.set_args, ips, jps, **kwargs) if smalln else 0,
-            best_of(5, CLkernel.set_args, ips, jps, **kwargs)
-        ]
-        ratio = res[0] / res[1]
-        print("    {meth} time (s): 'C': {res[0]:.4e},"
-              " 'CL': {res[1]:.4e} | ratio(C/CL): {ratio:.4f}"
-              .format(meth='set', res=res, ratio=ratio))
-
-        res = [
-            best_of(3, Ckernel.run) if smalln else 0,
-            best_of(3, CLkernel.run)
-        ]
-        ratio = res[0] / res[1]
-        print("    {meth} time (s): 'C': {res[0]:.4e},"
-              " 'CL': {res[1]:.4e} | ratio(C/CL): {ratio:.4f}"
-              .format(meth='run', res=res, ratio=ratio))
-
-        res = [
-            best_of(5, Ckernel.map_buffers) if smalln else 0,
-            best_of(5, CLkernel.map_buffers)
-        ]
-        ratio = res[0] / res[1]
-        print("    {meth} time (s): 'C': {res[0]:.4e},"
-              " 'CL': {res[1]:.4e} | ratio(C/CL): {ratio:.4f}"
-              .format(meth='get', res=res, ratio=ratio))
-
-
 class TestCase1(unittest.TestCase):
     """
 
@@ -138,38 +86,6 @@ class TestCase1(unittest.TestCase):
         compare_result(7, 'Sakura', dt=dt, flag=-2)
 
 
-class TestCase2(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        print("\n" + cls.__name__ + ": "
-              "benchmark kernels using C / CL extensions.")
-
-    def test01(self):
-        benchmark(1, 'Phi')
-
-    def test02(self):
-        benchmark(2, 'Acc')
-
-    def test03(self):
-        benchmark(3, 'AccJrk')
-
-    def test04(self):
-        benchmark(4, 'SnpCrk')
-
-    def test05(self):
-        eta = 1.0/64
-        benchmark(5, 'Tstep', eta=eta)
-
-    def test06(self):
-        pn = {'order': 7, 'clight': 128.0}
-        benchmark(6, 'PNAcc', pn=pn)
-
-    def test07(self):
-        dt = 1.0/64
-        benchmark(7, 'Sakura', dt=dt, flag=-2)
-
-
 if __name__ == "__main__":
     def load_tests(test_cases):
         loader = unittest.TestLoader()
@@ -179,7 +95,7 @@ if __name__ == "__main__":
             suite.addTests(tests)
         return suite
 
-    test_cases = (TestCase1, TestCase2)
+    test_cases = (TestCase1,)
 
     suite = load_tests(test_cases)
     unittest.TextTestRunner(verbosity=1, failfast=True).run(suite)
