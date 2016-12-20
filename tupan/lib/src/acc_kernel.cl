@@ -90,13 +90,12 @@ acc_kernel(
 {
 	local Acc_Data _jp[LSIZE];
 	uint_t lid = get_local_id(0);
-	uint_t bid = LSIZE * get_group_id(0);
-	uint_t bsize = LSIZE * get_num_groups(0);
+	uint_t istep = get_num_groups(0) * LSIZE;
+	uint_t istart = get_group_id(0) * LSIZE + lid;
 
-	for (uint_t iblock = bid;
-				iblock + lid < ni;
-				iblock += bsize) {
-		uint_t ii = iblock + lid;
+	for (uint_t ii = istart;
+				ii < ni;
+				ii += istep) {
 		__iadot[(0*NDIM+0)*ni + ii] = 0;
 		__iadot[(0*NDIM+1)*ni + ii] = 0;
 		__iadot[(0*NDIM+2)*ni + ii] = 0;
@@ -117,10 +116,9 @@ acc_kernel(
 //		jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
 //		jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
 //		jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
-		for (uint_t iblock = bid;
-					iblock + lid < ni;
-					iblock += bsize) {
-			uint_t ii = iblock + lid;
+		for (uint_t ii = istart;
+					ii < ni;
+					ii += istep) {
 			Acc_Data ip;
 			ip.m = (real_tn)(__im[ii]);
 			ip.e2 = (real_tn)(__ie2[ii]);
@@ -154,12 +152,12 @@ acc_kernel(
 //		jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
 //		jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
 //		jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
+		barrier(CLK_LOCAL_MEM_FENCE);
 		_jp[lid] = jp;
 		barrier(CLK_LOCAL_MEM_FENCE);
-		for (uint_t iblock = bid;
-					iblock + lid < ni;
-					iblock += bsize) {
-			uint_t ii = iblock + lid;
+		for (uint_t ii = istart;
+					ii < ni;
+					ii += istep) {
 			Acc_Data ip;
 			ip.m = (real_tn)(__im[ii]);
 			ip.e2 = (real_tn)(__ie2[ii]);
@@ -179,7 +177,6 @@ acc_kernel(
 			__iadot[(0*NDIM+1)*ni + ii] = ip.ay;
 			__iadot[(0*NDIM+2)*ni + ii] = ip.az;
 		}
-		barrier(CLK_LOCAL_MEM_FENCE);
 	}
 }
 
