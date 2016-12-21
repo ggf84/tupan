@@ -1,8 +1,8 @@
 #include "acc_kernel_common.h"
 
 /*
-kernel void
-acc_kernel(
+void
+acc_kernel_impl(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
@@ -11,8 +11,9 @@ acc_kernel(
 	global const real_t __jm[],
 	global const real_t __je2[],
 	global const real_t __jrdot[],
-	global real_t __iadot[])//,
-//	global real_t __jadot[])
+	global real_t __iadot[],
+	global real_t __jadot[],
+	local Acc_Data _jp[])
 {
 	for (uint_t ii = SIMD * get_group_id(0) * get_local_size(0);
 				ii < ni;
@@ -46,7 +47,6 @@ acc_kernel(
 			jp.ay = (real_tn)(0);
 			jp.az = (real_tn)(0);
 			barrier(CLK_LOCAL_MEM_FENCE);
-			local Acc_Data _jp[LSIZE];
 			_jp[lid] = jp;
 			barrier(CLK_LOCAL_MEM_FENCE);
 			#pragma unroll 8
@@ -78,8 +78,8 @@ acc_kernel(
 */
 
 /*
-kernel void
-acc_kernel(
+void
+acc_kernel_impl(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
@@ -88,10 +88,10 @@ acc_kernel(
 	global const real_t __jm[],
 	global const real_t __je2[],
 	global const real_t __jrdot[],
-	global real_t __iadot[])//,
-//	global real_t __jadot[])
+	global real_t __iadot[],
+	global real_t __jadot[],
+	local Acc_Data _jp[])
 {
-	local Acc_Data _jp[LSIZE];
 	uint_t lid = get_local_id(0);
 	uint_t istep = get_num_groups(0) * LSIZE;
 	uint_t istart = get_group_id(0) * LSIZE + lid;
@@ -104,8 +104,6 @@ acc_kernel(
 		__iadot[(0*NDIM+2)*ni + ii] = 0;
 	}
 
-//	barrier(CLK_GLOBAL_MEM_FENCE);
-
 	for (uint_t jblock = LSIZE * (nj/LSIZE);
 				jblock + 1 - 1 < nj;
 				jblock += 1) {
@@ -116,9 +114,9 @@ acc_kernel(
 		jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
 		jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
 		jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
-//		jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
-//		jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
-//		jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
+		jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
+		jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
+		jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
 		for (uint_t ii = istart;
 					ii < ni;
 					ii += istep) {
@@ -140,8 +138,6 @@ acc_kernel(
 		}
 	}
 
-//	barrier(CLK_GLOBAL_MEM_FENCE);
-
 	for (uint_t jblock = 0;
 				jblock + LSIZE - 1 < nj;
 				jblock += LSIZE) {
@@ -152,9 +148,9 @@ acc_kernel(
 		jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
 		jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
 		jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
-//		jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
-//		jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
-//		jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
+		jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
+		jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
+		jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
 		barrier(CLK_LOCAL_MEM_FENCE);
 		_jp[lid] = jp;
 		barrier(CLK_LOCAL_MEM_FENCE);
@@ -183,6 +179,7 @@ acc_kernel(
 	}
 }
 */
+
 
 void
 acc_kernel_impl(
