@@ -173,7 +173,7 @@ class Program(object):
             lsize *= 16
             wsize *= 16
         if self.cl_device.type == cl.device_type.GPU:
-            lsize *= 128
+            lsize *= 192
             wsize *= 1024
         fast_local_mem = True
 

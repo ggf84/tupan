@@ -59,22 +59,6 @@ class Phi_triangle(object):
         super(Phi_triangle, self).set_args(inpargs, outargs)
 
 
-class Acc(object):
-    """
-
-    """
-    name = 'acc_kernel'
-
-    def set_args(self, ips, jps):
-        p = 1
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
-
-        outargs = (ips.rdot[2:2+p],)
-
-        super(Acc, self).set_args(inpargs, outargs)
-
-
 class Acc_rectangle(object):
     """
 
@@ -438,7 +422,7 @@ def get_kernel(name, backend=cli.backend):
             return kernel(ips, jps, *args, **kwargs)
         return func
 
-    if backend == 'C':
+    if backend == 'C' or (backend == 'CL' and name == 'Acc'):
         kernel_r = make_extension(name+'_rectangle', backend)
         kernel_t = make_extension(name+'_triangle', backend)
 

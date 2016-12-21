@@ -11,7 +11,8 @@ acc_kernel(
 	global const real_t __jm[],
 	global const real_t __je2[],
 	global const real_t __jrdot[],
-	global real_t __iadot[])
+	global real_t __iadot[])//,
+//	global real_t __jadot[])
 {
 	for (uint_t ii = SIMD * get_group_id(0) * get_local_size(0);
 				ii < ni;
@@ -87,7 +88,8 @@ acc_kernel(
 	global const real_t __jm[],
 	global const real_t __je2[],
 	global const real_t __jrdot[],
-	global real_t __iadot[])
+	global real_t __iadot[])//,
+//	global real_t __jadot[])
 {
 	local Acc_Data _jp[LSIZE];
 	uint_t lid = get_local_id(0);
@@ -182,8 +184,8 @@ acc_kernel(
 }
 */
 
-kernel void
-acc_kernel(
+void
+acc_kernel_impl(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
@@ -192,29 +194,29 @@ acc_kernel(
 	global const real_t __jm[],
 	global const real_t __je2[],
 	global const real_t __jrdot[],
-	global real_t __iadot[])
+	global real_t __iadot[],
+	global real_t __jadot[],
+	local Acc_Data _jp[])
 {
-	local Acc_Data _jp[LSIZE];
 	uint_t lid = get_local_id(0);
-	uint_t iend = (ni + SIMD - 1) / SIMD;
-	uint_t istep = get_num_groups(0) * LSIZE;
 	uint_t istart = get_group_id(0) * LSIZE + lid;
+	uint_t istep = get_num_groups(0) * LSIZE;
+	uint_t iend = (ni + SIMD - 1) / SIMD;
+	uint_t nsimd = (ni - SIMD) * (SIMD < ni);
 
 	for (uint_t ii = istart;
 				ii < iend;
 				ii += istep) {
-		uint_t i = min(ii * SIMD, ni - SIMD) * (SIMD < ni);
+		uint_t i = min(ii * SIMD, nsimd);
 		vec(vstore)((real_tn)(0), 0, &__iadot[(0*NDIM+0)*ni + i]);
 		vec(vstore)((real_tn)(0), 0, &__iadot[(0*NDIM+1)*ni + i]);
 		vec(vstore)((real_tn)(0), 0, &__iadot[(0*NDIM+2)*ni + i]);
 	}
 
-//	barrier(CLK_GLOBAL_MEM_FENCE);
-
 	for (uint_t ii = istart;
 				ii < iend;
 				ii += istep) {
-		uint_t i = min(ii * SIMD, ni - SIMD) * (SIMD < ni);
+		uint_t i = min(ii * SIMD, nsimd);
 		Acc_Data ip;
 		ip.m = vec(vload)(0, __im + i);
 		ip.e2 = vec(vload)(0, __ie2 + i);
@@ -234,17 +236,15 @@ acc_kernel(
 			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
 			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
 			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
-//			jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
-//			jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
-//			jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
+			jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
+			jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
+			jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
 			ip = acc_kernel_core(ip, jp);
 		}
 		vec(vstore)(ip.ax, 0, &__iadot[(0*NDIM+0)*ni + i]);
 		vec(vstore)(ip.ay, 0, &__iadot[(0*NDIM+1)*ni + i]);
 		vec(vstore)(ip.az, 0, &__iadot[(0*NDIM+2)*ni + i]);
 	}
-
-//	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	for (uint_t jblock = 0;
 				jblock + LSIZE - 1 < nj;
@@ -256,16 +256,16 @@ acc_kernel(
 		jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
 		jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
 		jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
-//		jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
-//		jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
-//		jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
+		jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
+		jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
+		jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
 		barrier(CLK_LOCAL_MEM_FENCE);
 		_jp[lid] = jp;
 		barrier(CLK_LOCAL_MEM_FENCE);
 		for (uint_t ii = istart;
 					ii < iend;
 					ii += istep) {
-			uint_t i = min(ii * SIMD, ni - SIMD) * (SIMD < ni);
+			uint_t i = min(ii * SIMD, nsimd);
 			Acc_Data ip;
 			ip.m = vec(vload)(0, __im + i);
 			ip.e2 = vec(vload)(0, __ie2 + i);
@@ -286,5 +286,53 @@ acc_kernel(
 			vec(vstore)(ip.az, 0, &__iadot[(0*NDIM+2)*ni + i]);
 		}
 	}
+}
+
+
+kernel void
+acc_kernel_rectangle(
+	const uint_t ni,
+	global const real_t __im[],
+	global const real_t __ie2[],
+	global const real_t __irdot[],
+	const uint_t nj,
+	global const real_t __jm[],
+	global const real_t __je2[],
+	global const real_t __jrdot[],
+	global real_t __iadot[],
+	global real_t __jadot[])
+{
+	local Acc_Data _jp[LSIZE];
+	acc_kernel_impl(
+		ni, __im, __ie2, __irdot,
+		nj, __jm, __je2, __jrdot,
+		__iadot, __jadot,
+		_jp
+	);
+//	barrier(CLK_GLOBAL_MEM_FENCE);
+	acc_kernel_impl(
+		nj, __jm, __je2, __jrdot,
+		ni, __im, __ie2, __irdot,
+		__jadot, __iadot,
+		_jp
+	);
+}
+
+
+kernel void
+acc_kernel_triangle(
+	const uint_t ni,
+	global const real_t __im[],
+	global const real_t __ie2[],
+	global const real_t __irdot[],
+	global real_t __iadot[])
+{
+	local Acc_Data _jp[LSIZE];
+	acc_kernel_impl(
+		ni, __im, __ie2, __irdot,
+		ni, __im, __ie2, __irdot,
+		__iadot, __iadot,
+		_jp
+	);
 }
 

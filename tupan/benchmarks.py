@@ -50,6 +50,9 @@ def benchmark(bench, n_max, backend):
     if backend == 'C':
         name += '_rectangle'
 
+    if backend == 'CL' and name == 'Acc':
+        name += '_rectangle'
+
     kernel = ext.make_extension(name, backend)
 
     ips = set_particles(n_max)
