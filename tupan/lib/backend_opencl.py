@@ -170,11 +170,11 @@ class Program(object):
         lsize = 1
         wsize = 1
         if self.cl_device.type == cl.device_type.CPU:
-            lsize *= 16
-            wsize *= 16
+            lsize *= 64
+            wsize *= 8
         if self.cl_device.type == cl.device_type.GPU:
             lsize *= 192
-            wsize *= 1024
+            wsize *= 1536
         fast_local_mem = True
 
         # setting program options
