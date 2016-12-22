@@ -171,10 +171,10 @@ class Program(object):
         wsize = 1
         if self.cl_device.type == cl.device_type.CPU:
             lsize *= 64
-            wsize *= 8
+            wsize *= self.cl_device.max_compute_units**2
         if self.cl_device.type == cl.device_type.GPU:
             lsize *= 192
-            wsize *= 1536
+            wsize *= self.cl_device.max_compute_units**2
         fast_local_mem = True
 
         # setting program options
