@@ -164,16 +164,16 @@ class Program(object):
         self.kernel = None
 
     def build(self, fpwidth=cli.fpwidth):
-        simd = (self.cl_device.preferred_vector_width_float
-                if fpwidth == 'fp32'
-                else self.cl_device.preferred_vector_width_double)
+        simd = 1#(self.cl_device.preferred_vector_width_float
+                #if fpwidth == 'fp32'
+                #else self.cl_device.preferred_vector_width_double)
         lsize = 1
         wsize = 1
         if self.cl_device.type == cl.device_type.CPU:
             lsize *= 8
             wsize *= self.cl_device.max_compute_units**2
         if self.cl_device.type == cl.device_type.GPU:
-            lsize *= 192
+            lsize *= 128
             wsize *= self.cl_device.max_compute_units**2
         fast_local_mem = True
 

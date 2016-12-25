@@ -77,7 +77,10 @@ acc_kernel_impl(
 }
 */
 
-/*
+
+#define W 8
+
+
 void
 acc_kernel_impl(
 	const uint_t ni,
@@ -93,8 +96,8 @@ acc_kernel_impl(
 	local Acc_Data _jp[])
 {
 	uint_t lid = get_local_id(0);
-	uint_t istep = get_num_groups(0) * LSIZE;
-	uint_t istart = get_group_id(0) * LSIZE + lid;
+	uint_t istart = LSIZE * get_group_id(0) + lid;
+	uint_t istep = LSIZE * get_num_groups(0);
 
 	for (uint_t ii = istart;
 				ii < ni;
@@ -104,129 +107,21 @@ acc_kernel_impl(
 		__iadot[(0*NDIM+2)*ni + ii] = 0;
 	}
 
-	for (uint_t jblock = LSIZE * (nj/LSIZE);
-				jblock + 1 - 1 < nj;
-				jblock += 1) {
-		uint_t jj = jblock;
-		Acc_Data jp;
-		jp.m = (real_tn)(__jm[jj]);
-		jp.e2 = (real_tn)(__je2[jj]);
-		jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
-		jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
-		jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
-		jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
-		jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
-		jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
-		for (uint_t ii = istart;
-					ii < ni;
-					ii += istep) {
-			Acc_Data ip;
-			ip.m = (real_tn)(__im[ii]);
-			ip.e2 = (real_tn)(__ie2[ii]);
-			ip.rx = (real_tn)(__irdot[(0*NDIM+0)*ni + ii]);
-			ip.ry = (real_tn)(__irdot[(0*NDIM+1)*ni + ii]);
-			ip.rz = (real_tn)(__irdot[(0*NDIM+2)*ni + ii]);
-			ip.ax = (real_tn)(__iadot[(0*NDIM+0)*ni + ii]);
-			ip.ay = (real_tn)(__iadot[(0*NDIM+1)*ni + ii]);
-			ip.az = (real_tn)(__iadot[(0*NDIM+2)*ni + ii]);
-
-			ip = acc_kernel_core(ip, jp);
-
-			__iadot[(0*NDIM+0)*ni + ii] = ip.ax;
-			__iadot[(0*NDIM+1)*ni + ii] = ip.ay;
-			__iadot[(0*NDIM+2)*ni + ii] = ip.az;
-		}
-	}
-
-	for (uint_t jblock = 0;
-				jblock + LSIZE - 1 < nj;
-				jblock += LSIZE) {
-		uint_t jj = jblock + lid;
-		Acc_Data jp;
-		jp.m = (real_tn)(__jm[jj]);
-		jp.e2 = (real_tn)(__je2[jj]);
-		jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
-		jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
-		jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
-		jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
-		jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
-		jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
-		barrier(CLK_LOCAL_MEM_FENCE);
-		_jp[lid] = jp;
-		barrier(CLK_LOCAL_MEM_FENCE);
-		for (uint_t ii = istart;
-					ii < ni;
-					ii += istep) {
-			Acc_Data ip;
-			ip.m = (real_tn)(__im[ii]);
-			ip.e2 = (real_tn)(__ie2[ii]);
-			ip.rx = (real_tn)(__irdot[(0*NDIM+0)*ni + ii]);
-			ip.ry = (real_tn)(__irdot[(0*NDIM+1)*ni + ii]);
-			ip.rz = (real_tn)(__irdot[(0*NDIM+2)*ni + ii]);
-			ip.ax = (real_tn)(__iadot[(0*NDIM+0)*ni + ii]);
-			ip.ay = (real_tn)(__iadot[(0*NDIM+1)*ni + ii]);
-			ip.az = (real_tn)(__iadot[(0*NDIM+2)*ni + ii]);
-
-			#pragma unroll 8
-			for (uint_t j = 0; j < LSIZE; ++j) {
-				ip = acc_kernel_core(ip, _jp[j]);
-			}
-
-			__iadot[(0*NDIM+0)*ni + ii] = ip.ax;
-			__iadot[(0*NDIM+1)*ni + ii] = ip.ay;
-			__iadot[(0*NDIM+2)*ni + ii] = ip.az;
-		}
-	}
-}
-*/
-
-/*
-void
-acc_kernel_impl(
-	const uint_t ni,
-	global const real_t __im[],
-	global const real_t __ie2[],
-	global const real_t __irdot[],
-	const uint_t nj,
-	global const real_t __jm[],
-	global const real_t __je2[],
-	global const real_t __jrdot[],
-	global real_t __iadot[],
-	global real_t __jadot[],
-	local Acc_Data _jp[])
-{
-	uint_t lid = get_local_id(0);
-	uint_t istart = get_group_id(0) * LSIZE + lid;
-	uint_t istep = get_num_groups(0) * LSIZE;
-	uint_t iend = (ni + SIMD - 1) / SIMD;
-	uint_t nsimd = (ni - SIMD) * (SIMD < ni);
-
 	for (uint_t ii = istart;
-				ii < iend;
+				ii < ni;
 				ii += istep) {
-		uint_t i = min(ii * SIMD, nsimd);
-		vec(vstore)((real_tn)(0), 0, &__iadot[(0*NDIM+0)*ni + i]);
-		vec(vstore)((real_tn)(0), 0, &__iadot[(0*NDIM+1)*ni + i]);
-		vec(vstore)((real_tn)(0), 0, &__iadot[(0*NDIM+2)*ni + i]);
-	}
-
-	for (uint_t ii = istart;
-				ii < iend;
-				ii += istep) {
-		uint_t i = min(ii * SIMD, nsimd);
 		Acc_Data ip;
-		ip.m = vec(vload)(0, __im + i);
-		ip.e2 = vec(vload)(0, __ie2 + i);
-		ip.rx = vec(vload)(0, &__irdot[(0*NDIM+0)*ni + i]);
-		ip.ry = vec(vload)(0, &__irdot[(0*NDIM+1)*ni + i]);
-		ip.rz = vec(vload)(0, &__irdot[(0*NDIM+2)*ni + i]);
-		ip.ax = vec(vload)(0, &__iadot[(0*NDIM+0)*ni + i]);
-		ip.ay = vec(vload)(0, &__iadot[(0*NDIM+1)*ni + i]);
-		ip.az = vec(vload)(0, &__iadot[(0*NDIM+2)*ni + i]);
-		for (uint_t jblock = LSIZE * (nj/LSIZE);
-					jblock + 1 - 1 < nj;
-					jblock += 1) {
-			uint_t jj = jblock;
+		ip.m = (real_tn)(__im[ii]);
+		ip.e2 = (real_tn)(__ie2[ii]);
+		ip.rx = (real_tn)(__irdot[(0*NDIM+0)*ni + ii]);
+		ip.ry = (real_tn)(__irdot[(0*NDIM+1)*ni + ii]);
+		ip.rz = (real_tn)(__irdot[(0*NDIM+2)*ni + ii]);
+		ip.ax = (real_tn)(__iadot[(0*NDIM+0)*ni + ii]);
+		ip.ay = (real_tn)(__iadot[(0*NDIM+1)*ni + ii]);
+		ip.az = (real_tn)(__iadot[(0*NDIM+2)*ni + ii]);
+		for (uint_t jj = W * LSIZE * (nj/(W*LSIZE));
+					jj + 1 - 1 < nj;
+					jj += 1) {
 			Acc_Data jp;
 			jp.m = (real_tn)(__jm[jj]);
 			jp.e2 = (real_tn)(__je2[jj]);
@@ -238,55 +133,165 @@ acc_kernel_impl(
 			jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
 			ip = acc_kernel_core(ip, jp);
 		}
-		vec(vstore)(ip.ax, 0, &__iadot[(0*NDIM+0)*ni + i]);
-		vec(vstore)(ip.ay, 0, &__iadot[(0*NDIM+1)*ni + i]);
-		vec(vstore)(ip.az, 0, &__iadot[(0*NDIM+2)*ni + i]);
+		__iadot[(0*NDIM+0)*ni + ii] = ip.ax;
+		__iadot[(0*NDIM+1)*ni + ii] = ip.ay;
+		__iadot[(0*NDIM+2)*ni + ii] = ip.az;
 	}
 
 	for (uint_t jblock = 0;
-				jblock + LSIZE - 1 < nj;
-				jblock += LSIZE) {
-		uint_t jj = jblock + lid;
+				jblock + W * LSIZE - 1 < nj;
+				jblock += W * LSIZE) {
 		Acc_Data jp;
-		jp.m = (real_tn)(__jm[jj]);
-		jp.e2 = (real_tn)(__je2[jj]);
-		jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
-		jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
-		jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
-		jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
-		jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
-		jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
 		barrier(CLK_LOCAL_MEM_FENCE);
-		_jp[lid] = jp;
+		for (uint_t k = 0, jj = jblock + lid;
+					k < W;
+					++k, jj += LSIZE) {
+			jp.m = (real_tn)(__jm[jj]);
+			jp.e2 = (real_tn)(__je2[jj]);
+			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
+			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
+			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
+			jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
+			jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
+			jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
+			_jp[k * LSIZE + lid] = jp;
+		}
 		barrier(CLK_LOCAL_MEM_FENCE);
 		for (uint_t ii = istart;
-					ii < iend;
+					ii < ni;
 					ii += istep) {
-			uint_t i = min(ii * SIMD, nsimd);
 			Acc_Data ip;
-			ip.m = vec(vload)(0, __im + i);
-			ip.e2 = vec(vload)(0, __ie2 + i);
-			ip.rx = vec(vload)(0, &__irdot[(0*NDIM+0)*ni + i]);
-			ip.ry = vec(vload)(0, &__irdot[(0*NDIM+1)*ni + i]);
-			ip.rz = vec(vload)(0, &__irdot[(0*NDIM+2)*ni + i]);
-			ip.ax = vec(vload)(0, &__iadot[(0*NDIM+0)*ni + i]);
-			ip.ay = vec(vload)(0, &__iadot[(0*NDIM+1)*ni + i]);
-			ip.az = vec(vload)(0, &__iadot[(0*NDIM+2)*ni + i]);
+			ip.m = (real_tn)(__im[ii]);
+			ip.e2 = (real_tn)(__ie2[ii]);
+			ip.rx = (real_tn)(__irdot[(0*NDIM+0)*ni + ii]);
+			ip.ry = (real_tn)(__irdot[(0*NDIM+1)*ni + ii]);
+			ip.rz = (real_tn)(__irdot[(0*NDIM+2)*ni + ii]);
+			ip.ax = (real_tn)(__iadot[(0*NDIM+0)*ni + ii]);
+			ip.ay = (real_tn)(__iadot[(0*NDIM+1)*ni + ii]);
+			ip.az = (real_tn)(__iadot[(0*NDIM+2)*ni + ii]);
 
 			#pragma unroll 8
-			for (uint_t j = 0; j < LSIZE; ++j) {
+			for (uint_t j = 0; j < W * LSIZE; ++j) {
 				ip = acc_kernel_core(ip, _jp[j]);
 			}
 
-			vec(vstore)(ip.ax, 0, &__iadot[(0*NDIM+0)*ni + i]);
-			vec(vstore)(ip.ay, 0, &__iadot[(0*NDIM+1)*ni + i]);
-			vec(vstore)(ip.az, 0, &__iadot[(0*NDIM+2)*ni + i]);
+			__iadot[(0*NDIM+0)*ni + ii] = ip.ax;
+			__iadot[(0*NDIM+1)*ni + ii] = ip.ay;
+			__iadot[(0*NDIM+2)*ni + ii] = ip.az;
+		}
+	}
+}
+
+
+/*
+void
+acc_kernel_impl(
+	const uint_t ni,
+	global const real_t __im[],
+	global const real_t __ie2[],
+	global const real_t __irdot[],
+	const uint_t nj,
+	global const real_t __jm[],
+	global const real_t __je2[],
+	global const real_t __jrdot[],
+	global real_t __iadot[],
+	global real_t __jadot[],
+	local Acc_Data _jp[])
+{
+	uint_t lid = get_local_id(0);
+	uint_t istart = LSIZE * get_group_id(0) + lid;
+	uint_t istep = LSIZE * get_num_groups(0);
+	uint_t iend = (ni + SIMD - 1) / SIMD;
+	uint_t nsimd = (ni - SIMD) * (SIMD < ni);
+
+	for (uint_t iii = istart;
+				iii < iend;
+				iii += istep) {
+		uint_t ii = min(iii * SIMD, nsimd);
+		vec(vstore)((real_tn)(0), 0, &__iadot[(0*NDIM+0)*ni + ii]);
+		vec(vstore)((real_tn)(0), 0, &__iadot[(0*NDIM+1)*ni + ii]);
+		vec(vstore)((real_tn)(0), 0, &__iadot[(0*NDIM+2)*ni + ii]);
+	}
+
+	for (uint_t iii = istart;
+				iii < iend;
+				iii += istep) {
+		Acc_Data ip;
+		uint_t ii = min(iii * SIMD, nsimd);
+		ip.m = vec(vload)(0, &__im[ii]);
+		ip.e2 = vec(vload)(0, &__ie2[ii]);
+		ip.rx = vec(vload)(0, &__irdot[(0*NDIM+0)*ni + ii]);
+		ip.ry = vec(vload)(0, &__irdot[(0*NDIM+1)*ni + ii]);
+		ip.rz = vec(vload)(0, &__irdot[(0*NDIM+2)*ni + ii]);
+		ip.ax = vec(vload)(0, &__iadot[(0*NDIM+0)*ni + ii]);
+		ip.ay = vec(vload)(0, &__iadot[(0*NDIM+1)*ni + ii]);
+		ip.az = vec(vload)(0, &__iadot[(0*NDIM+2)*ni + ii]);
+		for (uint_t jj = W * LSIZE * (nj/(W*LSIZE));
+					jj + 1 - 1 < nj;
+					jj += 1) {
+			Acc_Data jp;
+			jp.m = (real_tn)(__jm[jj]);
+			jp.e2 = (real_tn)(__je2[jj]);
+			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
+			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
+			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
+			jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
+			jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
+			jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
+			ip = acc_kernel_core(ip, jp);
+		}
+		vec(vstore)(ip.ax, 0, &__iadot[(0*NDIM+0)*ni + ii]);
+		vec(vstore)(ip.ay, 0, &__iadot[(0*NDIM+1)*ni + ii]);
+		vec(vstore)(ip.az, 0, &__iadot[(0*NDIM+2)*ni + ii]);
+	}
+
+	for (uint_t jblock = 0;
+				jblock + W * LSIZE - 1 < nj;
+				jblock += W * LSIZE) {
+		Acc_Data jp;
+		barrier(CLK_LOCAL_MEM_FENCE);
+		for (uint_t k = 0, jj = jblock + lid;
+					k < W;
+					++k, jj += LSIZE) {
+			jp.m = (real_tn)(__jm[jj]);
+			jp.e2 = (real_tn)(__je2[jj]);
+			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
+			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
+			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
+			jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
+			jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
+			jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
+			_jp[k * LSIZE + lid] = jp;
+		}
+		barrier(CLK_LOCAL_MEM_FENCE);
+		for (uint_t iii = istart;
+					iii < iend;
+					iii += istep) {
+			Acc_Data ip;
+			uint_t ii = min(iii * SIMD, nsimd);
+			ip.m = vec(vload)(0, &__im[ii]);
+			ip.e2 = vec(vload)(0, &__ie2[ii]);
+			ip.rx = vec(vload)(0, &__irdot[(0*NDIM+0)*ni + ii]);
+			ip.ry = vec(vload)(0, &__irdot[(0*NDIM+1)*ni + ii]);
+			ip.rz = vec(vload)(0, &__irdot[(0*NDIM+2)*ni + ii]);
+			ip.ax = vec(vload)(0, &__iadot[(0*NDIM+0)*ni + ii]);
+			ip.ay = vec(vload)(0, &__iadot[(0*NDIM+1)*ni + ii]);
+			ip.az = vec(vload)(0, &__iadot[(0*NDIM+2)*ni + ii]);
+
+			#pragma unroll 8
+			for (uint_t j = 0; j < W * LSIZE; ++j) {
+				ip = acc_kernel_core(ip, _jp[j]);
+			}
+
+			vec(vstore)(ip.ax, 0, &__iadot[(0*NDIM+0)*ni + ii]);
+			vec(vstore)(ip.ay, 0, &__iadot[(0*NDIM+1)*ni + ii]);
+			vec(vstore)(ip.az, 0, &__iadot[(0*NDIM+2)*ni + ii]);
 		}
 	}
 }
 */
 
-
+/*
 void
 acc_kernel_impl(
 	const uint_t ni,
@@ -344,6 +349,7 @@ acc_kernel_impl(
 		vec(vstore)(ip.az, 0, &__iadot[(0*NDIM+2)*ni + ii]);
 	}
 }
+*/
 
 
 kernel void
@@ -359,7 +365,7 @@ acc_kernel_rectangle(
 	global real_t __iadot[],
 	global real_t __jadot[])
 {
-	local Acc_Data _pAcc[LSIZE];
+	local Acc_Data _pAcc[W * LSIZE];
 
 	acc_kernel_impl(
 		ni, __im, __ie2, __irdot,
@@ -387,7 +393,7 @@ acc_kernel_triangle(
 	global const real_t __irdot[],
 	global real_t __iadot[])
 {
-	local Acc_Data _pAcc[LSIZE];
+	local Acc_Data _pAcc[W * LSIZE];
 
 	acc_kernel_impl(
 		ni, __im, __ie2, __irdot,
