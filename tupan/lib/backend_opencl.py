@@ -170,8 +170,8 @@ class Program(object):
         lsize = 1
         wsize = 1
         if self.cl_device.type == cl.device_type.CPU:
-            lsize *= 32
-            wsize *= self.cl_device.max_compute_units*8
+            lsize *= 64
+            wsize *= self.cl_device.max_compute_units*2
         if self.cl_device.type == cl.device_type.GPU:
             lsize *= 128
             wsize *= self.cl_device.max_compute_units*32
