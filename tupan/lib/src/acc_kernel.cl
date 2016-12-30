@@ -77,7 +77,7 @@ acc_kernel_impl(
 }
 */
 
-
+/*
 void
 acc_kernel_impl(
 	const uint_t ni,
@@ -108,9 +108,9 @@ acc_kernel_impl(
 	uint_t j1 = 0;
 	#pragma unroll
 	for (uint_t lsize = LSIZE; lsize > 0; lsize /= 2) {
-		j0 = j1;
+		j0 = j1 + lid % lsize;
 		j1 = lsize * (nj/lsize);
-		for (uint_t jj = j0 + lid % lsize;
+		for (uint_t jj = j0;
 					jj < j1;
 					jj += lsize) {
 			Acc_Data jp;
@@ -148,7 +148,7 @@ acc_kernel_impl(
 		}
 	}
 }
-
+*/
 
 /*
 void
@@ -184,9 +184,9 @@ acc_kernel_impl(
 	uint_t j1 = 0;
 	#pragma unroll
 	for (uint_t lsize = LSIZE; lsize > 0; lsize /= 2) {
-		j0 = j1;
+		j0 = j1 + lid % lsize;
 		j1 = lsize * (nj/lsize);
-		for (uint_t jj = j0 + lid % lsize;
+		for (uint_t jj = j0;
 					jj < j1;
 					jj += lsize) {
 			Acc_Data jp;
@@ -226,6 +226,81 @@ acc_kernel_impl(
 	}
 }
 */
+
+void
+acc_kernel_impl(
+	const uint_t ni,
+	global const real_t __im[],
+	global const real_t __ie2[],
+	global const real_t __irdot[],
+	const uint_t nj,
+	global const real_t __jm[],
+	global const real_t __je2[],
+	global const real_t __jrdot[],
+	global real_t __iadot[],
+	global real_t __jadot[],
+	local Acc_Data _jp[])
+{
+	uint_t lid = get_local_id(0);
+	uint_t iend = (ni + SIMD - 1) / SIMD;
+	uint_t nsimd = (ni - SIMD) * (SIMD < ni);
+
+	uint_t i0 = 0;
+	uint_t i1 = 0;
+	#pragma unroll
+	for (uint_t ilsize = LSIZE;
+				ilsize > 0;
+				ilsize >>= 1) {
+		i0 = i1 + lid % ilsize;
+		i1 = ilsize * ((iend + ilsize - 1)/ilsize);
+		for (uint_t iii = i0 + ilsize * get_group_id(0);
+					iii < i1;
+					iii += ilsize * get_num_groups(0)) {
+			Acc_Data ip;
+			uint_t ii = min(iii * SIMD, nsimd);
+			ip.m = vec(vload)(0, &__im[ii]);
+			ip.e2 = vec(vload)(0, &__ie2[ii]);
+			ip.rx = vec(vload)(0, &__irdot[(0*NDIM+0)*ni + ii]);
+			ip.ry = vec(vload)(0, &__irdot[(0*NDIM+1)*ni + ii]);
+			ip.rz = vec(vload)(0, &__irdot[(0*NDIM+2)*ni + ii]);
+			ip.ax = vec(vload)(0, &__iadot[(0*NDIM+0)*ni + ii]);
+			ip.ay = vec(vload)(0, &__iadot[(0*NDIM+1)*ni + ii]);
+			ip.az = vec(vload)(0, &__iadot[(0*NDIM+2)*ni + ii]);
+			uint_t j0 = 0;
+			uint_t j1 = 0;
+			#pragma unroll
+			for (uint_t jlsize = LSIZE;
+						jlsize > 0;
+						jlsize >>= 1) {
+				j0 = j1 + lid % jlsize;
+				j1 = jlsize * (nj/jlsize);
+				for (uint_t jj = j0;
+							jj < j1;
+							jj += jlsize) {
+					Acc_Data jp;
+					jp.m = (real_tn)(__jm[jj]);
+					jp.e2 = (real_tn)(__je2[jj]);
+					jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
+					jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
+					jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
+					jp.ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
+					jp.ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
+					jp.az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+					_jp[lid] = jp;
+					barrier(CLK_LOCAL_MEM_FENCE);
+					#pragma unroll
+					for (uint_t j = 0; j < jlsize; ++j) {
+						ip = acc_kernel_core(ip, _jp[j]);
+					}
+				}
+			}
+			vec(vstore)(ip.ax, 0, &__iadot[(0*NDIM+0)*ni + ii]);
+			vec(vstore)(ip.ay, 0, &__iadot[(0*NDIM+1)*ni + ii]);
+			vec(vstore)(ip.az, 0, &__iadot[(0*NDIM+2)*ni + ii]);
+		}
+	}
+}
 
 
 kernel void

@@ -164,9 +164,9 @@ class Program(object):
         self.kernel = None
 
     def build(self, fpwidth=cli.fpwidth):
-        simd = 1#(self.cl_device.preferred_vector_width_float
-                #if fpwidth == 'fp32'
-                #else self.cl_device.preferred_vector_width_double)
+        simd = (self.cl_device.preferred_vector_width_float
+                if fpwidth == 'fp32'
+                else self.cl_device.preferred_vector_width_double)
         lsize = 1
         wsize = 1
         if self.cl_device.type == cl.device_type.CPU:
@@ -287,6 +287,7 @@ class CLKernel(object):
             # set outargs
             for (i, argtype) in enumerate(self.outtypes):
                 arg = outargs[i]
+                arg[...] = 0
                 buf = argtype(arg)
                 self.oarg[i] = arg
                 self.obuf[i] = buf
