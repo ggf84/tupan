@@ -245,7 +245,6 @@ acc_kernel_impl(
 	uint_t lid = get_local_id(0);
 	uint_t wid = get_group_id(0);
 	uint_t wsize = get_num_groups(0);
-	uint_t iend = (ni + SIMD - 1) / SIMD;
 	uint_t nsimd = (ni - SIMD) * (SIMD < ni);
 
 	uint_t i0 = 0;
@@ -254,7 +253,7 @@ acc_kernel_impl(
 				ilsize > 0;
 				ilsize >>= 1) {
 		i0 = i1 + lid % ilsize;
-		i1 = ilsize * ((iend + ilsize - 1)/ilsize);
+		i1 = ilsize * ((ni + SIMD * ilsize - 1)/(SIMD * ilsize));
 		for (uint_t iii = i0 + ilsize * wid;
 					iii < i1;
 					iii += ilsize * wsize) {
@@ -323,7 +322,6 @@ acc_kernel_impl(
 	uint_t lid = get_local_id(0);
 	uint_t wid = get_group_id(0);
 	uint_t wsize = get_num_groups(0);
-	uint_t iend = (ni + SIMD - 1) / SIMD;
 	uint_t nsimd = (ni - SIMD) * (SIMD < ni);
 
 	uint_t j0 = 0;
@@ -354,7 +352,7 @@ acc_kernel_impl(
 						ilsize > 0;
 						ilsize >>= 1) {
 				i0 = i1 + lid % ilsize;
-				i1 = ilsize * ((iend + ilsize - 1)/ilsize);
+				i1 = ilsize * ((ni + SIMD * ilsize - 1)/(SIMD * ilsize));
 				for (uint_t iii = i0 + ilsize * wid;
 							iii < i1;
 							iii += ilsize * wsize) {
