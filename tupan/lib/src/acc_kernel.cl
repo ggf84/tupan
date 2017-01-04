@@ -237,18 +237,19 @@ acc_kernel_impl(
 	for (uint_t iii = SIMD * LSIZE * wid;
 				iii < ni;
 				iii += SIMD * LSIZE * wsize) {
-		Acc_Data ip;
-		#pragma unroll
-		for (uint_t i = 0; i < SIMD; ++i) {
-			uint_t ii = (iii + i * LSIZE + lid) % ni;
+		Acc_Data ip = {0};
+		#pragma unroll SIMD
+		for (uint_t i = 0, ii = iii + lid;
+					i < SIMD && ii < ni;
+					++i, ii += LSIZE) {
 			ip._m[i] = __im[ii];
 			ip._e2[i] = __ie2[ii];
 			ip._rx[i] = __irdot[(0*NDIM+0)*ni + ii];
 			ip._ry[i] = __irdot[(0*NDIM+1)*ni + ii];
 			ip._rz[i] = __irdot[(0*NDIM+2)*ni + ii];
-			ip._ax[i] = 0;//__iadot[(0*NDIM+0)*ni + ii];
-			ip._ay[i] = 0;//__iadot[(0*NDIM+1)*ni + ii];
-			ip._az[i] = 0;//__iadot[(0*NDIM+2)*ni + ii];
+			ip._ax[i] = __iadot[(0*NDIM+0)*ni + ii];
+			ip._ay[i] = __iadot[(0*NDIM+1)*ni + ii];
+			ip._az[i] = __iadot[(0*NDIM+2)*ni + ii];
 		}
 		uint_t j0 = 0;
 		uint_t j1 = 0;
@@ -261,7 +262,7 @@ acc_kernel_impl(
 			for (uint_t jj = j0;
 						jj < j1;
 						jj += jlsize) {
-				Acc_Data jp;
+				Acc_Data jp = {0};
 				jp.m = (real_tn)(__jm[jj]);
 				jp.e2 = (real_tn)(__je2[jj]);
 				jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
@@ -279,9 +280,10 @@ acc_kernel_impl(
 				}
 			}
 		}
-		#pragma unroll
-		for (uint_t i = 0; i < SIMD; ++i) {
-			uint_t ii = (iii + i * LSIZE + lid) % ni;
+		#pragma unroll SIMD
+		for (uint_t i = 0, ii = iii + lid;
+					i < SIMD && ii < ni;
+					++i, ii += LSIZE) {
 			__iadot[(0*NDIM+0)*ni + ii] = ip._ax[i];
 			__iadot[(0*NDIM+1)*ni + ii] = ip._ay[i];
 			__iadot[(0*NDIM+2)*ni + ii] = ip._az[i];
