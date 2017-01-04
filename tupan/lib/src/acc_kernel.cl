@@ -237,7 +237,7 @@ acc_kernel_impl(
 	for (uint_t iii = SIMD * LSIZE * wid;
 				iii < ni;
 				iii += SIMD * LSIZE * wsize) {
-		Acc_Data ip = {0};
+		Acc_Data ip = {{0}};
 		#pragma unroll SIMD
 		for (uint_t i = 0, ii = iii + lid;
 					i < SIMD && ii < ni;
@@ -262,7 +262,7 @@ acc_kernel_impl(
 			for (uint_t jj = j0;
 						jj < j1;
 						jj += jlsize) {
-				Acc_Data jp = {0};
+				Acc_Data jp = {{0}};
 				jp.m = (real_tn)(__jm[jj]);
 				jp.e2 = (real_tn)(__je2[jj]);
 				jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
