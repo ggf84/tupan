@@ -176,7 +176,6 @@ class Program(object):
 #            simd *= 2 if fpwidth == 'fp32' else 1
             lsize *= 128
             wsize *= self.cl_device.max_compute_units*32
-        fast_local_mem = True
 
         # setting program options
         options = ' -D SIMD={}'.format(simd)
@@ -184,8 +183,6 @@ class Program(object):
         options += ' -D CONFIG_USE_OPENCL'
         if fpwidth == 'fp64':
             options += ' -D CONFIG_USE_DOUBLE'
-        if fast_local_mem:
-            options += ' -D FAST_LOCAL_MEM'
         options += ' -I {path}'.format(path=PATH)
         options += ' -cl-fast-relaxed-math'
 #        options += ' -cl-opt-disable'

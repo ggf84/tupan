@@ -61,6 +61,8 @@ class CKernel(object):
             self.bufs = bufs
         except AttributeError:
             types = []
+            cast = drv.ffi.cast
+            from_buffer = drv.ffi.from_buffer
             for arg in inpargs:
                 if isinstance(arg, int):
                     types.append(lambda x: x)
@@ -69,9 +71,10 @@ class CKernel(object):
                 elif isinstance(arg, dict):
                     types.append(lambda x: x['struct'][0])
                 else:
-                    types.append(drv.ffi.from_buffer)
+                    types.append(lambda x: cast('real_t *', from_buffer(x)))
             self.inptypes = types
-            self.outtypes = [drv.ffi.from_buffer for _ in outargs]
+            self.outtypes = [lambda x: cast('real_t *', from_buffer(x))
+                             for _ in outargs]
             CKernel.set_args(self, inpargs, outargs)
 
     def map_buffers(self):
