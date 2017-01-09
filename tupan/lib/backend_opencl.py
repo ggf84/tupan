@@ -173,7 +173,7 @@ class Program(object):
             lsize *= 64
             wsize *= self.cl_device.max_compute_units*2
         if self.cl_device.type == cl.device_type.GPU:
-            simd *= 2 if fpwidth == 'fp32' else 1
+#            simd *= 2 if fpwidth == 'fp32' else 1
             lsize *= 128
             wsize *= self.cl_device.max_compute_units*32
         fast_local_mem = True

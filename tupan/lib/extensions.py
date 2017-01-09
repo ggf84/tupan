@@ -12,22 +12,6 @@ from ..config import cli
 LOGGER = logging.getLogger(__name__)
 
 
-class Phi(object):
-    """
-
-    """
-    name = 'phi_kernel'
-
-    def set_args(self, ips, jps):
-        p = 1
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
-
-        outargs = (ips.phi,)
-
-        super(Phi, self).set_args(inpargs, outargs)
-
-
 class Phi_rectangle(object):
     """
 
@@ -90,22 +74,6 @@ class Acc_triangle(object):
         super(Acc_triangle, self).set_args(inpargs, outargs)
 
 
-class AccJrk(object):
-    """
-
-    """
-    name = 'acc_jrk_kernel'
-
-    def set_args(self, ips, jps):
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
-
-        outargs = (ips.rdot[2:2+p],)
-
-        super(AccJrk, self).set_args(inpargs, outargs)
-
-
 class AccJrk_rectangle(object):
     """
 
@@ -137,23 +105,6 @@ class AccJrk_triangle(object):
         super(AccJrk_triangle, self).set_args(inpargs, outargs)
 
 
-class SnpCrk(object):
-    """
-
-    """
-    name = 'snp_crk_kernel'
-
-    def set_args(self, ips, jps):
-        p = 4
-        jps = jps.copy()
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p])
-
-        outargs = (ips.rdot[2:2+p],)
-
-        super(SnpCrk, self).set_args(inpargs, outargs)
-
-
 class SnpCrk_rectangle(object):
     """
 
@@ -183,23 +134,6 @@ class SnpCrk_triangle(object):
         outargs = (ips.rdot[2:2+p],)
 
         super(SnpCrk_triangle, self).set_args(inpargs, outargs)
-
-
-class Tstep(object):
-    """
-
-    """
-    name = 'tstep_kernel'
-
-    def set_args(self, ips, jps, eta=None):
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
-                   eta)
-
-        outargs = (ips.tstep, ips.tstep_sum)
-
-        super(Tstep, self).set_args(inpargs, outargs)
 
 
 class Tstep_rectangle(object):
@@ -234,30 +168,6 @@ class Tstep_triangle(object):
         outargs = (ips.tstep, ips.tstep_sum)
 
         super(Tstep_triangle, self).set_args(inpargs, outargs)
-
-
-class PNAcc(object):
-    """
-
-    """
-    name = 'pnacc_kernel'
-
-    def set_args(self, ips, jps, pn=None):
-        try:
-            clight = self.clight
-        except AttributeError:
-            pn = pn_struct(pn)
-            clight = self.make_struct('CLIGHT', **pn)
-            self.clight = clight
-
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
-                   clight)
-
-        outargs = (ips.pnacc,)
-
-        super(PNAcc, self).set_args(inpargs, outargs)
 
 
 class PNAcc_rectangle(object):
@@ -305,23 +215,6 @@ class PNAcc_triangle(object):
         outargs = (ips.pnacc,)
 
         super(PNAcc_triangle, self).set_args(inpargs, outargs)
-
-
-class Sakura(object):
-    """
-
-    """
-    name = 'sakura_kernel'
-
-    def set_args(self, ips, jps, dt=None, flag=None):
-        p = 2
-        inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   jps.n, jps.mass, jps.eps2, jps.rdot[:p],
-                   dt, flag)
-
-        outargs = (ips.drdot,)
-
-        super(Sakura, self).set_args(inpargs, outargs)
 
 
 class Sakura_rectangle(object):
@@ -420,24 +313,17 @@ def get_kernel(name, backend=cli.backend):
 
         def func(ips, jps, *args, **kwargs):
             return kernel(ips, jps, *args, **kwargs)
+
         return func
 
-    if backend == 'C' or (backend == 'CL' and name == 'Acc'):
-        kernel_r = make_extension(name+'_rectangle', backend)
-        kernel_t = make_extension(name+'_triangle', backend)
-
-        def c_func(ips, jps, *args, **kwargs):
-            if ips != jps:
-                return kernel_r(ips, jps, *args, **kwargs)
-            return kernel_t(ips, *args, **kwargs)
-        return c_func
-
-    kernel = make_extension(name, backend)
+    kernel_r = make_extension(name+'_rectangle', backend)
+    kernel_t = make_extension(name+'_triangle', backend)
 
     def func(ips, jps, *args, **kwargs):
         if ips != jps:
-            kernel(jps, ips, *args, **kwargs)
-        return kernel(ips, jps, *args, **kwargs)
+            return kernel_r(ips, jps, *args, **kwargs)
+        return kernel_t(ips, *args, **kwargs)
+
     return func
 
 

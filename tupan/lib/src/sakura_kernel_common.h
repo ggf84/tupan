@@ -6,20 +6,62 @@
 
 
 typedef struct sakura_data {
-	real_t m;
-	real_t e2;
-	real_t rx;
-	real_t ry;
-	real_t rz;
-	real_t vx;
-	real_t vy;
-	real_t vz;
-	real_t drx;
-	real_t dry;
-	real_t drz;
-	real_t dvx;
-	real_t dvy;
-	real_t dvz;
+	union {
+		real_t m;
+		real_t _m[1];
+	};
+	union {
+		real_t e2;
+		real_t _e2[1];
+	};
+	union {
+		real_t rx;
+		real_t _rx[1];
+	};
+	union {
+		real_t ry;
+		real_t _ry[1];
+	};
+	union {
+		real_t rz;
+		real_t _rz[1];
+	};
+	union {
+		real_t vx;
+		real_t _vx[1];
+	};
+	union {
+		real_t vy;
+		real_t _vy[1];
+	};
+	union {
+		real_t vz;
+		real_t _vz[1];
+	};
+	union {
+		real_t drx;
+		real_t _drx[1];
+	};
+	union {
+		real_t dry;
+		real_t _dry[1];
+	};
+	union {
+		real_t drz;
+		real_t _drz[1];
+	};
+	union {
+		real_t dvx;
+		real_t _dvx[1];
+	};
+	union {
+		real_t dvy;
+		real_t _dvy[1];
+	};
+	union {
+		real_t dvz;
+		real_t _dvz[1];
+	};
 } Sakura_Data;
 
 

@@ -154,16 +154,46 @@ struct P2P_tstep_kernel_core {
 
 
 typedef struct tstep_data {
-	real_tn m;
-	real_tn e2;
-	real_tn rx;
-	real_tn ry;
-	real_tn rz;
-	real_tn vx;
-	real_tn vy;
-	real_tn vz;
-	real_tn w2_a;
-	real_tn w2_b;
+	union {
+		real_tn m;
+		real_t _m[SIMD];
+	};
+	union {
+		real_tn e2;
+		real_t _e2[SIMD];
+	};
+	union {
+		real_tn rx;
+		real_t _rx[SIMD];
+	};
+	union {
+		real_tn ry;
+		real_t _ry[SIMD];
+	};
+	union {
+		real_tn rz;
+		real_t _rz[SIMD];
+	};
+	union {
+		real_tn vx;
+		real_t _vx[SIMD];
+	};
+	union {
+		real_tn vy;
+		real_t _vy[SIMD];
+	};
+	union {
+		real_tn vz;
+		real_t _vz[SIMD];
+	};
+	union {
+		real_tn w2_a;
+		real_t _w2_a[SIMD];
+	};
+	union {
+		real_tn w2_b;
+		real_t _w2_b[SIMD];
+	};
 } Tstep_Data;
 
 

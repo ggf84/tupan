@@ -106,12 +106,30 @@ struct P2P_phi_kernel_core {
 
 
 typedef struct phi_data {
-	real_tn m;
-	real_tn e2;
-	real_tn rx;
-	real_tn ry;
-	real_tn rz;
-	real_tn phi;
+	union {
+		real_tn m;
+		real_t _m[SIMD];
+	};
+	union {
+		real_tn e2;
+		real_t _e2[SIMD];
+	};
+	union {
+		real_tn rx;
+		real_t _rx[SIMD];
+	};
+	union {
+		real_tn ry;
+		real_t _ry[SIMD];
+	};
+	union {
+		real_tn rz;
+		real_t _rz[SIMD];
+	};
+	union {
+		real_tn phi;
+		real_t _phi[SIMD];
+	};
 } Phi_Data;
 
 

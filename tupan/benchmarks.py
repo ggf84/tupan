@@ -47,22 +47,20 @@ def benchmark(bench, n_max, backend):
 
     name, kwargs = bench
 
-    if backend == 'C':
-        name += '_rectangle'
-
-    if backend == 'CL' and name == 'Acc':
-        name += '_rectangle'
+    name += '_triangle'
+#    name += '_rectangle'
 
     kernel = ext.make_extension(name, backend)
 
     ips = set_particles(n_max)
-    jps = set_particles(n_max)
+#    jps = set_particles(n_max)
 
     n = 2
     print('\n# benchmark:', name)
     while n <= n_max:
         print('#    n:', n)
-        elapsed = best_of(5, kernel.set_args, ips[:n], jps[:n], **kwargs)
+        elapsed = best_of(5, kernel.set_args, ips[:n], **kwargs)
+#        elapsed = best_of(5, kernel.set_args, ips[:n], jps[:n], **kwargs)
         print("#        {meth} (s): {elapsed:.4e}"
               .format(meth='set', elapsed=elapsed))
         elapsed = best_of(3, kernel.run)

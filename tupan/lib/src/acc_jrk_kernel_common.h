@@ -172,20 +172,62 @@ struct P2P_acc_jrk_kernel_core {
 
 
 typedef struct acc_jrk_data {
-	real_tn m;
-	real_tn e2;
-	real_tn rx;
-	real_tn ry;
-	real_tn rz;
-	real_tn vx;
-	real_tn vy;
-	real_tn vz;
-	real_tn ax;
-	real_tn ay;
-	real_tn az;
-	real_tn jx;
-	real_tn jy;
-	real_tn jz;
+	union {
+		real_tn m;
+		real_t _m[SIMD];
+	};
+	union {
+		real_tn e2;
+		real_t _e2[SIMD];
+	};
+	union {
+		real_tn rx;
+		real_t _rx[SIMD];
+	};
+	union {
+		real_tn ry;
+		real_t _ry[SIMD];
+	};
+	union {
+		real_tn rz;
+		real_t _rz[SIMD];
+	};
+	union {
+		real_tn vx;
+		real_t _vx[SIMD];
+	};
+	union {
+		real_tn vy;
+		real_t _vy[SIMD];
+	};
+	union {
+		real_tn vz;
+		real_t _vz[SIMD];
+	};
+	union {
+		real_tn ax;
+		real_t _ax[SIMD];
+	};
+	union {
+		real_tn ay;
+		real_t _ay[SIMD];
+	};
+	union {
+		real_tn az;
+		real_t _az[SIMD];
+	};
+	union {
+		real_tn jx;
+		real_t _jx[SIMD];
+	};
+	union {
+		real_tn jy;
+		real_t _jy[SIMD];
+	};
+	union {
+		real_tn jz;
+		real_t _jz[SIMD];
+	};
 } Acc_Jrk_Data;
 
 

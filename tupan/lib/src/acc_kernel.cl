@@ -90,20 +90,20 @@ acc_kernel_rectangle(
 	global real_t __iadot[],
 	global real_t __jadot[])
 {
-	local Acc_Data _pAcc[LSIZE];
+	local Acc_Data _jp[LSIZE];
 
 	acc_kernel_impl(
 		ni, __im, __ie2, __irdot,
 		nj, __jm, __je2, __jrdot,
 		__iadot, __jadot,
-		_pAcc
+		_jp
 	);
 
 	acc_kernel_impl(
 		nj, __jm, __je2, __jrdot,
 		ni, __im, __ie2, __irdot,
 		__jadot, __iadot,
-		_pAcc
+		_jp
 	);
 }
 
@@ -116,13 +116,13 @@ acc_kernel_triangle(
 	global const real_t __irdot[],
 	global real_t __iadot[])
 {
-	local Acc_Data _pAcc[LSIZE];
+	local Acc_Data _jp[LSIZE];
 
 	acc_kernel_impl(
 		ni, __im, __ie2, __irdot,
 		ni, __im, __ie2, __irdot,
 		__iadot, __iadot,
-		_pAcc
+		_jp
 	);
 }
 

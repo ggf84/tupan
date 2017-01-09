@@ -1,8 +1,8 @@
 #include "snp_crk_kernel_common.h"
 
 
-kernel void
-snp_crk_kernel(
+void
+snp_crk_kernel_impl(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
@@ -11,130 +11,163 @@ snp_crk_kernel(
 	global const real_t __jm[],
 	global const real_t __je2[],
 	global const real_t __jrdot[],
-	global real_t __iadot[])
+	global real_t __iadot[],
+	global real_t __jadot[],
+	local Snp_Crk_Data _jp[])
 {
-	for (uint_t ii = SIMD * get_group_id(0) * get_local_size(0);
-				ii < ni;
-				ii += SIMD * get_num_groups(0) * get_local_size(0)) {
-		uint_t lid = get_local_id(0);
-		uint_t i = ii + SIMD * lid;
-		i = min(i, ni-SIMD);
-		i *= (SIMD < ni);
+	uint_t lid = get_local_id(0);
+	uint_t wid = get_group_id(0);
+	uint_t wsize = get_num_groups(0);
 
-		Snp_Crk_Data ip;
-		ip.m = vec(vload)(0, __im + i);
-		ip.e2 = vec(vload)(0, __ie2 + i);
-		ip.rx = vec(vload)(0, &__irdot[(0*NDIM+0)*ni + i]);
-		ip.ry = vec(vload)(0, &__irdot[(0*NDIM+1)*ni + i]);
-		ip.rz = vec(vload)(0, &__irdot[(0*NDIM+2)*ni + i]);
-		ip.vx = vec(vload)(0, &__irdot[(1*NDIM+0)*ni + i]);
-		ip.vy = vec(vload)(0, &__irdot[(1*NDIM+1)*ni + i]);
-		ip.vz = vec(vload)(0, &__irdot[(1*NDIM+2)*ni + i]);
-		ip.ax = vec(vload)(0, &__irdot[(2*NDIM+0)*ni + i]);
-		ip.ay = vec(vload)(0, &__irdot[(2*NDIM+1)*ni + i]);
-		ip.az = vec(vload)(0, &__irdot[(2*NDIM+2)*ni + i]);
-		ip.jx = vec(vload)(0, &__irdot[(3*NDIM+0)*ni + i]);
-		ip.jy = vec(vload)(0, &__irdot[(3*NDIM+1)*ni + i]);
-		ip.jz = vec(vload)(0, &__irdot[(3*NDIM+2)*ni + i]);
-		ip.Ax = (real_tn)(0);
-		ip.Ay = (real_tn)(0);
-		ip.Az = (real_tn)(0);
-		ip.Jx = (real_tn)(0);
-		ip.Jy = (real_tn)(0);
-		ip.Jz = (real_tn)(0);
-		ip.Sx = (real_tn)(0);
-		ip.Sy = (real_tn)(0);
-		ip.Sz = (real_tn)(0);
-		ip.Cx = (real_tn)(0);
-		ip.Cy = (real_tn)(0);
-		ip.Cz = (real_tn)(0);
-
-		uint_t j = 0;
-
-		#ifdef FAST_LOCAL_MEM
-		for (; (j + LSIZE - 1) < nj; j += LSIZE) {
-			Snp_Crk_Data jp;
-			jp.m = (real_tn)(__jm[j + lid]);
-			jp.e2 = (real_tn)(__je2[j + lid]);
-			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + j + lid]);
-			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + j + lid]);
-			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + j + lid]);
-			jp.vx = (real_tn)(__jrdot[(1*NDIM+0)*nj + j + lid]);
-			jp.vy = (real_tn)(__jrdot[(1*NDIM+1)*nj + j + lid]);
-			jp.vz = (real_tn)(__jrdot[(1*NDIM+2)*nj + j + lid]);
-			jp.ax = (real_tn)(__jrdot[(2*NDIM+0)*nj + j + lid]);
-			jp.ay = (real_tn)(__jrdot[(2*NDIM+1)*nj + j + lid]);
-			jp.az = (real_tn)(__jrdot[(2*NDIM+2)*nj + j + lid]);
-			jp.jx = (real_tn)(__jrdot[(3*NDIM+0)*nj + j + lid]);
-			jp.jy = (real_tn)(__jrdot[(3*NDIM+1)*nj + j + lid]);
-			jp.jz = (real_tn)(__jrdot[(3*NDIM+2)*nj + j + lid]);
-			jp.Ax = (real_tn)(0);
-			jp.Ay = (real_tn)(0);
-			jp.Az = (real_tn)(0);
-			jp.Jx = (real_tn)(0);
-			jp.Jy = (real_tn)(0);
-			jp.Jz = (real_tn)(0);
-			jp.Sx = (real_tn)(0);
-			jp.Sy = (real_tn)(0);
-			jp.Sz = (real_tn)(0);
-			jp.Cx = (real_tn)(0);
-			jp.Cy = (real_tn)(0);
-			jp.Cz = (real_tn)(0);
-			barrier(CLK_LOCAL_MEM_FENCE);
-			local Snp_Crk_Data _jp[LSIZE];
-			_jp[lid] = jp;
-			barrier(CLK_LOCAL_MEM_FENCE);
-			#pragma unroll 8
-			for (uint_t k = 0; k < LSIZE; ++k) {
-				jp = _jp[k];
-				ip = snp_crk_kernel_core(ip, jp);
+	for (uint_t iii = SIMD * LSIZE * wid;
+				iii < ni;
+				iii += SIMD * LSIZE * wsize) {
+		Snp_Crk_Data ip = {{0}};
+		#pragma unroll SIMD
+		for (uint_t i = 0, ii = iii + lid;
+					i < SIMD && ii < ni;
+					++i, ii += LSIZE) {
+			ip._m[i] = __im[ii];
+			ip._e2[i] = __ie2[ii];
+			ip._rx[i] = __irdot[(0*NDIM+0)*ni + ii];
+			ip._ry[i] = __irdot[(0*NDIM+1)*ni + ii];
+			ip._rz[i] = __irdot[(0*NDIM+2)*ni + ii];
+			ip._vx[i] = __irdot[(1*NDIM+0)*ni + ii];
+			ip._vy[i] = __irdot[(1*NDIM+1)*ni + ii];
+			ip._vz[i] = __irdot[(1*NDIM+2)*ni + ii];
+			ip._ax[i] = __irdot[(2*NDIM+0)*ni + ii];
+			ip._ay[i] = __irdot[(2*NDIM+1)*ni + ii];
+			ip._az[i] = __irdot[(2*NDIM+2)*ni + ii];
+			ip._jx[i] = __irdot[(3*NDIM+0)*ni + ii];
+			ip._jy[i] = __irdot[(3*NDIM+1)*ni + ii];
+			ip._jz[i] = __irdot[(3*NDIM+2)*ni + ii];
+			ip._Ax[i] = __iadot[(0*NDIM+0)*ni + ii];
+			ip._Ay[i] = __iadot[(0*NDIM+1)*ni + ii];
+			ip._Az[i] = __iadot[(0*NDIM+2)*ni + ii];
+			ip._Jx[i] = __iadot[(1*NDIM+0)*ni + ii];
+			ip._Jy[i] = __iadot[(1*NDIM+1)*ni + ii];
+			ip._Jz[i] = __iadot[(1*NDIM+2)*ni + ii];
+			ip._Sx[i] = __iadot[(2*NDIM+0)*ni + ii];
+			ip._Sy[i] = __iadot[(2*NDIM+1)*ni + ii];
+			ip._Sz[i] = __iadot[(2*NDIM+2)*ni + ii];
+			ip._Cx[i] = __iadot[(3*NDIM+0)*ni + ii];
+			ip._Cy[i] = __iadot[(3*NDIM+1)*ni + ii];
+			ip._Cz[i] = __iadot[(3*NDIM+2)*ni + ii];
+		}
+		uint_t j0 = 0;
+		uint_t j1 = 0;
+		#pragma unroll
+		for (uint_t jlsize = LSIZE;
+					jlsize > 0;
+					jlsize >>= 1) {
+			j0 = j1 + lid % jlsize;
+			j1 = jlsize * (nj/jlsize);
+			for (uint_t jj = j0;
+						jj < j1;
+						jj += jlsize) {
+				Snp_Crk_Data jp = {{0}};
+				jp.m = (real_tn)(__jm[jj]);
+				jp.e2 = (real_tn)(__je2[jj]);
+				jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
+				jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
+				jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
+				jp.vx = (real_tn)(__jrdot[(1*NDIM+0)*nj + jj]);
+				jp.vy = (real_tn)(__jrdot[(1*NDIM+1)*nj + jj]);
+				jp.vz = (real_tn)(__jrdot[(1*NDIM+2)*nj + jj]);
+				jp.ax = (real_tn)(__jrdot[(2*NDIM+0)*nj + jj]);
+				jp.ay = (real_tn)(__jrdot[(2*NDIM+1)*nj + jj]);
+				jp.az = (real_tn)(__jrdot[(2*NDIM+2)*nj + jj]);
+				jp.jx = (real_tn)(__jrdot[(3*NDIM+0)*nj + jj]);
+				jp.jy = (real_tn)(__jrdot[(3*NDIM+1)*nj + jj]);
+				jp.jz = (real_tn)(__jrdot[(3*NDIM+2)*nj + jj]);
+				jp.Ax = (real_tn)(__jadot[(0*NDIM+0)*nj + jj]);
+				jp.Ay = (real_tn)(__jadot[(0*NDIM+1)*nj + jj]);
+				jp.Az = (real_tn)(__jadot[(0*NDIM+2)*nj + jj]);
+				jp.Jx = (real_tn)(__jadot[(1*NDIM+0)*nj + jj]);
+				jp.Jy = (real_tn)(__jadot[(1*NDIM+1)*nj + jj]);
+				jp.Jz = (real_tn)(__jadot[(1*NDIM+2)*nj + jj]);
+				jp.Sx = (real_tn)(__jadot[(2*NDIM+0)*nj + jj]);
+				jp.Sy = (real_tn)(__jadot[(2*NDIM+1)*nj + jj]);
+				jp.Sz = (real_tn)(__jadot[(2*NDIM+2)*nj + jj]);
+				jp.Cx = (real_tn)(__jadot[(3*NDIM+0)*nj + jj]);
+				jp.Cy = (real_tn)(__jadot[(3*NDIM+1)*nj + jj]);
+				jp.Cz = (real_tn)(__jadot[(3*NDIM+2)*nj + jj]);
+				barrier(CLK_LOCAL_MEM_FENCE);
+				_jp[lid] = jp;
+				barrier(CLK_LOCAL_MEM_FENCE);
+				#pragma unroll 8
+				for (uint_t j = 0; j < jlsize; ++j) {
+					ip = snp_crk_kernel_core(ip, _jp[j]);
+				}
 			}
 		}
-		#endif
-
-		for (; j < nj; ++j) {
-			Snp_Crk_Data jp;
-			jp.m = (real_tn)(__jm[j]);
-			jp.e2 = (real_tn)(__je2[j]);
-			jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + j]);
-			jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + j]);
-			jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + j]);
-			jp.vx = (real_tn)(__jrdot[(1*NDIM+0)*nj + j]);
-			jp.vy = (real_tn)(__jrdot[(1*NDIM+1)*nj + j]);
-			jp.vz = (real_tn)(__jrdot[(1*NDIM+2)*nj + j]);
-			jp.ax = (real_tn)(__jrdot[(2*NDIM+0)*nj + j]);
-			jp.ay = (real_tn)(__jrdot[(2*NDIM+1)*nj + j]);
-			jp.az = (real_tn)(__jrdot[(2*NDIM+2)*nj + j]);
-			jp.jx = (real_tn)(__jrdot[(3*NDIM+0)*nj + j]);
-			jp.jy = (real_tn)(__jrdot[(3*NDIM+1)*nj + j]);
-			jp.jz = (real_tn)(__jrdot[(3*NDIM+2)*nj + j]);
-			jp.Ax = (real_tn)(0);
-			jp.Ay = (real_tn)(0);
-			jp.Az = (real_tn)(0);
-			jp.Jx = (real_tn)(0);
-			jp.Jy = (real_tn)(0);
-			jp.Jz = (real_tn)(0);
-			jp.Sx = (real_tn)(0);
-			jp.Sy = (real_tn)(0);
-			jp.Sz = (real_tn)(0);
-			jp.Cx = (real_tn)(0);
-			jp.Cy = (real_tn)(0);
-			jp.Cz = (real_tn)(0);
-			ip = snp_crk_kernel_core(ip, jp);
+		#pragma unroll SIMD
+		for (uint_t i = 0, ii = iii + lid;
+					i < SIMD && ii < ni;
+					++i, ii += LSIZE) {
+			__iadot[(0*NDIM+0)*ni + ii] = ip._Ax[i];
+			__iadot[(0*NDIM+1)*ni + ii] = ip._Ay[i];
+			__iadot[(0*NDIM+2)*ni + ii] = ip._Az[i];
+			__iadot[(1*NDIM+0)*ni + ii] = ip._Jx[i];
+			__iadot[(1*NDIM+1)*ni + ii] = ip._Jy[i];
+			__iadot[(1*NDIM+2)*ni + ii] = ip._Jz[i];
+			__iadot[(2*NDIM+0)*ni + ii] = ip._Sx[i];
+			__iadot[(2*NDIM+1)*ni + ii] = ip._Sy[i];
+			__iadot[(2*NDIM+2)*ni + ii] = ip._Sz[i];
+			__iadot[(3*NDIM+0)*ni + ii] = ip._Cx[i];
+			__iadot[(3*NDIM+1)*ni + ii] = ip._Cy[i];
+			__iadot[(3*NDIM+2)*ni + ii] = ip._Cz[i];
 		}
-
-		vec(vstore)(ip.Ax, 0, &__iadot[(0*NDIM+0)*ni + i]);
-		vec(vstore)(ip.Ay, 0, &__iadot[(0*NDIM+1)*ni + i]);
-		vec(vstore)(ip.Az, 0, &__iadot[(0*NDIM+2)*ni + i]);
-		vec(vstore)(ip.Jx, 0, &__iadot[(1*NDIM+0)*ni + i]);
-		vec(vstore)(ip.Jy, 0, &__iadot[(1*NDIM+1)*ni + i]);
-		vec(vstore)(ip.Jz, 0, &__iadot[(1*NDIM+2)*ni + i]);
-		vec(vstore)(ip.Sx, 0, &__iadot[(2*NDIM+0)*ni + i]);
-		vec(vstore)(ip.Sy, 0, &__iadot[(2*NDIM+1)*ni + i]);
-		vec(vstore)(ip.Sz, 0, &__iadot[(2*NDIM+2)*ni + i]);
-		vec(vstore)(ip.Cx, 0, &__iadot[(3*NDIM+0)*ni + i]);
-		vec(vstore)(ip.Cy, 0, &__iadot[(3*NDIM+1)*ni + i]);
-		vec(vstore)(ip.Cz, 0, &__iadot[(3*NDIM+2)*ni + i]);
 	}
+}
+
+
+kernel void
+snp_crk_kernel_rectangle(
+	const uint_t ni,
+	global const real_t __im[],
+	global const real_t __ie2[],
+	global const real_t __irdot[],
+	const uint_t nj,
+	global const real_t __jm[],
+	global const real_t __je2[],
+	global const real_t __jrdot[],
+	global real_t __iadot[],
+	global real_t __jadot[])
+{
+	local Snp_Crk_Data _jp[LSIZE];
+
+	snp_crk_kernel_impl(
+		ni, __im, __ie2, __irdot,
+		nj, __jm, __je2, __jrdot,
+		__iadot, __jadot,
+		_jp
+	);
+
+	snp_crk_kernel_impl(
+		nj, __jm, __je2, __jrdot,
+		ni, __im, __ie2, __irdot,
+		__jadot, __iadot,
+		_jp
+	);
+}
+
+
+kernel void
+snp_crk_kernel_triangle(
+	const uint_t ni,
+	global const real_t __im[],
+	global const real_t __ie2[],
+	global const real_t __irdot[],
+	global real_t __iadot[])
+{
+	local Snp_Crk_Data _jp[LSIZE];
+
+	snp_crk_kernel_impl(
+		ni, __im, __ie2, __irdot,
+		ni, __im, __ie2, __irdot,
+		__iadot, __iadot,
+		_jp
+	);
 }
 

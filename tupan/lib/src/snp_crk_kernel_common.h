@@ -275,32 +275,110 @@ struct P2P_snp_crk_kernel_core {
 
 
 typedef struct snp_crk_data {
-	real_tn m;
-	real_tn e2;
-	real_tn rx;
-	real_tn ry;
-	real_tn rz;
-	real_tn vx;
-	real_tn vy;
-	real_tn vz;
-	real_tn ax;
-	real_tn ay;
-	real_tn az;
-	real_tn jx;
-	real_tn jy;
-	real_tn jz;
-	real_tn Ax;
-	real_tn Ay;
-	real_tn Az;
-	real_tn Jx;
-	real_tn Jy;
-	real_tn Jz;
-	real_tn Sx;
-	real_tn Sy;
-	real_tn Sz;
-	real_tn Cx;
-	real_tn Cy;
-	real_tn Cz;
+	union {
+		real_tn m;
+		real_t _m[SIMD];
+	};
+	union {
+		real_tn e2;
+		real_t _e2[SIMD];
+	};
+	union {
+		real_tn rx;
+		real_t _rx[SIMD];
+	};
+	union {
+		real_tn ry;
+		real_t _ry[SIMD];
+	};
+	union {
+		real_tn rz;
+		real_t _rz[SIMD];
+	};
+	union {
+		real_tn vx;
+		real_t _vx[SIMD];
+	};
+	union {
+		real_tn vy;
+		real_t _vy[SIMD];
+	};
+	union {
+		real_tn vz;
+		real_t _vz[SIMD];
+	};
+	union {
+		real_tn ax;
+		real_t _ax[SIMD];
+	};
+	union {
+		real_tn ay;
+		real_t _ay[SIMD];
+	};
+	union {
+		real_tn az;
+		real_t _az[SIMD];
+	};
+	union {
+		real_tn jx;
+		real_t _jx[SIMD];
+	};
+	union {
+		real_tn jy;
+		real_t _jy[SIMD];
+	};
+	union {
+		real_tn jz;
+		real_t _jz[SIMD];
+	};
+	union {
+		real_tn Ax;
+		real_t _Ax[SIMD];
+	};
+	union {
+		real_tn Ay;
+		real_t _Ay[SIMD];
+	};
+	union {
+		real_tn Az;
+		real_t _Az[SIMD];
+	};
+	union {
+		real_tn Jx;
+		real_t _Jx[SIMD];
+	};
+	union {
+		real_tn Jy;
+		real_t _Jy[SIMD];
+	};
+	union {
+		real_tn Jz;
+		real_t _Jz[SIMD];
+	};
+	union {
+		real_tn Sx;
+		real_t _Sx[SIMD];
+	};
+	union {
+		real_tn Sy;
+		real_t _Sy[SIMD];
+	};
+	union {
+		real_tn Sz;
+		real_t _Sz[SIMD];
+	};
+	union {
+		real_tn Cx;
+		real_t _Cx[SIMD];
+	};
+	union {
+		real_tn Cy;
+		real_t _Cy[SIMD];
+	};
+	union {
+		real_tn Cz;
+		real_t _Cz[SIMD];
+	};
 } Snp_Crk_Data;
 
 
