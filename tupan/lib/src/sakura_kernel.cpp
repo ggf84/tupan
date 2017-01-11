@@ -17,6 +17,7 @@ sakura_kernel_rectangle(
 	real_t __idrdot[],
 	real_t __jdrdot[])
 {
+	using namespace Sakura;
 	constexpr auto tile = 64 / sizeof(real_t);
 
 	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
@@ -45,6 +46,7 @@ sakura_kernel_triangle(
 	const int_t flag,
 	real_t __idrdot[])
 {
+	using namespace Sakura;
 	constexpr auto tile = 64 / sizeof(real_t);
 
 	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);

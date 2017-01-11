@@ -6,6 +6,8 @@
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
+namespace Acc {
+
 template<size_t TILE>
 struct Acc_Data_SoA {
 	real_t m[TILE];
@@ -18,7 +20,7 @@ struct Acc_Data_SoA {
 	real_t az[TILE];
 };
 
-template<size_t TILE, typename T = Acc_Data_SoA<TILE>>
+template<size_t TILE>
 auto setup(
 	const uint_t n,
 	const real_t __m[],
@@ -26,7 +28,7 @@ auto setup(
 	const real_t __rdot[])
 {
 	auto ntiles = (n + TILE - 1) / TILE;
-	vector<T> part(ntiles);
+	vector<Acc_Data_SoA<TILE>> part(ntiles);
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
@@ -119,6 +121,8 @@ struct P2P_acc_kernel_core {
 		}
 	}
 };
+
+}	// namespace Acc
 #endif
 
 

@@ -16,6 +16,7 @@ pnacc_kernel_rectangle(
 	real_t __ipnacc[],
 	real_t __jpnacc[])
 {
+	using namespace PNAcc;
 	constexpr auto tile = 64 / sizeof(real_t);
 
 	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
@@ -43,6 +44,7 @@ pnacc_kernel_triangle(
 	const CLIGHT clight,
 	real_t __ipnacc[])
 {
+	using namespace PNAcc;
 	constexpr auto tile = 64 / sizeof(real_t);
 
 	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);

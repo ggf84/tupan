@@ -15,6 +15,7 @@ acc_kernel_rectangle(
 	real_t __iadot[],
 	real_t __jadot[])
 {
+	using namespace Acc;
 	constexpr auto tile = 64 / sizeof(real_t);
 
 	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
@@ -41,6 +42,7 @@ acc_kernel_triangle(
 	const real_t __irdot[],
 	real_t __iadot[])
 {
+	using namespace Acc;
 	constexpr auto tile = 64 / sizeof(real_t);
 
 	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);

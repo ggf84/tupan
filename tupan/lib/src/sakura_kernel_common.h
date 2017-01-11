@@ -216,6 +216,8 @@ sakura_kernel_core(Sakura_Data ip, Sakura_Data jp,
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
+namespace Sakura {
+
 template<size_t TILE>
 struct Sakura_Data_SoA {
 	real_t m[TILE];
@@ -234,7 +236,7 @@ struct Sakura_Data_SoA {
 	real_t dvz[TILE];
 };
 
-template<size_t TILE, typename T = Sakura_Data_SoA<TILE>>
+template<size_t TILE>
 auto setup(
 	const uint_t n,
 	const real_t __m[],
@@ -242,7 +244,7 @@ auto setup(
 	const real_t __rdot[])
 {
 	auto ntiles = (n + TILE - 1) / TILE;
-	vector<T> part(ntiles);
+	vector<Sakura_Data_SoA<TILE>> part(ntiles);
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
@@ -397,6 +399,8 @@ struct P2P_sakura_kernel_core {
 		}
 	}
 };
+
+}	// namespace Sakura
 #endif
 
 
