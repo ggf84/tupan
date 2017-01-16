@@ -171,11 +171,11 @@ class Program(object):
         wsize = 1
         if self.cl_device.type == cl.device_type.CPU:
             lsize *= 64
-            wsize *= self.cl_device.max_compute_units*2
+            wsize *= self.cl_device.max_compute_units*16
         if self.cl_device.type == cl.device_type.GPU:
 #            simd *= 2 if fpwidth == 'fp32' else 1
-            lsize *= 128
-            wsize *= self.cl_device.max_compute_units*32
+            lsize *= 192
+            wsize *= self.cl_device.max_compute_units*256
 
         # setting program options
         options = ' -D SIMD={}'.format(simd)

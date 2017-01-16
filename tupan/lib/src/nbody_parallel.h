@@ -4,7 +4,7 @@
 #include <omp.h>
 
 
-constexpr auto threshold = 32;
+constexpr auto threshold = 64;
 
 
 template<typename I, typename J, typename F>
