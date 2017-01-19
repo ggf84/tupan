@@ -174,7 +174,7 @@ class Program(object):
             wsize *= self.cl_device.max_compute_units*16
         if self.cl_device.type == cl.device_type.GPU:
 #            simd *= 2 if fpwidth == 'fp32' else 1
-            lsize *= 192
+            lsize *= 64
             wsize *= self.cl_device.max_compute_units*256
 
         # setting program options
