@@ -169,7 +169,7 @@ struct P2P_acc_jrk_kernel_core {
 };
 
 }	// namespace Acc_Jrk
-#endif
+#else
 
 
 // ----------------------------------------------------------------------------
@@ -177,75 +177,78 @@ struct P2P_acc_jrk_kernel_core {
 
 typedef struct acc_jrk_data {
 	union {
-		real_tn m;
-		real_t _m[SIMD];
+		real_tn m[LSIZE];
+		real_t _m[LSIZE * SIMD];
 	};
 	union {
-		real_tn e2;
-		real_t _e2[SIMD];
+		real_tn e2[LSIZE];
+		real_t _e2[LSIZE * SIMD];
 	};
 	union {
-		real_tn rx;
-		real_t _rx[SIMD];
+		real_tn rx[LSIZE];
+		real_t _rx[LSIZE * SIMD];
 	};
 	union {
-		real_tn ry;
-		real_t _ry[SIMD];
+		real_tn ry[LSIZE];
+		real_t _ry[LSIZE * SIMD];
 	};
 	union {
-		real_tn rz;
-		real_t _rz[SIMD];
+		real_tn rz[LSIZE];
+		real_t _rz[LSIZE * SIMD];
 	};
 	union {
-		real_tn vx;
-		real_t _vx[SIMD];
+		real_tn vx[LSIZE];
+		real_t _vx[LSIZE * SIMD];
 	};
 	union {
-		real_tn vy;
-		real_t _vy[SIMD];
+		real_tn vy[LSIZE];
+		real_t _vy[LSIZE * SIMD];
 	};
 	union {
-		real_tn vz;
-		real_t _vz[SIMD];
+		real_tn vz[LSIZE];
+		real_t _vz[LSIZE * SIMD];
 	};
 	union {
-		real_tn ax;
-		real_t _ax[SIMD];
+		real_tn ax[LSIZE];
+		real_t _ax[LSIZE * SIMD];
 	};
 	union {
-		real_tn ay;
-		real_t _ay[SIMD];
+		real_tn ay[LSIZE];
+		real_t _ay[LSIZE * SIMD];
 	};
 	union {
-		real_tn az;
-		real_t _az[SIMD];
+		real_tn az[LSIZE];
+		real_t _az[LSIZE * SIMD];
 	};
 	union {
-		real_tn jx;
-		real_t _jx[SIMD];
+		real_tn jx[LSIZE];
+		real_t _jx[LSIZE * SIMD];
 	};
 	union {
-		real_tn jy;
-		real_t _jy[SIMD];
+		real_tn jy[LSIZE];
+		real_t _jy[LSIZE * SIMD];
 	};
 	union {
-		real_tn jz;
-		real_t _jz[SIMD];
+		real_tn jz[LSIZE];
+		real_t _jz[LSIZE * SIMD];
 	};
 } Acc_Jrk_Data;
 
 
-static inline Acc_Jrk_Data
-acc_jrk_kernel_core(Acc_Jrk_Data ip, Acc_Jrk_Data jp)
+static inline void
+acc_jrk_kernel_core(
+	uint_t i, uint_t j,
+	local Acc_Jrk_Data *ip,
+	local Acc_Jrk_Data *jp)
 // flop count: 43
 {
-	real_tn ee = ip.e2 + jp.e2;
-	real_tn rx = ip.rx - jp.rx;
-	real_tn ry = ip.ry - jp.ry;
-	real_tn rz = ip.rz - jp.rz;
-	real_tn vx = ip.vx - jp.vx;
-	real_tn vy = ip.vy - jp.vy;
-	real_tn vz = ip.vz - jp.vz;
+	real_tn ee = ip->e2[i] + jp->_e2[j];
+	real_tn rx = ip->rx[i] - jp->_rx[j];
+	real_tn ry = ip->ry[i] - jp->_ry[j];
+	real_tn rz = ip->rz[i] - jp->_rz[j];
+	real_tn vx = ip->vx[i] - jp->_vx[j];
+	real_tn vy = ip->vy[i] - jp->_vy[j];
+	real_tn vz = ip->vz[i] - jp->_vz[j];
 
 	real_tn rr = ee;
 	rr += rx * rx + ry * ry + rz * rz;
@@ -263,16 +266,16 @@ acc_jrk_kernel_core(Acc_Jrk_Data ip, Acc_Jrk_Data jp)
 	vy += q1 * ry;
 	vz += q1 * rz;
 
-	real_tn jm_r3 = jp.m * inv_r3;
+	real_tn jm_r3 = jp->_m[j] * inv_r3;
 
-	ip.ax -= jm_r3 * rx;
-	ip.ay -= jm_r3 * ry;
-	ip.az -= jm_r3 * rz;
-	ip.jx -= jm_r3 * vx;
-	ip.jy -= jm_r3 * vy;
-	ip.jz -= jm_r3 * vz;
-	return ip;
+	ip->ax[i] -= jm_r3 * rx;
+	ip->ay[i] -= jm_r3 * ry;
+	ip->az[i] -= jm_r3 * rz;
+	ip->jx[i] -= jm_r3 * vx;
+	ip->jy[i] -= jm_r3 * vy;
+	ip->jz[i] -= jm_r3 * vz;
 }
 
 
+#endif	// __cplusplus
 #endif	// __ACC_JRK_KERNEL_COMMON_H__

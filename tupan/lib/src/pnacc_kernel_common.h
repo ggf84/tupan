@@ -253,7 +253,7 @@ struct P2P_pnacc_kernel_core {
 };
 
 }	// namespace PNAcc
-#endif
+#else
 
 
 // ----------------------------------------------------------------------------
@@ -261,63 +261,67 @@ struct P2P_pnacc_kernel_core {
 
 typedef struct pnacc_data {
 	union {
-		real_tn m;
-		real_t _m[SIMD];
+		real_tn m[LSIZE];
+		real_t _m[LSIZE * SIMD];
 	};
 	union {
-		real_tn e2;
-		real_t _e2[SIMD];
+		real_tn e2[LSIZE];
+		real_t _e2[LSIZE * SIMD];
 	};
 	union {
-		real_tn rx;
-		real_t _rx[SIMD];
+		real_tn rx[LSIZE];
+		real_t _rx[LSIZE * SIMD];
 	};
 	union {
-		real_tn ry;
-		real_t _ry[SIMD];
+		real_tn ry[LSIZE];
+		real_t _ry[LSIZE * SIMD];
 	};
 	union {
-		real_tn rz;
-		real_t _rz[SIMD];
+		real_tn rz[LSIZE];
+		real_t _rz[LSIZE * SIMD];
 	};
 	union {
-		real_tn vx;
-		real_t _vx[SIMD];
+		real_tn vx[LSIZE];
+		real_t _vx[LSIZE * SIMD];
 	};
 	union {
-		real_tn vy;
-		real_t _vy[SIMD];
+		real_tn vy[LSIZE];
+		real_t _vy[LSIZE * SIMD];
 	};
 	union {
-		real_tn vz;
-		real_t _vz[SIMD];
+		real_tn vz[LSIZE];
+		real_t _vz[LSIZE * SIMD];
 	};
 	union {
-		real_tn pnax;
-		real_t _pnax[SIMD];
+		real_tn pnax[LSIZE];
+		real_t _pnax[LSIZE * SIMD];
 	};
 	union {
-		real_tn pnay;
-		real_t _pnay[SIMD];
+		real_tn pnay[LSIZE];
+		real_t _pnay[LSIZE * SIMD];
 	};
 	union {
-		real_tn pnaz;
-		real_t _pnaz[SIMD];
+		real_tn pnaz[LSIZE];
+		real_t _pnaz[LSIZE * SIMD];
 	};
 } PNAcc_Data;
 
 
-static inline PNAcc_Data
-pnacc_kernel_core(PNAcc_Data ip, PNAcc_Data jp, const CLIGHT clight)
+static inline void
+pnacc_kernel_core(
+	uint_t i, uint_t j,
+	local PNAcc_Data *ip,
+	local PNAcc_Data *jp,
+	const CLIGHT clight)
 // flop count: 36+???
 {
-	real_tn ee = ip.e2 + jp.e2;
-	real_tn rx = ip.rx - jp.rx;
-	real_tn ry = ip.ry - jp.ry;
-	real_tn rz = ip.rz - jp.rz;
-	real_tn vx = ip.vx - jp.vx;
-	real_tn vy = ip.vy - jp.vy;
-	real_tn vz = ip.vz - jp.vz;
+	real_tn ee = ip->e2[i] + jp->_e2[j];
+	real_tn rx = ip->rx[i] - jp->_rx[j];
+	real_tn ry = ip->ry[i] - jp->_ry[j];
+	real_tn rz = ip->rz[i] - jp->_rz[j];
+	real_tn vx = ip->vx[i] - jp->_vx[j];
+	real_tn vy = ip->vy[i] - jp->_vy[j];
+	real_tn vz = ip->vz[i] - jp->_vz[j];
 
 	real_tn rr = ee;
 	rr += rx * rx + ry * ry + rz * rz;
@@ -327,29 +331,29 @@ pnacc_kernel_core(PNAcc_Data ip, PNAcc_Data jp, const CLIGHT clight)
 	real_tn inv_r = inv_r1;
 	real_tn inv_r2 = inv_r * inv_r;
 
-	real_tn im = ip.m;
+	real_tn im = ip->m[i];
 	real_tn im2 = im * im;
 	real_tn im_r = im * inv_r;
-	real_tn iv2 = ip.vx * ip.vx
-				+ ip.vy * ip.vy
-				+ ip.vz * ip.vz;
+	real_tn iv2 = ip->vx[i] * ip->vx[i]
+				+ ip->vy[i] * ip->vy[i]
+				+ ip->vz[i] * ip->vz[i];
 	real_tn iv4 = iv2 * iv2;
-	real_tn niv = rx * ip.vx
-				+ ry * ip.vy
-				+ rz * ip.vz;
+	real_tn niv = rx * ip->vx[i]
+				+ ry * ip->vy[i]
+				+ rz * ip->vz[i];
 	niv *= inv_r;
 	real_tn niv2 = niv * niv;
 
-	real_tn jm = jp.m;
+	real_tn jm = jp->_m[j];
 	real_tn jm2 = jm * jm;
 	real_tn jm_r = jm * inv_r;
-	real_tn jv2 = jp.vx * jp.vx
-				+ jp.vy * jp.vy
-				+ jp.vz * jp.vz;
+	real_tn jv2 = jp->_vx[j] * jp->_vx[j]
+				+ jp->_vy[j] * jp->_vy[j]
+				+ jp->_vz[j] * jp->_vz[j];
 	real_tn jv4 = jv2 * jv2;
-	real_tn njv = rx * jp.vx
-				+ ry * jp.vy
-				+ rz * jp.vz;
+	real_tn njv = rx * jp->_vx[j]
+				+ ry * jp->_vy[j]
+				+ rz * jp->_vz[j];
 	njv *= inv_r;
 	real_tn njv2 = njv * njv;
 
@@ -357,9 +361,9 @@ pnacc_kernel_core(PNAcc_Data ip, PNAcc_Data jp, const CLIGHT clight)
 	real_tn vv = vx * vx
 			   + vy * vy
 			   + vz * vz;
-	real_tn ivjv = ip.vx * jp.vx
-				 + ip.vy * jp.vy
-				 + ip.vz * jp.vz;
+	real_tn ivjv = ip->vx[i] * jp->_vx[j]
+				 + ip->vy[i] * jp->_vy[j]
+				 + ip->vz[i] * jp->_vz[j];
 	real_tn nv = rx * vx
 			   + ry * vy
 			   + rz * vz;
@@ -380,11 +384,11 @@ pnacc_kernel_core(PNAcc_Data ip, PNAcc_Data jp, const CLIGHT clight)
 							 imjm, inv_r, inv_r2, vv, ivjv,
 							 nv, nvnv, nivnjv, order, inv_c);
 
-	ip.pnax += jpnA * rx + jpnB * vx;
-	ip.pnay += jpnA * ry + jpnB * vy;
-	ip.pnaz += jpnA * rz + jpnB * vz;
-	return ip;
+	ip->pnax[i] += jpnA * rx + jpnB * vx;
+	ip->pnay[i] += jpnA * ry + jpnB * vy;
+	ip->pnaz[i] += jpnA * rz + jpnB * vz;
 }
 
 
+#endif	// __cplusplus
 #endif	// __PNACC_KERNEL_COMMON_H__

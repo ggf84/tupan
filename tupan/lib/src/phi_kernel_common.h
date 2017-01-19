@@ -103,7 +103,7 @@ struct P2P_phi_kernel_core {
 };
 
 }	// namespace Phi
-#endif
+#else
 
 
 // ----------------------------------------------------------------------------
@@ -111,40 +111,43 @@ struct P2P_phi_kernel_core {
 
 typedef struct phi_data {
 	union {
-		real_tn m;
-		real_t _m[SIMD];
+		real_tn m[LSIZE];
+		real_t _m[LSIZE * SIMD];
 	};
 	union {
-		real_tn e2;
-		real_t _e2[SIMD];
+		real_tn e2[LSIZE];
+		real_t _e2[LSIZE * SIMD];
 	};
 	union {
-		real_tn rx;
-		real_t _rx[SIMD];
+		real_tn rx[LSIZE];
+		real_t _rx[LSIZE * SIMD];
 	};
 	union {
-		real_tn ry;
-		real_t _ry[SIMD];
+		real_tn ry[LSIZE];
+		real_t _ry[LSIZE * SIMD];
 	};
 	union {
-		real_tn rz;
-		real_t _rz[SIMD];
+		real_tn rz[LSIZE];
+		real_t _rz[LSIZE * SIMD];
 	};
 	union {
-		real_tn phi;
-		real_t _phi[SIMD];
+		real_tn phi[LSIZE];
+		real_t _phi[LSIZE * SIMD];
 	};
 } Phi_Data;
 
 
-static inline Phi_Data
-phi_kernel_core(Phi_Data ip, Phi_Data jp)
+static inline void
+phi_kernel_core(
+	uint_t i, uint_t j,
+	local Phi_Data *ip,
+	local Phi_Data *jp)
 // flop count: 14
 {
-	real_tn ee = ip.e2 + jp.e2;
-	real_tn rx = ip.rx - jp.rx;
-	real_tn ry = ip.ry - jp.ry;
-	real_tn rz = ip.rz - jp.rz;
+	real_tn ee = ip->e2[i] + jp->_e2[j];
+	real_tn rx = ip->rx[i] - jp->_rx[j];
+	real_tn ry = ip->ry[i] - jp->_ry[j];
+	real_tn rz = ip->rz[i] - jp->_rz[j];
 
 	real_tn rr = ee;
 	rr += rx * rx + ry * ry + rz * rz;
@@ -152,9 +155,9 @@ phi_kernel_core(Phi_Data ip, Phi_Data jp)
 	real_tn inv_r1 = rsqrt(rr);
 	inv_r1 = (rr > ee) ? (inv_r1):(0);
 
-	ip.phi -= jp.m * inv_r1;
-	return ip;
+	ip->phi[i] -= jp->_m[j] * inv_r1;
 }
 
 
+#endif	// __cplusplus
 #endif	// __PHI_KERNEL_COMMON_H__

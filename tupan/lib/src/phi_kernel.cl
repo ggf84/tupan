@@ -13,60 +13,41 @@ phi_kernel_impl(
 	global const real_t __jrdot[],
 	global real_t __iphi[],
 	global real_t __jphi[],
-	local Phi_Data _jp[])
+	local Phi_Data *ip,
+	local Phi_Data *jp)
 {
+	event_t e[6];
 	uint_t lid = get_local_id(0);
-	uint_t wid = get_group_id(0);
-	uint_t wsize = get_num_groups(0);
-
-	for (uint_t iii = SIMD * LSIZE * wid;
-				iii < ni;
-				iii += SIMD * LSIZE * wsize) {
-		Phi_Data ip = {{0}};
-		#pragma unroll SIMD
-		for (uint_t i = 0, ii = iii + lid;
-					i < SIMD && ii < ni;
-					++i, ii += LSIZE) {
-			ip._m[i] = __im[ii];
-			ip._e2[i] = __ie2[ii];
-			ip._rx[i] = __irdot[(0*NDIM+0)*ni + ii];
-			ip._ry[i] = __irdot[(0*NDIM+1)*ni + ii];
-			ip._rz[i] = __irdot[(0*NDIM+2)*ni + ii];
-			ip._phi[i] = __iphi[ii];
-		}
-		uint_t j0 = 0;
-		uint_t j1 = 0;
-		#pragma unroll
-		for (uint_t jlsize = LSIZE;
-					jlsize > 0;
-					jlsize >>= 1) {
-			j0 = j1 + lid % jlsize;
-			j1 = jlsize * (nj/jlsize);
-			for (uint_t jj = j0;
-						jj < j1;
-						jj += jlsize) {
-				Phi_Data jp = {{0}};
-				jp.m = (real_tn)(__jm[jj]);
-				jp.e2 = (real_tn)(__je2[jj]);
-				jp.rx = (real_tn)(__jrdot[(0*NDIM+0)*nj + jj]);
-				jp.ry = (real_tn)(__jrdot[(0*NDIM+1)*nj + jj]);
-				jp.rz = (real_tn)(__jrdot[(0*NDIM+2)*nj + jj]);
-				jp.phi = (real_tn)(__jphi[jj]);
-				barrier(CLK_LOCAL_MEM_FENCE);
-				_jp[lid] = jp;
-				barrier(CLK_LOCAL_MEM_FENCE);
-				#pragma unroll 8
-				for (uint_t j = 0; j < jlsize; ++j) {
-					ip = phi_kernel_core(ip, _jp[j]);
-				}
+	for (uint_t ii = LSIZE * SIMD * get_group_id(0);
+				ii < ni;
+				ii += LSIZE * SIMD * get_num_groups(0)) {
+		uint_t iN = min((uint_t)(LSIZE * SIMD), (ni - ii));
+		e[0] = async_work_group_copy(ip->_m, __im+ii, iN, 0);
+		e[1] = async_work_group_copy(ip->_e2, __ie2+ii, iN, 0);
+		e[2] = async_work_group_copy(ip->_rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
+		e[3] = async_work_group_copy(ip->_ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
+		e[4] = async_work_group_copy(ip->_rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
+		e[5] = async_work_group_copy(ip->_phi, __iphi+ii, iN, 0);
+		wait_group_events(6, e);
+		for (uint_t jj = 0;
+					jj < nj;
+					jj += LSIZE * SIMD) {
+			uint_t jN = min((uint_t)(LSIZE * SIMD), (nj - jj));
+			e[0] = async_work_group_copy(jp->_m, __jm+jj, jN, 0);
+			e[1] = async_work_group_copy(jp->_e2, __je2+jj, jN, 0);
+			e[2] = async_work_group_copy(jp->_rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
+			e[3] = async_work_group_copy(jp->_ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
+			e[4] = async_work_group_copy(jp->_rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
+			e[5] = async_work_group_copy(jp->_phi, __jphi+jj, jN, 0);
+			wait_group_events(6, e);
+			#pragma unroll 64
+			for (uint_t j = 0; j < jN; ++j) {
+				phi_kernel_core(lid, j, ip, jp);
 			}
+			barrier(CLK_LOCAL_MEM_FENCE);
 		}
-		#pragma unroll SIMD
-		for (uint_t i = 0, ii = iii + lid;
-					i < SIMD && ii < ni;
-					++i, ii += LSIZE) {
-			__iphi[ii] = ip._phi[i];
-		}
+		e[0] = async_work_group_copy(__iphi+ii, ip->_phi, iN, 0);
+		wait_group_events(1, e);
 	}
 }
 
@@ -84,20 +65,21 @@ phi_kernel_rectangle(
 	global real_t __iphi[],
 	global real_t __jphi[])
 {
-	local Phi_Data _jp[LSIZE];
+	local Phi_Data _ip;
+	local Phi_Data _jp;
 
 	phi_kernel_impl(
 		ni, __im, __ie2, __irdot,
 		nj, __jm, __je2, __jrdot,
 		__iphi, __jphi,
-		_jp
+		&_ip, &_jp
 	);
 
 	phi_kernel_impl(
 		nj, __jm, __je2, __jrdot,
 		ni, __im, __ie2, __irdot,
 		__jphi, __iphi,
-		_jp
+		&_jp, &_ip
 	);
 }
 
@@ -110,13 +92,14 @@ phi_kernel_triangle(
 	global const real_t __irdot[],
 	global real_t __iphi[])
 {
-	local Phi_Data _jp[LSIZE];
+	local Phi_Data _ip;
+	local Phi_Data _jp;
 
 	phi_kernel_impl(
 		ni, __im, __ie2, __irdot,
 		ni, __im, __ie2, __irdot,
 		__iphi, __iphi,
-		_jp
+		&_ip, &_jp
 	);
 }
 

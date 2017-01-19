@@ -5,66 +5,6 @@
 #include "universal_kepler_solver.h"
 
 
-typedef struct sakura_data {
-	union {
-		real_t m;
-		real_t _m[1];
-	};
-	union {
-		real_t e2;
-		real_t _e2[1];
-	};
-	union {
-		real_t rx;
-		real_t _rx[1];
-	};
-	union {
-		real_t ry;
-		real_t _ry[1];
-	};
-	union {
-		real_t rz;
-		real_t _rz[1];
-	};
-	union {
-		real_t vx;
-		real_t _vx[1];
-	};
-	union {
-		real_t vy;
-		real_t _vy[1];
-	};
-	union {
-		real_t vz;
-		real_t _vz[1];
-	};
-	union {
-		real_t drx;
-		real_t _drx[1];
-	};
-	union {
-		real_t dry;
-		real_t _dry[1];
-	};
-	union {
-		real_t drz;
-		real_t _drz[1];
-	};
-	union {
-		real_t dvx;
-		real_t _dvx[1];
-	};
-	union {
-		real_t dvy;
-		real_t _dvy[1];
-	};
-	union {
-		real_t dvz;
-		real_t _dvz[1];
-	};
-} Sakura_Data;
-
-
 static inline void
 twobody_solver(
 	const real_t dt,
@@ -164,55 +104,6 @@ evolve_twobody(
 	*v1y = vy;
 	*v1z = vz;
 }
-
-
-static inline Sakura_Data
-sakura_kernel_core(Sakura_Data ip, Sakura_Data jp,
-				   const real_t dt, const int_t flag)
-// flop count: 27 + ??
-{
-	real_t m = ip.m + jp.m;
-	real_t e2 = ip.e2 + jp.e2;
-	real_t r0x = ip.rx - jp.rx;
-	real_t r0y = ip.ry - jp.ry;
-	real_t r0z = ip.rz - jp.rz;
-	real_t v0x = ip.vx - jp.vx;
-	real_t v0y = ip.vy - jp.vy;
-	real_t v0z = ip.vz - jp.vz;
-
-	real_t r1x = r0x;
-	real_t r1y = r0y;
-	real_t r1z = r0z;
-	real_t v1x = v0x;
-	real_t v1y = v0y;
-	real_t v1z = v0z;
-	evolve_twobody(
-		dt, flag, m, e2,
-		r0x, r0y, r0z, v0x, v0y, v0z,
-		&r1x, &r1y, &r1z, &v1x, &v1y, &v1z
-	);	// flop count: ??
-
-	real_t inv_m = 1 / m;
-	real_t drx = r1x - r0x;
-	real_t dry = r1y - r0y;
-	real_t drz = r1z - r0z;
-	real_t dvx = v1x - v0x;
-	real_t dvy = v1y - v0y;
-	real_t dvz = v1z - v0z;
-
-	real_t jmu = jp.m * inv_m;
-
-	ip.drx += jmu * drx;
-	ip.dry += jmu * dry;
-	ip.drz += jmu * drz;
-	ip.dvx += jmu * dvx;
-	ip.dvy += jmu * dvy;
-	ip.dvz += jmu * dvz;
-	return ip;
-}
-
-
-// ----------------------------------------------------------------------------
 
 
 #ifdef __cplusplus	// cpp only, i.e., not for OpenCL
@@ -401,7 +292,120 @@ struct P2P_sakura_kernel_core {
 };
 
 }	// namespace Sakura
-#endif
+#else
 
 
+// ----------------------------------------------------------------------------
+
+
+typedef struct sakura_data {
+	union {
+		real_t m[LSIZE];
+		real_t _m[LSIZE * 1];
+	};
+	union {
+		real_t e2[LSIZE];
+		real_t _e2[LSIZE * 1];
+	};
+	union {
+		real_t rx[LSIZE];
+		real_t _rx[LSIZE * 1];
+	};
+	union {
+		real_t ry[LSIZE];
+		real_t _ry[LSIZE * 1];
+	};
+	union {
+		real_t rz[LSIZE];
+		real_t _rz[LSIZE * 1];
+	};
+	union {
+		real_t vx[LSIZE];
+		real_t _vx[LSIZE * 1];
+	};
+	union {
+		real_t vy[LSIZE];
+		real_t _vy[LSIZE * 1];
+	};
+	union {
+		real_t vz[LSIZE];
+		real_t _vz[LSIZE * 1];
+	};
+	union {
+		real_t drx[LSIZE];
+		real_t _drx[LSIZE * 1];
+	};
+	union {
+		real_t dry[LSIZE];
+		real_t _dry[LSIZE * 1];
+	};
+	union {
+		real_t drz[LSIZE];
+		real_t _drz[LSIZE * 1];
+	};
+	union {
+		real_t dvx[LSIZE];
+		real_t _dvx[LSIZE * 1];
+	};
+	union {
+		real_t dvy[LSIZE];
+		real_t _dvy[LSIZE * 1];
+	};
+	union {
+		real_t dvz[LSIZE];
+		real_t _dvz[LSIZE * 1];
+	};
+} Sakura_Data;
+
+
+static inline void
+sakura_kernel_core(
+	uint_t i, uint_t j,
+	local Sakura_Data *ip,
+	local Sakura_Data *jp,
+	const real_t dt,
+	const int_t flag)
+// flop count: 27 + ??
+{
+	real_t m = ip->m[i] + jp->_m[j];
+	real_t e2 = ip->e2[i] + jp->_e2[j];
+	real_t r0x = ip->rx[i] - jp->_rx[j];
+	real_t r0y = ip->ry[i] - jp->_ry[j];
+	real_t r0z = ip->rz[i] - jp->_rz[j];
+	real_t v0x = ip->vx[i] - jp->_vx[j];
+	real_t v0y = ip->vy[i] - jp->_vy[j];
+	real_t v0z = ip->vz[i] - jp->_vz[j];
+
+	real_t r1x = r0x;
+	real_t r1y = r0y;
+	real_t r1z = r0z;
+	real_t v1x = v0x;
+	real_t v1y = v0y;
+	real_t v1z = v0z;
+	evolve_twobody(
+		dt, flag, m, e2,
+		r0x, r0y, r0z, v0x, v0y, v0z,
+		&r1x, &r1y, &r1z, &v1x, &v1y, &v1z
+	);	// flop count: ??
+
+	real_t inv_m = 1 / m;
+	real_t drx = r1x - r0x;
+	real_t dry = r1y - r0y;
+	real_t drz = r1z - r0z;
+	real_t dvx = v1x - v0x;
+	real_t dvy = v1y - v0y;
+	real_t dvz = v1z - v0z;
+
+	real_t jmu = jp->_m[j] * inv_m;
+
+	ip->drx[i] += jmu * drx;
+	ip->dry[i] += jmu * dry;
+	ip->drz[i] += jmu * drz;
+	ip->dvx[i] += jmu * dvx;
+	ip->dvy[i] += jmu * dvy;
+	ip->dvz[i] += jmu * dvz;
+}
+
+
+#endif	// __cplusplus
 #endif	// __SAKURA_KERNEL_COMMON_H__

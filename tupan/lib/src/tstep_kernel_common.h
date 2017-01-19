@@ -151,7 +151,7 @@ struct P2P_tstep_kernel_core {
 };
 
 }	// namespace Tstep
-#endif
+#else
 
 
 // ----------------------------------------------------------------------------
@@ -159,60 +159,64 @@ struct P2P_tstep_kernel_core {
 
 typedef struct tstep_data {
 	union {
-		real_tn m;
-		real_t _m[SIMD];
+		real_tn m[LSIZE];
+		real_t _m[LSIZE * SIMD];
 	};
 	union {
-		real_tn e2;
-		real_t _e2[SIMD];
+		real_tn e2[LSIZE];
+		real_t _e2[LSIZE * SIMD];
 	};
 	union {
-		real_tn rx;
-		real_t _rx[SIMD];
+		real_tn rx[LSIZE];
+		real_t _rx[LSIZE * SIMD];
 	};
 	union {
-		real_tn ry;
-		real_t _ry[SIMD];
+		real_tn ry[LSIZE];
+		real_t _ry[LSIZE * SIMD];
 	};
 	union {
-		real_tn rz;
-		real_t _rz[SIMD];
+		real_tn rz[LSIZE];
+		real_t _rz[LSIZE * SIMD];
 	};
 	union {
-		real_tn vx;
-		real_t _vx[SIMD];
+		real_tn vx[LSIZE];
+		real_t _vx[LSIZE * SIMD];
 	};
 	union {
-		real_tn vy;
-		real_t _vy[SIMD];
+		real_tn vy[LSIZE];
+		real_t _vy[LSIZE * SIMD];
 	};
 	union {
-		real_tn vz;
-		real_t _vz[SIMD];
+		real_tn vz[LSIZE];
+		real_t _vz[LSIZE * SIMD];
 	};
 	union {
-		real_tn w2_a;
-		real_t _w2_a[SIMD];
+		real_tn w2_a[LSIZE];
+		real_t _w2_a[LSIZE * SIMD];
 	};
 	union {
-		real_tn w2_b;
-		real_t _w2_b[SIMD];
+		real_tn w2_b[LSIZE];
+		real_t _w2_b[LSIZE * SIMD];
 	};
 } Tstep_Data;
 
 
-static inline Tstep_Data
-tstep_kernel_core(Tstep_Data ip, Tstep_Data jp, const real_t eta)
+static inline void
+tstep_kernel_core(
+	uint_t i, uint_t j,
+	local Tstep_Data *ip,
+	local Tstep_Data *jp,
+	const real_t eta)
 // flop count: 42
 {
-	real_tn m_r3 = ip.m + jp.m;
-	real_tn ee = ip.e2 + jp.e2;
-	real_tn rx = ip.rx - jp.rx;
-	real_tn ry = ip.ry - jp.ry;
-	real_tn rz = ip.rz - jp.rz;
-	real_tn vx = ip.vx - jp.vx;
-	real_tn vy = ip.vy - jp.vy;
-	real_tn vz = ip.vz - jp.vz;
+	real_tn m_r3 = ip->m[i] + jp->_m[j];
+	real_tn ee = ip->e2[i] + jp->_e2[j];
+	real_tn rx = ip->rx[i] - jp->_rx[j];
+	real_tn ry = ip->ry[i] - jp->_ry[j];
+	real_tn rz = ip->rz[i] - jp->_rz[j];
+	real_tn vx = ip->vx[i] - jp->_vx[j];
+	real_tn vy = ip->vy[i] - jp->_vy[j];
+	real_tn vz = ip->vz[i] - jp->_vz[j];
 
 	real_tn rr = ee;
 	rr        += rx * rx + ry * ry + rz * rz;
@@ -232,10 +236,10 @@ tstep_kernel_core(Tstep_Data ip, Tstep_Data jp, const real_t eta)
 
 	m_r3 = (rr > ee) ? (m_r3):(0);
 
-	ip.w2_a = fmax(m_r3, ip.w2_a);
-	ip.w2_b += m_r3;
-	return ip;
+	ip->w2_a[i] = fmax(m_r3, ip->w2_a[i]);
+	ip->w2_b[i] += m_r3;
 }
 
 
+#endif	// __cplusplus
 #endif	// __TSTEP_KERNEL_COMMON_H__

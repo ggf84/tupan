@@ -272,7 +272,7 @@ struct P2P_snp_crk_kernel_core {
 };
 
 }	// namespace Snp_Crk
-#endif
+#else
 
 
 // ----------------------------------------------------------------------------
@@ -280,129 +280,132 @@ struct P2P_snp_crk_kernel_core {
 
 typedef struct snp_crk_data {
 	union {
-		real_tn m;
-		real_t _m[SIMD];
+		real_tn m[LSIZE];
+		real_t _m[LSIZE * SIMD];
 	};
 	union {
-		real_tn e2;
-		real_t _e2[SIMD];
+		real_tn e2[LSIZE];
+		real_t _e2[LSIZE * SIMD];
 	};
 	union {
-		real_tn rx;
-		real_t _rx[SIMD];
+		real_tn rx[LSIZE];
+		real_t _rx[LSIZE * SIMD];
 	};
 	union {
-		real_tn ry;
-		real_t _ry[SIMD];
+		real_tn ry[LSIZE];
+		real_t _ry[LSIZE * SIMD];
 	};
 	union {
-		real_tn rz;
-		real_t _rz[SIMD];
+		real_tn rz[LSIZE];
+		real_t _rz[LSIZE * SIMD];
 	};
 	union {
-		real_tn vx;
-		real_t _vx[SIMD];
+		real_tn vx[LSIZE];
+		real_t _vx[LSIZE * SIMD];
 	};
 	union {
-		real_tn vy;
-		real_t _vy[SIMD];
+		real_tn vy[LSIZE];
+		real_t _vy[LSIZE * SIMD];
 	};
 	union {
-		real_tn vz;
-		real_t _vz[SIMD];
+		real_tn vz[LSIZE];
+		real_t _vz[LSIZE * SIMD];
 	};
 	union {
-		real_tn ax;
-		real_t _ax[SIMD];
+		real_tn ax[LSIZE];
+		real_t _ax[LSIZE * SIMD];
 	};
 	union {
-		real_tn ay;
-		real_t _ay[SIMD];
+		real_tn ay[LSIZE];
+		real_t _ay[LSIZE * SIMD];
 	};
 	union {
-		real_tn az;
-		real_t _az[SIMD];
+		real_tn az[LSIZE];
+		real_t _az[LSIZE * SIMD];
 	};
 	union {
-		real_tn jx;
-		real_t _jx[SIMD];
+		real_tn jx[LSIZE];
+		real_t _jx[LSIZE * SIMD];
 	};
 	union {
-		real_tn jy;
-		real_t _jy[SIMD];
+		real_tn jy[LSIZE];
+		real_t _jy[LSIZE * SIMD];
 	};
 	union {
-		real_tn jz;
-		real_t _jz[SIMD];
+		real_tn jz[LSIZE];
+		real_t _jz[LSIZE * SIMD];
 	};
 	union {
-		real_tn Ax;
-		real_t _Ax[SIMD];
+		real_tn Ax[LSIZE];
+		real_t _Ax[LSIZE * SIMD];
 	};
 	union {
-		real_tn Ay;
-		real_t _Ay[SIMD];
+		real_tn Ay[LSIZE];
+		real_t _Ay[LSIZE * SIMD];
 	};
 	union {
-		real_tn Az;
-		real_t _Az[SIMD];
+		real_tn Az[LSIZE];
+		real_t _Az[LSIZE * SIMD];
 	};
 	union {
-		real_tn Jx;
-		real_t _Jx[SIMD];
+		real_tn Jx[LSIZE];
+		real_t _Jx[LSIZE * SIMD];
 	};
 	union {
-		real_tn Jy;
-		real_t _Jy[SIMD];
+		real_tn Jy[LSIZE];
+		real_t _Jy[LSIZE * SIMD];
 	};
 	union {
-		real_tn Jz;
-		real_t _Jz[SIMD];
+		real_tn Jz[LSIZE];
+		real_t _Jz[LSIZE * SIMD];
 	};
 	union {
-		real_tn Sx;
-		real_t _Sx[SIMD];
+		real_tn Sx[LSIZE];
+		real_t _Sx[LSIZE * SIMD];
 	};
 	union {
-		real_tn Sy;
-		real_t _Sy[SIMD];
+		real_tn Sy[LSIZE];
+		real_t _Sy[LSIZE * SIMD];
 	};
 	union {
-		real_tn Sz;
-		real_t _Sz[SIMD];
+		real_tn Sz[LSIZE];
+		real_t _Sz[LSIZE * SIMD];
 	};
 	union {
-		real_tn Cx;
-		real_t _Cx[SIMD];
+		real_tn Cx[LSIZE];
+		real_t _Cx[LSIZE * SIMD];
 	};
 	union {
-		real_tn Cy;
-		real_t _Cy[SIMD];
+		real_tn Cy[LSIZE];
+		real_t _Cy[LSIZE * SIMD];
 	};
 	union {
-		real_tn Cz;
-		real_t _Cz[SIMD];
+		real_tn Cz[LSIZE];
+		real_t _Cz[LSIZE * SIMD];
 	};
 } Snp_Crk_Data;
 
 
-static inline Snp_Crk_Data
-snp_crk_kernel_core(Snp_Crk_Data ip, Snp_Crk_Data jp)
+static inline void
+snp_crk_kernel_core(
+	uint_t i, uint_t j,
+	local Snp_Crk_Data *ip,
+	local Snp_Crk_Data *jp)
 // flop count: 128
 {
-	real_tn ee = ip.e2 + jp.e2;
-	real_tn rx = ip.rx - jp.rx;
-	real_tn ry = ip.ry - jp.ry;
-	real_tn rz = ip.rz - jp.rz;
-	real_tn vx = ip.vx - jp.vx;
-	real_tn vy = ip.vy - jp.vy;
-	real_tn vz = ip.vz - jp.vz;
-	real_tn ax = ip.ax - jp.ax;
-	real_tn ay = ip.ay - jp.ay;
-	real_tn az = ip.az - jp.az;
-	real_tn jx = ip.jx - jp.jx;
-	real_tn jy = ip.jy - jp.jy;
-	real_tn jz = ip.jz - jp.jz;
+	real_tn ee = ip->e2[i] + jp->_e2[j];
+	real_tn rx = ip->rx[i] - jp->_rx[j];
+	real_tn ry = ip->ry[i] - jp->_ry[j];
+	real_tn rz = ip->rz[i] - jp->_rz[j];
+	real_tn vx = ip->vx[i] - jp->_vx[j];
+	real_tn vy = ip->vy[i] - jp->_vy[j];
+	real_tn vz = ip->vz[i] - jp->_vz[j];
+	real_tn ax = ip->ax[i] - jp->_ax[j];
+	real_tn ay = ip->ay[i] - jp->_ay[j];
+	real_tn az = ip->az[i] - jp->_az[j];
+	real_tn jx = ip->jx[i] - jp->_jx[j];
+	real_tn jy = ip->jy[i] - jp->_jy[j];
+	real_tn jz = ip->jz[i] - jp->_jz[j];
 
 	real_tn rr = ee;
 	rr += rx * rx + ry * ry + rz * rz;
@@ -444,22 +447,22 @@ snp_crk_kernel_core(Snp_Crk_Data ip, Snp_Crk_Data jp)
 	vy += q1 * ry;
 	vz += q1 * rz;
 
-	real_tn jm_r3 = jp.m * inv_r3;
+	real_tn jm_r3 = jp->_m[j] * inv_r3;
 
-	ip.Ax -= jm_r3 * rx;
-	ip.Ay -= jm_r3 * ry;
-	ip.Az -= jm_r3 * rz;
-	ip.Jx -= jm_r3 * vx;
-	ip.Jy -= jm_r3 * vy;
-	ip.Jz -= jm_r3 * vz;
-	ip.Sx -= jm_r3 * ax;
-	ip.Sy -= jm_r3 * ay;
-	ip.Sz -= jm_r3 * az;
-	ip.Cx -= jm_r3 * jx;
-	ip.Cy -= jm_r3 * jy;
-	ip.Cz -= jm_r3 * jz;
-	return ip;
+	ip->Ax[i] -= jm_r3 * rx;
+	ip->Ay[i] -= jm_r3 * ry;
+	ip->Az[i] -= jm_r3 * rz;
+	ip->Jx[i] -= jm_r3 * vx;
+	ip->Jy[i] -= jm_r3 * vy;
+	ip->Jz[i] -= jm_r3 * vz;
+	ip->Sx[i] -= jm_r3 * ax;
+	ip->Sy[i] -= jm_r3 * ay;
+	ip->Sz[i] -= jm_r3 * az;
+	ip->Cx[i] -= jm_r3 * jx;
+	ip->Cy[i] -= jm_r3 * jy;
+	ip->Cz[i] -= jm_r3 * jz;
 }
 
 
+#endif	// __cplusplus
 #endif	// __SNP_CRK_KERNEL_COMMON_H__

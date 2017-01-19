@@ -128,68 +128,6 @@ struct P2P_acc_kernel_core {
 
 // ----------------------------------------------------------------------------
 
-/*
-typedef struct acc_data {
-	union {
-		real_tn m;
-		real_t _m[SIMD];
-	};
-	union {
-		real_tn e2;
-		real_t _e2[SIMD];
-	};
-	union {
-		real_tn rx;
-		real_t _rx[SIMD];
-	};
-	union {
-		real_tn ry;
-		real_t _ry[SIMD];
-	};
-	union {
-		real_tn rz;
-		real_t _rz[SIMD];
-	};
-	union {
-		real_tn ax;
-		real_t _ax[SIMD];
-	};
-	union {
-		real_tn ay;
-		real_t _ay[SIMD];
-	};
-	union {
-		real_tn az;
-		real_t _az[SIMD];
-	};
-} Acc_Data;
-
-
-static inline Acc_Data
-acc_kernel_core(Acc_Data ip, Acc_Data jp)
-// flop count: 21
-{
-	real_tn ee = ip.e2 + jp.e2;
-	real_tn rx = ip.rx - jp.rx;
-	real_tn ry = ip.ry - jp.ry;
-	real_tn rz = ip.rz - jp.rz;
-
-	real_tn rr = ee;
-	rr += rx * rx + ry * ry + rz * rz;
-
-	real_tn inv_r3 = rsqrt(rr);
-	inv_r3 = (rr > ee) ? (inv_r3):(0);
-	inv_r3 *= inv_r3 * inv_r3;
-
-	real_tn jm_r3 = jp.m * inv_r3;
-
-	ip.ax -= jm_r3 * rx;
-	ip.ay -= jm_r3 * ry;
-	ip.az -= jm_r3 * rz;
-	return ip;
-}
-*/
-
 
 typedef struct acc_data {
 	union {
@@ -252,6 +190,7 @@ acc_kernel_core(
 	ip->ay[i] -= jm_r3 * ry;
 	ip->az[i] -= jm_r3 * rz;
 }
+
 
 #endif	// __cplusplus
 #endif	// __ACC_KERNEL_COMMON_H__
