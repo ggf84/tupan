@@ -19,7 +19,6 @@ sakura_kernel_impl(
 	local Sakura_Data *jp)
 {
 	event_t e;
-	uint_t lid = get_local_id(0);
 	for (uint_t ii = LSIZE * 1 * get_group_id(0);
 				ii < ni;
 				ii += LSIZE * 1 * get_num_groups(0)) {
@@ -58,9 +57,13 @@ sakura_kernel_impl(
 			e = async_work_group_copy(jp->_dvy, __jdrdot+(1*NDIM+1)*nj+jj, jN, 0);
 			e = async_work_group_copy(jp->_dvz, __jdrdot+(1*NDIM+2)*nj+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
-			#pragma unroll 32
-			for (uint_t j = 0; j < jN; ++j) {
-				sakura_kernel_core(lid, j, ip, jp, dt, flag);
+			for (uint_t i = get_local_id(0);
+						i < LSIZE;
+						i += get_local_size(0)) {
+				#pragma unroll 32
+				for (uint_t j = 0; j < jN; ++j) {
+					sakura_kernel_core(i, j, ip, jp, dt, flag);
+				}
 			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 		}

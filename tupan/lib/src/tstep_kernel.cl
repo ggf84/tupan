@@ -20,7 +20,6 @@ tstep_kernel_impl(
 	local Tstep_Data *jp)
 {
 	event_t e;
-	uint_t lid = get_local_id(0);
 	for (uint_t ii = LSIZE * SIMD * get_group_id(0);
 				ii < ni;
 				ii += LSIZE * SIMD * get_num_groups(0)) {
@@ -51,14 +50,22 @@ tstep_kernel_impl(
 			e = async_work_group_copy(jp->_w2_a, __jdt_a+jj, jN, 0);
 			e = async_work_group_copy(jp->_w2_b, __jdt_b+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
-			#pragma unroll 32
-			for (uint_t j = 0; j < jN; ++j) {
-				tstep_kernel_core(lid, j, ip, jp, eta);
+			for (uint_t i = get_local_id(0);
+						i < LSIZE;
+						i += get_local_size(0)) {
+				#pragma unroll 32
+				for (uint_t j = 0; j < jN; ++j) {
+					tstep_kernel_core(i, j, ip, jp, eta);
+				}
 			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 		}
-		ip->w2_a[lid] = eta * rsqrt(ip->w2_a[lid]);
-		ip->w2_b[lid] = eta * rsqrt(ip->w2_b[lid]);
+		for (uint_t i = get_local_id(0);
+					i < LSIZE;
+					i += get_local_size(0)) {
+			ip->w2_a[i] = eta * rsqrt(ip->w2_a[i]);
+			ip->w2_b[i] = eta * rsqrt(ip->w2_b[i]);
+		}
 		barrier(CLK_LOCAL_MEM_FENCE);
 		e = async_work_group_copy(__idt_a+ii, ip->_w2_a, iN, 0);
 		e = async_work_group_copy(__idt_b+ii, ip->_w2_b, iN, 0);

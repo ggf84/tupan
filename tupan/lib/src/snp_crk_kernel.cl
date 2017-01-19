@@ -17,7 +17,6 @@ snp_crk_kernel_impl(
 	local Snp_Crk_Data *jp)
 {
 	event_t e;
-	uint_t lid = get_local_id(0);
 	for (uint_t ii = LSIZE * SIMD * get_group_id(0);
 				ii < ni;
 				ii += LSIZE * SIMD * get_num_groups(0)) {
@@ -80,9 +79,13 @@ snp_crk_kernel_impl(
 			e = async_work_group_copy(jp->_Cy, __jadot+(3*NDIM+1)*nj+jj, jN, 0);
 			e = async_work_group_copy(jp->_Cz, __jadot+(3*NDIM+2)*nj+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
-			#pragma unroll 32
-			for (uint_t j = 0; j < jN; ++j) {
-				snp_crk_kernel_core(lid, j, ip, jp);
+			for (uint_t i = get_local_id(0);
+						i < LSIZE;
+						i += get_local_size(0)) {
+				#pragma unroll 32
+				for (uint_t j = 0; j < jN; ++j) {
+					snp_crk_kernel_core(i, j, ip, jp);
+				}
 			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 		}
