@@ -165,32 +165,5 @@ typedef struct acc_data {
 } Acc_Data;
 
 
-static inline void
-acc_kernel_core(
-	uint_t i, uint_t j,
-	local Acc_Data *ip,
-	local Acc_Data *jp)
-// flop count: 21
-{
-	real_tn ee = ip->e2[i] + jp->_e2[j];
-	real_tn rx = ip->rx[i] - jp->_rx[j];
-	real_tn ry = ip->ry[i] - jp->_ry[j];
-	real_tn rz = ip->rz[i] - jp->_rz[j];
-
-	real_tn rr = ee;
-	rr += rx * rx + ry * ry + rz * rz;
-
-	real_tn inv_r3 = rsqrt(rr);
-	inv_r3 = (rr > ee) ? (inv_r3):(0);
-	inv_r3 *= inv_r3 * inv_r3;
-
-	real_tn jm_r3 = jp->_m[j] * inv_r3;
-
-	ip->ax[i] -= jm_r3 * rx;
-	ip->ay[i] -= jm_r3 * ry;
-	ip->az[i] -= jm_r3 * rz;
-}
-
-
 #endif	// __cplusplus
 #endif	// __ACC_KERNEL_COMMON_H__
