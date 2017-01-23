@@ -164,18 +164,22 @@ class Program(object):
         self.kernel = None
 
     def build(self, fpwidth=cli.fpwidth):
-        simd = (self.cl_device.preferred_vector_width_float
+        dev = self.cl_device
+
+        simd = (dev.preferred_vector_width_float
                 if fpwidth == 'fp32'
-                else self.cl_device.preferred_vector_width_double)
+                else dev.preferred_vector_width_double)
+
         lsize = 1
-        wsize = 1
-        if self.cl_device.type == cl.device_type.CPU:
-            lsize *= 32
-            wsize *= self.cl_device.max_compute_units*16
-        if self.cl_device.type == cl.device_type.GPU:
-#            simd *= 2 if fpwidth == 'fp32' else 1
-            lsize *= 64
-            wsize *= self.cl_device.max_compute_units*256
+        wsize = dev.max_compute_units
+
+        if dev.type == cl.device_type.CPU:
+            lsize *= 32 if fpwidth == 'fp32' else 32
+            wsize *= 8
+
+        if dev.type == cl.device_type.GPU:
+            lsize *= 128 if fpwidth == 'fp32' else 64
+            wsize *= 256
 
         # setting program options
         options = ' -D SIMD={}'.format(simd)
@@ -187,7 +191,7 @@ class Program(object):
         options += ' -cl-fast-relaxed-math'
 #        options += ' -cl-opt-disable'
 
-        self.cl_program.build(options=options, devices=[self.cl_device])
+        self.cl_program.build(options=options, devices=[dev])
 
         kernels = self.cl_program.all_kernels()
         for kernel in kernels:
