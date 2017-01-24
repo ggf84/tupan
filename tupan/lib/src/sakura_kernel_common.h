@@ -358,54 +358,5 @@ typedef struct sakura_data {
 } Sakura_Data;
 
 
-static inline void
-sakura_kernel_core(
-	uint_t i, uint_t j,
-	local Sakura_Data *ip,
-	local Sakura_Data *jp,
-	const real_t dt,
-	const int_t flag)
-// flop count: 27 + ??
-{
-	real_t m = ip->m[i] + jp->_m[j];
-	real_t e2 = ip->e2[i] + jp->_e2[j];
-	real_t r0x = ip->rx[i] - jp->_rx[j];
-	real_t r0y = ip->ry[i] - jp->_ry[j];
-	real_t r0z = ip->rz[i] - jp->_rz[j];
-	real_t v0x = ip->vx[i] - jp->_vx[j];
-	real_t v0y = ip->vy[i] - jp->_vy[j];
-	real_t v0z = ip->vz[i] - jp->_vz[j];
-
-	real_t r1x = r0x;
-	real_t r1y = r0y;
-	real_t r1z = r0z;
-	real_t v1x = v0x;
-	real_t v1y = v0y;
-	real_t v1z = v0z;
-	evolve_twobody(
-		dt, flag, m, e2,
-		r0x, r0y, r0z, v0x, v0y, v0z,
-		&r1x, &r1y, &r1z, &v1x, &v1y, &v1z
-	);	// flop count: ??
-
-	real_t inv_m = 1 / m;
-	real_t drx = r1x - r0x;
-	real_t dry = r1y - r0y;
-	real_t drz = r1z - r0z;
-	real_t dvx = v1x - v0x;
-	real_t dvy = v1y - v0y;
-	real_t dvz = v1z - v0z;
-
-	real_t jmu = jp->_m[j] * inv_m;
-
-	ip->drx[i] += jmu * drx;
-	ip->dry[i] += jmu * dry;
-	ip->drz[i] += jmu * drz;
-	ip->dvx[i] += jmu * dvx;
-	ip->dvy[i] += jmu * dvy;
-	ip->dvz[i] += jmu * dvz;
-}
-
-
 #endif	// __cplusplus
 #endif	// __SAKURA_KERNEL_COMMON_H__

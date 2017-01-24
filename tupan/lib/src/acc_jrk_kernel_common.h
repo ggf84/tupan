@@ -235,47 +235,5 @@ typedef struct acc_jrk_data {
 } Acc_Jrk_Data;
 
 
-static inline void
-acc_jrk_kernel_core(
-	uint_t i, uint_t j,
-	local Acc_Jrk_Data *ip,
-	local Acc_Jrk_Data *jp)
-// flop count: 43
-{
-	real_tn ee = ip->e2[i] + jp->_e2[j];
-	real_tn rx = ip->rx[i] - jp->_rx[j];
-	real_tn ry = ip->ry[i] - jp->_ry[j];
-	real_tn rz = ip->rz[i] - jp->_rz[j];
-	real_tn vx = ip->vx[i] - jp->_vx[j];
-	real_tn vy = ip->vy[i] - jp->_vy[j];
-	real_tn vz = ip->vz[i] - jp->_vz[j];
-
-	real_tn rr = ee;
-	rr += rx * rx + ry * ry + rz * rz;
-
-	real_tn inv_r3 = rsqrt(rr);
-	inv_r3 = (rr > ee) ? (inv_r3):(0);
-	real_tn inv_r2 = inv_r3 * inv_r3;
-	inv_r3 *= inv_r2;
-	inv_r2 *= -3;
-
-	real_tn s1 = rx * vx + ry * vy + rz * vz;
-
-	real_tn q1 = inv_r2 * (s1);
-	vx += q1 * rx;
-	vy += q1 * ry;
-	vz += q1 * rz;
-
-	real_tn jm_r3 = jp->_m[j] * inv_r3;
-
-	ip->ax[i] -= jm_r3 * rx;
-	ip->ay[i] -= jm_r3 * ry;
-	ip->az[i] -= jm_r3 * rz;
-	ip->jx[i] -= jm_r3 * vx;
-	ip->jy[i] -= jm_r3 * vy;
-	ip->jz[i] -= jm_r3 * vz;
-}
-
-
 #endif	// __cplusplus
 #endif	// __ACC_JRK_KERNEL_COMMON_H__

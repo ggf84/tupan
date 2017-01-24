@@ -141,7 +141,7 @@ struct P2P_tstep_kernel_core {
 				m_r5 += m_r3 * inv_r2;
 				m_r3 -= m_r5 * rv;
 
-				m_r3 = (rr > ee) ? (m_r3):(0);
+				m_r3 = (rr > ee && p.m[j] != 0) ? (m_r3):(0);
 
 				p.w2_a[j] = fmax(m_r3, p.w2_a[j]);
 				p.w2_b[j] += m_r3;
@@ -199,46 +199,6 @@ typedef struct tstep_data {
 		real_t _w2_b[LSIZE * SIMD];
 	};
 } Tstep_Data;
-
-
-static inline void
-tstep_kernel_core(
-	uint_t i, uint_t j,
-	local Tstep_Data *ip,
-	local Tstep_Data *jp,
-	const real_t eta)
-// flop count: 42
-{
-	real_tn m_r3 = ip->m[i] + jp->_m[j];
-	real_tn ee = ip->e2[i] + jp->_e2[j];
-	real_tn rx = ip->rx[i] - jp->_rx[j];
-	real_tn ry = ip->ry[i] - jp->_ry[j];
-	real_tn rz = ip->rz[i] - jp->_rz[j];
-	real_tn vx = ip->vx[i] - jp->_vx[j];
-	real_tn vy = ip->vy[i] - jp->_vy[j];
-	real_tn vz = ip->vz[i] - jp->_vz[j];
-
-	real_tn rr = ee;
-	rr        += rx * rx + ry * ry + rz * rz;
-	real_tn rv = rx * vx + ry * vy + rz * vz;
-	real_tn vv = vx * vx + vy * vy + vz * vz;
-
-	real_tn inv_r2 = rsqrt(rr);
-	m_r3 *= inv_r2;
-	inv_r2 *= inv_r2;
-	m_r3 *= 2 * inv_r2;
-
-	real_tn m_r5 = m_r3 * inv_r2;
-	m_r3 += vv * inv_r2;
-	rv *= eta * rsqrt(m_r3);
-	m_r5 += m_r3 * inv_r2;
-	m_r3 -= m_r5 * rv;
-
-	m_r3 = (rr > ee) ? (m_r3):(0);
-
-	ip->w2_a[i] = fmax(m_r3, ip->w2_a[i]);
-	ip->w2_b[i] += m_r3;
-}
 
 
 #endif	// __cplusplus

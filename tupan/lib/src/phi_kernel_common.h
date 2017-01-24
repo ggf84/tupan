@@ -137,27 +137,5 @@ typedef struct phi_data {
 } Phi_Data;
 
 
-static inline void
-phi_kernel_core(
-	uint_t i, uint_t j,
-	local Phi_Data *ip,
-	local Phi_Data *jp)
-// flop count: 14
-{
-	real_tn ee = ip->e2[i] + jp->_e2[j];
-	real_tn rx = ip->rx[i] - jp->_rx[j];
-	real_tn ry = ip->ry[i] - jp->_ry[j];
-	real_tn rz = ip->rz[i] - jp->_rz[j];
-
-	real_tn rr = ee;
-	rr += rx * rx + ry * ry + rz * rz;
-
-	real_tn inv_r1 = rsqrt(rr);
-	inv_r1 = (rr > ee) ? (inv_r1):(0);
-
-	ip->phi[i] -= jp->_m[j] * inv_r1;
-}
-
-
 #endif	// __cplusplus
 #endif	// __PHI_KERNEL_COMMON_H__

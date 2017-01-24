@@ -3,13 +3,12 @@
 
 static inline void
 acc_kernel_core(
-	uint_t iN, uint_t jN,
 	local Acc_Data *ip,
 	local Acc_Data *jp)
 // flop count: 21
 {
 	for (uint_t i = get_local_id(0);
-				i < iN;
+				i < LSIZE;
 				i += get_local_size(0)) {
 		real_tn iee = ip->e2[i];
 		real_tn irx = ip->rx[i];
@@ -18,25 +17,35 @@ acc_kernel_core(
 		real_tn iax = ip->ax[i];
 		real_tn iay = ip->ay[i];
 		real_tn iaz = ip->az[i];
-		#pragma unroll 32
-		for (uint_t j = 0; j < jN; ++j) {
-			real_tn ee = iee + jp->_e2[j];
-			real_tn rx = irx - jp->_rx[j];
-			real_tn ry = iry - jp->_ry[j];
-			real_tn rz = irz - jp->_rz[j];
+		#pragma unroll
+		for (uint_t k = 0; k < SIMD; ++k) {
+			#pragma unroll 1
+			for (uint_t j = 0; j < LSIZE; ++j) {
+				real_tn ee = iee + jp->e2[j];
+				real_tn rx = irx - jp->rx[j];
+				real_tn ry = iry - jp->ry[j];
+				real_tn rz = irz - jp->rz[j];
 
-			real_tn rr = ee;
-			rr += rx * rx + ry * ry + rz * rz;
+				real_tn rr = ee;
+				rr += rx * rx + ry * ry + rz * rz;
 
-			real_tn inv_r3 = rsqrt(rr);
-			inv_r3 = (rr > ee) ? (inv_r3):(0);
-			inv_r3 *= inv_r3 * inv_r3;
+				real_tn inv_r3 = rsqrt(rr);
+				inv_r3 = (rr > ee) ? (inv_r3):(0);
+				inv_r3 *= inv_r3 * inv_r3;
 
-			real_tn jm_r3 = jp->_m[j] * inv_r3;
+				real_tn jm_r3 = jp->m[j] * inv_r3;
 
-			iax -= jm_r3 * rx;
-			iay -= jm_r3 * ry;
-			iaz -= jm_r3 * rz;
+				iax -= jm_r3 * rx;
+				iay -= jm_r3 * ry;
+				iaz -= jm_r3 * rz;
+			}
+			shuff(iee, SIMD);
+			shuff(irx, SIMD);
+			shuff(iry, SIMD);
+			shuff(irz, SIMD);
+			shuff(iax, SIMD);
+			shuff(iay, SIMD);
+			shuff(iaz, SIMD);
 		}
 		ip->ax[i] = iax;
 		ip->ay[i] = iay;
@@ -64,6 +73,9 @@ acc_kernel_impl(
 				ii < ni;
 				ii += LSIZE * SIMD * get_num_groups(0)) {
 		uint_t iN = min((uint_t)(LSIZE * SIMD), (ni - ii));
+		ip->m[get_local_id(0)] = (real_tn)(0);
+		ip->e2[get_local_id(0)] = (real_tn)(0);
+		barrier(CLK_LOCAL_MEM_FENCE);
 		async_work_group_copy(ip->_m, __im+ii, iN, 0);
 		async_work_group_copy(ip->_e2, __ie2+ii, iN, 0);
 		async_work_group_copy(ip->_rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
@@ -76,6 +88,9 @@ acc_kernel_impl(
 					jj < nj;
 					jj += LSIZE * SIMD) {
 			uint_t jN = min((uint_t)(LSIZE * SIMD), (nj - jj));
+			jp->m[get_local_id(0)] = (real_tn)(0);
+			jp->e2[get_local_id(0)] = (real_tn)(0);
+			barrier(CLK_LOCAL_MEM_FENCE);
 			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
 			async_work_group_copy(jp->_e2, __je2+jj, jN, 0);
 			async_work_group_copy(jp->_rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
@@ -85,7 +100,7 @@ acc_kernel_impl(
 			async_work_group_copy(jp->_ay, __jadot+(0*NDIM+1)*nj+jj, jN, 0);
 			async_work_group_copy(jp->_az, __jadot+(0*NDIM+2)*nj+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
-			acc_kernel_core(LSIZE, jN, ip, jp);
+			acc_kernel_core(ip, jp);
 			barrier(CLK_LOCAL_MEM_FENCE);
 		}
 		async_work_group_copy(__iadot+(0*NDIM+0)*ni+ii, ip->_ax, iN, 0);

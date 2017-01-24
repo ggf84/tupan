@@ -29,11 +29,12 @@
 
 #include "type_defs.h"
 
-#define vload1(_offset_, _ptr_)				\
-		(_ptr_)[_offset_]
-#define vstore1(_data_, _offset_, _ptr_)	\
-		do {								\
-			(_ptr_)[_offset_] = _data_;		\
-		} while(0)
+#define shuff1(_x_)
+#define shuff2(_x_) _x_ = _x_.s10
+#define shuff4(_x_) _x_ = _x_.s1230
+#define shuff8(_x_) _x_ = _x_.s12345670
+#define shuff16(_x_) _x_ = _x_.s123456789abcdef0
+
+#define shuff(_x_, SIMD) concat(shuff, SIMD)(_x_)
 
 #endif	// __CL_COMMON_H__
