@@ -68,39 +68,44 @@ struct P2P_pnacc_kernel_core {
 	template<typename IP, typename JP>
 	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 45 + ???
-		decltype(jp.m) rx, ry, rz, vx, vy, vz, inv_r1;
-		decltype(jp.m) ipnA, ipnB, jpnA, jpnB;
 		for (size_t i = 0; i < TILE; ++i) {
+			auto im = ip.m[i];
+			auto iee = ip.e2[i];
+			auto irx = ip.rx[i];
+			auto iry = ip.ry[i];
+			auto irz = ip.rz[i];
+			auto ivx = ip.vx[i];
+			auto ivy = ip.vy[i];
+			auto ivz = ip.vz[i];
+			auto ipnax = ip.pnax[i];
+			auto ipnay = ip.pnay[i];
+			auto ipnaz = ip.pnaz[i];
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto ee = ip.e2[i] + jp.e2[j];
-				rx[j] = ip.rx[i] - jp.rx[j];
-				ry[j] = ip.ry[i] - jp.ry[j];
-				rz[j] = ip.rz[i] - jp.rz[j];
-				vx[j] = ip.vx[i] - jp.vx[j];
-				vy[j] = ip.vy[i] - jp.vy[j];
-				vz[j] = ip.vz[i] - jp.vz[j];
+				auto ee = iee + jp.e2[j];
+				auto rx = irx - jp.rx[j];
+				auto ry = iry - jp.ry[j];
+				auto rz = irz - jp.rz[j];
+				auto vx = ivx - jp.vx[j];
+				auto vy = ivy - jp.vy[j];
+				auto vz = ivz - jp.vz[j];
 
 				auto rr = ee;
-				rr += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
+				rr += rx * rx + ry * ry + rz * rz;
 
-				inv_r1[j] = rsqrt(rr);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				auto inv_r = inv_r1[j];
+				auto inv_r = rsqrt(rr);
 				auto inv_r2 = inv_r * inv_r;
 
-				auto im = ip.m[i];
+//				auto im = ip.m[i];
 				auto im2 = im * im;
 				auto im_r = im * inv_r;
-				auto iv2 = ip.vx[i] * ip.vx[i]
-						 + ip.vy[i] * ip.vy[i]
-						 + ip.vz[i] * ip.vz[i];
+				auto iv2 = ivx * ivx
+						 + ivy * ivy
+						 + ivz * ivz;
 				auto iv4 = iv2 * iv2;
-				auto niv = rx[j] * ip.vx[i]
-						 + ry[j] * ip.vy[i]
-						 + rz[j] * ip.vz[i];
+				auto niv = rx * ivx
+						 + ry * ivy
+						 + rz * ivz;
 				niv *= inv_r;
 				auto niv2 = niv * niv;
 
@@ -111,22 +116,22 @@ struct P2P_pnacc_kernel_core {
 						 + jp.vy[j] * jp.vy[j]
 						 + jp.vz[j] * jp.vz[j];
 				auto jv4 = jv2 * jv2;
-				auto njv = rx[j] * jp.vx[j]
-						 + ry[j] * jp.vy[j]
-						 + rz[j] * jp.vz[j];
+				auto njv = rx * jp.vx[j]
+						 + ry * jp.vy[j]
+						 + rz * jp.vz[j];
 				njv *= inv_r;
 				auto njv2 = njv * njv;
 
 				auto imjm = im * jm;
-				auto vv = vx[j] * vx[j]
-						+ vy[j] * vy[j]
-						+ vz[j] * vz[j];
-				auto ivjv = ip.vx[i] * jp.vx[j]
-						  + ip.vy[i] * jp.vy[j]
-						  + ip.vz[i] * jp.vz[j];
-				auto nv = rx[j] * vx[j]
-						+ ry[j] * vy[j]
-						+ rz[j] * vz[j];
+				auto vv = vx * vx
+						+ vy * vy
+						+ vz * vz;
+				auto ivjv = ivx * jp.vx[j]
+						  + ivy * jp.vy[j]
+						  + ivz * jp.vz[j];
+				auto nv = rx * vx
+						+ ry * vy
+						+ rz * vz;
 				nv *= inv_r;
 				auto nvnv = nv * nv;
 				auto nivnjv = niv * njv;
@@ -134,38 +139,33 @@ struct P2P_pnacc_kernel_core {
 				auto order = clight.order;
 				auto inv_c = clight.inv1;
 
-				ipnA[j] = pnterms_A(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
-									im, im2, im_r, iv2, iv4, -niv, niv2,
-									imjm, inv_r, inv_r2, vv, ivjv,
-									nv, nvnv, nivnjv, order, inv_c);
+				auto ipnA = pnterms_A(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
+									  im, im2, im_r, iv2, iv4, -niv, niv2,
+									  imjm, inv_r, inv_r2, vv, ivjv,
+									  nv, nvnv, nivnjv, order, inv_c);
+				auto ipnB = pnterms_B(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
+									  im, im2, im_r, iv2, iv4, -niv, niv2,
+									  imjm, inv_r, inv_r2, vv, ivjv,
+									  nv, nvnv, nivnjv, order, inv_c);
+				jp.pnax[j] -= ipnA * rx + ipnB * vx;
+				jp.pnay[j] -= ipnA * ry + ipnB * vy;
+				jp.pnaz[j] -= ipnA * rz + ipnB * vz;
 
-				ipnB[j] = pnterms_B(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
-									im, im2, im_r, iv2, iv4, -niv, niv2,
-									imjm, inv_r, inv_r2, vv, ivjv,
-									nv, nvnv, nivnjv, order, inv_c);
-
-				jpnA[j] = pnterms_A(im, im2, im_r, iv2, iv4, +niv, niv2,
-									jm, jm2, jm_r, jv2, jv4, +njv, njv2,
-									imjm, inv_r, inv_r2, vv, ivjv,
-									nv, nvnv, nivnjv, order, inv_c);
-
-				jpnB[j] = pnterms_B(im, im2, im_r, iv2, iv4, +niv, niv2,
-									jm, jm2, jm_r, jv2, jv4, +njv, njv2,
-									imjm, inv_r, inv_r2, vv, ivjv,
-									nv, nvnv, nivnjv, order, inv_c);
+				auto jpnA = pnterms_A(im, im2, im_r, iv2, iv4, +niv, niv2,
+									  jm, jm2, jm_r, jv2, jv4, +njv, njv2,
+									  imjm, inv_r, inv_r2, vv, ivjv,
+									  nv, nvnv, nivnjv, order, inv_c);
+				auto jpnB = pnterms_B(im, im2, im_r, iv2, iv4, +niv, niv2,
+									  jm, jm2, jm_r, jv2, jv4, +njv, njv2,
+									  imjm, inv_r, inv_r2, vv, ivjv,
+									  nv, nvnv, nivnjv, order, inv_c);
+				ipnax += jpnA * rx + jpnB * vx;
+				ipnay += jpnA * ry + jpnB * vy;
+				ipnaz += jpnA * rz + jpnB * vz;
 			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				jp.pnax[j] -= ipnA[j] * rx[j] + ipnB[j] * vx[j];
-				jp.pnay[j] -= ipnA[j] * ry[j] + ipnB[j] * vy[j];
-				jp.pnaz[j] -= ipnA[j] * rz[j] + ipnB[j] * vz[j];
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				ip.pnax[i] += jpnA[j] * rx[j] + jpnB[j] * vx[j];
-				ip.pnay[i] += jpnA[j] * ry[j] + jpnB[j] * vy[j];
-				ip.pnaz[i] += jpnA[j] * rz[j] + jpnB[j] * vz[j];
-			}
+			ip.pnax[i] = ipnax;
+			ip.pnay[i] = ipnay;
+			ip.pnaz[i] = ipnaz;
 		}
 	}
 
@@ -186,9 +186,8 @@ struct P2P_pnacc_kernel_core {
 				auto rr = ee;
 				rr += rx * rx + ry * ry + rz * rz;
 
-				auto inv_r1 = rsqrt(rr);
-				inv_r1 = (rr > ee) ? (inv_r1):(0);
-				auto inv_r = inv_r1;
+				auto inv_r = rsqrt(rr);
+				inv_r = (rr > ee) ? (inv_r):(0);
 				auto inv_r2 = inv_r * inv_r;
 
 				auto im = p.m[i];
@@ -238,12 +237,10 @@ struct P2P_pnacc_kernel_core {
 									  im, im2, im_r, iv2, iv4, -niv, niv2,
 									  imjm, inv_r, inv_r2, vv, ivjv,
 									  nv, nvnv, nivnjv, order, inv_c);
-
 				auto ipnB = pnterms_B(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
 									  im, im2, im_r, iv2, iv4, -niv, niv2,
 									  imjm, inv_r, inv_r2, vv, ivjv,
 									  nv, nvnv, nivnjv, order, inv_c);
-
 				p.pnax[j] -= ipnA * rx + ipnB * vx;
 				p.pnay[j] -= ipnA * ry + ipnB * vy;
 				p.pnaz[j] -= ipnA * rz + ipnB * vz;

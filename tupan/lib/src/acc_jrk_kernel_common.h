@@ -70,58 +70,68 @@ struct P2P_acc_jrk_kernel_core {
 	template<typename IP, typename JP>
 	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 56
-		decltype(jp.m) rx, ry, rz, vx, vy, vz;
-		decltype(jp.m) inv_r3, im_r3, jm_r3;
 		for (size_t i = 0; i < TILE; ++i) {
+			auto im = ip.m[i];
+			auto iee = ip.e2[i];
+			auto irx = ip.rx[i];
+			auto iry = ip.ry[i];
+			auto irz = ip.rz[i];
+			auto ivx = ip.vx[i];
+			auto ivy = ip.vy[i];
+			auto ivz = ip.vz[i];
+			auto iax = ip.ax[i];
+			auto iay = ip.ay[i];
+			auto iaz = ip.az[i];
+			auto ijx = ip.jx[i];
+			auto ijy = ip.jy[i];
+			auto ijz = ip.jz[i];
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto ee = ip.e2[i] + jp.e2[j];
-				rx[j] = ip.rx[i] - jp.rx[j];
-				ry[j] = ip.ry[i] - jp.ry[j];
-				rz[j] = ip.rz[i] - jp.rz[j];
-				vx[j] = ip.vx[i] - jp.vx[j];
-				vy[j] = ip.vy[i] - jp.vy[j];
-				vz[j] = ip.vz[i] - jp.vz[j];
+				auto ee = iee + jp.e2[j];
+				auto rx = irx - jp.rx[j];
+				auto ry = iry - jp.ry[j];
+				auto rz = irz - jp.rz[j];
+				auto vx = ivx - jp.vx[j];
+				auto vy = ivy - jp.vy[j];
+				auto vz = ivz - jp.vz[j];
 
 				auto rr = ee;
-				rr += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
+				rr += rx * rx + ry * ry + rz * rz;
 
-				inv_r3[j] = rsqrt(rr);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				auto inv_r2 = inv_r3[j] * inv_r3[j];
-				inv_r3[j] *= inv_r2;
+				auto inv_r3 = rsqrt(rr);
+				auto inv_r2 = inv_r3 * inv_r3;
+				inv_r3 *= inv_r2;
 				inv_r2 *= -3;
 
-				auto s1 = rx[j] * vx[j] + ry[j] * vy[j] + rz[j] * vz[j];
+				auto s1 = rx * vx + ry * vy + rz * vz;
 
 				auto q1 = inv_r2 * (s1);
-				vx[j] += q1 * rx[j];
-				vy[j] += q1 * ry[j];
-				vz[j] += q1 * rz[j];
+				vx += q1 * rx;
+				vy += q1 * ry;
+				vz += q1 * rz;
 
-				im_r3[j] = ip.m[i] * inv_r3[j];
-				jm_r3[j] = jp.m[j] * inv_r3[j];
+				auto im_r3 = im * inv_r3;
+				jp.ax[j] += im_r3 * rx;
+				jp.ay[j] += im_r3 * ry;
+				jp.az[j] += im_r3 * rz;
+				jp.jx[j] += im_r3 * vx;
+				jp.jy[j] += im_r3 * vy;
+				jp.jz[j] += im_r3 * vz;
+
+				auto jm_r3 = jp.m[j] * inv_r3;
+				iax -= jm_r3 * rx;
+				iay -= jm_r3 * ry;
+				iaz -= jm_r3 * rz;
+				ijx -= jm_r3 * vx;
+				ijy -= jm_r3 * vy;
+				ijz -= jm_r3 * vz;
 			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				jp.ax[j] += im_r3[j] * rx[j];
-				jp.ay[j] += im_r3[j] * ry[j];
-				jp.az[j] += im_r3[j] * rz[j];
-				jp.jx[j] += im_r3[j] * vx[j];
-				jp.jy[j] += im_r3[j] * vy[j];
-				jp.jz[j] += im_r3[j] * vz[j];
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				ip.ax[i] -= jm_r3[j] * rx[j];
-				ip.ay[i] -= jm_r3[j] * ry[j];
-				ip.az[i] -= jm_r3[j] * rz[j];
-				ip.jx[i] -= jm_r3[j] * vx[j];
-				ip.jy[i] -= jm_r3[j] * vy[j];
-				ip.jz[i] -= jm_r3[j] * vz[j];
-			}
+			ip.ax[i] = iax;
+			ip.ay[i] = iay;
+			ip.az[i] = iaz;
+			ip.jx[i] = ijx;
+			ip.jy[i] = ijy;
+			ip.jz[i] = ijz;
 		}
 	}
 

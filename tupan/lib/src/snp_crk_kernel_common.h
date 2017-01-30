@@ -94,43 +94,63 @@ struct P2P_snp_crk_kernel_core {
 	template<typename IP, typename JP>
 	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 153
-		decltype(jp.m) rx, ry, rz, vx, vy, vz;
-		decltype(jp.m) ax, ay, az, jx, jy, jz;
-		decltype(jp.m) inv_r3, im_r3, jm_r3;
 		for (size_t i = 0; i < TILE; ++i) {
+			auto im = ip.m[i];
+			auto iee = ip.e2[i];
+			auto irx = ip.rx[i];
+			auto iry = ip.ry[i];
+			auto irz = ip.rz[i];
+			auto ivx = ip.vx[i];
+			auto ivy = ip.vy[i];
+			auto ivz = ip.vz[i];
+			auto iax = ip.ax[i];
+			auto iay = ip.ay[i];
+			auto iaz = ip.az[i];
+			auto ijx = ip.jx[i];
+			auto ijy = ip.jy[i];
+			auto ijz = ip.jz[i];
+			auto iAx = ip.Ax[i];
+			auto iAy = ip.Ay[i];
+			auto iAz = ip.Az[i];
+			auto iJx = ip.Jx[i];
+			auto iJy = ip.Jy[i];
+			auto iJz = ip.Jz[i];
+			auto iSx = ip.Sx[i];
+			auto iSy = ip.Sy[i];
+			auto iSz = ip.Sz[i];
+			auto iCx = ip.Cx[i];
+			auto iCy = ip.Cy[i];
+			auto iCz = ip.Cz[i];
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto ee = ip.e2[i] + jp.e2[j];
-				rx[j] = ip.rx[i] - jp.rx[j];
-				ry[j] = ip.ry[i] - jp.ry[j];
-				rz[j] = ip.rz[i] - jp.rz[j];
-				vx[j] = ip.vx[i] - jp.vx[j];
-				vy[j] = ip.vy[i] - jp.vy[j];
-				vz[j] = ip.vz[i] - jp.vz[j];
-				ax[j] = ip.ax[i] - jp.ax[j];
-				ay[j] = ip.ay[i] - jp.ay[j];
-				az[j] = ip.az[i] - jp.az[j];
-				jx[j] = ip.jx[i] - jp.jx[j];
-				jy[j] = ip.jy[i] - jp.jy[j];
-				jz[j] = ip.jz[i] - jp.jz[j];
+				auto ee = iee + jp.e2[j];
+				auto rx = irx - jp.rx[j];
+				auto ry = iry - jp.ry[j];
+				auto rz = irz - jp.rz[j];
+				auto vx = ivx - jp.vx[j];
+				auto vy = ivy - jp.vy[j];
+				auto vz = ivz - jp.vz[j];
+				auto ax = iax - jp.ax[j];
+				auto ay = iay - jp.ay[j];
+				auto az = iaz - jp.az[j];
+				auto jx = ijx - jp.jx[j];
+				auto jy = ijy - jp.jy[j];
+				auto jz = ijz - jp.jz[j];
 
 				auto rr = ee;
-				rr += rx[j] * rx[j] + ry[j] * ry[j] + rz[j] * rz[j];
+				rr += rx * rx + ry * ry + rz * rz;
 
-				inv_r3[j] = rsqrt(rr);
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				auto inv_r2 = inv_r3[j] * inv_r3[j];
-				inv_r3[j] *= inv_r2;
+				auto inv_r3 = rsqrt(rr);
+				auto inv_r2 = inv_r3 * inv_r3;
+				inv_r3 *= inv_r2;
 				inv_r2 *= -3;
 
-				auto s1 = rx[j] * vx[j] + ry[j] * vy[j] + rz[j] * vz[j];
-				auto s2 = vx[j] * vx[j] + vy[j] * vy[j] + vz[j] * vz[j];
-				auto s3 = vx[j] * ax[j] + vy[j] * ay[j] + vz[j] * az[j];
+				auto s1 = rx * vx + ry * vy + rz * vz;
+				auto s2 = vx * vx + vy * vy + vz * vz;
+				auto s3 = vx * ax + vy * ay + vz * az;
 				s3 *= 3;
-				s2 += rx[j] * ax[j] + ry[j] * ay[j] + rz[j] * az[j];
-				s3 += rx[j] * jx[j] + ry[j] * jy[j] + rz[j] * jz[j];
+				s2 += rx * ax + ry * ay + rz * az;
+				s3 += rx * jx + ry * jy + rz * jz;
 
 				constexpr auto cq21 = static_cast<decltype(s1)>(5.0/3.0);
 				constexpr auto cq31 = static_cast<decltype(s1)>(8.0/3.0);
@@ -144,51 +164,58 @@ struct P2P_snp_crk_kernel_core {
 				const auto c3 = 3 * q2;
 				const auto c2 = 2 * q1;
 
-				jx[j] += b3 * ax[j] + c3 * vx[j] + q3 * rx[j];
-				jy[j] += b3 * ay[j] + c3 * vy[j] + q3 * ry[j];
-				jz[j] += b3 * az[j] + c3 * vz[j] + q3 * rz[j];
+				jx += b3 * ax + c3 * vx + q3 * rx;
+				jy += b3 * ay + c3 * vy + q3 * ry;
+				jz += b3 * az + c3 * vz + q3 * rz;
 
-				ax[j] += c2 * vx[j] + q2 * rx[j];
-				ay[j] += c2 * vy[j] + q2 * ry[j];
-				az[j] += c2 * vz[j] + q2 * rz[j];
+				ax += c2 * vx + q2 * rx;
+				ay += c2 * vy + q2 * ry;
+				az += c2 * vz + q2 * rz;
 
-				vx[j] += q1 * rx[j];
-				vy[j] += q1 * ry[j];
-				vz[j] += q1 * rz[j];
+				vx += q1 * rx;
+				vy += q1 * ry;
+				vz += q1 * rz;
 
-				im_r3[j] = ip.m[i] * inv_r3[j];
-				jm_r3[j] = jp.m[j] * inv_r3[j];
+				auto im_r3 = im * inv_r3;
+				jp.Ax[j] += im_r3 * rx;
+				jp.Ay[j] += im_r3 * ry;
+				jp.Az[j] += im_r3 * rz;
+				jp.Jx[j] += im_r3 * vx;
+				jp.Jy[j] += im_r3 * vy;
+				jp.Jz[j] += im_r3 * vz;
+				jp.Sx[j] += im_r3 * ax;
+				jp.Sy[j] += im_r3 * ay;
+				jp.Sz[j] += im_r3 * az;
+				jp.Cx[j] += im_r3 * jx;
+				jp.Cy[j] += im_r3 * jy;
+				jp.Cz[j] += im_r3 * jz;
+
+				auto jm_r3 = jp.m[j] * inv_r3;
+				iAx -= jm_r3 * rx;
+				iAy -= jm_r3 * ry;
+				iAz -= jm_r3 * rz;
+				iJx -= jm_r3 * vx;
+				iJy -= jm_r3 * vy;
+				iJz -= jm_r3 * vz;
+				iSx -= jm_r3 * ax;
+				iSy -= jm_r3 * ay;
+				iSz -= jm_r3 * az;
+				iCx -= jm_r3 * jx;
+				iCy -= jm_r3 * jy;
+				iCz -= jm_r3 * jz;
 			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				jp.Ax[j] += im_r3[j] * rx[j];
-				jp.Ay[j] += im_r3[j] * ry[j];
-				jp.Az[j] += im_r3[j] * rz[j];
-				jp.Jx[j] += im_r3[j] * vx[j];
-				jp.Jy[j] += im_r3[j] * vy[j];
-				jp.Jz[j] += im_r3[j] * vz[j];
-				jp.Sx[j] += im_r3[j] * ax[j];
-				jp.Sy[j] += im_r3[j] * ay[j];
-				jp.Sz[j] += im_r3[j] * az[j];
-				jp.Cx[j] += im_r3[j] * jx[j];
-				jp.Cy[j] += im_r3[j] * jy[j];
-				jp.Cz[j] += im_r3[j] * jz[j];
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				ip.Ax[i] -= jm_r3[j] * rx[j];
-				ip.Ay[i] -= jm_r3[j] * ry[j];
-				ip.Az[i] -= jm_r3[j] * rz[j];
-				ip.Jx[i] -= jm_r3[j] * vx[j];
-				ip.Jy[i] -= jm_r3[j] * vy[j];
-				ip.Jz[i] -= jm_r3[j] * vz[j];
-				ip.Sx[i] -= jm_r3[j] * ax[j];
-				ip.Sy[i] -= jm_r3[j] * ay[j];
-				ip.Sz[i] -= jm_r3[j] * az[j];
-				ip.Cx[i] -= jm_r3[j] * jx[j];
-				ip.Cy[i] -= jm_r3[j] * jy[j];
-				ip.Cz[i] -= jm_r3[j] * jz[j];
-			}
+			ip.Ax[i] = iAx;
+			ip.Ay[i] = iAy;
+			ip.Az[i] = iAz;
+			ip.Jx[i] = iJx;
+			ip.Jy[i] = iJy;
+			ip.Jz[i] = iJz;
+			ip.Sx[i] = iSx;
+			ip.Sy[i] = iSy;
+			ip.Sz[i] = iSz;
+			ip.Cx[i] = iCx;
+			ip.Cy[i] = iCy;
+			ip.Cz[i] = iCz;
 		}
 	}
 

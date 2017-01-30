@@ -54,28 +54,30 @@ struct P2P_phi_kernel_core {
 	template<typename IP, typename JP>
 	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 16
-		decltype(jp.m) inv_r1;
 		for (size_t i = 0; i < TILE; ++i) {
+			auto im = ip.m[i];
+			auto iee = ip.e2[i];
+			auto irx = ip.rx[i];
+			auto iry = ip.ry[i];
+			auto irz = ip.rz[i];
+			auto iphi = ip.phi[i];
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto ee = ip.e2[i] + jp.e2[j];
-				auto rx = ip.rx[i] - jp.rx[j];
-				auto ry = ip.ry[i] - jp.ry[j];
-				auto rz = ip.rz[i] - jp.rz[j];
+				auto ee = iee + jp.e2[j];
+				auto rx = irx - jp.rx[j];
+				auto ry = iry - jp.ry[j];
+				auto rz = irz - jp.rz[j];
 
 				auto rr = ee;
 				rr += rx * rx + ry * ry + rz * rz;
 
-				inv_r1[j] = rsqrt(rr);
+				auto inv_r1 = rsqrt(rr);
+
+				jp.phi[j] -= im * inv_r1;
+
+				iphi -= jp.m[j] * inv_r1;
 			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				jp.phi[j] -= ip.m[i] * inv_r1[j];
-			}
-			#pragma omp simd
-			for (size_t j = 0; j < TILE; ++j) {
-				ip.phi[i] -= jp.m[j] * inv_r1[j];
-			}
+			ip.phi[i] = iphi;
 		}
 	}
 

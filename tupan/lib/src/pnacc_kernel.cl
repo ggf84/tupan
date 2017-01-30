@@ -37,9 +37,8 @@ pnacc_kernel_core(
 				real_tn rr = ee;
 				rr += rx * rx + ry * ry + rz * rz;
 
-				real_tn inv_r1 = rsqrt(rr);
-				inv_r1 = (rr > ee) ? (inv_r1):(0);
-				real_tn inv_r = inv_r1;
+				real_tn inv_r = rsqrt(rr);
+				inv_r = (rr > ee) ? (inv_r):(0);
 				real_tn inv_r2 = inv_r * inv_r;
 
 //				real_tn im = ip->m[i];
@@ -89,7 +88,6 @@ pnacc_kernel_core(
 										 jm, jm2, jm_r, jv2, jv4, +njv, njv2,
 										 imjm, inv_r, inv_r2, vv, ivjv,
 										 nv, nvnv, nivnjv, order, inv_c);
-
 				real_tn jpnB = pnterms_B(im, im2, im_r, iv2, iv4, +niv, niv2,
 										 jm, jm2, jm_r, jv2, jv4, +njv, njv2,
 										 imjm, inv_r, inv_r2, vv, ivjv,

@@ -35,7 +35,7 @@ COMPILER_FLAGS = [
     '-fno-math-errno',
     '-ffinite-math-only',
     '-funsafe-math-optimizations',
-    '-fno-associative-math',
+#    '-fno-associative-math',
     '-ffp-contract=fast',
     '-std=c++14',
 #    '-fopt-info-vec',              # gcc
