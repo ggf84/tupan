@@ -4,7 +4,7 @@
 #include <omp.h>
 
 
-constexpr auto threshold = 64;
+constexpr auto threshold = 16;
 
 
 template<typename I, typename J, typename F>
@@ -25,7 +25,7 @@ rectangle(const I i0, const I i1, const J j0, const J j1, F fn)
 {
 	const auto di = i1 - i0;
 	const auto dj = j1 - j0;
-	if (di < threshold || dj < threshold) {
+	if (di < threshold && dj < threshold) {
 		return p2p_rectangle(i0, i1, j0, j1, fn);
 	}
 
