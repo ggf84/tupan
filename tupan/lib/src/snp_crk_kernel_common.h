@@ -10,32 +10,32 @@ namespace Snp_Crk {
 
 template<size_t TILE>
 struct Snp_Crk_Data_SoA {
-	real_t m[TILE];
-	real_t e2[TILE];
-	real_t rx[TILE];
-	real_t ry[TILE];
-	real_t rz[TILE];
-	real_t vx[TILE];
-	real_t vy[TILE];
-	real_t vz[TILE];
-	real_t ax[TILE];
-	real_t ay[TILE];
-	real_t az[TILE];
-	real_t jx[TILE];
-	real_t jy[TILE];
-	real_t jz[TILE];
-	real_t Ax[TILE];
-	real_t Ay[TILE];
-	real_t Az[TILE];
-	real_t Jx[TILE];
-	real_t Jy[TILE];
-	real_t Jz[TILE];
-	real_t Sx[TILE];
-	real_t Sy[TILE];
-	real_t Sz[TILE];
-	real_t Cx[TILE];
-	real_t Cy[TILE];
-	real_t Cz[TILE];
+	real_t __ALIGNED__ m[TILE];
+	real_t __ALIGNED__ e2[TILE];
+	real_t __ALIGNED__ rx[TILE];
+	real_t __ALIGNED__ ry[TILE];
+	real_t __ALIGNED__ rz[TILE];
+	real_t __ALIGNED__ vx[TILE];
+	real_t __ALIGNED__ vy[TILE];
+	real_t __ALIGNED__ vz[TILE];
+	real_t __ALIGNED__ ax[TILE];
+	real_t __ALIGNED__ ay[TILE];
+	real_t __ALIGNED__ az[TILE];
+	real_t __ALIGNED__ jx[TILE];
+	real_t __ALIGNED__ jy[TILE];
+	real_t __ALIGNED__ jz[TILE];
+	real_t __ALIGNED__ Ax[TILE];
+	real_t __ALIGNED__ Ay[TILE];
+	real_t __ALIGNED__ Az[TILE];
+	real_t __ALIGNED__ Jx[TILE];
+	real_t __ALIGNED__ Jy[TILE];
+	real_t __ALIGNED__ Jz[TILE];
+	real_t __ALIGNED__ Sx[TILE];
+	real_t __ALIGNED__ Sy[TILE];
+	real_t __ALIGNED__ Sz[TILE];
+	real_t __ALIGNED__ Cx[TILE];
+	real_t __ALIGNED__ Cy[TILE];
+	real_t __ALIGNED__ Cz[TILE];
 };
 
 template<size_t TILE>

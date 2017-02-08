@@ -10,20 +10,20 @@ namespace Acc_Jrk {
 
 template<size_t TILE>
 struct Acc_Jrk_Data_SoA {
-	real_t m[TILE];
-	real_t e2[TILE];
-	real_t rx[TILE];
-	real_t ry[TILE];
-	real_t rz[TILE];
-	real_t vx[TILE];
-	real_t vy[TILE];
-	real_t vz[TILE];
-	real_t ax[TILE];
-	real_t ay[TILE];
-	real_t az[TILE];
-	real_t jx[TILE];
-	real_t jy[TILE];
-	real_t jz[TILE];
+	real_t __ALIGNED__ m[TILE];
+	real_t __ALIGNED__ e2[TILE];
+	real_t __ALIGNED__ rx[TILE];
+	real_t __ALIGNED__ ry[TILE];
+	real_t __ALIGNED__ rz[TILE];
+	real_t __ALIGNED__ vx[TILE];
+	real_t __ALIGNED__ vy[TILE];
+	real_t __ALIGNED__ vz[TILE];
+	real_t __ALIGNED__ ax[TILE];
+	real_t __ALIGNED__ ay[TILE];
+	real_t __ALIGNED__ az[TILE];
+	real_t __ALIGNED__ jx[TILE];
+	real_t __ALIGNED__ jy[TILE];
+	real_t __ALIGNED__ jz[TILE];
 };
 
 template<size_t TILE>

@@ -111,20 +111,20 @@ namespace Sakura {
 
 template<size_t TILE>
 struct Sakura_Data_SoA {
-	real_t m[TILE];
-	real_t e2[TILE];
-	real_t rx[TILE];
-	real_t ry[TILE];
-	real_t rz[TILE];
-	real_t vx[TILE];
-	real_t vy[TILE];
-	real_t vz[TILE];
-	real_t drx[TILE];
-	real_t dry[TILE];
-	real_t drz[TILE];
-	real_t dvx[TILE];
-	real_t dvy[TILE];
-	real_t dvz[TILE];
+	real_t __ALIGNED__ m[TILE];
+	real_t __ALIGNED__ e2[TILE];
+	real_t __ALIGNED__ rx[TILE];
+	real_t __ALIGNED__ ry[TILE];
+	real_t __ALIGNED__ rz[TILE];
+	real_t __ALIGNED__ vx[TILE];
+	real_t __ALIGNED__ vy[TILE];
+	real_t __ALIGNED__ vz[TILE];
+	real_t __ALIGNED__ drx[TILE];
+	real_t __ALIGNED__ dry[TILE];
+	real_t __ALIGNED__ drz[TILE];
+	real_t __ALIGNED__ dvx[TILE];
+	real_t __ALIGNED__ dvy[TILE];
+	real_t __ALIGNED__ dvz[TILE];
 };
 
 template<size_t TILE>

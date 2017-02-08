@@ -11,17 +11,17 @@ namespace PNAcc {
 
 template<size_t TILE>
 struct PNAcc_Data_SoA {
-	real_t m[TILE];
-	real_t e2[TILE];
-	real_t rx[TILE];
-	real_t ry[TILE];
-	real_t rz[TILE];
-	real_t vx[TILE];
-	real_t vy[TILE];
-	real_t vz[TILE];
-	real_t pnax[TILE];
-	real_t pnay[TILE];
-	real_t pnaz[TILE];
+	real_t __ALIGNED__ m[TILE];
+	real_t __ALIGNED__ e2[TILE];
+	real_t __ALIGNED__ rx[TILE];
+	real_t __ALIGNED__ ry[TILE];
+	real_t __ALIGNED__ rz[TILE];
+	real_t __ALIGNED__ vx[TILE];
+	real_t __ALIGNED__ vy[TILE];
+	real_t __ALIGNED__ vz[TILE];
+	real_t __ALIGNED__ pnax[TILE];
+	real_t __ALIGNED__ pnay[TILE];
+	real_t __ALIGNED__ pnaz[TILE];
 };
 
 template<size_t TILE>

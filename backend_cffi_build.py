@@ -28,15 +28,11 @@ FILE_NAMES = [
 
 
 COMPILER_FLAGS = [
-    '-O3',
+    '-O2',
     '-flto',
     '-fopenmp',
+    '-ffast-math',
     '-funroll-loops',
-    '-fno-math-errno',
-    '-ffinite-math-only',
-    '-funsafe-math-optimizations',
-#    '-fno-associative-math',
-    '-ffp-contract=fast',
     '-std=c++14',
 #    '-fopt-info-vec',              # gcc
 #    '-Rpass=loop-vectorize',       # clang

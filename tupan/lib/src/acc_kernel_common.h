@@ -10,14 +10,14 @@ namespace Acc {
 
 template<size_t TILE>
 struct Acc_Data_SoA {
-	real_t m[TILE];
-	real_t e2[TILE];
-	real_t rx[TILE];
-	real_t ry[TILE];
-	real_t rz[TILE];
-	real_t ax[TILE];
-	real_t ay[TILE];
-	real_t az[TILE];
+	real_t __ALIGNED__ m[TILE];
+	real_t __ALIGNED__ e2[TILE];
+	real_t __ALIGNED__ rx[TILE];
+	real_t __ALIGNED__ ry[TILE];
+	real_t __ALIGNED__ rz[TILE];
+	real_t __ALIGNED__ ax[TILE];
+	real_t __ALIGNED__ ay[TILE];
+	real_t __ALIGNED__ az[TILE];
 };
 
 template<size_t TILE>

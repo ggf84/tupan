@@ -10,16 +10,16 @@ namespace Tstep {
 
 template<size_t TILE>
 struct Tstep_Data_SoA {
-	real_t m[TILE];
-	real_t e2[TILE];
-	real_t rx[TILE];
-	real_t ry[TILE];
-	real_t rz[TILE];
-	real_t vx[TILE];
-	real_t vy[TILE];
-	real_t vz[TILE];
-	real_t w2_a[TILE];
-	real_t w2_b[TILE];
+	real_t __ALIGNED__ m[TILE];
+	real_t __ALIGNED__ e2[TILE];
+	real_t __ALIGNED__ rx[TILE];
+	real_t __ALIGNED__ ry[TILE];
+	real_t __ALIGNED__ rz[TILE];
+	real_t __ALIGNED__ vx[TILE];
+	real_t __ALIGNED__ vy[TILE];
+	real_t __ALIGNED__ vz[TILE];
+	real_t __ALIGNED__ w2_a[TILE];
+	real_t __ALIGNED__ w2_b[TILE];
 };
 
 template<size_t TILE>
