@@ -163,44 +163,44 @@ struct P2P_tstep_kernel_core {
 
 typedef struct tstep_data {
 	union {
-		real_tn m[LSIZE];
-		real_t _m[LSIZE * SIMD];
+		real_tn m[LMSIZE];
+		real_t _m[LMSIZE * SIMD];
 	};
 	union {
-		real_tn e2[LSIZE];
-		real_t _e2[LSIZE * SIMD];
+		real_tn e2[LMSIZE];
+		real_t _e2[LMSIZE * SIMD];
 	};
 	union {
-		real_tn rx[LSIZE];
-		real_t _rx[LSIZE * SIMD];
+		real_tn rx[LMSIZE];
+		real_t _rx[LMSIZE * SIMD];
 	};
 	union {
-		real_tn ry[LSIZE];
-		real_t _ry[LSIZE * SIMD];
+		real_tn ry[LMSIZE];
+		real_t _ry[LMSIZE * SIMD];
 	};
 	union {
-		real_tn rz[LSIZE];
-		real_t _rz[LSIZE * SIMD];
+		real_tn rz[LMSIZE];
+		real_t _rz[LMSIZE * SIMD];
 	};
 	union {
-		real_tn vx[LSIZE];
-		real_t _vx[LSIZE * SIMD];
+		real_tn vx[LMSIZE];
+		real_t _vx[LMSIZE * SIMD];
 	};
 	union {
-		real_tn vy[LSIZE];
-		real_t _vy[LSIZE * SIMD];
+		real_tn vy[LMSIZE];
+		real_t _vy[LMSIZE * SIMD];
 	};
 	union {
-		real_tn vz[LSIZE];
-		real_t _vz[LSIZE * SIMD];
+		real_tn vz[LMSIZE];
+		real_t _vz[LMSIZE * SIMD];
 	};
 	union {
-		real_tn w2_a[LSIZE];
-		real_t _w2_a[LSIZE * SIMD];
+		real_tn w2_a[LMSIZE];
+		real_t _w2_a[LMSIZE * SIMD];
 	};
 	union {
-		real_tn w2_b[LSIZE];
-		real_t _w2_b[LSIZE * SIMD];
+		real_tn w2_b[LMSIZE];
+		real_t _w2_b[LMSIZE * SIMD];
 	};
 } Tstep_Data;
 

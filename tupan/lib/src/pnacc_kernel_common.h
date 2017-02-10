@@ -258,48 +258,48 @@ struct P2P_pnacc_kernel_core {
 
 typedef struct pnacc_data {
 	union {
-		real_tn m[LSIZE];
-		real_t _m[LSIZE * SIMD];
+		real_tn m[LMSIZE];
+		real_t _m[LMSIZE * SIMD];
 	};
 	union {
-		real_tn e2[LSIZE];
-		real_t _e2[LSIZE * SIMD];
+		real_tn e2[LMSIZE];
+		real_t _e2[LMSIZE * SIMD];
 	};
 	union {
-		real_tn rx[LSIZE];
-		real_t _rx[LSIZE * SIMD];
+		real_tn rx[LMSIZE];
+		real_t _rx[LMSIZE * SIMD];
 	};
 	union {
-		real_tn ry[LSIZE];
-		real_t _ry[LSIZE * SIMD];
+		real_tn ry[LMSIZE];
+		real_t _ry[LMSIZE * SIMD];
 	};
 	union {
-		real_tn rz[LSIZE];
-		real_t _rz[LSIZE * SIMD];
+		real_tn rz[LMSIZE];
+		real_t _rz[LMSIZE * SIMD];
 	};
 	union {
-		real_tn vx[LSIZE];
-		real_t _vx[LSIZE * SIMD];
+		real_tn vx[LMSIZE];
+		real_t _vx[LMSIZE * SIMD];
 	};
 	union {
-		real_tn vy[LSIZE];
-		real_t _vy[LSIZE * SIMD];
+		real_tn vy[LMSIZE];
+		real_t _vy[LMSIZE * SIMD];
 	};
 	union {
-		real_tn vz[LSIZE];
-		real_t _vz[LSIZE * SIMD];
+		real_tn vz[LMSIZE];
+		real_t _vz[LMSIZE * SIMD];
 	};
 	union {
-		real_tn pnax[LSIZE];
-		real_t _pnax[LSIZE * SIMD];
+		real_tn pnax[LMSIZE];
+		real_t _pnax[LMSIZE * SIMD];
 	};
 	union {
-		real_tn pnay[LSIZE];
-		real_t _pnay[LSIZE * SIMD];
+		real_tn pnay[LMSIZE];
+		real_t _pnay[LMSIZE * SIMD];
 	};
 	union {
-		real_tn pnaz[LSIZE];
-		real_t _pnaz[LSIZE * SIMD];
+		real_tn pnaz[LMSIZE];
+		real_t _pnaz[LMSIZE * SIMD];
 	};
 } PNAcc_Data;
 

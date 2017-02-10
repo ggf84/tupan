@@ -7,38 +7,44 @@ phi_kernel_core(
 	local Phi_Data *jp)
 // flop count: 14
 {
-	for (uint_t i = get_local_id(0);
-				i < LSIZE;
-				i += get_local_size(0)) {
-		real_tn iee = ip->e2[i];
-		real_tn irx = ip->rx[i];
-		real_tn iry = ip->ry[i];
-		real_tn irz = ip->rz[i];
-		real_tn iphi = ip->phi[i];
+	uint_t ilid = get_local_id(0);
+//	#pragma unroll 8
+	for (uint_t l = 0; l < WGSIZE; ++l) {
+		uint_t jlid = l;//(ilid + l) % WGSIZE;
 		#pragma unroll
-		for (uint_t k = 0; k < SIMD; ++k) {
-			#pragma unroll 2
-			for (uint_t j = 0; j < LSIZE; ++j) {
-				real_tn ee = iee + jp->e2[j];
-				real_tn rx = irx - jp->rx[j];
-				real_tn ry = iry - jp->ry[j];
-				real_tn rz = irz - jp->rz[j];
+		for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
+			uint_t i = ii + ilid;
+			real_tn iee = ip->e2[i];
+			real_tn irx = ip->rx[i];
+			real_tn iry = ip->ry[i];
+			real_tn irz = ip->rz[i];
+			real_tn iphi = ip->phi[i];
+//			#pragma unroll
+			for (uint_t k = 0; k < SIMD; ++k) {
+				#pragma unroll
+				for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
+					uint_t j = jj + jlid;
+					real_tn ee = iee + jp->e2[j];
+					real_tn rx = irx - jp->rx[j];
+					real_tn ry = iry - jp->ry[j];
+					real_tn rz = irz - jp->rz[j];
 
-				real_tn rr = ee;
-				rr += rx * rx + ry * ry + rz * rz;
+					real_tn rr = ee;
+					rr += rx * rx + ry * ry + rz * rz;
 
-				real_tn inv_r1 = rsqrt(rr);
-				inv_r1 = (rr > ee) ? (inv_r1):(0);
+					real_tn inv_r1 = rsqrt(rr);
+					inv_r1 = (rr > ee) ? (inv_r1):(0);
 
-				iphi -= jp->m[j] * inv_r1;
+					iphi -= jp->m[j] * inv_r1;
+				}
+				shuff(iee, SIMD);
+				shuff(irx, SIMD);
+				shuff(iry, SIMD);
+				shuff(irz, SIMD);
+				shuff(iphi, SIMD);
 			}
-			shuff(iee, SIMD);
-			shuff(irx, SIMD);
-			shuff(iry, SIMD);
-			shuff(irz, SIMD);
-			shuff(iphi, SIMD);
+			ip->phi[i] = iphi;
 		}
-		ip->phi[i] = iphi;
 	}
 }
 
@@ -58,12 +64,15 @@ phi_kernel_impl(
 	local Phi_Data *ip,
 	local Phi_Data *jp)
 {
-	for (uint_t ii = LSIZE * SIMD * get_group_id(0);
+	for (uint_t ii = LMSIZE * SIMD * get_group_id(0);
 				ii < ni;
-				ii += LSIZE * SIMD * get_num_groups(0)) {
-		uint_t iN = min((uint_t)(LSIZE * SIMD), (ni - ii));
-		ip->m[get_local_id(0)] = (real_tn)(0);
-		ip->e2[get_local_id(0)] = (real_tn)(0);
+				ii += LMSIZE * SIMD * get_num_groups(0)) {
+		uint_t iN = min((uint_t)(LMSIZE * SIMD), (ni - ii));
+		for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
+			uint_t k = kk + get_local_id(0);
+			ip->m[k] = (real_tn)(0);
+			ip->e2[k] = (real_tn)(0);
+		}
 		barrier(CLK_LOCAL_MEM_FENCE);
 		async_work_group_copy(ip->_m, __im+ii, iN, 0);
 		async_work_group_copy(ip->_e2, __ie2+ii, iN, 0);
@@ -73,10 +82,13 @@ phi_kernel_impl(
 		async_work_group_copy(ip->_phi, __iphi+ii, iN, 0);
 		for (uint_t jj = 0;
 					jj < nj;
-					jj += LSIZE * SIMD) {
-			uint_t jN = min((uint_t)(LSIZE * SIMD), (nj - jj));
-			jp->m[get_local_id(0)] = (real_tn)(0);
-			jp->e2[get_local_id(0)] = (real_tn)(0);
+					jj += LMSIZE * SIMD) {
+			uint_t jN = min((uint_t)(LMSIZE * SIMD), (nj - jj));
+			for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
+				uint_t k = kk + get_local_id(0);
+				jp->m[k] = (real_tn)(0);
+				jp->e2[k] = (real_tn)(0);
+			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
 			async_work_group_copy(jp->_e2, __je2+jj, jN, 0);
@@ -93,7 +105,7 @@ phi_kernel_impl(
 }
 
 
-kernel void
+kernel __attribute__((reqd_work_group_size(WGSIZE, 1, 1))) void
 phi_kernel_rectangle(
 	const uint_t ni,
 	global const real_t __im[],
@@ -125,7 +137,7 @@ phi_kernel_rectangle(
 }
 
 
-kernel void
+kernel __attribute__((reqd_work_group_size(WGSIZE, 1, 1))) void
 phi_kernel_triangle(
 	const uint_t ni,
 	global const real_t __im[],

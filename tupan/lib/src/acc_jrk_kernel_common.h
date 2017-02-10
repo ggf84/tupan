@@ -187,60 +187,60 @@ struct P2P_acc_jrk_kernel_core {
 
 typedef struct acc_jrk_data {
 	union {
-		real_tn m[LSIZE];
-		real_t _m[LSIZE * SIMD];
+		real_tn m[LMSIZE];
+		real_t _m[LMSIZE * SIMD];
 	};
 	union {
-		real_tn e2[LSIZE];
-		real_t _e2[LSIZE * SIMD];
+		real_tn e2[LMSIZE];
+		real_t _e2[LMSIZE * SIMD];
 	};
 	union {
-		real_tn rx[LSIZE];
-		real_t _rx[LSIZE * SIMD];
+		real_tn rx[LMSIZE];
+		real_t _rx[LMSIZE * SIMD];
 	};
 	union {
-		real_tn ry[LSIZE];
-		real_t _ry[LSIZE * SIMD];
+		real_tn ry[LMSIZE];
+		real_t _ry[LMSIZE * SIMD];
 	};
 	union {
-		real_tn rz[LSIZE];
-		real_t _rz[LSIZE * SIMD];
+		real_tn rz[LMSIZE];
+		real_t _rz[LMSIZE * SIMD];
 	};
 	union {
-		real_tn vx[LSIZE];
-		real_t _vx[LSIZE * SIMD];
+		real_tn vx[LMSIZE];
+		real_t _vx[LMSIZE * SIMD];
 	};
 	union {
-		real_tn vy[LSIZE];
-		real_t _vy[LSIZE * SIMD];
+		real_tn vy[LMSIZE];
+		real_t _vy[LMSIZE * SIMD];
 	};
 	union {
-		real_tn vz[LSIZE];
-		real_t _vz[LSIZE * SIMD];
+		real_tn vz[LMSIZE];
+		real_t _vz[LMSIZE * SIMD];
 	};
 	union {
-		real_tn ax[LSIZE];
-		real_t _ax[LSIZE * SIMD];
+		real_tn ax[LMSIZE];
+		real_t _ax[LMSIZE * SIMD];
 	};
 	union {
-		real_tn ay[LSIZE];
-		real_t _ay[LSIZE * SIMD];
+		real_tn ay[LMSIZE];
+		real_t _ay[LMSIZE * SIMD];
 	};
 	union {
-		real_tn az[LSIZE];
-		real_t _az[LSIZE * SIMD];
+		real_tn az[LMSIZE];
+		real_t _az[LMSIZE * SIMD];
 	};
 	union {
-		real_tn jx[LSIZE];
-		real_t _jx[LSIZE * SIMD];
+		real_tn jx[LMSIZE];
+		real_t _jx[LMSIZE * SIMD];
 	};
 	union {
-		real_tn jy[LSIZE];
-		real_t _jy[LSIZE * SIMD];
+		real_tn jy[LMSIZE];
+		real_t _jy[LMSIZE * SIMD];
 	};
 	union {
-		real_tn jz[LSIZE];
-		real_t _jz[LSIZE * SIMD];
+		real_tn jz[LMSIZE];
+		real_t _jz[LMSIZE * SIMD];
 	};
 } Acc_Jrk_Data;
 

@@ -307,60 +307,60 @@ struct P2P_sakura_kernel_core {
 
 typedef struct sakura_data {
 	union {
-		real_t m[LSIZE];
-		real_t _m[LSIZE * 1];
+		real_t m[LMSIZE];
+		real_t _m[LMSIZE * 1];
 	};
 	union {
-		real_t e2[LSIZE];
-		real_t _e2[LSIZE * 1];
+		real_t e2[LMSIZE];
+		real_t _e2[LMSIZE * 1];
 	};
 	union {
-		real_t rx[LSIZE];
-		real_t _rx[LSIZE * 1];
+		real_t rx[LMSIZE];
+		real_t _rx[LMSIZE * 1];
 	};
 	union {
-		real_t ry[LSIZE];
-		real_t _ry[LSIZE * 1];
+		real_t ry[LMSIZE];
+		real_t _ry[LMSIZE * 1];
 	};
 	union {
-		real_t rz[LSIZE];
-		real_t _rz[LSIZE * 1];
+		real_t rz[LMSIZE];
+		real_t _rz[LMSIZE * 1];
 	};
 	union {
-		real_t vx[LSIZE];
-		real_t _vx[LSIZE * 1];
+		real_t vx[LMSIZE];
+		real_t _vx[LMSIZE * 1];
 	};
 	union {
-		real_t vy[LSIZE];
-		real_t _vy[LSIZE * 1];
+		real_t vy[LMSIZE];
+		real_t _vy[LMSIZE * 1];
 	};
 	union {
-		real_t vz[LSIZE];
-		real_t _vz[LSIZE * 1];
+		real_t vz[LMSIZE];
+		real_t _vz[LMSIZE * 1];
 	};
 	union {
-		real_t drx[LSIZE];
-		real_t _drx[LSIZE * 1];
+		real_t drx[LMSIZE];
+		real_t _drx[LMSIZE * 1];
 	};
 	union {
-		real_t dry[LSIZE];
-		real_t _dry[LSIZE * 1];
+		real_t dry[LMSIZE];
+		real_t _dry[LMSIZE * 1];
 	};
 	union {
-		real_t drz[LSIZE];
-		real_t _drz[LSIZE * 1];
+		real_t drz[LMSIZE];
+		real_t _drz[LMSIZE * 1];
 	};
 	union {
-		real_t dvx[LSIZE];
-		real_t _dvx[LSIZE * 1];
+		real_t dvx[LMSIZE];
+		real_t _dvx[LMSIZE * 1];
 	};
 	union {
-		real_t dvy[LSIZE];
-		real_t _dvy[LSIZE * 1];
+		real_t dvy[LMSIZE];
+		real_t _dvy[LMSIZE * 1];
 	};
 	union {
-		real_t dvz[LSIZE];
-		real_t _dvz[LSIZE * 1];
+		real_t dvz[LMSIZE];
+		real_t _dvz[LMSIZE * 1];
 	};
 } Sakura_Data;
 

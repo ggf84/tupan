@@ -133,36 +133,36 @@ struct P2P_acc_kernel_core {
 
 typedef struct acc_data {
 	union {
-		real_tn m[LSIZE];
-		real_t _m[LSIZE * SIMD];
+		real_tn m[LMSIZE];
+		real_t _m[LMSIZE * SIMD];
 	};
 	union {
-		real_tn e2[LSIZE];
-		real_t _e2[LSIZE * SIMD];
+		real_tn e2[LMSIZE];
+		real_t _e2[LMSIZE * SIMD];
 	};
 	union {
-		real_tn rx[LSIZE];
-		real_t _rx[LSIZE * SIMD];
+		real_tn rx[LMSIZE];
+		real_t _rx[LMSIZE * SIMD];
 	};
 	union {
-		real_tn ry[LSIZE];
-		real_t _ry[LSIZE * SIMD];
+		real_tn ry[LMSIZE];
+		real_t _ry[LMSIZE * SIMD];
 	};
 	union {
-		real_tn rz[LSIZE];
-		real_t _rz[LSIZE * SIMD];
+		real_tn rz[LMSIZE];
+		real_t _rz[LMSIZE * SIMD];
 	};
 	union {
-		real_tn ax[LSIZE];
-		real_t _ax[LSIZE * SIMD];
+		real_tn ax[LMSIZE];
+		real_t _ax[LMSIZE * SIMD];
 	};
 	union {
-		real_tn ay[LSIZE];
-		real_t _ay[LSIZE * SIMD];
+		real_tn ay[LMSIZE];
+		real_t _ay[LMSIZE * SIMD];
 	};
 	union {
-		real_tn az[LSIZE];
-		real_t _az[LSIZE * SIMD];
+		real_tn az[LMSIZE];
+		real_t _az[LMSIZE * SIMD];
 	};
 } Acc_Data;
 

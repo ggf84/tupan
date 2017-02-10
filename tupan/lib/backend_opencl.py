@@ -170,20 +170,24 @@ class Program(object):
                 if fpwidth == 'fp32'
                 else dev.preferred_vector_width_double)
 
-        lsize = 1
-        wsize = dev.max_compute_units
+        lmsize = 1                      # local_mem_size
+        wgsize = 1                      # work_group_size
+        ngroup = dev.max_compute_units  # num_groups
 
         if dev.type == cl.device_type.CPU:
-            lsize *= 32 if fpwidth == 'fp32' else 32
-            wsize *= 8
+            lmsize *= 32 if fpwidth == 'fp32' else 32
+            wgsize *= 16
+            ngroup *= 8
 
         if dev.type == cl.device_type.GPU:
-            lsize *= 128 if fpwidth == 'fp32' else 64
-            wsize *= 256
+            lmsize *= 128 if fpwidth == 'fp32' else 64
+            wgsize *= 64
+            ngroup *= 256
 
         # setting program options
         options = ' -D SIMD={}'.format(simd)
-        options += ' -D LSIZE={}'.format(lsize)
+        options += ' -D LMSIZE={}'.format(lmsize)
+        options += ' -D WGSIZE={}'.format(wgsize)
         options += ' -D CONFIG_USE_OPENCL'
         if fpwidth == 'fp64':
             options += ' -D CONFIG_USE_DOUBLE'
@@ -196,8 +200,8 @@ class Program(object):
         kernels = self.cl_program.all_kernels()
         for kernel in kernels:
             name = kernel.function_name
-            kernel.wsize = wsize
-            kernel.lsize = lsize
+            kernel.wgsize = wgsize
+            kernel.ngroup = ngroup
             kernel.name = name
 #            kwgi = cl.kernel_work_group_info
 #            LOGGER.debug(
@@ -329,13 +333,13 @@ class CLKernel(object):
         for device in ctx.devices:
             kernel = device.program.kernel[name]
 
-            wsize = kernel.wsize
-            lsize = kernel.lsize
+            wgsize = kernel.wgsize
+            ngroup = kernel.ngroup
 
-            gsize = wsize * lsize
+            gwsize = ngroup * wgsize
 
-            local_work_size = (lsize, 1, 1)
-            global_work_size = (gsize, 1, 1)
+            local_work_size = (wgsize, 1, 1)
+            global_work_size = (gwsize, 1, 1)
 
             for (i, buf) in enumerate(self.bufs):
                 kernel.set_arg(i, buf)
