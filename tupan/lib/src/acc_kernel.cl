@@ -3,65 +3,49 @@
 
 static inline void
 acc_kernel_core(
+	uint_t ilid,
+	uint_t jlid,
 	local Acc_Data *ip,
 	local Acc_Data *jp)
 // flop count: 21
 {
-	uint_t ilid = get_local_id(0);
-//	#pragma unroll 8
-	for (uint_t l = 0; l < WGSIZE; ++l) {
-		uint_t jlid = l;//(ilid + l) % WGSIZE;
-		#pragma unroll
-		for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
-			uint_t i = ii + ilid;
-//			real_tn im = ip->m[i];
-			real_tn iee = ip->e2[i];
-			real_tn irx = ip->rx[i];
-			real_tn iry = ip->ry[i];
-			real_tn irz = ip->rz[i];
-			real_tn iax = ip->ax[i];
-			real_tn iay = ip->ay[i];
-			real_tn iaz = ip->az[i];
-//			#pragma unroll
-			for (uint_t k = 0; k < SIMD; ++k) {
-				#pragma unroll
-				for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
-					uint_t j = jj + jlid;
-					real_tn ee = iee + jp->e2[j];
-					real_tn rx = irx - jp->rx[j];
-					real_tn ry = iry - jp->ry[j];
-					real_tn rz = irz - jp->rz[j];
+	for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
+		uint_t i = ii + ilid;
+		real_tn im = ip->m[i];
+		real_tn iee = ip->e2[i];
+		real_tn irx = ip->rx[i];
+		real_tn iry = ip->ry[i];
+		real_tn irz = ip->rz[i];
+//		real_tn iax = ip->ax[i];
+//		real_tn iay = ip->ay[i];
+//		real_tn iaz = ip->az[i];
+		for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
+			uint_t j = jj + jlid;
+			real_tn ee = iee + jp->e2[j];
+			real_tn rx = irx - jp->rx[j];
+			real_tn ry = iry - jp->ry[j];
+			real_tn rz = irz - jp->rz[j];
 
-					real_tn rr = ee;
-					rr += rx * rx + ry * ry + rz * rz;
+			real_tn rr = ee;
+			rr += rx * rx + ry * ry + rz * rz;
 
-					real_tn inv_r3 = rsqrt(rr);
-					inv_r3 = (rr > ee) ? (inv_r3):(0);
-					inv_r3 *= inv_r3 * inv_r3;
+			real_tn inv_r3 = rsqrt(rr);
+			inv_r3 = (rr > ee) ? (inv_r3):(0);
+			inv_r3 *= inv_r3 * inv_r3;
 
-//					real_tn im_r3 = im * inv_r3;
-//					jp->ax[j] += im_r3 * rx;
-//					jp->ay[j] += im_r3 * ry;
-//					jp->az[j] += im_r3 * rz;
+			real_tn im_r3 = im * inv_r3;
+			jp->ax[j] += im_r3 * rx;
+			jp->ay[j] += im_r3 * ry;
+			jp->az[j] += im_r3 * rz;
 
-					real_tn jm_r3 = jp->m[j] * inv_r3;
-					iax -= jm_r3 * rx;
-					iay -= jm_r3 * ry;
-					iaz -= jm_r3 * rz;
-				}
-//				shuff(im, SIMD);
-				shuff(iee, SIMD);
-				shuff(irx, SIMD);
-				shuff(iry, SIMD);
-				shuff(irz, SIMD);
-				shuff(iax, SIMD);
-				shuff(iay, SIMD);
-				shuff(iaz, SIMD);
-			}
-			ip->ax[i] = iax;
-			ip->ay[i] = iay;
-			ip->az[i] = iaz;
+//			real_tn jm_r3 = jp->m[j] * inv_r3;
+//			iax -= jm_r3 * rx;
+//			iay -= jm_r3 * ry;
+//			iaz -= jm_r3 * rz;
 		}
+//		ip->ax[i] = iax;
+//		ip->ay[i] = iay;
+//		ip->az[i] = iaz;
 	}
 }
 
@@ -81,12 +65,13 @@ acc_kernel_impl(
 	local Acc_Data *ip,
 	local Acc_Data *jp)
 {
+	uint_t lid = get_local_id(0);
 	for (uint_t ii = LMSIZE * SIMD * get_group_id(0);
 				ii < ni;
 				ii += LMSIZE * SIMD * get_num_groups(0)) {
 		uint_t iN = min((uint_t)(LMSIZE * SIMD), (ni - ii));
 		for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-			uint_t k = kk + get_local_id(0);
+			uint_t k = kk + lid;
 			ip->m[k] = (real_tn)(0);
 			ip->e2[k] = (real_tn)(0);
 		}
@@ -104,7 +89,7 @@ acc_kernel_impl(
 					jj += LMSIZE * SIMD) {
 			uint_t jN = min((uint_t)(LMSIZE * SIMD), (nj - jj));
 			for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-				uint_t k = kk + get_local_id(0);
+				uint_t k = kk + lid;
 				jp->m[k] = (real_tn)(0);
 				jp->e2[k] = (real_tn)(0);
 			}
@@ -118,7 +103,24 @@ acc_kernel_impl(
 			async_work_group_copy(jp->_ay, __jadot+(0*NDIM+1)*nj+jj, jN, 0);
 			async_work_group_copy(jp->_az, __jadot+(0*NDIM+2)*nj+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
-			acc_kernel_core(ip, jp);
+			for (uint_t k = 0; k < SIMD; ++k) {
+				#pragma unroll
+				for (uint_t l = 0; l < WGSIZE; ++l) {
+					acc_kernel_core(l, lid, jp, ip);
+//					acc_kernel_core((lid + l) % WGSIZE, lid, jp, ip);
+				}
+				for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
+					uint_t i = kk + lid;
+					shuff(ip->m[i], SIMD);
+					shuff(ip->e2[i], SIMD);
+					shuff(ip->rx[i], SIMD);
+					shuff(ip->ry[i], SIMD);
+					shuff(ip->rz[i], SIMD);
+					shuff(ip->ax[i], SIMD);
+					shuff(ip->ay[i], SIMD);
+					shuff(ip->az[i], SIMD);
+				}
+			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 		}
 		async_work_group_copy(__iadot+(0*NDIM+0)*ni+ii, ip->_ax, iN, 0);

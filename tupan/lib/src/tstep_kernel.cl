@@ -3,77 +3,62 @@
 
 static inline void
 tstep_kernel_core(
+	uint_t ilid,
+	uint_t jlid,
 	local Tstep_Data *ip,
 	local Tstep_Data *jp,
 	const real_t eta)
-// flop count: 42
+// flop count: 43
 {
-	uint_t ilid = get_local_id(0);
-//	#pragma unroll 8
-	for (uint_t l = 0; l < WGSIZE; ++l) {
-		uint_t jlid = l;//(ilid + l) % WGSIZE;
-		#pragma unroll
-		for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
-			uint_t i = ii + ilid;
-			real_tn im = ip->m[i];
-			real_tn iee = ip->e2[i];
-			real_tn irx = ip->rx[i];
-			real_tn iry = ip->ry[i];
-			real_tn irz = ip->rz[i];
-			real_tn ivx = ip->vx[i];
-			real_tn ivy = ip->vy[i];
-			real_tn ivz = ip->vz[i];
-			real_tn iw2_a = ip->w2_a[i];
-			real_tn iw2_b = ip->w2_b[i];
-//			#pragma unroll
-			for (uint_t k = 0; k < SIMD; ++k) {
-				#pragma unroll
-				for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
-					uint_t j = jj + jlid;
-					real_tn m_r3 = im + jp->m[j];
-					real_tn ee = iee + jp->e2[j];
-					real_tn rx = irx - jp->rx[j];
-					real_tn ry = iry - jp->ry[j];
-					real_tn rz = irz - jp->rz[j];
-					real_tn vx = ivx - jp->vx[j];
-					real_tn vy = ivy - jp->vy[j];
-					real_tn vz = ivz - jp->vz[j];
+	for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
+		uint_t i = ii + ilid;
+		real_tn im = ip->m[i];
+		real_tn iee = ip->e2[i];
+		real_tn irx = ip->rx[i];
+		real_tn iry = ip->ry[i];
+		real_tn irz = ip->rz[i];
+		real_tn ivx = ip->vx[i];
+		real_tn ivy = ip->vy[i];
+		real_tn ivz = ip->vz[i];
+//		real_tn iw2_a = ip->w2_a[i];
+//		real_tn iw2_b = ip->w2_b[i];
+		for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
+			uint_t j = jj + jlid;
+			real_tn m_r3 = im + jp->m[j];
+			real_tn ee = iee + jp->e2[j];
+			real_tn rx = irx - jp->rx[j];
+			real_tn ry = iry - jp->ry[j];
+			real_tn rz = irz - jp->rz[j];
+			real_tn vx = ivx - jp->vx[j];
+			real_tn vy = ivy - jp->vy[j];
+			real_tn vz = ivz - jp->vz[j];
 
-					real_tn rr = ee;
-					rr        += rx * rx + ry * ry + rz * rz;
-					real_tn rv = rx * vx + ry * vy + rz * vz;
-					real_tn vv = vx * vx + vy * vy + vz * vz;
+			real_tn rr = ee;
+			rr        += rx * rx + ry * ry + rz * rz;
+			real_tn rv = rx * vx + ry * vy + rz * vz;
+			real_tn vv = vx * vx + vy * vy + vz * vz;
 
-					real_tn inv_r2 = rsqrt(rr);
-					m_r3 *= inv_r2;
-					inv_r2 *= inv_r2;
-					m_r3 *= 2 * inv_r2;
+			real_tn inv_r2 = rsqrt(rr);
+			m_r3 *= inv_r2;
+			inv_r2 *= inv_r2;
+			m_r3 *= 2 * inv_r2;
 
-					real_tn m_r5 = m_r3 * inv_r2;
-					m_r3 += vv * inv_r2;
-					rv *= eta * rsqrt(m_r3);
-					m_r5 += m_r3 * inv_r2;
-					m_r3 -= m_r5 * rv;
+			real_tn m_r5 = m_r3 * inv_r2;
+			m_r3 += vv * inv_r2;
+			rv *= eta * rsqrt(m_r3);
+			m_r5 += m_r3 * inv_r2;
+			m_r3 -= m_r5 * rv;
 
-					m_r3 = (rr > ee && jp->m[j] != 0) ? (m_r3):(0);
+			m_r3 = (rr > ee && im * jp->m[j] != 0) ? (m_r3):(0);
 
-					iw2_a = fmax(m_r3, iw2_a);
-					iw2_b += m_r3;
-				}
-				shuff(im, SIMD);
-				shuff(iee, SIMD);
-				shuff(irx, SIMD);
-				shuff(iry, SIMD);
-				shuff(irz, SIMD);
-				shuff(ivx, SIMD);
-				shuff(ivy, SIMD);
-				shuff(ivz, SIMD);
-				shuff(iw2_a, SIMD);
-				shuff(iw2_b, SIMD);
-			}
-			ip->w2_a[i] = iw2_a;
-			ip->w2_b[i] = iw2_b;
+			jp->w2_a[j] = fmax(m_r3, jp->w2_a[j]);
+			jp->w2_b[j] += m_r3;
+
+//			iw2_a = fmax(m_r3, iw2_a);
+//			iw2_b += m_r3;
 		}
+//		ip->w2_a[i] = iw2_a;
+//		ip->w2_b[i] = iw2_b;
 	}
 }
 
@@ -96,12 +81,13 @@ tstep_kernel_impl(
 	local Tstep_Data *ip,
 	local Tstep_Data *jp)
 {
+	uint_t lid = get_local_id(0);
 	for (uint_t ii = LMSIZE * SIMD * get_group_id(0);
 				ii < ni;
 				ii += LMSIZE * SIMD * get_num_groups(0)) {
 		uint_t iN = min((uint_t)(LMSIZE * SIMD), (ni - ii));
 		for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-			uint_t k = kk + get_local_id(0);
+			uint_t k = kk + lid;
 			ip->m[k] = (real_tn)(0);
 			ip->e2[k] = (real_tn)(0);
 		}
@@ -121,7 +107,7 @@ tstep_kernel_impl(
 					jj += LMSIZE * SIMD) {
 			uint_t jN = min((uint_t)(LMSIZE * SIMD), (nj - jj));
 			for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-				uint_t k = kk + get_local_id(0);
+				uint_t k = kk + lid;
 				jp->m[k] = (real_tn)(0);
 				jp->e2[k] = (real_tn)(0);
 			}
@@ -137,11 +123,30 @@ tstep_kernel_impl(
 			async_work_group_copy(jp->_w2_a, __jdt_a+jj, jN, 0);
 			async_work_group_copy(jp->_w2_b, __jdt_b+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
-			tstep_kernel_core(ip, jp, eta);
+			for (uint_t k = 0; k < SIMD; ++k) {
+				#pragma unroll
+				for (uint_t l = 0; l < WGSIZE; ++l) {
+					tstep_kernel_core(l, lid, jp, ip, eta);
+//					tstep_kernel_core((lid + l) % WGSIZE, lid, jp, ip, eta);
+				}
+				for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
+					uint_t i = kk + lid;
+					shuff(ip->m[i], SIMD);
+					shuff(ip->e2[i], SIMD);
+					shuff(ip->rx[i], SIMD);
+					shuff(ip->ry[i], SIMD);
+					shuff(ip->rz[i], SIMD);
+					shuff(ip->vx[i], SIMD);
+					shuff(ip->vy[i], SIMD);
+					shuff(ip->vz[i], SIMD);
+					shuff(ip->w2_a[i], SIMD);
+					shuff(ip->w2_b[i], SIMD);
+				}
+			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 		}
 		for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-			uint_t k = kk + get_local_id(0);
+			uint_t k = kk + lid;
 			ip->w2_a[k] = eta * rsqrt(ip->w2_a[k]);
 			ip->w2_b[k] = eta * rsqrt(ip->w2_b[k]);
 		}
