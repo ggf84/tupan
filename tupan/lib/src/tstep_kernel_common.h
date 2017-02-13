@@ -103,6 +103,8 @@ struct P2P_tstep_kernel_core {
 				m_r5 += m_r3 * inv_r2;
 				m_r3 -= m_r5 * rv;
 
+				m_r3 = (im == 0 || jp.m[j] == 0) ? (0):(m_r3);
+
 				jp.w2_a[j] = fmax(m_r3, jp.w2_a[j]);
 				jp.w2_b[j] += m_r3;
 
@@ -116,7 +118,7 @@ struct P2P_tstep_kernel_core {
 
 	template<typename P>
 	void operator()(P&& p) {
-		// flop count: 43
+		// flop count: 42
 		for (size_t i = 0; i < TILE; ++i) {
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
@@ -145,7 +147,8 @@ struct P2P_tstep_kernel_core {
 				m_r5 += m_r3 * inv_r2;
 				m_r3 -= m_r5 * rv;
 
-				m_r3 = (rr > ee && p.m[i] * p.m[j] != 0) ? (m_r3):(0);
+				m_r3 = (rr > ee) ? (m_r3):(0);
+				m_r3 = (p.m[i] == 0 || p.m[j] == 0) ? (0):(m_r3);
 
 				p.w2_a[j] = fmax(m_r3, p.w2_a[j]);
 				p.w2_b[j] += m_r3;

@@ -8,7 +8,7 @@ tstep_kernel_core(
 	local Tstep_Data *ip,
 	local Tstep_Data *jp,
 	const real_t eta)
-// flop count: 43
+// flop count: 42
 {
 	for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
 		uint_t i = ii + ilid;
@@ -49,7 +49,8 @@ tstep_kernel_core(
 			m_r5 += m_r3 * inv_r2;
 			m_r3 -= m_r5 * rv;
 
-			m_r3 = (rr > ee && im * jp->m[j] != 0) ? (m_r3):(0);
+			m_r3 = (rr > ee) ? (m_r3):(0);
+			m_r3 = (im == 0 || jp->m[j] == 0) ? (0):(m_r3);
 
 			jp->w2_a[j] = fmax(m_r3, jp->w2_a[j]);
 			jp->w2_b[j] += m_r3;
