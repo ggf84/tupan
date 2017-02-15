@@ -161,6 +161,30 @@ snp_crk_kernel_impl(
 			uint_t k = kk + lid;
 			ip->m[k] = (real_tn)(0);
 			ip->e2[k] = (real_tn)(0);
+			ip->rx[k] = (real_tn)(0);
+			ip->ry[k] = (real_tn)(0);
+			ip->rz[k] = (real_tn)(0);
+			ip->vx[k] = (real_tn)(0);
+			ip->vy[k] = (real_tn)(0);
+			ip->vz[k] = (real_tn)(0);
+			ip->ax[k] = (real_tn)(0);
+			ip->ay[k] = (real_tn)(0);
+			ip->az[k] = (real_tn)(0);
+			ip->jx[k] = (real_tn)(0);
+			ip->jy[k] = (real_tn)(0);
+			ip->jz[k] = (real_tn)(0);
+			ip->Ax[k] = (real_tn)(0);
+			ip->Ay[k] = (real_tn)(0);
+			ip->Az[k] = (real_tn)(0);
+			ip->Jx[k] = (real_tn)(0);
+			ip->Jy[k] = (real_tn)(0);
+			ip->Jz[k] = (real_tn)(0);
+			ip->Sx[k] = (real_tn)(0);
+			ip->Sy[k] = (real_tn)(0);
+			ip->Sz[k] = (real_tn)(0);
+			ip->Cx[k] = (real_tn)(0);
+			ip->Cy[k] = (real_tn)(0);
+			ip->Cz[k] = (real_tn)(0);
 		}
 		barrier(CLK_LOCAL_MEM_FENCE);
 		async_work_group_copy(ip->_m, __im+ii, iN, 0);
@@ -197,6 +221,30 @@ snp_crk_kernel_impl(
 				uint_t k = kk + lid;
 				jp->m[k] = (real_tn)(0);
 				jp->e2[k] = (real_tn)(0);
+				jp->rx[k] = (real_tn)(0);
+				jp->ry[k] = (real_tn)(0);
+				jp->rz[k] = (real_tn)(0);
+				jp->vx[k] = (real_tn)(0);
+				jp->vy[k] = (real_tn)(0);
+				jp->vz[k] = (real_tn)(0);
+				jp->ax[k] = (real_tn)(0);
+				jp->ay[k] = (real_tn)(0);
+				jp->az[k] = (real_tn)(0);
+				jp->jx[k] = (real_tn)(0);
+				jp->jy[k] = (real_tn)(0);
+				jp->jz[k] = (real_tn)(0);
+				jp->Ax[k] = (real_tn)(0);
+				jp->Ay[k] = (real_tn)(0);
+				jp->Az[k] = (real_tn)(0);
+				jp->Jx[k] = (real_tn)(0);
+				jp->Jy[k] = (real_tn)(0);
+				jp->Jz[k] = (real_tn)(0);
+				jp->Sx[k] = (real_tn)(0);
+				jp->Sy[k] = (real_tn)(0);
+				jp->Sz[k] = (real_tn)(0);
+				jp->Cx[k] = (real_tn)(0);
+				jp->Cy[k] = (real_tn)(0);
+				jp->Cz[k] = (real_tn)(0);
 			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
@@ -227,7 +275,7 @@ snp_crk_kernel_impl(
 			async_work_group_copy(jp->_Cz, __jadot+(3*NDIM+2)*nj+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
 			for (uint_t k = 0; k < SIMD; ++k) {
-				#pragma unroll
+//				#pragma unroll
 				for (uint_t l = 0; l < WGSIZE; ++l) {
 					snp_crk_kernel_core(l, lid, jp, ip);
 //					snp_crk_kernel_core((lid + l) % WGSIZE, lid, jp, ip);

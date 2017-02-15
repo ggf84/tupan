@@ -139,6 +139,15 @@ pnacc_kernel_impl(
 			uint_t k = kk + lid;
 			ip->m[k] = (real_tn)(0);
 			ip->e2[k] = (real_tn)(0);
+			ip->rx[k] = (real_tn)(0);
+			ip->ry[k] = (real_tn)(0);
+			ip->rz[k] = (real_tn)(0);
+			ip->vx[k] = (real_tn)(0);
+			ip->vy[k] = (real_tn)(0);
+			ip->vz[k] = (real_tn)(0);
+			ip->pnax[k] = (real_tn)(0);
+			ip->pnay[k] = (real_tn)(0);
+			ip->pnaz[k] = (real_tn)(0);
 		}
 		barrier(CLK_LOCAL_MEM_FENCE);
 		async_work_group_copy(ip->_m, __im+ii, iN, 0);
@@ -160,6 +169,15 @@ pnacc_kernel_impl(
 				uint_t k = kk + lid;
 				jp->m[k] = (real_tn)(0);
 				jp->e2[k] = (real_tn)(0);
+				jp->rx[k] = (real_tn)(0);
+				jp->ry[k] = (real_tn)(0);
+				jp->rz[k] = (real_tn)(0);
+				jp->vx[k] = (real_tn)(0);
+				jp->vy[k] = (real_tn)(0);
+				jp->vz[k] = (real_tn)(0);
+				jp->pnax[k] = (real_tn)(0);
+				jp->pnay[k] = (real_tn)(0);
+				jp->pnaz[k] = (real_tn)(0);
 			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
@@ -175,7 +193,7 @@ pnacc_kernel_impl(
 			async_work_group_copy(jp->_pnaz, __jpnacc+(0*NDIM+2)*nj+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
 			for (uint_t k = 0; k < SIMD; ++k) {
-				#pragma unroll
+//				#pragma unroll
 				for (uint_t l = 0; l < WGSIZE; ++l) {
 					pnacc_kernel_core(l, lid, jp, ip, clight);
 //					pnacc_kernel_core((lid + l) % WGSIZE, lid, jp, ip, clight);

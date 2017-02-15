@@ -110,6 +110,18 @@ sakura_kernel_impl(
 			uint_t k = kk + lid;
 			ip->m[k] = (real_t1)(0);
 			ip->e2[k] = (real_t1)(0);
+			ip->rx[k] = (real_t1)(0);
+			ip->ry[k] = (real_t1)(0);
+			ip->rz[k] = (real_t1)(0);
+			ip->vx[k] = (real_t1)(0);
+			ip->vy[k] = (real_t1)(0);
+			ip->vz[k] = (real_t1)(0);
+			ip->drx[k] = (real_t1)(0);
+			ip->dry[k] = (real_t1)(0);
+			ip->drz[k] = (real_t1)(0);
+			ip->dvx[k] = (real_t1)(0);
+			ip->dvy[k] = (real_t1)(0);
+			ip->dvz[k] = (real_t1)(0);
 		}
 		barrier(CLK_LOCAL_MEM_FENCE);
 		async_work_group_copy(ip->_m, __im+ii, iN, 0);
@@ -134,6 +146,18 @@ sakura_kernel_impl(
 				uint_t k = kk + lid;
 				jp->m[k] = (real_t1)(0);
 				jp->e2[k] = (real_t1)(0);
+				jp->rx[k] = (real_t1)(0);
+				jp->ry[k] = (real_t1)(0);
+				jp->rz[k] = (real_t1)(0);
+				jp->vx[k] = (real_t1)(0);
+				jp->vy[k] = (real_t1)(0);
+				jp->vz[k] = (real_t1)(0);
+				jp->drx[k] = (real_t1)(0);
+				jp->dry[k] = (real_t1)(0);
+				jp->drz[k] = (real_t1)(0);
+				jp->dvx[k] = (real_t1)(0);
+				jp->dvy[k] = (real_t1)(0);
+				jp->dvz[k] = (real_t1)(0);
 			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
@@ -152,7 +176,7 @@ sakura_kernel_impl(
 			async_work_group_copy(jp->_dvz, __jdrdot+(1*NDIM+2)*nj+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
 			for (uint_t k = 0; k < 1; ++k) {
-				#pragma unroll
+//				#pragma unroll
 				for (uint_t l = 0; l < WGSIZE; ++l) {
 					sakura_kernel_core(l, lid, jp, ip, dt, flag);
 //					sakura_kernel_core((lid + l) % WGSIZE, lid, jp, ip, dt, flag);

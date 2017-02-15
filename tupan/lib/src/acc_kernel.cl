@@ -74,6 +74,12 @@ acc_kernel_impl(
 			uint_t k = kk + lid;
 			ip->m[k] = (real_tn)(0);
 			ip->e2[k] = (real_tn)(0);
+			ip->rx[k] = (real_tn)(0);
+			ip->ry[k] = (real_tn)(0);
+			ip->rz[k] = (real_tn)(0);
+			ip->ax[k] = (real_tn)(0);
+			ip->ay[k] = (real_tn)(0);
+			ip->az[k] = (real_tn)(0);
 		}
 		barrier(CLK_LOCAL_MEM_FENCE);
 		async_work_group_copy(ip->_m, __im+ii, iN, 0);
@@ -92,6 +98,12 @@ acc_kernel_impl(
 				uint_t k = kk + lid;
 				jp->m[k] = (real_tn)(0);
 				jp->e2[k] = (real_tn)(0);
+				jp->rx[k] = (real_tn)(0);
+				jp->ry[k] = (real_tn)(0);
+				jp->rz[k] = (real_tn)(0);
+				jp->ax[k] = (real_tn)(0);
+				jp->ay[k] = (real_tn)(0);
+				jp->az[k] = (real_tn)(0);
 			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
@@ -104,7 +116,7 @@ acc_kernel_impl(
 			async_work_group_copy(jp->_az, __jadot+(0*NDIM+2)*nj+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
 			for (uint_t k = 0; k < SIMD; ++k) {
-				#pragma unroll
+//				#pragma unroll
 				for (uint_t l = 0; l < WGSIZE; ++l) {
 					acc_kernel_core(l, lid, jp, ip);
 //					acc_kernel_core((lid + l) % WGSIZE, lid, jp, ip);
