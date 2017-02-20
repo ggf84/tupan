@@ -3,49 +3,54 @@
 
 static inline void
 acc_kernel_core(
-	uint_t ilid,
-	uint_t jlid,
+	uint_t lid,
 	local Acc_Data *ip,
 	local Acc_Data *jp)
 // flop count: 21
 {
-	for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
-		uint_t i = ii + ilid;
-		real_tn im = ip->m[i];
-		real_tn iee = ip->e2[i];
-		real_tn irx = ip->rx[i];
-		real_tn iry = ip->ry[i];
-		real_tn irz = ip->rz[i];
-//		real_tn iax = ip->ax[i];
-//		real_tn iay = ip->ay[i];
-//		real_tn iaz = ip->az[i];
-		for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
-			uint_t j = jj + jlid;
-			real_tn ee = iee + jp->e2[j];
-			real_tn rx = irx - jp->rx[j];
-			real_tn ry = iry - jp->ry[j];
-			real_tn rz = irz - jp->rz[j];
+	uint_t jwarp = lid / WARP;
+	uint_t jlane = lid % WARP;
+	uint_t jlid = WARP * jwarp + jlane;
 
-			real_tn rr = ee;
-			rr += rx * rx + ry * ry + rz * rz;
+	for (uint_t w = 0; w < WGSIZE/WARP; ++w) {
+		uint_t iwarp = jwarp^w;
+		for (uint_t l = 0; l < WARP; ++l) {
+			uint_t ilane = jlane^l;
+			uint_t ilid = WARP * iwarp + ilane;
+			for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
+				uint_t i = ii + ilid;
+//				real_tn iax = ip->ax[i];
+//				real_tn iay = ip->ay[i];
+//				real_tn iaz = ip->az[i];
+				for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
+					uint_t j = jj + jlid;
+					real_tn ee = ip->e2[i] + jp->e2[j];
+					real_tn rx = ip->rx[i] - jp->rx[j];
+					real_tn ry = ip->ry[i] - jp->ry[j];
+					real_tn rz = ip->rz[i] - jp->rz[j];
 
-			real_tn inv_r3 = rsqrt(rr);
-			inv_r3 = (rr > ee) ? (inv_r3):(0);
-			inv_r3 *= inv_r3 * inv_r3;
+					real_tn rr = ee;
+					rr += rx * rx + ry * ry + rz * rz;
 
-			real_tn im_r3 = im * inv_r3;
-			jp->ax[j] += im_r3 * rx;
-			jp->ay[j] += im_r3 * ry;
-			jp->az[j] += im_r3 * rz;
+					real_tn inv_r3 = rsqrt(rr);
+					inv_r3 = (rr > ee) ? (inv_r3):(0);
+					inv_r3 *= inv_r3 * inv_r3;
 
-//			real_tn jm_r3 = jp->m[j] * inv_r3;
-//			iax -= jm_r3 * rx;
-//			iay -= jm_r3 * ry;
-//			iaz -= jm_r3 * rz;
+					real_tn im_r3 = ip->m[i] * inv_r3;
+					jp->ax[j] += im_r3 * rx;
+					jp->ay[j] += im_r3 * ry;
+					jp->az[j] += im_r3 * rz;
+
+//					real_tn jm_r3 = jp->m[j] * inv_r3;
+//					iax -= jm_r3 * rx;
+//					iay -= jm_r3 * ry;
+//					iaz -= jm_r3 * rz;
+				}
+//				ip->ax[i] = iax;
+//				ip->ay[i] = iay;
+//				ip->az[i] = iaz;
+			}
 		}
-//		ip->ax[i] = iax;
-//		ip->ay[i] = iay;
-//		ip->az[i] = iaz;
 	}
 }
 
@@ -116,11 +121,7 @@ acc_kernel_impl(
 			async_work_group_copy(jp->_az, __jadot+(0*NDIM+2)*nj+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
 			for (uint_t k = 0; k < SIMD; ++k) {
-//				#pragma unroll
-				for (uint_t l = 0; l < WGSIZE; ++l) {
-					acc_kernel_core(l, lid, jp, ip);
-//					acc_kernel_core((lid + l) % WGSIZE, lid, jp, ip);
-				}
+				acc_kernel_core(lid, jp, ip);
 				for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
 					uint_t i = kk + lid;
 					shuff(ip->m[i], SIMD);

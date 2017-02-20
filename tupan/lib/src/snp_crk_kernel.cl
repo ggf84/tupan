@@ -3,136 +3,132 @@
 
 static inline void
 snp_crk_kernel_core(
-	uint_t ilid,
-	uint_t jlid,
+	uint_t lid,
 	local Snp_Crk_Data *ip,
 	local Snp_Crk_Data *jp)
 // flop count: 128
 {
-	for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
-		uint_t i = ii + ilid;
-		real_tn im = ip->m[i];
-		real_tn iee = ip->e2[i];
-		real_tn irx = ip->rx[i];
-		real_tn iry = ip->ry[i];
-		real_tn irz = ip->rz[i];
-		real_tn ivx = ip->vx[i];
-		real_tn ivy = ip->vy[i];
-		real_tn ivz = ip->vz[i];
-		real_tn iax = ip->ax[i];
-		real_tn iay = ip->ay[i];
-		real_tn iaz = ip->az[i];
-		real_tn ijx = ip->jx[i];
-		real_tn ijy = ip->jy[i];
-		real_tn ijz = ip->jz[i];
-//		real_tn iAx = ip->Ax[i];
-//		real_tn iAy = ip->Ay[i];
-//		real_tn iAz = ip->Az[i];
-//		real_tn iJx = ip->Jx[i];
-//		real_tn iJy = ip->Jy[i];
-//		real_tn iJz = ip->Jz[i];
-//		real_tn iSx = ip->Sx[i];
-//		real_tn iSy = ip->Sy[i];
-//		real_tn iSz = ip->Sz[i];
-//		real_tn iCx = ip->Cx[i];
-//		real_tn iCy = ip->Cy[i];
-//		real_tn iCz = ip->Cz[i];
-		for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
-			uint_t j = jj + jlid;
-			real_tn ee = iee + jp->e2[j];
-			real_tn rx = irx - jp->rx[j];
-			real_tn ry = iry - jp->ry[j];
-			real_tn rz = irz - jp->rz[j];
-			real_tn vx = ivx - jp->vx[j];
-			real_tn vy = ivy - jp->vy[j];
-			real_tn vz = ivz - jp->vz[j];
-			real_tn ax = iax - jp->ax[j];
-			real_tn ay = iay - jp->ay[j];
-			real_tn az = iaz - jp->az[j];
-			real_tn jx = ijx - jp->jx[j];
-			real_tn jy = ijy - jp->jy[j];
-			real_tn jz = ijz - jp->jz[j];
+	uint_t jwarp = lid / WARP;
+	uint_t jlane = lid % WARP;
+	uint_t jlid = WARP * jwarp + jlane;
 
-			real_tn rr = ee;
-			rr += rx * rx + ry * ry + rz * rz;
+	for (uint_t w = 0; w < WGSIZE/WARP; ++w) {
+		uint_t iwarp = jwarp^w;
+		for (uint_t l = 0; l < WARP; ++l) {
+			uint_t ilane = jlane^l;
+			uint_t ilid = WARP * iwarp + ilane;
+			for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
+				uint_t i = ii + ilid;
+//				real_tn iAx = ip->Ax[i];
+//				real_tn iAy = ip->Ay[i];
+//				real_tn iAz = ip->Az[i];
+//				real_tn iJx = ip->Jx[i];
+//				real_tn iJy = ip->Jy[i];
+//				real_tn iJz = ip->Jz[i];
+//				real_tn iSx = ip->Sx[i];
+//				real_tn iSy = ip->Sy[i];
+//				real_tn iSz = ip->Sz[i];
+//				real_tn iCx = ip->Cx[i];
+//				real_tn iCy = ip->Cy[i];
+//				real_tn iCz = ip->Cz[i];
+				for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
+					uint_t j = jj + jlid;
+					real_tn ee = ip->e2[i] + jp->e2[j];
+					real_tn rx = ip->rx[i] - jp->rx[j];
+					real_tn ry = ip->ry[i] - jp->ry[j];
+					real_tn rz = ip->rz[i] - jp->rz[j];
+					real_tn vx = ip->vx[i] - jp->vx[j];
+					real_tn vy = ip->vy[i] - jp->vy[j];
+					real_tn vz = ip->vz[i] - jp->vz[j];
+					real_tn ax = ip->ax[i] - jp->ax[j];
+					real_tn ay = ip->ay[i] - jp->ay[j];
+					real_tn az = ip->az[i] - jp->az[j];
+					real_tn jx = ip->jx[i] - jp->jx[j];
+					real_tn jy = ip->jy[i] - jp->jy[j];
+					real_tn jz = ip->jz[i] - jp->jz[j];
 
-			real_tn inv_r3 = rsqrt(rr);
-			inv_r3 = (rr > ee) ? (inv_r3):(0);
-			real_tn inv_r2 = inv_r3 * inv_r3;
-			inv_r3 *= inv_r2;
-			inv_r2 *= -3;
+					real_tn rr = ee;
+					rr += rx * rx + ry * ry + rz * rz;
 
-			real_tn s1 = rx * vx + ry * vy + rz * vz;
-			real_tn s2 = vx * vx + vy * vy + vz * vz;
-			real_tn s3 = vx * ax + vy * ay + vz * az;
-			s3 *= 3;
-			s2 += rx * ax + ry * ay + rz * az;
-			s3 += rx * jx + ry * jy + rz * jz;
+					real_tn inv_r3 = rsqrt(rr);
+					inv_r3 = (rr > ee) ? (inv_r3):(0);
+					real_tn inv_r2 = inv_r3 * inv_r3;
+					inv_r3 *= inv_r2;
+					inv_r2 *= -3;
 
-			#define cq21 ((real_t)(5.0/3.0))
-			#define cq31 ((real_t)(8.0/3.0))
-			#define cq32 ((real_t)(7.0/3.0))
+					real_tn s1 = rx * vx + ry * vy + rz * vz;
+					real_tn s2 = vx * vx + vy * vy + vz * vz;
+					real_tn s3 = vx * ax + vy * ay + vz * az;
+					s3 *= 3;
+					s2 += rx * ax + ry * ay + rz * az;
+					s3 += rx * jx + ry * jy + rz * jz;
 
-			const real_tn q1 = inv_r2 * (s1);
-			const real_tn q2 = inv_r2 * (s2 + (cq21 * s1) * q1);
-			const real_tn q3 = inv_r2 * (s3 + (cq31 * s2) * q1 + (cq32 * s1) * q2);
+					#define cq21 ((real_t)(5.0/3.0))
+					#define cq31 ((real_t)(8.0/3.0))
+					#define cq32 ((real_t)(7.0/3.0))
 
-			const real_tn b3 = 3 * q1;
-			const real_tn c3 = 3 * q2;
-			const real_tn c2 = 2 * q1;
+					const real_tn q1 = inv_r2 * (s1);
+					const real_tn q2 = inv_r2 * (s2 + (cq21 * s1) * q1);
+					const real_tn q3 = inv_r2 * (s3 + (cq31 * s2) * q1 + (cq32 * s1) * q2);
 
-			jx += b3 * ax + c3 * vx + q3 * rx;
-			jy += b3 * ay + c3 * vy + q3 * ry;
-			jz += b3 * az + c3 * vz + q3 * rz;
+					const real_tn b3 = 3 * q1;
+					const real_tn c3 = 3 * q2;
+					const real_tn c2 = 2 * q1;
 
-			ax += c2 * vx + q2 * rx;
-			ay += c2 * vy + q2 * ry;
-			az += c2 * vz + q2 * rz;
+					jx += b3 * ax + c3 * vx + q3 * rx;
+					jy += b3 * ay + c3 * vy + q3 * ry;
+					jz += b3 * az + c3 * vz + q3 * rz;
 
-			vx += q1 * rx;
-			vy += q1 * ry;
-			vz += q1 * rz;
+					ax += c2 * vx + q2 * rx;
+					ay += c2 * vy + q2 * ry;
+					az += c2 * vz + q2 * rz;
 
-			real_tn im_r3 = im * inv_r3;
-			jp->Ax[j] += im_r3 * rx;
-			jp->Ay[j] += im_r3 * ry;
-			jp->Az[j] += im_r3 * rz;
-			jp->Jx[j] += im_r3 * vx;
-			jp->Jy[j] += im_r3 * vy;
-			jp->Jz[j] += im_r3 * vz;
-			jp->Sx[j] += im_r3 * ax;
-			jp->Sy[j] += im_r3 * ay;
-			jp->Sz[j] += im_r3 * az;
-			jp->Cx[j] += im_r3 * jx;
-			jp->Cy[j] += im_r3 * jy;
-			jp->Cz[j] += im_r3 * jz;
+					vx += q1 * rx;
+					vy += q1 * ry;
+					vz += q1 * rz;
 
-//			real_tn jm_r3 = jp->m[j] * inv_r3;
-//			iAx -= jm_r3 * rx;
-//			iAy -= jm_r3 * ry;
-//			iAz -= jm_r3 * rz;
-//			iJx -= jm_r3 * vx;
-//			iJy -= jm_r3 * vy;
-//			iJz -= jm_r3 * vz;
-//			iSx -= jm_r3 * ax;
-//			iSy -= jm_r3 * ay;
-//			iSz -= jm_r3 * az;
-//			iCx -= jm_r3 * jx;
-//			iCy -= jm_r3 * jy;
-//			iCz -= jm_r3 * jz;
+					real_tn im_r3 = ip->m[i] * inv_r3;
+					jp->Ax[j] += im_r3 * rx;
+					jp->Ay[j] += im_r3 * ry;
+					jp->Az[j] += im_r3 * rz;
+					jp->Jx[j] += im_r3 * vx;
+					jp->Jy[j] += im_r3 * vy;
+					jp->Jz[j] += im_r3 * vz;
+					jp->Sx[j] += im_r3 * ax;
+					jp->Sy[j] += im_r3 * ay;
+					jp->Sz[j] += im_r3 * az;
+					jp->Cx[j] += im_r3 * jx;
+					jp->Cy[j] += im_r3 * jy;
+					jp->Cz[j] += im_r3 * jz;
+
+//					real_tn jm_r3 = jp->m[j] * inv_r3;
+//					iAx -= jm_r3 * rx;
+//					iAy -= jm_r3 * ry;
+//					iAz -= jm_r3 * rz;
+//					iJx -= jm_r3 * vx;
+//					iJy -= jm_r3 * vy;
+//					iJz -= jm_r3 * vz;
+//					iSx -= jm_r3 * ax;
+//					iSy -= jm_r3 * ay;
+//					iSz -= jm_r3 * az;
+//					iCx -= jm_r3 * jx;
+//					iCy -= jm_r3 * jy;
+//					iCz -= jm_r3 * jz;
+				}
+//				ip->Ax[i] = iAx;
+//				ip->Ay[i] = iAy;
+//				ip->Az[i] = iAz;
+//				ip->Jx[i] = iJx;
+//				ip->Jy[i] = iJy;
+//				ip->Jz[i] = iJz;
+//				ip->Sx[i] = iSx;
+//				ip->Sy[i] = iSy;
+//				ip->Sz[i] = iSz;
+//				ip->Cx[i] = iCx;
+//				ip->Cy[i] = iCy;
+//				ip->Cz[i] = iCz;
+			}
 		}
-//		ip->Ax[i] = iAx;
-//		ip->Ay[i] = iAy;
-//		ip->Az[i] = iAz;
-//		ip->Jx[i] = iJx;
-//		ip->Jy[i] = iJy;
-//		ip->Jz[i] = iJz;
-//		ip->Sx[i] = iSx;
-//		ip->Sy[i] = iSy;
-//		ip->Sz[i] = iSz;
-//		ip->Cx[i] = iCx;
-//		ip->Cy[i] = iCy;
-//		ip->Cz[i] = iCz;
 	}
 }
 
@@ -275,11 +271,7 @@ snp_crk_kernel_impl(
 			async_work_group_copy(jp->_Cz, __jadot+(3*NDIM+2)*nj+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
 			for (uint_t k = 0; k < SIMD; ++k) {
-//				#pragma unroll
-				for (uint_t l = 0; l < WGSIZE; ++l) {
-					snp_crk_kernel_core(l, lid, jp, ip);
-//					snp_crk_kernel_core((lid + l) % WGSIZE, lid, jp, ip);
-				}
+				snp_crk_kernel_core(lid, jp, ip);
 				for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
 					uint_t i = kk + lid;
 					shuff(ip->m[i], SIMD);

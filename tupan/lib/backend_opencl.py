@@ -170,24 +170,28 @@ class Program(object):
                 if fpwidth == 'fp32'
                 else dev.preferred_vector_width_double)
 
-        lmsize = 1                      # local_mem_size
+        warp = 1                        # warp/wavefront size
         wgsize = 1                      # work_group_size
+        lmsize = 1                      # local_mem_size
         ngroup = dev.max_compute_units  # num_groups
 
         if dev.type == cl.device_type.CPU:
+            warp *= 1
+            wgsize *= 2 * warp
             lmsize *= 32 if fpwidth == 'fp32' else 32
-            wgsize *= 16
-            ngroup *= 8
+            ngroup *= 4
 
         if dev.type == cl.device_type.GPU:
+            warp *= 32
+            wgsize *= 2 * warp
             lmsize *= 128 if fpwidth == 'fp32' else 64
-            wgsize *= 64
-            ngroup *= 256
+            ngroup *= 128
 
         # setting program options
         options = ' -D SIMD={}'.format(simd)
-        options += ' -D LMSIZE={}'.format(lmsize)
+        options += ' -D WARP={}'.format(warp)
         options += ' -D WGSIZE={}'.format(wgsize)
+        options += ' -D LMSIZE={}'.format(lmsize)
         options += ' -D CONFIG_USE_OPENCL'
         if fpwidth == 'fp64':
             options += ' -D CONFIG_USE_DOUBLE'

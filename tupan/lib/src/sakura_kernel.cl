@@ -3,83 +3,85 @@
 
 static inline void
 sakura_kernel_core(
-	uint_t ilid,
-	uint_t jlid,
+	uint_t lid,
 	local Sakura_Data *ip,
 	local Sakura_Data *jp,
 	const real_t dt,
 	const int_t flag)
 // flop count: 27 + ??
 {
-	for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
-		uint_t i = ii + ilid;
-		real_t im = ip->m[i];
-		real_t iee = ip->e2[i];
-		real_t irx = ip->rx[i];
-		real_t iry = ip->ry[i];
-		real_t irz = ip->rz[i];
-		real_t ivx = ip->vx[i];
-		real_t ivy = ip->vy[i];
-		real_t ivz = ip->vz[i];
-//		real_t idrx = ip->drx[i];
-//		real_t idry = ip->dry[i];
-//		real_t idrz = ip->drz[i];
-//		real_t idvx = ip->dvx[i];
-//		real_t idvy = ip->dvy[i];
-//		real_t idvz = ip->dvz[i];
-		for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
-			uint_t j = jj + jlid;
-			real_t m = im + jp->m[j];
-			real_t e2 = iee + jp->e2[j];
-			real_t r0x = irx - jp->rx[j];
-			real_t r0y = iry - jp->ry[j];
-			real_t r0z = irz - jp->rz[j];
-			real_t v0x = ivx - jp->vx[j];
-			real_t v0y = ivy - jp->vy[j];
-			real_t v0z = ivz - jp->vz[j];
+	uint_t jwarp = lid / WARP;
+	uint_t jlane = lid % WARP;
+	uint_t jlid = WARP * jwarp + jlane;
 
-			real_t r1x = r0x;
-			real_t r1y = r0y;
-			real_t r1z = r0z;
-			real_t v1x = v0x;
-			real_t v1y = v0y;
-			real_t v1z = v0z;
-			evolve_twobody(
-				dt, flag, m, e2,
-				r0x, r0y, r0z, v0x, v0y, v0z,
-				&r1x, &r1y, &r1z, &v1x, &v1y, &v1z
-			);	// flop count: ??
+	for (uint_t w = 0; w < WGSIZE/WARP; ++w) {
+		uint_t iwarp = jwarp^w;
+		for (uint_t l = 0; l < WARP; ++l) {
+			uint_t ilane = jlane^l;
+			uint_t ilid = WARP * iwarp + ilane;
+			for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
+				uint_t i = ii + ilid;
+//				real_t idrx = ip->drx[i];
+//				real_t idry = ip->dry[i];
+//				real_t idrz = ip->drz[i];
+//				real_t idvx = ip->dvx[i];
+//				real_t idvy = ip->dvy[i];
+//				real_t idvz = ip->dvz[i];
+				for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
+					uint_t j = jj + jlid;
+					real_t m = ip->m[i] + jp->m[j];
+					real_t e2 = ip->e2[i] + jp->e2[j];
+					real_t r0x = ip->rx[i] - jp->rx[j];
+					real_t r0y = ip->ry[i] - jp->ry[j];
+					real_t r0z = ip->rz[i] - jp->rz[j];
+					real_t v0x = ip->vx[i] - jp->vx[j];
+					real_t v0y = ip->vy[i] - jp->vy[j];
+					real_t v0z = ip->vz[i] - jp->vz[j];
 
-			real_t inv_m = 1 / m;
-			real_t drx = r1x - r0x;
-			real_t dry = r1y - r0y;
-			real_t drz = r1z - r0z;
-			real_t dvx = v1x - v0x;
-			real_t dvy = v1y - v0y;
-			real_t dvz = v1z - v0z;
+					real_t r1x = r0x;
+					real_t r1y = r0y;
+					real_t r1z = r0z;
+					real_t v1x = v0x;
+					real_t v1y = v0y;
+					real_t v1z = v0z;
+					evolve_twobody(
+						dt, flag, m, e2,
+						r0x, r0y, r0z, v0x, v0y, v0z,
+						&r1x, &r1y, &r1z, &v1x, &v1y, &v1z
+					);	// flop count: ??
 
-			real_t imu = im * inv_m;
-			jp->drx[j] -= imu * drx;
-			jp->dry[j] -= imu * dry;
-			jp->drz[j] -= imu * drz;
-			jp->dvx[j] -= imu * dvx;
-			jp->dvy[j] -= imu * dvy;
-			jp->dvz[j] -= imu * dvz;
+					real_t inv_m = 1 / m;
+					real_t drx = r1x - r0x;
+					real_t dry = r1y - r0y;
+					real_t drz = r1z - r0z;
+					real_t dvx = v1x - v0x;
+					real_t dvy = v1y - v0y;
+					real_t dvz = v1z - v0z;
 
-//			real_t jmu = jp->m[j] * inv_m;
-//			idrx += jmu * drx;
-//			idry += jmu * dry;
-//			idrz += jmu * drz;
-//			idvx += jmu * dvx;
-//			idvy += jmu * dvy;
-//			idvz += jmu * dvz;
+					real_t imu = ip->m[i] * inv_m;
+					jp->drx[j] -= imu * drx;
+					jp->dry[j] -= imu * dry;
+					jp->drz[j] -= imu * drz;
+					jp->dvx[j] -= imu * dvx;
+					jp->dvy[j] -= imu * dvy;
+					jp->dvz[j] -= imu * dvz;
+
+//					real_t jmu = jp->m[j] * inv_m;
+//					idrx += jmu * drx;
+//					idry += jmu * dry;
+//					idrz += jmu * drz;
+//					idvx += jmu * dvx;
+//					idvy += jmu * dvy;
+//					idvz += jmu * dvz;
+				}
+//				ip->drx[i] = idrx;
+//				ip->dry[i] = idry;
+//				ip->drz[i] = idrz;
+//				ip->dvx[i] = idvx;
+//				ip->dvy[i] = idvy;
+//				ip->dvz[i] = idvz;
+			}
 		}
-//		ip->drx[i] = idrx;
-//		ip->dry[i] = idry;
-//		ip->drz[i] = idrz;
-//		ip->dvx[i] = idvx;
-//		ip->dvy[i] = idvy;
-//		ip->dvz[i] = idvz;
 	}
 }
 
@@ -176,11 +178,7 @@ sakura_kernel_impl(
 			async_work_group_copy(jp->_dvz, __jdrdot+(1*NDIM+2)*nj+jj, jN, 0);
 			barrier(CLK_LOCAL_MEM_FENCE);
 			for (uint_t k = 0; k < 1; ++k) {
-//				#pragma unroll
-				for (uint_t l = 0; l < WGSIZE; ++l) {
-					sakura_kernel_core(l, lid, jp, ip, dt, flag);
-//					sakura_kernel_core((lid + l) % WGSIZE, lid, jp, ip, dt, flag);
-				}
+				sakura_kernel_core(lid, jp, ip, dt, flag);
 				for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
 					uint_t i = kk + lid;
 					shuff(ip->m[i], 1);
