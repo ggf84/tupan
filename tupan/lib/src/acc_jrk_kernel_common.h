@@ -71,14 +71,6 @@ struct P2P_acc_jrk_kernel_core {
 	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 56
 		for (size_t i = 0; i < TILE; ++i) {
-			auto im = ip.m[i];
-			auto iee = ip.e2[i];
-			auto irx = ip.rx[i];
-			auto iry = ip.ry[i];
-			auto irz = ip.rz[i];
-			auto ivx = ip.vx[i];
-			auto ivy = ip.vy[i];
-			auto ivz = ip.vz[i];
 			auto iax = ip.ax[i];
 			auto iay = ip.ay[i];
 			auto iaz = ip.az[i];
@@ -87,13 +79,13 @@ struct P2P_acc_jrk_kernel_core {
 			auto ijz = ip.jz[i];
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto ee = iee + jp.e2[j];
-				auto rx = irx - jp.rx[j];
-				auto ry = iry - jp.ry[j];
-				auto rz = irz - jp.rz[j];
-				auto vx = ivx - jp.vx[j];
-				auto vy = ivy - jp.vy[j];
-				auto vz = ivz - jp.vz[j];
+				auto ee = ip.e2[i] + jp.e2[j];
+				auto rx = ip.rx[i] - jp.rx[j];
+				auto ry = ip.ry[i] - jp.ry[j];
+				auto rz = ip.rz[i] - jp.rz[j];
+				auto vx = ip.vx[i] - jp.vx[j];
+				auto vy = ip.vy[i] - jp.vy[j];
+				auto vz = ip.vz[i] - jp.vz[j];
 
 				auto rr = ee;
 				rr += rx * rx + ry * ry + rz * rz;
@@ -110,7 +102,7 @@ struct P2P_acc_jrk_kernel_core {
 				vy += q1 * ry;
 				vz += q1 * rz;
 
-				auto im_r3 = im * inv_r3;
+				auto im_r3 = ip.m[i] * inv_r3;
 				jp.ax[j] += im_r3 * rx;
 				jp.ay[j] += im_r3 * ry;
 				jp.az[j] += im_r3 * rz;

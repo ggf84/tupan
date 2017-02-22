@@ -178,14 +178,6 @@ struct P2P_sakura_kernel_core {
 	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 41 + ???
 		for (size_t i = 0; i < TILE; ++i) {
-			auto im = ip.m[i];
-			auto iee = ip.e2[i];
-			auto irx = ip.rx[i];
-			auto iry = ip.ry[i];
-			auto irz = ip.rz[i];
-			auto ivx = ip.vx[i];
-			auto ivy = ip.vy[i];
-			auto ivz = ip.vz[i];
 			auto idrx = ip.drx[i];
 			auto idry = ip.dry[i];
 			auto idrz = ip.drz[i];
@@ -194,14 +186,14 @@ struct P2P_sakura_kernel_core {
 			auto idvz = ip.dvz[i];
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto m = im + jp.m[j];
-				auto ee = iee + jp.e2[j];
-				auto r0x = irx - jp.rx[j];
-				auto r0y = iry - jp.ry[j];
-				auto r0z = irz - jp.rz[j];
-				auto v0x = ivx - jp.vx[j];
-				auto v0y = ivy - jp.vy[j];
-				auto v0z = ivz - jp.vz[j];
+				auto m = ip.m[i] + jp.m[j];
+				auto ee = ip.e2[i] + jp.e2[j];
+				auto r0x = ip.rx[i] - jp.rx[j];
+				auto r0y = ip.ry[i] - jp.ry[j];
+				auto r0z = ip.rz[i] - jp.rz[j];
+				auto v0x = ip.vx[i] - jp.vx[j];
+				auto v0y = ip.vy[i] - jp.vy[j];
+				auto v0z = ip.vz[i] - jp.vz[j];
 
 				auto r1x = r0x;
 				auto r1y = r0y;
@@ -223,7 +215,7 @@ struct P2P_sakura_kernel_core {
 				auto dvy = v1y - v0y;
 				auto dvz = v1z - v0z;
 
-				auto imu = im * inv_m;
+				auto imu = ip.m[i] * inv_m;
 				jp.drx[j] -= imu * drx;
 				jp.dry[j] -= imu * dry;
 				jp.drz[j] -= imu * drz;

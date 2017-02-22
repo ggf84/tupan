@@ -69,26 +69,18 @@ struct P2P_pnacc_kernel_core {
 	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 45 + ???
 		for (size_t i = 0; i < TILE; ++i) {
-			auto im = ip.m[i];
-			auto iee = ip.e2[i];
-			auto irx = ip.rx[i];
-			auto iry = ip.ry[i];
-			auto irz = ip.rz[i];
-			auto ivx = ip.vx[i];
-			auto ivy = ip.vy[i];
-			auto ivz = ip.vz[i];
 			auto ipnax = ip.pnax[i];
 			auto ipnay = ip.pnay[i];
 			auto ipnaz = ip.pnaz[i];
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto ee = iee + jp.e2[j];
-				auto rx = irx - jp.rx[j];
-				auto ry = iry - jp.ry[j];
-				auto rz = irz - jp.rz[j];
-				auto vx = ivx - jp.vx[j];
-				auto vy = ivy - jp.vy[j];
-				auto vz = ivz - jp.vz[j];
+				auto ee = ip.e2[i] + jp.e2[j];
+				auto rx = ip.rx[i] - jp.rx[j];
+				auto ry = ip.ry[i] - jp.ry[j];
+				auto rz = ip.rz[i] - jp.rz[j];
+				auto vx = ip.vx[i] - jp.vx[j];
+				auto vy = ip.vy[i] - jp.vy[j];
+				auto vz = ip.vz[i] - jp.vz[j];
 
 				auto rr = ee;
 				rr += rx * rx + ry * ry + rz * rz;
@@ -96,16 +88,16 @@ struct P2P_pnacc_kernel_core {
 				auto inv_r = rsqrt(rr);
 				auto inv_r2 = inv_r * inv_r;
 
-//				auto im = ip.m[i];
+				auto im = ip.m[i];
 				auto im2 = im * im;
 				auto im_r = im * inv_r;
-				auto iv2 = ivx * ivx
-						 + ivy * ivy
-						 + ivz * ivz;
+				auto iv2 = ip.vx[i] * ip.vx[i]
+						 + ip.vy[i] * ip.vy[i]
+						 + ip.vz[i] * ip.vz[i];
 				auto iv4 = iv2 * iv2;
-				auto niv = rx * ivx
-						 + ry * ivy
-						 + rz * ivz;
+				auto niv = rx * ip.vx[i]
+						 + ry * ip.vy[i]
+						 + rz * ip.vz[i];
 				niv *= inv_r;
 				auto niv2 = niv * niv;
 
@@ -126,9 +118,9 @@ struct P2P_pnacc_kernel_core {
 				auto vv = vx * vx
 						+ vy * vy
 						+ vz * vz;
-				auto ivjv = ivx * jp.vx[j]
-						  + ivy * jp.vy[j]
-						  + ivz * jp.vz[j];
+				auto ivjv = ip.vx[i] * jp.vx[j]
+						  + ip.vy[i] * jp.vy[j]
+						  + ip.vz[i] * jp.vz[j];
 				auto nv = rx * vx
 						+ ry * vy
 						+ rz * vz;

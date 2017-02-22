@@ -59,20 +59,15 @@ struct P2P_acc_kernel_core {
 	void operator()(IP&& ip, JP&& jp) {
 		// flop count: 28
 		for (size_t i = 0; i < TILE; ++i) {
-			auto im = ip.m[i];
-			auto iee = ip.e2[i];
-			auto irx = ip.rx[i];
-			auto iry = ip.ry[i];
-			auto irz = ip.rz[i];
 			auto iax = ip.ax[i];
 			auto iay = ip.ay[i];
 			auto iaz = ip.az[i];
 			#pragma omp simd
 			for (size_t j = 0; j < TILE; ++j) {
-				auto ee = iee + jp.e2[j];
-				auto rx = irx - jp.rx[j];
-				auto ry = iry - jp.ry[j];
-				auto rz = irz - jp.rz[j];
+				auto ee = ip.e2[i] + jp.e2[j];
+				auto rx = ip.rx[i] - jp.rx[j];
+				auto ry = ip.ry[i] - jp.ry[j];
+				auto rz = ip.rz[i] - jp.rz[j];
 
 				auto rr = ee;
 				rr += rx * rx + ry * ry + rz * rz;
@@ -80,7 +75,7 @@ struct P2P_acc_kernel_core {
 				auto inv_r3 = rsqrt(rr);
 				inv_r3 *= inv_r3 * inv_r3;
 
-				auto im_r3 = im * inv_r3;
+				auto im_r3 = ip.m[i] * inv_r3;
 				jp.ax[j] += im_r3 * rx;
 				jp.ay[j] += im_r3 * ry;
 				jp.az[j] += im_r3 * rz;
