@@ -42,25 +42,30 @@ def set_particles(n):
     return ps
 
 
-def benchmark(bench, n_max, backend):
+def benchmark(bench, n_max, backend, rect=False):
     np.random.seed(0)
 
     name, kwargs = bench
 
-    name += '_triangle'
-#    name += '_rectangle'
+    if rect:
+        name += '_rectangle'
+    else:
+        name += '_triangle'
 
     kernel = ext.make_extension(name, backend)
 
     ips = set_particles(n_max)
-#    jps = set_particles(n_max)
+    if rect:
+        jps = set_particles(n_max)
 
     n = 2
     print('\n# benchmark:', name)
     while n <= n_max:
         print('#    n:', n)
-        elapsed = best_of(5, kernel.set_args, ips[:n], **kwargs)
-#        elapsed = best_of(5, kernel.set_args, ips[:n], jps[:n], **kwargs)
+        if rect:
+            elapsed = best_of(5, kernel.set_args, ips[:n], jps[:n], **kwargs)
+        else:
+            elapsed = best_of(5, kernel.set_args, ips[:n], **kwargs)
         print("#        {meth} (s): {elapsed:.4e}"
               .format(meth='set', elapsed=elapsed))
         elapsed = best_of(3, kernel.run)
@@ -99,17 +104,25 @@ class Benchmark(object):
             help=('Max number of particles '
                   '(type: %(type)s, default: %(default)s)')
         )
+        parser.add_argument(
+            '-r', '--rect',
+            action='store_true',
+            default=False,
+            help=('Use rectangle kernel '
+                  '(default: %(default)s)')
+        )
         self.parser = parser
 
     def __call__(self, cli):
         k = cli.kernel
         n_max = cli.n_max
+        rect = cli.rect
         backend = cli.backend
         if k == -1:
             for kernel in KERNEL:
-                benchmark(kernel, n_max, backend)
+                benchmark(kernel, n_max, backend, rect)
         else:
-            benchmark(KERNEL[k], n_max, backend)
+            benchmark(KERNEL[k], n_max, backend, rect)
 
 
 # -- End of File --

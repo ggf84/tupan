@@ -209,7 +209,7 @@ class Program(object):
             kernel.name = name
 #            kwgi = cl.kernel_work_group_info
 #            LOGGER.debug(
-#                "CL '%s' info: %s %s %s %s %s on %s",
+#                "\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s",
 #                name,
 #                kernel.get_work_group_info(
 #                    kwgi.COMPILE_WORK_GROUP_SIZE,
