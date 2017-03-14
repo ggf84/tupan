@@ -160,61 +160,57 @@ acc_kernel_impl(
 {
 	uint_t block = LMSIZE * SIMD;
 	uint_t lid = get_local_id(0);
-	uint_t jgrp = get_group_id(0);
+	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
-	uint_t grpsize = ngrps * block;
-	for (uint_t g = 0; g < ngrps; ++g) {
-		uint_t igrp = (jgrp + g) % ngrps;
-		for (uint_t ii = igrp * block;
-					ii < ni;
-					ii += grpsize) {
-			uint_t iN = min(block, (ni - ii));
-			zero_Acc_Data(lid, ip);
+	for (uint_t ii = grp * block;
+				ii < ni;
+				ii += ngrps * block) {
+		barrier(CLK_LOCAL_MEM_FENCE);
+		zero_Acc_Data(lid, ip);
+		barrier(CLK_LOCAL_MEM_FENCE);
+		uint_t iN = min(block, (ni - ii));
+		async_work_group_copy(ip->_m, __im+ii, iN, 0);
+		async_work_group_copy(ip->_e2, __ie2+ii, iN, 0);
+		async_work_group_copy(ip->_rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
+		async_work_group_copy(ip->_ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
+		async_work_group_copy(ip->_rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
+
+		for (uint_t jj = 0;
+					jj < nj;
+					jj += block) {
 			barrier(CLK_LOCAL_MEM_FENCE);
-			async_work_group_copy(ip->_m, __im+ii, iN, 0);
-			async_work_group_copy(ip->_e2, __ie2+ii, iN, 0);
-			async_work_group_copy(ip->_rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
-			async_work_group_copy(ip->_ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
-			async_work_group_copy(ip->_rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
+			zero_Acc_Data(lid, jp);
+			barrier(CLK_LOCAL_MEM_FENCE);
+			uint_t jN = min(block, (nj - jj));
+			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
+			async_work_group_copy(jp->_e2, __je2+jj, jN, 0);
+			async_work_group_copy(jp->_rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
+			async_work_group_copy(jp->_ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
+			async_work_group_copy(jp->_rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
 
-			for (uint_t jj = jgrp * block;
-						jj < nj;
-						jj += grpsize) {
-				uint_t jN = min(block, (nj - jj));
-				zero_Acc_Data(lid, jp);
-				barrier(CLK_LOCAL_MEM_FENCE);
-				async_work_group_copy(jp->_m, __jm+jj, jN, 0);
-				async_work_group_copy(jp->_e2, __je2+jj, jN, 0);
-				async_work_group_copy(jp->_rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
-				async_work_group_copy(jp->_ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
-				async_work_group_copy(jp->_rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
-
-				barrier(CLK_LOCAL_MEM_FENCE);
-				acc_kernel_core(lid, ip, jp);
-				barrier(CLK_LOCAL_MEM_FENCE);
-
-				for (uint_t kk = 0, k = lid;
-							kk < jN;
-							kk += WGSIZE, k += WGSIZE) {
-					if (k < jN) {
-						(__jadot+(0*NDIM+0)*nj+jj)[k] += jp->_ax[k];
-						(__jadot+(0*NDIM+1)*nj+jj)[k] += jp->_ay[k];
-						(__jadot+(0*NDIM+2)*nj+jj)[k] += jp->_az[k];
-					}
-				}
-				barrier(CLK_GLOBAL_MEM_FENCE);
-			}
+			barrier(CLK_LOCAL_MEM_FENCE);
+			acc_kernel_core(lid, jp, ip);
+			barrier(CLK_LOCAL_MEM_FENCE);
 
 //			for (uint_t kk = 0, k = lid;
-//						kk < iN;
+//						kk < block;
 //						kk += WGSIZE, k += WGSIZE) {
-//				if (k < iN) {
-//					atomic_fadd(&(__iadot+(0*NDIM+0)*ni+ii)[k], ip->_ax[k]);
-//					atomic_fadd(&(__iadot+(0*NDIM+1)*ni+ii)[k], ip->_ay[k]);
-//					atomic_fadd(&(__iadot+(0*NDIM+2)*ni+ii)[k], ip->_az[k]);
+//				if (k < jN) {
+//					atomic_fadd(&(__jadot+(0*NDIM+0)*nj)[jj+k], jp->_ax[k]);
+//					atomic_fadd(&(__jadot+(0*NDIM+1)*nj)[jj+k], jp->_ay[k]);
+//					atomic_fadd(&(__jadot+(0*NDIM+2)*nj)[jj+k], jp->_az[k]);
 //				}
 //			}
-//			barrier(CLK_GLOBAL_MEM_FENCE);
+		}
+
+		for (uint_t kk = 0, k = lid;
+					kk < block;
+					kk += WGSIZE, k += WGSIZE) {
+			if (k < iN) {
+				(__iadot+(0*NDIM+0)*ni)[ii+k] += ip->_ax[k];
+				(__iadot+(0*NDIM+1)*ni)[ii+k] += ip->_ay[k];
+				(__iadot+(0*NDIM+2)*ni)[ii+k] += ip->_az[k];
+			}
 		}
 	}
 }
@@ -234,65 +230,61 @@ acc_kernel_rectangle(
 	global real_t __iadot[],
 	global real_t __jadot[])
 {
+	local Acc_Data ip;
+	local Acc_Data jp;
 	uint_t block = LMSIZE * SIMD;
 	uint_t lid = get_local_id(0);
-	uint_t jgrp = get_group_id(0);
+	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
-	uint_t grpsize = ngrps * block;
-	for (uint_t g = 0; g < ngrps; ++g) {
-		uint_t igrp = (jgrp + g) % ngrps;
-		for (uint_t ii = igrp * block;
-					ii < ni;
-					ii += grpsize) {
-			uint_t iN = min(block, (ni - ii));
-			local Acc_Data ip;
-			zero_Acc_Data(lid, &ip);
+	for (uint_t ii = grp * block;
+				ii < ni;
+				ii += ngrps * block) {
+		barrier(CLK_LOCAL_MEM_FENCE);
+		zero_Acc_Data(lid, &ip);
+		barrier(CLK_LOCAL_MEM_FENCE);
+		uint_t iN = min(block, (ni - ii));
+		async_work_group_copy(ip._m, __im+ii, iN, 0);
+		async_work_group_copy(ip._e2, __ie2+ii, iN, 0);
+		async_work_group_copy(ip._rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
+		async_work_group_copy(ip._ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
+		async_work_group_copy(ip._rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
+
+		for (uint_t jj = 0;
+					jj < nj;
+					jj += block) {
 			barrier(CLK_LOCAL_MEM_FENCE);
-			async_work_group_copy(ip._m, __im+ii, iN, 0);
-			async_work_group_copy(ip._e2, __ie2+ii, iN, 0);
-			async_work_group_copy(ip._rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
-			async_work_group_copy(ip._ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
-			async_work_group_copy(ip._rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
+			zero_Acc_Data(lid, &jp);
+			barrier(CLK_LOCAL_MEM_FENCE);
+			uint_t jN = min(block, (nj - jj));
+			async_work_group_copy(jp._m, __jm+jj, jN, 0);
+			async_work_group_copy(jp._e2, __je2+jj, jN, 0);
+			async_work_group_copy(jp._rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
+			async_work_group_copy(jp._ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
+			async_work_group_copy(jp._rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
 
-			for (uint_t jj = jgrp * block;
-						jj < nj;
-						jj += grpsize) {
-				uint_t jN = min(block, (nj - jj));
-				local Acc_Data jp;
-				zero_Acc_Data(lid, &jp);
-				barrier(CLK_LOCAL_MEM_FENCE);
-				async_work_group_copy(jp._m, __jm+jj, jN, 0);
-				async_work_group_copy(jp._e2, __je2+jj, jN, 0);
-				async_work_group_copy(jp._rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
-				async_work_group_copy(jp._ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
-				async_work_group_copy(jp._rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
-
-				barrier(CLK_LOCAL_MEM_FENCE);
-				p2p_acc_kernel_core(lid, &ip, &jp);
-				barrier(CLK_LOCAL_MEM_FENCE);
-
-				for (uint_t kk = 0, k = lid;
-							kk < jN;
-							kk += WGSIZE, k += WGSIZE) {
-					if (k < jN) {
-						(__jadot+(0*NDIM+0)*nj+jj)[k] += jp._ax[k];
-						(__jadot+(0*NDIM+1)*nj+jj)[k] += jp._ay[k];
-						(__jadot+(0*NDIM+2)*nj+jj)[k] += jp._az[k];
-					}
-				}
-				barrier(CLK_GLOBAL_MEM_FENCE);
-			}
+			barrier(CLK_LOCAL_MEM_FENCE);
+			p2p_acc_kernel_core(lid, &jp, &ip);
+			barrier(CLK_LOCAL_MEM_FENCE);
 
 			for (uint_t kk = 0, k = lid;
-						kk < iN;
+						kk < block;
 						kk += WGSIZE, k += WGSIZE) {
-				if (k < iN) {
-					atomic_fadd(&(__iadot+(0*NDIM+0)*ni+ii)[k], ip._ax[k]);
-					atomic_fadd(&(__iadot+(0*NDIM+1)*ni+ii)[k], ip._ay[k]);
-					atomic_fadd(&(__iadot+(0*NDIM+2)*ni+ii)[k], ip._az[k]);
+				if (k < jN) {
+					atomic_fadd(&(__jadot+(0*NDIM+0)*nj)[jj+k], jp._ax[k]);
+					atomic_fadd(&(__jadot+(0*NDIM+1)*nj)[jj+k], jp._ay[k]);
+					atomic_fadd(&(__jadot+(0*NDIM+2)*nj)[jj+k], jp._az[k]);
 				}
 			}
-			barrier(CLK_GLOBAL_MEM_FENCE);
+		}
+
+		for (uint_t kk = 0, k = lid;
+					kk < block;
+					kk += WGSIZE, k += WGSIZE) {
+			if (k < iN) {
+				(__iadot+(0*NDIM+0)*ni)[ii+k] += ip._ax[k];
+				(__iadot+(0*NDIM+1)*ni)[ii+k] += ip._ay[k];
+				(__iadot+(0*NDIM+2)*ni)[ii+k] += ip._az[k];
+			}
 		}
 	}
 }
