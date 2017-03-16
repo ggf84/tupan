@@ -15,15 +15,16 @@ p2p_acc_kernel_core(
 	for (uint_t k = 0; k < SIMD; ++k) {
 		for (uint_t w = 0; w < WGSIZE/WARP; ++w) {
 			uint_t iwarp = jwarp^w;
+			barrier(CLK_LOCAL_MEM_FENCE);
 			for (uint_t l = 0; l < WARP; ++l) {
 				uint_t ilane = jlane^l;
 				uint_t ilid = WARP * iwarp + ilane;
 				for (uint_t ii = 0, i = ilid;
 							ii < LMSIZE;
 							ii += WGSIZE, i += WGSIZE) {
-					real_tn iax = ip->ax[i];
-					real_tn iay = ip->ay[i];
-					real_tn iaz = ip->az[i];
+					real_tn iax = (real_tn)(0);
+					real_tn iay = (real_tn)(0);
+					real_tn iaz = (real_tn)(0);
 					for (uint_t jj = 0, j = jlid;
 								jj < LMSIZE;
 								jj += WGSIZE, j += WGSIZE) {
@@ -48,11 +49,12 @@ p2p_acc_kernel_core(
 						iay -= jm_r3 * ry;
 						iaz -= jm_r3 * rz;
 					}
-					ip->ax[i] = iax;
-					ip->ay[i] = iay;
-					ip->az[i] = iaz;
+					ip->ax[i] += iax;
+					ip->ay[i] += iay;
+					ip->az[i] += iaz;
 				}
 			}
+			barrier(CLK_LOCAL_MEM_FENCE);
 		}
 		for (uint_t jj = 0, j = jlid;
 					jj < LMSIZE;
@@ -84,15 +86,16 @@ acc_kernel_core(
 	for (uint_t k = 0; k < SIMD; ++k) {
 		for (uint_t w = 0; w < WGSIZE/WARP; ++w) {
 			uint_t iwarp = jwarp^w;
+			barrier(CLK_LOCAL_MEM_FENCE);
 			for (uint_t l = 0; l < WARP; ++l) {
 				uint_t ilane = jlane^l;
 				uint_t ilid = WARP * iwarp + ilane;
 				for (uint_t ii = 0, i = ilid;
 							ii < LMSIZE;
 							ii += WGSIZE, i += WGSIZE) {
-//					real_tn iax = ip->ax[i];
-//					real_tn iay = ip->ay[i];
-//					real_tn iaz = ip->az[i];
+//					real_tn iax = (real_tn)(0);
+//					real_tn iay = (real_tn)(0);
+//					real_tn iaz = (real_tn)(0);
 					for (uint_t jj = 0, j = jlid;
 								jj < LMSIZE;
 								jj += WGSIZE, j += WGSIZE) {
@@ -118,11 +121,12 @@ acc_kernel_core(
 //						iay -= jm_r3 * ry;
 //						iaz -= jm_r3 * rz;
 					}
-//					ip->ax[i] = iax;
-//					ip->ay[i] = iay;
-//					ip->az[i] = iaz;
+//					ip->ax[i] += iax;
+//					ip->ay[i] += iay;
+//					ip->az[i] += iaz;
 				}
 			}
+			barrier(CLK_LOCAL_MEM_FENCE);
 		}
 		for (uint_t jj = 0, j = jlid;
 					jj < LMSIZE;
