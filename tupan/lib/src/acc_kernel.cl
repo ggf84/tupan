@@ -3,29 +3,22 @@
 
 static inline void
 p2p_acc_kernel_core(
-	uint_t lid,
+	uint_t warp_id,
+	uint_t lane_id,
 	local Acc_Data *ip,
 	local Acc_Data *jp)
 // flop count: 28
 {
-	uint_t jwarp = lid / WARP;
-	uint_t jlane = lid % WARP;
-	uint_t jlid = WARP * jwarp + jlane;
-
 	for (uint_t k = 0; k < SIMD; ++k) {
 		for (uint_t w = 0; w < WGSIZE/WARP; ++w) {
-			uint_t iwarp = jwarp^w;
-			barrier(CLK_LOCAL_MEM_FENCE);
 			for (uint_t l = 0; l < WARP; ++l) {
-				uint_t ilane = jlane^l;
-				uint_t ilid = WARP * iwarp + ilane;
-				for (uint_t ii = 0, i = ilid;
+				for (uint_t ii = 0, i = WARP * (warp_id^w) + (lane_id^l);
 							ii < LMSIZE;
 							ii += WGSIZE, i += WGSIZE) {
 					real_tn iax = (real_tn)(0);
 					real_tn iay = (real_tn)(0);
 					real_tn iaz = (real_tn)(0);
-					for (uint_t jj = 0, j = jlid;
+					for (uint_t jj = 0, j = WARP * warp_id + lane_id;
 								jj < LMSIZE;
 								jj += WGSIZE, j += WGSIZE) {
 						real_tn ee = ip->e2[i] + jp->e2[j];
@@ -56,7 +49,7 @@ p2p_acc_kernel_core(
 			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 		}
-		for (uint_t jj = 0, j = jlid;
+		for (uint_t jj = 0, j = WARP * warp_id + lane_id;
 					jj < LMSIZE;
 					jj += WGSIZE, j += WGSIZE) {
 			shuff(jp->m[j], SIMD);
@@ -74,29 +67,22 @@ p2p_acc_kernel_core(
 
 static inline void
 acc_kernel_core(
-	uint_t lid,
+	uint_t warp_id,
+	uint_t lane_id,
 	local Acc_Data *ip,
 	local Acc_Data *jp)
 // flop count: 21
 {
-	uint_t jwarp = lid / WARP;
-	uint_t jlane = lid % WARP;
-	uint_t jlid = WARP * jwarp + jlane;
-
 	for (uint_t k = 0; k < SIMD; ++k) {
 		for (uint_t w = 0; w < WGSIZE/WARP; ++w) {
-			uint_t iwarp = jwarp^w;
-			barrier(CLK_LOCAL_MEM_FENCE);
 			for (uint_t l = 0; l < WARP; ++l) {
-				uint_t ilane = jlane^l;
-				uint_t ilid = WARP * iwarp + ilane;
-				for (uint_t ii = 0, i = ilid;
+				for (uint_t ii = 0, i = WARP * (warp_id^w) + (lane_id^l);
 							ii < LMSIZE;
 							ii += WGSIZE, i += WGSIZE) {
 //					real_tn iax = (real_tn)(0);
 //					real_tn iay = (real_tn)(0);
 //					real_tn iaz = (real_tn)(0);
-					for (uint_t jj = 0, j = jlid;
+					for (uint_t jj = 0, j = WARP * warp_id + lane_id;
 								jj < LMSIZE;
 								jj += WGSIZE, j += WGSIZE) {
 						real_tn ee = ip->e2[i] + jp->e2[j];
@@ -128,7 +114,7 @@ acc_kernel_core(
 			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 		}
-		for (uint_t jj = 0, j = jlid;
+		for (uint_t jj = 0, j = WARP * warp_id + lane_id;
 					jj < LMSIZE;
 					jj += WGSIZE, j += WGSIZE) {
 			shuff(jp->m[j], SIMD);
@@ -166,11 +152,13 @@ acc_kernel_impl(
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
+	uint_t warp_id = lid / WARP;
+	uint_t lane_id = lid % WARP;
 	for (uint_t ii = grp * block;
 				ii < ni;
 				ii += ngrps * block) {
 		barrier(CLK_LOCAL_MEM_FENCE);
-		zero_Acc_Data(lid, ip);
+		zero_Acc_Data(warp_id, lane_id, ip);
 		barrier(CLK_LOCAL_MEM_FENCE);
 		uint_t iN = min(block, (ni - ii));
 		async_work_group_copy(ip->_m, __im+ii, iN, 0);
@@ -183,7 +171,7 @@ acc_kernel_impl(
 					jj < nj;
 					jj += block) {
 			barrier(CLK_LOCAL_MEM_FENCE);
-			zero_Acc_Data(lid, jp);
+			zero_Acc_Data(warp_id, lane_id, jp);
 			barrier(CLK_LOCAL_MEM_FENCE);
 			uint_t jN = min(block, (nj - jj));
 			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
@@ -193,10 +181,10 @@ acc_kernel_impl(
 			async_work_group_copy(jp->_rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
 
 			barrier(CLK_LOCAL_MEM_FENCE);
-			acc_kernel_core(lid, jp, ip);
+			acc_kernel_core(warp_id, lane_id, jp, ip);
 			barrier(CLK_LOCAL_MEM_FENCE);
 
-//			for (uint_t kk = 0, k = lid;
+//			for (uint_t kk = 0, k = WARP * warp_id + lane_id;
 //						kk < block;
 //						kk += WGSIZE, k += WGSIZE) {
 //				if (k < jN) {
@@ -207,7 +195,7 @@ acc_kernel_impl(
 //			}
 		}
 
-		for (uint_t kk = 0, k = lid;
+		for (uint_t kk = 0, k = WARP * warp_id + lane_id;
 					kk < block;
 					kk += WGSIZE, k += WGSIZE) {
 			if (k < iN) {
@@ -240,11 +228,13 @@ acc_kernel_rectangle(
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
+	uint_t warp_id = lid / WARP;
+	uint_t lane_id = lid % WARP;
 	for (uint_t ii = grp * block;
 				ii < ni;
 				ii += ngrps * block) {
 		barrier(CLK_LOCAL_MEM_FENCE);
-		zero_Acc_Data(lid, &ip);
+		zero_Acc_Data(warp_id, lane_id, &ip);
 		barrier(CLK_LOCAL_MEM_FENCE);
 		uint_t iN = min(block, (ni - ii));
 		async_work_group_copy(ip._m, __im+ii, iN, 0);
@@ -257,7 +247,7 @@ acc_kernel_rectangle(
 					jj < nj;
 					jj += block) {
 			barrier(CLK_LOCAL_MEM_FENCE);
-			zero_Acc_Data(lid, &jp);
+			zero_Acc_Data(warp_id, lane_id, &jp);
 			barrier(CLK_LOCAL_MEM_FENCE);
 			uint_t jN = min(block, (nj - jj));
 			async_work_group_copy(jp._m, __jm+jj, jN, 0);
@@ -267,10 +257,10 @@ acc_kernel_rectangle(
 			async_work_group_copy(jp._rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
 
 			barrier(CLK_LOCAL_MEM_FENCE);
-			p2p_acc_kernel_core(lid, &jp, &ip);
+			p2p_acc_kernel_core(warp_id, lane_id, &jp, &ip);
 			barrier(CLK_LOCAL_MEM_FENCE);
 
-			for (uint_t kk = 0, k = lid;
+			for (uint_t kk = 0, k = WARP * warp_id + lane_id;
 						kk < block;
 						kk += WGSIZE, k += WGSIZE) {
 				if (k < jN) {
@@ -281,7 +271,7 @@ acc_kernel_rectangle(
 			}
 		}
 
-		for (uint_t kk = 0, k = lid;
+		for (uint_t kk = 0, k = WARP * warp_id + lane_id;
 					kk < block;
 					kk += WGSIZE, k += WGSIZE) {
 			if (k < iN) {

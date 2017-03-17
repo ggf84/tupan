@@ -163,9 +163,9 @@ typedef struct acc_data {
 
 
 static inline void
-zero_Acc_Data(uint_t lid, local Acc_Data *p)
+zero_Acc_Data(uint_t warp_id, uint_t lane_id, local Acc_Data *p)
 {
-	for (uint_t kk = 0, k = lid;
+	for (uint_t kk = 0, k = WARP * warp_id + lane_id;
 				kk < LMSIZE;
 				kk += WGSIZE, k += WGSIZE) {
 		p->m[k] = (real_tn)(0);
