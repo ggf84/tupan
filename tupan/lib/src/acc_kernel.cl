@@ -133,7 +133,8 @@ acc_kernel_core(
 // ----------------------------------------------------------------------------
 
 
-static inline void
+kernel void
+__attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 acc_kernel_impl(
 	const uint_t ni,
 	global const real_t __im[],
@@ -144,10 +145,10 @@ acc_kernel_impl(
 	global const real_t __je2[],
 	global const real_t __jrdot[],
 	global real_t __iadot[],
-	global real_t __jadot[],
-	local Acc_Data *ip,
-	local Acc_Data *jp)
+	global real_t __jadot[])
 {
+	local Acc_Data ip;
+	local Acc_Data jp;
 	uint_t block = LMSIZE * SIMD;
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
@@ -158,39 +159,39 @@ acc_kernel_impl(
 				ii < ni;
 				ii += ngrps * block) {
 		barrier(CLK_LOCAL_MEM_FENCE);
-		zero_Acc_Data(warp_id, lane_id, ip);
+		zero_Acc_Data(warp_id, lane_id, &ip);
 		barrier(CLK_LOCAL_MEM_FENCE);
 		uint_t iN = min(block, (ni - ii));
-		async_work_group_copy(ip->_m, __im+ii, iN, 0);
-		async_work_group_copy(ip->_e2, __ie2+ii, iN, 0);
-		async_work_group_copy(ip->_rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
+		async_work_group_copy(ip._m, __im+ii, iN, 0);
+		async_work_group_copy(ip._e2, __ie2+ii, iN, 0);
+		async_work_group_copy(ip._rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
+		async_work_group_copy(ip._ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
+		async_work_group_copy(ip._rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
 
 		for (uint_t jj = 0;
 					jj < nj;
 					jj += block) {
 			barrier(CLK_LOCAL_MEM_FENCE);
-			zero_Acc_Data(warp_id, lane_id, jp);
+			zero_Acc_Data(warp_id, lane_id, &jp);
 			barrier(CLK_LOCAL_MEM_FENCE);
 			uint_t jN = min(block, (nj - jj));
-			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
-			async_work_group_copy(jp->_e2, __je2+jj, jN, 0);
-			async_work_group_copy(jp->_rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
+			async_work_group_copy(jp._m, __jm+jj, jN, 0);
+			async_work_group_copy(jp._e2, __je2+jj, jN, 0);
+			async_work_group_copy(jp._rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
+			async_work_group_copy(jp._ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
+			async_work_group_copy(jp._rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
 
 			barrier(CLK_LOCAL_MEM_FENCE);
-			acc_kernel_core(warp_id, lane_id, jp, ip);
+			acc_kernel_core(warp_id, lane_id, &jp, &ip);
 			barrier(CLK_LOCAL_MEM_FENCE);
 
 //			for (uint_t kk = 0, k = WARP * warp_id + lane_id;
 //						kk < block;
 //						kk += WGSIZE, k += WGSIZE) {
 //				if (k < jN) {
-//					atomic_fadd(&(__jadot+(0*NDIM+0)*nj)[jj+k], jp->_ax[k]);
-//					atomic_fadd(&(__jadot+(0*NDIM+1)*nj)[jj+k], jp->_ay[k]);
-//					atomic_fadd(&(__jadot+(0*NDIM+2)*nj)[jj+k], jp->_az[k]);
+//					atomic_fadd(&(__jadot+(0*NDIM+0)*nj)[jj+k], jp._ax[k]);
+//					atomic_fadd(&(__jadot+(0*NDIM+1)*nj)[jj+k], jp._ay[k]);
+//					atomic_fadd(&(__jadot+(0*NDIM+2)*nj)[jj+k], jp._az[k]);
 //				}
 //			}
 		}
@@ -199,9 +200,9 @@ acc_kernel_impl(
 					kk < block;
 					kk += WGSIZE, k += WGSIZE) {
 			if (k < iN) {
-				(__iadot+(0*NDIM+0)*ni)[ii+k] += ip->_ax[k];
-				(__iadot+(0*NDIM+1)*ni)[ii+k] += ip->_ay[k];
-				(__iadot+(0*NDIM+2)*ni)[ii+k] += ip->_az[k];
+				(__iadot+(0*NDIM+0)*ni)[ii+k] += ip._ax[k];
+				(__iadot+(0*NDIM+1)*ni)[ii+k] += ip._ay[k];
+				(__iadot+(0*NDIM+2)*ni)[ii+k] += ip._az[k];
 			}
 		}
 	}
@@ -296,14 +297,10 @@ acc_kernel_triangle(
 	global const real_t __irdot[],
 	global real_t __iadot[])
 {
-	local Acc_Data _ip;
-	local Acc_Data _jp;
-
 	acc_kernel_impl(
 		ni, __im, __ie2, __irdot,
 		ni, __im, __ie2, __irdot,
-		__iadot, __iadot,
-		&_ip, &_jp
+		__iadot, __iadot
 	);
 }
 
@@ -322,21 +319,15 @@ acc_kernel_rectangle(
 	global real_t __iadot[],
 	global real_t __jadot[])
 {
-	local Acc_Data _ip;
-	local Acc_Data _jp;
-
 	acc_kernel_impl(
 		ni, __im, __ie2, __irdot,
 		nj, __jm, __je2, __jrdot,
-		__iadot, __jadot,
-		&_ip, &_jp
+		__iadot, __jadot
 	);
-
 	acc_kernel_impl(
 		nj, __jm, __je2, __jrdot,
 		ni, __im, __ie2, __irdot,
-		__jadot, __iadot,
-		&_jp, &_ip
+		__jadot, __iadot
 	);
 }
 */
