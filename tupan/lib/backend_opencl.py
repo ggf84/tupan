@@ -51,7 +51,7 @@ class Queue(object):
     events = []
 
     def __init__(self, cl_context, cl_device=None,
-                 out_of_order=False, profiling=False):
+                 out_of_order=True, profiling=False):
         properties = 0
         cqp = cl.command_queue_properties
         if out_of_order:
@@ -170,26 +170,31 @@ class Program(object):
                 if fpwidth == 'fp32'
                 else dev.preferred_vector_width_double)
 
-        warp = 1                        # warp/wavefront size
+        nlanes = 1                      # warp/wavefront size
+        nwarps = 1                      # number of warps in a work group
         wgsize = 1                      # work_group_size
         lmsize = 1                      # local_mem_size
         ngroup = dev.max_compute_units  # num_groups
 
         if dev.type == cl.device_type.CPU:
-            warp *= 1
-            wgsize *= 2 * warp
-            lmsize *= 32 if fpwidth == 'fp32' else 32
+            nlanes *= 1 if fpwidth == 'fp32' else 1
+            nwarps *= 1
+            wgsize *= nwarps * nlanes
+            lmsize *= 32 * wgsize
             ngroup *= 4
 
         if dev.type == cl.device_type.GPU:
-            warp *= 32
-            wgsize *= 2 * warp
-            lmsize *= 128 if fpwidth == 'fp32' else 64
+            nlanes *= 32 if fpwidth == 'fp32' else 16
+            nwarps *= 2
+            wgsize *= nwarps * nlanes
+            lmsize *= 2 * wgsize
             ngroup *= 128
 
         # setting program options
         options = ' -D SIMD={}'.format(simd)
-        options += ' -D WARP={}'.format(warp)
+        options += ' -D WARP={}'.format(nlanes)
+        options += ' -D NLANES={}'.format(nlanes)
+        options += ' -D NWARPS={}'.format(nwarps)
         options += ' -D WGSIZE={}'.format(wgsize)
         options += ' -D LMSIZE={}'.format(lmsize)
         options += ' -D CONFIG_USE_OPENCL'
