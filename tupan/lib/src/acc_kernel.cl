@@ -14,9 +14,6 @@ p2p_acc_kernel_core(
 	for (uint_t ii = 0, i = (NLANES * warp_id + lane_id);
 				ii < LMSIZE;
 				ii += WGSIZE, i += WGSIZE) {
-		real_tn iax = (real_tn)(0);
-		real_tn iay = (real_tn)(0);
-		real_tn iaz = (real_tn)(0);
 		for (uint_t jj = 0, j = (NLANES * warp_id + lane_id)^l;
 					jj < LMSIZE;
 					jj += WGSIZE, j += WGSIZE) {
@@ -37,14 +34,10 @@ p2p_acc_kernel_core(
 			jp->az[j] += im_r3 * rz;
 
 			real_tn jm_r3 = jp->m[j] * inv_r3;
-			iax -= jm_r3 * rx;
-			iay -= jm_r3 * ry;
-			iaz -= jm_r3 * rz;
+			ip->ax[i] += jm_r3 * rx;
+			ip->ay[i] += jm_r3 * ry;
+			ip->az[i] += jm_r3 * rz;
 		}
-		ip->ax[i] += iax;
-		ip->ay[i] += iay;
-		ip->az[i] += iaz;
-
 		shuff(ip->m[i], SIMD);
 		shuff(ip->e2[i], SIMD);
 		shuff(ip->rx[i], SIMD);
@@ -67,15 +60,12 @@ acc_kernel_core(
 {
 	for (uint_t k = 0; k < SIMD; ++k)
 	for (uint_t l = 0; l < NLANES; ++l)
-	for (uint_t ii = 0, i = (lane_id)^l;
+	for (uint_t ii = 0, i = (NLANES * warp_id + lane_id);
 				ii < LMSIZE;
-				ii += NLANES, i += NLANES) {
-//		real_tn iax = (real_tn)(0);
-//		real_tn iay = (real_tn)(0);
-//		real_tn iaz = (real_tn)(0);
-		for (uint_t jj = 0, j = (NLANES * warp_id + lane_id);
+				ii += WGSIZE, i += WGSIZE) {
+		for (uint_t jj = 0, j = (lane_id)^l;
 					jj < LMSIZE;
-					jj += WGSIZE, j += WGSIZE) {
+					jj += NLANES, j += NLANES) {
 			real_tn ee = ip->e2[i] + jp->e2[j];
 			real_tn rx = ip->rx[i] - jp->rx[j];
 			real_tn ry = ip->ry[i] - jp->ry[j];
@@ -88,20 +78,16 @@ acc_kernel_core(
 			inv_r3 = (rr > ee) ? (inv_r3):(0);
 			inv_r3 *= inv_r3 * inv_r3;
 
-			real_tn im_r3 = ip->m[i] * inv_r3;
-			jp->ax[j] += im_r3 * rx;
-			jp->ay[j] += im_r3 * ry;
-			jp->az[j] += im_r3 * rz;
+//			real_tn im_r3 = ip->m[i] * inv_r3;
+//			jp->ax[j] += im_r3 * rx;
+//			jp->ay[j] += im_r3 * ry;
+//			jp->az[j] += im_r3 * rz;
 
-//			real_tn jm_r3 = jp->m[j] * inv_r3;
-//			iax -= jm_r3 * rx;
-//			iay -= jm_r3 * ry;
-//			iaz -= jm_r3 * rz;
+			real_tn jm_r3 = jp->m[j] * inv_r3;
+			ip->ax[i] += jm_r3 * rx;
+			ip->ay[i] += jm_r3 * ry;
+			ip->az[i] += jm_r3 * rz;
 		}
-//		ip->ax[i] += iax;
-//		ip->ay[i] += iay;
-//		ip->az[i] += iaz;
-
 		shuff(ip->m[i], SIMD);
 		shuff(ip->e2[i], SIMD);
 		shuff(ip->rx[i], SIMD);
@@ -166,7 +152,7 @@ acc_kernel_impl(
 			async_work_group_copy(jp._rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
 
 			barrier(CLK_LOCAL_MEM_FENCE);
-			acc_kernel_core(warp_id, lane_id, &jp, &ip);
+			acc_kernel_core(warp_id, lane_id, &ip, &jp);
 			barrier(CLK_LOCAL_MEM_FENCE);
 
 //			for (uint_t kk = 0, k = NLANES * warp_id + lane_id;
@@ -184,9 +170,9 @@ acc_kernel_impl(
 					kk < block;
 					kk += WGSIZE, k += WGSIZE) {
 			if (k < iN) {
-				(__iadot+(0*NDIM+0)*ni)[ii+k] += ip._ax[k];
-				(__iadot+(0*NDIM+1)*ni)[ii+k] += ip._ay[k];
-				(__iadot+(0*NDIM+2)*ni)[ii+k] += ip._az[k];
+				(__iadot+(0*NDIM+0)*ni)[ii+k] -= ip._ax[k];
+				(__iadot+(0*NDIM+1)*ni)[ii+k] -= ip._ay[k];
+				(__iadot+(0*NDIM+2)*ni)[ii+k] -= ip._az[k];
 			}
 		}
 	}
@@ -242,7 +228,7 @@ acc_kernel_rectangle(
 			async_work_group_copy(jp._rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
 
 			barrier(CLK_LOCAL_MEM_FENCE);
-			p2p_acc_kernel_core(warp_id, lane_id, &jp, &ip);
+			p2p_acc_kernel_core(warp_id, lane_id, &ip, &jp);
 			barrier(CLK_LOCAL_MEM_FENCE);
 
 			for (uint_t kk = 0, k = NLANES * warp_id + lane_id;
@@ -260,9 +246,9 @@ acc_kernel_rectangle(
 					kk < block;
 					kk += WGSIZE, k += WGSIZE) {
 			if (k < iN) {
-				(__iadot+(0*NDIM+0)*ni)[ii+k] += ip._ax[k];
-				(__iadot+(0*NDIM+1)*ni)[ii+k] += ip._ay[k];
-				(__iadot+(0*NDIM+2)*ni)[ii+k] += ip._az[k];
+				(__iadot+(0*NDIM+0)*ni)[ii+k] -= ip._ax[k];
+				(__iadot+(0*NDIM+1)*ni)[ii+k] -= ip._ay[k];
+				(__iadot+(0*NDIM+2)*ni)[ii+k] -= ip._az[k];
 			}
 		}
 	}
