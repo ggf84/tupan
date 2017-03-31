@@ -15,7 +15,7 @@ p2p_acc_kernel_core(
 				for (uint_t ii = 0, i = NLANES * warp_id + lane_id;
 							ii < LMSIZE;
 							ii += WGSIZE, i += WGSIZE) {
-					for (uint_t jj = 0, j = NLANES * (warp_id^w) + (lane_id^l);
+					for (uint_t jj = 0, j = NLANES * (warp_id^w) + (lane_id);
 								jj < LMSIZE;
 								jj += WGSIZE, j += WGSIZE) {
 						real_tn ee = ip->e2[i] + jp->e2[j];
@@ -40,21 +40,11 @@ p2p_acc_kernel_core(
 						ip->az[i] += jm_r3 * rz;
 					}
 				}
+				warp_shuff_Acc_Data(warp_id, lane_id, ip, l);
 			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 		}
-		for (uint_t ii = 0, i = NLANES * warp_id + lane_id;
-					ii < LMSIZE;
-					ii += WGSIZE, i += WGSIZE) {
-			shuff(ip->m[i], SIMD);
-			shuff(ip->e2[i], SIMD);
-			shuff(ip->rx[i], SIMD);
-			shuff(ip->ry[i], SIMD);
-			shuff(ip->rz[i], SIMD);
-			shuff(ip->ax[i], SIMD);
-			shuff(ip->ay[i], SIMD);
-			shuff(ip->az[i], SIMD);
-		}
+		simd_shuff_Acc_Data(warp_id, lane_id, ip);
 	}
 }
 
@@ -73,7 +63,7 @@ acc_kernel_core(
 				for (uint_t ii = 0, i = NLANES * warp_id + lane_id;
 							ii < LMSIZE;
 							ii += WGSIZE, i += WGSIZE) {
-					for (uint_t jj = 0, j = /*NLANES * (warp_id^w) +*/ (lane_id^l);
+					for (uint_t jj = 0, j = /*NLANES * (warp_id^w) +*/ (lane_id);
 								jj < LMSIZE;
 								jj += NLANES, j += NLANES) {
 						real_tn ee = ip->e2[i] + jp->e2[j];
@@ -99,21 +89,11 @@ acc_kernel_core(
 						ip->az[i] += jm_r3 * rz;
 					}
 				}
+				warp_shuff_Acc_Data(warp_id, lane_id, ip, l);
 			}
 			barrier(CLK_LOCAL_MEM_FENCE);
 //		}
-		for (uint_t ii = 0, i = NLANES * warp_id + lane_id;
-					ii < LMSIZE;
-					ii += WGSIZE, i += WGSIZE) {
-			shuff(ip->m[i], SIMD);
-			shuff(ip->e2[i], SIMD);
-			shuff(ip->rx[i], SIMD);
-			shuff(ip->ry[i], SIMD);
-			shuff(ip->rz[i], SIMD);
-			shuff(ip->ax[i], SIMD);
-			shuff(ip->ay[i], SIMD);
-			shuff(ip->az[i], SIMD);
-		}
+		simd_shuff_Acc_Data(warp_id, lane_id, ip);
 	}
 }
 
