@@ -177,6 +177,7 @@ class Program(object):
         ngroup = dev.max_compute_units  # num_groups
 
         if dev.type == cl.device_type.CPU:
+            simd *= 1
             nlanes *= 1 if fpwidth == 'fp32' else 1
             nwarps *= 1
             wgsize *= nwarps * nlanes
@@ -184,10 +185,11 @@ class Program(object):
             ngroup *= 4
 
         if dev.type == cl.device_type.GPU:
+            simd *= 2
             nlanes *= 32 if fpwidth == 'fp32' else 16
             nwarps *= 2
             wgsize *= nwarps * nlanes
-            lmsize *= 2 * wgsize
+            lmsize *= 1 * wgsize
             ngroup *= 128
 
         # setting program options

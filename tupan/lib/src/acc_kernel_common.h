@@ -177,6 +177,7 @@ zero_Acc_Data(uint_t warp_id, uint_t lane_id, local Acc_Data *p)
 		p->ay[k] = (real_tn)(0);
 		p->az[k] = (real_tn)(0);
 	}
+	barrier(CLK_LOCAL_MEM_FENCE);
 }
 
 
@@ -194,29 +195,6 @@ simd_shuff_Acc_Data(uint_t warp_id, uint_t lane_id, local Acc_Data *p)
 		shuff(p->ax[k], SIMD);
 		shuff(p->ay[k], SIMD);
 		shuff(p->az[k], SIMD);
-	}
-}
-
-
-static inline void
-warp_shuff_Acc_Data(
-	uint_t warp_id,
-	uint_t lane_id,
-	local Acc_Data *p,
-	uint_t l)
-{
-	for (uint_t kk = 0, k0 = NLANES * warp_id + lane_id,
-						k1 = NLANES * warp_id + (lane_id^l);
-				kk < LMSIZE;
-				kk += WGSIZE, k0 += WGSIZE, k1 += WGSIZE) {
-		p->m[k0] = p->m[k1];
-		p->e2[k0] = p->e2[k1];
-		p->rx[k0] = p->rx[k1];
-		p->ry[k0] = p->ry[k1];
-		p->rz[k0] = p->rz[k1];
-		p->ax[k0] = p->ax[k1];
-		p->ay[k0] = p->ay[k1];
-		p->az[k0] = p->az[k1];
 	}
 }
 

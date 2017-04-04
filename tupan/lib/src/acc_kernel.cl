@@ -9,13 +9,13 @@ p2p_acc_kernel_core(
 	local Acc_Data *jp)
 // flop count: 28
 {
-	for (uint_t k = 0; k < SIMD; ++k) {
-		for (uint_t w = 0; w < NWARPS; ++w) {
-			for (uint_t l = 0; l < NLANES; ++l) {
+	for (uint_t w = 0; w < NWARPS; ++w) {
+		for (uint_t l = 0; l < NLANES; ++l) {
+			for (uint_t k = 0; k < SIMD; ++k) {
 				for (uint_t ii = 0, i = NLANES * warp_id + lane_id;
 							ii < LMSIZE;
 							ii += WGSIZE, i += WGSIZE) {
-					for (uint_t jj = 0, j = NLANES * (warp_id^w) + (lane_id);
+					for (uint_t jj = 0, j = NLANES * (warp_id^w) + (lane_id^l);
 								jj < LMSIZE;
 								jj += WGSIZE, j += WGSIZE) {
 						real_tn ee = ip->e2[i] + jp->e2[j];
@@ -40,11 +40,10 @@ p2p_acc_kernel_core(
 						ip->az[i] += jm_r3 * rz;
 					}
 				}
-				warp_shuff_Acc_Data(warp_id, lane_id, ip, l);
+				simd_shuff_Acc_Data(warp_id, lane_id, ip);
 			}
-			barrier(CLK_LOCAL_MEM_FENCE);
 		}
-		simd_shuff_Acc_Data(warp_id, lane_id, ip);
+		barrier(CLK_LOCAL_MEM_FENCE);
 	}
 }
 
@@ -57,15 +56,15 @@ acc_kernel_core(
 	local Acc_Data *jp)
 // flop count: 21
 {
-	for (uint_t k = 0; k < SIMD; ++k) {
-//		for (uint_t w = 0; w < NWARPS; ++w) {
-			for (uint_t l = 0; l < NLANES; ++l) {
+	for (uint_t w = 0; w < NWARPS; ++w) {
+		for (uint_t l = 0; l < NLANES; ++l) {
+			for (uint_t k = 0; k < SIMD; ++k) {
 				for (uint_t ii = 0, i = NLANES * warp_id + lane_id;
 							ii < LMSIZE;
 							ii += WGSIZE, i += WGSIZE) {
-					for (uint_t jj = 0, j = /*NLANES * (warp_id^w) +*/ (lane_id);
+					for (uint_t jj = 0, j = NLANES * (w) + (l);
 								jj < LMSIZE;
-								jj += NLANES, j += NLANES) {
+								jj += WGSIZE, j += WGSIZE) {
 						real_tn ee = ip->e2[i] + jp->e2[j];
 						real_tn rx = ip->rx[i] - jp->rx[j];
 						real_tn ry = ip->ry[i] - jp->ry[j];
@@ -89,11 +88,10 @@ acc_kernel_core(
 						ip->az[i] += jm_r3 * rz;
 					}
 				}
-				warp_shuff_Acc_Data(warp_id, lane_id, ip, l);
+				simd_shuff_Acc_Data(warp_id, lane_id, ip);
 			}
-			barrier(CLK_LOCAL_MEM_FENCE);
-//		}
-		simd_shuff_Acc_Data(warp_id, lane_id, ip);
+		}
+		barrier(CLK_LOCAL_MEM_FENCE);
 	}
 }
 
@@ -126,32 +124,28 @@ acc_kernel_impl(
 	for (uint_t ii = grp * block;
 				ii < ni;
 				ii += ngrps * block) {
-		barrier(CLK_LOCAL_MEM_FENCE);
-		zero_Acc_Data(warp_id, lane_id, &ip);
-		barrier(CLK_LOCAL_MEM_FENCE);
 		uint_t iN = min(block, (ni - ii));
+		zero_Acc_Data(warp_id, lane_id, &ip);
 		async_work_group_copy(ip._m, __im+ii, iN, 0);
 		async_work_group_copy(ip._e2, __ie2+ii, iN, 0);
 		async_work_group_copy(ip._rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
 		async_work_group_copy(ip._ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
 		async_work_group_copy(ip._rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
+		barrier(CLK_LOCAL_MEM_FENCE);
 
 		for (uint_t jj = 0;
 					jj < nj;
 					jj += block) {
-			barrier(CLK_LOCAL_MEM_FENCE);
-			zero_Acc_Data(warp_id, lane_id, &jp);
-			barrier(CLK_LOCAL_MEM_FENCE);
 			uint_t jN = min(block, (nj - jj));
+			zero_Acc_Data(warp_id, lane_id, &jp);
 			async_work_group_copy(jp._m, __jm+jj, jN, 0);
 			async_work_group_copy(jp._e2, __je2+jj, jN, 0);
 			async_work_group_copy(jp._rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
 			async_work_group_copy(jp._ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
 			async_work_group_copy(jp._rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
+			barrier(CLK_LOCAL_MEM_FENCE);
 
-			barrier(CLK_LOCAL_MEM_FENCE);
 			acc_kernel_core(warp_id, lane_id, &ip, &jp);
-			barrier(CLK_LOCAL_MEM_FENCE);
 
 //			for (uint_t kk = 0, k = NLANES * warp_id + lane_id;
 //						kk < block;
@@ -162,6 +156,7 @@ acc_kernel_impl(
 //					atomic_fadd(&(__jadot+(0*NDIM+2)*nj)[jj+k], jp._az[k]);
 //				}
 //			}
+//			barrier(CLK_GLOBAL_MEM_FENCE);
 		}
 
 		for (uint_t kk = 0, k = NLANES * warp_id + lane_id;
@@ -173,6 +168,7 @@ acc_kernel_impl(
 				(__iadot+(0*NDIM+2)*ni)[ii+k] -= ip._az[k];
 			}
 		}
+		barrier(CLK_GLOBAL_MEM_FENCE);
 	}
 }
 
@@ -202,32 +198,28 @@ acc_kernel_rectangle(
 	for (uint_t ii = grp * block;
 				ii < ni;
 				ii += ngrps * block) {
-		barrier(CLK_LOCAL_MEM_FENCE);
-		zero_Acc_Data(warp_id, lane_id, &ip);
-		barrier(CLK_LOCAL_MEM_FENCE);
 		uint_t iN = min(block, (ni - ii));
+		zero_Acc_Data(warp_id, lane_id, &ip);
 		async_work_group_copy(ip._m, __im+ii, iN, 0);
 		async_work_group_copy(ip._e2, __ie2+ii, iN, 0);
 		async_work_group_copy(ip._rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
 		async_work_group_copy(ip._ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
 		async_work_group_copy(ip._rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
+		barrier(CLK_LOCAL_MEM_FENCE);
 
 		for (uint_t jj = 0;
 					jj < nj;
 					jj += block) {
-			barrier(CLK_LOCAL_MEM_FENCE);
-			zero_Acc_Data(warp_id, lane_id, &jp);
-			barrier(CLK_LOCAL_MEM_FENCE);
 			uint_t jN = min(block, (nj - jj));
+			zero_Acc_Data(warp_id, lane_id, &jp);
 			async_work_group_copy(jp._m, __jm+jj, jN, 0);
 			async_work_group_copy(jp._e2, __je2+jj, jN, 0);
 			async_work_group_copy(jp._rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
 			async_work_group_copy(jp._ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
 			async_work_group_copy(jp._rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
+			barrier(CLK_LOCAL_MEM_FENCE);
 
-			barrier(CLK_LOCAL_MEM_FENCE);
 			p2p_acc_kernel_core(warp_id, lane_id, &ip, &jp);
-			barrier(CLK_LOCAL_MEM_FENCE);
 
 			for (uint_t kk = 0, k = NLANES * warp_id + lane_id;
 						kk < block;
@@ -238,6 +230,7 @@ acc_kernel_rectangle(
 					atomic_fadd(&(__jadot+(0*NDIM+2)*nj)[jj+k], jp._az[k]);
 				}
 			}
+			barrier(CLK_GLOBAL_MEM_FENCE);
 		}
 
 		for (uint_t kk = 0, k = NLANES * warp_id + lane_id;
@@ -249,6 +242,7 @@ acc_kernel_rectangle(
 				(__iadot+(0*NDIM+2)*ni)[ii+k] -= ip._az[k];
 			}
 		}
+		barrier(CLK_GLOBAL_MEM_FENCE);
 	}
 }
 
