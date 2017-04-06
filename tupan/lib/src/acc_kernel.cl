@@ -24,7 +24,9 @@ p2p_acc_kernel_core(
 						real_tn rz = ip->rz[i] - jp->rz[j];
 
 						real_tn rr = ee;
-						rr += rx * rx + ry * ry + rz * rz;
+						rr += rx * rx;
+						rr += ry * ry;
+						rr += rz * rz;
 
 						real_tn inv_r3 = rsqrt(rr);
 						inv_r3 *= inv_r3 * inv_r3;
@@ -71,7 +73,9 @@ acc_kernel_core(
 						real_tn rz = ip->rz[i] - jp->rz[j];
 
 						real_tn rr = ee;
-						rr += rx * rx + ry * ry + rz * rz;
+						rr += rx * rx;
+						rr += ry * ry;
+						rr += rz * rz;
 
 						real_tn inv_r3 = rsqrt(rr);
 						inv_r3 = (rr > ee) ? (inv_r3):(0);
