@@ -178,19 +178,19 @@ class Program(object):
 
         if dev.type == cl.device_type.CPU:
             simd *= 1
-            nlanes *= 1 if fpwidth == 'fp32' else 1
-            nwarps *= 1
+            nlanes *= 1
+            nwarps *= 2
             wgsize *= nwarps * nlanes
-            lmsize *= 32 * wgsize
+            lmsize *= 16 * nlanes
             ngroup *= 4
 
         if dev.type == cl.device_type.GPU:
-            simd *= 2
-            nlanes *= 32 if fpwidth == 'fp32' else 16
+            simd *= 1
+            nlanes *= 32
             nwarps *= 2
             wgsize *= nwarps * nlanes
-            lmsize *= 1 * wgsize
-            ngroup *= 128
+            lmsize *= 2 * nlanes
+            ngroup *= 256
 
         # setting program options
         options = ' -D SIMD={}'.format(simd)

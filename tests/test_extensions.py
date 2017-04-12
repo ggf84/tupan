@@ -35,9 +35,9 @@ def compare_result(test_number, kernel_name, **kwargs):
     c_ips, c_jps = set_particles(32), set_particles(2048)
     cl_ips, cl_jps = c_ips.copy(), c_jps.copy()
     for (c_ip, c_jp), (cl_ip, cl_jp) in [((c_ips, c_ips), (cl_ips, cl_ips)),
+                                         ((c_jps, c_jps), (cl_jps, cl_jps)),
                                          ((c_ips, c_jps), (cl_ips, cl_jps)),
-                                         ((c_jps, c_ips), (cl_jps, cl_ips)),
-                                         ((c_jps, c_jps), (cl_jps, cl_jps))]:
+                                         ((c_jps, c_ips), (cl_jps, cl_ips)),]:
 
         res = [Ckernel(c_ip, c_jp, **kwargs), CLkernel(cl_ip, cl_jp, **kwargs)]
 
