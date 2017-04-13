@@ -163,30 +163,43 @@ typedef struct acc_data {
 
 
 static inline void
-zero_Acc_Data(uint_t warp_id, uint_t lane_id, local Acc_Data *p)
+setup_Acc_Data(
+	uint_t bid,
+	uint_t lane,
+	local Acc_Data *p,
+	uint_t n,
+	global const real_t __m[],
+	global const real_t __e2[],
+	global const real_t __rdot[])
 {
-	for (uint_t kk = 0, k = NLANES * warp_id + lane_id;
-				kk < LMSIZE;
-				kk += WGSIZE, k += WGSIZE) {
-		p->m[k] = (real_tn)(0);
-		p->e2[k] = (real_tn)(0);
-		p->rx[k] = (real_tn)(0);
-		p->ry[k] = (real_tn)(0);
-		p->rz[k] = (real_tn)(0);
-		p->ax[k] = (real_tn)(0);
-		p->ay[k] = (real_tn)(0);
-		p->az[k] = (real_tn)(0);
+	for (uint_t kk = 0, k = lane;
+				kk < LMSIZE * SIMD;
+				kk += NLANES, k += NLANES) {
+		p->_m[k] = (real_t)(0);
+		p->_e2[k] = (real_t)(0);
+		p->_rx[k] = (real_t)(0);
+		p->_ry[k] = (real_t)(0);
+		p->_rz[k] = (real_t)(0);
+		p->_ax[k] = (real_t)(0);
+		p->_ay[k] = (real_t)(0);
+		p->_az[k] = (real_t)(0);
+		if (bid+k < n) {
+			p->_m[k] = __m[bid+k];
+			p->_e2[k] = __e2[bid+k];
+			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[bid+k];
+			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[bid+k];
+			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[bid+k];
+		}
 	}
-	barrier(CLK_LOCAL_MEM_FENCE);
 }
 
 
 static inline void
-simd_shuff_Acc_Data(uint_t warp_id, uint_t lane_id, local Acc_Data *p)
+simd_shuff_Acc_Data(uint_t lane, local Acc_Data *p)
 {
-	for (uint_t kk = 0, k = NLANES * warp_id + lane_id;
+	for (uint_t kk = 0, k = lane;
 				kk < LMSIZE;
-				kk += WGSIZE, k += WGSIZE) {
+				kk += NLANES, k += NLANES) {
 		shuff(p->m[k], SIMD);
 		shuff(p->e2[k], SIMD);
 		shuff(p->rx[k], SIMD);
