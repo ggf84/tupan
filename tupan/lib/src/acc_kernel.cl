@@ -162,18 +162,21 @@ acc_kernel_rectangle(
 
 kernel void
 __attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
-acc_kernel_impl(
+acc_kernel_triangle(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
 	global const real_t __irdot[],
-	const uint_t nj,
-	global const real_t __jm[],
-	global const real_t __je2[],
-	global const real_t __jrdot[],
-	global real_t __iadot[],
-	global real_t __jadot[])
+	global real_t __iadot[])
 {
+	// ------------------------------------------------------------------------
+	const uint_t nj = ni;
+	global const real_t *__jm = __im;
+	global const real_t *__je2 = __ie2;
+	global const real_t *__jrdot = __irdot;
+	global real_t *__jadot = __iadot;
+	// ------------------------------------------------------------------------
+
 	local Acc_Data ip[NWARPS];
 	local Acc_Data jp[NWARPS];
 	uint_t lid = get_local_id(0);
@@ -226,49 +229,4 @@ acc_kernel_impl(
 		}
 	}
 }
-
-
-kernel void
-__attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
-acc_kernel_triangle(
-	const uint_t ni,
-	global const real_t __im[],
-	global const real_t __ie2[],
-	global const real_t __irdot[],
-	global real_t __iadot[])
-{
-	acc_kernel_impl(
-		ni, __im, __ie2, __irdot,
-		ni, __im, __ie2, __irdot,
-		__iadot, __iadot
-	);
-}
-
-/*
-kernel void
-__attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
-acc_kernel_rectangle(
-	const uint_t ni,
-	global const real_t __im[],
-	global const real_t __ie2[],
-	global const real_t __irdot[],
-	const uint_t nj,
-	global const real_t __jm[],
-	global const real_t __je2[],
-	global const real_t __jrdot[],
-	global real_t __iadot[],
-	global real_t __jadot[])
-{
-	acc_kernel_impl(
-		ni, __im, __ie2, __irdot,
-		nj, __jm, __je2, __jrdot,
-		__iadot, __jadot
-	);
-	acc_kernel_impl(
-		nj, __jm, __je2, __jrdot,
-		ni, __im, __ie2, __irdot,
-		__jadot, __iadot
-	);
-}
-*/
 
