@@ -195,20 +195,16 @@ setup_Acc_Data(
 
 
 static inline void
-simd_shuff_Acc_Data(uint_t lane, local Acc_Data *p)
+simd_shuff_Acc_Data(uint_t k, local Acc_Data *p)
 {
-	for (uint_t kk = 0, k = lane;
-				kk < LMSIZE;
-				kk += NLANES, k += NLANES) {
-		shuff(p->m[k], SIMD);
-		shuff(p->e2[k], SIMD);
-		shuff(p->rx[k], SIMD);
-		shuff(p->ry[k], SIMD);
-		shuff(p->rz[k], SIMD);
-		shuff(p->ax[k], SIMD);
-		shuff(p->ay[k], SIMD);
-		shuff(p->az[k], SIMD);
-	}
+	shuff(p->m[k], SIMD);
+	shuff(p->e2[k], SIMD);
+	shuff(p->rx[k], SIMD);
+	shuff(p->ry[k], SIMD);
+	shuff(p->rz[k], SIMD);
+	shuff(p->ax[k], SIMD);
+	shuff(p->ay[k], SIMD);
+	shuff(p->az[k], SIMD);
 }
 
 
