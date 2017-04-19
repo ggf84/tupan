@@ -108,6 +108,34 @@ struct P2P_phi_kernel_core {
 
 typedef struct phi_data {
 	union {
+		real_tn m;
+		real_t _m[SIMD];
+	};
+	union {
+		real_tn e2;
+		real_t _e2[SIMD];
+	};
+	union {
+		real_tn rx;
+		real_t _rx[SIMD];
+	};
+	union {
+		real_tn ry;
+		real_t _ry[SIMD];
+	};
+	union {
+		real_tn rz;
+		real_t _rz[SIMD];
+	};
+	union {
+		real_tn phi;
+		real_t _phi[SIMD];
+	};
+} Phi_Data;
+
+
+typedef struct phi_data_soa {
+	union {
 		real_tn m[LMSIZE];
 		real_t _m[LMSIZE * SIMD];
 	};
@@ -131,7 +159,43 @@ typedef struct phi_data {
 		real_tn phi[LMSIZE];
 		real_t _phi[LMSIZE * SIMD];
 	};
-} Phi_Data;
+} Phi_Data_SoA;
+
+
+static inline void
+read_Phi_Data(
+	uint_t base,
+	uint_t lid,
+	Phi_Data *p,
+	uint_t n,
+	global const real_t __m[],
+	global const real_t __e2[],
+	global const real_t __rdot[])
+{
+	for (uint_t k = 0, kk = base + lid;
+				k < SIMD;
+				k += 1, kk += WGSIZE) {
+		if (kk < n) {
+			p->_m[k] = __m[kk];
+			p->_e2[k] = __e2[kk];
+			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];
+			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];
+			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];
+		}
+	}
+}
+
+
+static inline void
+simd_shuff_Phi_Data(Phi_Data *p)
+{
+	shuff(p->m, SIMD);
+	shuff(p->e2, SIMD);
+	shuff(p->rx, SIMD);
+	shuff(p->ry, SIMD);
+	shuff(p->rz, SIMD);
+	shuff(p->phi, SIMD);
+}
 
 
 #endif	// __cplusplus

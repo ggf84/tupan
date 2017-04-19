@@ -2,200 +2,124 @@
 
 
 static inline void
-acc_jrk_kernel_core(
-	uint_t lid,
-	local Acc_Jrk_Data *ip,
-	local Acc_Jrk_Data *jp)
-// flop count: 43
+p2p_acc_jrk_kernel_core(
+	uint_t lane,
+	Acc_Jrk_Data *jp,
+	local Acc_Jrk_Data_SoA *ip)
+// flop count: 56
 {
-	uint_t jwarp = lid / WARP;
-	uint_t jlane = lid % WARP;
-	uint_t jlid = WARP * jwarp + jlane;
+	#pragma unroll
+	for (uint_t l = 0; l < NLANES; ++l) {
+		uint_t i = lane^l;
+		#pragma unroll
+		for (uint_t k = 0; k < SIMD; ++k) {
+			real_tn ee = ip->e2[i] + jp->e2;
+			real_tn rx = ip->rx[i] - jp->rx;
+			real_tn ry = ip->ry[i] - jp->ry;
+			real_tn rz = ip->rz[i] - jp->rz;
+			real_tn vx = ip->vx[i] - jp->vx;
+			real_tn vy = ip->vy[i] - jp->vy;
+			real_tn vz = ip->vz[i] - jp->vz;
 
-	for (uint_t w = 0; w < WGSIZE/WARP; ++w) {
-		uint_t iwarp = jwarp^w;
-		for (uint_t l = 0; l < WARP; ++l) {
-			uint_t ilane = jlane^l;
-			uint_t ilid = WARP * iwarp + ilane;
-			for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
-				uint_t i = ii + ilid;
-//				real_tn iax = ip->ax[i];
-//				real_tn iay = ip->ay[i];
-//				real_tn iaz = ip->az[i];
-//				real_tn ijx = ip->jx[i];
-//				real_tn ijy = ip->jy[i];
-//				real_tn ijz = ip->jz[i];
-				for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
-					uint_t j = jj + jlid;
-					real_tn ee = ip->e2[i] + jp->e2[j];
-					real_tn rx = ip->rx[i] - jp->rx[j];
-					real_tn ry = ip->ry[i] - jp->ry[j];
-					real_tn rz = ip->rz[i] - jp->rz[j];
-					real_tn vx = ip->vx[i] - jp->vx[j];
-					real_tn vy = ip->vy[i] - jp->vy[j];
-					real_tn vz = ip->vz[i] - jp->vz[j];
+			real_tn rr = ee;
+			rr += rx * rx;
+			rr += ry * ry;
+			rr += rz * rz;
 
-					real_tn rr = ee;
-					rr += rx * rx + ry * ry + rz * rz;
+			real_tn inv_r3 = rsqrt(rr);
+			real_tn inv_r2 = inv_r3 * inv_r3;
+			inv_r3 *= inv_r2;
+			inv_r2 *= -3;
 
-					real_tn inv_r3 = rsqrt(rr);
-					inv_r3 = (rr > ee) ? (inv_r3):(0);
-					real_tn inv_r2 = inv_r3 * inv_r3;
-					inv_r3 *= inv_r2;
-					inv_r2 *= -3;
+			real_tn s1  = rx * vx;
+					s1 += ry * vy;
+					s1 += rz * vz;
 
-					real_tn s1 = rx * vx + ry * vy + rz * vz;
+			real_tn q1 = inv_r2 * (s1);
+			vx += q1 * rx;
+			vy += q1 * ry;
+			vz += q1 * rz;
 
-					real_tn q1 = inv_r2 * (s1);
-					vx += q1 * rx;
-					vy += q1 * ry;
-					vz += q1 * rz;
+			real_tn im_r3 = ip->m[i] * inv_r3;
+			jp->ax += im_r3 * rx;
+			jp->ay += im_r3 * ry;
+			jp->az += im_r3 * rz;
+			jp->jx += im_r3 * vx;
+			jp->jy += im_r3 * vy;
+			jp->jz += im_r3 * vz;
 
-					real_tn im_r3 = ip->m[i] * inv_r3;
-					jp->ax[j] += im_r3 * rx;
-					jp->ay[j] += im_r3 * ry;
-					jp->az[j] += im_r3 * rz;
-					jp->jx[j] += im_r3 * vx;
-					jp->jy[j] += im_r3 * vy;
-					jp->jz[j] += im_r3 * vz;
+			real_tn jm_r3 = jp->m * inv_r3;
+			ip->ax[i] += jm_r3 * rx;
+			ip->ay[i] += jm_r3 * ry;
+			ip->az[i] += jm_r3 * rz;
+			ip->jx[i] += jm_r3 * vx;
+			ip->jy[i] += jm_r3 * vy;
+			ip->jz[i] += jm_r3 * vz;
 
-//					real_tn jm_r3 = jp->m[j] * inv_r3;
-//					iax -= jm_r3 * rx;
-//					iay -= jm_r3 * ry;
-//					iaz -= jm_r3 * rz;
-//					ijx -= jm_r3 * vx;
-//					ijy -= jm_r3 * vy;
-//					ijz -= jm_r3 * vz;
-				}
-//				ip->ax[i] = iax;
-//				ip->ay[i] = iay;
-//				ip->az[i] = iaz;
-//				ip->jx[i] = ijx;
-//				ip->jy[i] = ijy;
-//				ip->jz[i] = ijz;
-			}
+			simd_shuff_Acc_Jrk_Data(jp);
 		}
 	}
 }
 
 
 static inline void
-acc_jrk_kernel_impl(
-	const uint_t ni,
-	global const real_t __im[],
-	global const real_t __ie2[],
-	global const real_t __irdot[],
-	const uint_t nj,
-	global const real_t __jm[],
-	global const real_t __je2[],
-	global const real_t __jrdot[],
-	global real_t __iadot[],
-	global real_t __jadot[],
-	local Acc_Jrk_Data *ip,
-	local Acc_Jrk_Data *jp)
+acc_jrk_kernel_core(
+	uint_t lane,
+	Acc_Jrk_Data *jp,
+	local Acc_Jrk_Data_SoA *ip)
+// flop count: 43
 {
-	uint_t lid = get_local_id(0);
-	for (uint_t ii = LMSIZE * SIMD * get_group_id(0);
-				ii < ni;
-				ii += LMSIZE * SIMD * get_num_groups(0)) {
-		uint_t iN = min((uint_t)(LMSIZE * SIMD), (ni - ii));
-		for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-			uint_t k = kk + lid;
-			ip->m[k] = (real_tn)(0);
-			ip->e2[k] = (real_tn)(0);
-			ip->rx[k] = (real_tn)(0);
-			ip->ry[k] = (real_tn)(0);
-			ip->rz[k] = (real_tn)(0);
-			ip->vx[k] = (real_tn)(0);
-			ip->vy[k] = (real_tn)(0);
-			ip->vz[k] = (real_tn)(0);
-			ip->ax[k] = (real_tn)(0);
-			ip->ay[k] = (real_tn)(0);
-			ip->az[k] = (real_tn)(0);
-			ip->jx[k] = (real_tn)(0);
-			ip->jy[k] = (real_tn)(0);
-			ip->jz[k] = (real_tn)(0);
+	#pragma unroll
+	for (uint_t l = 0; l < NLANES; ++l) {
+		uint_t i = lane^l;
+		#pragma unroll
+		for (uint_t k = 0; k < SIMD; ++k) {
+			real_tn ee = ip->e2[i] + jp->e2;
+			real_tn rx = ip->rx[i] - jp->rx;
+			real_tn ry = ip->ry[i] - jp->ry;
+			real_tn rz = ip->rz[i] - jp->rz;
+			real_tn vx = ip->vx[i] - jp->vx;
+			real_tn vy = ip->vy[i] - jp->vy;
+			real_tn vz = ip->vz[i] - jp->vz;
+
+			real_tn rr = ee;
+			rr += rx * rx;
+			rr += ry * ry;
+			rr += rz * rz;
+
+			real_tn inv_r3 = rsqrt(rr);
+			inv_r3 = (rr > ee) ? (inv_r3):(0);
+			real_tn inv_r2 = inv_r3 * inv_r3;
+			inv_r3 *= inv_r2;
+			inv_r2 *= -3;
+
+			real_tn s1  = rx * vx;
+					s1 += ry * vy;
+					s1 += rz * vz;
+
+			real_tn q1 = inv_r2 * (s1);
+			vx += q1 * rx;
+			vy += q1 * ry;
+			vz += q1 * rz;
+
+//			real_tn im_r3 = ip->m[i] * inv_r3;
+//			jp->ax += im_r3 * rx;
+//			jp->ay += im_r3 * ry;
+//			jp->az += im_r3 * rz;
+//			jp->jx += im_r3 * vx;
+//			jp->jy += im_r3 * vy;
+//			jp->jz += im_r3 * vz;
+
+			real_tn jm_r3 = jp->m * inv_r3;
+			ip->ax[i] += jm_r3 * rx;
+			ip->ay[i] += jm_r3 * ry;
+			ip->az[i] += jm_r3 * rz;
+			ip->jx[i] += jm_r3 * vx;
+			ip->jy[i] += jm_r3 * vy;
+			ip->jz[i] += jm_r3 * vz;
+
+			simd_shuff_Acc_Jrk_Data(jp);
 		}
-		barrier(CLK_LOCAL_MEM_FENCE);
-		async_work_group_copy(ip->_m, __im+ii, iN, 0);
-		async_work_group_copy(ip->_e2, __ie2+ii, iN, 0);
-		async_work_group_copy(ip->_rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_vx, __irdot+(1*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_vy, __irdot+(1*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_vz, __irdot+(1*NDIM+2)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_ax, __iadot+(0*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_ay, __iadot+(0*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_az, __iadot+(0*NDIM+2)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_jx, __iadot+(1*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_jy, __iadot+(1*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_jz, __iadot+(1*NDIM+2)*ni+ii, iN, 0);
-		for (uint_t jj = 0;
-					jj < nj;
-					jj += LMSIZE * SIMD) {
-			uint_t jN = min((uint_t)(LMSIZE * SIMD), (nj - jj));
-			for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-				uint_t k = kk + lid;
-				jp->m[k] = (real_tn)(0);
-				jp->e2[k] = (real_tn)(0);
-				jp->rx[k] = (real_tn)(0);
-				jp->ry[k] = (real_tn)(0);
-				jp->rz[k] = (real_tn)(0);
-				jp->vx[k] = (real_tn)(0);
-				jp->vy[k] = (real_tn)(0);
-				jp->vz[k] = (real_tn)(0);
-				jp->ax[k] = (real_tn)(0);
-				jp->ay[k] = (real_tn)(0);
-				jp->az[k] = (real_tn)(0);
-				jp->jx[k] = (real_tn)(0);
-				jp->jy[k] = (real_tn)(0);
-				jp->jz[k] = (real_tn)(0);
-			}
-			barrier(CLK_LOCAL_MEM_FENCE);
-			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
-			async_work_group_copy(jp->_e2, __je2+jj, jN, 0);
-			async_work_group_copy(jp->_rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_vx, __jrdot+(1*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_vy, __jrdot+(1*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_vz, __jrdot+(1*NDIM+2)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_ax, __jadot+(0*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_ay, __jadot+(0*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_az, __jadot+(0*NDIM+2)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_jx, __jadot+(1*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_jy, __jadot+(1*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_jz, __jadot+(1*NDIM+2)*nj+jj, jN, 0);
-			barrier(CLK_LOCAL_MEM_FENCE);
-			for (uint_t k = 0; k < SIMD; ++k) {
-				acc_jrk_kernel_core(lid, jp, ip);
-				for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-					uint_t i = kk + lid;
-					shuff(ip->m[i], SIMD);
-					shuff(ip->e2[i], SIMD);
-					shuff(ip->rx[i], SIMD);
-					shuff(ip->ry[i], SIMD);
-					shuff(ip->rz[i], SIMD);
-					shuff(ip->vx[i], SIMD);
-					shuff(ip->vy[i], SIMD);
-					shuff(ip->vz[i], SIMD);
-					shuff(ip->ax[i], SIMD);
-					shuff(ip->ay[i], SIMD);
-					shuff(ip->az[i], SIMD);
-					shuff(ip->jx[i], SIMD);
-					shuff(ip->jy[i], SIMD);
-					shuff(ip->jz[i], SIMD);
-				}
-			}
-			barrier(CLK_LOCAL_MEM_FENCE);
-		}
-		async_work_group_copy(__iadot+(0*NDIM+0)*ni+ii, ip->_ax, iN, 0);
-		async_work_group_copy(__iadot+(0*NDIM+1)*ni+ii, ip->_ay, iN, 0);
-		async_work_group_copy(__iadot+(0*NDIM+2)*ni+ii, ip->_az, iN, 0);
-		async_work_group_copy(__iadot+(1*NDIM+0)*ni+ii, ip->_jx, iN, 0);
-		async_work_group_copy(__iadot+(1*NDIM+1)*ni+ii, ip->_jy, iN, 0);
-		async_work_group_copy(__iadot+(1*NDIM+2)*ni+ii, ip->_jz, iN, 0);
 	}
 }
 
@@ -213,22 +137,82 @@ acc_jrk_kernel_rectangle(
 	global real_t __iadot[],
 	global real_t __jadot[])
 {
-	local Acc_Jrk_Data _ip;
-	local Acc_Jrk_Data _jp;
+	local Acc_Jrk_Data_SoA _ip[NWARPS];
+	uint_t lid = get_local_id(0);
+	uint_t grp = get_group_id(0);
+	uint_t ngrps = get_num_groups(0);
+	uint_t lane = lid % NLANES;
+	uint_t warp = lid / NLANES;
+	for (uint_t ii = SIMD * WGSIZE * grp;
+				ii < ni;
+				ii += SIMD * WGSIZE * ngrps) {
+		Acc_Jrk_Data ip = {{0}};
+		read_Acc_Jrk_Data(
+			ii, lid, &ip,
+			ni, __im, __ie2, __irdot
+		);
+		_ip[warp].m[lane] = ip.m;
+		_ip[warp].e2[lane] = ip.e2;
+		_ip[warp].rx[lane] = ip.rx;
+		_ip[warp].ry[lane] = ip.ry;
+		_ip[warp].rz[lane] = ip.rz;
+		_ip[warp].vx[lane] = ip.vx;
+		_ip[warp].vy[lane] = ip.vy;
+		_ip[warp].vz[lane] = ip.vz;
+		_ip[warp].ax[lane] = ip.ax;
+		_ip[warp].ay[lane] = ip.ay;
+		_ip[warp].az[lane] = ip.az;
+		_ip[warp].jx[lane] = ip.jx;
+		_ip[warp].jy[lane] = ip.jy;
+		_ip[warp].jz[lane] = ip.jz;
 
-	acc_jrk_kernel_impl(
-		ni, __im, __ie2, __irdot,
-		nj, __jm, __je2, __jrdot,
-		__iadot, __jadot,
-		&_ip, &_jp
-	);
+		for (uint_t jj = 0;
+					jj < nj;
+					jj += SIMD * WGSIZE) {
+			Acc_Jrk_Data jp = {{0}};
+			read_Acc_Jrk_Data(
+				jj, lid, &jp,
+				nj, __jm, __je2, __jrdot
+			);
 
-	acc_jrk_kernel_impl(
-		nj, __jm, __je2, __jrdot,
-		ni, __im, __ie2, __irdot,
-		__jadot, __iadot,
-		&_jp, &_ip
-	);
+			for (uint_t w = 0; w < NWARPS; ++w) {
+				p2p_acc_jrk_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
+				barrier(CLK_LOCAL_MEM_FENCE);
+			}
+
+			for (uint_t k = 0, kk = jj + lid;
+						k < SIMD;
+						k += 1, kk += WGSIZE) {
+				if (kk < nj) {
+					atomic_fadd(&(__jadot+(0*NDIM+0)*nj)[kk], jp._ax[k]);
+					atomic_fadd(&(__jadot+(0*NDIM+1)*nj)[kk], jp._ay[k]);
+					atomic_fadd(&(__jadot+(0*NDIM+2)*nj)[kk], jp._az[k]);
+					atomic_fadd(&(__jadot+(1*NDIM+0)*nj)[kk], jp._jx[k]);
+					atomic_fadd(&(__jadot+(1*NDIM+1)*nj)[kk], jp._jy[k]);
+					atomic_fadd(&(__jadot+(1*NDIM+2)*nj)[kk], jp._jz[k]);
+				}
+			}
+		}
+
+		ip.ax = _ip[warp].ax[lane];
+		ip.ay = _ip[warp].ay[lane];
+		ip.az = _ip[warp].az[lane];
+		ip.jx = _ip[warp].jx[lane];
+		ip.jy = _ip[warp].jy[lane];
+		ip.jz = _ip[warp].jz[lane];
+		for (uint_t k = 0, kk = ii + lid;
+					k < SIMD;
+					k += 1, kk += WGSIZE) {
+			if (kk < ni) {
+				(__iadot+(0*NDIM+0)*ni)[kk] -= ip._ax[k];
+				(__iadot+(0*NDIM+1)*ni)[kk] -= ip._ay[k];
+				(__iadot+(0*NDIM+2)*ni)[kk] -= ip._az[k];
+				(__iadot+(1*NDIM+0)*ni)[kk] -= ip._jx[k];
+				(__iadot+(1*NDIM+1)*ni)[kk] -= ip._jy[k];
+				(__iadot+(1*NDIM+2)*ni)[kk] -= ip._jz[k];
+			}
+		}
+	}
 }
 
 
@@ -240,14 +224,89 @@ acc_jrk_kernel_triangle(
 	global const real_t __irdot[],
 	global real_t __iadot[])
 {
-	local Acc_Jrk_Data _ip;
-	local Acc_Jrk_Data _jp;
+	// ------------------------------------------------------------------------
+	const uint_t nj = ni;
+	global const real_t *__jm = __im;
+	global const real_t *__je2 = __ie2;
+	global const real_t *__jrdot = __irdot;
+	global real_t *__jadot = __iadot;
+	// ------------------------------------------------------------------------
 
-	acc_jrk_kernel_impl(
-		ni, __im, __ie2, __irdot,
-		ni, __im, __ie2, __irdot,
-		__iadot, __iadot,
-		&_ip, &_jp
-	);
+	local Acc_Jrk_Data_SoA _ip[NWARPS];
+	uint_t lid = get_local_id(0);
+	uint_t grp = get_group_id(0);
+	uint_t ngrps = get_num_groups(0);
+	uint_t lane = lid % NLANES;
+	uint_t warp = lid / NLANES;
+	for (uint_t ii = SIMD * WGSIZE * grp;
+				ii < ni;
+				ii += SIMD * WGSIZE * ngrps) {
+		Acc_Jrk_Data ip = {{0}};
+		read_Acc_Jrk_Data(
+			ii, lid, &ip,
+			ni, __im, __ie2, __irdot
+		);
+		_ip[warp].m[lane] = ip.m;
+		_ip[warp].e2[lane] = ip.e2;
+		_ip[warp].rx[lane] = ip.rx;
+		_ip[warp].ry[lane] = ip.ry;
+		_ip[warp].rz[lane] = ip.rz;
+		_ip[warp].vx[lane] = ip.vx;
+		_ip[warp].vy[lane] = ip.vy;
+		_ip[warp].vz[lane] = ip.vz;
+		_ip[warp].ax[lane] = ip.ax;
+		_ip[warp].ay[lane] = ip.ay;
+		_ip[warp].az[lane] = ip.az;
+		_ip[warp].jx[lane] = ip.jx;
+		_ip[warp].jy[lane] = ip.jy;
+		_ip[warp].jz[lane] = ip.jz;
+
+		for (uint_t jj = 0;
+					jj < nj;
+					jj += SIMD * WGSIZE) {
+			Acc_Jrk_Data jp = {{0}};
+			read_Acc_Jrk_Data(
+				jj, lid, &jp,
+				nj, __jm, __je2, __jrdot
+			);
+
+			for (uint_t w = 0; w < NWARPS; ++w) {
+				acc_jrk_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
+				barrier(CLK_LOCAL_MEM_FENCE);
+			}
+
+//			for (uint_t k = 0, kk = jj + lid;
+//						k < SIMD;
+//						k += 1, kk += WGSIZE) {
+//				if (kk < nj) {
+//					atomic_fadd(&(__jadot+(0*NDIM+0)*nj)[kk], jp._ax[k]);
+//					atomic_fadd(&(__jadot+(0*NDIM+1)*nj)[kk], jp._ay[k]);
+//					atomic_fadd(&(__jadot+(0*NDIM+2)*nj)[kk], jp._az[k]);
+//					atomic_fadd(&(__jadot+(1*NDIM+0)*nj)[kk], jp._jx[k]);
+//					atomic_fadd(&(__jadot+(1*NDIM+1)*nj)[kk], jp._jy[k]);
+//					atomic_fadd(&(__jadot+(1*NDIM+2)*nj)[kk], jp._jz[k]);
+//				}
+//			}
+		}
+
+		ip.ax = _ip[warp].ax[lane];
+		ip.ay = _ip[warp].ay[lane];
+		ip.az = _ip[warp].az[lane];
+		ip.jx = _ip[warp].jx[lane];
+		ip.jy = _ip[warp].jy[lane];
+		ip.jz = _ip[warp].jz[lane];
+		for (uint_t k = 0, kk = ii + lid;
+					k < SIMD;
+					k += 1, kk += WGSIZE) {
+			if (kk < ni) {
+				(__iadot+(0*NDIM+0)*ni)[kk] -= ip._ax[k];
+				(__iadot+(0*NDIM+1)*ni)[kk] -= ip._ay[k];
+				(__iadot+(0*NDIM+2)*ni)[kk] -= ip._az[k];
+				(__iadot+(1*NDIM+0)*ni)[kk] -= ip._jx[k];
+				(__iadot+(1*NDIM+1)*ni)[kk] -= ip._jy[k];
+				(__iadot+(1*NDIM+2)*ni)[kk] -= ip._jz[k];
+			}
+		}
+	}
 }
 

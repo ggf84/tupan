@@ -2,125 +2,74 @@
 
 
 static inline void
-phi_kernel_core(
-	uint_t lid,
-	local Phi_Data *ip,
-	local Phi_Data *jp)
-// flop count: 14
+p2p_phi_kernel_core(
+	uint_t lane,
+	Phi_Data *jp,
+	local Phi_Data_SoA *ip)
+// flop count: 16
 {
-	uint_t jwarp = lid / WARP;
-	uint_t jlane = lid % WARP;
-	uint_t jlid = WARP * jwarp + jlane;
+	#pragma unroll
+	for (uint_t l = 0; l < NLANES; ++l) {
+		uint_t i = lane^l;
+		#pragma unroll
+		for (uint_t k = 0; k < SIMD; ++k) {
+			real_tn ee = ip->e2[i] + jp->e2;
+			real_tn rx = ip->rx[i] - jp->rx;
+			real_tn ry = ip->ry[i] - jp->ry;
+			real_tn rz = ip->rz[i] - jp->rz;
 
-	for (uint_t w = 0; w < WGSIZE/WARP; ++w) {
-		uint_t iwarp = jwarp^w;
-		for (uint_t l = 0; l < WARP; ++l) {
-			uint_t ilane = jlane^l;
-			uint_t ilid = WARP * iwarp + ilane;
-			for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
-				uint_t i = ii + ilid;
-//				real_tn iphi = ip->phi[i];
-				for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
-					uint_t j = jj + jlid;
-					real_tn ee = ip->e2[i] + jp->e2[j];
-					real_tn rx = ip->rx[i] - jp->rx[j];
-					real_tn ry = ip->ry[i] - jp->ry[j];
-					real_tn rz = ip->rz[i] - jp->rz[j];
+			real_tn rr = ee;
+			rr += rx * rx;
+			rr += ry * ry;
+			rr += rz * rz;
 
-					real_tn rr = ee;
-					rr += rx * rx + ry * ry + rz * rz;
+			real_tn inv_r1 = rsqrt(rr);
 
-					real_tn inv_r1 = rsqrt(rr);
-					inv_r1 = (rr > ee) ? (inv_r1):(0);
+			jp->phi += ip->m[i] * inv_r1;
+			ip->phi[i] += jp->m * inv_r1;
 
-					jp->phi[j] -= ip->m[i] * inv_r1;
-
-//					iphi -= jp->m[j] * inv_r1;
-				}
-//				ip->phi[i] = iphi;
-			}
+			simd_shuff_Phi_Data(jp);
 		}
 	}
 }
 
 
 static inline void
-phi_kernel_impl(
-	const uint_t ni,
-	global const real_t __im[],
-	global const real_t __ie2[],
-	global const real_t __irdot[],
-	const uint_t nj,
-	global const real_t __jm[],
-	global const real_t __je2[],
-	global const real_t __jrdot[],
-	global real_t __iphi[],
-	global real_t __jphi[],
-	local Phi_Data *ip,
-	local Phi_Data *jp)
+phi_kernel_core(
+	uint_t lane,
+	Phi_Data *jp,
+	local Phi_Data_SoA *ip)
+// flop count: 14
 {
-	uint_t lid = get_local_id(0);
-	for (uint_t ii = LMSIZE * SIMD * get_group_id(0);
-				ii < ni;
-				ii += LMSIZE * SIMD * get_num_groups(0)) {
-		uint_t iN = min((uint_t)(LMSIZE * SIMD), (ni - ii));
-		for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-			uint_t k = kk + lid;
-			ip->m[k] = (real_tn)(0);
-			ip->e2[k] = (real_tn)(0);
-			ip->rx[k] = (real_tn)(0);
-			ip->ry[k] = (real_tn)(0);
-			ip->rz[k] = (real_tn)(0);
-			ip->phi[k] = (real_tn)(0);
+	#pragma unroll
+	for (uint_t l = 0; l < NLANES; ++l) {
+		uint_t i = lane^l;
+		#pragma unroll
+		for (uint_t k = 0; k < SIMD; ++k) {
+			real_tn ee = ip->e2[i] + jp->e2;
+			real_tn rx = ip->rx[i] - jp->rx;
+			real_tn ry = ip->ry[i] - jp->ry;
+			real_tn rz = ip->rz[i] - jp->rz;
+
+			real_tn rr = ee;
+			rr += rx * rx;
+			rr += ry * ry;
+			rr += rz * rz;
+
+			real_tn inv_r1 = rsqrt(rr);
+			inv_r1 = (rr > ee) ? (inv_r1):(0);
+
+//			jp->phi += ip->m[i] * inv_r1;
+			ip->phi[i] += jp->m * inv_r1;
+
+			simd_shuff_Phi_Data(jp);
 		}
-		barrier(CLK_LOCAL_MEM_FENCE);
-		async_work_group_copy(ip->_m, __im+ii, iN, 0);
-		async_work_group_copy(ip->_e2, __ie2+ii, iN, 0);
-		async_work_group_copy(ip->_rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_phi, __iphi+ii, iN, 0);
-		for (uint_t jj = 0;
-					jj < nj;
-					jj += LMSIZE * SIMD) {
-			uint_t jN = min((uint_t)(LMSIZE * SIMD), (nj - jj));
-			for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-				uint_t k = kk + lid;
-				jp->m[k] = (real_tn)(0);
-				jp->e2[k] = (real_tn)(0);
-				jp->rx[k] = (real_tn)(0);
-				jp->ry[k] = (real_tn)(0);
-				jp->rz[k] = (real_tn)(0);
-				jp->phi[k] = (real_tn)(0);
-			}
-			barrier(CLK_LOCAL_MEM_FENCE);
-			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
-			async_work_group_copy(jp->_e2, __je2+jj, jN, 0);
-			async_work_group_copy(jp->_rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_phi, __jphi+jj, jN, 0);
-			barrier(CLK_LOCAL_MEM_FENCE);
-			for (uint_t k = 0; k < SIMD; ++k) {
-				phi_kernel_core(lid, jp, ip);
-				for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-					uint_t i = kk + lid;
-					shuff(ip->m[i], SIMD);
-					shuff(ip->e2[i], SIMD);
-					shuff(ip->rx[i], SIMD);
-					shuff(ip->ry[i], SIMD);
-					shuff(ip->rz[i], SIMD);
-					shuff(ip->phi[i], SIMD);
-				}
-			}
-			barrier(CLK_LOCAL_MEM_FENCE);
-		}
-		async_work_group_copy(__iphi+ii, ip->_phi, iN, 0);
 	}
 }
 
 
-kernel __attribute__((reqd_work_group_size(WGSIZE, 1, 1))) void
+kernel void
+__attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 phi_kernel_rectangle(
 	const uint_t ni,
 	global const real_t __im[],
@@ -133,22 +82,59 @@ phi_kernel_rectangle(
 	global real_t __iphi[],
 	global real_t __jphi[])
 {
-	local Phi_Data _ip;
-	local Phi_Data _jp;
+	local Phi_Data_SoA _ip[NWARPS];
+	uint_t lid = get_local_id(0);
+	uint_t grp = get_group_id(0);
+	uint_t ngrps = get_num_groups(0);
+	uint_t lane = lid % NLANES;
+	uint_t warp = lid / NLANES;
+	for (uint_t ii = SIMD * WGSIZE * grp;
+				ii < ni;
+				ii += SIMD * WGSIZE * ngrps) {
+		Phi_Data ip = {{0}};
+		read_Phi_Data(
+			ii, lid, &ip,
+			ni, __im, __ie2, __irdot
+		);
+		_ip[warp].m[lane] = ip.m;
+		_ip[warp].e2[lane] = ip.e2;
+		_ip[warp].rx[lane] = ip.rx;
+		_ip[warp].ry[lane] = ip.ry;
+		_ip[warp].rz[lane] = ip.rz;
+		_ip[warp].phi[lane] = ip.phi;
 
-	phi_kernel_impl(
-		ni, __im, __ie2, __irdot,
-		nj, __jm, __je2, __jrdot,
-		__iphi, __jphi,
-		&_ip, &_jp
-	);
+		for (uint_t jj = 0;
+					jj < nj;
+					jj += SIMD * WGSIZE) {
+			Phi_Data jp = {{0}};
+			read_Phi_Data(
+				jj, lid, &jp,
+				nj, __jm, __je2, __jrdot
+			);
 
-	phi_kernel_impl(
-		nj, __jm, __je2, __jrdot,
-		ni, __im, __ie2, __irdot,
-		__jphi, __iphi,
-		&_jp, &_ip
-	);
+			for (uint_t w = 0; w < NWARPS; ++w) {
+				p2p_phi_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
+				barrier(CLK_LOCAL_MEM_FENCE);
+			}
+
+			for (uint_t k = 0, kk = jj + lid;
+						k < SIMD;
+						k += 1, kk += WGSIZE) {
+				if (kk < nj) {
+					atomic_fadd(&__jphi[kk], -jp._phi[k]);
+				}
+			}
+		}
+
+		ip.phi = _ip[warp].phi[lane];
+		for (uint_t k = 0, kk = ii + lid;
+					k < SIMD;
+					k += 1, kk += WGSIZE) {
+			if (kk < ni) {
+				__iphi[kk] -= ip._phi[k];
+			}
+		}
+	}
 }
 
 
@@ -160,14 +146,66 @@ phi_kernel_triangle(
 	global const real_t __irdot[],
 	global real_t __iphi[])
 {
-	local Phi_Data _ip;
-	local Phi_Data _jp;
+	// ------------------------------------------------------------------------
+	const uint_t nj = ni;
+	global const real_t *__jm = __im;
+	global const real_t *__je2 = __ie2;
+	global const real_t *__jrdot = __irdot;
+	global real_t *__jphi = __iphi;
+	// ------------------------------------------------------------------------
 
-	phi_kernel_impl(
-		ni, __im, __ie2, __irdot,
-		ni, __im, __ie2, __irdot,
-		__iphi, __iphi,
-		&_ip, &_jp
-	);
+	local Phi_Data_SoA _ip[NWARPS];
+	uint_t lid = get_local_id(0);
+	uint_t grp = get_group_id(0);
+	uint_t ngrps = get_num_groups(0);
+	uint_t lane = lid % NLANES;
+	uint_t warp = lid / NLANES;
+	for (uint_t ii = SIMD * WGSIZE * grp;
+				ii < ni;
+				ii += SIMD * WGSIZE * ngrps) {
+		Phi_Data ip = {{0}};
+		read_Phi_Data(
+			ii, lid, &ip,
+			ni, __im, __ie2, __irdot
+		);
+		_ip[warp].m[lane] = ip.m;
+		_ip[warp].e2[lane] = ip.e2;
+		_ip[warp].rx[lane] = ip.rx;
+		_ip[warp].ry[lane] = ip.ry;
+		_ip[warp].rz[lane] = ip.rz;
+		_ip[warp].phi[lane] = ip.phi;
+
+		for (uint_t jj = 0;
+					jj < nj;
+					jj += SIMD * WGSIZE) {
+			Phi_Data jp = {{0}};
+			read_Phi_Data(
+				jj, lid, &jp,
+				nj, __jm, __je2, __jrdot
+			);
+
+			for (uint_t w = 0; w < NWARPS; ++w) {
+				phi_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
+				barrier(CLK_LOCAL_MEM_FENCE);
+			}
+
+//			for (uint_t k = 0, kk = jj + lid;
+//						k < SIMD;
+//						k += 1, kk += WGSIZE) {
+//				if (kk < nj) {
+//					atomic_fadd(&__jphi[kk], -jp._phi[k]);
+//				}
+//			}
+		}
+
+		ip.phi = _ip[warp].phi[lane];
+		for (uint_t k = 0, kk = ii + lid;
+					k < SIMD;
+					k += 1, kk += WGSIZE) {
+			if (kk < ni) {
+				__iphi[kk] -= ip._phi[k];
+			}
+		}
+	}
 }
 

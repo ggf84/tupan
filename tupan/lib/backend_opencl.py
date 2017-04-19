@@ -185,12 +185,12 @@ class Program(object):
             ngroup *= 4
 
         if dev.type == cl.device_type.GPU:
-            simd *= 1
+            simd *= 2
             nlanes *= 32
             nwarps *= 2
             wgsize *= nwarps * nlanes
-            lmsize *= 2 * nlanes
-            ngroup *= 256
+            lmsize *= 1 * nlanes
+            ngroup *= 24*4
 
         # setting program options
         options = ' -D SIMD={}'.format(simd)
