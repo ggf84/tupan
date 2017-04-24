@@ -148,8 +148,8 @@ class Program(object):
             'acc_jrk_kernel.cl',
             'snp_crk_kernel.cl',
             'tstep_kernel.cl',
-            'pnacc_kernel.cl',
-            'sakura_kernel.cl',
+#            'pnacc_kernel.cl',
+#            'sakura_kernel.cl',
         )
 
         fsources = []
@@ -178,11 +178,11 @@ class Program(object):
 
         if dev.type == cl.device_type.CPU:
             simd *= 1
-            nlanes *= 1
+            nlanes *= 8
             nwarps *= 2
             wgsize *= nwarps * nlanes
-            lmsize *= 16 * nlanes
-            ngroup *= 4
+            lmsize *= 1 * nlanes
+            ngroup *= 2
 
         if dev.type == cl.device_type.GPU:
             simd *= 2

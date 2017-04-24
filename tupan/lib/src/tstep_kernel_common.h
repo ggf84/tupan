@@ -47,13 +47,13 @@ auto setup(
 }
 
 template<size_t TILE, typename PART>
-void commit(const uint_t n, const PART& part, real_t __dt_a[], real_t __dt_b[], const real_t eta)
+void commit(const uint_t n, const PART& part, real_t __w2_a[], real_t __w2_b[], const real_t eta)
 {
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
-		__dt_a[k] = eta * rsqrt(p.w2_a[kk]);
-		__dt_b[k] = eta * rsqrt(p.w2_b[kk]);
+		__w2_a[k] = p.w2_a[kk];
+		__w2_b[k] = p.w2_b[kk];
 	}
 }
 
@@ -158,6 +158,50 @@ struct P2P_tstep_kernel_core {
 
 typedef struct tstep_data {
 	union {
+		real_tn m;
+		real_t _m[SIMD];
+	};
+	union {
+		real_tn e2;
+		real_t _e2[SIMD];
+	};
+	union {
+		real_tn rx;
+		real_t _rx[SIMD];
+	};
+	union {
+		real_tn ry;
+		real_t _ry[SIMD];
+	};
+	union {
+		real_tn rz;
+		real_t _rz[SIMD];
+	};
+	union {
+		real_tn vx;
+		real_t _vx[SIMD];
+	};
+	union {
+		real_tn vy;
+		real_t _vy[SIMD];
+	};
+	union {
+		real_tn vz;
+		real_t _vz[SIMD];
+	};
+	union {
+		real_tn w2_a;
+		real_t _w2_a[SIMD];
+	};
+	union {
+		real_tn w2_b;
+		real_t _w2_b[SIMD];
+	};
+} Tstep_Data;
+
+
+typedef struct tstep_data_soa {
+	union {
 		real_tn m[LMSIZE];
 		real_t _m[LMSIZE * SIMD];
 	};
@@ -197,7 +241,50 @@ typedef struct tstep_data {
 		real_tn w2_b[LMSIZE];
 		real_t _w2_b[LMSIZE * SIMD];
 	};
-} Tstep_Data;
+} Tstep_Data_SoA;
+
+
+static inline void
+read_Tstep_Data(
+	uint_t base,
+	uint_t lid,
+	Tstep_Data *p,
+	uint_t n,
+	global const real_t __m[],
+	global const real_t __e2[],
+	global const real_t __rdot[])
+{
+	for (uint_t k = 0, kk = base + lid;
+				k < SIMD;
+				k += 1, kk += WGSIZE) {
+		if (kk < n) {
+			p->_m[k] = __m[kk];
+			p->_e2[k] = __e2[kk];
+			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];
+			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];
+			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];
+			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];
+			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];
+			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];
+		}
+	}
+}
+
+
+static inline void
+simd_shuff_Tstep_Data(Tstep_Data *p)
+{
+	shuff(p->m, SIMD);
+	shuff(p->e2, SIMD);
+	shuff(p->rx, SIMD);
+	shuff(p->ry, SIMD);
+	shuff(p->rz, SIMD);
+	shuff(p->vx, SIMD);
+	shuff(p->vy, SIMD);
+	shuff(p->vz, SIMD);
+	shuff(p->w2_a, SIMD);
+	shuff(p->w2_b, SIMD);
+}
 
 
 #endif	// __cplusplus

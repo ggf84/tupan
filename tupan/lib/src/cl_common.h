@@ -33,23 +33,7 @@
 #define shuff16(_x_) _x_ = _x_.s123456789abcdef0
 
 #define shuff(_x_, SIMD) concat(shuff, SIMD)(_x_)
-/*
-// adapted from: https://streamcomputing.eu/blog/2016-02-09/atomic-operations-for-floats-in-opencl-improved/
-inline void
-atomic_fadd(global real_t *addr, real_t value)
-{
-	union {
-		real_t f;
-		uint_t i;
-	} prev, curr, next;
-	curr.f = *((volatile global real_t *)addr);
-	do {
-		prev.f = curr.f;
-		next.f = prev.f + value;
-		curr.i = atom_cmpxchg((volatile global uint_t *)addr, prev.i, next.i);
-	} while (curr.i != prev.i);
-}
-*/
+
 
 // adapted from: https://devtalk.nvidia.com/default/topic/458062/atomicadd-float-float-atomicmul-float-float-/
 inline void
@@ -66,5 +50,22 @@ atomic_fadd(global real_t* addr, real_t value)
 		prev.i = atom_xchg((volatile global uint_t *)addr, curr.i);
 	} while (prev.i != 0);
 }
+
+
+inline void
+atomic_fmax(global real_t* addr, real_t value)
+{
+	union {
+		real_t f;
+		uint_t i;
+	} prev, curr;
+    prev.f = value;
+	do {
+		curr.i = atom_xchg((volatile global uint_t *)addr, (uint_t)0);
+		curr.f = fmax(prev.f, curr.f);
+		prev.i = atom_xchg((volatile global uint_t *)addr, curr.i);
+	} while (prev.i != 0);
+}
+
 
 #endif	// __CL_COMMON_H__

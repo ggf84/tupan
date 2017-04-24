@@ -395,6 +395,12 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         """
         kernel(self, other, eta=eta)
 
+        self.tstep[...] = eta / np.sqrt(self.tstep)
+        self.tstep_sum[...] = eta / np.sqrt(self.tstep_sum)
+        if self != other:
+            other.tstep[...] = eta / np.sqrt(other.tstep)
+            other.tstep_sum[...] = eta / np.sqrt(other.tstep_sum)
+
         if shared:
             tstep = self.tstep
             tstep[...] = np.copysign(abs(tstep).min(), tstep)

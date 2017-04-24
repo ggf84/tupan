@@ -13,10 +13,10 @@ tstep_kernel_rectangle(
 	const real_t __je2[],
 	const real_t __jrdot[],
 	const real_t eta,
-	real_t __idt_a[],
-	real_t __idt_b[],
-	real_t __jdt_a[],
-	real_t __jdt_b[])
+	real_t __iw2_a[],
+	real_t __iw2_b[],
+	real_t __jw2_a[],
+	real_t __jw2_b[])
 {
 	using namespace Tstep;
 	constexpr auto tile = 64 / sizeof(real_t);
@@ -32,8 +32,8 @@ tstep_kernel_rectangle(
 		P2P_tstep_kernel_core<tile>(eta)
 	);
 
-	commit<tile>(ni, ipart, __idt_a, __idt_b, eta);
-	commit<tile>(nj, jpart, __jdt_a, __jdt_b, eta);
+	commit<tile>(ni, ipart, __iw2_a, __iw2_b, eta);
+	commit<tile>(nj, jpart, __jw2_a, __jw2_b, eta);
 }
 
 
@@ -44,8 +44,8 @@ tstep_kernel_triangle(
 	const real_t __ie2[],
 	const real_t __irdot[],
 	const real_t eta,
-	real_t __idt_a[],
-	real_t __idt_b[])
+	real_t __iw2_a[],
+	real_t __iw2_b[])
 {
 	using namespace Tstep;
 	constexpr auto tile = 64 / sizeof(real_t);
@@ -59,6 +59,6 @@ tstep_kernel_triangle(
 		P2P_tstep_kernel_core<tile>(eta)
 	);
 
-	commit<tile>(ni, ipart, __idt_a, __idt_b, eta);
+	commit<tile>(ni, ipart, __iw2_a, __iw2_b, eta);
 }
 

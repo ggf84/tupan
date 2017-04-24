@@ -124,7 +124,8 @@ acc_jrk_kernel_core(
 }
 
 
-kernel __attribute__((reqd_work_group_size(WGSIZE, 1, 1))) void
+kernel void
+__attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 acc_jrk_kernel_rectangle(
 	const uint_t ni,
 	global const real_t __im[],
@@ -151,6 +152,7 @@ acc_jrk_kernel_rectangle(
 			ii, lid, &ip,
 			ni, __im, __ie2, __irdot
 		);
+		barrier(CLK_LOCAL_MEM_FENCE);
 		_ip[warp].m[lane] = ip.m;
 		_ip[warp].e2[lane] = ip.e2;
 		_ip[warp].rx[lane] = ip.rx;
@@ -165,6 +167,7 @@ acc_jrk_kernel_rectangle(
 		_ip[warp].jx[lane] = ip.jx;
 		_ip[warp].jy[lane] = ip.jy;
 		_ip[warp].jz[lane] = ip.jz;
+		barrier(CLK_LOCAL_MEM_FENCE);
 
 		for (uint_t jj = 0;
 					jj < nj;
@@ -216,7 +219,8 @@ acc_jrk_kernel_rectangle(
 }
 
 
-kernel __attribute__((reqd_work_group_size(WGSIZE, 1, 1))) void
+kernel void
+__attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 acc_jrk_kernel_triangle(
 	const uint_t ni,
 	global const real_t __im[],
@@ -246,6 +250,7 @@ acc_jrk_kernel_triangle(
 			ii, lid, &ip,
 			ni, __im, __ie2, __irdot
 		);
+		barrier(CLK_LOCAL_MEM_FENCE);
 		_ip[warp].m[lane] = ip.m;
 		_ip[warp].e2[lane] = ip.e2;
 		_ip[warp].rx[lane] = ip.rx;
@@ -260,6 +265,7 @@ acc_jrk_kernel_triangle(
 		_ip[warp].jx[lane] = ip.jx;
 		_ip[warp].jy[lane] = ip.jy;
 		_ip[warp].jz[lane] = ip.jz;
+		barrier(CLK_LOCAL_MEM_FENCE);
 
 		for (uint_t jj = 0;
 					jj < nj;

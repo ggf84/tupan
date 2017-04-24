@@ -112,6 +112,7 @@ acc_kernel_rectangle(
 			ii, lid, &ip,
 			ni, __im, __ie2, __irdot
 		);
+		barrier(CLK_LOCAL_MEM_FENCE);
 		_ip[warp].m[lane] = ip.m;
 		_ip[warp].e2[lane] = ip.e2;
 		_ip[warp].rx[lane] = ip.rx;
@@ -120,6 +121,7 @@ acc_kernel_rectangle(
 		_ip[warp].ax[lane] = ip.ax;
 		_ip[warp].ay[lane] = ip.ay;
 		_ip[warp].az[lane] = ip.az;
+		barrier(CLK_LOCAL_MEM_FENCE);
 
 		for (uint_t jj = 0;
 					jj < nj;
@@ -193,6 +195,7 @@ acc_kernel_triangle(
 			ii, lid, &ip,
 			ni, __im, __ie2, __irdot
 		);
+		barrier(CLK_LOCAL_MEM_FENCE);
 		_ip[warp].m[lane] = ip.m;
 		_ip[warp].e2[lane] = ip.e2;
 		_ip[warp].rx[lane] = ip.rx;
@@ -201,6 +204,7 @@ acc_kernel_triangle(
 		_ip[warp].ax[lane] = ip.ax;
 		_ip[warp].ay[lane] = ip.ay;
 		_ip[warp].az[lane] = ip.az;
+		barrier(CLK_LOCAL_MEM_FENCE);
 
 		for (uint_t jj = 0;
 					jj < nj;
