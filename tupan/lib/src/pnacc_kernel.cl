@@ -2,225 +2,212 @@
 
 
 static inline void
-pnacc_kernel_core(
-	uint_t lid,
-	local PNAcc_Data *ip,
-	local PNAcc_Data *jp,
-	const CLIGHT clight)
-// flop count: 36+???
+p2p_pnacc_kernel_core(
+	const CLIGHT clight,
+	uint_t lane,
+	PNAcc_Data *jp,
+	local PNAcc_Data_SoA *ip)
+// flop count: 65+24+???
 {
-	uint_t jwarp = lid / WARP;
-	uint_t jlane = lid % WARP;
-	uint_t jlid = WARP * jwarp + jlane;
+	#pragma unroll
+	for (uint_t l = 0; l < NLANES; ++l) {
+		uint_t i = lane^l;
+		#pragma unroll
+		for (uint_t k = 0; k < SIMD; ++k) {
+			real_tn ee = ip->e2[i] + jp->e2;
+			real_tn rx = ip->rx[i] - jp->rx;
+			real_tn ry = ip->ry[i] - jp->ry;
+			real_tn rz = ip->rz[i] - jp->rz;
+			real_tn vx = ip->vx[i] - jp->vx;
+			real_tn vy = ip->vy[i] - jp->vy;
+			real_tn vz = ip->vz[i] - jp->vz;
 
-	for (uint_t w = 0; w < WGSIZE/WARP; ++w) {
-		uint_t iwarp = jwarp^w;
-		for (uint_t l = 0; l < WARP; ++l) {
-			uint_t ilane = jlane^l;
-			uint_t ilid = WARP * iwarp + ilane;
-			for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
-				uint_t i = ii + ilid;
-//				real_tn ipnax = ip->pnax[i];
-//				real_tn ipnay = ip->pnay[i];
-//				real_tn ipnaz = ip->pnaz[i];
-				for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
-					uint_t j = jj + jlid;
-					real_tn ee = ip->e2[i] + jp->e2[j];
-					real_tn rx = ip->rx[i] - jp->rx[j];
-					real_tn ry = ip->ry[i] - jp->ry[j];
-					real_tn rz = ip->rz[i] - jp->rz[j];
-					real_tn vx = ip->vx[i] - jp->vx[j];
-					real_tn vy = ip->vy[i] - jp->vy[j];
-					real_tn vz = ip->vz[i] - jp->vz[j];
+			real_tn rr = ee;
+			rr += rx * rx;
+			rr += ry * ry;
+			rr += rz * rz;
 
-					real_tn rr = ee;
-					rr += rx * rx + ry * ry + rz * rz;
+			real_tn inv_r = rsqrt(rr);
+			real_tn inv_r2 = inv_r * inv_r;
 
-					real_tn inv_r = rsqrt(rr);
-					inv_r = (rr > ee) ? (inv_r):(0);
-					real_tn inv_r2 = inv_r * inv_r;
+			real_tn im = ip->m[i];
+			real_tn im2 = im * im;
+			real_tn im_r = im * inv_r;
+			real_tn iv2  = ip->vx[i] * ip->vx[i];
+					iv2 += ip->vy[i] * ip->vy[i];
+					iv2 += ip->vz[i] * ip->vz[i];
+			real_tn iv4 = iv2 * iv2;
+			real_tn niv  = rx * ip->vx[i];
+					niv += ry * ip->vy[i];
+					niv += rz * ip->vz[i];
+			niv *= inv_r;
+			real_tn niv2 = niv * niv;
 
-					real_tn im = ip->m[i];
-					real_tn im2 = im * im;
-					real_tn im_r = im * inv_r;
-					real_tn iv2 = ip->vx[i] * ip->vx[i]
-								+ ip->vy[i] * ip->vy[i]
-								+ ip->vz[i] * ip->vz[i];
-					real_tn iv4 = iv2 * iv2;
-					real_tn niv = rx * ip->vx[i]
-								+ ry * ip->vy[i]
-								+ rz * ip->vz[i];
-					niv *= inv_r;
-					real_tn niv2 = niv * niv;
+			real_tn jm = jp->m;
+			real_tn jm2 = jm * jm;
+			real_tn jm_r = jm * inv_r;
+			real_tn jv2  = jp->vx * jp->vx;
+					jv2 += jp->vy * jp->vy;
+					jv2 += jp->vz * jp->vz;
+			real_tn jv4 = jv2 * jv2;
+			real_tn njv  = rx * jp->vx;
+					njv += ry * jp->vy;
+					njv += rz * jp->vz;
+			njv *= inv_r;
+			real_tn njv2 = njv * njv;
 
-					real_tn jm = jp->m[j];
-					real_tn jm2 = jm * jm;
-					real_tn jm_r = jm * inv_r;
-					real_tn jv2 = jp->vx[j] * jp->vx[j]
-								+ jp->vy[j] * jp->vy[j]
-								+ jp->vz[j] * jp->vz[j];
-					real_tn jv4 = jv2 * jv2;
-					real_tn njv = rx * jp->vx[j]
-								+ ry * jp->vy[j]
-								+ rz * jp->vz[j];
-					njv *= inv_r;
-					real_tn njv2 = njv * njv;
+			real_tn imjm = im * jm;
+			real_tn vv  = vx * vx;
+					vv += vy * vy;
+					vv += vz * vz;
+			real_tn ivjv  = ip->vx[i] * jp->vx;
+					ivjv += ip->vy[i] * jp->vy;
+					ivjv += ip->vz[i] * jp->vz;
+			real_tn nv  = rx * vx;
+					nv += ry * vy;
+					nv += rz * vz;
+			nv *= inv_r;
+			real_tn nvnv = nv * nv;
+			real_tn nivnjv = niv * njv;
 
-					real_tn imjm = im * jm;
-					real_tn vv = vx * vx
-							   + vy * vy
-							   + vz * vz;
-					real_tn ivjv = ip->vx[i] * jp->vx[j]
-								 + ip->vy[i] * jp->vy[j]
-								 + ip->vz[i] * jp->vz[j];
-					real_tn nv = rx * vx
-							   + ry * vy
-							   + rz * vz;
-					nv *= inv_r;
-					real_tn nvnv = nv * nv;
-					real_tn nivnjv = niv * njv;
+			uint_t order = clight.order;
+			real_t inv_c = clight.inv1;
 
-					uint_t order = clight.order;
-					real_t inv_c = clight.inv1;
+			real_tn ipnA = pnterms_A(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
+									 im, im2, im_r, iv2, iv4, -niv, niv2,
+									 imjm, inv_r, inv_r2, vv, ivjv,
+									 nv, nvnv, nivnjv, order, inv_c);
+			real_tn ipnB = pnterms_B(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
+									 im, im2, im_r, iv2, iv4, -niv, niv2,
+									 imjm, inv_r, inv_r2, vv, ivjv,
+									 nv, nvnv, nivnjv, order, inv_c);
+			jp->pnax += ipnA * rx + ipnB * vx;
+			jp->pnay += ipnA * ry + ipnB * vy;
+			jp->pnaz += ipnA * rz + ipnB * vz;
 
-					real_tn ipnA = pnterms_A(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
-											 im, im2, im_r, iv2, iv4, -niv, niv2,
-											 imjm, inv_r, inv_r2, vv, ivjv,
-											 nv, nvnv, nivnjv, order, inv_c);
-					real_tn ipnB = pnterms_B(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
-											 im, im2, im_r, iv2, iv4, -niv, niv2,
-											 imjm, inv_r, inv_r2, vv, ivjv,
-											 nv, nvnv, nivnjv, order, inv_c);
-					jp->pnax[j] -= ipnA * rx + ipnB * vx;
-					jp->pnay[j] -= ipnA * ry + ipnB * vy;
-					jp->pnaz[j] -= ipnA * rz + ipnB * vz;
+			real_tn jpnA = pnterms_A(im, im2, im_r, iv2, iv4, +niv, niv2,
+									 jm, jm2, jm_r, jv2, jv4, +njv, njv2,
+									 imjm, inv_r, inv_r2, vv, ivjv,
+									 nv, nvnv, nivnjv, order, inv_c);
+			real_tn jpnB = pnterms_B(im, im2, im_r, iv2, iv4, +niv, niv2,
+									 jm, jm2, jm_r, jv2, jv4, +njv, njv2,
+									 imjm, inv_r, inv_r2, vv, ivjv,
+									 nv, nvnv, nivnjv, order, inv_c);
+			ip->pnax[i] += jpnA * rx + jpnB * vx;
+			ip->pnay[i] += jpnA * ry + jpnB * vy;
+			ip->pnaz[i] += jpnA * rz + jpnB * vz;
 
-//					real_tn jpnA = pnterms_A(im, im2, im_r, iv2, iv4, +niv, niv2,
-//											 jm, jm2, jm_r, jv2, jv4, +njv, njv2,
-//											 imjm, inv_r, inv_r2, vv, ivjv,
-//											 nv, nvnv, nivnjv, order, inv_c);
-//					real_tn jpnB = pnterms_B(im, im2, im_r, iv2, iv4, +niv, niv2,
-//											 jm, jm2, jm_r, jv2, jv4, +njv, njv2,
-//											 imjm, inv_r, inv_r2, vv, ivjv,
-//											 nv, nvnv, nivnjv, order, inv_c);
-//					ipnax += jpnA * rx + jpnB * vx;
-//					ipnay += jpnA * ry + jpnB * vy;
-//					ipnaz += jpnA * rz + jpnB * vz;
-				}
-//				ip->pnax[i] = ipnax;
-//				ip->pnay[i] = ipnay;
-//				ip->pnaz[i] = ipnaz;
-			}
+			simd_shuff_PNAcc_Data(jp);
 		}
 	}
 }
 
 
 static inline void
-pnacc_kernel_impl(
-	const uint_t ni,
-	global const real_t __im[],
-	global const real_t __ie2[],
-	global const real_t __irdot[],
-	const uint_t nj,
-	global const real_t __jm[],
-	global const real_t __je2[],
-	global const real_t __jrdot[],
+pnacc_kernel_core(
 	const CLIGHT clight,
-	global real_t __ipnacc[],
-	global real_t __jpnacc[],
-	local PNAcc_Data *ip,
-	local PNAcc_Data *jp)
+	uint_t lane,
+	PNAcc_Data *jp,
+	local PNAcc_Data_SoA *ip)
+// flop count: 65+12+???
 {
-	uint_t lid = get_local_id(0);
-	for (uint_t ii = LMSIZE * SIMD * get_group_id(0);
-				ii < ni;
-				ii += LMSIZE * SIMD * get_num_groups(0)) {
-		uint_t iN = min((uint_t)(LMSIZE * SIMD), (ni - ii));
-		for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-			uint_t k = kk + lid;
-			ip->m[k] = (real_tn)(0);
-			ip->e2[k] = (real_tn)(0);
-			ip->rx[k] = (real_tn)(0);
-			ip->ry[k] = (real_tn)(0);
-			ip->rz[k] = (real_tn)(0);
-			ip->vx[k] = (real_tn)(0);
-			ip->vy[k] = (real_tn)(0);
-			ip->vz[k] = (real_tn)(0);
-			ip->pnax[k] = (real_tn)(0);
-			ip->pnay[k] = (real_tn)(0);
-			ip->pnaz[k] = (real_tn)(0);
+	#pragma unroll
+	for (uint_t l = 0; l < NLANES; ++l) {
+		uint_t i = lane^l;
+		#pragma unroll
+		for (uint_t k = 0; k < SIMD; ++k) {
+			real_tn ee = ip->e2[i] + jp->e2;
+			real_tn rx = ip->rx[i] - jp->rx;
+			real_tn ry = ip->ry[i] - jp->ry;
+			real_tn rz = ip->rz[i] - jp->rz;
+			real_tn vx = ip->vx[i] - jp->vx;
+			real_tn vy = ip->vy[i] - jp->vy;
+			real_tn vz = ip->vz[i] - jp->vz;
+
+			real_tn rr = ee;
+			rr += rx * rx;
+			rr += ry * ry;
+			rr += rz * rz;
+
+			real_tn inv_r = rsqrt(rr);
+			inv_r = (rr > ee) ? (inv_r):(0);
+			real_tn inv_r2 = inv_r * inv_r;
+
+			real_tn im = ip->m[i];
+			real_tn im2 = im * im;
+			real_tn im_r = im * inv_r;
+			real_tn iv2  = ip->vx[i] * ip->vx[i];
+					iv2 += ip->vy[i] * ip->vy[i];
+					iv2 += ip->vz[i] * ip->vz[i];
+			real_tn iv4 = iv2 * iv2;
+			real_tn niv  = rx * ip->vx[i];
+					niv += ry * ip->vy[i];
+					niv += rz * ip->vz[i];
+			niv *= inv_r;
+			real_tn niv2 = niv * niv;
+
+			real_tn jm = jp->m;
+			real_tn jm2 = jm * jm;
+			real_tn jm_r = jm * inv_r;
+			real_tn jv2  = jp->vx * jp->vx;
+					jv2 += jp->vy * jp->vy;
+					jv2 += jp->vz * jp->vz;
+			real_tn jv4 = jv2 * jv2;
+			real_tn njv  = rx * jp->vx;
+					njv += ry * jp->vy;
+					njv += rz * jp->vz;
+			njv *= inv_r;
+			real_tn njv2 = njv * njv;
+
+			real_tn imjm = im * jm;
+			real_tn vv  = vx * vx;
+					vv += vy * vy;
+					vv += vz * vz;
+			real_tn ivjv  = ip->vx[i] * jp->vx;
+					ivjv += ip->vy[i] * jp->vy;
+					ivjv += ip->vz[i] * jp->vz;
+			real_tn nv  = rx * vx;
+					nv += ry * vy;
+					nv += rz * vz;
+			nv *= inv_r;
+			real_tn nvnv = nv * nv;
+			real_tn nivnjv = niv * njv;
+
+			uint_t order = clight.order;
+			real_t inv_c = clight.inv1;
+
+//			real_tn ipnA = pnterms_A(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
+//									 im, im2, im_r, iv2, iv4, -niv, niv2,
+//									 imjm, inv_r, inv_r2, vv, ivjv,
+//									 nv, nvnv, nivnjv, order, inv_c);
+//			real_tn ipnB = pnterms_B(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
+//									 im, im2, im_r, iv2, iv4, -niv, niv2,
+//									 imjm, inv_r, inv_r2, vv, ivjv,
+//									 nv, nvnv, nivnjv, order, inv_c);
+//			jp->pnax += ipnA * rx + ipnB * vx;
+//			jp->pnay += ipnA * ry + ipnB * vy;
+//			jp->pnaz += ipnA * rz + ipnB * vz;
+
+			real_tn jpnA = pnterms_A(im, im2, im_r, iv2, iv4, +niv, niv2,
+									 jm, jm2, jm_r, jv2, jv4, +njv, njv2,
+									 imjm, inv_r, inv_r2, vv, ivjv,
+									 nv, nvnv, nivnjv, order, inv_c);
+			real_tn jpnB = pnterms_B(im, im2, im_r, iv2, iv4, +niv, niv2,
+									 jm, jm2, jm_r, jv2, jv4, +njv, njv2,
+									 imjm, inv_r, inv_r2, vv, ivjv,
+									 nv, nvnv, nivnjv, order, inv_c);
+			ip->pnax[i] += jpnA * rx + jpnB * vx;
+			ip->pnay[i] += jpnA * ry + jpnB * vy;
+			ip->pnaz[i] += jpnA * rz + jpnB * vz;
+
+			simd_shuff_PNAcc_Data(jp);
 		}
-		barrier(CLK_LOCAL_MEM_FENCE);
-		async_work_group_copy(ip->_m, __im+ii, iN, 0);
-		async_work_group_copy(ip->_e2, __ie2+ii, iN, 0);
-		async_work_group_copy(ip->_rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_vx, __irdot+(1*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_vy, __irdot+(1*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_vz, __irdot+(1*NDIM+2)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_pnax, __ipnacc+(0*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_pnay, __ipnacc+(0*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_pnaz, __ipnacc+(0*NDIM+2)*ni+ii, iN, 0);
-		for (uint_t jj = 0;
-					jj < nj;
-					jj += LMSIZE * SIMD) {
-			uint_t jN = min((uint_t)(LMSIZE * SIMD), (nj - jj));
-			for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-				uint_t k = kk + lid;
-				jp->m[k] = (real_tn)(0);
-				jp->e2[k] = (real_tn)(0);
-				jp->rx[k] = (real_tn)(0);
-				jp->ry[k] = (real_tn)(0);
-				jp->rz[k] = (real_tn)(0);
-				jp->vx[k] = (real_tn)(0);
-				jp->vy[k] = (real_tn)(0);
-				jp->vz[k] = (real_tn)(0);
-				jp->pnax[k] = (real_tn)(0);
-				jp->pnay[k] = (real_tn)(0);
-				jp->pnaz[k] = (real_tn)(0);
-			}
-			barrier(CLK_LOCAL_MEM_FENCE);
-			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
-			async_work_group_copy(jp->_e2, __je2+jj, jN, 0);
-			async_work_group_copy(jp->_rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_vx, __jrdot+(1*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_vy, __jrdot+(1*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_vz, __jrdot+(1*NDIM+2)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_pnax, __jpnacc+(0*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_pnay, __jpnacc+(0*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_pnaz, __jpnacc+(0*NDIM+2)*nj+jj, jN, 0);
-			barrier(CLK_LOCAL_MEM_FENCE);
-			for (uint_t k = 0; k < SIMD; ++k) {
-				pnacc_kernel_core(lid, jp, ip, clight);
-				for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-					uint_t i = kk + lid;
-					shuff(ip->m[i], SIMD);
-					shuff(ip->e2[i], SIMD);
-					shuff(ip->rx[i], SIMD);
-					shuff(ip->ry[i], SIMD);
-					shuff(ip->rz[i], SIMD);
-					shuff(ip->vx[i], SIMD);
-					shuff(ip->vy[i], SIMD);
-					shuff(ip->vz[i], SIMD);
-					shuff(ip->pnax[i], SIMD);
-					shuff(ip->pnay[i], SIMD);
-					shuff(ip->pnaz[i], SIMD);
-				}
-			}
-			barrier(CLK_LOCAL_MEM_FENCE);
-		}
-		async_work_group_copy(__ipnacc+(0*NDIM+0)*ni+ii, ip->_pnax, iN, 0);
-		async_work_group_copy(__ipnacc+(0*NDIM+1)*ni+ii, ip->_pnay, iN, 0);
-		async_work_group_copy(__ipnacc+(0*NDIM+2)*ni+ii, ip->_pnaz, iN, 0);
 	}
 }
 
 
-kernel __attribute__((reqd_work_group_size(WGSIZE, 1, 1))) void
+kernel void
+__attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 pnacc_kernel_rectangle(
 	const uint_t ni,
 	global const real_t __im[],
@@ -235,28 +222,77 @@ pnacc_kernel_rectangle(
 	global real_t __ipnacc[],
 	global real_t __jpnacc[])
 {
-	local PNAcc_Data _ip;
-	local PNAcc_Data _jp;
+	local PNAcc_Data_SoA _ip[NWARPS];
+	uint_t lid = get_local_id(0);
+	uint_t grp = get_group_id(0);
+	uint_t ngrps = get_num_groups(0);
+	uint_t lane = lid % NLANES;
+	uint_t warp = lid / NLANES;
+	for (uint_t ii = SIMD * WGSIZE * grp;
+				ii < ni;
+				ii += SIMD * WGSIZE * ngrps) {
+		PNAcc_Data ip = {{0}};
+		read_PNAcc_Data(
+			ii, lid, &ip,
+			ni, __im, __ie2, __irdot
+		);
+		barrier(CLK_LOCAL_MEM_FENCE);
+		_ip[warp].m[lane] = ip.m;
+		_ip[warp].e2[lane] = ip.e2;
+		_ip[warp].rx[lane] = ip.rx;
+		_ip[warp].ry[lane] = ip.ry;
+		_ip[warp].rz[lane] = ip.rz;
+		_ip[warp].vx[lane] = ip.vx;
+		_ip[warp].vy[lane] = ip.vy;
+		_ip[warp].vz[lane] = ip.vz;
+		_ip[warp].pnax[lane] = ip.pnax;
+		_ip[warp].pnay[lane] = ip.pnay;
+		_ip[warp].pnaz[lane] = ip.pnaz;
+		barrier(CLK_LOCAL_MEM_FENCE);
 
-	pnacc_kernel_impl(
-		ni, __im, __ie2, __irdot,
-		nj, __jm, __je2, __jrdot,
-		*clight,
-		__ipnacc, __jpnacc,
-		&_ip, &_jp
-	);
+		for (uint_t jj = 0;
+					jj < nj;
+					jj += SIMD * WGSIZE) {
+			PNAcc_Data jp = {{0}};
+			read_PNAcc_Data(
+				jj, lid, &jp,
+				nj, __jm, __je2, __jrdot
+			);
 
-	pnacc_kernel_impl(
-		nj, __jm, __je2, __jrdot,
-		ni, __im, __ie2, __irdot,
-		*clight,
-		__jpnacc, __ipnacc,
-		&_jp, &_ip
-	);
+			for (uint_t w = 0; w < NWARPS; ++w) {
+				p2p_pnacc_kernel_core(*clight, lane, &jp, &_ip[(warp+w)%NWARPS]);
+				barrier(CLK_LOCAL_MEM_FENCE);
+			}
+
+			for (uint_t k = 0, kk = jj + lid;
+						k < SIMD;
+						k += 1, kk += WGSIZE) {
+				if (kk < nj) {
+					atomic_fadd(&(__jpnacc+(0*NDIM+0)*nj)[kk], -jp._pnax[k]);
+					atomic_fadd(&(__jpnacc+(0*NDIM+1)*nj)[kk], -jp._pnay[k]);
+					atomic_fadd(&(__jpnacc+(0*NDIM+2)*nj)[kk], -jp._pnaz[k]);
+				}
+			}
+		}
+
+		ip.pnax = _ip[warp].pnax[lane];
+		ip.pnay = _ip[warp].pnay[lane];
+		ip.pnaz = _ip[warp].pnaz[lane];
+		for (uint_t k = 0, kk = ii + lid;
+					k < SIMD;
+					k += 1, kk += WGSIZE) {
+			if (kk < ni) {
+				(__ipnacc+(0*NDIM+0)*ni)[kk] += ip._pnax[k];
+				(__ipnacc+(0*NDIM+1)*ni)[kk] += ip._pnay[k];
+				(__ipnacc+(0*NDIM+2)*ni)[kk] += ip._pnaz[k];
+			}
+		}
+	}
 }
 
 
-kernel __attribute__((reqd_work_group_size(WGSIZE, 1, 1))) void
+kernel void
+__attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 pnacc_kernel_triangle(
 	const uint_t ni,
 	global const real_t __im[],
@@ -266,15 +302,79 @@ pnacc_kernel_triangle(
 	constant const CLIGHT * clight,
 	global real_t __ipnacc[])
 {
-	local PNAcc_Data _ip;
-	local PNAcc_Data _jp;
+	// ------------------------------------------------------------------------
+	const uint_t nj = ni;
+	global const real_t *__jm = __im;
+	global const real_t *__je2 = __ie2;
+	global const real_t *__jrdot = __irdot;
+	global real_t *__jpnacc = __ipnacc;
+	// ------------------------------------------------------------------------
 
-	pnacc_kernel_impl(
-		ni, __im, __ie2, __irdot,
-		ni, __im, __ie2, __irdot,
-		*clight,
-		__ipnacc, __ipnacc,
-		&_ip, &_jp
-	);
+	local PNAcc_Data_SoA _ip[NWARPS];
+	uint_t lid = get_local_id(0);
+	uint_t grp = get_group_id(0);
+	uint_t ngrps = get_num_groups(0);
+	uint_t lane = lid % NLANES;
+	uint_t warp = lid / NLANES;
+	for (uint_t ii = SIMD * WGSIZE * grp;
+				ii < ni;
+				ii += SIMD * WGSIZE * ngrps) {
+		PNAcc_Data ip = {{0}};
+		read_PNAcc_Data(
+			ii, lid, &ip,
+			ni, __im, __ie2, __irdot
+		);
+		barrier(CLK_LOCAL_MEM_FENCE);
+		_ip[warp].m[lane] = ip.m;
+		_ip[warp].e2[lane] = ip.e2;
+		_ip[warp].rx[lane] = ip.rx;
+		_ip[warp].ry[lane] = ip.ry;
+		_ip[warp].rz[lane] = ip.rz;
+		_ip[warp].vx[lane] = ip.vx;
+		_ip[warp].vy[lane] = ip.vy;
+		_ip[warp].vz[lane] = ip.vz;
+		_ip[warp].pnax[lane] = ip.pnax;
+		_ip[warp].pnay[lane] = ip.pnay;
+		_ip[warp].pnaz[lane] = ip.pnaz;
+		barrier(CLK_LOCAL_MEM_FENCE);
+
+		for (uint_t jj = 0;
+					jj < nj;
+					jj += SIMD * WGSIZE) {
+			PNAcc_Data jp = {{0}};
+			read_PNAcc_Data(
+				jj, lid, &jp,
+				nj, __jm, __je2, __jrdot
+			);
+
+			for (uint_t w = 0; w < NWARPS; ++w) {
+				pnacc_kernel_core(*clight, lane, &jp, &_ip[(warp+w)%NWARPS]);
+				barrier(CLK_LOCAL_MEM_FENCE);
+			}
+
+//			for (uint_t k = 0, kk = jj + lid;
+//						k < SIMD;
+//						k += 1, kk += WGSIZE) {
+//				if (kk < nj) {
+//					atomic_fadd(&(__jpnacc+(0*NDIM+0)*nj)[kk], -jp._pnax[k]);
+//					atomic_fadd(&(__jpnacc+(0*NDIM+1)*nj)[kk], -jp._pnay[k]);
+//					atomic_fadd(&(__jpnacc+(0*NDIM+2)*nj)[kk], -jp._pnaz[k]);
+//				}
+//			}
+		}
+
+		ip.pnax = _ip[warp].pnax[lane];
+		ip.pnay = _ip[warp].pnay[lane];
+		ip.pnaz = _ip[warp].pnaz[lane];
+		for (uint_t k = 0, kk = ii + lid;
+					k < SIMD;
+					k += 1, kk += WGSIZE) {
+			if (kk < ni) {
+				(__ipnacc+(0*NDIM+0)*ni)[kk] += ip._pnax[k];
+				(__ipnacc+(0*NDIM+1)*ni)[kk] += ip._pnay[k];
+				(__ipnacc+(0*NDIM+2)*ni)[kk] += ip._pnaz[k];
+			}
+		}
+	}
 }
 

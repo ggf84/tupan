@@ -148,8 +148,8 @@ class Program(object):
             'acc_jrk_kernel.cl',
             'snp_crk_kernel.cl',
             'tstep_kernel.cl',
-#            'pnacc_kernel.cl',
-#            'sakura_kernel.cl',
+            'pnacc_kernel.cl',
+            'sakura_kernel.cl',
         )
 
         fsources = []
@@ -173,7 +173,6 @@ class Program(object):
         nlanes = 1                      # warp/wavefront size
         nwarps = 1                      # number of warps in a work group
         wgsize = 1                      # work_group_size
-        lmsize = 1                      # local_mem_size
         ngroup = dev.max_compute_units  # num_groups
 
         if dev.type == cl.device_type.CPU:
@@ -181,7 +180,6 @@ class Program(object):
             nlanes *= 8
             nwarps *= 2
             wgsize *= nwarps * nlanes
-            lmsize *= 1 * nlanes
             ngroup *= 2
 
         if dev.type == cl.device_type.GPU:
@@ -189,16 +187,13 @@ class Program(object):
             nlanes *= 32
             nwarps *= 2
             wgsize *= nwarps * nlanes
-            lmsize *= 1 * nlanes
             ngroup *= 24*4
 
         # setting program options
         options = ' -D SIMD={}'.format(simd)
-        options += ' -D WARP={}'.format(nlanes)
         options += ' -D NLANES={}'.format(nlanes)
         options += ' -D NWARPS={}'.format(nwarps)
         options += ' -D WGSIZE={}'.format(wgsize)
-        options += ' -D LMSIZE={}'.format(lmsize)
         options += ' -D CONFIG_USE_OPENCL'
         if fpwidth == 'fp64':
             options += ' -D CONFIG_USE_DOUBLE'

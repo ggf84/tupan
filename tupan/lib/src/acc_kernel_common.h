@@ -164,36 +164,36 @@ typedef struct acc_data {
 
 typedef struct acc_data_soa {
 	union {
-		real_tn m[LMSIZE];
-		real_t _m[LMSIZE * SIMD];
+		real_tn m[NLANES];
+		real_t _m[NLANES * SIMD];
 	};
 	union {
-		real_tn e2[LMSIZE];
-		real_t _e2[LMSIZE * SIMD];
+		real_tn e2[NLANES];
+		real_t _e2[NLANES * SIMD];
 	};
 	union {
-		real_tn rx[LMSIZE];
-		real_t _rx[LMSIZE * SIMD];
+		real_tn rx[NLANES];
+		real_t _rx[NLANES * SIMD];
 	};
 	union {
-		real_tn ry[LMSIZE];
-		real_t _ry[LMSIZE * SIMD];
+		real_tn ry[NLANES];
+		real_t _ry[NLANES * SIMD];
 	};
 	union {
-		real_tn rz[LMSIZE];
-		real_t _rz[LMSIZE * SIMD];
+		real_tn rz[NLANES];
+		real_t _rz[NLANES * SIMD];
 	};
 	union {
-		real_tn ax[LMSIZE];
-		real_t _ax[LMSIZE * SIMD];
+		real_tn ax[NLANES];
+		real_t _ax[NLANES * SIMD];
 	};
 	union {
-		real_tn ay[LMSIZE];
-		real_t _ay[LMSIZE * SIMD];
+		real_tn ay[NLANES];
+		real_t _ay[NLANES * SIMD];
 	};
 	union {
-		real_tn az[LMSIZE];
-		real_t _az[LMSIZE * SIMD];
+		real_tn az[NLANES];
+		real_t _az[NLANES * SIMD];
 	};
 } Acc_Data_SoA;
 

@@ -2,214 +2,137 @@
 
 
 static inline void
-sakura_kernel_core(
-	uint_t lid,
-	local Sakura_Data *ip,
-	local Sakura_Data *jp,
+p2p_sakura_kernel_core(
 	const real_t dt,
-	const int_t flag)
-// flop count: 27 + ??
+	const int_t flag,
+	uint_t lane,
+	Sakura_Data *jp,
+	local Sakura_Data_SoA *ip)
+// flop count: 41 + ??
 {
-	uint_t jwarp = lid / WARP;
-	uint_t jlane = lid % WARP;
-	uint_t jlid = WARP * jwarp + jlane;
+	#pragma unroll
+	for (uint_t l = 0; l < NLANES; ++l) {
+		uint_t i = lane^l;
+		#pragma unroll
+		for (uint_t k = 0; k < 1; ++k) {
+			real_t m = ip->m[i] + jp->m;
+			real_t e2 = ip->e2[i] + jp->e2;
+			real_t r0x = ip->rx[i] - jp->rx;
+			real_t r0y = ip->ry[i] - jp->ry;
+			real_t r0z = ip->rz[i] - jp->rz;
+			real_t v0x = ip->vx[i] - jp->vx;
+			real_t v0y = ip->vy[i] - jp->vy;
+			real_t v0z = ip->vz[i] - jp->vz;
 
-	for (uint_t w = 0; w < WGSIZE/WARP; ++w) {
-		uint_t iwarp = jwarp^w;
-		for (uint_t l = 0; l < WARP; ++l) {
-			uint_t ilane = jlane^l;
-			uint_t ilid = WARP * iwarp + ilane;
-			for (uint_t ii = 0; ii < LMSIZE; ii += WGSIZE) {
-				uint_t i = ii + ilid;
-//				real_t idrx = ip->drx[i];
-//				real_t idry = ip->dry[i];
-//				real_t idrz = ip->drz[i];
-//				real_t idvx = ip->dvx[i];
-//				real_t idvy = ip->dvy[i];
-//				real_t idvz = ip->dvz[i];
-				for (uint_t jj = 0; jj < LMSIZE; jj += WGSIZE) {
-					uint_t j = jj + jlid;
-					real_t m = ip->m[i] + jp->m[j];
-					real_t e2 = ip->e2[i] + jp->e2[j];
-					real_t r0x = ip->rx[i] - jp->rx[j];
-					real_t r0y = ip->ry[i] - jp->ry[j];
-					real_t r0z = ip->rz[i] - jp->rz[j];
-					real_t v0x = ip->vx[i] - jp->vx[j];
-					real_t v0y = ip->vy[i] - jp->vy[j];
-					real_t v0z = ip->vz[i] - jp->vz[j];
+			real_t r1x = r0x;
+			real_t r1y = r0y;
+			real_t r1z = r0z;
+			real_t v1x = v0x;
+			real_t v1y = v0y;
+			real_t v1z = v0z;
+			evolve_twobody(
+				dt, flag, m, e2,
+				r0x, r0y, r0z, v0x, v0y, v0z,
+				&r1x, &r1y, &r1z, &v1x, &v1y, &v1z
+			);	// flop count: ??
 
-					real_t r1x = r0x;
-					real_t r1y = r0y;
-					real_t r1z = r0z;
-					real_t v1x = v0x;
-					real_t v1y = v0y;
-					real_t v1z = v0z;
-					evolve_twobody(
-						dt, flag, m, e2,
-						r0x, r0y, r0z, v0x, v0y, v0z,
-						&r1x, &r1y, &r1z, &v1x, &v1y, &v1z
-					);	// flop count: ??
+			real_t inv_m = 1 / m;
+			real_t drx = r0x - r1x;
+			real_t dry = r0y - r1y;
+			real_t drz = r0z - r1z;
+			real_t dvx = v0x - v1x;
+			real_t dvy = v0y - v1y;
+			real_t dvz = v0z - v1z;
 
-					real_t inv_m = 1 / m;
-					real_t drx = r1x - r0x;
-					real_t dry = r1y - r0y;
-					real_t drz = r1z - r0z;
-					real_t dvx = v1x - v0x;
-					real_t dvy = v1y - v0y;
-					real_t dvz = v1z - v0z;
+			real_t imu = ip->m[i] * inv_m;
+			jp->drx += imu * drx;
+			jp->dry += imu * dry;
+			jp->drz += imu * drz;
+			jp->dvx += imu * dvx;
+			jp->dvy += imu * dvy;
+			jp->dvz += imu * dvz;
 
-					real_t imu = ip->m[i] * inv_m;
-					jp->drx[j] -= imu * drx;
-					jp->dry[j] -= imu * dry;
-					jp->drz[j] -= imu * drz;
-					jp->dvx[j] -= imu * dvx;
-					jp->dvy[j] -= imu * dvy;
-					jp->dvz[j] -= imu * dvz;
+			real_t jmu = jp->m * inv_m;
+			ip->drx[i] += jmu * drx;
+			ip->dry[i] += jmu * dry;
+			ip->drz[i] += jmu * drz;
+			ip->dvx[i] += jmu * dvx;
+			ip->dvy[i] += jmu * dvy;
+			ip->dvz[i] += jmu * dvz;
 
-//					real_t jmu = jp->m[j] * inv_m;
-//					idrx += jmu * drx;
-//					idry += jmu * dry;
-//					idrz += jmu * drz;
-//					idvx += jmu * dvx;
-//					idvy += jmu * dvy;
-//					idvz += jmu * dvz;
-				}
-//				ip->drx[i] = idrx;
-//				ip->dry[i] = idry;
-//				ip->drz[i] = idrz;
-//				ip->dvx[i] = idvx;
-//				ip->dvy[i] = idvy;
-//				ip->dvz[i] = idvz;
-			}
+			simd_shuff_Sakura_Data(jp);
 		}
 	}
 }
 
 
 static inline void
-sakura_kernel_impl(
-	const uint_t ni,
-	global const real_t __im[],
-	global const real_t __ie2[],
-	global const real_t __irdot[],
-	const uint_t nj,
-	global const real_t __jm[],
-	global const real_t __je2[],
-	global const real_t __jrdot[],
+sakura_kernel_core(
 	const real_t dt,
 	const int_t flag,
-	global real_t __idrdot[],
-	global real_t __jdrdot[],
-	local Sakura_Data *ip,
-	local Sakura_Data *jp)
+	uint_t lane,
+	Sakura_Data *jp,
+	local Sakura_Data_SoA *ip)
+// flop count: 28 + ??
 {
-	uint_t lid = get_local_id(0);
-	for (uint_t ii = LMSIZE * 1 * get_group_id(0);
-				ii < ni;
-				ii += LMSIZE * 1 * get_num_groups(0)) {
-		uint_t iN = min((uint_t)(LMSIZE * 1), (ni - ii));
-		for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-			uint_t k = kk + lid;
-			ip->m[k] = (real_t1)(0);
-			ip->e2[k] = (real_t1)(0);
-			ip->rx[k] = (real_t1)(0);
-			ip->ry[k] = (real_t1)(0);
-			ip->rz[k] = (real_t1)(0);
-			ip->vx[k] = (real_t1)(0);
-			ip->vy[k] = (real_t1)(0);
-			ip->vz[k] = (real_t1)(0);
-			ip->drx[k] = (real_t1)(0);
-			ip->dry[k] = (real_t1)(0);
-			ip->drz[k] = (real_t1)(0);
-			ip->dvx[k] = (real_t1)(0);
-			ip->dvy[k] = (real_t1)(0);
-			ip->dvz[k] = (real_t1)(0);
+	#pragma unroll
+	for (uint_t l = 0; l < NLANES; ++l) {
+		uint_t i = lane^l;
+		#pragma unroll
+		for (uint_t k = 0; k < 1; ++k) {
+			real_t m = ip->m[i] + jp->m;
+			real_t e2 = ip->e2[i] + jp->e2;
+			real_t r0x = ip->rx[i] - jp->rx;
+			real_t r0y = ip->ry[i] - jp->ry;
+			real_t r0z = ip->rz[i] - jp->rz;
+			real_t v0x = ip->vx[i] - jp->vx;
+			real_t v0y = ip->vy[i] - jp->vy;
+			real_t v0z = ip->vz[i] - jp->vz;
+
+			real_t r1x = r0x;
+			real_t r1y = r0y;
+			real_t r1z = r0z;
+			real_t v1x = v0x;
+			real_t v1y = v0y;
+			real_t v1z = v0z;
+			evolve_twobody(
+				dt, flag, m, e2,
+				r0x, r0y, r0z, v0x, v0y, v0z,
+				&r1x, &r1y, &r1z, &v1x, &v1y, &v1z
+			);	// flop count: ??
+
+			real_t inv_m = 1 / m;
+			real_t drx = r0x - r1x;
+			real_t dry = r0y - r1y;
+			real_t drz = r0z - r1z;
+			real_t dvx = v0x - v1x;
+			real_t dvy = v0y - v1y;
+			real_t dvz = v0z - v1z;
+
+//			real_t imu = ip->m[i] * inv_m;
+//			jp->drx += imu * drx;
+//			jp->dry += imu * dry;
+//			jp->drz += imu * drz;
+//			jp->dvx += imu * dvx;
+//			jp->dvy += imu * dvy;
+//			jp->dvz += imu * dvz;
+
+			real_t jmu = jp->m * inv_m;
+			ip->drx[i] += jmu * drx;
+			ip->dry[i] += jmu * dry;
+			ip->drz[i] += jmu * drz;
+			ip->dvx[i] += jmu * dvx;
+			ip->dvy[i] += jmu * dvy;
+			ip->dvz[i] += jmu * dvz;
+
+			simd_shuff_Sakura_Data(jp);
 		}
-		barrier(CLK_LOCAL_MEM_FENCE);
-		async_work_group_copy(ip->_m, __im+ii, iN, 0);
-		async_work_group_copy(ip->_e2, __ie2+ii, iN, 0);
-		async_work_group_copy(ip->_rx, __irdot+(0*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_ry, __irdot+(0*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_rz, __irdot+(0*NDIM+2)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_vx, __irdot+(1*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_vy, __irdot+(1*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_vz, __irdot+(1*NDIM+2)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_drx, __idrdot+(0*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_dry, __idrdot+(0*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_drz, __idrdot+(0*NDIM+2)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_dvx, __idrdot+(1*NDIM+0)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_dvy, __idrdot+(1*NDIM+1)*ni+ii, iN, 0);
-		async_work_group_copy(ip->_dvz, __idrdot+(1*NDIM+2)*ni+ii, iN, 0);
-		for (uint_t jj = 0;
-					jj < nj;
-					jj += LMSIZE * 1) {
-			uint_t jN = min((uint_t)(LMSIZE * 1), (nj - jj));
-			for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-				uint_t k = kk + lid;
-				jp->m[k] = (real_t1)(0);
-				jp->e2[k] = (real_t1)(0);
-				jp->rx[k] = (real_t1)(0);
-				jp->ry[k] = (real_t1)(0);
-				jp->rz[k] = (real_t1)(0);
-				jp->vx[k] = (real_t1)(0);
-				jp->vy[k] = (real_t1)(0);
-				jp->vz[k] = (real_t1)(0);
-				jp->drx[k] = (real_t1)(0);
-				jp->dry[k] = (real_t1)(0);
-				jp->drz[k] = (real_t1)(0);
-				jp->dvx[k] = (real_t1)(0);
-				jp->dvy[k] = (real_t1)(0);
-				jp->dvz[k] = (real_t1)(0);
-			}
-			barrier(CLK_LOCAL_MEM_FENCE);
-			async_work_group_copy(jp->_m, __jm+jj, jN, 0);
-			async_work_group_copy(jp->_e2, __je2+jj, jN, 0);
-			async_work_group_copy(jp->_rx, __jrdot+(0*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_ry, __jrdot+(0*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_rz, __jrdot+(0*NDIM+2)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_vx, __jrdot+(1*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_vy, __jrdot+(1*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_vz, __jrdot+(1*NDIM+2)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_drx, __jdrdot+(0*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_dry, __jdrdot+(0*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_drz, __jdrdot+(0*NDIM+2)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_dvx, __jdrdot+(1*NDIM+0)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_dvy, __jdrdot+(1*NDIM+1)*nj+jj, jN, 0);
-			async_work_group_copy(jp->_dvz, __jdrdot+(1*NDIM+2)*nj+jj, jN, 0);
-			barrier(CLK_LOCAL_MEM_FENCE);
-			for (uint_t k = 0; k < 1; ++k) {
-				sakura_kernel_core(lid, jp, ip, dt, flag);
-				for (uint_t kk = 0; kk < LMSIZE; kk += WGSIZE) {
-					uint_t i = kk + lid;
-					shuff(ip->m[i], 1);
-					shuff(ip->e2[i], 1);
-					shuff(ip->rx[i], 1);
-					shuff(ip->ry[i], 1);
-					shuff(ip->rz[i], 1);
-					shuff(ip->vx[i], 1);
-					shuff(ip->vy[i], 1);
-					shuff(ip->vz[i], 1);
-					shuff(ip->drx[i], 1);
-					shuff(ip->dry[i], 1);
-					shuff(ip->drz[i], 1);
-					shuff(ip->dvx[i], 1);
-					shuff(ip->dvy[i], 1);
-					shuff(ip->dvz[i], 1);
-				}
-			}
-			barrier(CLK_LOCAL_MEM_FENCE);
-		}
-		async_work_group_copy(__idrdot+(0*NDIM+0)*ni+ii, ip->_drx, iN, 0);
-		async_work_group_copy(__idrdot+(0*NDIM+1)*ni+ii, ip->_dry, iN, 0);
-		async_work_group_copy(__idrdot+(0*NDIM+2)*ni+ii, ip->_drz, iN, 0);
-		async_work_group_copy(__idrdot+(1*NDIM+0)*ni+ii, ip->_dvx, iN, 0);
-		async_work_group_copy(__idrdot+(1*NDIM+1)*ni+ii, ip->_dvy, iN, 0);
-		async_work_group_copy(__idrdot+(1*NDIM+2)*ni+ii, ip->_dvz, iN, 0);
 	}
 }
 
 
-kernel __attribute__((reqd_work_group_size(WGSIZE, 1, 1))) void
+kernel void
+__attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 sakura_kernel_rectangle(
 	const uint_t ni,
 	global const real_t __im[],
@@ -224,28 +147,89 @@ sakura_kernel_rectangle(
 	global real_t __idrdot[],
 	global real_t __jdrdot[])
 {
-	local Sakura_Data _ip;
-	local Sakura_Data _jp;
+	local Sakura_Data_SoA _ip[NWARPS];
+	uint_t lid = get_local_id(0);
+	uint_t grp = get_group_id(0);
+	uint_t ngrps = get_num_groups(0);
+	uint_t lane = lid % NLANES;
+	uint_t warp = lid / NLANES;
+	for (uint_t ii = 1 * WGSIZE * grp;
+				ii < ni;
+				ii += 1 * WGSIZE * ngrps) {
+		Sakura_Data ip = {{0}};
+		read_Sakura_Data(
+			ii, lid, &ip,
+			ni, __im, __ie2, __irdot
+		);
+		barrier(CLK_LOCAL_MEM_FENCE);
+		_ip[warp].m[lane] = ip.m;
+		_ip[warp].e2[lane] = ip.e2;
+		_ip[warp].rx[lane] = ip.rx;
+		_ip[warp].ry[lane] = ip.ry;
+		_ip[warp].rz[lane] = ip.rz;
+		_ip[warp].vx[lane] = ip.vx;
+		_ip[warp].vy[lane] = ip.vy;
+		_ip[warp].vz[lane] = ip.vz;
+		_ip[warp].drx[lane] = ip.drx;
+		_ip[warp].dry[lane] = ip.dry;
+		_ip[warp].drz[lane] = ip.drz;
+		_ip[warp].dvx[lane] = ip.dvx;
+		_ip[warp].dvy[lane] = ip.dvy;
+		_ip[warp].dvz[lane] = ip.dvz;
+		barrier(CLK_LOCAL_MEM_FENCE);
 
-	sakura_kernel_impl(
-		ni, __im, __ie2, __irdot,
-		nj, __jm, __je2, __jrdot,
-		dt, flag,
-		__idrdot, __jdrdot,
-		&_ip, &_jp
-	);
+		for (uint_t jj = 0;
+					jj < nj;
+					jj += 1 * WGSIZE) {
+			Sakura_Data jp = {{0}};
+			read_Sakura_Data(
+				jj, lid, &jp,
+				nj, __jm, __je2, __jrdot
+			);
 
-	sakura_kernel_impl(
-		nj, __jm, __je2, __jrdot,
-		ni, __im, __ie2, __irdot,
-		dt, flag,
-		__jdrdot, __idrdot,
-		&_jp, &_ip
-	);
+			for (uint_t w = 0; w < NWARPS; ++w) {
+				p2p_sakura_kernel_core(dt, flag, lane, &jp, &_ip[(warp+w)%NWARPS]);
+				barrier(CLK_LOCAL_MEM_FENCE);
+			}
+
+			for (uint_t k = 0, kk = jj + lid;
+						k < 1;
+						k += 1, kk += WGSIZE) {
+				if (kk < nj) {
+					atomic_fadd(&(__jdrdot+(0*NDIM+0)*nj)[kk], jp._drx[k]);
+					atomic_fadd(&(__jdrdot+(0*NDIM+1)*nj)[kk], jp._dry[k]);
+					atomic_fadd(&(__jdrdot+(0*NDIM+2)*nj)[kk], jp._drz[k]);
+					atomic_fadd(&(__jdrdot+(1*NDIM+0)*nj)[kk], jp._dvx[k]);
+					atomic_fadd(&(__jdrdot+(1*NDIM+1)*nj)[kk], jp._dvy[k]);
+					atomic_fadd(&(__jdrdot+(1*NDIM+2)*nj)[kk], jp._dvz[k]);
+				}
+			}
+		}
+
+		ip.drx = _ip[warp].drx[lane];
+		ip.dry = _ip[warp].dry[lane];
+		ip.drz = _ip[warp].drz[lane];
+		ip.dvx = _ip[warp].dvx[lane];
+		ip.dvy = _ip[warp].dvy[lane];
+		ip.dvz = _ip[warp].dvz[lane];
+		for (uint_t k = 0, kk = ii + lid;
+					k < 1;
+					k += 1, kk += WGSIZE) {
+			if (kk < ni) {
+				(__idrdot+(0*NDIM+0)*ni)[kk] -= ip._drx[k];
+				(__idrdot+(0*NDIM+1)*ni)[kk] -= ip._dry[k];
+				(__idrdot+(0*NDIM+2)*ni)[kk] -= ip._drz[k];
+				(__idrdot+(1*NDIM+0)*ni)[kk] -= ip._dvx[k];
+				(__idrdot+(1*NDIM+1)*ni)[kk] -= ip._dvy[k];
+				(__idrdot+(1*NDIM+2)*ni)[kk] -= ip._dvz[k];
+			}
+		}
+	}
 }
 
 
-kernel __attribute__((reqd_work_group_size(WGSIZE, 1, 1))) void
+kernel void
+__attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 sakura_kernel_triangle(
 	const uint_t ni,
 	global const real_t __im[],
@@ -255,15 +239,91 @@ sakura_kernel_triangle(
 	const int_t flag,
 	global real_t __idrdot[])
 {
-	local Sakura_Data _ip;
-	local Sakura_Data _jp;
+	// ------------------------------------------------------------------------
+	const uint_t nj = ni;
+	global const real_t *__jm = __im;
+	global const real_t *__je2 = __ie2;
+	global const real_t *__jrdot = __irdot;
+	global real_t *__jdrdot = __idrdot;
+	// ------------------------------------------------------------------------
 
-	sakura_kernel_impl(
-		ni, __im, __ie2, __irdot,
-		ni, __im, __ie2, __irdot,
-		dt, flag,
-		__idrdot, __idrdot,
-		&_ip, &_jp
-	);
+	local Sakura_Data_SoA _ip[NWARPS];
+	uint_t lid = get_local_id(0);
+	uint_t grp = get_group_id(0);
+	uint_t ngrps = get_num_groups(0);
+	uint_t lane = lid % NLANES;
+	uint_t warp = lid / NLANES;
+	for (uint_t ii = 1 * WGSIZE * grp;
+				ii < ni;
+				ii += 1 * WGSIZE * ngrps) {
+		Sakura_Data ip = {{0}};
+		read_Sakura_Data(
+			ii, lid, &ip,
+			ni, __im, __ie2, __irdot
+		);
+		barrier(CLK_LOCAL_MEM_FENCE);
+		_ip[warp].m[lane] = ip.m;
+		_ip[warp].e2[lane] = ip.e2;
+		_ip[warp].rx[lane] = ip.rx;
+		_ip[warp].ry[lane] = ip.ry;
+		_ip[warp].rz[lane] = ip.rz;
+		_ip[warp].vx[lane] = ip.vx;
+		_ip[warp].vy[lane] = ip.vy;
+		_ip[warp].vz[lane] = ip.vz;
+		_ip[warp].drx[lane] = ip.drx;
+		_ip[warp].dry[lane] = ip.dry;
+		_ip[warp].drz[lane] = ip.drz;
+		_ip[warp].dvx[lane] = ip.dvx;
+		_ip[warp].dvy[lane] = ip.dvy;
+		_ip[warp].dvz[lane] = ip.dvz;
+		barrier(CLK_LOCAL_MEM_FENCE);
+
+		for (uint_t jj = 0;
+					jj < nj;
+					jj += 1 * WGSIZE) {
+			Sakura_Data jp = {{0}};
+			read_Sakura_Data(
+				jj, lid, &jp,
+				nj, __jm, __je2, __jrdot
+			);
+
+			for (uint_t w = 0; w < NWARPS; ++w) {
+				sakura_kernel_core(dt, flag, lane, &jp, &_ip[(warp+w)%NWARPS]);
+				barrier(CLK_LOCAL_MEM_FENCE);
+			}
+
+//			for (uint_t k = 0, kk = jj + lid;
+//						k < 1;
+//						k += 1, kk += WGSIZE) {
+//				if (kk < nj) {
+//					atomic_fadd(&(__jdrdot+(0*NDIM+0)*nj)[kk], jp._drx[k]);
+//					atomic_fadd(&(__jdrdot+(0*NDIM+1)*nj)[kk], jp._dry[k]);
+//					atomic_fadd(&(__jdrdot+(0*NDIM+2)*nj)[kk], jp._drz[k]);
+//					atomic_fadd(&(__jdrdot+(1*NDIM+0)*nj)[kk], jp._dvx[k]);
+//					atomic_fadd(&(__jdrdot+(1*NDIM+1)*nj)[kk], jp._dvy[k]);
+//					atomic_fadd(&(__jdrdot+(1*NDIM+2)*nj)[kk], jp._dvz[k]);
+//				}
+//			}
+		}
+
+		ip.drx = _ip[warp].drx[lane];
+		ip.dry = _ip[warp].dry[lane];
+		ip.drz = _ip[warp].drz[lane];
+		ip.dvx = _ip[warp].dvx[lane];
+		ip.dvy = _ip[warp].dvy[lane];
+		ip.dvz = _ip[warp].dvz[lane];
+		for (uint_t k = 0, kk = ii + lid;
+					k < 1;
+					k += 1, kk += WGSIZE) {
+			if (kk < ni) {
+				(__idrdot+(0*NDIM+0)*ni)[kk] -= ip._drx[k];
+				(__idrdot+(0*NDIM+1)*ni)[kk] -= ip._dry[k];
+				(__idrdot+(0*NDIM+2)*ni)[kk] -= ip._drz[k];
+				(__idrdot+(1*NDIM+0)*ni)[kk] -= ip._dvx[k];
+				(__idrdot+(1*NDIM+1)*ni)[kk] -= ip._dvy[k];
+				(__idrdot+(1*NDIM+2)*ni)[kk] -= ip._dvz[k];
+			}
+		}
+	}
 }
 

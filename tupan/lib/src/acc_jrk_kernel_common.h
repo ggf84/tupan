@@ -239,60 +239,60 @@ typedef struct acc_jrk_data {
 
 typedef struct acc_jrk_data_soa {
 	union {
-		real_tn m[LMSIZE];
-		real_t _m[LMSIZE * SIMD];
+		real_tn m[NLANES];
+		real_t _m[NLANES * SIMD];
 	};
 	union {
-		real_tn e2[LMSIZE];
-		real_t _e2[LMSIZE * SIMD];
+		real_tn e2[NLANES];
+		real_t _e2[NLANES * SIMD];
 	};
 	union {
-		real_tn rx[LMSIZE];
-		real_t _rx[LMSIZE * SIMD];
+		real_tn rx[NLANES];
+		real_t _rx[NLANES * SIMD];
 	};
 	union {
-		real_tn ry[LMSIZE];
-		real_t _ry[LMSIZE * SIMD];
+		real_tn ry[NLANES];
+		real_t _ry[NLANES * SIMD];
 	};
 	union {
-		real_tn rz[LMSIZE];
-		real_t _rz[LMSIZE * SIMD];
+		real_tn rz[NLANES];
+		real_t _rz[NLANES * SIMD];
 	};
 	union {
-		real_tn vx[LMSIZE];
-		real_t _vx[LMSIZE * SIMD];
+		real_tn vx[NLANES];
+		real_t _vx[NLANES * SIMD];
 	};
 	union {
-		real_tn vy[LMSIZE];
-		real_t _vy[LMSIZE * SIMD];
+		real_tn vy[NLANES];
+		real_t _vy[NLANES * SIMD];
 	};
 	union {
-		real_tn vz[LMSIZE];
-		real_t _vz[LMSIZE * SIMD];
+		real_tn vz[NLANES];
+		real_t _vz[NLANES * SIMD];
 	};
 	union {
-		real_tn ax[LMSIZE];
-		real_t _ax[LMSIZE * SIMD];
+		real_tn ax[NLANES];
+		real_t _ax[NLANES * SIMD];
 	};
 	union {
-		real_tn ay[LMSIZE];
-		real_t _ay[LMSIZE * SIMD];
+		real_tn ay[NLANES];
+		real_t _ay[NLANES * SIMD];
 	};
 	union {
-		real_tn az[LMSIZE];
-		real_t _az[LMSIZE * SIMD];
+		real_tn az[NLANES];
+		real_t _az[NLANES * SIMD];
 	};
 	union {
-		real_tn jx[LMSIZE];
-		real_t _jx[LMSIZE * SIMD];
+		real_tn jx[NLANES];
+		real_t _jx[NLANES * SIMD];
 	};
 	union {
-		real_tn jy[LMSIZE];
-		real_t _jy[LMSIZE * SIMD];
+		real_tn jy[NLANES];
+		real_t _jy[NLANES * SIMD];
 	};
 	union {
-		real_tn jz[LMSIZE];
-		real_t _jz[LMSIZE * SIMD];
+		real_tn jz[NLANES];
+		real_t _jz[NLANES * SIMD];
 	};
 } Acc_Jrk_Data_SoA;
 

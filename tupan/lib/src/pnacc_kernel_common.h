@@ -250,50 +250,142 @@ struct P2P_pnacc_kernel_core {
 
 typedef struct pnacc_data {
 	union {
-		real_tn m[LMSIZE];
-		real_t _m[LMSIZE * SIMD];
+		real_tn m;
+		real_t _m[SIMD];
 	};
 	union {
-		real_tn e2[LMSIZE];
-		real_t _e2[LMSIZE * SIMD];
+		real_tn e2;
+		real_t _e2[SIMD];
 	};
 	union {
-		real_tn rx[LMSIZE];
-		real_t _rx[LMSIZE * SIMD];
+		real_tn rx;
+		real_t _rx[SIMD];
 	};
 	union {
-		real_tn ry[LMSIZE];
-		real_t _ry[LMSIZE * SIMD];
+		real_tn ry;
+		real_t _ry[SIMD];
 	};
 	union {
-		real_tn rz[LMSIZE];
-		real_t _rz[LMSIZE * SIMD];
+		real_tn rz;
+		real_t _rz[SIMD];
 	};
 	union {
-		real_tn vx[LMSIZE];
-		real_t _vx[LMSIZE * SIMD];
+		real_tn vx;
+		real_t _vx[SIMD];
 	};
 	union {
-		real_tn vy[LMSIZE];
-		real_t _vy[LMSIZE * SIMD];
+		real_tn vy;
+		real_t _vy[SIMD];
 	};
 	union {
-		real_tn vz[LMSIZE];
-		real_t _vz[LMSIZE * SIMD];
+		real_tn vz;
+		real_t _vz[SIMD];
 	};
 	union {
-		real_tn pnax[LMSIZE];
-		real_t _pnax[LMSIZE * SIMD];
+		real_tn pnax;
+		real_t _pnax[SIMD];
 	};
 	union {
-		real_tn pnay[LMSIZE];
-		real_t _pnay[LMSIZE * SIMD];
+		real_tn pnay;
+		real_t _pnay[SIMD];
 	};
 	union {
-		real_tn pnaz[LMSIZE];
-		real_t _pnaz[LMSIZE * SIMD];
+		real_tn pnaz;
+		real_t _pnaz[SIMD];
 	};
 } PNAcc_Data;
+
+
+typedef struct pnacc_data_soa {
+	union {
+		real_tn m[NLANES];
+		real_t _m[NLANES * SIMD];
+	};
+	union {
+		real_tn e2[NLANES];
+		real_t _e2[NLANES * SIMD];
+	};
+	union {
+		real_tn rx[NLANES];
+		real_t _rx[NLANES * SIMD];
+	};
+	union {
+		real_tn ry[NLANES];
+		real_t _ry[NLANES * SIMD];
+	};
+	union {
+		real_tn rz[NLANES];
+		real_t _rz[NLANES * SIMD];
+	};
+	union {
+		real_tn vx[NLANES];
+		real_t _vx[NLANES * SIMD];
+	};
+	union {
+		real_tn vy[NLANES];
+		real_t _vy[NLANES * SIMD];
+	};
+	union {
+		real_tn vz[NLANES];
+		real_t _vz[NLANES * SIMD];
+	};
+	union {
+		real_tn pnax[NLANES];
+		real_t _pnax[NLANES * SIMD];
+	};
+	union {
+		real_tn pnay[NLANES];
+		real_t _pnay[NLANES * SIMD];
+	};
+	union {
+		real_tn pnaz[NLANES];
+		real_t _pnaz[NLANES * SIMD];
+	};
+} PNAcc_Data_SoA;
+
+
+static inline void
+read_PNAcc_Data(
+	uint_t base,
+	uint_t lid,
+	PNAcc_Data *p,
+	uint_t n,
+	global const real_t __m[],
+	global const real_t __e2[],
+	global const real_t __rdot[])
+{
+	for (uint_t k = 0, kk = base + lid;
+				k < SIMD;
+				k += 1, kk += WGSIZE) {
+		if (kk < n) {
+			p->_m[k] = __m[kk];
+			p->_e2[k] = __e2[kk];
+			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];
+			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];
+			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];
+			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];
+			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];
+			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];
+		}
+	}
+}
+
+
+static inline void
+simd_shuff_PNAcc_Data(PNAcc_Data *p)
+{
+	shuff(p->m, SIMD);
+	shuff(p->e2, SIMD);
+	shuff(p->rx, SIMD);
+	shuff(p->ry, SIMD);
+	shuff(p->rz, SIMD);
+	shuff(p->vx, SIMD);
+	shuff(p->vy, SIMD);
+	shuff(p->vz, SIMD);
+	shuff(p->pnax, SIMD);
+	shuff(p->pnay, SIMD);
+	shuff(p->pnaz, SIMD);
+}
 
 
 #endif	// __cplusplus
