@@ -170,29 +170,33 @@ class Program(object):
                 if fpwidth == 'fp32'
                 else dev.preferred_vector_width_double)
 
-        nlanes = 1                      # warp/wavefront size
+        wpt = 1                         # work per thread
         nwarps = 1                      # number of warps in a work group
+        nlanes = 1                      # number of lanes in a warp/wavefront
         wgsize = 1                      # work_group_size
         ngroup = dev.max_compute_units  # num_groups
 
         if dev.type == cl.device_type.CPU:
+            wpt *= 1
             simd *= 1
-            nlanes *= 8
             nwarps *= 2
+            nlanes *= 8
             wgsize *= nwarps * nlanes
             ngroup *= 2
 
         if dev.type == cl.device_type.GPU:
+            wpt *= 2
             simd *= 2
-            nlanes *= 32
             nwarps *= 2
+            nlanes *= 32
             wgsize *= nwarps * nlanes
             ngroup *= 24*4
 
         # setting program options
-        options = ' -D SIMD={}'.format(simd)
-        options += ' -D NLANES={}'.format(nlanes)
+        options = ' -D WPT={}'.format(wpt)
+        options += ' -D SIMD={}'.format(simd)
         options += ' -D NWARPS={}'.format(nwarps)
+        options += ' -D NLANES={}'.format(nlanes)
         options += ' -D WGSIZE={}'.format(wgsize)
         options += ' -D CONFIG_USE_OPENCL'
         if fpwidth == 'fp64':

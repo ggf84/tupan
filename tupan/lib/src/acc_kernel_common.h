@@ -128,36 +128,36 @@ struct P2P_acc_kernel_core {
 
 typedef struct acc_data {
 	union {
-		real_tn m;
-		real_t _m[SIMD];
+		real_tn m[WPT];
+		real_t _m[WPT * SIMD];
 	};
 	union {
-		real_tn e2;
-		real_t _e2[SIMD];
+		real_tn e2[WPT];
+		real_t _e2[WPT * SIMD];
 	};
 	union {
-		real_tn rx;
-		real_t _rx[SIMD];
+		real_tn rx[WPT];
+		real_t _rx[WPT * SIMD];
 	};
 	union {
-		real_tn ry;
-		real_t _ry[SIMD];
+		real_tn ry[WPT];
+		real_t _ry[WPT * SIMD];
 	};
 	union {
-		real_tn rz;
-		real_t _rz[SIMD];
+		real_tn rz[WPT];
+		real_t _rz[WPT * SIMD];
 	};
 	union {
-		real_tn ax;
-		real_t _ax[SIMD];
+		real_tn ax[WPT];
+		real_t _ax[WPT * SIMD];
 	};
 	union {
-		real_tn ay;
-		real_t _ay[SIMD];
+		real_tn ay[WPT];
+		real_t _ay[WPT * SIMD];
 	};
 	union {
-		real_tn az;
-		real_t _az[SIMD];
+		real_tn az[WPT];
+		real_t _az[WPT * SIMD];
 	};
 } Acc_Data;
 
@@ -200,16 +200,17 @@ typedef struct acc_data_soa {
 
 static inline void
 read_Acc_Data(
-	uint_t base,
-	uint_t lid,
+	const uint_t nloads,
+	const uint_t base,
+	const uint_t lid,
 	Acc_Data *p,
-	uint_t n,
+	const uint_t n,
 	global const real_t __m[],
 	global const real_t __e2[],
 	global const real_t __rdot[])
 {
 	for (uint_t k = 0, kk = base + lid;
-				k < SIMD;
+				k < nloads;
 				k += 1, kk += WGSIZE) {
 		if (kk < n) {
 			p->_m[k] = __m[kk];
@@ -223,16 +224,18 @@ read_Acc_Data(
 
 
 static inline void
-simd_shuff_Acc_Data(Acc_Data *p)
+simd_shuff_Acc_Data(
+	const uint_t k,
+	Acc_Data *p)
 {
-	shuff(p->m, SIMD);
-	shuff(p->e2, SIMD);
-	shuff(p->rx, SIMD);
-	shuff(p->ry, SIMD);
-	shuff(p->rz, SIMD);
-	shuff(p->ax, SIMD);
-	shuff(p->ay, SIMD);
-	shuff(p->az, SIMD);
+	shuff(p->m[k], SIMD);
+	shuff(p->e2[k], SIMD);
+	shuff(p->rx[k], SIMD);
+	shuff(p->ry[k], SIMD);
+	shuff(p->rz[k], SIMD);
+	shuff(p->ax[k], SIMD);
+	shuff(p->ay[k], SIMD);
+	shuff(p->az[k], SIMD);
 }
 
 
