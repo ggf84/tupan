@@ -8,10 +8,8 @@ p2p_snp_crk_kernel_core(
 	local Snp_Crk_Data_SoA *ip)
 // flop count: 153
 {
-	#pragma unroll
 	for (uint_t l = 0; l < NLANES; ++l) {
 		uint_t i = lane^l;
-		#pragma unroll
 		for (uint_t k = 0; k < SIMD; ++k) {
 			real_tn ee = ip->e2[i] + jp->e2;
 			real_tn rx = ip->rx[i] - jp->rx;
@@ -128,10 +126,8 @@ snp_crk_kernel_core(
 	local Snp_Crk_Data_SoA *ip)
 // flop count: 128
 {
-	#pragma unroll
 	for (uint_t l = 0; l < NLANES; ++l) {
 		uint_t i = lane^l;
-		#pragma unroll
 		for (uint_t k = 0; k < SIMD; ++k) {
 			real_tn ee = ip->e2[i] + jp->e2;
 			real_tn rx = ip->rx[i] - jp->rx;

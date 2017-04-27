@@ -9,10 +9,8 @@ p2p_tstep_kernel_core(
 	local Tstep_Data_SoA *ip)
 // flop count: 43
 {
-	#pragma unroll
 	for (uint_t l = 0; l < NLANES; ++l) {
 		uint_t i = lane^l;
-		#pragma unroll
 		for (uint_t k = 0; k < SIMD; ++k) {
 			real_tn m_r3 = ip->m[i] + jp->m;
 			real_tn ee = ip->e2[i] + jp->e2;
@@ -69,10 +67,8 @@ tstep_kernel_core(
 	local Tstep_Data_SoA *ip)
 // flop count: 42
 {
-	#pragma unroll
 	for (uint_t l = 0; l < NLANES; ++l) {
 		uint_t i = lane^l;
-		#pragma unroll
 		for (uint_t k = 0; k < SIMD; ++k) {
 			real_tn m_r3 = ip->m[i] + jp->m;
 			real_tn ee = ip->e2[i] + jp->e2;

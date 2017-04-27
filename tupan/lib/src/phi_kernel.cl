@@ -8,10 +8,8 @@ p2p_phi_kernel_core(
 	local Phi_Data_SoA *ip)
 // flop count: 16
 {
-	#pragma unroll
 	for (uint_t l = 0; l < NLANES; ++l) {
 		uint_t i = lane^l;
-		#pragma unroll
 		for (uint_t k = 0; k < SIMD; ++k) {
 			real_tn ee = ip->e2[i] + jp->e2;
 			real_tn rx = ip->rx[i] - jp->rx;
@@ -41,10 +39,8 @@ phi_kernel_core(
 	local Phi_Data_SoA *ip)
 // flop count: 14
 {
-	#pragma unroll
 	for (uint_t l = 0; l < NLANES; ++l) {
 		uint_t i = lane^l;
-		#pragma unroll
 		for (uint_t k = 0; k < SIMD; ++k) {
 			real_tn ee = ip->e2[i] + jp->e2;
 			real_tn rx = ip->rx[i] - jp->rx;

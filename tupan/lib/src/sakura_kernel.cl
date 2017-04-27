@@ -10,10 +10,8 @@ p2p_sakura_kernel_core(
 	local Sakura_Data_SoA *ip)
 // flop count: 41 + ??
 {
-	#pragma unroll
 	for (uint_t l = 0; l < NLANES; ++l) {
 		uint_t i = lane^l;
-		#pragma unroll
 		for (uint_t k = 0; k < 1; ++k) {
 			real_t m = ip->m[i] + jp->m;
 			real_t e2 = ip->e2[i] + jp->e2;
@@ -75,10 +73,8 @@ sakura_kernel_core(
 	local Sakura_Data_SoA *ip)
 // flop count: 28 + ??
 {
-	#pragma unroll
 	for (uint_t l = 0; l < NLANES; ++l) {
 		uint_t i = lane^l;
-		#pragma unroll
 		for (uint_t k = 0; k < 1; ++k) {
 			real_t m = ip->m[i] + jp->m;
 			real_t e2 = ip->e2[i] + jp->e2;

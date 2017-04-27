@@ -8,10 +8,8 @@ p2p_acc_kernel_core(
 	local Acc_Data_SoA *ip)
 // flop count: 28
 {
-	#pragma unroll
 	for (uint_t l = 0; l < NLANES; ++l) {
 		uint_t i = lane^l;
-		#pragma unroll
 		for (uint_t k = 0; k < SIMD; ++k) {
 			real_tn ee = ip->e2[i] + jp->e2;
 			real_tn rx = ip->rx[i] - jp->rx;
@@ -49,10 +47,8 @@ acc_kernel_core(
 	local Acc_Data_SoA *ip)
 // flop count: 21
 {
-	#pragma unroll
 	for (uint_t l = 0; l < NLANES; ++l) {
 		uint_t i = lane^l;
-		#pragma unroll
 		for (uint_t k = 0; k < SIMD; ++k) {
 			real_tn ee = ip->e2[i] + jp->e2;
 			real_tn rx = ip->rx[i] - jp->rx;
