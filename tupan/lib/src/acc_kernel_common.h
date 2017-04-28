@@ -200,18 +200,18 @@ typedef struct acc_data_soa {
 
 static inline void
 read_Acc_Data(
-	const uint_t nloads,
 	const uint_t base,
-	const uint_t lid,
+	const uint_t stride,
+	const uint_t nloads,
 	Acc_Data *p,
 	const uint_t n,
 	global const real_t __m[],
 	global const real_t __e2[],
 	global const real_t __rdot[])
 {
-	for (uint_t k = 0, kk = base + lid;
+	for (uint_t k = 0, kk = base;
 				k < nloads;
-				k += 1, kk += WGSIZE) {
+				k += 1, kk += stride) {
 		if (kk < n) {
 			p->_m[k] = __m[kk];
 			p->_e2[k] = __e2[kk];

@@ -177,20 +177,20 @@ class Program(object):
         ngroup = dev.max_compute_units  # num_groups
 
         if dev.type == cl.device_type.CPU:
-            wpt *= 1
+            wpt *= 8
             simd *= 1
-            nwarps *= 2
-            nlanes *= 8
+            nwarps *= 4
+            nlanes *= 1
             wgsize *= nwarps * nlanes
-            ngroup *= 2
+            ngroup *= 1
 
         if dev.type == cl.device_type.GPU:
             wpt *= 2
             simd *= 2
-            nwarps *= 2
+            nwarps *= 4 if fpwidth == 'fp32' else 2
             nlanes *= 32
             wgsize *= nwarps * nlanes
-            ngroup *= 24*4
+            ngroup *= 24
 
         # setting program options
         options = ' -D WPT={}'.format(wpt)
