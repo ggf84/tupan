@@ -109,7 +109,7 @@ acc_kernel_rectangle(
 				jj += WGSIZE * SIMD * WPT) {
 		Acc_Data jp = {{{0}}};
 		read_Acc_Data(
-			jj+lid, WGSIZE, SIMD * WPT, &jp,
+			&jp, jj + lid, WGSIZE, SIMD * WPT,
 			nj, __jm, __je2, __jrdot
 		);
 
@@ -118,7 +118,7 @@ acc_kernel_rectangle(
 					ii += WGSIZE * SIMD * ngrps) {
 			Acc_Data ip = {{{0}}};
 			read_Acc_Data(
-				ii+lid, WGSIZE, SIMD, &ip,
+				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
 			_ip[warp].m[lane] = ip.m[0];
@@ -190,7 +190,7 @@ acc_kernel_triangle(
 				jj += WGSIZE * SIMD * WPT) {
 		Acc_Data jp = {{{0}}};
 		read_Acc_Data(
-			jj+lid, WGSIZE, SIMD * WPT, &jp,
+			&jp, jj + lid, WGSIZE, SIMD * WPT,
 			nj, __jm, __je2, __jrdot
 		);
 
@@ -199,7 +199,7 @@ acc_kernel_triangle(
 					ii += WGSIZE * SIMD * ngrps) {
 			Acc_Data ip = {{{0}}};
 			read_Acc_Data(
-				ii+lid, WGSIZE, SIMD, &ip,
+				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
 			_ip[warp].m[lane] = ip.m[0];

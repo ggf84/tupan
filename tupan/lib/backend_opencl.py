@@ -179,7 +179,7 @@ class Program(object):
         if dev.type == cl.device_type.CPU:
             wpt *= 8
             simd *= 1
-            nwarps *= 4
+            nwarps *= 8
             nlanes *= 1
             wgsize *= nwarps * nlanes
             ngroup *= 1

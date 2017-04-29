@@ -200,10 +200,10 @@ typedef struct acc_data_soa {
 
 static inline void
 read_Acc_Data(
+	Acc_Data *p,
 	const uint_t base,
 	const uint_t stride,
 	const uint_t nloads,
-	Acc_Data *p,
 	const uint_t n,
 	global const real_t __m[],
 	global const real_t __e2[],
