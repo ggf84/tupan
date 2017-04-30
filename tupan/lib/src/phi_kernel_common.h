@@ -108,28 +108,28 @@ struct P2P_phi_kernel_core {
 
 typedef struct phi_data {
 	union {
-		real_tn m;
-		real_t _m[SIMD];
+		real_tn m[WPT];
+		real_t _m[WPT * SIMD];
 	};
 	union {
-		real_tn e2;
-		real_t _e2[SIMD];
+		real_tn e2[WPT];
+		real_t _e2[WPT * SIMD];
 	};
 	union {
-		real_tn rx;
-		real_t _rx[SIMD];
+		real_tn rx[WPT];
+		real_t _rx[WPT * SIMD];
 	};
 	union {
-		real_tn ry;
-		real_t _ry[SIMD];
+		real_tn ry[WPT];
+		real_t _ry[WPT * SIMD];
 	};
 	union {
-		real_tn rz;
-		real_t _rz[SIMD];
+		real_tn rz[WPT];
+		real_t _rz[WPT * SIMD];
 	};
 	union {
-		real_tn phi;
-		real_t _phi[SIMD];
+		real_tn phi[WPT];
+		real_t _phi[WPT * SIMD];
 	};
 } Phi_Data;
 
@@ -164,17 +164,18 @@ typedef struct phi_data_soa {
 
 static inline void
 read_Phi_Data(
-	uint_t base,
-	uint_t lid,
 	Phi_Data *p,
-	uint_t n,
+	const uint_t base,
+	const uint_t stride,
+	const uint_t nloads,
+	const uint_t n,
 	global const real_t __m[],
 	global const real_t __e2[],
 	global const real_t __rdot[])
 {
-	for (uint_t k = 0, kk = base + lid;
-				k < SIMD;
-				k += 1, kk += WGSIZE) {
+	for (uint_t k = 0, kk = base;
+				k < nloads;
+				k += 1, kk += stride) {
 		if (kk < n) {
 			p->_m[k] = __m[kk];
 			p->_e2[k] = __e2[kk];
@@ -187,14 +188,16 @@ read_Phi_Data(
 
 
 static inline void
-simd_shuff_Phi_Data(Phi_Data *p)
+simd_shuff_Phi_Data(
+	const uint_t k,
+	Phi_Data *p)
 {
-	shuff(p->m, SIMD);
-	shuff(p->e2, SIMD);
-	shuff(p->rx, SIMD);
-	shuff(p->ry, SIMD);
-	shuff(p->rz, SIMD);
-	shuff(p->phi, SIMD);
+	shuff(p->m[k], SIMD);
+	shuff(p->e2[k], SIMD);
+	shuff(p->rx[k], SIMD);
+	shuff(p->ry[k], SIMD);
+	shuff(p->rz[k], SIMD);
+	shuff(p->phi[k], SIMD);
 }
 
 

@@ -293,108 +293,108 @@ struct P2P_snp_crk_kernel_core {
 
 typedef struct snp_crk_data {
 	union {
-		real_tn m;
-		real_t _m[SIMD];
+		real_tn m[WPT];
+		real_t _m[WPT * SIMD];
 	};
 	union {
-		real_tn e2;
-		real_t _e2[SIMD];
+		real_tn e2[WPT];
+		real_t _e2[WPT * SIMD];
 	};
 	union {
-		real_tn rx;
-		real_t _rx[SIMD];
+		real_tn rx[WPT];
+		real_t _rx[WPT * SIMD];
 	};
 	union {
-		real_tn ry;
-		real_t _ry[SIMD];
+		real_tn ry[WPT];
+		real_t _ry[WPT * SIMD];
 	};
 	union {
-		real_tn rz;
-		real_t _rz[SIMD];
+		real_tn rz[WPT];
+		real_t _rz[WPT * SIMD];
 	};
 	union {
-		real_tn vx;
-		real_t _vx[SIMD];
+		real_tn vx[WPT];
+		real_t _vx[WPT * SIMD];
 	};
 	union {
-		real_tn vy;
-		real_t _vy[SIMD];
+		real_tn vy[WPT];
+		real_t _vy[WPT * SIMD];
 	};
 	union {
-		real_tn vz;
-		real_t _vz[SIMD];
+		real_tn vz[WPT];
+		real_t _vz[WPT * SIMD];
 	};
 	union {
-		real_tn ax;
-		real_t _ax[SIMD];
+		real_tn ax[WPT];
+		real_t _ax[WPT * SIMD];
 	};
 	union {
-		real_tn ay;
-		real_t _ay[SIMD];
+		real_tn ay[WPT];
+		real_t _ay[WPT * SIMD];
 	};
 	union {
-		real_tn az;
-		real_t _az[SIMD];
+		real_tn az[WPT];
+		real_t _az[WPT * SIMD];
 	};
 	union {
-		real_tn jx;
-		real_t _jx[SIMD];
+		real_tn jx[WPT];
+		real_t _jx[WPT * SIMD];
 	};
 	union {
-		real_tn jy;
-		real_t _jy[SIMD];
+		real_tn jy[WPT];
+		real_t _jy[WPT * SIMD];
 	};
 	union {
-		real_tn jz;
-		real_t _jz[SIMD];
+		real_tn jz[WPT];
+		real_t _jz[WPT * SIMD];
 	};
 	union {
-		real_tn Ax;
-		real_t _Ax[SIMD];
+		real_tn Ax[WPT];
+		real_t _Ax[WPT * SIMD];
 	};
 	union {
-		real_tn Ay;
-		real_t _Ay[SIMD];
+		real_tn Ay[WPT];
+		real_t _Ay[WPT * SIMD];
 	};
 	union {
-		real_tn Az;
-		real_t _Az[SIMD];
+		real_tn Az[WPT];
+		real_t _Az[WPT * SIMD];
 	};
 	union {
-		real_tn Jx;
-		real_t _Jx[SIMD];
+		real_tn Jx[WPT];
+		real_t _Jx[WPT * SIMD];
 	};
 	union {
-		real_tn Jy;
-		real_t _Jy[SIMD];
+		real_tn Jy[WPT];
+		real_t _Jy[WPT * SIMD];
 	};
 	union {
-		real_tn Jz;
-		real_t _Jz[SIMD];
+		real_tn Jz[WPT];
+		real_t _Jz[WPT * SIMD];
 	};
 	union {
-		real_tn Sx;
-		real_t _Sx[SIMD];
+		real_tn Sx[WPT];
+		real_t _Sx[WPT * SIMD];
 	};
 	union {
-		real_tn Sy;
-		real_t _Sy[SIMD];
+		real_tn Sy[WPT];
+		real_t _Sy[WPT * SIMD];
 	};
 	union {
-		real_tn Sz;
-		real_t _Sz[SIMD];
+		real_tn Sz[WPT];
+		real_t _Sz[WPT * SIMD];
 	};
 	union {
-		real_tn Cx;
-		real_t _Cx[SIMD];
+		real_tn Cx[WPT];
+		real_t _Cx[WPT * SIMD];
 	};
 	union {
-		real_tn Cy;
-		real_t _Cy[SIMD];
+		real_tn Cy[WPT];
+		real_t _Cy[WPT * SIMD];
 	};
 	union {
-		real_tn Cz;
-		real_t _Cz[SIMD];
+		real_tn Cz[WPT];
+		real_t _Cz[WPT * SIMD];
 	};
 } Snp_Crk_Data;
 
@@ -509,17 +509,18 @@ typedef struct snp_crk_data_soa {
 
 static inline void
 read_Snp_Crk_Data(
-	uint_t base,
-	uint_t lid,
 	Snp_Crk_Data *p,
-	uint_t n,
+	const uint_t base,
+	const uint_t stride,
+	const uint_t nloads,
+	const uint_t n,
 	global const real_t __m[],
 	global const real_t __e2[],
 	global const real_t __rdot[])
 {
-	for (uint_t k = 0, kk = base + lid;
-				k < SIMD;
-				k += 1, kk += WGSIZE) {
+	for (uint_t k = 0, kk = base;
+				k < nloads;
+				k += 1, kk += stride) {
 		if (kk < n) {
 			p->_m[k] = __m[kk];
 			p->_e2[k] = __e2[kk];
@@ -541,34 +542,36 @@ read_Snp_Crk_Data(
 
 
 static inline void
-simd_shuff_Snp_Crk_Data(Snp_Crk_Data *p)
+simd_shuff_Snp_Crk_Data(
+	const uint_t k,
+	Snp_Crk_Data *p)
 {
-	shuff(p->m, SIMD);
-	shuff(p->e2, SIMD);
-	shuff(p->rx, SIMD);
-	shuff(p->ry, SIMD);
-	shuff(p->rz, SIMD);
-	shuff(p->vx, SIMD);
-	shuff(p->vy, SIMD);
-	shuff(p->vz, SIMD);
-	shuff(p->ax, SIMD);
-	shuff(p->ay, SIMD);
-	shuff(p->az, SIMD);
-	shuff(p->jx, SIMD);
-	shuff(p->jy, SIMD);
-	shuff(p->jz, SIMD);
-	shuff(p->Ax, SIMD);
-	shuff(p->Ay, SIMD);
-	shuff(p->Az, SIMD);
-	shuff(p->Jx, SIMD);
-	shuff(p->Jy, SIMD);
-	shuff(p->Jz, SIMD);
-	shuff(p->Sx, SIMD);
-	shuff(p->Sy, SIMD);
-	shuff(p->Sz, SIMD);
-	shuff(p->Cx, SIMD);
-	shuff(p->Cy, SIMD);
-	shuff(p->Cz, SIMD);
+	shuff(p->m[k], SIMD);
+	shuff(p->e2[k], SIMD);
+	shuff(p->rx[k], SIMD);
+	shuff(p->ry[k], SIMD);
+	shuff(p->rz[k], SIMD);
+	shuff(p->vx[k], SIMD);
+	shuff(p->vy[k], SIMD);
+	shuff(p->vz[k], SIMD);
+	shuff(p->ax[k], SIMD);
+	shuff(p->ay[k], SIMD);
+	shuff(p->az[k], SIMD);
+	shuff(p->jx[k], SIMD);
+	shuff(p->jy[k], SIMD);
+	shuff(p->jz[k], SIMD);
+	shuff(p->Ax[k], SIMD);
+	shuff(p->Ay[k], SIMD);
+	shuff(p->Az[k], SIMD);
+	shuff(p->Jx[k], SIMD);
+	shuff(p->Jy[k], SIMD);
+	shuff(p->Jz[k], SIMD);
+	shuff(p->Sx[k], SIMD);
+	shuff(p->Sy[k], SIMD);
+	shuff(p->Sz[k], SIMD);
+	shuff(p->Cx[k], SIMD);
+	shuff(p->Cy[k], SIMD);
+	shuff(p->Cz[k], SIMD);
 }
 
 

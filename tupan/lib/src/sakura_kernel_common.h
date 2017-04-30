@@ -299,119 +299,119 @@ struct P2P_sakura_kernel_core {
 
 typedef struct sakura_data {
 	union {
-		real_t m;
-		real_t _m[1];
+		real_t  m[WPT];
+		real_t _m[WPT * 1];
 	};
 	union {
-		real_t e2;
-		real_t _e2[1];
+		real_t  e2[WPT];
+		real_t _e2[WPT * 1];
 	};
 	union {
-		real_t rx;
-		real_t _rx[1];
+		real_t  rx[WPT];
+		real_t _rx[WPT * 1];
 	};
 	union {
-		real_t ry;
-		real_t _ry[1];
+		real_t  ry[WPT];
+		real_t _ry[WPT * 1];
 	};
 	union {
-		real_t rz;
-		real_t _rz[1];
+		real_t  rz[WPT];
+		real_t _rz[WPT * 1];
 	};
 	union {
-		real_t vx;
-		real_t _vx[1];
+		real_t  vx[WPT];
+		real_t _vx[WPT * 1];
 	};
 	union {
-		real_t vy;
-		real_t _vy[1];
+		real_t  vy[WPT];
+		real_t _vy[WPT * 1];
 	};
 	union {
-		real_t vz;
-		real_t _vz[1];
+		real_t  vz[WPT];
+		real_t _vz[WPT * 1];
 	};
 	union {
-		real_t drx;
-		real_t _drx[1];
+		real_t  drx[WPT];
+		real_t _drx[WPT * 1];
 	};
 	union {
-		real_t dry;
-		real_t _dry[1];
+		real_t  dry[WPT];
+		real_t _dry[WPT * 1];
 	};
 	union {
-		real_t drz;
-		real_t _drz[1];
+		real_t  drz[WPT];
+		real_t _drz[WPT * 1];
 	};
 	union {
-		real_t dvx;
-		real_t _dvx[1];
+		real_t  dvx[WPT];
+		real_t _dvx[WPT * 1];
 	};
 	union {
-		real_t dvy;
-		real_t _dvy[1];
+		real_t  dvy[WPT];
+		real_t _dvy[WPT * 1];
 	};
 	union {
-		real_t dvz;
-		real_t _dvz[1];
+		real_t  dvz[WPT];
+		real_t _dvz[WPT * 1];
 	};
 } Sakura_Data;
 
 
 typedef struct sakura_data_soa {
 	union {
-		real_t m[NLANES];
+		real_t  m[NLANES];
 		real_t _m[NLANES * 1];
 	};
 	union {
-		real_t e2[NLANES];
+		real_t  e2[NLANES];
 		real_t _e2[NLANES * 1];
 	};
 	union {
-		real_t rx[NLANES];
+		real_t  rx[NLANES];
 		real_t _rx[NLANES * 1];
 	};
 	union {
-		real_t ry[NLANES];
+		real_t  ry[NLANES];
 		real_t _ry[NLANES * 1];
 	};
 	union {
-		real_t rz[NLANES];
+		real_t  rz[NLANES];
 		real_t _rz[NLANES * 1];
 	};
 	union {
-		real_t vx[NLANES];
+		real_t  vx[NLANES];
 		real_t _vx[NLANES * 1];
 	};
 	union {
-		real_t vy[NLANES];
+		real_t  vy[NLANES];
 		real_t _vy[NLANES * 1];
 	};
 	union {
-		real_t vz[NLANES];
+		real_t  vz[NLANES];
 		real_t _vz[NLANES * 1];
 	};
 	union {
-		real_t drx[NLANES];
+		real_t  drx[NLANES];
 		real_t _drx[NLANES * 1];
 	};
 	union {
-		real_t dry[NLANES];
+		real_t  dry[NLANES];
 		real_t _dry[NLANES * 1];
 	};
 	union {
-		real_t drz[NLANES];
+		real_t  drz[NLANES];
 		real_t _drz[NLANES * 1];
 	};
 	union {
-		real_t dvx[NLANES];
+		real_t  dvx[NLANES];
 		real_t _dvx[NLANES * 1];
 	};
 	union {
-		real_t dvy[NLANES];
+		real_t  dvy[NLANES];
 		real_t _dvy[NLANES * 1];
 	};
 	union {
-		real_t dvz[NLANES];
+		real_t  dvz[NLANES];
 		real_t _dvz[NLANES * 1];
 	};
 } Sakura_Data_SoA;
@@ -419,17 +419,18 @@ typedef struct sakura_data_soa {
 
 static inline void
 read_Sakura_Data(
-	uint_t base,
-	uint_t lid,
 	Sakura_Data *p,
-	uint_t n,
+	const uint_t base,
+	const uint_t stride,
+	const uint_t nloads,
+	const uint_t n,
 	global const real_t __m[],
 	global const real_t __e2[],
 	global const real_t __rdot[])
 {
-	for (uint_t k = 0, kk = base + lid;
-				k < 1;
-				k += 1, kk += WGSIZE) {
+	for (uint_t k = 0, kk = base;
+				k < nloads;
+				k += 1, kk += stride) {
 		if (kk < n) {
 			p->_m[k] = __m[kk];
 			p->_e2[k] = __e2[kk];
@@ -445,22 +446,24 @@ read_Sakura_Data(
 
 
 static inline void
-simd_shuff_Sakura_Data(Sakura_Data *p)
+simd_shuff_Sakura_Data(
+	const uint_t k,
+	Sakura_Data *p)
 {
-	shuff(p->m, 1);
-	shuff(p->e2, 1);
-	shuff(p->rx, 1);
-	shuff(p->ry, 1);
-	shuff(p->rz, 1);
-	shuff(p->vx, 1);
-	shuff(p->vy, 1);
-	shuff(p->vz, 1);
-	shuff(p->drx, 1);
-	shuff(p->dry, 1);
-	shuff(p->drz, 1);
-	shuff(p->dvx, 1);
-	shuff(p->dvy, 1);
-	shuff(p->dvz, 1);
+	shuff(p->m[k], 1);
+	shuff(p->e2[k], 1);
+	shuff(p->rx[k], 1);
+	shuff(p->ry[k], 1);
+	shuff(p->rz[k], 1);
+	shuff(p->vx[k], 1);
+	shuff(p->vy[k], 1);
+	shuff(p->vz[k], 1);
+	shuff(p->drx[k], 1);
+	shuff(p->dry[k], 1);
+	shuff(p->drz[k], 1);
+	shuff(p->dvx[k], 1);
+	shuff(p->dvy[k], 1);
+	shuff(p->dvz[k], 1);
 }
 
 

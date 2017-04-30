@@ -179,60 +179,60 @@ struct P2P_acc_jrk_kernel_core {
 
 typedef struct acc_jrk_data {
 	union {
-		real_tn m;
-		real_t _m[SIMD];
+		real_tn m[WPT];
+		real_t _m[WPT * SIMD];
 	};
 	union {
-		real_tn e2;
-		real_t _e2[SIMD];
+		real_tn e2[WPT];
+		real_t _e2[WPT * SIMD];
 	};
 	union {
-		real_tn rx;
-		real_t _rx[SIMD];
+		real_tn rx[WPT];
+		real_t _rx[WPT * SIMD];
 	};
 	union {
-		real_tn ry;
-		real_t _ry[SIMD];
+		real_tn ry[WPT];
+		real_t _ry[WPT * SIMD];
 	};
 	union {
-		real_tn rz;
-		real_t _rz[SIMD];
+		real_tn rz[WPT];
+		real_t _rz[WPT * SIMD];
 	};
 	union {
-		real_tn vx;
-		real_t _vx[SIMD];
+		real_tn vx[WPT];
+		real_t _vx[WPT * SIMD];
 	};
 	union {
-		real_tn vy;
-		real_t _vy[SIMD];
+		real_tn vy[WPT];
+		real_t _vy[WPT * SIMD];
 	};
 	union {
-		real_tn vz;
-		real_t _vz[SIMD];
+		real_tn vz[WPT];
+		real_t _vz[WPT * SIMD];
 	};
 	union {
-		real_tn ax;
-		real_t _ax[SIMD];
+		real_tn ax[WPT];
+		real_t _ax[WPT * SIMD];
 	};
 	union {
-		real_tn ay;
-		real_t _ay[SIMD];
+		real_tn ay[WPT];
+		real_t _ay[WPT * SIMD];
 	};
 	union {
-		real_tn az;
-		real_t _az[SIMD];
+		real_tn az[WPT];
+		real_t _az[WPT * SIMD];
 	};
 	union {
-		real_tn jx;
-		real_t _jx[SIMD];
+		real_tn jx[WPT];
+		real_t _jx[WPT * SIMD];
 	};
 	union {
-		real_tn jy;
-		real_t _jy[SIMD];
+		real_tn jy[WPT];
+		real_t _jy[WPT * SIMD];
 	};
 	union {
-		real_tn jz;
-		real_t _jz[SIMD];
+		real_tn jz[WPT];
+		real_t _jz[WPT * SIMD];
 	};
 } Acc_Jrk_Data;
 
@@ -299,17 +299,18 @@ typedef struct acc_jrk_data_soa {
 
 static inline void
 read_Acc_Jrk_Data(
-	uint_t base,
-	uint_t lid,
 	Acc_Jrk_Data *p,
-	uint_t n,
+	const uint_t base,
+	const uint_t stride,
+	const uint_t nloads,
+	const uint_t n,
 	global const real_t __m[],
 	global const real_t __e2[],
 	global const real_t __rdot[])
 {
-	for (uint_t k = 0, kk = base + lid;
-				k < SIMD;
-				k += 1, kk += WGSIZE) {
+	for (uint_t k = 0, kk = base;
+				k < nloads;
+				k += 1, kk += stride) {
 		if (kk < n) {
 			p->_m[k] = __m[kk];
 			p->_e2[k] = __e2[kk];
@@ -325,22 +326,24 @@ read_Acc_Jrk_Data(
 
 
 static inline void
-simd_shuff_Acc_Jrk_Data(Acc_Jrk_Data *p)
+simd_shuff_Acc_Jrk_Data(
+	const uint_t k,
+	Acc_Jrk_Data *p)
 {
-	shuff(p->m, SIMD);
-	shuff(p->e2, SIMD);
-	shuff(p->rx, SIMD);
-	shuff(p->ry, SIMD);
-	shuff(p->rz, SIMD);
-	shuff(p->vx, SIMD);
-	shuff(p->vy, SIMD);
-	shuff(p->vz, SIMD);
-	shuff(p->ax, SIMD);
-	shuff(p->ay, SIMD);
-	shuff(p->az, SIMD);
-	shuff(p->jx, SIMD);
-	shuff(p->jy, SIMD);
-	shuff(p->jz, SIMD);
+	shuff(p->m[k], SIMD);
+	shuff(p->e2[k], SIMD);
+	shuff(p->rx[k], SIMD);
+	shuff(p->ry[k], SIMD);
+	shuff(p->rz[k], SIMD);
+	shuff(p->vx[k], SIMD);
+	shuff(p->vy[k], SIMD);
+	shuff(p->vz[k], SIMD);
+	shuff(p->ax[k], SIMD);
+	shuff(p->ay[k], SIMD);
+	shuff(p->az[k], SIMD);
+	shuff(p->jx[k], SIMD);
+	shuff(p->jy[k], SIMD);
+	shuff(p->jz[k], SIMD);
 }
 
 
