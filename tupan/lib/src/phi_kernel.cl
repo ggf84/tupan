@@ -91,7 +91,7 @@ phi_kernel_rectangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * SIMD * WPT) {
-		Phi_Data jp = {{0}};
+		Phi_Data jp = {{{0}}};
 		read_Phi_Data(
 			&jp, jj + lid, WGSIZE, SIMD * WPT,
 			nj, __jm, __je2, __jrdot
@@ -100,7 +100,7 @@ phi_kernel_rectangle(
 		for (uint_t ii = WGSIZE * SIMD * grp;
 					ii < ni;
 					ii += WGSIZE * SIMD * ngrps) {
-			Phi_Data ip = {{0}};
+			Phi_Data ip = {{{0}}};
 			read_Phi_Data(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
@@ -164,7 +164,7 @@ phi_kernel_triangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * SIMD * WPT) {
-		Phi_Data jp = {{0}};
+		Phi_Data jp = {{{0}}};
 		read_Phi_Data(
 			&jp, jj + lid, WGSIZE, SIMD * WPT,
 			nj, __jm, __je2, __jrdot
@@ -173,7 +173,7 @@ phi_kernel_triangle(
 		for (uint_t ii = WGSIZE * SIMD * grp;
 					ii < ni;
 					ii += WGSIZE * SIMD * ngrps) {
-			Phi_Data ip = {{0}};
+			Phi_Data ip = {{{0}}};
 			read_Phi_Data(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot

@@ -231,7 +231,7 @@ pnacc_kernel_rectangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * SIMD * WPT) {
-		PNAcc_Data jp = {{0}};
+		PNAcc_Data jp = {{{0}}};
 		read_PNAcc_Data(
 			&jp, jj + lid, WGSIZE, SIMD * WPT,
 			nj, __jm, __je2, __jrdot
@@ -240,7 +240,7 @@ pnacc_kernel_rectangle(
 		for (uint_t ii = WGSIZE * SIMD * grp;
 					ii < ni;
 					ii += WGSIZE * SIMD * ngrps) {
-			PNAcc_Data ip = {{0}};
+			PNAcc_Data ip = {{{0}}};
 			read_PNAcc_Data(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
@@ -317,7 +317,7 @@ pnacc_kernel_triangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * SIMD * WPT) {
-		PNAcc_Data jp = {{0}};
+		PNAcc_Data jp = {{{0}}};
 		read_PNAcc_Data(
 			&jp, jj + lid, WGSIZE, SIMD * WPT,
 			nj, __jm, __je2, __jrdot
@@ -326,7 +326,7 @@ pnacc_kernel_triangle(
 		for (uint_t ii = WGSIZE * SIMD * grp;
 					ii < ni;
 					ii += WGSIZE * SIMD * ngrps) {
-			PNAcc_Data ip = {{0}};
+			PNAcc_Data ip = {{{0}}};
 			read_PNAcc_Data(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot

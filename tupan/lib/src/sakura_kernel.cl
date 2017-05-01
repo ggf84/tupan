@@ -156,7 +156,7 @@ sakura_kernel_rectangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * 1 * WPT) {
-		Sakura_Data jp = {{0}};
+		Sakura_Data jp = {{{0}}};
 		read_Sakura_Data(
 			&jp, jj + lid, WGSIZE, 1 * WPT,
 			nj, __jm, __je2, __jrdot
@@ -165,7 +165,7 @@ sakura_kernel_rectangle(
 		for (uint_t ii = WGSIZE * 1 * grp;
 					ii < ni;
 					ii += WGSIZE * 1 * ngrps) {
-			Sakura_Data ip = {{0}};
+			Sakura_Data ip = {{{0}}};
 			read_Sakura_Data(
 				&ip, ii + lid, WGSIZE, 1,
 				ni, __im, __ie2, __irdot
@@ -254,7 +254,7 @@ sakura_kernel_triangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * 1 * WPT) {
-		Sakura_Data jp = {{0}};
+		Sakura_Data jp = {{{0}}};
 		read_Sakura_Data(
 			&jp, jj + lid, WGSIZE, 1 * WPT,
 			nj, __jm, __je2, __jrdot
@@ -263,7 +263,7 @@ sakura_kernel_triangle(
 		for (uint_t ii = WGSIZE * 1 * grp;
 					ii < ni;
 					ii += WGSIZE * 1 * ngrps) {
-			Sakura_Data ip = {{0}};
+			Sakura_Data ip = {{{0}}};
 			read_Sakura_Data(
 				&ip, ii + lid, WGSIZE, 1,
 				ni, __im, __ie2, __irdot
