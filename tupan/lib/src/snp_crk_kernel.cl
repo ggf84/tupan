@@ -4,8 +4,8 @@
 static inline void
 p2p_snp_crk_kernel_core(
 	uint_t lane,
-	Snp_Crk_Data *jp,
-	local Snp_Crk_Data_SoA *ip)
+	concat(Snp_Crk_Data, WPT) *jp,
+	local concat(Snp_Crk_Data, NLANES) *ip)
 // flop count: 153
 {
 	for (uint_t l = 0; l < NLANES; ++l) {
@@ -124,8 +124,8 @@ p2p_snp_crk_kernel_core(
 static inline void
 snp_crk_kernel_core(
 	uint_t lane,
-	Snp_Crk_Data *jp,
-	local Snp_Crk_Data_SoA *ip)
+	concat(Snp_Crk_Data, WPT) *jp,
+	local concat(Snp_Crk_Data, NLANES) *ip)
 // flop count: 128
 {
 	for (uint_t l = 0; l < NLANES; ++l) {
@@ -256,7 +256,7 @@ snp_crk_kernel_rectangle(
 	global real_t __iadot[],
 	global real_t __jadot[])
 {
-	local Snp_Crk_Data_SoA _ip[NWARPS];
+	local concat(Snp_Crk_Data, NLANES) _ip[NWARPS];
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
@@ -265,17 +265,17 @@ snp_crk_kernel_rectangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * SIMD * WPT) {
-		Snp_Crk_Data jp = {{{0}}};
-		read_Snp_Crk_Data(
-			&jp, jj + lid, WGSIZE, SIMD * WPT,
+		concat(Snp_Crk_Data, WPT) jp = {{{0}}};
+		concat(read_Snp_Crk_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
 		for (uint_t ii = WGSIZE * SIMD * grp;
 					ii < ni;
 					ii += WGSIZE * SIMD * ngrps) {
-			Snp_Crk_Data ip = {{{0}}};
-			read_Snp_Crk_Data(
+			concat(Snp_Crk_Data, 1) ip = {{{0}}};
+			concat(read_Snp_Crk_Data, 1)(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
@@ -382,7 +382,7 @@ snp_crk_kernel_triangle(
 	global real_t *__jadot = __iadot;
 	// ------------------------------------------------------------------------
 
-	local Snp_Crk_Data_SoA _ip[NWARPS];
+	local concat(Snp_Crk_Data, NLANES) _ip[NWARPS];
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
@@ -391,17 +391,17 @@ snp_crk_kernel_triangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * SIMD * WPT) {
-		Snp_Crk_Data jp = {{{0}}};
-		read_Snp_Crk_Data(
-			&jp, jj + lid, WGSIZE, SIMD * WPT,
+		concat(Snp_Crk_Data, WPT) jp = {{{0}}};
+		concat(read_Snp_Crk_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
 		for (uint_t ii = WGSIZE * SIMD * grp;
 					ii < ni;
 					ii += WGSIZE * SIMD * ngrps) {
-			Snp_Crk_Data ip = {{{0}}};
-			read_Snp_Crk_Data(
+			concat(Snp_Crk_Data, 1) ip = {{{0}}};
+			concat(read_Snp_Crk_Data, 1)(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);

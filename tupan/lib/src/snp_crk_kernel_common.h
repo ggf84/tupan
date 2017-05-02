@@ -291,260 +291,167 @@ struct P2P_snp_crk_kernel_core {
 // ----------------------------------------------------------------------------
 
 
-typedef struct snp_crk_data {
-	union {
-		real_tn m[WPT];
-		real_t _m[WPT * SIMD];
-	};
-	union {
-		real_tn e2[WPT];
-		real_t _e2[WPT * SIMD];
-	};
-	union {
-		real_tn rx[WPT];
-		real_t _rx[WPT * SIMD];
-	};
-	union {
-		real_tn ry[WPT];
-		real_t _ry[WPT * SIMD];
-	};
-	union {
-		real_tn rz[WPT];
-		real_t _rz[WPT * SIMD];
-	};
-	union {
-		real_tn vx[WPT];
-		real_t _vx[WPT * SIMD];
-	};
-	union {
-		real_tn vy[WPT];
-		real_t _vy[WPT * SIMD];
-	};
-	union {
-		real_tn vz[WPT];
-		real_t _vz[WPT * SIMD];
-	};
-	union {
-		real_tn ax[WPT];
-		real_t _ax[WPT * SIMD];
-	};
-	union {
-		real_tn ay[WPT];
-		real_t _ay[WPT * SIMD];
-	};
-	union {
-		real_tn az[WPT];
-		real_t _az[WPT * SIMD];
-	};
-	union {
-		real_tn jx[WPT];
-		real_t _jx[WPT * SIMD];
-	};
-	union {
-		real_tn jy[WPT];
-		real_t _jy[WPT * SIMD];
-	};
-	union {
-		real_tn jz[WPT];
-		real_t _jz[WPT * SIMD];
-	};
-	union {
-		real_tn Ax[WPT];
-		real_t _Ax[WPT * SIMD];
-	};
-	union {
-		real_tn Ay[WPT];
-		real_t _Ay[WPT * SIMD];
-	};
-	union {
-		real_tn Az[WPT];
-		real_t _Az[WPT * SIMD];
-	};
-	union {
-		real_tn Jx[WPT];
-		real_t _Jx[WPT * SIMD];
-	};
-	union {
-		real_tn Jy[WPT];
-		real_t _Jy[WPT * SIMD];
-	};
-	union {
-		real_tn Jz[WPT];
-		real_t _Jz[WPT * SIMD];
-	};
-	union {
-		real_tn Sx[WPT];
-		real_t _Sx[WPT * SIMD];
-	};
-	union {
-		real_tn Sy[WPT];
-		real_t _Sy[WPT * SIMD];
-	};
-	union {
-		real_tn Sz[WPT];
-		real_t _Sz[WPT * SIMD];
-	};
-	union {
-		real_tn Cx[WPT];
-		real_t _Cx[WPT * SIMD];
-	};
-	union {
-		real_tn Cy[WPT];
-		real_t _Cy[WPT * SIMD];
-	};
-	union {
-		real_tn Cz[WPT];
-		real_t _Cz[WPT * SIMD];
-	};
-} Snp_Crk_Data;
+#define DEFINE_SNP_CRK_DATA(TILE)			\
+typedef struct concat(snp_crk_data, TILE) {	\
+	union {									\
+		real_tn m[TILE];					\
+		real_t _m[TILE * SIMD];				\
+	};										\
+	union {									\
+		real_tn e2[TILE];					\
+		real_t _e2[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn rx[TILE];					\
+		real_t _rx[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn ry[TILE];					\
+		real_t _ry[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn rz[TILE];					\
+		real_t _rz[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn vx[TILE];					\
+		real_t _vx[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn vy[TILE];					\
+		real_t _vy[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn vz[TILE];					\
+		real_t _vz[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn ax[TILE];					\
+		real_t _ax[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn ay[TILE];					\
+		real_t _ay[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn az[TILE];					\
+		real_t _az[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn jx[TILE];					\
+		real_t _jx[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn jy[TILE];					\
+		real_t _jy[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn jz[TILE];					\
+		real_t _jz[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn Ax[TILE];					\
+		real_t _Ax[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn Ay[TILE];					\
+		real_t _Ay[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn Az[TILE];					\
+		real_t _Az[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn Jx[TILE];					\
+		real_t _Jx[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn Jy[TILE];					\
+		real_t _Jy[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn Jz[TILE];					\
+		real_t _Jz[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn Sx[TILE];					\
+		real_t _Sx[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn Sy[TILE];					\
+		real_t _Sy[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn Sz[TILE];					\
+		real_t _Sz[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn Cx[TILE];					\
+		real_t _Cx[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn Cy[TILE];					\
+		real_t _Cy[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn Cz[TILE];					\
+		real_t _Cz[TILE * SIMD];			\
+	};										\
+} concat(Snp_Crk_Data, TILE);				\
+
+DEFINE_SNP_CRK_DATA(1)
+#if WPT != 1
+DEFINE_SNP_CRK_DATA(WPT)
+#endif
+#if NLANES != 1 && NLANES != WPT
+DEFINE_SNP_CRK_DATA(NLANES)
+#endif
 
 
-typedef struct snp_crk_data_soa {
-	union {
-		real_tn m[NLANES];
-		real_t _m[NLANES * SIMD];
-	};
-	union {
-		real_tn e2[NLANES];
-		real_t _e2[NLANES * SIMD];
-	};
-	union {
-		real_tn rx[NLANES];
-		real_t _rx[NLANES * SIMD];
-	};
-	union {
-		real_tn ry[NLANES];
-		real_t _ry[NLANES * SIMD];
-	};
-	union {
-		real_tn rz[NLANES];
-		real_t _rz[NLANES * SIMD];
-	};
-	union {
-		real_tn vx[NLANES];
-		real_t _vx[NLANES * SIMD];
-	};
-	union {
-		real_tn vy[NLANES];
-		real_t _vy[NLANES * SIMD];
-	};
-	union {
-		real_tn vz[NLANES];
-		real_t _vz[NLANES * SIMD];
-	};
-	union {
-		real_tn ax[NLANES];
-		real_t _ax[NLANES * SIMD];
-	};
-	union {
-		real_tn ay[NLANES];
-		real_t _ay[NLANES * SIMD];
-	};
-	union {
-		real_tn az[NLANES];
-		real_t _az[NLANES * SIMD];
-	};
-	union {
-		real_tn jx[NLANES];
-		real_t _jx[NLANES * SIMD];
-	};
-	union {
-		real_tn jy[NLANES];
-		real_t _jy[NLANES * SIMD];
-	};
-	union {
-		real_tn jz[NLANES];
-		real_t _jz[NLANES * SIMD];
-	};
-	union {
-		real_tn Ax[NLANES];
-		real_t _Ax[NLANES * SIMD];
-	};
-	union {
-		real_tn Ay[NLANES];
-		real_t _Ay[NLANES * SIMD];
-	};
-	union {
-		real_tn Az[NLANES];
-		real_t _Az[NLANES * SIMD];
-	};
-	union {
-		real_tn Jx[NLANES];
-		real_t _Jx[NLANES * SIMD];
-	};
-	union {
-		real_tn Jy[NLANES];
-		real_t _Jy[NLANES * SIMD];
-	};
-	union {
-		real_tn Jz[NLANES];
-		real_t _Jz[NLANES * SIMD];
-	};
-	union {
-		real_tn Sx[NLANES];
-		real_t _Sx[NLANES * SIMD];
-	};
-	union {
-		real_tn Sy[NLANES];
-		real_t _Sy[NLANES * SIMD];
-	};
-	union {
-		real_tn Sz[NLANES];
-		real_t _Sz[NLANES * SIMD];
-	};
-	union {
-		real_tn Cx[NLANES];
-		real_t _Cx[NLANES * SIMD];
-	};
-	union {
-		real_tn Cy[NLANES];
-		real_t _Cy[NLANES * SIMD];
-	};
-	union {
-		real_tn Cz[NLANES];
-		real_t _Cz[NLANES * SIMD];
-	};
-} Snp_Crk_Data_SoA;
+#define DEFINE_READ_SNP_CRK_DATA(TILE)				\
+static inline void									\
+concat(read_Snp_Crk_Data, TILE)(					\
+	concat(Snp_Crk_Data, TILE) *p,					\
+	const uint_t base,								\
+	const uint_t stride,							\
+	const uint_t nloads,							\
+	const uint_t n,									\
+	global const real_t __m[],						\
+	global const real_t __e2[],						\
+	global const real_t __rdot[])					\
+{													\
+	for (uint_t k = 0, kk = base;					\
+				k < TILE * nloads;					\
+				k += 1, kk += stride) {				\
+		if (kk < n) {								\
+			p->_m[k] = __m[kk];						\
+			p->_e2[k] = __e2[kk];					\
+			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];	\
+			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];	\
+			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];	\
+			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];	\
+			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];	\
+			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];	\
+			p->_ax[k] = (__rdot+(2*NDIM+0)*n)[kk];	\
+			p->_ay[k] = (__rdot+(2*NDIM+1)*n)[kk];	\
+			p->_az[k] = (__rdot+(2*NDIM+2)*n)[kk];	\
+			p->_jx[k] = (__rdot+(3*NDIM+0)*n)[kk];	\
+			p->_jy[k] = (__rdot+(3*NDIM+1)*n)[kk];	\
+			p->_jz[k] = (__rdot+(3*NDIM+2)*n)[kk];	\
+		}											\
+	}												\
+}													\
 
-
-static inline void
-read_Snp_Crk_Data(
-	Snp_Crk_Data *p,
-	const uint_t base,
-	const uint_t stride,
-	const uint_t nloads,
-	const uint_t n,
-	global const real_t __m[],
-	global const real_t __e2[],
-	global const real_t __rdot[])
-{
-	for (uint_t k = 0, kk = base;
-				k < nloads;
-				k += 1, kk += stride) {
-		if (kk < n) {
-			p->_m[k] = __m[kk];
-			p->_e2[k] = __e2[kk];
-			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];
-			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];
-			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];
-			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];
-			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];
-			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];
-			p->_ax[k] = (__rdot+(2*NDIM+0)*n)[kk];
-			p->_ay[k] = (__rdot+(2*NDIM+1)*n)[kk];
-			p->_az[k] = (__rdot+(2*NDIM+2)*n)[kk];
-			p->_jx[k] = (__rdot+(3*NDIM+0)*n)[kk];
-			p->_jy[k] = (__rdot+(3*NDIM+1)*n)[kk];
-			p->_jz[k] = (__rdot+(3*NDIM+2)*n)[kk];
-		}
-	}
-}
+DEFINE_READ_SNP_CRK_DATA(1)
+#if WPT != 1
+DEFINE_READ_SNP_CRK_DATA(WPT)
+#endif
 
 
 static inline void
 simd_shuff_Snp_Crk_Data(
 	const uint_t k,
-	Snp_Crk_Data *p)
+	concat(Snp_Crk_Data, WPT) *p)
 {
 	shuff(p->m[k], SIMD);
 	shuff(p->e2[k], SIMD);

@@ -5,8 +5,8 @@ static inline void
 p2p_tstep_kernel_core(
 	const real_t eta,
 	uint_t lane,
-	Tstep_Data *jp,
-	local Tstep_Data_SoA *ip)
+	concat(Tstep_Data, WPT) *jp,
+	local concat(Tstep_Data, NLANES) *ip)
 // flop count: 43
 {
 	for (uint_t l = 0; l < NLANES; ++l) {
@@ -65,8 +65,8 @@ static inline void
 tstep_kernel_core(
 	const real_t eta,
 	uint_t lane,
-	Tstep_Data *jp,
-	local Tstep_Data_SoA *ip)
+	concat(Tstep_Data, WPT) *jp,
+	local concat(Tstep_Data, NLANES) *ip)
 // flop count: 42
 {
 	for (uint_t l = 0; l < NLANES; ++l) {
@@ -139,7 +139,7 @@ tstep_kernel_rectangle(
 	global real_t __jw2_a[],
 	global real_t __jw2_b[])
 {
-	local Tstep_Data_SoA _ip[NWARPS];
+	local concat(Tstep_Data, NLANES) _ip[NWARPS];
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
@@ -148,17 +148,17 @@ tstep_kernel_rectangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * SIMD * WPT) {
-		Tstep_Data jp = {{{0}}};
-		read_Tstep_Data(
-			&jp, jj + lid, WGSIZE, SIMD * WPT,
+		concat(Tstep_Data, WPT) jp = {{{0}}};
+		concat(read_Tstep_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
 		for (uint_t ii = WGSIZE * SIMD * grp;
 					ii < ni;
 					ii += WGSIZE * SIMD * ngrps) {
-			Tstep_Data ip = {{{0}}};
-			read_Tstep_Data(
+			concat(Tstep_Data, 1) ip = {{{0}}};
+			concat(read_Tstep_Data, 1)(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
@@ -222,7 +222,7 @@ tstep_kernel_triangle(
 	global real_t *__jw2_b = __iw2_b;
 	// ------------------------------------------------------------------------
 
-	local Tstep_Data_SoA _ip[NWARPS];
+	local concat(Tstep_Data, NLANES) _ip[NWARPS];
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
@@ -231,17 +231,17 @@ tstep_kernel_triangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * SIMD * WPT) {
-		Tstep_Data jp = {{{0}}};
-		read_Tstep_Data(
-			&jp, jj + lid, WGSIZE, SIMD * WPT,
+		concat(Tstep_Data, WPT) jp = {{{0}}};
+		concat(read_Tstep_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
 		for (uint_t ii = WGSIZE * SIMD * grp;
 					ii < ni;
 					ii += WGSIZE * SIMD * ngrps) {
-			Tstep_Data ip = {{{0}}};
-			read_Tstep_Data(
+			concat(Tstep_Data, 1) ip = {{{0}}};
+			concat(read_Tstep_Data, 1)(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);

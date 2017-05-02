@@ -248,134 +248,101 @@ struct P2P_pnacc_kernel_core {
 // ----------------------------------------------------------------------------
 
 
-typedef struct pnacc_data {
-	union {
-		real_tn m[WPT];
-		real_t _m[WPT * SIMD];
-	};
-	union {
-		real_tn e2[WPT];
-		real_t _e2[WPT * SIMD];
-	};
-	union {
-		real_tn rx[WPT];
-		real_t _rx[WPT * SIMD];
-	};
-	union {
-		real_tn ry[WPT];
-		real_t _ry[WPT * SIMD];
-	};
-	union {
-		real_tn rz[WPT];
-		real_t _rz[WPT * SIMD];
-	};
-	union {
-		real_tn vx[WPT];
-		real_t _vx[WPT * SIMD];
-	};
-	union {
-		real_tn vy[WPT];
-		real_t _vy[WPT * SIMD];
-	};
-	union {
-		real_tn vz[WPT];
-		real_t _vz[WPT * SIMD];
-	};
-	union {
-		real_tn pnax[WPT];
-		real_t _pnax[WPT * SIMD];
-	};
-	union {
-		real_tn pnay[WPT];
-		real_t _pnay[WPT * SIMD];
-	};
-	union {
-		real_tn pnaz[WPT];
-		real_t _pnaz[WPT * SIMD];
-	};
-} PNAcc_Data;
+#define DEFINE_PNACC_DATA(TILE)				\
+typedef struct concat(pnacc_data, TILE) {	\
+	union {									\
+		real_tn m[WPT];						\
+		real_t _m[WPT * SIMD];				\
+	};										\
+	union {									\
+		real_tn e2[WPT];					\
+		real_t _e2[WPT * SIMD];				\
+	};										\
+	union {									\
+		real_tn rx[WPT];					\
+		real_t _rx[WPT * SIMD];				\
+	};										\
+	union {									\
+		real_tn ry[WPT];					\
+		real_t _ry[WPT * SIMD];				\
+	};										\
+	union {									\
+		real_tn rz[WPT];					\
+		real_t _rz[WPT * SIMD];				\
+	};										\
+	union {									\
+		real_tn vx[WPT];					\
+		real_t _vx[WPT * SIMD];				\
+	};										\
+	union {									\
+		real_tn vy[WPT];					\
+		real_t _vy[WPT * SIMD];				\
+	};										\
+	union {									\
+		real_tn vz[WPT];					\
+		real_t _vz[WPT * SIMD];				\
+	};										\
+	union {									\
+		real_tn pnax[WPT];					\
+		real_t _pnax[WPT * SIMD];			\
+	};										\
+	union {									\
+		real_tn pnay[WPT];					\
+		real_t _pnay[WPT * SIMD];			\
+	};										\
+	union {									\
+		real_tn pnaz[WPT];					\
+		real_t _pnaz[WPT * SIMD];			\
+	};										\
+} concat(PNAcc_Data, TILE);					\
+
+DEFINE_PNACC_DATA(1)
+#if WPT != 1
+DEFINE_PNACC_DATA(WPT)
+#endif
+#if NLANES != 1 && NLANES != WPT
+DEFINE_PNACC_DATA(NLANES)
+#endif
 
 
-typedef struct pnacc_data_soa {
-	union {
-		real_tn m[NLANES];
-		real_t _m[NLANES * SIMD];
-	};
-	union {
-		real_tn e2[NLANES];
-		real_t _e2[NLANES * SIMD];
-	};
-	union {
-		real_tn rx[NLANES];
-		real_t _rx[NLANES * SIMD];
-	};
-	union {
-		real_tn ry[NLANES];
-		real_t _ry[NLANES * SIMD];
-	};
-	union {
-		real_tn rz[NLANES];
-		real_t _rz[NLANES * SIMD];
-	};
-	union {
-		real_tn vx[NLANES];
-		real_t _vx[NLANES * SIMD];
-	};
-	union {
-		real_tn vy[NLANES];
-		real_t _vy[NLANES * SIMD];
-	};
-	union {
-		real_tn vz[NLANES];
-		real_t _vz[NLANES * SIMD];
-	};
-	union {
-		real_tn pnax[NLANES];
-		real_t _pnax[NLANES * SIMD];
-	};
-	union {
-		real_tn pnay[NLANES];
-		real_t _pnay[NLANES * SIMD];
-	};
-	union {
-		real_tn pnaz[NLANES];
-		real_t _pnaz[NLANES * SIMD];
-	};
-} PNAcc_Data_SoA;
+#define DEFINE_READ_PNACC_DATA(TILE)				\
+static inline void									\
+concat(read_PNAcc_Data, TILE)(						\
+	concat(PNAcc_Data, TILE) *p,					\
+	const uint_t base,								\
+	const uint_t stride,							\
+	const uint_t nloads,							\
+	const uint_t n,									\
+	global const real_t __m[],						\
+	global const real_t __e2[],						\
+	global const real_t __rdot[])					\
+{													\
+	for (uint_t k = 0, kk = base;					\
+				k < TILE * nloads;					\
+				k += 1, kk += stride) {				\
+		if (kk < n) {								\
+			p->_m[k] = __m[kk];						\
+			p->_e2[k] = __e2[kk];					\
+			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];	\
+			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];	\
+			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];	\
+			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];	\
+			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];	\
+			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];	\
+		}											\
+	}												\
+}													\
 
-
-static inline void
-read_PNAcc_Data(
-	PNAcc_Data *p,
-	const uint_t base,
-	const uint_t stride,
-	const uint_t nloads,
-	const uint_t n,
-	global const real_t __m[],
-	global const real_t __e2[],
-	global const real_t __rdot[])
-{
-	for (uint_t k = 0, kk = base;
-				k < nloads;
-				k += 1, kk += stride) {
-		if (kk < n) {
-			p->_m[k] = __m[kk];
-			p->_e2[k] = __e2[kk];
-			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];
-			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];
-			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];
-			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];
-			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];
-			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];
-		}
-	}
-}
+DEFINE_READ_PNACC_DATA(1)
+#if WPT != 1
+DEFINE_READ_PNACC_DATA(WPT)
+#endif
 
 
 static inline void
 simd_shuff_PNAcc_Data(
 	const uint_t k,
-	PNAcc_Data *p)
+	concat(PNAcc_Data, WPT) *p)
 {
 	shuff(p->m[k], SIMD);
 	shuff(p->e2[k], SIMD);

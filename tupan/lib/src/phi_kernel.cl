@@ -4,8 +4,8 @@
 static inline void
 p2p_phi_kernel_core(
 	uint_t lane,
-	Phi_Data *jp,
-	local Phi_Data_SoA *ip)
+	concat(Phi_Data, WPT) *jp,
+	local concat(Phi_Data, NLANES) *ip)
 // flop count: 16
 {
 	for (uint_t l = 0; l < NLANES; ++l) {
@@ -37,8 +37,8 @@ p2p_phi_kernel_core(
 static inline void
 phi_kernel_core(
 	uint_t lane,
-	Phi_Data *jp,
-	local Phi_Data_SoA *ip)
+	concat(Phi_Data, WPT) *jp,
+	local concat(Phi_Data, NLANES) *ip)
 // flop count: 14
 {
 	for (uint_t l = 0; l < NLANES; ++l) {
@@ -82,7 +82,7 @@ phi_kernel_rectangle(
 	global real_t __iphi[],
 	global real_t __jphi[])
 {
-	local Phi_Data_SoA _ip[NWARPS];
+	local concat(Phi_Data, NLANES) _ip[NWARPS];
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
@@ -91,17 +91,17 @@ phi_kernel_rectangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * SIMD * WPT) {
-		Phi_Data jp = {{{0}}};
-		read_Phi_Data(
-			&jp, jj + lid, WGSIZE, SIMD * WPT,
+		concat(Phi_Data, WPT) jp = {{{0}}};
+		concat(read_Phi_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
 		for (uint_t ii = WGSIZE * SIMD * grp;
 					ii < ni;
 					ii += WGSIZE * SIMD * ngrps) {
-			Phi_Data ip = {{{0}}};
-			read_Phi_Data(
+			concat(Phi_Data, 1) ip = {{{0}}};
+			concat(read_Phi_Data, 1)(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
@@ -155,7 +155,7 @@ phi_kernel_triangle(
 	global real_t *__jphi = __iphi;
 	// ------------------------------------------------------------------------
 
-	local Phi_Data_SoA _ip[NWARPS];
+	local concat(Phi_Data, NLANES) _ip[NWARPS];
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
@@ -164,17 +164,17 @@ phi_kernel_triangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * SIMD * WPT) {
-		Phi_Data jp = {{{0}}};
-		read_Phi_Data(
-			&jp, jj + lid, WGSIZE, SIMD * WPT,
+		concat(Phi_Data, WPT) jp = {{{0}}};
+		concat(read_Phi_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
 		for (uint_t ii = WGSIZE * SIMD * grp;
 					ii < ni;
 					ii += WGSIZE * SIMD * ngrps) {
-			Phi_Data ip = {{{0}}};
-			read_Phi_Data(
+			concat(Phi_Data, 1) ip = {{{0}}};
+			concat(read_Phi_Data, 1)(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);

@@ -177,158 +177,113 @@ struct P2P_acc_jrk_kernel_core {
 // ----------------------------------------------------------------------------
 
 
-typedef struct acc_jrk_data {
-	union {
-		real_tn m[WPT];
-		real_t _m[WPT * SIMD];
-	};
-	union {
-		real_tn e2[WPT];
-		real_t _e2[WPT * SIMD];
-	};
-	union {
-		real_tn rx[WPT];
-		real_t _rx[WPT * SIMD];
-	};
-	union {
-		real_tn ry[WPT];
-		real_t _ry[WPT * SIMD];
-	};
-	union {
-		real_tn rz[WPT];
-		real_t _rz[WPT * SIMD];
-	};
-	union {
-		real_tn vx[WPT];
-		real_t _vx[WPT * SIMD];
-	};
-	union {
-		real_tn vy[WPT];
-		real_t _vy[WPT * SIMD];
-	};
-	union {
-		real_tn vz[WPT];
-		real_t _vz[WPT * SIMD];
-	};
-	union {
-		real_tn ax[WPT];
-		real_t _ax[WPT * SIMD];
-	};
-	union {
-		real_tn ay[WPT];
-		real_t _ay[WPT * SIMD];
-	};
-	union {
-		real_tn az[WPT];
-		real_t _az[WPT * SIMD];
-	};
-	union {
-		real_tn jx[WPT];
-		real_t _jx[WPT * SIMD];
-	};
-	union {
-		real_tn jy[WPT];
-		real_t _jy[WPT * SIMD];
-	};
-	union {
-		real_tn jz[WPT];
-		real_t _jz[WPT * SIMD];
-	};
-} Acc_Jrk_Data;
+#define DEFINE_ACC_JRK_DATA(TILE)			\
+typedef struct concat(acc_jrk_data, TILE) {	\
+	union {									\
+		real_tn m[TILE];					\
+		real_t _m[TILE * SIMD];				\
+	};										\
+	union {									\
+		real_tn e2[TILE];					\
+		real_t _e2[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn rx[TILE];					\
+		real_t _rx[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn ry[TILE];					\
+		real_t _ry[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn rz[TILE];					\
+		real_t _rz[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn vx[TILE];					\
+		real_t _vx[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn vy[TILE];					\
+		real_t _vy[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn vz[TILE];					\
+		real_t _vz[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn ax[TILE];					\
+		real_t _ax[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn ay[TILE];					\
+		real_t _ay[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn az[TILE];					\
+		real_t _az[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn jx[TILE];					\
+		real_t _jx[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn jy[TILE];					\
+		real_t _jy[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn jz[TILE];					\
+		real_t _jz[TILE * SIMD];			\
+	};										\
+} concat(Acc_Jrk_Data, TILE);				\
+
+DEFINE_ACC_JRK_DATA(1)
+#if WPT != 1
+DEFINE_ACC_JRK_DATA(WPT)
+#endif
+#if NLANES != 1 && NLANES != WPT
+DEFINE_ACC_JRK_DATA(NLANES)
+#endif
 
 
-typedef struct acc_jrk_data_soa {
-	union {
-		real_tn m[NLANES];
-		real_t _m[NLANES * SIMD];
-	};
-	union {
-		real_tn e2[NLANES];
-		real_t _e2[NLANES * SIMD];
-	};
-	union {
-		real_tn rx[NLANES];
-		real_t _rx[NLANES * SIMD];
-	};
-	union {
-		real_tn ry[NLANES];
-		real_t _ry[NLANES * SIMD];
-	};
-	union {
-		real_tn rz[NLANES];
-		real_t _rz[NLANES * SIMD];
-	};
-	union {
-		real_tn vx[NLANES];
-		real_t _vx[NLANES * SIMD];
-	};
-	union {
-		real_tn vy[NLANES];
-		real_t _vy[NLANES * SIMD];
-	};
-	union {
-		real_tn vz[NLANES];
-		real_t _vz[NLANES * SIMD];
-	};
-	union {
-		real_tn ax[NLANES];
-		real_t _ax[NLANES * SIMD];
-	};
-	union {
-		real_tn ay[NLANES];
-		real_t _ay[NLANES * SIMD];
-	};
-	union {
-		real_tn az[NLANES];
-		real_t _az[NLANES * SIMD];
-	};
-	union {
-		real_tn jx[NLANES];
-		real_t _jx[NLANES * SIMD];
-	};
-	union {
-		real_tn jy[NLANES];
-		real_t _jy[NLANES * SIMD];
-	};
-	union {
-		real_tn jz[NLANES];
-		real_t _jz[NLANES * SIMD];
-	};
-} Acc_Jrk_Data_SoA;
+#define DEFINE_READ_ACC_JRK_DATA(TILE)				\
+static inline void									\
+concat(read_Acc_Jrk_Data, TILE)(					\
+	concat(Acc_Jrk_Data, TILE) *p,					\
+	const uint_t base,								\
+	const uint_t stride,							\
+	const uint_t nloads,							\
+	const uint_t n,									\
+	global const real_t __m[],						\
+	global const real_t __e2[],						\
+	global const real_t __rdot[])					\
+{													\
+	for (uint_t k = 0, kk = base;					\
+				k < TILE * nloads;					\
+				k += 1, kk += stride) {				\
+		if (kk < n) {								\
+			p->_m[k] = __m[kk];						\
+			p->_e2[k] = __e2[kk];					\
+			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];	\
+			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];	\
+			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];	\
+			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];	\
+			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];	\
+			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];	\
+		}											\
+	}												\
+}													\
 
-
-static inline void
-read_Acc_Jrk_Data(
-	Acc_Jrk_Data *p,
-	const uint_t base,
-	const uint_t stride,
-	const uint_t nloads,
-	const uint_t n,
-	global const real_t __m[],
-	global const real_t __e2[],
-	global const real_t __rdot[])
-{
-	for (uint_t k = 0, kk = base;
-				k < nloads;
-				k += 1, kk += stride) {
-		if (kk < n) {
-			p->_m[k] = __m[kk];
-			p->_e2[k] = __e2[kk];
-			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];
-			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];
-			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];
-			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];
-			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];
-			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];
-		}
-	}
-}
+DEFINE_READ_ACC_JRK_DATA(1)
+#if WPT != 1
+DEFINE_READ_ACC_JRK_DATA(WPT)
+#endif
 
 
 static inline void
 simd_shuff_Acc_Jrk_Data(
 	const uint_t k,
-	Acc_Jrk_Data *p)
+	concat(Acc_Jrk_Data, WPT) *p)
 {
 	shuff(p->m[k], SIMD);
 	shuff(p->e2[k], SIMD);

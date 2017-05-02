@@ -4,8 +4,8 @@
 static inline void
 p2p_acc_kernel_core(
 	uint_t lane,
-	Acc_Data *jp,
-	local Acc_Data_SoA *ip)
+	concat(Acc_Data, WPT) *jp,
+	local concat(Acc_Data, NLANES) *ip)
 // flop count: 28
 {
 	for (uint_t l = 0; l < NLANES; ++l) {
@@ -45,8 +45,8 @@ p2p_acc_kernel_core(
 static inline void
 acc_kernel_core(
 	uint_t lane,
-	Acc_Data *jp,
-	local Acc_Data_SoA *ip)
+	concat(Acc_Data, WPT) *jp,
+	local concat(Acc_Data, NLANES) *ip)
 // flop count: 21
 {
 	for (uint_t l = 0; l < NLANES; ++l) {
@@ -98,7 +98,7 @@ acc_kernel_rectangle(
 	global real_t __iadot[],
 	global real_t __jadot[])
 {
-	local Acc_Data_SoA _ip[NWARPS];
+	local concat(Acc_Data, NLANES) _ip[NWARPS];
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
@@ -107,17 +107,17 @@ acc_kernel_rectangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * SIMD * WPT) {
-		Acc_Data jp = {{{0}}};
-		read_Acc_Data(
-			&jp, jj + lid, WGSIZE, SIMD * WPT,
+		concat(Acc_Data, WPT) jp = {{{0}}};
+		concat(read_Acc_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
 		for (uint_t ii = WGSIZE * SIMD * grp;
 					ii < ni;
 					ii += WGSIZE * SIMD * ngrps) {
-			Acc_Data ip = {{{0}}};
-			read_Acc_Data(
+			concat(Acc_Data, 1) ip = {{{0}}};
+			concat(read_Acc_Data, 1)(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
@@ -179,7 +179,7 @@ acc_kernel_triangle(
 	global real_t *__jadot = __iadot;
 	// ------------------------------------------------------------------------
 
-	local Acc_Data_SoA _ip[NWARPS];
+	local concat(Acc_Data, NLANES) _ip[NWARPS];
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
@@ -188,17 +188,17 @@ acc_kernel_triangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * SIMD * WPT) {
-		Acc_Data jp = {{{0}}};
-		read_Acc_Data(
-			&jp, jj + lid, WGSIZE, SIMD * WPT,
+		concat(Acc_Data, WPT) jp = {{{0}}};
+		concat(read_Acc_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
 		for (uint_t ii = WGSIZE * SIMD * grp;
 					ii < ni;
 					ii += WGSIZE * SIMD * ngrps) {
-			Acc_Data ip = {{{0}}};
-			read_Acc_Data(
+			concat(Acc_Data, 1) ip = {{{0}}};
+			concat(read_Acc_Data, 1)(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);

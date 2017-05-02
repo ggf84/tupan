@@ -156,126 +156,97 @@ struct P2P_tstep_kernel_core {
 // ----------------------------------------------------------------------------
 
 
-typedef struct tstep_data {
-	union {
-		real_tn m[WPT];
-		real_t _m[WPT * SIMD];
-	};
-	union {
-		real_tn e2[WPT];
-		real_t _e2[WPT * SIMD];
-	};
-	union {
-		real_tn rx[WPT];
-		real_t _rx[WPT * SIMD];
-	};
-	union {
-		real_tn ry[WPT];
-		real_t _ry[WPT * SIMD];
-	};
-	union {
-		real_tn rz[WPT];
-		real_t _rz[WPT * SIMD];
-	};
-	union {
-		real_tn vx[WPT];
-		real_t _vx[WPT * SIMD];
-	};
-	union {
-		real_tn vy[WPT];
-		real_t _vy[WPT * SIMD];
-	};
-	union {
-		real_tn vz[WPT];
-		real_t _vz[WPT * SIMD];
-	};
-	union {
-		real_tn w2_a[WPT];
-		real_t _w2_a[WPT * SIMD];
-	};
-	union {
-		real_tn w2_b[WPT];
-		real_t _w2_b[WPT * SIMD];
-	};
-} Tstep_Data;
+#define DEFINE_TSTEP_DATA(TILE)				\
+typedef struct concat(tstep_data, TILE) {	\
+	union {									\
+		real_tn m[TILE];					\
+		real_t _m[TILE * SIMD];				\
+	};										\
+	union {									\
+		real_tn e2[TILE];					\
+		real_t _e2[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn rx[TILE];					\
+		real_t _rx[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn ry[TILE];					\
+		real_t _ry[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn rz[TILE];					\
+		real_t _rz[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn vx[TILE];					\
+		real_t _vx[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn vy[TILE];					\
+		real_t _vy[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn vz[TILE];					\
+		real_t _vz[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn w2_a[TILE];					\
+		real_t _w2_a[TILE * SIMD];			\
+	};										\
+	union {									\
+		real_tn w2_b[TILE];					\
+		real_t _w2_b[TILE * SIMD];			\
+	};										\
+} concat(Tstep_Data, TILE);					\
+
+DEFINE_TSTEP_DATA(1)
+#if WPT != 1
+DEFINE_TSTEP_DATA(WPT)
+#endif
+#if NLANES != 1 && NLANES != WPT
+DEFINE_TSTEP_DATA(NLANES)
+#endif
 
 
-typedef struct tstep_data_soa {
-	union {
-		real_tn m[NLANES];
-		real_t _m[NLANES * SIMD];
-	};
-	union {
-		real_tn e2[NLANES];
-		real_t _e2[NLANES * SIMD];
-	};
-	union {
-		real_tn rx[NLANES];
-		real_t _rx[NLANES * SIMD];
-	};
-	union {
-		real_tn ry[NLANES];
-		real_t _ry[NLANES * SIMD];
-	};
-	union {
-		real_tn rz[NLANES];
-		real_t _rz[NLANES * SIMD];
-	};
-	union {
-		real_tn vx[NLANES];
-		real_t _vx[NLANES * SIMD];
-	};
-	union {
-		real_tn vy[NLANES];
-		real_t _vy[NLANES * SIMD];
-	};
-	union {
-		real_tn vz[NLANES];
-		real_t _vz[NLANES * SIMD];
-	};
-	union {
-		real_tn w2_a[NLANES];
-		real_t _w2_a[NLANES * SIMD];
-	};
-	union {
-		real_tn w2_b[NLANES];
-		real_t _w2_b[NLANES * SIMD];
-	};
-} Tstep_Data_SoA;
+#define DEFINE_READ_TSTEP_DATA(TILE)				\
+static inline void									\
+concat(read_Tstep_Data, TILE)(						\
+	concat(Tstep_Data, TILE) *p,					\
+	const uint_t base,								\
+	const uint_t stride,							\
+	const uint_t nloads,							\
+	const uint_t n,									\
+	global const real_t __m[],						\
+	global const real_t __e2[],						\
+	global const real_t __rdot[])					\
+{													\
+	for (uint_t k = 0, kk = base;					\
+				k < TILE * nloads;					\
+				k += 1, kk += stride) {				\
+		if (kk < n) {								\
+			p->_m[k] = __m[kk];						\
+			p->_e2[k] = __e2[kk];					\
+			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];	\
+			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];	\
+			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];	\
+			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];	\
+			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];	\
+			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];	\
+		}											\
+	}												\
+}													\
 
-
-static inline void
-read_Tstep_Data(
-	Tstep_Data *p,
-	const uint_t base,
-	const uint_t stride,
-	const uint_t nloads,
-	const uint_t n,
-	global const real_t __m[],
-	global const real_t __e2[],
-	global const real_t __rdot[])
-{
-	for (uint_t k = 0, kk = base;
-				k < nloads;
-				k += 1, kk += stride) {
-		if (kk < n) {
-			p->_m[k] = __m[kk];
-			p->_e2[k] = __e2[kk];
-			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];
-			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];
-			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];
-			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];
-			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];
-			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];
-		}
-	}
-}
+DEFINE_READ_TSTEP_DATA(1)
+#if WPT != 1
+DEFINE_READ_TSTEP_DATA(WPT)
+#endif
 
 
 static inline void
 simd_shuff_Tstep_Data(
 	const uint_t k,
-	Tstep_Data *p)
+	concat(Tstep_Data, WPT) *p)
 {
 	shuff(p->m[k], SIMD);
 	shuff(p->e2[k], SIMD);

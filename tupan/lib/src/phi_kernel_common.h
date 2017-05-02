@@ -106,91 +106,78 @@ struct P2P_phi_kernel_core {
 // ----------------------------------------------------------------------------
 
 
-typedef struct phi_data {
-	union {
-		real_tn m[WPT];
-		real_t _m[WPT * SIMD];
-	};
-	union {
-		real_tn e2[WPT];
-		real_t _e2[WPT * SIMD];
-	};
-	union {
-		real_tn rx[WPT];
-		real_t _rx[WPT * SIMD];
-	};
-	union {
-		real_tn ry[WPT];
-		real_t _ry[WPT * SIMD];
-	};
-	union {
-		real_tn rz[WPT];
-		real_t _rz[WPT * SIMD];
-	};
-	union {
-		real_tn phi[WPT];
-		real_t _phi[WPT * SIMD];
-	};
-} Phi_Data;
+#define DEFINE_PHI_DATA(TILE)			\
+typedef struct concat(phi_data, TILE) {	\
+	union {								\
+		real_tn m[TILE];				\
+		real_t _m[TILE * SIMD];			\
+	};									\
+	union {								\
+		real_tn e2[TILE];				\
+		real_t _e2[TILE * SIMD];		\
+	};									\
+	union {								\
+		real_tn rx[TILE];				\
+		real_t _rx[TILE * SIMD];		\
+	};									\
+	union {								\
+		real_tn ry[TILE];				\
+		real_t _ry[TILE * SIMD];		\
+	};									\
+	union {								\
+		real_tn rz[TILE];				\
+		real_t _rz[TILE * SIMD];		\
+	};									\
+	union {								\
+		real_tn phi[TILE];				\
+		real_t _phi[TILE * SIMD];		\
+	};									\
+} concat(Phi_Data, TILE);				\
+
+DEFINE_PHI_DATA(1)
+#if WPT != 1
+DEFINE_PHI_DATA(WPT)
+#endif
+#if NLANES != 1 && NLANES != WPT
+DEFINE_PHI_DATA(NLANES)
+#endif
 
 
-typedef struct phi_data_soa {
-	union {
-		real_tn m[NLANES];
-		real_t _m[NLANES * SIMD];
-	};
-	union {
-		real_tn e2[NLANES];
-		real_t _e2[NLANES * SIMD];
-	};
-	union {
-		real_tn rx[NLANES];
-		real_t _rx[NLANES * SIMD];
-	};
-	union {
-		real_tn ry[NLANES];
-		real_t _ry[NLANES * SIMD];
-	};
-	union {
-		real_tn rz[NLANES];
-		real_t _rz[NLANES * SIMD];
-	};
-	union {
-		real_tn phi[NLANES];
-		real_t _phi[NLANES * SIMD];
-	};
-} Phi_Data_SoA;
+#define DEFINE_READ_PHI_DATA(TILE)					\
+static inline void									\
+concat(read_Phi_Data, TILE)(						\
+	concat(Phi_Data, TILE) *p,						\
+	const uint_t base,								\
+	const uint_t stride,							\
+	const uint_t nloads,							\
+	const uint_t n,									\
+	global const real_t __m[],						\
+	global const real_t __e2[],						\
+	global const real_t __rdot[])					\
+{													\
+	for (uint_t k = 0, kk = base;					\
+				k < TILE * nloads;					\
+				k += 1, kk += stride) {				\
+		if (kk < n) {								\
+			p->_m[k] = __m[kk];						\
+			p->_e2[k] = __e2[kk];					\
+			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];	\
+			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];	\
+			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];	\
+		}											\
+	}												\
+}													\
 
-
-static inline void
-read_Phi_Data(
-	Phi_Data *p,
-	const uint_t base,
-	const uint_t stride,
-	const uint_t nloads,
-	const uint_t n,
-	global const real_t __m[],
-	global const real_t __e2[],
-	global const real_t __rdot[])
-{
-	for (uint_t k = 0, kk = base;
-				k < nloads;
-				k += 1, kk += stride) {
-		if (kk < n) {
-			p->_m[k] = __m[kk];
-			p->_e2[k] = __e2[kk];
-			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];
-			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];
-			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];
-		}
-	}
-}
+DEFINE_READ_PHI_DATA(1)
+#if WPT != 1
+DEFINE_READ_PHI_DATA(WPT)
+#endif
 
 
 static inline void
 simd_shuff_Phi_Data(
 	const uint_t k,
-	Phi_Data *p)
+	concat(Phi_Data, WPT) *p)
 {
 	shuff(p->m[k], SIMD);
 	shuff(p->e2[k], SIMD);

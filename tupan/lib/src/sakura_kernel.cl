@@ -6,8 +6,8 @@ p2p_sakura_kernel_core(
 	const real_t dt,
 	const int_t flag,
 	uint_t lane,
-	Sakura_Data *jp,
-	local Sakura_Data_SoA *ip)
+	concat(Sakura_Data, WPT) *jp,
+	local concat(Sakura_Data, NLANES) *ip)
 // flop count: 41 + ??
 {
 	for (uint_t l = 0; l < NLANES; ++l) {
@@ -71,8 +71,8 @@ sakura_kernel_core(
 	const real_t dt,
 	const int_t flag,
 	uint_t lane,
-	Sakura_Data *jp,
-	local Sakura_Data_SoA *ip)
+	concat(Sakura_Data, WPT) *jp,
+	local concat(Sakura_Data, NLANES) *ip)
 // flop count: 28 + ??
 {
 	for (uint_t l = 0; l < NLANES; ++l) {
@@ -147,7 +147,7 @@ sakura_kernel_rectangle(
 	global real_t __idrdot[],
 	global real_t __jdrdot[])
 {
-	local Sakura_Data_SoA _ip[NWARPS];
+	local concat(Sakura_Data, NLANES) _ip[NWARPS];
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
@@ -156,17 +156,17 @@ sakura_kernel_rectangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * 1 * WPT) {
-		Sakura_Data jp = {{{0}}};
-		read_Sakura_Data(
-			&jp, jj + lid, WGSIZE, 1 * WPT,
+		concat(Sakura_Data, WPT) jp = {{{0}}};
+		concat(read_Sakura_Data, WPT)(
+			&jp, jj + lid, WGSIZE, 1,
 			nj, __jm, __je2, __jrdot
 		);
 
 		for (uint_t ii = WGSIZE * 1 * grp;
 					ii < ni;
 					ii += WGSIZE * 1 * ngrps) {
-			Sakura_Data ip = {{{0}}};
-			read_Sakura_Data(
+			concat(Sakura_Data, 1) ip = {{{0}}};
+			concat(read_Sakura_Data, 1)(
 				&ip, ii + lid, WGSIZE, 1,
 				ni, __im, __ie2, __irdot
 			);
@@ -245,7 +245,7 @@ sakura_kernel_triangle(
 	global real_t *__jdrdot = __idrdot;
 	// ------------------------------------------------------------------------
 
-	local Sakura_Data_SoA _ip[NWARPS];
+	local concat(Sakura_Data, NLANES) _ip[NWARPS];
 	uint_t lid = get_local_id(0);
 	uint_t grp = get_group_id(0);
 	uint_t ngrps = get_num_groups(0);
@@ -254,17 +254,17 @@ sakura_kernel_triangle(
 	for (uint_t jj = 0;
 				jj < nj;
 				jj += WGSIZE * 1 * WPT) {
-		Sakura_Data jp = {{{0}}};
-		read_Sakura_Data(
-			&jp, jj + lid, WGSIZE, 1 * WPT,
+		concat(Sakura_Data, WPT) jp = {{{0}}};
+		concat(read_Sakura_Data, WPT)(
+			&jp, jj + lid, WGSIZE, 1,
 			nj, __jm, __je2, __jrdot
 		);
 
 		for (uint_t ii = WGSIZE * 1 * grp;
 					ii < ni;
 					ii += WGSIZE * 1 * ngrps) {
-			Sakura_Data ip = {{{0}}};
-			read_Sakura_Data(
+			concat(Sakura_Data, 1) ip = {{{0}}};
+			concat(read_Sakura_Data, 1)(
 				&ip, ii + lid, WGSIZE, 1,
 				ni, __im, __ie2, __irdot
 			);

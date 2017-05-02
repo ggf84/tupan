@@ -297,158 +297,113 @@ struct P2P_sakura_kernel_core {
 // ----------------------------------------------------------------------------
 
 
-typedef struct sakura_data {
-	union {
-		real_t  m[WPT];
-		real_t _m[WPT * 1];
-	};
-	union {
-		real_t  e2[WPT];
-		real_t _e2[WPT * 1];
-	};
-	union {
-		real_t  rx[WPT];
-		real_t _rx[WPT * 1];
-	};
-	union {
-		real_t  ry[WPT];
-		real_t _ry[WPT * 1];
-	};
-	union {
-		real_t  rz[WPT];
-		real_t _rz[WPT * 1];
-	};
-	union {
-		real_t  vx[WPT];
-		real_t _vx[WPT * 1];
-	};
-	union {
-		real_t  vy[WPT];
-		real_t _vy[WPT * 1];
-	};
-	union {
-		real_t  vz[WPT];
-		real_t _vz[WPT * 1];
-	};
-	union {
-		real_t  drx[WPT];
-		real_t _drx[WPT * 1];
-	};
-	union {
-		real_t  dry[WPT];
-		real_t _dry[WPT * 1];
-	};
-	union {
-		real_t  drz[WPT];
-		real_t _drz[WPT * 1];
-	};
-	union {
-		real_t  dvx[WPT];
-		real_t _dvx[WPT * 1];
-	};
-	union {
-		real_t  dvy[WPT];
-		real_t _dvy[WPT * 1];
-	};
-	union {
-		real_t  dvz[WPT];
-		real_t _dvz[WPT * 1];
-	};
-} Sakura_Data;
+#define DEFINE_SAKURA_DATA(TILE)			\
+typedef struct concat(sakura_data, TILE) {	\
+	union {									\
+		real_t  m[TILE];					\
+		real_t _m[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  e2[TILE];					\
+		real_t _e2[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  rx[TILE];					\
+		real_t _rx[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  ry[TILE];					\
+		real_t _ry[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  rz[TILE];					\
+		real_t _rz[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  vx[TILE];					\
+		real_t _vx[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  vy[TILE];					\
+		real_t _vy[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  vz[TILE];					\
+		real_t _vz[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  drx[TILE];					\
+		real_t _drx[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  dry[TILE];					\
+		real_t _dry[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  drz[TILE];					\
+		real_t _drz[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  dvx[TILE];					\
+		real_t _dvx[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  dvy[TILE];					\
+		real_t _dvy[TILE * 1];				\
+	};										\
+	union {									\
+		real_t  dvz[TILE];					\
+		real_t _dvz[TILE * 1];				\
+	};										\
+} concat(Sakura_Data, TILE);				\
+
+DEFINE_SAKURA_DATA(1)
+#if WPT != 1
+DEFINE_SAKURA_DATA(WPT)
+#endif
+#if NLANES != 1 && NLANES != WPT
+DEFINE_SAKURA_DATA(NLANES)
+#endif
 
 
-typedef struct sakura_data_soa {
-	union {
-		real_t  m[NLANES];
-		real_t _m[NLANES * 1];
-	};
-	union {
-		real_t  e2[NLANES];
-		real_t _e2[NLANES * 1];
-	};
-	union {
-		real_t  rx[NLANES];
-		real_t _rx[NLANES * 1];
-	};
-	union {
-		real_t  ry[NLANES];
-		real_t _ry[NLANES * 1];
-	};
-	union {
-		real_t  rz[NLANES];
-		real_t _rz[NLANES * 1];
-	};
-	union {
-		real_t  vx[NLANES];
-		real_t _vx[NLANES * 1];
-	};
-	union {
-		real_t  vy[NLANES];
-		real_t _vy[NLANES * 1];
-	};
-	union {
-		real_t  vz[NLANES];
-		real_t _vz[NLANES * 1];
-	};
-	union {
-		real_t  drx[NLANES];
-		real_t _drx[NLANES * 1];
-	};
-	union {
-		real_t  dry[NLANES];
-		real_t _dry[NLANES * 1];
-	};
-	union {
-		real_t  drz[NLANES];
-		real_t _drz[NLANES * 1];
-	};
-	union {
-		real_t  dvx[NLANES];
-		real_t _dvx[NLANES * 1];
-	};
-	union {
-		real_t  dvy[NLANES];
-		real_t _dvy[NLANES * 1];
-	};
-	union {
-		real_t  dvz[NLANES];
-		real_t _dvz[NLANES * 1];
-	};
-} Sakura_Data_SoA;
+#define DEFINE_READ_SAKURA_DATA(TILE)				\
+static inline void									\
+concat(read_Sakura_Data, TILE)(						\
+	concat(Sakura_Data, TILE) *p,					\
+	const uint_t base,								\
+	const uint_t stride,							\
+	const uint_t nloads,							\
+	const uint_t n,									\
+	global const real_t __m[],						\
+	global const real_t __e2[],						\
+	global const real_t __rdot[])					\
+{													\
+	for (uint_t k = 0, kk = base;					\
+				k < TILE * nloads;					\
+				k += 1, kk += stride) {				\
+		if (kk < n) {								\
+			p->_m[k] = __m[kk];						\
+			p->_e2[k] = __e2[kk];					\
+			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];	\
+			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];	\
+			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];	\
+			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];	\
+			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];	\
+			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];	\
+		}											\
+	}												\
+}													\
 
-
-static inline void
-read_Sakura_Data(
-	Sakura_Data *p,
-	const uint_t base,
-	const uint_t stride,
-	const uint_t nloads,
-	const uint_t n,
-	global const real_t __m[],
-	global const real_t __e2[],
-	global const real_t __rdot[])
-{
-	for (uint_t k = 0, kk = base;
-				k < nloads;
-				k += 1, kk += stride) {
-		if (kk < n) {
-			p->_m[k] = __m[kk];
-			p->_e2[k] = __e2[kk];
-			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];
-			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];
-			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];
-			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];
-			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];
-			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];
-		}
-	}
-}
+DEFINE_READ_SAKURA_DATA(1)
+#if WPT != 1
+DEFINE_READ_SAKURA_DATA(WPT)
+#endif
 
 
 static inline void
 simd_shuff_Sakura_Data(
 	const uint_t k,
-	Sakura_Data *p)
+	concat(Sakura_Data, WPT) *p)
 {
 	shuff(p->m[k], 1);
 	shuff(p->e2[k], 1);
