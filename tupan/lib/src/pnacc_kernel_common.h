@@ -251,48 +251,48 @@ struct P2P_pnacc_kernel_core {
 #define DEFINE_PNACC_DATA(TILE)				\
 typedef struct concat(pnacc_data, TILE) {	\
 	union {									\
-		real_tn m[WPT];						\
-		real_t _m[WPT * SIMD];				\
+		real_tn m[TILE];					\
+		real_t _m[TILE * SIMD];				\
 	};										\
 	union {									\
-		real_tn e2[WPT];					\
-		real_t _e2[WPT * SIMD];				\
+		real_tn e2[TILE];					\
+		real_t _e2[TILE * SIMD];			\
 	};										\
 	union {									\
-		real_tn rx[WPT];					\
-		real_t _rx[WPT * SIMD];				\
+		real_tn rx[TILE];					\
+		real_t _rx[TILE * SIMD];			\
 	};										\
 	union {									\
-		real_tn ry[WPT];					\
-		real_t _ry[WPT * SIMD];				\
+		real_tn ry[TILE];					\
+		real_t _ry[TILE * SIMD];			\
 	};										\
 	union {									\
-		real_tn rz[WPT];					\
-		real_t _rz[WPT * SIMD];				\
+		real_tn rz[TILE];					\
+		real_t _rz[TILE * SIMD];			\
 	};										\
 	union {									\
-		real_tn vx[WPT];					\
-		real_t _vx[WPT * SIMD];				\
+		real_tn vx[TILE];					\
+		real_t _vx[TILE * SIMD];			\
 	};										\
 	union {									\
-		real_tn vy[WPT];					\
-		real_t _vy[WPT * SIMD];				\
+		real_tn vy[TILE];					\
+		real_t _vy[TILE * SIMD];			\
 	};										\
 	union {									\
-		real_tn vz[WPT];					\
-		real_t _vz[WPT * SIMD];				\
+		real_tn vz[TILE];					\
+		real_t _vz[TILE * SIMD];			\
 	};										\
 	union {									\
-		real_tn pnax[WPT];					\
-		real_t _pnax[WPT * SIMD];			\
+		real_tn pnax[TILE];					\
+		real_t _pnax[TILE * SIMD];			\
 	};										\
 	union {									\
-		real_tn pnay[WPT];					\
-		real_t _pnay[WPT * SIMD];			\
+		real_tn pnay[TILE];					\
+		real_t _pnay[TILE * SIMD];			\
 	};										\
 	union {									\
-		real_tn pnaz[WPT];					\
-		real_t _pnaz[WPT * SIMD];			\
+		real_tn pnaz[TILE];					\
+		real_t _pnaz[TILE * SIMD];			\
 	};										\
 } concat(PNAcc_Data, TILE);					\
 
