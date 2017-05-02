@@ -104,18 +104,20 @@ acc_kernel_rectangle(
 	uint_t ngrps = get_num_groups(0);
 	uint_t lane = lid % NLANES;
 	uint_t warp = lid / NLANES;
-	for (uint_t jj = 0;
+	uint_t block = WGSIZE * SIMD;
+	for (uint_t jj = WPT * block * grp;
 				jj < nj;
-				jj += WGSIZE * SIMD * WPT) {
+				jj += WPT * block * ngrps) {
 		concat(Acc_Data, WPT) jp = {{{0}}};
 		concat(read_Acc_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
-		for (uint_t ii = WGSIZE * SIMD * grp;
+		for (uint_t b = 0; b < WPT; ++b)
+		for (uint_t ii = b * block;
 					ii < ni;
-					ii += WGSIZE * SIMD * ngrps) {
+					ii += WPT * block) {
 			concat(Acc_Data, 1) ip = {{{0}}};
 			concat(read_Acc_Data, 1)(
 				&ip, ii + lid, WGSIZE, SIMD,
@@ -130,9 +132,20 @@ acc_kernel_rectangle(
 			_ip[warp].ay[lane] = ip.ay[0];
 			_ip[warp].az[lane] = ip.az[0];
 
-			for (uint_t w = 0; w < NWARPS; ++w) {
-				p2p_acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
-				barrier(CLK_LOCAL_MEM_FENCE);
+			uint_t i = ii / (WPT * block);
+			uint_t j = jj / (WPT * block);
+			uint_t mask = (i + j) % 2;
+			if (i == j) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					p2p_acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
+			} else if ((i > j/* && mask == 0*/)
+					|| (i < j/* && mask == 1*/)) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					p2p_acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
 			}
 
 			ip.ax[0] = _ip[warp].ax[lane];
@@ -142,9 +155,9 @@ acc_kernel_rectangle(
 						k < SIMD;
 						k += 1, kk += WGSIZE) {
 				if (kk < ni) {
-					(__iadot+(0*NDIM+0)*ni)[kk] -= ip._ax[k];
-					(__iadot+(0*NDIM+1)*ni)[kk] -= ip._ay[k];
-					(__iadot+(0*NDIM+2)*ni)[kk] -= ip._az[k];
+					atomic_fadd(&(__iadot+(0*NDIM+0)*ni)[kk], -ip._ax[k]);
+					atomic_fadd(&(__iadot+(0*NDIM+1)*ni)[kk], -ip._ay[k]);
+					atomic_fadd(&(__iadot+(0*NDIM+2)*ni)[kk], -ip._az[k]);
 				}
 			}
 		}
@@ -185,18 +198,20 @@ acc_kernel_triangle(
 	uint_t ngrps = get_num_groups(0);
 	uint_t lane = lid % NLANES;
 	uint_t warp = lid / NLANES;
-	for (uint_t jj = 0;
+	uint_t block = WGSIZE * SIMD;
+	for (uint_t jj = WPT * block * grp;
 				jj < nj;
-				jj += WGSIZE * SIMD * WPT) {
+				jj += WPT * block * ngrps) {
 		concat(Acc_Data, WPT) jp = {{{0}}};
 		concat(read_Acc_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
-		for (uint_t ii = WGSIZE * SIMD * grp;
+		for (uint_t b = 0; b < WPT; ++b)
+		for (uint_t ii = b * block;
 					ii < ni;
-					ii += WGSIZE * SIMD * ngrps) {
+					ii += WPT * block) {
 			concat(Acc_Data, 1) ip = {{{0}}};
 			concat(read_Acc_Data, 1)(
 				&ip, ii + lid, WGSIZE, SIMD,
@@ -211,23 +226,34 @@ acc_kernel_triangle(
 			_ip[warp].ay[lane] = ip.ay[0];
 			_ip[warp].az[lane] = ip.az[0];
 
-			for (uint_t w = 0; w < NWARPS; ++w) {
-				acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
-				barrier(CLK_LOCAL_MEM_FENCE);
+			uint_t i = ii / (WPT * block);
+			uint_t j = jj / (WPT * block);
+			uint_t mask = (i + j) % 2;
+			if (i == j) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
+			} else if ((i > j && mask == 0)
+					|| (i < j && mask == 1)) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					p2p_acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
 			}
 
-//			ip.ax[0] = _ip[warp].ax[lane];
-//			ip.ay[0] = _ip[warp].ay[lane];
-//			ip.az[0] = _ip[warp].az[lane];
-//			for (uint_t k = 0, kk = ii + lid;
-//						k < SIMD;
-//						k += 1, kk += WGSIZE) {
-//				if (kk < ni) {
-//					(__iadot+(0*NDIM+0)*ni)[kk] -= ip._ax[k];
-//					(__iadot+(0*NDIM+1)*ni)[kk] -= ip._ay[k];
-//					(__iadot+(0*NDIM+2)*ni)[kk] -= ip._az[k];
-//				}
-//			}
+			ip.ax[0] = _ip[warp].ax[lane];
+			ip.ay[0] = _ip[warp].ay[lane];
+			ip.az[0] = _ip[warp].az[lane];
+			for (uint_t k = 0, kk = ii + lid;
+						k < SIMD;
+						k += 1, kk += WGSIZE) {
+				if (kk < ni) {
+					atomic_fadd(&(__iadot+(0*NDIM+0)*ni)[kk], -ip._ax[k]);
+					atomic_fadd(&(__iadot+(0*NDIM+1)*ni)[kk], -ip._ay[k]);
+					atomic_fadd(&(__iadot+(0*NDIM+2)*ni)[kk], -ip._az[k]);
+				}
+			}
 		}
 
 		for (uint_t k = 0, kk = jj + lid;
