@@ -171,20 +171,20 @@ DEFINE_ACC_DATA(NLANES)
 #endif
 
 
-#define DEFINE_READ_ACC_DATA(TILE)					\
+#define DEFINE_LOAD_ACC_DATA(TILE)					\
 static inline void									\
-concat(read_Acc_Data, TILE)(						\
+concat(load_Acc_Data, TILE)(						\
 	concat(Acc_Data, TILE) *p,						\
 	const uint_t base,								\
 	const uint_t stride,							\
-	const uint_t nloads,							\
+	const uint_t nitems,							\
 	const uint_t n,									\
 	global const real_t __m[],						\
 	global const real_t __e2[],						\
 	global const real_t __rdot[])					\
 {													\
 	for (uint_t k = 0, kk = base;					\
-				k < TILE * nloads;					\
+				k < TILE * nitems;					\
 				k += 1, kk += stride) {				\
 		if (kk < n) {								\
 			p->_m[k] = __m[kk];						\
@@ -196,9 +196,36 @@ concat(read_Acc_Data, TILE)(						\
 	}												\
 }													\
 
-DEFINE_READ_ACC_DATA(1)
+DEFINE_LOAD_ACC_DATA(1)
 #if WPT != 1
-DEFINE_READ_ACC_DATA(WPT)
+DEFINE_LOAD_ACC_DATA(WPT)
+#endif
+
+
+#define DEFINE_STORE_ACC_DATA(TILE)								\
+static inline void												\
+concat(store_Acc_Data, TILE)(									\
+	concat(Acc_Data, TILE) *p,									\
+	const uint_t base,											\
+	const uint_t stride,										\
+	const uint_t nitems,										\
+	const uint_t n,												\
+	global real_t __adot[])										\
+{																\
+	for (uint_t k = 0, kk = base;								\
+				k < TILE * nitems;								\
+				k += 1, kk += stride) {							\
+		if (kk < n) {											\
+			atomic_fadd(&(__adot+(0*NDIM+0)*n)[kk], p->_ax[k]);	\
+			atomic_fadd(&(__adot+(0*NDIM+1)*n)[kk], p->_ay[k]);	\
+			atomic_fadd(&(__adot+(0*NDIM+2)*n)[kk], p->_az[k]);	\
+		}														\
+	}															\
+}																\
+
+DEFINE_STORE_ACC_DATA(1)
+#if WPT != 1
+DEFINE_STORE_ACC_DATA(WPT)
 #endif
 
 

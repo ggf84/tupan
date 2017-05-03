@@ -109,7 +109,7 @@ acc_kernel_rectangle(
 				jj < nj;
 				jj += WPT * block * ngrps) {
 		concat(Acc_Data, WPT) jp = {{{0}}};
-		concat(read_Acc_Data, WPT)(
+		concat(load_Acc_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
@@ -119,7 +119,7 @@ acc_kernel_rectangle(
 					ii < ni;
 					ii += WPT * block) {
 			concat(Acc_Data, 1) ip = {{{0}}};
-			concat(read_Acc_Data, 1)(
+			concat(load_Acc_Data, 1)(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
@@ -134,43 +134,32 @@ acc_kernel_rectangle(
 
 			uint_t i = ii / (WPT * block);
 			uint_t j = jj / (WPT * block);
-			uint_t mask = (i + j) % 2;
 			if (i == j) {
 				for (uint_t w = 0; w < NWARPS; ++w) {
 					p2p_acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
 					barrier(CLK_LOCAL_MEM_FENCE);
 				}
-			} else if ((i > j/* && mask == 0*/)
-					|| (i < j/* && mask == 1*/)) {
+			} else if ((i > j/* && (i + j) % 2 == 0*/)
+					|| (i < j/* && (i + j) % 2 == 1*/)) {
 				for (uint_t w = 0; w < NWARPS; ++w) {
 					p2p_acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
 					barrier(CLK_LOCAL_MEM_FENCE);
 				}
 			}
 
-			ip.ax[0] = _ip[warp].ax[lane];
-			ip.ay[0] = _ip[warp].ay[lane];
-			ip.az[0] = _ip[warp].az[lane];
-			for (uint_t k = 0, kk = ii + lid;
-						k < SIMD;
-						k += 1, kk += WGSIZE) {
-				if (kk < ni) {
-					atomic_fadd(&(__iadot+(0*NDIM+0)*ni)[kk], -ip._ax[k]);
-					atomic_fadd(&(__iadot+(0*NDIM+1)*ni)[kk], -ip._ay[k]);
-					atomic_fadd(&(__iadot+(0*NDIM+2)*ni)[kk], -ip._az[k]);
-				}
-			}
+			ip.ax[0] = -_ip[warp].ax[lane];
+			ip.ay[0] = -_ip[warp].ay[lane];
+			ip.az[0] = -_ip[warp].az[lane];
+			concat(store_Acc_Data, 1)(
+				&ip, ii + lid, WGSIZE, SIMD,
+				ni, __iadot
+			);
 		}
 
-		for (uint_t k = 0, kk = jj + lid;
-					k < SIMD * WPT;
-					k += 1, kk += WGSIZE) {
-			if (kk < nj) {
-				atomic_fadd(&(__jadot+(0*NDIM+0)*nj)[kk], jp._ax[k]);
-				atomic_fadd(&(__jadot+(0*NDIM+1)*nj)[kk], jp._ay[k]);
-				atomic_fadd(&(__jadot+(0*NDIM+2)*nj)[kk], jp._az[k]);
-			}
-		}
+		concat(store_Acc_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
+			nj, __jadot
+		);
 	}
 }
 
@@ -203,7 +192,7 @@ acc_kernel_triangle(
 				jj < nj;
 				jj += WPT * block * ngrps) {
 		concat(Acc_Data, WPT) jp = {{{0}}};
-		concat(read_Acc_Data, WPT)(
+		concat(load_Acc_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
@@ -213,7 +202,7 @@ acc_kernel_triangle(
 					ii < ni;
 					ii += WPT * block) {
 			concat(Acc_Data, 1) ip = {{{0}}};
-			concat(read_Acc_Data, 1)(
+			concat(load_Acc_Data, 1)(
 				&ip, ii + lid, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
@@ -228,43 +217,32 @@ acc_kernel_triangle(
 
 			uint_t i = ii / (WPT * block);
 			uint_t j = jj / (WPT * block);
-			uint_t mask = (i + j) % 2;
 			if (i == j) {
 				for (uint_t w = 0; w < NWARPS; ++w) {
 					acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
 					barrier(CLK_LOCAL_MEM_FENCE);
 				}
-			} else if ((i > j && mask == 0)
-					|| (i < j && mask == 1)) {
+			} else if ((i > j && (i + j) % 2 == 0)
+					|| (i < j && (i + j) % 2 == 1)) {
 				for (uint_t w = 0; w < NWARPS; ++w) {
 					p2p_acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
 					barrier(CLK_LOCAL_MEM_FENCE);
 				}
 			}
 
-			ip.ax[0] = _ip[warp].ax[lane];
-			ip.ay[0] = _ip[warp].ay[lane];
-			ip.az[0] = _ip[warp].az[lane];
-			for (uint_t k = 0, kk = ii + lid;
-						k < SIMD;
-						k += 1, kk += WGSIZE) {
-				if (kk < ni) {
-					atomic_fadd(&(__iadot+(0*NDIM+0)*ni)[kk], -ip._ax[k]);
-					atomic_fadd(&(__iadot+(0*NDIM+1)*ni)[kk], -ip._ay[k]);
-					atomic_fadd(&(__iadot+(0*NDIM+2)*ni)[kk], -ip._az[k]);
-				}
-			}
+			ip.ax[0] = -_ip[warp].ax[lane];
+			ip.ay[0] = -_ip[warp].ay[lane];
+			ip.az[0] = -_ip[warp].az[lane];
+			concat(store_Acc_Data, 1)(
+				&ip, ii + lid, WGSIZE, SIMD,
+				ni, __iadot
+			);
 		}
 
-		for (uint_t k = 0, kk = jj + lid;
-					k < SIMD * WPT;
-					k += 1, kk += WGSIZE) {
-			if (kk < nj) {
-				atomic_fadd(&(__jadot+(0*NDIM+0)*nj)[kk], jp._ax[k]);
-				atomic_fadd(&(__jadot+(0*NDIM+1)*nj)[kk], jp._ay[k]);
-				atomic_fadd(&(__jadot+(0*NDIM+2)*nj)[kk], jp._az[k]);
-			}
-		}
+		concat(store_Acc_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
+			nj, __jadot
+		);
 	}
 }
 
