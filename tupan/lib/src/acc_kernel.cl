@@ -114,13 +114,13 @@ acc_kernel_rectangle(
 			nj, __jm, __je2, __jrdot
 		);
 
-		for (uint_t b = 0; b < WPT; ++b)
-		for (uint_t ii = b * block;
+		for (uint_t ii = 0;
 					ii < ni;
-					ii += WPT * block) {
+					ii += WPT * block)
+		for (uint_t k = 0; k < WPT; ++k) {
 			concat(Acc_Data, 1) ip = {{{0}}};
 			concat(load_Acc_Data, 1)(
-				&ip, ii + lid, WGSIZE, SIMD,
+				&ip, ii + lid + k * block, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
 			_ip[warp].m[lane] = ip.m[0];
@@ -151,7 +151,7 @@ acc_kernel_rectangle(
 			ip.ay[0] = -_ip[warp].ay[lane];
 			ip.az[0] = -_ip[warp].az[lane];
 			concat(store_Acc_Data, 1)(
-				&ip, ii + lid, WGSIZE, SIMD,
+				&ip, ii + lid + k * block, WGSIZE, SIMD,
 				ni, __iadot
 			);
 		}
@@ -197,13 +197,13 @@ acc_kernel_triangle(
 			nj, __jm, __je2, __jrdot
 		);
 
-		for (uint_t b = 0; b < WPT; ++b)
-		for (uint_t ii = b * block;
+		for (uint_t ii = 0;
 					ii < ni;
-					ii += WPT * block) {
+					ii += WPT * block)
+		for (uint_t k = 0; k < WPT; ++k) {
 			concat(Acc_Data, 1) ip = {{{0}}};
 			concat(load_Acc_Data, 1)(
-				&ip, ii + lid, WGSIZE, SIMD,
+				&ip, ii + lid + k * block, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
 			_ip[warp].m[lane] = ip.m[0];
@@ -234,7 +234,7 @@ acc_kernel_triangle(
 			ip.ay[0] = -_ip[warp].ay[lane];
 			ip.az[0] = -_ip[warp].az[lane];
 			concat(store_Acc_Data, 1)(
-				&ip, ii + lid, WGSIZE, SIMD,
+				&ip, ii + lid + k * block, WGSIZE, SIMD,
 				ni, __iadot
 			);
 		}
