@@ -132,15 +132,13 @@ acc_kernel_rectangle(
 			_ip[warp].ay[lane] = ip.ay[0];
 			_ip[warp].az[lane] = ip.az[0];
 
-			uint_t i = ii / (WPT * block);
-			uint_t j = jj / (WPT * block);
-			if (i == j) {
+			if (ii == jj) {
 				for (uint_t w = 0; w < NWARPS; ++w) {
 					p2p_acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
 					barrier(CLK_LOCAL_MEM_FENCE);
 				}
-			} else if ((i > j/* && (i + j) % 2 == 0*/)
-					|| (i < j/* && (i + j) % 2 == 1*/)) {
+			} else if ((ii > jj/* && ((ii + jj) / (WPT * block)) % 2 == 0*/)
+					|| (ii < jj/* && ((ii + jj) / (WPT * block)) % 2 == 1*/)) {
 				for (uint_t w = 0; w < NWARPS; ++w) {
 					p2p_acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
 					barrier(CLK_LOCAL_MEM_FENCE);
@@ -215,15 +213,13 @@ acc_kernel_triangle(
 			_ip[warp].ay[lane] = ip.ay[0];
 			_ip[warp].az[lane] = ip.az[0];
 
-			uint_t i = ii / (WPT * block);
-			uint_t j = jj / (WPT * block);
-			if (i == j) {
+			if (ii == jj) {
 				for (uint_t w = 0; w < NWARPS; ++w) {
 					acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
 					barrier(CLK_LOCAL_MEM_FENCE);
 				}
-			} else if ((i > j && (i + j) % 2 == 0)
-					|| (i < j && (i + j) % 2 == 1)) {
+			} else if ((ii > jj && ((ii + jj) / (WPT * block)) % 2 == 0)
+					|| (ii < jj && ((ii + jj) / (WPT * block)) % 2 == 1)) {
 				for (uint_t w = 0; w < NWARPS; ++w) {
 					p2p_acc_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
 					barrier(CLK_LOCAL_MEM_FENCE);
