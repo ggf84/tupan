@@ -305,20 +305,20 @@ DEFINE_PNACC_DATA(NLANES)
 #endif
 
 
-#define DEFINE_READ_PNACC_DATA(TILE)				\
+#define DEFINE_LOAD_PNACC_DATA(TILE)				\
 static inline void									\
-concat(read_PNAcc_Data, TILE)(						\
+concat(load_PNAcc_Data, TILE)(						\
 	concat(PNAcc_Data, TILE) *p,					\
 	const uint_t base,								\
 	const uint_t stride,							\
-	const uint_t nloads,							\
+	const uint_t nitems,							\
 	const uint_t n,									\
 	global const real_t __m[],						\
 	global const real_t __e2[],						\
 	global const real_t __rdot[])					\
 {													\
 	for (uint_t k = 0, kk = base;					\
-				k < TILE * nloads;					\
+				k < TILE * nitems;					\
 				k += 1, kk += stride) {				\
 		if (kk < n) {								\
 			p->_m[k] = __m[kk];						\
@@ -333,9 +333,36 @@ concat(read_PNAcc_Data, TILE)(						\
 	}												\
 }													\
 
-DEFINE_READ_PNACC_DATA(1)
+DEFINE_LOAD_PNACC_DATA(1)
 #if WPT != 1
-DEFINE_READ_PNACC_DATA(WPT)
+DEFINE_LOAD_PNACC_DATA(WPT)
+#endif
+
+
+#define DEFINE_STORE_PNACC_DATA(TILE)								\
+static inline void													\
+concat(store_PNAcc_Data, TILE)(										\
+	concat(PNAcc_Data, TILE) *p,									\
+	const uint_t base,												\
+	const uint_t stride,											\
+	const uint_t nitems,											\
+	const uint_t n,													\
+	global real_t __pnacc[])										\
+{																	\
+	for (uint_t k = 0, kk = base;									\
+				k < TILE * nitems;									\
+				k += 1, kk += stride) {								\
+		if (kk < n) {												\
+			atomic_fadd(&(__pnacc+(0*NDIM+0)*n)[kk], -p->_pnax[k]);	\
+			atomic_fadd(&(__pnacc+(0*NDIM+1)*n)[kk], -p->_pnay[k]);	\
+			atomic_fadd(&(__pnacc+(0*NDIM+2)*n)[kk], -p->_pnaz[k]);	\
+		}															\
+	}																\
+}																	\
+
+DEFINE_STORE_PNACC_DATA(1)
+#if WPT != 1
+DEFINE_STORE_PNACC_DATA(WPT)
 #endif
 
 

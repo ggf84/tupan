@@ -186,7 +186,7 @@ class Program(object):
 
         if dev.type == cl.device_type.GPU:
             wpt *= 1
-            simd *= 2
+            simd *= 1
             nwarps *= 4 if fpwidth == 'fp32' else 2
             nlanes *= 32
             wgsize *= nwarps * nlanes

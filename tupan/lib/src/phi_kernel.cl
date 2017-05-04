@@ -88,21 +88,23 @@ phi_kernel_rectangle(
 	uint_t ngrps = get_num_groups(0);
 	uint_t lane = lid % NLANES;
 	uint_t warp = lid / NLANES;
-	for (uint_t jj = 0;
+	uint_t block = WGSIZE * SIMD;
+	for (uint_t jj = WPT * block * grp;
 				jj < nj;
-				jj += WGSIZE * SIMD * WPT) {
+				jj += WPT * block * ngrps) {
 		concat(Phi_Data, WPT) jp = {{{0}}};
-		concat(read_Phi_Data, WPT)(
+		concat(load_Phi_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
-		for (uint_t ii = WGSIZE * SIMD * grp;
+		for (uint_t ii = 0;
 					ii < ni;
-					ii += WGSIZE * SIMD * ngrps) {
+					ii += WPT * block)
+		for (uint_t k = 0; k < WPT; ++k) {
 			concat(Phi_Data, 1) ip = {{{0}}};
-			concat(read_Phi_Data, 1)(
-				&ip, ii + lid, WGSIZE, SIMD,
+			concat(load_Phi_Data, 1)(
+				&ip, ii + lid + k * block, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
 			_ip[warp].m[lane] = ip.m[0];
@@ -112,28 +114,30 @@ phi_kernel_rectangle(
 			_ip[warp].rz[lane] = ip.rz[0];
 			_ip[warp].phi[lane] = ip.phi[0];
 
-			for (uint_t w = 0; w < NWARPS; ++w) {
-				p2p_phi_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
-				barrier(CLK_LOCAL_MEM_FENCE);
+			if (ii == jj) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					p2p_phi_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
+			} else if ((ii > jj/* && ((ii + jj) / (WPT * block)) % 2 == 0*/)
+					|| (ii < jj/* && ((ii + jj) / (WPT * block)) % 2 == 1*/)) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					p2p_phi_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
 			}
 
 			ip.phi[0] = _ip[warp].phi[lane];
-			for (uint_t k = 0, kk = ii + lid;
-						k < SIMD;
-						k += 1, kk += WGSIZE) {
-				if (kk < ni) {
-					__iphi[kk] -= ip._phi[k];
-				}
-			}
+			concat(store_Phi_Data, 1)(
+				&ip, ii + lid + k * block, WGSIZE, SIMD,
+				ni, __iphi
+			);
 		}
 
-		for (uint_t k = 0, kk = jj + lid;
-					k < SIMD * WPT;
-					k += 1, kk += WGSIZE) {
-			if (kk < nj) {
-				atomic_fadd(&__jphi[kk], -jp._phi[k]);
-			}
-		}
+		concat(store_Phi_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
+			nj, __jphi
+		);
 	}
 }
 
@@ -161,21 +165,23 @@ phi_kernel_triangle(
 	uint_t ngrps = get_num_groups(0);
 	uint_t lane = lid % NLANES;
 	uint_t warp = lid / NLANES;
-	for (uint_t jj = 0;
+	uint_t block = WGSIZE * SIMD;
+	for (uint_t jj = WPT * block * grp;
 				jj < nj;
-				jj += WGSIZE * SIMD * WPT) {
+				jj += WPT * block * ngrps) {
 		concat(Phi_Data, WPT) jp = {{{0}}};
-		concat(read_Phi_Data, WPT)(
+		concat(load_Phi_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
-		for (uint_t ii = WGSIZE * SIMD * grp;
+		for (uint_t ii = 0;
 					ii < ni;
-					ii += WGSIZE * SIMD * ngrps) {
+					ii += WPT * block)
+		for (uint_t k = 0; k < WPT; ++k) {
 			concat(Phi_Data, 1) ip = {{{0}}};
-			concat(read_Phi_Data, 1)(
-				&ip, ii + lid, WGSIZE, SIMD,
+			concat(load_Phi_Data, 1)(
+				&ip, ii + lid + k * block, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
 			_ip[warp].m[lane] = ip.m[0];
@@ -185,28 +191,30 @@ phi_kernel_triangle(
 			_ip[warp].rz[lane] = ip.rz[0];
 			_ip[warp].phi[lane] = ip.phi[0];
 
-			for (uint_t w = 0; w < NWARPS; ++w) {
-				phi_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
-				barrier(CLK_LOCAL_MEM_FENCE);
+			if (ii == jj) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					phi_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
+			} else if ((ii > jj && ((ii + jj) / (WPT * block)) % 2 == 0)
+					|| (ii < jj && ((ii + jj) / (WPT * block)) % 2 == 1)) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					p2p_phi_kernel_core(lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
 			}
 
-//			ip.phi[0] = _ip[warp].phi[lane];
-//			for (uint_t k = 0, kk = ii + lid;
-//						k < SIMD;
-//						k += 1, kk += WGSIZE) {
-//				if (kk < ni) {
-//					__iphi[kk] -= ip._phi[k];
-//				}
-//			}
+			ip.phi[0] = _ip[warp].phi[lane];
+			concat(store_Phi_Data, 1)(
+				&ip, ii + lid + k * block, WGSIZE, SIMD,
+				ni, __iphi
+			);
 		}
 
-		for (uint_t k = 0, kk = jj + lid;
-					k < SIMD * WPT;
-					k += 1, kk += WGSIZE) {
-			if (kk < nj) {
-				atomic_fadd(&__jphi[kk], -jp._phi[k]);
-			}
-		}
+		concat(store_Phi_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
+			nj, __jphi
+		);
 	}
 }
 

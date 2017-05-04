@@ -143,20 +143,20 @@ DEFINE_PHI_DATA(NLANES)
 #endif
 
 
-#define DEFINE_READ_PHI_DATA(TILE)					\
+#define DEFINE_LOAD_PHI_DATA(TILE)					\
 static inline void									\
-concat(read_Phi_Data, TILE)(						\
+concat(load_Phi_Data, TILE)(						\
 	concat(Phi_Data, TILE) *p,						\
 	const uint_t base,								\
 	const uint_t stride,							\
-	const uint_t nloads,							\
+	const uint_t nitems,							\
 	const uint_t n,									\
 	global const real_t __m[],						\
 	global const real_t __e2[],						\
 	global const real_t __rdot[])					\
 {													\
 	for (uint_t k = 0, kk = base;					\
-				k < TILE * nloads;					\
+				k < TILE * nitems;					\
 				k += 1, kk += stride) {				\
 		if (kk < n) {								\
 			p->_m[k] = __m[kk];						\
@@ -168,9 +168,34 @@ concat(read_Phi_Data, TILE)(						\
 	}												\
 }													\
 
-DEFINE_READ_PHI_DATA(1)
+DEFINE_LOAD_PHI_DATA(1)
 #if WPT != 1
-DEFINE_READ_PHI_DATA(WPT)
+DEFINE_LOAD_PHI_DATA(WPT)
+#endif
+
+
+#define DEFINE_STORE_PHI_DATA(TILE)					\
+static inline void									\
+concat(store_Phi_Data, TILE)(						\
+	concat(Phi_Data, TILE) *p,						\
+	const uint_t base,								\
+	const uint_t stride,							\
+	const uint_t nitems,							\
+	const uint_t n,									\
+	global real_t __phi[])							\
+{													\
+	for (uint_t k = 0, kk = base;					\
+				k < TILE * nitems;					\
+				k += 1, kk += stride) {				\
+		if (kk < n) {								\
+			atomic_fadd(&__phi[kk], -p->_phi[k]);	\
+		}											\
+	}												\
+}													\
+
+DEFINE_STORE_PHI_DATA(1)
+#if WPT != 1
+DEFINE_STORE_PHI_DATA(WPT)
 #endif
 
 

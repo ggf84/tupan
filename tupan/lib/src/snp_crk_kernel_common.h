@@ -408,20 +408,20 @@ DEFINE_SNP_CRK_DATA(NLANES)
 #endif
 
 
-#define DEFINE_READ_SNP_CRK_DATA(TILE)				\
+#define DEFINE_LOAD_SNP_CRK_DATA(TILE)				\
 static inline void									\
-concat(read_Snp_Crk_Data, TILE)(					\
+concat(load_Snp_Crk_Data, TILE)(					\
 	concat(Snp_Crk_Data, TILE) *p,					\
 	const uint_t base,								\
 	const uint_t stride,							\
-	const uint_t nloads,							\
+	const uint_t nitems,							\
 	const uint_t n,									\
 	global const real_t __m[],						\
 	global const real_t __e2[],						\
 	global const real_t __rdot[])					\
 {													\
 	for (uint_t k = 0, kk = base;					\
-				k < TILE * nloads;					\
+				k < TILE * nitems;					\
 				k += 1, kk += stride) {				\
 		if (kk < n) {								\
 			p->_m[k] = __m[kk];						\
@@ -442,9 +442,45 @@ concat(read_Snp_Crk_Data, TILE)(					\
 	}												\
 }													\
 
-DEFINE_READ_SNP_CRK_DATA(1)
+DEFINE_LOAD_SNP_CRK_DATA(1)
 #if WPT != 1
-DEFINE_READ_SNP_CRK_DATA(WPT)
+DEFINE_LOAD_SNP_CRK_DATA(WPT)
+#endif
+
+
+#define DEFINE_STORE_SNP_CRK_DATA(TILE)							\
+static inline void												\
+concat(store_Snp_Crk_Data, TILE)(								\
+	concat(Snp_Crk_Data, TILE) *p,								\
+	const uint_t base,											\
+	const uint_t stride,										\
+	const uint_t nitems,										\
+	const uint_t n,												\
+	global real_t __adot[])										\
+{																\
+	for (uint_t k = 0, kk = base;								\
+				k < TILE * nitems;								\
+				k += 1, kk += stride) {							\
+		if (kk < n) {											\
+			atomic_fadd(&(__adot+(0*NDIM+0)*n)[kk], p->_Ax[k]);	\
+			atomic_fadd(&(__adot+(0*NDIM+1)*n)[kk], p->_Ay[k]);	\
+			atomic_fadd(&(__adot+(0*NDIM+2)*n)[kk], p->_Az[k]);	\
+			atomic_fadd(&(__adot+(1*NDIM+0)*n)[kk], p->_Jx[k]);	\
+			atomic_fadd(&(__adot+(1*NDIM+1)*n)[kk], p->_Jy[k]);	\
+			atomic_fadd(&(__adot+(1*NDIM+2)*n)[kk], p->_Jz[k]);	\
+			atomic_fadd(&(__adot+(2*NDIM+0)*n)[kk], p->_Sx[k]);	\
+			atomic_fadd(&(__adot+(2*NDIM+1)*n)[kk], p->_Sy[k]);	\
+			atomic_fadd(&(__adot+(2*NDIM+2)*n)[kk], p->_Sz[k]);	\
+			atomic_fadd(&(__adot+(3*NDIM+0)*n)[kk], p->_Cx[k]);	\
+			atomic_fadd(&(__adot+(3*NDIM+1)*n)[kk], p->_Cy[k]);	\
+			atomic_fadd(&(__adot+(3*NDIM+2)*n)[kk], p->_Cz[k]);	\
+		}														\
+	}															\
+}																\
+
+DEFINE_STORE_SNP_CRK_DATA(1)
+#if WPT != 1
+DEFINE_STORE_SNP_CRK_DATA(WPT)
 #endif
 
 

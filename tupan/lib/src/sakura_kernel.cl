@@ -153,21 +153,23 @@ sakura_kernel_rectangle(
 	uint_t ngrps = get_num_groups(0);
 	uint_t lane = lid % NLANES;
 	uint_t warp = lid / NLANES;
-	for (uint_t jj = 0;
+	uint_t block = WGSIZE * 1;
+	for (uint_t jj = WPT * block * grp;
 				jj < nj;
-				jj += WGSIZE * 1 * WPT) {
+				jj += WPT * block * ngrps) {
 		concat(Sakura_Data, WPT) jp = {{{0}}};
-		concat(read_Sakura_Data, WPT)(
+		concat(load_Sakura_Data, WPT)(
 			&jp, jj + lid, WGSIZE, 1,
 			nj, __jm, __je2, __jrdot
 		);
 
-		for (uint_t ii = WGSIZE * 1 * grp;
+		for (uint_t ii = 0;
 					ii < ni;
-					ii += WGSIZE * 1 * ngrps) {
+					ii += WPT * block)
+		for (uint_t k = 0; k < WPT; ++k) {
 			concat(Sakura_Data, 1) ip = {{{0}}};
-			concat(read_Sakura_Data, 1)(
-				&ip, ii + lid, WGSIZE, 1,
+			concat(load_Sakura_Data, 1)(
+				&ip, ii + lid + k * block, WGSIZE, 1,
 				ni, __im, __ie2, __irdot
 			);
 			_ip[warp].m[lane] = ip.m[0];
@@ -185,43 +187,35 @@ sakura_kernel_rectangle(
 			_ip[warp].dvy[lane] = ip.dvy[0];
 			_ip[warp].dvz[lane] = ip.dvz[0];
 
-			for (uint_t w = 0; w < NWARPS; ++w) {
-				p2p_sakura_kernel_core(dt, flag, lane, &jp, &_ip[(warp+w)%NWARPS]);
-				barrier(CLK_LOCAL_MEM_FENCE);
-			}
-
-			ip.drx[0] = _ip[warp].drx[lane];
-			ip.dry[0] = _ip[warp].dry[lane];
-			ip.drz[0] = _ip[warp].drz[lane];
-			ip.dvx[0] = _ip[warp].dvx[lane];
-			ip.dvy[0] = _ip[warp].dvy[lane];
-			ip.dvz[0] = _ip[warp].dvz[lane];
-			for (uint_t k = 0, kk = ii + lid;
-						k < 1;
-						k += 1, kk += WGSIZE) {
-				if (kk < ni) {
-					(__idrdot+(0*NDIM+0)*ni)[kk] -= ip._drx[k];
-					(__idrdot+(0*NDIM+1)*ni)[kk] -= ip._dry[k];
-					(__idrdot+(0*NDIM+2)*ni)[kk] -= ip._drz[k];
-					(__idrdot+(1*NDIM+0)*ni)[kk] -= ip._dvx[k];
-					(__idrdot+(1*NDIM+1)*ni)[kk] -= ip._dvy[k];
-					(__idrdot+(1*NDIM+2)*ni)[kk] -= ip._dvz[k];
+			if (ii == jj) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					p2p_sakura_kernel_core(dt, flag, lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
+			} else if ((ii > jj/* && ((ii + jj) / (WPT * block)) % 2 == 0*/)
+					|| (ii < jj/* && ((ii + jj) / (WPT * block)) % 2 == 1*/)) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					p2p_sakura_kernel_core(dt, flag, lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
 				}
 			}
+
+			ip.drx[0] = -_ip[warp].drx[lane];
+			ip.dry[0] = -_ip[warp].dry[lane];
+			ip.drz[0] = -_ip[warp].drz[lane];
+			ip.dvx[0] = -_ip[warp].dvx[lane];
+			ip.dvy[0] = -_ip[warp].dvy[lane];
+			ip.dvz[0] = -_ip[warp].dvz[lane];
+			concat(store_Sakura_Data, 1)(
+				&ip, ii + lid + k * block, WGSIZE, 1,
+				ni, __idrdot
+			);
 		}
 
-		for (uint_t k = 0, kk = jj + lid;
-					k < 1 * WPT;
-					k += 1, kk += WGSIZE) {
-			if (kk < nj) {
-				atomic_fadd(&(__jdrdot+(0*NDIM+0)*nj)[kk], jp._drx[k]);
-				atomic_fadd(&(__jdrdot+(0*NDIM+1)*nj)[kk], jp._dry[k]);
-				atomic_fadd(&(__jdrdot+(0*NDIM+2)*nj)[kk], jp._drz[k]);
-				atomic_fadd(&(__jdrdot+(1*NDIM+0)*nj)[kk], jp._dvx[k]);
-				atomic_fadd(&(__jdrdot+(1*NDIM+1)*nj)[kk], jp._dvy[k]);
-				atomic_fadd(&(__jdrdot+(1*NDIM+2)*nj)[kk], jp._dvz[k]);
-			}
-		}
+		concat(store_Sakura_Data, WPT)(
+			&jp, jj + lid, WGSIZE, 1,
+			nj, __jdrdot
+		);
 	}
 }
 
@@ -251,21 +245,23 @@ sakura_kernel_triangle(
 	uint_t ngrps = get_num_groups(0);
 	uint_t lane = lid % NLANES;
 	uint_t warp = lid / NLANES;
-	for (uint_t jj = 0;
+	uint_t block = WGSIZE * 1;
+	for (uint_t jj = WPT * block * grp;
 				jj < nj;
-				jj += WGSIZE * 1 * WPT) {
+				jj += WPT * block * ngrps) {
 		concat(Sakura_Data, WPT) jp = {{{0}}};
-		concat(read_Sakura_Data, WPT)(
+		concat(load_Sakura_Data, WPT)(
 			&jp, jj + lid, WGSIZE, 1,
 			nj, __jm, __je2, __jrdot
 		);
 
-		for (uint_t ii = WGSIZE * 1 * grp;
+		for (uint_t ii = 0;
 					ii < ni;
-					ii += WGSIZE * 1 * ngrps) {
+					ii += WPT * block)
+		for (uint_t k = 0; k < WPT; ++k) {
 			concat(Sakura_Data, 1) ip = {{{0}}};
-			concat(read_Sakura_Data, 1)(
-				&ip, ii + lid, WGSIZE, 1,
+			concat(load_Sakura_Data, 1)(
+				&ip, ii + lid + k * block, WGSIZE, 1,
 				ni, __im, __ie2, __irdot
 			);
 			_ip[warp].m[lane] = ip.m[0];
@@ -283,43 +279,35 @@ sakura_kernel_triangle(
 			_ip[warp].dvy[lane] = ip.dvy[0];
 			_ip[warp].dvz[lane] = ip.dvz[0];
 
-			for (uint_t w = 0; w < NWARPS; ++w) {
-				sakura_kernel_core(dt, flag, lane, &jp, &_ip[(warp+w)%NWARPS]);
-				barrier(CLK_LOCAL_MEM_FENCE);
+			if (ii == jj) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					sakura_kernel_core(dt, flag, lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
+			} else if ((ii > jj && ((ii + jj) / (WPT * block)) % 2 == 0)
+					|| (ii < jj && ((ii + jj) / (WPT * block)) % 2 == 1)) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					p2p_sakura_kernel_core(dt, flag, lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
 			}
 
-//			ip.drx[0] = _ip[warp].drx[lane];
-//			ip.dry[0] = _ip[warp].dry[lane];
-//			ip.drz[0] = _ip[warp].drz[lane];
-//			ip.dvx[0] = _ip[warp].dvx[lane];
-//			ip.dvy[0] = _ip[warp].dvy[lane];
-//			ip.dvz[0] = _ip[warp].dvz[lane];
-//			for (uint_t k = 0, kk = ii + lid;
-//						k < 1;
-//						k += 1, kk += WGSIZE) {
-//				if (kk < ni) {
-//					(__idrdot+(0*NDIM+0)*ni)[kk] -= ip._drx[k];
-//					(__idrdot+(0*NDIM+1)*ni)[kk] -= ip._dry[k];
-//					(__idrdot+(0*NDIM+2)*ni)[kk] -= ip._drz[k];
-//					(__idrdot+(1*NDIM+0)*ni)[kk] -= ip._dvx[k];
-//					(__idrdot+(1*NDIM+1)*ni)[kk] -= ip._dvy[k];
-//					(__idrdot+(1*NDIM+2)*ni)[kk] -= ip._dvz[k];
-//				}
-//			}
+			ip.drx[0] = -_ip[warp].drx[lane];
+			ip.dry[0] = -_ip[warp].dry[lane];
+			ip.drz[0] = -_ip[warp].drz[lane];
+			ip.dvx[0] = -_ip[warp].dvx[lane];
+			ip.dvy[0] = -_ip[warp].dvy[lane];
+			ip.dvz[0] = -_ip[warp].dvz[lane];
+			concat(store_Sakura_Data, 1)(
+				&ip, ii + lid + k * block, WGSIZE, 1,
+				ni, __idrdot
+			);
 		}
 
-		for (uint_t k = 0, kk = jj + lid;
-					k < 1 * WPT;
-					k += 1, kk += WGSIZE) {
-			if (kk < nj) {
-				atomic_fadd(&(__jdrdot+(0*NDIM+0)*nj)[kk], jp._drx[k]);
-				atomic_fadd(&(__jdrdot+(0*NDIM+1)*nj)[kk], jp._dry[k]);
-				atomic_fadd(&(__jdrdot+(0*NDIM+2)*nj)[kk], jp._drz[k]);
-				atomic_fadd(&(__jdrdot+(1*NDIM+0)*nj)[kk], jp._dvx[k]);
-				atomic_fadd(&(__jdrdot+(1*NDIM+1)*nj)[kk], jp._dvy[k]);
-				atomic_fadd(&(__jdrdot+(1*NDIM+2)*nj)[kk], jp._dvz[k]);
-			}
-		}
+		concat(store_Sakura_Data, WPT)(
+			&jp, jj + lid, WGSIZE, 1,
+			nj, __jdrdot
+		);
 	}
 }
 

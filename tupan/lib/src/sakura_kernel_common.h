@@ -366,20 +366,20 @@ DEFINE_SAKURA_DATA(NLANES)
 #endif
 
 
-#define DEFINE_READ_SAKURA_DATA(TILE)				\
+#define DEFINE_LOAD_SAKURA_DATA(TILE)				\
 static inline void									\
-concat(read_Sakura_Data, TILE)(						\
+concat(load_Sakura_Data, TILE)(						\
 	concat(Sakura_Data, TILE) *p,					\
 	const uint_t base,								\
 	const uint_t stride,							\
-	const uint_t nloads,							\
+	const uint_t nitems,							\
 	const uint_t n,									\
 	global const real_t __m[],						\
 	global const real_t __e2[],						\
 	global const real_t __rdot[])					\
 {													\
 	for (uint_t k = 0, kk = base;					\
-				k < TILE * nloads;					\
+				k < TILE * nitems;					\
 				k += 1, kk += stride) {				\
 		if (kk < n) {								\
 			p->_m[k] = __m[kk];						\
@@ -394,9 +394,39 @@ concat(read_Sakura_Data, TILE)(						\
 	}												\
 }													\
 
-DEFINE_READ_SAKURA_DATA(1)
+DEFINE_LOAD_SAKURA_DATA(1)
 #if WPT != 1
-DEFINE_READ_SAKURA_DATA(WPT)
+DEFINE_LOAD_SAKURA_DATA(WPT)
+#endif
+
+
+#define DEFINE_STORE_SAKURA_DATA(TILE)								\
+static inline void													\
+concat(store_Sakura_Data, TILE)(									\
+	concat(Sakura_Data, TILE) *p,									\
+	const uint_t base,												\
+	const uint_t stride,											\
+	const uint_t nitems,											\
+	const uint_t n,													\
+	global real_t __drdot[])										\
+{																	\
+	for (uint_t k = 0, kk = base;									\
+				k < TILE * nitems;									\
+				k += 1, kk += stride) {								\
+		if (kk < n) {												\
+			atomic_fadd(&(__drdot+(0*NDIM+0)*n)[kk], p->_drx[k]);	\
+			atomic_fadd(&(__drdot+(0*NDIM+1)*n)[kk], p->_dry[k]);	\
+			atomic_fadd(&(__drdot+(0*NDIM+2)*n)[kk], p->_drz[k]);	\
+			atomic_fadd(&(__drdot+(1*NDIM+0)*n)[kk], p->_dvx[k]);	\
+			atomic_fadd(&(__drdot+(1*NDIM+1)*n)[kk], p->_dvy[k]);	\
+			atomic_fadd(&(__drdot+(1*NDIM+2)*n)[kk], p->_dvz[k]);	\
+		}															\
+	}																\
+}																	\
+
+DEFINE_STORE_SAKURA_DATA(1)
+#if WPT != 1
+DEFINE_STORE_SAKURA_DATA(WPT)
 #endif
 
 

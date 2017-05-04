@@ -228,21 +228,23 @@ pnacc_kernel_rectangle(
 	uint_t ngrps = get_num_groups(0);
 	uint_t lane = lid % NLANES;
 	uint_t warp = lid / NLANES;
-	for (uint_t jj = 0;
+	uint_t block = WGSIZE * SIMD;
+	for (uint_t jj = WPT * block * grp;
 				jj < nj;
-				jj += WGSIZE * SIMD * WPT) {
+				jj += WPT * block * ngrps) {
 		concat(PNAcc_Data, WPT) jp = {{{0}}};
-		concat(read_PNAcc_Data, WPT)(
+		concat(load_PNAcc_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
-		for (uint_t ii = WGSIZE * SIMD * grp;
+		for (uint_t ii = 0;
 					ii < ni;
-					ii += WGSIZE * SIMD * ngrps) {
+					ii += WPT * block)
+		for (uint_t k = 0; k < WPT; ++k) {
 			concat(PNAcc_Data, 1) ip = {{{0}}};
-			concat(read_PNAcc_Data, 1)(
-				&ip, ii + lid, WGSIZE, SIMD,
+			concat(load_PNAcc_Data, 1)(
+				&ip, ii + lid + k * block, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
 			_ip[warp].m[lane] = ip.m[0];
@@ -257,34 +259,32 @@ pnacc_kernel_rectangle(
 			_ip[warp].pnay[lane] = ip.pnay[0];
 			_ip[warp].pnaz[lane] = ip.pnaz[0];
 
-			for (uint_t w = 0; w < NWARPS; ++w) {
-				p2p_pnacc_kernel_core(*clight, lane, &jp, &_ip[(warp+w)%NWARPS]);
-				barrier(CLK_LOCAL_MEM_FENCE);
-			}
-
-			ip.pnax[0] = _ip[warp].pnax[lane];
-			ip.pnay[0] = _ip[warp].pnay[lane];
-			ip.pnaz[0] = _ip[warp].pnaz[lane];
-			for (uint_t k = 0, kk = ii + lid;
-						k < SIMD;
-						k += 1, kk += WGSIZE) {
-				if (kk < ni) {
-					(__ipnacc+(0*NDIM+0)*ni)[kk] += ip._pnax[k];
-					(__ipnacc+(0*NDIM+1)*ni)[kk] += ip._pnay[k];
-					(__ipnacc+(0*NDIM+2)*ni)[kk] += ip._pnaz[k];
+			if (ii == jj) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					p2p_pnacc_kernel_core(*clight, lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
+			} else if ((ii > jj/* && ((ii + jj) / (WPT * block)) % 2 == 0*/)
+					|| (ii < jj/* && ((ii + jj) / (WPT * block)) % 2 == 1*/)) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					p2p_pnacc_kernel_core(*clight, lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
 				}
 			}
+
+			ip.pnax[0] = -_ip[warp].pnax[lane];
+			ip.pnay[0] = -_ip[warp].pnay[lane];
+			ip.pnaz[0] = -_ip[warp].pnaz[lane];
+			concat(store_PNAcc_Data, 1)(
+				&ip, ii + lid + k * block, WGSIZE, SIMD,
+				ni, __ipnacc
+			);
 		}
 
-		for (uint_t k = 0, kk = jj + lid;
-					k < SIMD * WPT;
-					k += 1, kk += WGSIZE) {
-			if (kk < nj) {
-				atomic_fadd(&(__jpnacc+(0*NDIM+0)*nj)[kk], -jp._pnax[k]);
-				atomic_fadd(&(__jpnacc+(0*NDIM+1)*nj)[kk], -jp._pnay[k]);
-				atomic_fadd(&(__jpnacc+(0*NDIM+2)*nj)[kk], -jp._pnaz[k]);
-			}
-		}
+		concat(store_PNAcc_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
+			nj, __jpnacc
+		);
 	}
 }
 
@@ -314,21 +314,23 @@ pnacc_kernel_triangle(
 	uint_t ngrps = get_num_groups(0);
 	uint_t lane = lid % NLANES;
 	uint_t warp = lid / NLANES;
-	for (uint_t jj = 0;
+	uint_t block = WGSIZE * SIMD;
+	for (uint_t jj = WPT * block * grp;
 				jj < nj;
-				jj += WGSIZE * SIMD * WPT) {
+				jj += WPT * block * ngrps) {
 		concat(PNAcc_Data, WPT) jp = {{{0}}};
-		concat(read_PNAcc_Data, WPT)(
+		concat(load_PNAcc_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
 			nj, __jm, __je2, __jrdot
 		);
 
-		for (uint_t ii = WGSIZE * SIMD * grp;
+		for (uint_t ii = 0;
 					ii < ni;
-					ii += WGSIZE * SIMD * ngrps) {
+					ii += WPT * block)
+		for (uint_t k = 0; k < WPT; ++k) {
 			concat(PNAcc_Data, 1) ip = {{{0}}};
-			concat(read_PNAcc_Data, 1)(
-				&ip, ii + lid, WGSIZE, SIMD,
+			concat(load_PNAcc_Data, 1)(
+				&ip, ii + lid + k * block, WGSIZE, SIMD,
 				ni, __im, __ie2, __irdot
 			);
 			_ip[warp].m[lane] = ip.m[0];
@@ -343,34 +345,32 @@ pnacc_kernel_triangle(
 			_ip[warp].pnay[lane] = ip.pnay[0];
 			_ip[warp].pnaz[lane] = ip.pnaz[0];
 
-			for (uint_t w = 0; w < NWARPS; ++w) {
-				pnacc_kernel_core(*clight, lane, &jp, &_ip[(warp+w)%NWARPS]);
-				barrier(CLK_LOCAL_MEM_FENCE);
+			if (ii == jj) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					pnacc_kernel_core(*clight, lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
+			} else if ((ii > jj && ((ii + jj) / (WPT * block)) % 2 == 0)
+					|| (ii < jj && ((ii + jj) / (WPT * block)) % 2 == 1)) {
+				for (uint_t w = 0; w < NWARPS; ++w) {
+					p2p_pnacc_kernel_core(*clight, lane, &jp, &_ip[(warp+w)%NWARPS]);
+					barrier(CLK_LOCAL_MEM_FENCE);
+				}
 			}
 
-//			ip.pnax[0] = _ip[warp].pnax[lane];
-//			ip.pnay[0] = _ip[warp].pnay[lane];
-//			ip.pnaz[0] = _ip[warp].pnaz[lane];
-//			for (uint_t k = 0, kk = ii + lid;
-//						k < SIMD;
-//						k += 1, kk += WGSIZE) {
-//				if (kk < ni) {
-//					(__ipnacc+(0*NDIM+0)*ni)[kk] += ip._pnax[k];
-//					(__ipnacc+(0*NDIM+1)*ni)[kk] += ip._pnay[k];
-//					(__ipnacc+(0*NDIM+2)*ni)[kk] += ip._pnaz[k];
-//				}
-//			}
+			ip.pnax[0] = -_ip[warp].pnax[lane];
+			ip.pnay[0] = -_ip[warp].pnay[lane];
+			ip.pnaz[0] = -_ip[warp].pnaz[lane];
+			concat(store_PNAcc_Data, 1)(
+				&ip, ii + lid + k * block, WGSIZE, SIMD,
+				ni, __ipnacc
+			);
 		}
 
-		for (uint_t k = 0, kk = jj + lid;
-					k < SIMD * WPT;
-					k += 1, kk += WGSIZE) {
-			if (kk < nj) {
-				atomic_fadd(&(__jpnacc+(0*NDIM+0)*nj)[kk], -jp._pnax[k]);
-				atomic_fadd(&(__jpnacc+(0*NDIM+1)*nj)[kk], -jp._pnay[k]);
-				atomic_fadd(&(__jpnacc+(0*NDIM+2)*nj)[kk], -jp._pnaz[k]);
-			}
-		}
+		concat(store_PNAcc_Data, WPT)(
+			&jp, jj + lid, WGSIZE, SIMD,
+			nj, __jpnacc
+		);
 	}
 }
 
