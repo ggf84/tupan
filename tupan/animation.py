@@ -53,7 +53,7 @@ void main (void) {
 
 ALPHA_FUNCTION = """
 float get_alpha(float r, float a, float b) {
-    return b * (1 - r) / (a + r);
+    return b * (1 - r) / (1 + a * r);
 }
 """
 
@@ -72,8 +72,8 @@ void main()
 {
     float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
     if (r > 1) discard;  // kill pixels outside circle
-    float alpha = get_alpha(r, 0.0625, 0.0625);
-    gl_FragColor = vec4(v_color.rgb * (1 + alpha), alpha);
+    float alpha = get_alpha(r, 4, 1);
+    gl_FragColor = vec4(v_color.rgb, 1) * alpha;
 }
 """ % ALPHA_FUNCTION
 
@@ -92,8 +92,8 @@ void main()
 {
     float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
     if (r > 1) discard;  // kill pixels outside circle
-    float alpha = get_alpha(r, 64, 1);
-    gl_FragColor = vec4(v_color.rgb, alpha);
+    float alpha = get_alpha(r, 1, 0.25);
+    gl_FragColor = vec4(v_color.rgb, 1) * alpha;
 }
 """ % ALPHA_FUNCTION
 
@@ -115,9 +115,8 @@ void main()
     float r1 = r - 0.5;
     float r2 = r - 0.25;
     r = abs(max(r1, r2)) * v_psize / 2;
-    float alpha = exp(-r);
-//    float alpha = get_alpha(3*r, 1, 20);
-    gl_FragColor = vec4(alpha, 0, 0, alpha);
+    float alpha = exp(-r*r);
+    gl_FragColor = vec4(1, 0, 0, 1) * alpha;
 }
 """ % ALPHA_FUNCTION
 
