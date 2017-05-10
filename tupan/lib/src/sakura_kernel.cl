@@ -149,71 +149,70 @@ sakura_kernel_rectangle(
 {
 	local concat(Sakura_Data, NLANES) _ip[NWARPS];
 	uint_t lid = get_local_id(0);
-	uint_t grp = get_group_id(0);
-	uint_t ngrps = get_num_groups(0);
+	uint_t grp = get_global_id(0) / NLANES;
+	uint_t ngrps = get_global_size(0) / NLANES;
 	uint_t lane = lid % NLANES;
 	uint_t warp = lid / NLANES;
-	uint_t block = WGSIZE * 1;
-	for (uint_t jj = WPT * block * grp;
+	uint_t block = NLANES * 1 * WPT;
+	for (uint_t jj = block * grp;
 				jj < nj;
-				jj += WPT * block * ngrps) {
+				jj += block * ngrps) {
 		concat(Sakura_Data, WPT) jp = {{{0}}};
 		concat(load_Sakura_Data, WPT)(
-			&jp, jj + lid, WGSIZE, 1,
+			&jp, jj + lane, NLANES, 1,
 			nj, __jm, __je2, __jrdot
 		);
 
+		for (uint_t ilane = lane;
+					ilane < block;
+					ilane += NLANES * 1)
 		for (uint_t ii = 0;
 					ii < ni;
-					ii += WPT * block)
-		for (uint_t k = 0; k < WPT; ++k) {
-			concat(Sakura_Data, 1) ip = {{{0}}};
-			concat(load_Sakura_Data, 1)(
-				&ip, ii + lid + k * block, WGSIZE, 1,
-				ni, __im, __ie2, __irdot
-			);
-			_ip[warp].m[lane] = ip.m[0];
-			_ip[warp].e2[lane] = ip.e2[0];
-			_ip[warp].rx[lane] = ip.rx[0];
-			_ip[warp].ry[lane] = ip.ry[0];
-			_ip[warp].rz[lane] = ip.rz[0];
-			_ip[warp].vx[lane] = ip.vx[0];
-			_ip[warp].vy[lane] = ip.vy[0];
-			_ip[warp].vz[lane] = ip.vz[0];
-			_ip[warp].drx[lane] = ip.drx[0];
-			_ip[warp].dry[lane] = ip.dry[0];
-			_ip[warp].drz[lane] = ip.drz[0];
-			_ip[warp].dvx[lane] = ip.dvx[0];
-			_ip[warp].dvy[lane] = ip.dvy[0];
-			_ip[warp].dvz[lane] = ip.dvz[0];
+					ii += block) {
+			if ((ii == jj)
+				|| (ii > jj/* && ((ii + jj) / block) % 2 == 0*/)
+				|| (ii < jj/* && ((ii + jj) / block) % 2 == 1*/)) {
+				concat(Sakura_Data, 1) ip = {{{0}}};
+				concat(load_Sakura_Data, 1)(
+					&ip, ii + ilane, NLANES, 1,
+					ni, __im, __ie2, __irdot
+				);
+				_ip[warp].m[lane] = ip.m[0];
+				_ip[warp].e2[lane] = ip.e2[0];
+				_ip[warp].rx[lane] = ip.rx[0];
+				_ip[warp].ry[lane] = ip.ry[0];
+				_ip[warp].rz[lane] = ip.rz[0];
+				_ip[warp].vx[lane] = ip.vx[0];
+				_ip[warp].vy[lane] = ip.vy[0];
+				_ip[warp].vz[lane] = ip.vz[0];
+				_ip[warp].drx[lane] = ip.drx[0];
+				_ip[warp].dry[lane] = ip.dry[0];
+				_ip[warp].drz[lane] = ip.drz[0];
+				_ip[warp].dvx[lane] = ip.dvx[0];
+				_ip[warp].dvy[lane] = ip.dvy[0];
+				_ip[warp].dvz[lane] = ip.dvz[0];
 
-			if (ii == jj) {
-				for (uint_t w = 0; w < NWARPS; ++w) {
-					p2p_sakura_kernel_core(dt, flag, lane, &jp, &_ip[(warp+w)%NWARPS]);
-					barrier(CLK_LOCAL_MEM_FENCE);
+				if (ii != jj) {
+					p2p_sakura_kernel_core(dt, flag, lane, &jp, &_ip[warp]);
+				} else {
+					p2p_sakura_kernel_core(dt, flag, lane, &jp, &_ip[warp]);
 				}
-			} else if ((ii > jj/* && ((ii + jj) / (WPT * block)) % 2 == 0*/)
-					|| (ii < jj/* && ((ii + jj) / (WPT * block)) % 2 == 1*/)) {
-				for (uint_t w = 0; w < NWARPS; ++w) {
-					p2p_sakura_kernel_core(dt, flag, lane, &jp, &_ip[(warp+w)%NWARPS]);
-					barrier(CLK_LOCAL_MEM_FENCE);
-				}
+
+				ip.drx[0] = -_ip[warp].drx[lane];
+				ip.dry[0] = -_ip[warp].dry[lane];
+				ip.drz[0] = -_ip[warp].drz[lane];
+				ip.dvx[0] = -_ip[warp].dvx[lane];
+				ip.dvy[0] = -_ip[warp].dvy[lane];
+				ip.dvz[0] = -_ip[warp].dvz[lane];
+				concat(store_Sakura_Data, 1)(
+					&ip, ii + ilane, NLANES, 1,
+					ni, __idrdot
+				);
 			}
-
-			ip.drx[0] = -_ip[warp].drx[lane];
-			ip.dry[0] = -_ip[warp].dry[lane];
-			ip.drz[0] = -_ip[warp].drz[lane];
-			ip.dvx[0] = -_ip[warp].dvx[lane];
-			ip.dvy[0] = -_ip[warp].dvy[lane];
-			ip.dvz[0] = -_ip[warp].dvz[lane];
-			concat(store_Sakura_Data, 1)(
-				&ip, ii + lid + k * block, WGSIZE, 1,
-				ni, __idrdot
-			);
 		}
 
 		concat(store_Sakura_Data, WPT)(
-			&jp, jj + lid, WGSIZE, 1,
+			&jp, jj + lane, NLANES, 1,
 			nj, __jdrdot
 		);
 	}
@@ -241,71 +240,70 @@ sakura_kernel_triangle(
 
 	local concat(Sakura_Data, NLANES) _ip[NWARPS];
 	uint_t lid = get_local_id(0);
-	uint_t grp = get_group_id(0);
-	uint_t ngrps = get_num_groups(0);
+	uint_t grp = get_global_id(0) / NLANES;
+	uint_t ngrps = get_global_size(0) / NLANES;
 	uint_t lane = lid % NLANES;
 	uint_t warp = lid / NLANES;
-	uint_t block = WGSIZE * 1;
-	for (uint_t jj = WPT * block * grp;
+	uint_t block = NLANES * 1 * WPT;
+	for (uint_t jj = block * grp;
 				jj < nj;
-				jj += WPT * block * ngrps) {
+				jj += block * ngrps) {
 		concat(Sakura_Data, WPT) jp = {{{0}}};
 		concat(load_Sakura_Data, WPT)(
-			&jp, jj + lid, WGSIZE, 1,
+			&jp, jj + lane, NLANES, 1,
 			nj, __jm, __je2, __jrdot
 		);
 
+		for (uint_t ilane = lane;
+					ilane < block;
+					ilane += NLANES * 1)
 		for (uint_t ii = 0;
 					ii < ni;
-					ii += WPT * block)
-		for (uint_t k = 0; k < WPT; ++k) {
-			concat(Sakura_Data, 1) ip = {{{0}}};
-			concat(load_Sakura_Data, 1)(
-				&ip, ii + lid + k * block, WGSIZE, 1,
-				ni, __im, __ie2, __irdot
-			);
-			_ip[warp].m[lane] = ip.m[0];
-			_ip[warp].e2[lane] = ip.e2[0];
-			_ip[warp].rx[lane] = ip.rx[0];
-			_ip[warp].ry[lane] = ip.ry[0];
-			_ip[warp].rz[lane] = ip.rz[0];
-			_ip[warp].vx[lane] = ip.vx[0];
-			_ip[warp].vy[lane] = ip.vy[0];
-			_ip[warp].vz[lane] = ip.vz[0];
-			_ip[warp].drx[lane] = ip.drx[0];
-			_ip[warp].dry[lane] = ip.dry[0];
-			_ip[warp].drz[lane] = ip.drz[0];
-			_ip[warp].dvx[lane] = ip.dvx[0];
-			_ip[warp].dvy[lane] = ip.dvy[0];
-			_ip[warp].dvz[lane] = ip.dvz[0];
+					ii += block) {
+			if ((ii == jj)
+				|| (ii > jj && ((ii + jj) / block) % 2 == 0)
+				|| (ii < jj && ((ii + jj) / block) % 2 == 1)) {
+				concat(Sakura_Data, 1) ip = {{{0}}};
+				concat(load_Sakura_Data, 1)(
+					&ip, ii + ilane, NLANES, 1,
+					ni, __im, __ie2, __irdot
+				);
+				_ip[warp].m[lane] = ip.m[0];
+				_ip[warp].e2[lane] = ip.e2[0];
+				_ip[warp].rx[lane] = ip.rx[0];
+				_ip[warp].ry[lane] = ip.ry[0];
+				_ip[warp].rz[lane] = ip.rz[0];
+				_ip[warp].vx[lane] = ip.vx[0];
+				_ip[warp].vy[lane] = ip.vy[0];
+				_ip[warp].vz[lane] = ip.vz[0];
+				_ip[warp].drx[lane] = ip.drx[0];
+				_ip[warp].dry[lane] = ip.dry[0];
+				_ip[warp].drz[lane] = ip.drz[0];
+				_ip[warp].dvx[lane] = ip.dvx[0];
+				_ip[warp].dvy[lane] = ip.dvy[0];
+				_ip[warp].dvz[lane] = ip.dvz[0];
 
-			if (ii == jj) {
-				for (uint_t w = 0; w < NWARPS; ++w) {
-					sakura_kernel_core(dt, flag, lane, &jp, &_ip[(warp+w)%NWARPS]);
-					barrier(CLK_LOCAL_MEM_FENCE);
+				if (ii != jj) {
+					p2p_sakura_kernel_core(dt, flag, lane, &jp, &_ip[warp]);
+				} else {
+					sakura_kernel_core(dt, flag, lane, &jp, &_ip[warp]);
 				}
-			} else if ((ii > jj && ((ii + jj) / (WPT * block)) % 2 == 0)
-					|| (ii < jj && ((ii + jj) / (WPT * block)) % 2 == 1)) {
-				for (uint_t w = 0; w < NWARPS; ++w) {
-					p2p_sakura_kernel_core(dt, flag, lane, &jp, &_ip[(warp+w)%NWARPS]);
-					barrier(CLK_LOCAL_MEM_FENCE);
-				}
+
+				ip.drx[0] = -_ip[warp].drx[lane];
+				ip.dry[0] = -_ip[warp].dry[lane];
+				ip.drz[0] = -_ip[warp].drz[lane];
+				ip.dvx[0] = -_ip[warp].dvx[lane];
+				ip.dvy[0] = -_ip[warp].dvy[lane];
+				ip.dvz[0] = -_ip[warp].dvz[lane];
+				concat(store_Sakura_Data, 1)(
+					&ip, ii + ilane, NLANES, 1,
+					ni, __idrdot
+				);
 			}
-
-			ip.drx[0] = -_ip[warp].drx[lane];
-			ip.dry[0] = -_ip[warp].dry[lane];
-			ip.drz[0] = -_ip[warp].drz[lane];
-			ip.dvx[0] = -_ip[warp].dvx[lane];
-			ip.dvy[0] = -_ip[warp].dvy[lane];
-			ip.dvz[0] = -_ip[warp].dvz[lane];
-			concat(store_Sakura_Data, 1)(
-				&ip, ii + lid + k * block, WGSIZE, 1,
-				ni, __idrdot
-			);
 		}
 
 		concat(store_Sakura_Data, WPT)(
-			&jp, jj + lid, WGSIZE, 1,
+			&jp, jj + lane, NLANES, 1,
 			nj, __jdrdot
 		);
 	}
