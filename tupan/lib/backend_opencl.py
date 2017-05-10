@@ -185,12 +185,12 @@ class Program(object):
             ngroup *= 2
 
         if dev.type == cl.device_type.GPU:
-            wpt *= 1
-            simd *= 1
-            nwarps *= 4 if fpwidth == 'fp32' else 2
+            wpt *= 2
+            simd *= 2 if fpwidth == 'fp32' else 1
+            nwarps *= 2
             nlanes *= 32
             wgsize *= nwarps * nlanes
-            ngroup *= 64
+            ngroup *= 128
 
         # setting program options
         options = ' -D WPT={}'.format(wpt)
