@@ -182,7 +182,7 @@ class Program(object):
             nwarps *= 4
             nlanes *= 1
             wgsize *= nwarps * nlanes
-            ngroup *= 2
+            ngroup *= 4
 
         if dev.type == cl.device_type.GPU:
             wpt *= 2
@@ -195,7 +195,6 @@ class Program(object):
         # setting program options
         options = ' -D WPT={}'.format(wpt)
         options += ' -D SIMD={}'.format(simd)
-        options += ' -D NWARPS={}'.format(nwarps)
         options += ' -D NLANES={}'.format(nlanes)
         options += ' -D WGSIZE={}'.format(wgsize)
         options += ' -D CONFIG_USE_OPENCL'
