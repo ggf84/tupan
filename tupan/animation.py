@@ -73,7 +73,7 @@ void main()
     float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
     if (r > 1) discard;  // kill pixels outside circle
     float alpha = get_alpha(r, 4, 1);
-    gl_FragColor = vec4(v_color.rgb, 1) * alpha;
+    gl_FragColor = v_color * alpha;
 }
 """ % ALPHA_FUNCTION
 
@@ -93,7 +93,7 @@ void main()
     float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
     if (r > 1) discard;  // kill pixels outside circle
     float alpha = get_alpha(r, 1, 0.25);
-    gl_FragColor = vec4(v_color.rgb, 1) * alpha;
+    gl_FragColor = v_color * alpha;
 }
 """ % ALPHA_FUNCTION
 
