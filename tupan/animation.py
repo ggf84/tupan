@@ -8,7 +8,6 @@ TODO.
 import logging
 import subprocess
 import numpy as np
-from matplotlib import cm
 from vispy import gloo
 from vispy import app
 from vispy.util.transforms import ortho, translate, scale, rotate
@@ -188,7 +187,10 @@ class GLviewer(app.Canvas):
             self.record_screen()
 
     def on_initialize(self, event):
-        gloo.set_state(depth_test=True, blend=True, clear_color='black')
+        gloo.set_state(
+            preset='additive',
+            clear_color='black',
+        )
 
     def on_key_press(self, event):
         if event.key == '+':
@@ -259,29 +261,8 @@ class GLviewer(app.Canvas):
     def on_draw(self, event):
         gloo.clear()
 
-        if 'body' in self.data:
-            gloo.set_depth_mask(False)
-            gloo.set_state(blend_func=('src_alpha', 'one'))
-            self.program['body'].draw('points')
-            gloo.set_depth_mask(True)
-
-        if 'star' in self.data:
-            gloo.set_depth_mask(False)
-            gloo.set_state(blend_func=('src_alpha', 'one'))
-            self.program['star'].draw('points')
-            gloo.set_depth_mask(True)
-
-        if 'sph' in self.data:
-            gloo.set_depth_mask(False)
-            gloo.set_state(blend_func=('src_alpha', 'one'))
-            self.program['sph'].draw('points')
-            gloo.set_depth_mask(True)
-
-        if 'blackhole' in self.data:
-            gloo.set_depth_mask(False)
-            gloo.set_state(blend_func=('dst_alpha', 'one_minus_src_alpha'))
-            self.program['blackhole'].draw('points')
-            gloo.set_depth_mask(True)
+        for key in self.data:
+            self.program[key].draw('points')
 
         if cli.record:
             self.record_screen()
@@ -306,28 +287,40 @@ class GLviewer(app.Canvas):
             self.program[name].bind(self.vdata[name])
 
     def show_event(self, ps):
-        def f(arg): return np.log(1 + arg)
+        def f(arg): return np.log2(2 + arg)
 
         if not self.data:
             self.init_vertex_buffers(ps)
 
         for name, member in ps.members.items():
             pid = member.pid
+            mass = member.mass
             pos = member.rdot[0]
+
             mmin, mmax = self.mmin[name], self.mmax[name]
-            c = f(member.mass / mmin) / f(mmax / mmin)
-            s = f(member.mass / mmin) / f(mmax / mmin)
+            I = f(mass / mmin) / f(mmax / mmin)
+
+            s = 1 * I**1
+
+            r = 1 * I**1
+            g = 3 * I**3
+            b = 9 * I**9
+            a = 1 * I**0
+
+            c = np.array([r, g, b, a])
+            c[:3] *= 3 / (1 + 3 + 9)
+            c = c.T
 
             if len(self.data[name]['a_pid']) == len(pid):
                 self.data[name]['a_pid'] = pid
                 self.data[name]['a_position'] = pos.T
-                self.data[name]['a_color'] = cm.cubehelix(c)
+                self.data[name]['a_color'] = c
                 self.data[name]['a_psize'] = s
             else:
                 mask = np.in1d(self.data[name]['a_pid'], pid, assume_unique=True)
                 self.data[name]['a_pid'][mask] = pid
                 self.data[name]['a_position'][mask] = pos.T
-                self.data[name]['a_color'][mask] = cm.cubehelix(c)
+                self.data[name]['a_color'][mask] = c
                 self.data[name]['a_psize'][mask] = s
 
             self.vdata[name].set_data(self.data[name])
