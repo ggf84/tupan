@@ -29,30 +29,22 @@ uniform float u_psize;
 // Attributes
 // ------------------------------------
 attribute vec3  a_position;
-attribute vec4  a_color;
+attribute vec3  a_color;
 attribute float a_psize;
 attribute int a_pid;
 
 // Varyings
 // ------------------------------------
-varying vec4  v_color;
+varying vec3  v_color;
 varying float v_psize;
-
-%s  // declare auxiliary functions
 
 // Main
 // ------------------------------------
-void main (void) {
+void main(void) {
     v_color  = a_color;
     v_psize  = a_psize * u_psize;
-    gl_Position = u_projection * u_view * u_model * vec4(a_position, 1.0);
     gl_PointSize = v_psize;
-}
-""" % ""
-
-ALPHA_FUNCTION = """
-float get_alpha(float r, float a, float b) {
-    return b * (1 - r) / (1 + a * r);
+    gl_Position = u_projection * u_view * u_model * vec4(a_position, 1);
 }
 """
 
@@ -60,64 +52,61 @@ FRAG_SHADER0 = """
 #version 120
 // Varyings
 // ------------------------------------
-varying vec4  v_color;
+varying vec3  v_color;
 varying float v_psize;
-
-%s  // declare auxiliary functions
 
 // Main
 // ------------------------------------
 void main()
 {
-    float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
-    if (r > 1) discard;  // kill pixels outside circle
-    float alpha = get_alpha(r, 4, 1);
-    gl_FragColor = v_color * alpha;
+    float d = length(2 * gl_PointCoord.xy - vec2(1, 1));
+    if (d > 1) discard;
+    float n = 3;
+    d = n * sqrt(d);
+    d = n * (n - d)/(1 + d * d);
+    gl_FragColor = vec4(v_color * d, 1);
 }
-""" % ALPHA_FUNCTION
+"""
 
 FRAG_SHADER1 = """
 #version 120
 // Varyings
 // ------------------------------------
-varying vec4  v_color;
+varying vec3  v_color;
 varying float v_psize;
-
-%s  // declare auxiliary functions
 
 // Main
 // ------------------------------------
 void main()
 {
-    float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
-    if (r > 1) discard;  // kill pixels outside circle
-    float alpha = get_alpha(r, 1, 0.25);
-    gl_FragColor = v_color * alpha;
+    float d = length(2 * gl_PointCoord.xy - vec2(1, 1));
+    if (d > 1) discard;
+    float n = 1;
+    d = n * sqrt(d);
+    d = n * (n - d)/(1 + d * d);
+    gl_FragColor = vec4(v_color * d, 1);
 }
-""" % ALPHA_FUNCTION
+"""
 
 FRAG_SHADER2 = """
 #version 120
 // Varyings
 // ------------------------------------
-varying vec4  v_color;
+varying vec3  v_color;
 varying float v_psize;
-
-%s  // declare auxiliary functions
 
 // Main
 // ------------------------------------
 void main()
 {
-    float r = length(2 * gl_PointCoord.xy - vec2(1, 1));
-    if (r > 1) discard;  // kill pixels outside circle
-    float r1 = r - 0.5;
-    float r2 = r - 0.25;
-    r = abs(max(r1, r2)) * v_psize / 2;
-    float alpha = exp(-r*r);
-    gl_FragColor = vec4(1, 0, 0, 1) * alpha;
+    float d = length(2 * gl_PointCoord.xy - vec2(1, 1));
+    if (d > 1) discard;
+    d = 2 * d - 2;
+    d = max(d - 1, d + 1) * v_psize / 4;
+    d = exp(- d * d);
+    gl_FragColor = vec4(d, 0, 0, 1);
 }
-""" % ALPHA_FUNCTION
+"""
 
 
 class GLviewer(app.Canvas):
@@ -143,7 +132,7 @@ class GLviewer(app.Canvas):
         self.program['blackhole'] = gloo.Program(VERT_SHADER, FRAG_SHADER2)
         self.model = np.eye(4, dtype=np.float32)
         self.projection = np.eye(4, dtype=np.float32)
-        self.psize = 16
+        self.psize = 10
 
         self.translate = [0.0, 0.0, 0.0]
         self.view = translate(self.translate)
@@ -277,7 +266,7 @@ class GLviewer(app.Canvas):
             self.mmax[name] = mass.max()
 
             self.data[name] = np.zeros(n, [('a_position', np.float32, 3),
-                                           ('a_color',    np.float32, 4),
+                                           ('a_color',    np.float32, 3),
                                            ('a_psize', np.float32, 1),
                                            ('a_pid', np.int32, 1)])
 
@@ -287,7 +276,7 @@ class GLviewer(app.Canvas):
             self.program[name].bind(self.vdata[name])
 
     def show_event(self, ps):
-        def f(arg): return np.log2(2 + arg)
+        def f(arg): return np.log2(1 + arg)
 
         if not self.data:
             self.init_vertex_buffers(ps)
@@ -295,33 +284,27 @@ class GLviewer(app.Canvas):
         for name, member in ps.members.items():
             pid = member.pid
             mass = member.mass
-            pos = member.rdot[0]
+            pos = member.rdot[0].T
 
             mmin, mmax = self.mmin[name], self.mmax[name]
-            I = f(mass / mmin) / f(mmax / mmin)
+            a = f(mass / mmin) / f(mmax / mmin)
 
-            s = 1 * I**1
+            s = 1 * a**0.25
 
-            r = 1 * I**1
-            g = 3 * I**3
-            b = 9 * I**9
-            a = 1 * I**0
+            q = 5
+            qs = [q**i for i in range(3)]
+            r, g, b = [i * a**i for i in qs]
+            c = np.array([r, g, b]).T
+            c /= sum(qs)
 
-            c = np.array([r, g, b, a])
-            c[:3] *= 3 / (1 + 3 + 9)
-            c = c.T
-
-            if len(self.data[name]['a_pid']) == len(pid):
-                self.data[name]['a_pid'] = pid
-                self.data[name]['a_position'] = pos.T
-                self.data[name]['a_color'] = c
-                self.data[name]['a_psize'] = s
-            else:
+            mask = Ellipsis
+            if len(self.data[name]['a_pid']) != len(pid):
                 mask = np.in1d(self.data[name]['a_pid'], pid, assume_unique=True)
-                self.data[name]['a_pid'][mask] = pid
-                self.data[name]['a_position'][mask] = pos.T
-                self.data[name]['a_color'][mask] = c
-                self.data[name]['a_psize'][mask] = s
+
+            self.data[name]['a_position'][mask] = pos
+            self.data[name]['a_color'][mask] = c
+            self.data[name]['a_psize'][mask] = s
+            self.data[name]['a_pid'][mask] = pid
 
             self.vdata[name].set_data(self.data[name])
 
