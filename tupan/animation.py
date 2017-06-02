@@ -29,8 +29,8 @@ uniform float u_psize;
 // Attributes
 // ------------------------------------
 attribute vec3  a_position;
-attribute vec3  a_color;
 attribute float a_psize;
+attribute float a_mass;
 attribute int a_pid;
 
 // Varyings
@@ -41,7 +41,15 @@ varying float v_psize;
 // Main
 // ------------------------------------
 void main(void) {
-    v_color  = a_color;
+    float qs = 0;
+    float qq = 1;
+    for (int i = 0; i < 3; ++i) {
+        v_color[i] = qq * pow(a_mass, qq);
+        qs += qq;
+        qq *= 6;
+    }
+    v_color /= qs;
+
     v_psize  = a_psize * u_psize;
     gl_PointSize = v_psize;
     gl_Position = u_projection * u_view * u_model * vec4(a_position, 1);
@@ -119,7 +127,6 @@ class GLviewer(app.Canvas):
         self.size = size
         self.aspect = aspect
 
-        self.mmin = {}
         self.mmax = {}
         self.data = {}
         self.vdata = {}
@@ -260,12 +267,11 @@ class GLviewer(app.Canvas):
             pid = member.pid
             mass = member.mass
 
-            self.mmin[name] = mass.min()
             self.mmax[name] = mass.max()
 
             self.data[name] = np.zeros(n, [('a_position', np.float32, 3),
-                                           ('a_color',    np.float32, 3),
                                            ('a_psize', np.float32, 1),
+                                           ('a_mass', np.float32, 1),
                                            ('a_pid', np.int32, 1)])
 
             self.data[name]['a_pid'][...] = pid
@@ -284,24 +290,18 @@ class GLviewer(app.Canvas):
             mass = member.mass
             pos = member.rdot[0].T
 
-            mmin, mmax = self.mmin[name], self.mmax[name]
-            a = f(mass / mmin) / f(mmax / mmin)
+            mmax = self.mmax[name]
+            m = f(mass / mmax)
 
-            s = 1 * a**0.0625
-
-            q = 1.375
-            qs = [(i+q)**(i+q) for i in range(3)]
-            r, g, b = [i * a**i for i in qs]
-            c = np.array([r, g, b]).T
-            c *= min(qs)/max(qs)
+            s = m**0.5
 
             mask = Ellipsis
             if len(self.data[name]['a_pid']) != len(pid):
                 mask = np.in1d(self.data[name]['a_pid'], pid, assume_unique=True)
 
             self.data[name]['a_position'][mask] = pos
-            self.data[name]['a_color'][mask] = c
             self.data[name]['a_psize'][mask] = s
+            self.data[name]['a_mass'][mask] = m
             self.data[name]['a_pid'][mask] = pid
 
             self.vdata[name].set_data(self.data[name])
