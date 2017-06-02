@@ -61,9 +61,8 @@ void main()
 {
     float d = length(2 * gl_PointCoord.xy - vec2(1, 1));
     if (d > 1) discard;
-    float n = 3;
-    d = n * sqrt(d);
-    d = n * (n - d)/(1 + d * d);
+    float n = 16;
+    d = n * (1 - sqrt(d))/(1 + n * d);
     gl_FragColor = vec4(v_color * d, 1);
 }
 """
@@ -82,8 +81,7 @@ void main()
     float d = length(2 * gl_PointCoord.xy - vec2(1, 1));
     if (d > 1) discard;
     float n = 1;
-    d = n * sqrt(d);
-    d = n * (n - d)/(1 + d * d);
+    d = n * (1 - sqrt(d))/(1 + n * d);
     gl_FragColor = vec4(v_color * d, 1);
 }
 """
@@ -289,13 +287,13 @@ class GLviewer(app.Canvas):
             mmin, mmax = self.mmin[name], self.mmax[name]
             a = f(mass / mmin) / f(mmax / mmin)
 
-            s = 1 * a**0.25
+            s = 1 * a**0.0625
 
-            q = 5
-            qs = [q**i for i in range(3)]
+            q = 1.375
+            qs = [(i+q)**(i+q) for i in range(3)]
             r, g, b = [i * a**i for i in qs]
             c = np.array([r, g, b]).T
-            c /= sum(qs)
+            c *= min(qs)/max(qs)
 
             mask = Ellipsis
             if len(self.data[name]['a_pid']) != len(pid):
