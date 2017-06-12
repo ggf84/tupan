@@ -41,12 +41,13 @@ varying float v_psize;
 // Main
 // ------------------------------------
 void main(void) {
+    float n = 2.5;
     float qs = 0;
     float qq = 1;
     for (int i = 0; i < 3; ++i) {
-        v_color[i] = qq * pow(a_mass, qq);
+        v_color[i] = qq * pow(a_mass, qq / n);
         qs += qq;
-        qq *= 6;
+        qq *= n;
     }
     v_color /= qs;
 
@@ -70,7 +71,7 @@ void main()
     float d = length(2 * gl_PointCoord.xy - vec2(1, 1));
     if (d > 1) discard;
     float n = 16;
-    d = n * (1 - sqrt(d))/(1 + n * d);
+    d = (1 + n / 2) * (1 - d) / (1 + n * d);
     gl_FragColor = vec4(v_color * d, 1);
 }
 """
@@ -89,7 +90,7 @@ void main()
     float d = length(2 * gl_PointCoord.xy - vec2(1, 1));
     if (d > 1) discard;
     float n = 1;
-    d = n * (1 - sqrt(d))/(1 + n * d);
+    d = (1 + n / 2) * (1 - d) / (1 + n * d);
     gl_FragColor = vec4(v_color * d, 1);
 }
 """
@@ -127,6 +128,8 @@ class GLviewer(app.Canvas):
         self.size = size
         self.aspect = aspect
 
+        self.n = 0
+        self.mmin = {}
         self.mmax = {}
         self.data = {}
         self.vdata = {}
@@ -267,6 +270,8 @@ class GLviewer(app.Canvas):
             pid = member.pid
             mass = member.mass
 
+            self.n = n
+            self.mmin[name] = mass.min()
             self.mmax[name] = mass.max()
 
             self.data[name] = np.zeros(n, [('a_position', np.float32, 3),
@@ -290,17 +295,17 @@ class GLviewer(app.Canvas):
             mass = member.mass
             pos = member.rdot[0].T
 
+            mmin = self.mmin[name]
             mmax = self.mmax[name]
-            m = f(mass / mmax)
-
-            s = m**0.5
+            m = f(mass / mmin) / f(mmax / mmin)
 
             mask = Ellipsis
-            if len(self.data[name]['a_pid']) != len(pid):
-                mask = np.in1d(self.data[name]['a_pid'], pid, assume_unique=True)
+            if member.n != self.n:
+                a_pid = self.data[name]['a_pid']
+                mask = np.in1d(a_pid, pid, assume_unique=True)
 
             self.data[name]['a_position'][mask] = pos
-            self.data[name]['a_psize'][mask] = s
+            self.data[name]['a_psize'][mask] = m
             self.data[name]['a_mass'][mask] = m
             self.data[name]['a_pid'][mask] = pid
 
