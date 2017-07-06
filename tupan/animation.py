@@ -8,8 +8,9 @@ TODO.
 import logging
 import subprocess
 import numpy as np
-from vispy import gloo
 from vispy import app
+from vispy import gloo
+from vispy import visuals
 from vispy.util.transforms import perspective, translate, rotate
 from .config import cli
 
@@ -401,6 +402,12 @@ class GLviewer(app.Canvas):
         self.background['a_position'] = [(-1, -1), (-1, 1), (1, 1),
                                          (-1, -1), (1, 1), (1, -1)]
 
+        self.text = visuals.TextVisual('', pos=(9, 16), anchor_x='left')
+        self.text.color = 'white'
+        self.text.font_size = 9
+
+        self.trans = visuals.transforms.TransformSystem(self)
+
         def callback(fps):
             titlestr = "tupan viewer: %0.1f fps @ %d x %d"
             self.title = titlestr % (fps, self.size[0], self.size[1])
@@ -467,9 +474,11 @@ class GLviewer(app.Canvas):
         elif event.text == 'b':
             self.bg_alpha -= 0.03125 * int(self.bg_alpha > 0.0)
             self.set_state()
+            gloo.clear()
         elif event.text == 'B':
             self.bg_alpha += 0.03125 * int(self.bg_alpha < 1.0)
             self.set_state()
+            gloo.clear()
         elif event.text == 'm':
             self.magnitude -= 0.25
             for prog in self.program.values():
@@ -563,6 +572,8 @@ class GLviewer(app.Canvas):
 
     def on_draw(self, event):
         gloo.clear()
+        self.text.draw(self.trans)
+        self.set_state()
 
 #        self.background.draw()
 
@@ -640,6 +651,8 @@ class GLviewer(app.Canvas):
 
             self.vdata[name].set_data(self.data[name])
 
+        time = ps.time[0]
+        self.text.text = f'T = {time:e}'
         self.app.process_events()
         self.update()
 
