@@ -105,14 +105,6 @@ vec3 xyz_to_rgb(vec3 xyz)
                         vec3(-1.5371385, +1.8760108, -0.2040259),
                         vec3(-0.4985314, +0.0415560, +1.0572252));  // sRGB
 
-//    mat3 xyz2rgb = mat3(vec3(+1.4628067, -0.5217933, +0.0349342),
-//                        vec3(-0.1840623, +1.4472381, -0.0968930),
-//                        vec3(-0.2743606, +0.0677227, +1.2884099));  // Wide Gamut RGB
-
-//    mat3 xyz2rgb = mat3(vec3(+1.7552599, -0.5441336, +0.0063467),
-//                        vec3(-0.4836786, +1.5068789, -0.0175761),
-//                        vec3(-0.2530000, +0.0215528, +1.2256959));  // Best RGB
-
     vec3 rgb = xyz2rgb * xyz;
 
     float w = 0.0;
@@ -136,6 +128,7 @@ vec3 xyz_to_rgb(vec3 xyz)
     return rgb;
 }
 
+
 float log10(float arg)
 {
     return log(arg) / log(10);
@@ -152,8 +145,8 @@ void main(void)
 
     float magnitude = a_magnitude + 5 * (log10(projPosition.w) - 1);
 
-//    v_psize = u_psize * sqrt(16 * a_psize);// * 10.0 / projPosition.w;
-    v_psize = u_psize * log10(1 + pow(100, (10 - magnitude) / 5));
+    v_psize = u_psize * sqrt(a_psize);
+//    v_psize = 0.25 * u_psize * log10(1 + pow(100, (10 - magnitude) / 5));
     v_psize = clamp(v_psize, 0, 255);
 
     float lower = u_magnitude;
@@ -241,8 +234,9 @@ vec3 makeStar(in vec2 r)
     }
 */
 
-    col *= airy(d);// + (1 - d) / (64 * d);
+    col *= airy(d) + (1 - d) / (64 * d);
     col += 0.5 * d * (1 - d) * spike(r);
+    col = clamp(col, 0, 1);
     col *= v_brightness;
     return col;
 }
@@ -380,7 +374,7 @@ class GLviewer(app.Canvas):
         self.bg_alpha = 1.0
 
         self.u_temp = 1.0
-        self.psize = 4.0
+        self.psize = 8.0
         self.brightness = 1.0
         self.magnitude = 20.0
 
@@ -402,6 +396,7 @@ class GLviewer(app.Canvas):
         self.background['a_position'] = [(-1, -1), (-1, 1), (1, 1),
                                          (-1, -1), (1, 1), (1, -1)]
 
+        self.show_legend = True
         self.text = visuals.TextVisual('', pos=(9, 16), anchor_x='left')
         self.text.color = 'white'
         self.text.font_size = 9
@@ -453,6 +448,30 @@ class GLviewer(app.Canvas):
 
     def on_initialize(self, event):
         self.set_state()
+
+    def on_resize(self, event):
+        w, h = event.size
+        gloo.set_viewport(0, 0, w, h)
+        self.projection = perspective(45, w / h, 2**(-53), 100.0)
+        for prog in self.program.values():
+            prog['u_viewport'] = (w, h)
+            prog['u_projection'] = self.projection
+#        self.background['u_viewport'] = (w, h)
+
+    def on_draw(self, event):
+        gloo.clear()
+
+        if self.show_legend:
+            self.text.draw(self.trans)
+            self.set_state()
+
+#        self.background.draw()
+
+        for key in self.data:
+            self.program[key].draw('points')
+
+        if cli.record:
+            self.record_screen()
 
     def on_key_press(self, event):
         if event.text == '+':
@@ -529,18 +548,11 @@ class GLviewer(app.Canvas):
             self.model = np.dot(self.model, rotate(-1, [0, 0, 1]))
             for prog in self.program.values():
                 prog['u_model'] = self.model
+        elif event.text == 'l':
+            self.show_legend = not self.show_legend
         elif event.key == 'Escape':
             self.is_visible = False
         self.update()
-
-    def on_resize(self, event):
-        w, h = event.size
-        gloo.set_viewport(0, 0, w, h)
-        self.projection = perspective(45, w / h, 2**(-53), 100.0)
-        for prog in self.program.values():
-            prog['u_viewport'] = (w, h)
-            prog['u_projection'] = self.projection
-#        self.background['u_viewport'] = (w, h)
 
     def on_mouse_wheel(self, event):
         delta = 0.03125 * event.delta[1]
@@ -569,19 +581,6 @@ class GLviewer(app.Canvas):
                 for prog in self.program.values():
                     prog['u_model'] = self.model
         self.update()
-
-    def on_draw(self, event):
-        gloo.clear()
-        self.text.draw(self.trans)
-        self.set_state()
-
-#        self.background.draw()
-
-        for key in self.data:
-            self.program[key].draw('points')
-
-        if cli.record:
-            self.record_screen()
 
     def init_vertex_buffers(self, ps):
         for name, member in ps.members.items():
