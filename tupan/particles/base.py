@@ -169,7 +169,8 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
     """
     # name, shape, sctype, doc
     default_attr_descr = [
-        ('pid', '{nb}', 'uint_t', 'particle id'),
+        ('pid', '{nb}', 'uint_t', 'global particle id'),
+        ('pid_type', '{nb}', 'uint_t', 'particle id of this type'),
         ('mass', '{nb}', 'real_t', 'particle mass'),
         ('eps2', '{nb}', 'real_t', 'particle squared softening'),
         ('rdot', '10, {nd}, {nb}', 'real_t', 'position and its time derivatives'),

@@ -22,6 +22,7 @@ VERT_SHADER = """
 #version 120
 // Uniforms
 // ------------------------------------
+uniform float u_Mtot;
 uniform float u_temp;
 uniform float u_psize;
 uniform float u_magnitude;
@@ -33,7 +34,6 @@ uniform mat4  u_projection;
 
 // Attributes
 // ------------------------------------
-attribute int   a_pid;
 attribute float a_temp;
 attribute float a_psize;
 attribute float a_magnitude;
@@ -149,8 +149,8 @@ void main(void)
 //    v_psize = 0.25 * u_psize * log10(1 + pow(100, (10 - magnitude) / 5));
     v_psize = clamp(v_psize, 0, 255);
 
-    float lower = u_magnitude;
-    float upper = u_magnitude - 20;
+    float lower = u_magnitude - u_Mtot;
+    float upper = u_magnitude;
     v_brightness = (upper - magnitude) / (lower - upper);
     v_brightness = clamp(v_brightness, 0, 1);
     v_brightness *= u_brightness;
@@ -263,7 +263,8 @@ varying vec3  v_pcolor;
 // ------------------------------------
 void main()
 {
-    float d = length(2 * gl_PointCoord.xy - vec2(1, 1));
+    vec2 r = (gl_FragCoord.xy - v_pcenter) / (0.5 * v_psize);
+    float d = length(r);
     if (d > 1) discard;
     float n = 1;
     d = n * (1 - d) * exp2(-n * d);
@@ -283,7 +284,8 @@ varying vec3  v_pcolor;
 // ------------------------------------
 void main()
 {
-    float d = length(2 * gl_PointCoord.xy - vec2(1, 1));
+    vec2 r = (gl_FragCoord.xy - v_pcenter) / (0.5 * v_psize);
+    float d = length(r);
     if (d > 1) discard;
     d = 2 * d - 2;
     d = max(d - 1, d + 1) * v_psize / 4;
@@ -358,10 +360,6 @@ class GLviewer(app.Canvas):
         super(GLviewer, self).__init__(keys='interactive')
         self.size = (w, h)
 
-        self.n = 0
-        self.mmin = {}
-        self.mmax = {}
-        self.mmean = {}
         self.data = {}
         self.vdata = {}
         self.program = {}
@@ -376,7 +374,7 @@ class GLviewer(app.Canvas):
         self.u_temp = 1.0
         self.psize = 8.0
         self.brightness = 1.0
-        self.magnitude = 20.0
+        self.magnitude = 0.0
 
         self.translate = [0.0, 0.0, -10.0]
         self.view = translate(self.translate)
@@ -585,40 +583,12 @@ class GLviewer(app.Canvas):
     def init_vertex_buffers(self, ps):
         for name, member in ps.members.items():
             n = member.n
-            pid = member.pid
-            mass = member.mass
-
-            self.n = n
-            self.mmean[name] = mass.mean()
-
-            self.data[name] = np.zeros(n, [
-                ('a_pid', np.int32, 1),
-                ('a_temp', np.float32, 1),
-                ('a_psize', np.float32, 1),
-                ('a_magnitude', np.float32, 1),
-                ('a_position', np.float32, 3),
-                ]
-            )
-
-            self.data[name]['a_pid'][...] = pid
-
-            self.vdata[name] = gloo.VertexBuffer(self.data[name])
-            self.program[name].bind(self.vdata[name])
-
-    def show_event(self, ps):
-        if not self.data:
-            self.init_vertex_buffers(ps)
-
-        for name, member in ps.members.items():
-            pid = member.pid
             mass = member.mass
             pos = member.rdot[0].T
 
-            mmean = self.mmean[name]
-
             four_pi = 4 * np.pi
             sigma = 5.67037e-8
-            m = (mass / mmean)
+            m = mass / mass.mean()
             L = m**(7/2)
             R = m**(2/3)
             T = (3.828e+26 * L / (four_pi * sigma * (6.957e+8 * R)**2))**(1/4)
@@ -630,6 +600,7 @@ class GLviewer(app.Canvas):
 #            F0 = 3.828e+26 / (four_pi * (10 * 3.0852823)**2)
 #            F0 = 1 / (four_pi * 10**2)
             M = -2.5 * np.log10(L)
+            Mtot = -2.5 * np.log10(L.sum())
 
 #            print(m.min(), m.max(), m.mean())
 #            print(M.min(), M.max(), M.mean())
@@ -637,17 +608,38 @@ class GLviewer(app.Canvas):
 #            print(R.min(), R.max(), R.mean())
 #            print(T.min(), T.max(), T.mean())
 
-            mask = Ellipsis
-            if member.n != self.n:
-                a_pid = self.data[name]['a_pid']
-                mask = np.in1d(a_pid, pid, assume_unique=True)
+#            from numpy.random import seed, shuffle
+#            seed(0)
+#            shuffle(T)
+#            shuffle(R)
+#            shuffle(M)
 
-            self.data[name]['a_pid'][mask] = pid
-            self.data[name]['a_temp'][mask] = T
-            self.data[name]['a_psize'][mask] = R
-            self.data[name]['a_magnitude'][mask] = M
-            self.data[name]['a_position'][mask] = pos
+            attributes = [
+                ('a_temp', np.float32, 1),
+                ('a_psize', np.float32, 1),
+                ('a_magnitude', np.float32, 1),
+                ('a_position', np.float32, 3),
+            ]
+            self.data[name] = np.zeros(n, attributes)
 
+            self.data[name]['a_temp'][...] = T
+            self.data[name]['a_psize'][...] = R
+            self.data[name]['a_magnitude'][...] = M
+            self.data[name]['a_position'][...] = pos
+
+            self.vdata[name] = gloo.VertexBuffer(self.data[name])
+            self.program[name].bind(self.vdata[name])
+            self.program[name]['u_Mtot'] = Mtot
+
+    def show_event(self, ps):
+        if not self.data:
+            self.init_vertex_buffers(ps)
+
+        for name, member in ps.members.items():
+            pid = member.pid_type
+            pos = member.rdot[0].T
+
+            self.data[name]['a_position'][pid] = pos
             self.vdata[name].set_data(self.data[name])
 
         time = ps.time[0]
