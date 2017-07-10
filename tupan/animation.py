@@ -22,7 +22,7 @@ VERT_SHADER = """
 #version 120
 // Uniforms
 // ------------------------------------
-uniform float u_Mtot;
+uniform float u_Mlim;
 uniform float u_temp;
 uniform float u_psize;
 uniform float u_magnitude;
@@ -145,11 +145,13 @@ void main(void)
 
     float magnitude = a_magnitude + 5 * (log10(projPosition.w) - 1);
 
-    v_psize = u_psize * sqrt(a_psize);
+//    v_psize = u_psize * sqrt(a_psize);
+//    v_psize = u_psize * log(1 + 8 * a_psize) / log(1 + 8);
 //    v_psize = 0.25 * u_psize * log10(1 + pow(100, (10 - magnitude) / 5));
+    v_psize = u_psize * (u_Mlim - magnitude) / u_Mlim;
     v_psize = clamp(v_psize, 0, 255);
 
-    float lower = u_magnitude - u_Mtot;
+    float lower = u_magnitude + u_Mlim;
     float upper = u_magnitude;
     v_brightness = (upper - magnitude) / (lower - upper);
     v_brightness = clamp(v_brightness, 0, 1);
@@ -372,7 +374,7 @@ class GLviewer(app.Canvas):
         self.bg_alpha = 1.0
 
         self.u_temp = 1.0
-        self.psize = 8.0
+        self.psize = 10.0
         self.brightness = 1.0
         self.magnitude = 0.0
 
@@ -600,7 +602,7 @@ class GLviewer(app.Canvas):
 #            F0 = 3.828e+26 / (four_pi * (10 * 3.0852823)**2)
 #            F0 = 1 / (four_pi * 10**2)
             M = -2.5 * np.log10(L)
-            Mtot = -2.5 * np.log10(L.sum())
+            Msum = -2.5 * np.log10(L.sum())
 
 #            print(m.min(), m.max(), m.mean())
 #            print(M.min(), M.max(), M.mean())
@@ -629,14 +631,14 @@ class GLviewer(app.Canvas):
 
             self.vdata[name] = gloo.VertexBuffer(self.data[name])
             self.program[name].bind(self.vdata[name])
-            self.program[name]['u_Mtot'] = Mtot
+            self.program[name]['u_Mlim'] = -Msum
 
     def show_event(self, ps):
         if not self.data:
             self.init_vertex_buffers(ps)
 
         for name, member in ps.members.items():
-            pid = member.pid_type
+            pid = member.pid
             pos = member.rdot[0].T
 
             self.data[name]['a_position'][pid] = pos

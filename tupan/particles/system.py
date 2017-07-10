@@ -41,9 +41,8 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
             self.reset_pid()
 
     def reset_pid(self):
-        self.pid[...] = range(self.n)
         for member in self.members.values():
-            member.pid_type[...] = range(member.n)
+            member.pid[...] = range(member.n)
 
     def set_members(self, **members):
         self.members = Members(**members)

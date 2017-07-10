@@ -14,7 +14,7 @@ from tupan.lib.utils.timing import Timer
 
 # number of snapshots per era.
 #
-snaps_per_era = 5
+snaps_per_era = 10
 
 
 with HDF5IO('datastream.hdf5', 'r') as fin:

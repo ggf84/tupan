@@ -149,34 +149,9 @@ class HDF5IO(object):
         for t in times:
             snaps[t] = type(ps)()
 
-        # ---
-        for member in ps.members.values():
-            if member.n:
-                pids = set(member.pid)
-                n = len(pids)
-                for t in times:
-                    snap = type(member)(n)
-                    members = snaps[t].members
-                    members[snap.name] = snap
-                    snaps[t].update_members(**members)
-        pids = set(ps.pid)
-        n = len(pids)
-        for i, pid in enumerate(pids):
-            pstream = ps[ps.pid == pid]
-            for attr in ps.default_attr_names:
-                array = getattr(pstream, attr)
-                alen = len(array.T)
-                kdeg = 3 if alen > 3 else (2 if alen > 2 else 1)
-                f = interp1d(pstream.time, array, kind=kdeg)
-                for t, snap in snaps.items():
-                    ary = getattr(snap, attr)
-                    ary[..., i] = pid if attr == 'pid' else f(t)
-        # ---
-
 #        # ---
 #        for member in ps.members.values():
 #            if member.n:
-#                name = member.name
 #                pids = set(member.pid)
 #                n = len(pids)
 #                for t in times:
@@ -184,19 +159,44 @@ class HDF5IO(object):
 #                    members = snaps[t].members
 #                    members[snap.name] = snap
 #                    snaps[t].update_members(**members)
-#                for i, pid in enumerate(pids):
-#                    pstream = member[member.pid == pid]
-#                    for attr in member.default_attr_names:
-#                        array = getattr(pstream, attr)
-#                        alen = len(array.T)
-#                        kdeg = 3 if alen > 3 else (2 if alen > 2 else 1)
-#                        f = interp1d(pstream.time, array, kind=kdeg)
-#                        for t in times:
-#                            snap = snaps[t]
-#                            obj = getattr(snap.members, name)
-#                            ary = getattr(obj, attr)
-#                            ary[..., i] = pid if attr == 'pid' else f(t)
+#        pids = set(ps.pid)
+#        n = len(pids)
+#        for i, pid in enumerate(pids):
+#            pstream = ps[ps.pid == pid]
+#            for attr in ps.default_attr_names:
+#                array = getattr(pstream, attr)
+#                alen = len(array.T)
+#                kdeg = 3 if alen > 3 else (2 if alen > 2 else 1)
+#                f = interp1d(pstream.time, array, kind=kdeg)
+#                for t, snap in snaps.items():
+#                    ary = getattr(snap, attr)
+#                    ary[..., i] = pid if attr == 'pid' else f(t)
 #        # ---
+
+        # ---
+        for member in ps.members.values():
+            if member.n:
+                name = member.name
+                pids = set(member.pid)
+                n = len(pids)
+                for t in times:
+                    snap = type(member)(n)
+                    members = snaps[t].members
+                    members[snap.name] = snap
+                    snaps[t].update_members(**members)
+                for pid in pids:
+                    pstream = member[member.pid == pid]
+                    for attr in member.default_attr_names:
+                        array = getattr(pstream, attr)
+                        alen = len(array.T)
+                        kdeg = 3 if alen > 3 else (2 if alen > 2 else 1)
+                        f = interp1d(pstream.time, array, kind=kdeg)
+                        for t in times:
+                            snap = snaps[t]
+                            obj = getattr(snap.members, name)
+                            ary = getattr(obj, attr)
+                            ary[..., pid] = pid if attr == 'pid' else f(t)
+        # ---
 
         return snaps
 
