@@ -63,12 +63,12 @@ void main(void)
 
     float magnitude = a_magnitude + 5 * (log10(projPosition.w) - 1);
 
-//    v_psize = 0.25 * u_psize * a_psize;
-    v_psize = u_psize * sqrt(a_psize);
+    v_psize = 0.25 * u_psize * a_psize;
+//    v_psize = u_psize * sqrt(a_psize);
 //    v_psize = u_psize * log(1 + 8 * a_psize) / log(1 + 8);
 //    v_psize = 0.25 * u_psize * log10(1 + pow(100, (10 - magnitude) / 5));
 //    v_psize = u_psize * (u_Mlim - magnitude) / u_Mlim;
-    v_psize = clamp(v_psize, 5, 255);
+    v_psize = clamp(v_psize, 7, 255);
 
     float lower = u_magnitude + u_Mlim;
     float upper = u_magnitude;
@@ -127,7 +127,7 @@ float zbar31(float wavelength)
 }
 
 
-float black_body_spectrum(float temperature, float wavelength)
+float black_body(float temperature, float wavelength)
 {
     // Calculate the emittance of a black body at given
     // temperature (in kelvin) and wavelength (in metres).
@@ -145,7 +145,7 @@ vec3 spectrum_to_xyz(float temperature, int lmin, int lmax)
     float Z = 0.0;
     for (int i = 0; i < (lmax-lmin)+1; i += 80) {
         float wavelength = float(lmin + i);
-        float I = black_body_spectrum(temperature, wavelength);
+        float I = black_body(temperature, wavelength);
         X += I * xbar31(wavelength);
         Y += I * ybar31(wavelength);
         Z += I * zbar31(wavelength);
@@ -200,31 +200,34 @@ vec3 xyz_to_rgb(vec3 xyz)
 float airy(float d)
 {
 //    float s = d;
-//    float s = 4.49341 * d;        // first minimum is at ~4.49341
-//    float s = 7.72525 * d;        // second minimum is at ~7.72525
-//    float s = 10.90412 * d;       // third minimum is at ~10.90412
-    float s = 14.06619 * d;       // fourth minimum is at ~14.06619
+//    float s = 4.493409 * d;        // 1st minimum
+//    float s = 7.725252 * d;        // 2nd minimum
+//    float s = 10.904122 * d;       // 3rd minimum
+//    float s = 14.066194 * d;       // 4th minimum
+//    float s = 17.220755 * d;       // 5th minimum
+//    float s = 20.371303 * d;       // 6th minimum
+//    float s = 23.519452 * d;       // 7th minimum
+    float s = 26.666054 * d;       // 8th minimum
+//    float s = 29.811599 * d;       // 9th minimum
     float j1 = (sin(s) / s - cos(s)) / s;
     float I = 2 * j1 / s;
     I *= 9 * I / 4;             // normalization factor I(0) = 4 / 9
     return I;
 }
 
+
 float gaussian(float r2, float sigma2)
 {
     return exp(-0.5 * r2 / sigma2) / (2 * PI * sigma2);
 }
 
+
 float spike(vec2 r)
 {
-    float s = max(0, 1 - 32 * abs(r.x + r.y)) +  max(0, 1 - 32 * abs(r.x - r.y));
+    float s = max(0, 1 - 16 * abs(r.x + r.y)) +  max(0, 1 - 16 * abs(r.x - r.y));
     return s * s;
 }
 
-float rand(int seed, float ray)
-{
-    return mod(sin(float(seed) * 363.5346 + ray * 674.2454) * 6743.4365, 1.0);
-}
 
 vec3 makeStar(in vec2 r)
 {
@@ -232,37 +235,16 @@ vec3 makeStar(in vec2 r)
     if (d > 1) discard;
     vec3 col = spectrum_to_xyz(v_temp, 380, 780);
 
-/*
-    float ang = atan(r.x, r.y);
-    for (int i = 0; i < 10; ++i)
-    {
-        float ray = float(i + 1);
-        float rayang = rand(5, ray) * 100 * length(v_pcolor);
-        rayang = mod(rayang, 2.0 * PI);
-        if (rayang < ang - PI) {rayang += 2.0 * PI;}
-        if (rayang > ang + PI) {rayang -= 2.0 * PI;}
-        float brite = 0.6 - abs(ang - rayang);
-        brite -= d * 0.4;
-
-        if (brite > 0.0)
-        {
-            col += vec3(0.3 + 1.7 * rand(8644, ray),
-                        0.5 + 1.5 * rand(4567, ray),
-                        0.7 + 1.3 * rand(7354, ray)) * brite * 0.125;
-        }
-    }
-*/
-
     float psf = 2 * airy(d);
-    psf += (1 - d * d) / (128 * d * d);
+    psf += pow((1 - d * d) / (16 * d), 2);
     psf *= 1 + 8 * d * spike(r);
 
     col *= psf;
-    col *= v_brightness;
-    col = clamp(col, 0, 1);
     col = xyz_to_rgb(col);
+    col *= v_brightness;
     return col;
 }
+
 
 // Main
 // ------------------------------------
