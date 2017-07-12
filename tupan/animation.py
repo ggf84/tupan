@@ -41,10 +41,65 @@ attribute vec3  a_position;
 
 // Varyings
 // ------------------------------------
+varying float v_temp;
 varying float v_psize;
 varying float v_brightness;
 varying vec2  v_pcenter;
-varying vec3  v_pcolor;
+
+
+float log10(float arg)
+{
+    return log(arg) / log(10);
+}
+
+
+// Main
+// ------------------------------------
+void main(void)
+{
+    vec4 projPosition = u_projection * u_view * u_model * vec4(a_position, 1);
+    vec2 ndcPosition = projPosition.xy / projPosition.w;
+    v_pcenter = 0.5 * u_viewport * (ndcPosition + vec2(1, 1));
+
+    float magnitude = a_magnitude + 5 * (log10(projPosition.w) - 1);
+
+//    v_psize = 0.25 * u_psize * a_psize;
+    v_psize = u_psize * sqrt(a_psize);
+//    v_psize = u_psize * log(1 + 8 * a_psize) / log(1 + 8);
+//    v_psize = 0.25 * u_psize * log10(1 + pow(100, (10 - magnitude) / 5));
+//    v_psize = u_psize * (u_Mlim - magnitude) / u_Mlim;
+    v_psize = clamp(v_psize, 5, 255);
+
+    float lower = u_magnitude + u_Mlim;
+    float upper = u_magnitude;
+    v_brightness = (upper - magnitude) / (lower - upper);
+    v_brightness = clamp(v_brightness, 0, 1);
+    v_brightness *= u_brightness;
+
+    v_temp = u_temp * a_temp;
+    gl_PointSize = v_psize;
+    gl_Position = projPosition;
+//    if (magnitude > lower) {
+//        gl_Position.w = -1;
+//    }
+}
+"""
+
+FRAG_SHADER0 = """
+#version 120
+// Uniforms
+// ------------------------------------
+uniform vec2 u_viewport;
+
+// Varyings
+// ------------------------------------
+varying float v_temp;
+varying float v_psize;
+varying float v_brightness;
+varying vec2  v_pcenter;
+
+
+#define PI 3.1415927
 
 
 float xbar31(float wavelength)
@@ -99,6 +154,15 @@ vec3 spectrum_to_xyz(float temperature, int lmin, int lmax)
 }
 
 
+float gamma_correction(float c)
+{
+    if (c > 0.0031308) {
+        return (1 + 0.055) * pow(c, 1.0/2.4) - 0.055;
+    }
+    return 12.92 * c;
+}
+
+
 vec3 xyz_to_rgb(vec3 xyz)
 {
     mat3 xyz2rgb = mat3(vec3(+3.2404542, -0.9692660, +0.0556434),
@@ -107,6 +171,7 @@ vec3 xyz_to_rgb(vec3 xyz)
 
     vec3 rgb = xyz2rgb * xyz;
 
+/*
     float w = 0.0;
     w = min(w, rgb.r);
     w = min(w, rgb.g);
@@ -122,67 +187,19 @@ vec3 xyz_to_rgb(vec3 xyz)
     if (norm > 0.0) {
         rgb /= norm;
     }
-
-    rgb = pow(rgb, vec3(1.0/2.2));
+*/
+    rgb = clamp(rgb, 0, 1);
+    rgb.r = gamma_correction(rgb.r);
+    rgb.g = gamma_correction(rgb.g);
+    rgb.b = gamma_correction(rgb.b);
 
     return rgb;
 }
 
 
-float log10(float arg)
-{
-    return log(arg) / log(10);
-}
-
-
-// Main
-// ------------------------------------
-void main(void)
-{
-    vec4 projPosition = u_projection * u_view * u_model * vec4(a_position, 1);
-    vec2 ndcPosition = projPosition.xy / projPosition.w;
-    v_pcenter = 0.5 * u_viewport * (ndcPosition + vec2(1, 1));
-
-    float magnitude = a_magnitude + 5 * (log10(projPosition.w) - 1);
-
-//    v_psize = u_psize * sqrt(a_psize);
-//    v_psize = u_psize * log(1 + 8 * a_psize) / log(1 + 8);
-//    v_psize = 0.25 * u_psize * log10(1 + pow(100, (10 - magnitude) / 5));
-    v_psize = u_psize * (u_Mlim - magnitude) / u_Mlim;
-    v_psize = clamp(v_psize, 0, 255);
-
-    float lower = u_magnitude + u_Mlim;
-    float upper = u_magnitude;
-    v_brightness = (upper - magnitude) / (lower - upper);
-    v_brightness = clamp(v_brightness, 0, 1);
-    v_brightness *= u_brightness;
-
-    v_pcolor = xyz_to_rgb(spectrum_to_xyz(u_temp * a_temp, 380, 780));
-    gl_PointSize = v_psize;
-    gl_Position = projPosition;
-//    if (magnitude > lower) {
-//        gl_Position.w = -1;
-//    }
-}
-"""
-
-FRAG_SHADER0 = """
-#version 120
-// Uniforms
-// ------------------------------------
-uniform vec2 u_viewport;
-
-// Varyings
-// ------------------------------------
-varying float v_psize;
-varying float v_brightness;
-varying vec2  v_pcenter;
-varying vec3  v_pcolor;
-
-#define PI 3.1415927
-
 float airy(float d)
 {
+//    float s = d;
 //    float s = 4.49341 * d;        // first minimum is at ~4.49341
 //    float s = 7.72525 * d;        // second minimum is at ~7.72525
 //    float s = 10.90412 * d;       // third minimum is at ~10.90412
@@ -200,7 +217,7 @@ float gaussian(float r2, float sigma2)
 
 float spike(vec2 r)
 {
-    float s = max(0, 1 - 16 * abs(r.x + r.y)) +  max(0, 1 - 16 * abs(r.x - r.y));
+    float s = max(0, 1 - 32 * abs(r.x + r.y)) +  max(0, 1 - 32 * abs(r.x - r.y));
     return s * s;
 }
 
@@ -213,7 +230,7 @@ vec3 makeStar(in vec2 r)
 {
     float d = length(r);
     if (d > 1) discard;
-    vec3 col = v_pcolor;
+    vec3 col = spectrum_to_xyz(v_temp, 380, 780);
 
 /*
     float ang = atan(r.x, r.y);
@@ -236,10 +253,14 @@ vec3 makeStar(in vec2 r)
     }
 */
 
-    col *= airy(d) + (1 - d) / (64 * d);
-    col += 0.5 * d * (1 - d) * spike(r);
-    col = clamp(col, 0, 1);
+    float psf = 2 * airy(d);
+    psf += (1 - d * d) / (128 * d * d);
+    psf *= 1 + 8 * d * spike(r);
+
+    col *= psf;
     col *= v_brightness;
+    col = clamp(col, 0, 1);
+    col = xyz_to_rgb(col);
     return col;
 }
 
@@ -259,7 +280,6 @@ FRAG_SHADER1 = """
 // ------------------------------------
 varying float v_psize;
 varying vec2  v_pcenter;
-varying vec3  v_pcolor;
 
 // Main
 // ------------------------------------
@@ -270,7 +290,7 @@ void main()
     if (d > 1) discard;
     float n = 1;
     d = n * (1 - d) * exp2(-n * d);
-    gl_FragColor = vec4(v_pcolor * d, 1);
+    gl_FragColor = vec4(vec3(d), 1);
 }
 """
 
@@ -280,7 +300,6 @@ FRAG_SHADER2 = """
 // ------------------------------------
 varying float v_psize;
 varying vec2  v_pcenter;
-varying vec3  v_pcolor;
 
 // Main
 // ------------------------------------
