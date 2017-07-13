@@ -63,12 +63,12 @@ void main(void)
 
     float magnitude = a_magnitude + 5 * (log10(projPosition.w) - 1);
 
-    v_psize = 0.25 * u_psize * a_psize;
+    v_psize = 0.5 * u_psize * a_psize;
 //    v_psize = u_psize * sqrt(a_psize);
 //    v_psize = u_psize * log(1 + 8 * a_psize) / log(1 + 8);
 //    v_psize = 0.25 * u_psize * log10(1 + pow(100, (10 - magnitude) / 5));
-//    v_psize = u_psize * (u_Mlim - magnitude) / u_Mlim;
-    v_psize = clamp(v_psize, 7, 255);
+//    v_psize = 2 * u_psize * (u_Mlim - magnitude) / u_Mlim;
+    v_psize = clamp(v_psize, 0, 255);
 
     float lower = u_magnitude + u_Mlim;
     float upper = u_magnitude;
@@ -188,10 +188,13 @@ vec3 xyz_to_rgb(vec3 xyz)
         rgb /= norm;
     }
 */
+
     rgb = clamp(rgb, 0, 1);
     rgb.r = gamma_correction(rgb.r);
     rgb.g = gamma_correction(rgb.g);
     rgb.b = gamma_correction(rgb.b);
+
+//    rgb = 1 - exp(-8 * rgb);
 
     return rgb;
 }
@@ -199,7 +202,7 @@ vec3 xyz_to_rgb(vec3 xyz)
 
 float airy(float d)
 {
-//    float s = d;
+    float s = d;
 //    float s = 4.493409 * d;        // 1st minimum
 //    float s = 7.725252 * d;        // 2nd minimum
 //    float s = 10.904122 * d;       // 3rd minimum
@@ -207,7 +210,7 @@ float airy(float d)
 //    float s = 17.220755 * d;       // 5th minimum
 //    float s = 20.371303 * d;       // 6th minimum
 //    float s = 23.519452 * d;       // 7th minimum
-    float s = 26.666054 * d;       // 8th minimum
+//    float s = 26.666054 * d;       // 8th minimum
 //    float s = 29.811599 * d;       // 9th minimum
     float j1 = (sin(s) / s - cos(s)) / s;
     float I = 2 * j1 / s;
@@ -231,17 +234,20 @@ float spike(vec2 r)
 
 vec3 makeStar(in vec2 r)
 {
-    float d = length(r);
-    if (d > 1) discard;
+    float d2 = dot(r, r);
+    if (d2 > 1) discard;
     vec3 col = spectrum_to_xyz(v_temp, 380, 780);
 
-    float psf = 2 * airy(d);
-    psf += pow((1 - d * d) / (16 * d), 2);
-    psf *= 1 + 8 * d * spike(r);
+    float c = 29.811599;
+    float c2 = c * c;
+    float d = sqrt(d2);
+    float psf = airy(c * d);
+    psf += (1 - d2) / (c2 * d2);
+    psf *= 1 + c * d2 * spike(r);
 
     col *= psf;
-    col = xyz_to_rgb(col);
     col *= v_brightness;
+    col = xyz_to_rgb(col);
     return col;
 }
 
@@ -375,7 +381,7 @@ class GLviewer(app.Canvas):
         self.bg_alpha = 1.0
 
         self.u_temp = 1.0
-        self.psize = 10.0
+        self.psize = 6.0
         self.brightness = 1.0
         self.magnitude = 0.0
 
