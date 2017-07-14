@@ -18,6 +18,34 @@ from .config import cli
 LOGGER = logging.getLogger(__name__)
 
 
+render_vertex = """
+#version 120
+
+attribute vec2 position;
+attribute vec2 texcoord;
+varying vec2 v_texcoord;
+
+void main()
+{
+    gl_Position = vec4(position, 0.0, 1.0);
+    v_texcoord = texcoord;
+}
+"""
+
+render_fragment = """
+#version 120
+
+uniform sampler2D texture;
+varying vec2 v_texcoord;
+
+void main()
+{
+    vec4 c = texture2D(texture, v_texcoord);
+    gl_FragColor = c;
+}
+"""
+
+
 VERT_SHADER = """
 #version 120
 // Uniforms
@@ -304,69 +332,14 @@ void main()
 """
 
 
-VERT_SHADER3 = """
-#version 120
-// Uniforms
-// ------------------------------------
-uniform vec2 u_viewport;
-
-// Attributes
-// ------------------------------------
-attribute vec2  a_position;
-
-// Main
-// ------------------------------------
-void main(void)
-{
-    gl_Position = vec4(a_position, 0, 1);
-}
-"""
-
-FRAG_SHADER3 = """
-#version 120
-// Uniforms
-// ------------------------------------
-uniform vec2 u_viewport;
-
-// Random float generator
-// ------------------------------------
-float random(vec2 p)
-{
-    float a = fract(sin(p.x + p.y * 10000.) * 10000.);
-    float b = fract(cos(p.y + p.x * 10000.) * 10000.);
-    return (a * a + b * b) / 2.;
-}
-
-// Star field generation
-// ------------------------------------
-vec4 makeStarField(vec2 p)
-{
-    vec2 seed = floor(p * 512);
-    float r = random(seed);
-    vec4 starfield = vec4(pow(r, 10));
-    return starfield;
-}
-
-// Main
-// ------------------------------------
-void main()
-{
-    vec2 uv = 2 * gl_FragCoord.xy - u_viewport.xy;
-    uv /= max(u_viewport.x, u_viewport.y);
-    vec4 starfield = makeStarField(uv);
-    gl_FragColor = starfield;
-}
-"""
-
-
 class GLviewer(app.Canvas):
     """
     TODO.
     """
     def __init__(self, *args, **kwargs):
-        w = 48 * 16
-        h = 48 * 9
         super(GLviewer, self).__init__(keys='interactive')
+
+        w, h = 768, 432
         self.size = (w, h)
 
         self.data = {}
@@ -376,37 +349,22 @@ class GLviewer(app.Canvas):
         self.program['star'] = gloo.Program(VERT_SHADER, FRAG_SHADER0)
         self.program['sph'] = gloo.Program(VERT_SHADER, FRAG_SHADER1)
         self.program['blackhole'] = gloo.Program(VERT_SHADER, FRAG_SHADER2)
-        self.background = gloo.Program(VERT_SHADER3, FRAG_SHADER3)
 
         self.bg_alpha = 1.0
+        self.translate = [0.0, 0.0, -10.0]
 
         self.u_temp = 1.0
-        self.psize = 6.0
-        self.brightness = 1.0
-        self.magnitude = 0.0
+        self.u_psize = 6.0
+        self.u_brightness = 1.0
+        self.u_magnitude = 0.0
+        self.u_view = translate(self.translate)
+        self.u_model = np.eye(4, dtype=np.float32)
+        self.u_projection = np.eye(4, dtype=np.float32)
 
-        self.translate = [0.0, 0.0, -10.0]
-        self.view = translate(self.translate)
-        self.model = np.eye(4, dtype=np.float32)
-        self.projection = np.eye(4, dtype=np.float32)
-
-        for prog in self.program.values():
-            prog['u_temp'] = self.u_temp
-            prog['u_psize'] = self.psize
-            prog['u_brightness'] = self.brightness
-            prog['u_magnitude'] = self.magnitude
-            prog['u_model'] = self.model
-            prog['u_view'] = self.view
-            prog['u_viewport'] = (w, h)
-
-        self.background['u_viewport'] = (w, h)
-        self.background['a_position'] = [(-1, -1), (-1, 1), (1, 1),
-                                         (-1, -1), (1, 1), (1, -1)]
-
-        self.show_legend = True
         self.text = visuals.TextVisual('', pos=(9, 16), anchor_x='left')
         self.text.color = 'white'
         self.text.font_size = 9
+        self.show_legend = True
 
         self.trans = visuals.transforms.TransformSystem(self)
 
@@ -414,12 +372,31 @@ class GLviewer(app.Canvas):
             titlestr = "tupan viewer: %0.1f fps @ %d x %d"
             self.title = titlestr % (fps, self.size[0], self.size[1])
         self.measure_fps(callback=callback)
-        self.show(True)
         self.is_visible = True
+        self.record = cli.record
 
-    def record_screen(self):
+        tex = gloo.Texture2D(self.size+(4,), format='rgba')
+        self.render = gloo.Program(render_vertex, render_fragment)
+        self.render["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        self.render["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        self.render["texture"] = tex
+        self.fbo = gloo.FrameBuffer(self.render["texture"],
+                                    gloo.RenderBuffer(self.size))
+#        self.fbo.resize((h, w))
+#        with self.fbo:
+#            self.do_draw()
+#            im = self.fbo.read()
+#            import matplotlib.pyplot as plt
+#            plt.figure(figsize=(self.size[0]/100., self.size[1]/100.), dpi=100)
+#            self.fig = plt.imshow(im, interpolation='none')
+#            plt.show(block=False)
+
+        self.show(True)
+
+    def record_screen(self, im=None):
         try:
-            im = gloo.read_pixels()
+            if im is None:
+                im = gloo.read_pixels()
             self.ffwriter.stdin.write(im.tostring())
         except AttributeError:
             cmdline = [
@@ -457,104 +434,85 @@ class GLviewer(app.Canvas):
         self.set_state()
 
     def on_resize(self, event):
-        w, h = event.size
+        w, h = self.size
+        self.fbo.resize((h, w))
         gloo.set_viewport(0, 0, w, h)
-        self.projection = perspective(45, w / h, 2**(-53), 100.0)
-        for prog in self.program.values():
-            prog['u_viewport'] = (w, h)
-            prog['u_projection'] = self.projection
-#        self.background['u_viewport'] = (w, h)
+        self.u_projection = perspective(45, w / h, 2**(-53), 100.0)
 
-    def on_draw(self, event):
+    def do_draw(self):
         gloo.clear()
 
         if self.show_legend:
             self.text.draw(self.trans)
             self.set_state()
 
-#        self.background.draw()
-
         for key in self.data:
-            self.program[key].draw('points')
+            prog = self.program[key]
+            prog['u_temp'] = self.u_temp
+            prog['u_psize'] = self.u_psize
+            prog['u_brightness'] = self.u_brightness
+            prog['u_magnitude'] = self.u_magnitude
+            prog['u_viewport'] = self.size
+            prog['u_view'] = self.u_view
+            prog['u_model'] = self.u_model
+            prog['u_projection'] = self.u_projection
+            prog.draw('points')
 
-        if cli.record:
+    def on_draw(self, event):
+        with self.fbo:
+            self.do_draw()
+#            im = self.fbo.read()
+#            import matplotlib.pyplot as plt
+#            self.fig.set_data(im)
+#            plt.draw()
+
+        gloo.clear()
+        self.render.draw('triangle_strip')
+
+        if self.record:
             self.record_screen()
 
     def on_key_press(self, event):
         if event.text == '+':
-            self.psize *= 1.03125
-            for prog in self.program.values():
-                prog['u_psize'] = self.psize
+            self.u_psize *= 1.03125
         elif event.text == '-':
-            self.psize /= 1.03125
-            for prog in self.program.values():
-                prog['u_psize'] = self.psize
+            self.u_psize /= 1.03125
         elif event.text == 'a':
-            self.brightness /= 1.03125
-            for prog in self.program.values():
-                prog['u_brightness'] = self.brightness
+            self.u_brightness /= 1.03125
         elif event.text == 'A':
-            self.brightness *= 1.03125
-            for prog in self.program.values():
-                prog['u_brightness'] = self.brightness
+            self.u_brightness *= 1.03125
         elif event.text == 'b':
             self.bg_alpha -= 0.03125 * int(self.bg_alpha > 0.0)
             self.set_state()
-            gloo.clear()
         elif event.text == 'B':
             self.bg_alpha += 0.03125 * int(self.bg_alpha < 1.0)
             self.set_state()
-            gloo.clear()
         elif event.text == 'm':
-            self.magnitude -= 0.25
-            for prog in self.program.values():
-                prog['u_magnitude'] = self.magnitude
+            self.u_magnitude -= 0.25
         elif event.text == 'M':
-            self.magnitude += 0.25
-            for prog in self.program.values():
-                prog['u_magnitude'] = self.magnitude
+            self.u_magnitude += 0.25
         elif event.text == 't':
             self.u_temp /= 1.03125
-            for prog in self.program.values():
-                prog['u_temp'] = self.u_temp
         elif event.text == 'T':
             self.u_temp *= 1.03125
-            for prog in self.program.values():
-                prog['u_temp'] = self.u_temp
         elif event.text == 'Z':
             self.translate[2] -= 0.03125 * (1 + abs(self.translate[2]))
-            self.view = translate(self.translate)
-            for prog in self.program.values():
-                prog['u_view'] = self.view
+            self.u_view = translate(self.translate)
         elif event.text == 'z':
             self.translate[2] += 0.03125 * (1 + abs(self.translate[2]))
-            self.view = translate(self.translate)
-            for prog in self.program.values():
-                prog['u_view'] = self.view
+            self.u_view = translate(self.translate)
         elif event.key == 'Up':
-            self.model = np.dot(self.model, rotate(+1, [1, 0, 0]))
-            for prog in self.program.values():
-                prog['u_model'] = self.model
+            self.u_model = np.dot(self.u_model, rotate(+1, [1, 0, 0]))
         elif event.key == 'Down':
-            self.model = np.dot(self.model, rotate(-1, [1, 0, 0]))
-            for prog in self.program.values():
-                prog['u_model'] = self.model
+            self.u_model = np.dot(self.u_model, rotate(-1, [1, 0, 0]))
         elif event.key == 'Right':
-            self.model = np.dot(self.model, rotate(+1, [0, 1, 0]))
-            for prog in self.program.values():
-                prog['u_model'] = self.model
+            self.u_model = np.dot(self.u_model, rotate(+1, [0, 1, 0]))
         elif event.key == 'Left':
-            self.model = np.dot(self.model, rotate(-1, [0, 1, 0]))
-            for prog in self.program.values():
-                prog['u_model'] = self.model
+            self.u_model = np.dot(self.u_model, rotate(-1, [0, 1, 0]))
         elif event.key == '>':
-            self.model = np.dot(self.model, rotate(+1, [0, 0, 1]))
-            for prog in self.program.values():
-                prog['u_model'] = self.model
+            self.u_model = np.dot(self.u_model, rotate(+1, [0, 0, 1]))
         elif event.key == '<':
-            self.model = np.dot(self.model, rotate(-1, [0, 0, 1]))
-            for prog in self.program.values():
-                prog['u_model'] = self.model
+            self.u_model = np.dot(self.u_model, rotate(-1, [0, 0, 1]))
         elif event.text == 'l':
             self.show_legend = not self.show_legend
         elif event.key == 'Escape':
@@ -564,9 +522,7 @@ class GLviewer(app.Canvas):
     def on_mouse_wheel(self, event):
         delta = 0.03125 * event.delta[1]
         self.translate[2] += delta * (1 + abs(self.translate[2]))
-        self.view = translate(self.translate)
-        for prog in self.program.values():
-            prog['u_view'] = self.view
+        self.u_view = translate(self.translate)
         self.update()
 
     def on_mouse_move(self, event):
@@ -578,15 +534,11 @@ class GLviewer(app.Canvas):
             if event.button == 1:
                 self.translate[0] = 5 * dx
                 self.translate[1] = 5 * dy
-                self.view = translate(self.translate)
-                for prog in self.program.values():
-                    prog['u_view'] = self.view
+                self.u_view = translate(self.translate)
             if event.button == 2:
-                self.model = np.dot(self.model,
-                                    np.dot(rotate(-dx, [0, 1, 0]),
-                                           rotate(+dy, [1, 0, 0])))
-                for prog in self.program.values():
-                    prog['u_model'] = self.model
+                self.u_model = np.dot(self.u_model,
+                                      np.dot(rotate(-dx, [0, 1, 0]),
+                                             rotate(+dy, [1, 0, 0])))
         self.update()
 
     def init_vertex_buffers(self, ps):
