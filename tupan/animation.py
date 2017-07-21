@@ -135,7 +135,7 @@ void main(void)
 //    v_psize = u_psize * pow(a_psize, 3.0/4.0);
     v_psize = 0.5 * u_psize * a_psize;
 //    v_psize = 2 * u_psize * sqrt(a_psize);
-//    v_psize = u_psize * log(1 + 8 * a_psize) / log(1 + 8);
+//    v_psize = 2.5 * u_psize * log(1 + 4 * a_psize) / log(1 + 4);
 //    v_psize = 0.25 * u_psize * log10(1 + pow(100, (10 - magnitude) / 5));
 //    v_psize = 2 * u_psize * (u_Mlim - magnitude) / u_Mlim;
     v_psize = clamp(v_psize, 0, 255);
@@ -212,7 +212,7 @@ float gaussian(float r2, float sigma2)
 
 float spike(vec2 r)
 {
-    float s = max(0, 1 - 32 * abs(r.x + r.y)) +  max(0, 1 - 32 * abs(r.x - r.y));
+    float s = max(0, 1 - 24 * abs(r.x + r.y)) +  max(0, 1 - 24 * abs(r.x - r.y));
     return s * s;
 }
 
@@ -224,7 +224,7 @@ float make_star(in vec2 r)
     float k = 1024;
     float psf = airy(k * d);
     psf *= abs(2 - d2);
-    psf *= 1 + 128 * d * spike(r);
+    psf *= 1 + 64 * d * spike(r);
     psf *= 0.125 * pow(k / 8, 4);
 
     return psf * v_brightness;
