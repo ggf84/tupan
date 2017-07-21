@@ -38,9 +38,47 @@ render_fragment = """
 uniform sampler2D texture;
 varying vec2 v_texcoord;
 
+float gamma_correction(float c)
+{
+    return (c <= 0.0031308)
+                ? (12.92 * c)
+                : ((1 + 0.055) * pow(c, (1.0/2.4)) - 0.055);
+}
+
+vec3 gamma_correction(vec3 c)
+{
+    c.r = gamma_correction(c.r);
+    c.g = gamma_correction(c.g);
+    c.b = gamma_correction(c.b);
+    return c;
+//    return (c <= 0.0031308)
+//                ? (12.92 * c)
+//                : ((1 + 0.055) * pow(c, vec3(1.0/2.4)) - 0.055);
+}
+
+vec3 xyz_to_rgb(vec3 c)
+{
+    // luminance adjustment
+    vec3 C = c;
+    c /= (c.x + c.y + c.z);
+    C.y = log(1 + 16 * C.y) / log(1 + pow(16, 4));
+    C.x = C.y * (c.x / c.y);
+    C.z = C.y * ((1 - (c.x + c.y)) / c.y);
+    c = C;
+
+    mat3 xyz2rgb = mat3(vec3(+3.2404542, -0.9692660, +0.0556434),
+                        vec3(-1.5371385, +1.8760108, -0.2040259),
+                        vec3(-0.4985314, +0.0415560, +1.0572252));  // sRGB
+    c = xyz2rgb * c;
+    c = clamp(c, 0, 1);
+    c = gamma_correction(c);
+    return c;
+}
+
 void main()
 {
     vec4 c = texture2D(texture, v_texcoord);
+    c.rgb = xyz_to_rgb(c.xyz);
     gl_FragColor = c;
 }
 """
@@ -55,6 +93,7 @@ uniform float u_temp;
 uniform float u_psize;
 uniform float u_magnitude;
 uniform float u_brightness;
+uniform float u_bolometric_flux;
 uniform vec2  u_viewport;
 uniform mat4  u_model;
 uniform mat4  u_view;
@@ -89,22 +128,25 @@ void main(void)
     vec2 ndcPosition = projPosition.xy / projPosition.w;
     v_pcenter = 0.5 * u_viewport * (ndcPosition + vec2(1, 1));
 
+    v_temp = a_temp + u_temp;
     float magnitude = a_magnitude + 5 * (log10(projPosition.w) - 1);
 
+//    v_psize = u_psize;
+//    v_psize = u_psize * pow(a_psize, 3.0/4.0);
     v_psize = 0.5 * u_psize * a_psize;
-//    v_psize = u_psize * sqrt(a_psize);
+//    v_psize = 2 * u_psize * sqrt(a_psize);
 //    v_psize = u_psize * log(1 + 8 * a_psize) / log(1 + 8);
 //    v_psize = 0.25 * u_psize * log10(1 + pow(100, (10 - magnitude) / 5));
 //    v_psize = 2 * u_psize * (u_Mlim - magnitude) / u_Mlim;
     v_psize = clamp(v_psize, 0, 255);
 
-    float lower = u_magnitude + u_Mlim;
-    float upper = u_magnitude;
-    v_brightness = (upper - magnitude) / (lower - upper);
-    v_brightness = clamp(v_brightness, 0, 1);
-    v_brightness *= u_brightness;
+//    float lower = u_magnitude + u_Mlim;
+//    float upper = u_magnitude;
+//    v_brightness = (upper - magnitude) / (lower - upper);
+//    v_brightness = clamp(v_brightness, 0, 1);
+    v_brightness = u_brightness / u_bolometric_flux;
+//    v_brightness = 10 * u_brightness / (5.67037e-8 * pow(v_temp, 4));
 
-    v_temp = u_temp * a_temp;
     gl_PointSize = v_psize;
     gl_Position = projPosition;
 //    if (magnitude > lower) {
@@ -115,6 +157,9 @@ void main(void)
 
 FRAG_SHADER0 = """
 #version 120
+
+#define PI 3.1415927
+
 // Uniforms
 // ------------------------------------
 uniform vec2 u_viewport;
@@ -127,105 +172,19 @@ varying float v_brightness;
 varying vec2  v_pcenter;
 
 
-#define PI 3.1415927
+const float offset = 1.0 / 512;
 
-
-float xbar31(float wavelength)
-{
-    float t1 = (wavelength-442.0f)*((wavelength < 442.0f)?0.0624f:0.0374f);
-    float t2 = (wavelength-599.8f)*((wavelength < 599.8f)?0.0264f:0.0323f);
-    float t3 = (wavelength-501.1f)*((wavelength < 501.1f)?0.0490f:0.0382f);
-    return 0.362f*exp(-0.5f*t1*t1) + 1.056f*exp(-0.5f*t2*t2) - 0.065f*exp(-0.5f*t3*t3);
-}
-
-
-float ybar31(float wavelength)
-{
-    float t1 = (wavelength-568.8f)*((wavelength < 568.8f)?0.0213f:0.0247f);
-    float t2 = (wavelength-530.9f)*((wavelength < 530.9f)?0.0613f:0.0322f);
-    return 0.821f*exp(-0.5f*t1*t1) + 0.286f*exp(-0.5f*t2*t2);
-}
-
-
-float zbar31(float wavelength)
-{
-    float t1 = (wavelength-437.0f)*((wavelength < 437.0f)?0.0845f:0.0278f);
-    float t2 = (wavelength-459.0f)*((wavelength < 459.0f)?0.0385f:0.0725f);
-    return 1.217f*exp(-0.5f*t1*t1) + 0.681f*exp(-0.5f*t2*t2);
-}
-
-
-float black_body(float temperature, float wavelength)
-{
-    // Calculate the emittance of a black body at given
-    // temperature (in kelvin) and wavelength (in metres).
-    float c1 = 3.7417718e-16;
-    float c2 = 1.43878e-2;
-    float wlen = wavelength * 1.0e-9;  // Convert to metres.
-    return c1 * pow(wlen, -5.0) / (exp(c2 / (wlen * temperature)) - 1.0);
-}
-
-
-vec3 spectrum_to_xyz(float temperature, int lmin, int lmax)
-{
-    float X = 0.0;
-    float Y = 0.0;
-    float Z = 0.0;
-    for (int i = 0; i < (lmax-lmin)+1; i += 80) {
-        float wavelength = float(lmin + i);
-        float I = black_body(temperature, wavelength);
-        X += I * xbar31(wavelength);
-        Y += I * ybar31(wavelength);
-        Z += I * zbar31(wavelength);
-    }
-    return vec3(X, Y, Z) / (X + Y + Z);
-}
-
-
-float gamma_correction(float c)
-{
-    if (c > 0.0031308) {
-        return (1 + 0.055) * pow(c, 1.0/2.4) - 0.055;
-    }
-    return 12.92 * c;
-}
-
-
-vec3 xyz_to_rgb(vec3 xyz)
-{
-    mat3 xyz2rgb = mat3(vec3(+3.2404542, -0.9692660, +0.0556434),
-                        vec3(-1.5371385, +1.8760108, -0.2040259),
-                        vec3(-0.4985314, +0.0415560, +1.0572252));  // sRGB
-
-    vec3 rgb = xyz2rgb * xyz;
-
-/*
-    float w = 0.0;
-    w = min(w, rgb.r);
-    w = min(w, rgb.g);
-    w = min(w, rgb.b);
-    if (w < 0.0) {
-        rgb -= w;
-    }
-
-    float norm = 0.0;
-    norm = max(norm, rgb.r);
-    norm = max(norm, rgb.g);
-    norm = max(norm, rgb.b);
-    if (norm > 0.0) {
-        rgb /= norm;
-    }
-*/
-
-    rgb = clamp(rgb, 0, 1);
-    rgb.r = gamma_correction(rgb.r);
-    rgb.g = gamma_correction(rgb.g);
-    rgb.b = gamma_correction(rgb.b);
-
-//    rgb = 1 - exp(-8 * rgb);
-
-    return rgb;
-}
+const vec2 offsets[8] = vec2[](
+    vec2(-offset,  offset), // top-left
+    vec2( 0.0f,    offset), // top-center
+    vec2( offset,  offset), // top-right
+    vec2(-offset,  0.0f),   // center-left
+//    vec2( 0.0f,    0.0f),   // center-center
+    vec2( offset,  0.0f),   // center-right
+    vec2(-offset, -offset), // bottom-left
+    vec2( 0.0f,   -offset), // bottom-center
+    vec2( offset, -offset)  // bottom-right
+);
 
 
 float airy(float d)
@@ -246,47 +205,89 @@ float airy(float d)
     return I;
 }
 
-
 float gaussian(float r2, float sigma2)
 {
     return exp(-0.5 * r2 / sigma2) / (2 * PI * sigma2);
 }
 
-
 float spike(vec2 r)
 {
-    float s = max(0, 1 - 16 * abs(r.x + r.y)) +  max(0, 1 - 16 * abs(r.x - r.y));
+    float s = max(0, 1 - 32 * abs(r.x + r.y)) +  max(0, 1 - 32 * abs(r.x - r.y));
     return s * s;
 }
 
-
-vec3 makeStar(in vec2 r)
+float make_star(in vec2 r)
 {
     float d2 = dot(r, r);
-    if (d2 > 1) discard;
-    vec3 col = spectrum_to_xyz(v_temp, 380, 780);
-
-    float c = 29.811599;
-    float c2 = c * c;
     float d = sqrt(d2);
-    float psf = airy(c * d);
-    psf += (1 - d2) / (c2 * d2);
-    psf *= 1 + c * d2 * spike(r);
 
-    col *= psf;
-    col *= v_brightness;
-    col = xyz_to_rgb(col);
-    return col;
+    float k = 1024;
+    float psf = airy(k * d);
+    psf *= abs(2 - d2);
+    psf *= 1 + 128 * d * spike(r);
+    psf *= 0.125 * pow(k / 8, 4);
+
+    return psf * v_brightness;
 }
 
+float xbar31(float wavelength)
+{
+    float t1 = (wavelength-442.0f)*((wavelength < 442.0f)?0.0624f:0.0374f);
+    float t2 = (wavelength-599.8f)*((wavelength < 599.8f)?0.0264f:0.0323f);
+    float t3 = (wavelength-501.1f)*((wavelength < 501.1f)?0.0490f:0.0382f);
+    return 0.362f*exp(-0.5f*t1*t1) + 1.056f*exp(-0.5f*t2*t2) - 0.065f*exp(-0.5f*t3*t3);
+}
+
+float ybar31(float wavelength)
+{
+    float t1 = (wavelength-568.8f)*((wavelength < 568.8f)?0.0213f:0.0247f);
+    float t2 = (wavelength-530.9f)*((wavelength < 530.9f)?0.0613f:0.0322f);
+    return 0.821f*exp(-0.5f*t1*t1) + 0.286f*exp(-0.5f*t2*t2);
+}
+
+float zbar31(float wavelength)
+{
+    float t1 = (wavelength-437.0f)*((wavelength < 437.0f)?0.0845f:0.0278f);
+    float t2 = (wavelength-459.0f)*((wavelength < 459.0f)?0.0385f:0.0725f);
+    return 1.217f*exp(-0.5f*t1*t1) + 0.681f*exp(-0.5f*t2*t2);
+}
+
+float black_body(float temperature, float wavelength)
+{
+    // Calculate the emittance of a black body at given
+    // temperature (in kelvin) and wavelength (in metres).
+    float c1 = 3.7417718e-16;
+    float c2 = 1.43878e-2;
+    float wlen = 1.0e-9 * wavelength;  // Convert to metres.
+    return c1 * pow(wlen, -5.0) / (exp(c2 / (wlen * temperature)) - 1.0);
+}
+
+vec3 spectrum_to_xyz(float temperature, int lamb_min, int lamb_max, int nsteps)
+{
+    vec3 XYZ = vec3(0.0);
+    int dlamb = (lamb_max - lamb_min) / nsteps;
+    float lambda = lamb_min;
+    for (int i = 0; i < nsteps + 1; ++i) {
+        float I = black_body(temperature, lambda);
+        vec3 xyz = vec3(xbar31(lambda), ybar31(lambda), zbar31(lambda));
+        XYZ += I * xyz * (dlamb * 1.0e-9);
+        lambda += dlamb;
+    }
+    return XYZ;
+}
 
 // Main
 // ------------------------------------
 void main()
 {
-    vec2 r = (gl_FragCoord.xy - v_pcenter) / (0.5 * v_psize);
-    gl_FragColor.rgb = makeStar(r);
-    gl_FragColor.a = 1;
+    vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
+    float psf = make_star(r);
+    for(int i = 0; i < 8; i++) {
+        psf += make_star(r + offsets[i]);
+    }
+    psf /= 1 + 8;
+    vec3 c = psf * spectrum_to_xyz(v_temp, 380, 780, 8);
+    gl_FragColor = vec4(c, 1);
 }
 """
 
@@ -301,7 +302,7 @@ varying vec2  v_pcenter;
 // ------------------------------------
 void main()
 {
-    vec2 r = (gl_FragCoord.xy - v_pcenter) / (0.5 * v_psize);
+    vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
     float d = length(r);
     if (d > 1) discard;
     float n = 1;
@@ -321,7 +322,7 @@ varying vec2  v_pcenter;
 // ------------------------------------
 void main()
 {
-    vec2 r = (gl_FragCoord.xy - v_pcenter) / (0.5 * v_psize);
+    vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
     float d = length(r);
     if (d > 1) discard;
     d = 2 * d - 2;
@@ -353,8 +354,8 @@ class GLviewer(app.Canvas):
         self.bg_alpha = 1.0
         self.translate = [0.0, 0.0, -10.0]
 
-        self.u_temp = 1.0
-        self.u_psize = 6.0
+        self.u_temp = 0.0
+        self.u_psize = 4.0
         self.u_brightness = 1.0
         self.u_magnitude = 0.0
         self.u_view = translate(self.translate)
@@ -375,7 +376,9 @@ class GLviewer(app.Canvas):
         self.is_visible = True
         self.record = cli.record
 
-        tex = gloo.Texture2D(self.size+(4,), format='rgba')
+        tex = gloo.Texture2D(self.size+(4,),
+                             format='rgba',
+                             internalformat='rgba32f')
         self.render = gloo.Program(render_vertex, render_fragment)
         self.render["position"] = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
         self.render["texcoord"] = [(0, 0), (0, 1), (1, 0), (1, 1)]
@@ -426,8 +429,9 @@ class GLviewer(app.Canvas):
             cull_face=False,
             depth_test=False,
             clear_color=(0.0, 0.0, 0.0, self.bg_alpha),
-            blend_func=('one', 'one_minus_src_color', 'zero', 'one'),
+#            blend_func=('one', 'one_minus_src_color', 'zero', 'one'),
 #            blend_func=('src_alpha', 'one', 'zero', 'one'),
+            blend_func=('one', 'one', 'zero', 'one'),
         )
 
     def on_initialize(self, event):
@@ -492,9 +496,9 @@ class GLviewer(app.Canvas):
         elif event.text == 'M':
             self.u_magnitude += 0.25
         elif event.text == 't':
-            self.u_temp /= 1.03125
+            self.u_temp -= 50
         elif event.text == 'T':
-            self.u_temp *= 1.03125
+            self.u_temp += 50
         elif event.text == 'Z':
             self.translate[2] -= 0.03125 * (1 + abs(self.translate[2]))
             self.u_view = translate(self.translate)
@@ -547,6 +551,14 @@ class GLviewer(app.Canvas):
             mass = member.mass
             pos = member.rdot[0].T
 
+            attributes = [
+                ('a_temp', np.float32, 1),
+                ('a_psize', np.float32, 1),
+                ('a_magnitude', np.float32, 1),
+                ('a_position', np.float32, 3),
+            ]
+            self.data[name] = np.zeros(n, attributes)
+
             four_pi = 4 * np.pi
             sigma = 5.67037e-8
             m = mass / mass.mean()
@@ -575,13 +587,9 @@ class GLviewer(app.Canvas):
 #            shuffle(R)
 #            shuffle(M)
 
-            attributes = [
-                ('a_temp', np.float32, 1),
-                ('a_psize', np.float32, 1),
-                ('a_magnitude', np.float32, 1),
-                ('a_position', np.float32, 3),
-            ]
-            self.data[name] = np.zeros(n, attributes)
+            F = sigma * T**4
+            self.program[name]['u_Mlim'] = -Msum
+            self.program[name]['u_bolometric_flux'] = F.mean()
 
             self.data[name]['a_temp'][...] = T
             self.data[name]['a_psize'][...] = R
@@ -590,7 +598,6 @@ class GLviewer(app.Canvas):
 
             self.vdata[name] = gloo.VertexBuffer(self.data[name])
             self.program[name].bind(self.vdata[name])
-            self.program[name]['u_Mlim'] = -Msum
 
     def show_event(self, ps):
         if not self.data:
