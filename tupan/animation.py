@@ -47,7 +47,7 @@ float gamma_correction(float c)
 {
     return (c <= 0.0031308)
                 ? (12.92 * c)
-                : ((1 + 0.055) * pow(c, (1.0/2.4)) - 0.055);
+                : (1.055 * pow(c, (1.0/2.4)) - 0.055);
 }
 
 vec3 gamma_correction(vec3 c)
@@ -58,25 +58,27 @@ vec3 gamma_correction(vec3 c)
     return c;
 //    return (c <= 0.0031308)
 //                ? (12.92 * c)
-//                : ((1 + 0.055) * pow(c, vec3(1.0/2.4)) - 0.055);
+//                : (1.055 * pow(c, vec3(1.0/2.4)) - 0.055);
+}
+
+float asinh(float x)
+{
+    return log(x + sqrt(1 + x * x));
 }
 
 vec3 xyz_to_rgb(vec3 c)
 {
     // luminance adjustment
-    vec3 C = c;
-    c /= (c.x + c.y + c.z);
-    C.y = log(1 + 16 * C.y) / log(1 + pow(16, 4));
-    C.x = C.y * (c.x / c.y);
-    C.z = C.y * ((1 - (c.x + c.y)) / c.y);
-    c = C;
+    float I = (c.x + c.y + c.z) / 3;
+    float i = asinh(24 * I) / 8;
+    c *= i / I;
 
     mat3 xyz2rgb = mat3(vec3(+3.24096994, -0.96924364, +0.05563008),
                         vec3(-1.53738318, +1.87596750, -0.20397696),
                         vec3(-0.49861076, +0.04155506, +1.05697151));  // sRGB
     c = xyz2rgb * c;
-    c = clamp(c, 0, 1);
     c = gamma_correction(c);
+    c = clamp(c, 0, 1);
     return c;
 }
 
@@ -93,13 +95,10 @@ VERT_SHADER = """
 #version 120
 // Uniforms
 // ------------------------------------
-uniform float u_Mlim;
 uniform float u_temp;
 uniform float u_psize;
-uniform float u_magnitude;
 uniform float u_brightness;
 uniform float u_bolometric_flux;
-uniform vec2  u_viewport;
 uniform mat4  u_model;
 uniform mat4  u_view;
 uniform mat4  u_projection;
@@ -108,7 +107,6 @@ uniform mat4  u_projection;
 // ------------------------------------
 attribute float a_temp;
 attribute float a_psize;
-attribute float a_magnitude;
 attribute vec3  a_position;
 
 // Varyings
@@ -116,47 +114,27 @@ attribute vec3  a_position;
 varying float v_temp;
 varying float v_psize;
 varying float v_brightness;
-varying vec2  v_pcenter;
-
-
-float log10(float arg)
-{
-    return log(arg) / log(10);
-}
 
 
 // Main
 // ------------------------------------
 void main(void)
 {
-    vec4 projPosition = u_projection * u_view * u_model * vec4(a_position, 1);
-    vec2 ndcPosition = projPosition.xy / projPosition.w;
-    v_pcenter = 0.5 * u_viewport * (ndcPosition + vec2(1, 1));
-
     v_temp = a_temp + u_temp;
-    float magnitude = a_magnitude + 5 * (log10(projPosition.w) - 1);
+    vec4 projPosition = u_projection * u_view * u_model * vec4(a_position, 1);
 
 //    v_psize = u_psize;
 //    v_psize = u_psize * pow(a_psize, 3.0/4.0);
     v_psize = 0.5 * u_psize * a_psize;
 //    v_psize = 2 * u_psize * sqrt(a_psize);
 //    v_psize = 2.5 * u_psize * log(1 + 4 * a_psize) / log(1 + 4);
-//    v_psize = 0.25 * u_psize * log10(1 + pow(100, (10 - magnitude) / 5));
-//    v_psize = 2 * u_psize * (u_Mlim - magnitude) / u_Mlim;
     v_psize = clamp(v_psize, 0, 255);
 
-//    float lower = u_magnitude + u_Mlim;
-//    float upper = u_magnitude;
-//    v_brightness = (upper - magnitude) / (lower - upper);
-//    v_brightness = clamp(v_brightness, 0, 1);
     v_brightness = u_brightness / u_bolometric_flux;
-//    v_brightness = 10 * u_brightness / (5.67037e-8 * pow(v_temp, 4));
+//    v_brightness = u_brightness / (5.67037e-8 * pow(v_temp, 4));
 
     gl_PointSize = v_psize;
     gl_Position = projPosition;
-//    if (magnitude > lower) {
-//        gl_Position.w = -1;
-//    }
 }
 """
 
@@ -167,7 +145,6 @@ FRAG_SHADER0 = """
 
 // Uniforms
 // ------------------------------------
-uniform vec2 u_viewport;
 uniform vec4 u_xyzbar31[95];
 
 // Varyings
@@ -175,7 +152,6 @@ uniform vec4 u_xyzbar31[95];
 varying float v_temp;
 varying float v_psize;
 varying float v_brightness;
-varying vec2  v_pcenter;
 
 
 const float offset = 1.0 / 512;
@@ -193,22 +169,42 @@ const vec2 offsets[8] = vec2[](
 );
 
 
+float bessj1(float x)
+/*
+Returns the Bessel function J1(x) for any real x.
+(from Numerical Recipes in C, 2nd Ed., p. 257)
+*/
+{
+    float ax,z;
+    float xx,y,ans,ans1,ans2;
+
+    if ((ax=abs(x)) < 8.0) {
+        y=x*x;
+        ans1=x*(72362614232.0+y*(-7895059235.0+y*(242396853.1
+            +y*(-2972611.439+y*(15704.48260+y*(-30.16036606))))));
+        ans2=144725228442.0+y*(2300535178.0+y*(18583304.74
+            +y*(99447.43394+y*(376.9991397+y*1.0))));
+        ans=ans1/ans2;
+    } else {
+        z=8.0/ax;
+        y=z*z;
+        xx=ax-2.356194491;
+        ans1=1.0+y*(0.183105e-2+y*(-0.3516396496e-4
+            +y*(0.2457520174e-5+y*(-0.240337019e-6))));
+        ans2=0.04687499995+y*(-0.2002690873e-3
+            +y*(0.8449199096e-5+y*(-0.88228987e-6
+            +y*0.105787412e-6)));
+        ans=sqrt(0.636619772/ax)*(cos(xx)*ans1-z*sin(xx)*ans2);
+        if (x < 0.0) ans = -ans;
+    }
+    return ans;
+}
+
 float airy(float d)
 {
-    float s = d;
-//    float s = 4.493409 * d;        // 1st minimum
-//    float s = 7.725252 * d;        // 2nd minimum
-//    float s = 10.904122 * d;       // 3rd minimum
-//    float s = 14.066194 * d;       // 4th minimum
-//    float s = 17.220755 * d;       // 5th minimum
-//    float s = 20.371303 * d;       // 6th minimum
-//    float s = 23.519452 * d;       // 7th minimum
-//    float s = 26.666054 * d;       // 8th minimum
-//    float s = 29.811599 * d;       // 9th minimum
-    float j1 = (sin(s) / s - cos(s)) / s;
-    float I = 2 * j1 / s;
-    I *= 9 * I / 4;             // normalization factor I(0) = 4 / 9
-    return I;
+    float j1 = bessj1(d);
+    float I = 2 * j1 / d;
+    return I * I;
 }
 
 float gaussian(float r2, float sigma2)
@@ -219,7 +215,7 @@ float gaussian(float r2, float sigma2)
 float spike(vec2 r)
 {
     float s = max(0, 1 - 32 * abs(r.x + r.y)) +  max(0, 1 - 32 * abs(r.x - r.y));
-    return s * s;
+    return length(r) * s * s;
 }
 
 float make_star(in vec2 r)
@@ -230,8 +226,7 @@ float make_star(in vec2 r)
     float k = 1024;
     float psf = airy(k * d);
     psf *= abs(2 - d2);
-    psf *= 1 + 32 * d * spike(r);
-    psf *= 0.125 * pow(k / 8, 4);
+    psf *= pow(k / 32, 3);
 
     return psf * v_brightness;
 }
@@ -262,12 +257,13 @@ vec3 spectrum_to_xyz(float temperature, int step)
 // ------------------------------------
 void main()
 {
-    vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
+    vec2 r = 2 * gl_PointCoord - 1;
     float psf = make_star(r);
     for(int i = 0; i < 8; i++) {
         psf += make_star(r + offsets[i]);
     }
     psf /= 1 + 8;
+    psf *= 1 + 16 * spike(r);
     vec3 c = psf * spectrum_to_xyz(v_temp, 4);
     gl_FragColor = vec4(c, 1);
 }
@@ -278,13 +274,12 @@ FRAG_SHADER1 = """
 // Varyings
 // ------------------------------------
 varying float v_psize;
-varying vec2  v_pcenter;
 
 // Main
 // ------------------------------------
 void main()
 {
-    vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
+    vec2 r = 2 * gl_PointCoord - 1;
     float d = length(r);
     if (d > 1) discard;
     float n = 1;
@@ -298,13 +293,12 @@ FRAG_SHADER2 = """
 // Varyings
 // ------------------------------------
 varying float v_psize;
-varying vec2  v_pcenter;
 
 // Main
 // ------------------------------------
 void main()
 {
-    vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
+    vec2 r = 2 * gl_PointCoord - 1;
     float d = length(r);
     if (d > 1) discard;
     d = 2 * d - 2;
@@ -342,7 +336,6 @@ class GLviewer(app.Canvas):
         self.u_temp = 0.0
         self.u_psize = 4.0
         self.u_brightness = 1.0
-        self.u_magnitude = 0.0
         self.u_view = translate(self.translate)
         self.u_model = np.eye(4, dtype=np.float32)
         self.u_projection = np.eye(4, dtype=np.float32)
@@ -440,8 +433,6 @@ class GLviewer(app.Canvas):
             prog['u_temp'] = self.u_temp
             prog['u_psize'] = self.u_psize
             prog['u_brightness'] = self.u_brightness
-            prog['u_magnitude'] = self.u_magnitude
-            prog['u_viewport'] = self.size
             prog['u_view'] = self.u_view
             prog['u_model'] = self.u_model
             prog['u_projection'] = self.u_projection
@@ -476,10 +467,6 @@ class GLviewer(app.Canvas):
         elif event.text == 'B':
             self.bg_alpha += 0.03125 * int(self.bg_alpha < 1.0)
             self.set_state()
-        elif event.text == 'm':
-            self.u_magnitude -= 0.25
-        elif event.text == 'M':
-            self.u_magnitude += 0.25
         elif event.text == 't':
             self.u_temp -= 50
         elif event.text == 'T':
@@ -539,7 +526,6 @@ class GLviewer(app.Canvas):
             attributes = [
                 ('a_temp', np.float32, 1),
                 ('a_psize', np.float32, 1),
-                ('a_magnitude', np.float32, 1),
                 ('a_position', np.float32, 3),
             ]
             self.data[name] = np.zeros(n, attributes)
@@ -557,8 +543,7 @@ class GLviewer(app.Canvas):
 #            F0 = sigma * 5772**4 * (1/10)**2
 #            F0 = 3.828e+26 / (four_pi * (10 * 3.0852823)**2)
 #            F0 = 1 / (four_pi * 10**2)
-            M = -2.5 * np.log10(L)
-            Msum = -2.5 * np.log10(L.sum())
+#            M = -2.5 * np.log10(L)
 
 #            print(m.min(), m.max(), m.mean())
 #            print(M.min(), M.max(), M.mean())
@@ -573,12 +558,10 @@ class GLviewer(app.Canvas):
 #            shuffle(M)
 
             F = sigma * T**4
-            self.program[name]['u_Mlim'] = -Msum
             self.program[name]['u_bolometric_flux'] = F.mean()
 
             self.data[name]['a_temp'][...] = T
             self.data[name]['a_psize'][...] = R
-            self.data[name]['a_magnitude'][...] = M
             self.data[name]['a_position'][...] = pos
 
             self.vdata[name] = gloo.VertexBuffer(self.data[name])
