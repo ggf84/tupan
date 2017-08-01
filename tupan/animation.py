@@ -70,7 +70,7 @@ vec3 xyz_to_rgb(vec3 c)
 {
     // luminance adjustment
     float I = (c.x + c.y + c.z) / 3;
-    float i = asinh(24 * I) / 8;
+    float i = asinh(36 * I) / 6;
     c *= i / I;
 
     mat3 xyz2rgb = mat3(vec3(+3.24096994, -0.96924364, +0.05563008),
@@ -99,6 +99,7 @@ uniform float u_temp;
 uniform float u_psize;
 uniform float u_brightness;
 uniform float u_bolometric_flux;
+uniform vec2  u_viewport;
 uniform mat4  u_model;
 uniform mat4  u_view;
 uniform mat4  u_projection;
@@ -114,6 +115,7 @@ attribute vec3  a_position;
 varying float v_temp;
 varying float v_psize;
 varying float v_brightness;
+varying vec2  v_pcenter;
 
 
 // Main
@@ -122,6 +124,8 @@ void main(void)
 {
     v_temp = a_temp + u_temp;
     vec4 projPosition = u_projection * u_view * u_model * vec4(a_position, 1);
+    vec2 ndcPosition = projPosition.xy / projPosition.w;
+    v_pcenter = 0.5 * u_viewport * (ndcPosition + vec2(1, 1));
 
 //    v_psize = u_psize;
 //    v_psize = u_psize * pow(a_psize, 3.0/4.0);
@@ -152,7 +156,7 @@ uniform vec4 u_xyzbar31[95];
 varying float v_temp;
 varying float v_psize;
 varying float v_brightness;
-
+varying vec2  v_pcenter;
 
 const float offset = 1.0 / 512;
 
@@ -257,7 +261,7 @@ vec3 spectrum_to_xyz(float temperature, int step)
 // ------------------------------------
 void main()
 {
-    vec2 r = 2 * gl_PointCoord - 1;
+    vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
     float psf = make_star(r);
     for(int i = 0; i < 8; i++) {
         psf += make_star(r + offsets[i]);
@@ -274,12 +278,13 @@ FRAG_SHADER1 = """
 // Varyings
 // ------------------------------------
 varying float v_psize;
+varying vec2  v_pcenter;
 
 // Main
 // ------------------------------------
 void main()
 {
-    vec2 r = 2 * gl_PointCoord - 1;
+    vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
     float d = length(r);
     if (d > 1) discard;
     float n = 1;
@@ -293,12 +298,13 @@ FRAG_SHADER2 = """
 // Varyings
 // ------------------------------------
 varying float v_psize;
+varying vec2  v_pcenter;
 
 // Main
 // ------------------------------------
 void main()
 {
-    vec2 r = 2 * gl_PointCoord - 1;
+    vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
     float d = length(r);
     if (d > 1) discard;
     d = 2 * d - 2;
@@ -340,12 +346,14 @@ class GLviewer(app.Canvas):
         self.u_model = np.eye(4, dtype=np.float32)
         self.u_projection = np.eye(4, dtype=np.float32)
 
-        self.text = visuals.TextVisual('', pos=(9, 16), anchor_x='left')
-        self.text.color = 'white'
-        self.text.font_size = 9
+        self.text = visuals.TextVisual(
+                        '',
+                        pos=(9, 16),
+                        color='white',
+                        font_size=9,
+                        anchor_x='left',
+                    )
         self.show_legend = True
-
-        self.trans = visuals.transforms.TransformSystem(self)
 
         def callback(fps):
             titlestr = "tupan viewer: %0.1f fps @ %d x %d"
@@ -418,14 +426,15 @@ class GLviewer(app.Canvas):
     def on_resize(self, event):
         w, h = self.size
         self.fbo.resize((h, w))
-        gloo.set_viewport(0, 0, w, h)
+        self.context.set_viewport(0, 0, w, h)
         self.u_projection = perspective(45, w / h, 2**(-53), 100.0)
+        self.text.transforms.configure(canvas=self, viewport=(0, 0, w, h))
 
     def do_draw(self):
         gloo.clear()
 
         if self.show_legend:
-            self.text.draw(self.trans)
+            self.text.draw()
             self.set_state()
 
         for key in self.data:
@@ -433,6 +442,7 @@ class GLviewer(app.Canvas):
             prog['u_temp'] = self.u_temp
             prog['u_psize'] = self.u_psize
             prog['u_brightness'] = self.u_brightness
+            prog['u_viewport'] = self.size
             prog['u_view'] = self.u_view
             prog['u_model'] = self.u_model
             prog['u_projection'] = self.u_projection
