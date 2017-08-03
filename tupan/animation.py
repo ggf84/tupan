@@ -70,7 +70,7 @@ vec3 xyz_to_rgb(vec3 c)
 {
     // luminance adjustment
     float I = (c.x + c.y + c.z) / 3;
-    float i = asinh(36 * I) / 6;
+    float i = asinh(32 * I) / (2 * asinh(32));
     c *= i / I;
 
     mat3 xyz2rgb = mat3(vec3(+3.24096994, -0.96924364, +0.05563008),
@@ -117,6 +117,10 @@ varying float v_psize;
 varying float v_brightness;
 varying vec2  v_pcenter;
 
+float asinh(float x)
+{
+    return log(x + sqrt(1 + x * x));
+}
 
 // Main
 // ------------------------------------
@@ -125,13 +129,9 @@ void main(void)
     v_temp = a_temp + u_temp;
     vec4 projPosition = u_projection * u_view * u_model * vec4(a_position, 1);
     vec2 ndcPosition = projPosition.xy / projPosition.w;
-    v_pcenter = 0.5 * u_viewport * (ndcPosition + vec2(1, 1));
+    v_pcenter = 0.5 * u_viewport * (ndcPosition + 1);
 
-//    v_psize = u_psize;
-//    v_psize = u_psize * pow(a_psize, 3.0/4.0);
-    v_psize = 0.5 * u_psize * a_psize;
-//    v_psize = 2 * u_psize * sqrt(a_psize);
-//    v_psize = 2.5 * u_psize * log(1 + 4 * a_psize) / log(1 + 4);
+    v_psize = u_psize * asinh(a_psize / 16) * 16;
     v_psize = clamp(v_psize, 0, 255);
 
     v_brightness = u_brightness / u_bolometric_flux;
@@ -268,7 +268,7 @@ void main()
     }
     psf /= 1 + 8;
     psf *= 1 + 16 * spike(r);
-    vec3 c = psf * spectrum_to_xyz(v_temp, 4);
+    vec3 c = psf * spectrum_to_xyz(v_temp, 8);
     gl_FragColor = vec4(c, 1);
 }
 """
