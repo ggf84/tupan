@@ -107,6 +107,7 @@ uniform mat4  u_projection;
 // Attributes
 // ------------------------------------
 attribute float a_temp;
+attribute float a_mass;
 attribute float a_psize;
 attribute vec3  a_position;
 
@@ -131,7 +132,7 @@ void main(void)
     vec2 ndcPosition = projPosition.xy / projPosition.w;
     v_pcenter = 0.5 * u_viewport * (ndcPosition + 1);
 
-    v_psize = u_psize * asinh(a_psize / 16) * 16;
+    v_psize = u_psize * sqrt(a_mass);
     v_psize = clamp(v_psize, 0, 255);
 
     v_brightness = u_brightness / u_bolometric_flux;
@@ -340,7 +341,7 @@ class GLviewer(app.Canvas):
         self.translate = [0.0, 0.0, -10.0]
 
         self.u_temp = 0.0
-        self.u_psize = 4.0
+        self.u_psize = 6.0
         self.u_brightness = 1.0
         self.u_view = translate(self.translate)
         self.u_model = np.eye(4, dtype=np.float32)
@@ -535,6 +536,7 @@ class GLviewer(app.Canvas):
 
             attributes = [
                 ('a_temp', np.float32, 1),
+                ('a_mass', np.float32, 1),
                 ('a_psize', np.float32, 1),
                 ('a_position', np.float32, 3),
             ]
@@ -571,6 +573,7 @@ class GLviewer(app.Canvas):
             self.program[name]['u_bolometric_flux'] = F.mean()
 
             self.data[name]['a_temp'][...] = T
+            self.data[name]['a_mass'][...] = m
             self.data[name]['a_psize'][...] = R
             self.data[name]['a_position'][...] = pos
 
