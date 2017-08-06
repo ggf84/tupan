@@ -103,6 +103,7 @@ uniform vec2  u_viewport;
 uniform mat4  u_model;
 uniform mat4  u_view;
 uniform mat4  u_projection;
+uniform vec4  u_xyzbar31[95];
 
 // Attributes
 // ------------------------------------
@@ -113,21 +114,43 @@ attribute vec3  a_position;
 
 // Varyings
 // ------------------------------------
-varying float v_temp;
 varying float v_psize;
-varying float v_brightness;
 varying vec2  v_pcenter;
+varying vec3  v_color;
 
 float asinh(float x)
 {
     return log(x + sqrt(1 + x * x));
 }
 
+float black_body(float temperature, float wlen)
+{
+    // Calculate the emittance of a black body at given
+    // temperature (in kelvin) and wavelength (in metres).
+    float c1 = 3.7417718e-16;
+    float c2 = 1.43878e-2;
+    return c1 * pow(wlen, -5.0) / (exp(c2 / (wlen * temperature)) - 1.0);
+}
+
+vec3 spectrum_to_xyz(float temperature, int step)
+{
+    vec3 XYZ = vec3(0.0);
+    float dwlen = 5 * step * 1.0e-9;
+    for (int i = 4; i < 85; i += step) {
+        vec4 cie = u_xyzbar31[i].yzwx;
+        float wlen = cie.w * 1.0e-9;
+        float I = black_body(temperature, wlen);
+        XYZ += I * cie.xyz * dwlen;
+    }
+//    XYZ *= u_brightness / (5.67037e-8 * pow(temperature, 4));
+    XYZ *= u_brightness / u_bolometric_flux;
+    return XYZ;
+}
+
 // Main
 // ------------------------------------
 void main(void)
 {
-    v_temp = a_temp + u_temp;
     vec4 projPosition = u_projection * u_view * u_model * vec4(a_position, 1);
     vec2 ndcPosition = projPosition.xy / projPosition.w;
     v_pcenter = 0.5 * u_viewport * (ndcPosition + 1);
@@ -135,8 +158,8 @@ void main(void)
     v_psize = u_psize * sqrt(a_mass);
     v_psize = clamp(v_psize, 0, 255);
 
-    v_brightness = u_brightness / u_bolometric_flux;
-//    v_brightness = u_brightness / (5.67037e-8 * pow(v_temp, 4));
+    float temperature = a_temp + u_temp;
+    v_color = spectrum_to_xyz(temperature, 4);
 
     gl_PointSize = v_psize;
     gl_Position = projPosition;
@@ -148,31 +171,11 @@ FRAG_SHADER0 = """
 
 #define PI 3.1415927
 
-// Uniforms
-// ------------------------------------
-uniform vec4 u_xyzbar31[95];
-
 // Varyings
 // ------------------------------------
-varying float v_temp;
 varying float v_psize;
-varying float v_brightness;
 varying vec2  v_pcenter;
-
-const float offset = 1.0 / 512;
-
-const vec2 offsets[8] = vec2[](
-    vec2(-offset,  offset), // top-left
-    vec2( 0.0f,    offset), // top-center
-    vec2( offset,  offset), // top-right
-    vec2(-offset,  0.0f),   // center-left
-//    vec2( 0.0f,    0.0f),   // center-center
-    vec2( offset,  0.0f),   // center-right
-    vec2(-offset, -offset), // bottom-left
-    vec2( 0.0f,   -offset), // bottom-center
-    vec2( offset, -offset)  // bottom-right
-);
-
+varying vec3  v_color;
 
 float bessj1(float x)
 /*
@@ -233,43 +236,24 @@ float make_star(in vec2 r)
     psf *= abs(2 - d2);
     psf *= pow(k / 32, 3);
 
-    return psf * v_brightness;
-}
-
-float black_body(float temperature, float wlen)
-{
-    // Calculate the emittance of a black body at given
-    // temperature (in kelvin) and wavelength (in metres).
-    float c1 = 3.7417718e-16;
-    float c2 = 1.43878e-2;
-    return c1 * pow(wlen, -5.0) / (exp(c2 / (wlen * temperature)) - 1.0);
-}
-
-vec3 spectrum_to_xyz(float temperature, int step)
-{
-    vec3 XYZ = vec3(0.0);
-    float dwlen = 5 * step * 1.0e-9;
-    for (int i = 0; i < 95; i += step) {
-        vec4 cie = u_xyzbar31[i].yzwx;
-        float wlen = cie.w * 1.0e-9;
-        float I = black_body(temperature, wlen);
-        XYZ += I * cie.xyz * dwlen;
-    }
-    return XYZ;
+    return psf;
 }
 
 // Main
 // ------------------------------------
 void main()
 {
+    int n = 1;
+    float psf = 0.0;
     vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
-    float psf = make_star(r);
-    for(int i = 0; i < 8; i++) {
-        psf += make_star(r + offsets[i]);
+    for(int i = -n; i <= n; ++i) {
+        for(int j = -n; j <= n; ++j) {
+            psf += make_star(r + vec2(i, j) / 512);
+        }
     }
-    psf /= 1 + 8;
+    psf /= pow(1 + 2 * n, 2);
     psf *= 1 + 16 * spike(r);
-    vec3 c = psf * spectrum_to_xyz(v_temp, 8);
+    vec3 c = psf * v_color;
     gl_FragColor = vec4(c, 1);
 }
 """
