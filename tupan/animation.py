@@ -93,10 +93,13 @@ void main()
 
 VERT_SHADER = """
 #version 120
+
+#define PI 3.1415927
+
 // Uniforms
 // ------------------------------------
-uniform float u_temp;
-uniform float u_psize;
+uniform int   u_dist_mod;
+uniform float u_radius;
 uniform float u_brightness;
 uniform float u_bolometric_flux;
 uniform vec2  u_viewport;
@@ -107,15 +110,14 @@ uniform vec4  u_xyzbar31[95];
 
 // Attributes
 // ------------------------------------
-attribute float a_temp;
-attribute float a_mass;
-attribute float a_psize;
+attribute float a_radius;
+attribute float a_temperature;
 attribute vec3  a_position;
 
 // Varyings
 // ------------------------------------
-varying float v_psize;
-varying vec2  v_pcenter;
+varying float v_radius;
+varying vec2  v_center;
 varying vec3  v_color;
 
 float asinh(float x)
@@ -142,8 +144,8 @@ vec3 spectrum_to_xyz(float temperature, int step)
         float I = black_body(temperature, wlen);
         XYZ += I * cie.xyz * dwlen;
     }
-//    XYZ *= u_brightness / (5.67037e-8 * pow(temperature, 4));
-    XYZ *= u_brightness / u_bolometric_flux;
+    XYZ /= u_bolometric_flux;
+    XYZ *= u_brightness;
     return XYZ;
 }
 
@@ -153,15 +155,16 @@ void main(void)
 {
     vec4 projPosition = u_projection * u_view * u_model * vec4(a_position, 1);
     vec2 ndcPosition = projPosition.xy / projPosition.w;
-    v_pcenter = 0.5 * u_viewport * (ndcPosition + 1);
+    v_center = 0.5 * u_viewport * (ndcPosition + 1);
 
-    v_psize = u_psize * sqrt(a_mass);
-    v_psize = clamp(v_psize, 0, 255);
+    v_radius = u_radius * a_radius;
+    if (u_dist_mod == 1) v_radius *= 10.0 / projPosition.w;
+    v_radius = clamp(v_radius, 0, 255);
 
-    float temperature = a_temp + u_temp;
-    v_color = spectrum_to_xyz(temperature, 4);
+    v_color = spectrum_to_xyz(a_temperature, 4);
+    v_color *= 4 * PI * v_radius * v_radius;    // Flux -> Luminosity
 
-    gl_PointSize = v_psize;
+    gl_PointSize = v_radius;
     gl_Position = projPosition;
 }
 """
@@ -173,8 +176,8 @@ FRAG_SHADER0 = """
 
 // Varyings
 // ------------------------------------
-varying float v_psize;
-varying vec2  v_pcenter;
+varying float v_radius;
+varying vec2  v_center;
 varying vec3  v_color;
 
 float bessj1(float x)
@@ -215,28 +218,11 @@ float airy(float d)
     return I * I;
 }
 
-float gaussian(float r2, float sigma2)
-{
-    return exp(-0.5 * r2 / sigma2) / (2 * PI * sigma2);
-}
-
 float spike(vec2 r)
 {
-    float s = max(0, 1 - 32 * abs(r.x + r.y)) +  max(0, 1 - 32 * abs(r.x - r.y));
-    return length(r) * s * s;
-}
-
-float make_star(in vec2 r)
-{
-    float d2 = dot(r, r);
-    float d = sqrt(d2);
-
-    float k = 1024;
-    float psf = airy(k * d);
-    psf *= abs(2 - d2);
-    psf *= pow(k / 32, 3);
-
-    return psf;
+    float s = max(0, 1 - 0.5 * abs(r.x + r.y))
+            + max(0, 1 - 0.5 * abs(r.x - r.y));
+    return 0.125 * s * length(r);
 }
 
 // Main
@@ -245,14 +231,17 @@ void main()
 {
     int n = 1;
     float psf = 0.0;
-    vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
+    vec2 r = 2 * (gl_FragCoord.xy - v_center);
     for(int i = -n; i <= n; ++i) {
         for(int j = -n; j <= n; ++j) {
-            psf += make_star(r + vec2(i, j) / 512);
+            vec2 rr = 2 * (2 * r + vec2(i, j));
+            psf += airy(length(rr));
         }
     }
+    psf *= 3 * PI / 32;
+    psf *= 4 * v_radius;
     psf /= pow(1 + 2 * n, 2);
-    psf *= 1 + 16 * spike(r);
+    psf *= 1 + spike(r);
     vec3 c = psf * v_color;
     gl_FragColor = vec4(c, 1);
 }
@@ -262,14 +251,14 @@ FRAG_SHADER1 = """
 #version 120
 // Varyings
 // ------------------------------------
-varying float v_psize;
-varying vec2  v_pcenter;
+varying float v_radius;
+varying vec2  v_center;
 
 // Main
 // ------------------------------------
 void main()
 {
-    vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
+    vec2 r = 2 * (gl_FragCoord.xy - v_center) / v_radius;
     float d = length(r);
     if (d > 1) discard;
     float n = 1;
@@ -282,18 +271,18 @@ FRAG_SHADER2 = """
 #version 120
 // Varyings
 // ------------------------------------
-varying float v_psize;
-varying vec2  v_pcenter;
+varying float v_radius;
+varying vec2  v_center;
 
 // Main
 // ------------------------------------
 void main()
 {
-    vec2 r = 2 * (gl_FragCoord.xy - v_pcenter) / v_psize;
+    vec2 r = 2 * (gl_FragCoord.xy - v_center) / v_radius;
     float d = length(r);
     if (d > 1) discard;
     d = 2 * d - 2;
-    d = max(d - 1, d + 1) * v_psize / 4;
+    d = max(d - 1, d + 1) * v_radius / 4;
     d = exp(- d * d);
     gl_FragColor = vec4(d, 0, 0, 1);
 }
@@ -324,8 +313,8 @@ class GLviewer(app.Canvas):
         self.bg_alpha = 1.0
         self.translate = [0.0, 0.0, -10.0]
 
-        self.u_temp = 0.0
-        self.u_psize = 6.0
+        self.u_dist_mod = True
+        self.u_radius = 4.0
         self.u_brightness = 1.0
         self.u_view = translate(self.translate)
         self.u_model = np.eye(4, dtype=np.float32)
@@ -424,8 +413,8 @@ class GLviewer(app.Canvas):
 
         for key in self.data:
             prog = self.program[key]
-            prog['u_temp'] = self.u_temp
-            prog['u_psize'] = self.u_psize
+            prog['u_dist_mod'] = int(self.u_dist_mod)
+            prog['u_radius'] = self.u_radius
             prog['u_brightness'] = self.u_brightness
             prog['u_viewport'] = self.size
             prog['u_view'] = self.u_view
@@ -449,9 +438,9 @@ class GLviewer(app.Canvas):
 
     def on_key_press(self, event):
         if event.text == '+':
-            self.u_psize *= 1.03125
+            self.u_radius *= 1.03125
         elif event.text == '-':
-            self.u_psize /= 1.03125
+            self.u_radius /= 1.03125
         elif event.text == 'a':
             self.u_brightness /= 1.03125
         elif event.text == 'A':
@@ -462,10 +451,8 @@ class GLviewer(app.Canvas):
         elif event.text == 'B':
             self.bg_alpha += 0.03125 * int(self.bg_alpha < 1.0)
             self.set_state()
-        elif event.text == 't':
-            self.u_temp -= 50
-        elif event.text == 'T':
-            self.u_temp += 50
+        elif event.text == 'd':
+            self.u_dist_mod = not self.u_dist_mod
         elif event.text == 'Z':
             self.translate[2] -= 0.03125 * (1 + abs(self.translate[2]))
             self.u_view = translate(self.translate)
@@ -473,17 +460,17 @@ class GLviewer(app.Canvas):
             self.translate[2] += 0.03125 * (1 + abs(self.translate[2]))
             self.u_view = translate(self.translate)
         elif event.key == 'Up':
-            self.u_model = np.dot(self.u_model, rotate(+1, [1, 0, 0]))
-        elif event.key == 'Down':
             self.u_model = np.dot(self.u_model, rotate(-1, [1, 0, 0]))
+        elif event.key == 'Down':
+            self.u_model = np.dot(self.u_model, rotate(+1, [1, 0, 0]))
         elif event.key == 'Right':
             self.u_model = np.dot(self.u_model, rotate(+1, [0, 1, 0]))
         elif event.key == 'Left':
             self.u_model = np.dot(self.u_model, rotate(-1, [0, 1, 0]))
         elif event.key == '>':
-            self.u_model = np.dot(self.u_model, rotate(+1, [0, 0, 1]))
-        elif event.key == '<':
             self.u_model = np.dot(self.u_model, rotate(-1, [0, 0, 1]))
+        elif event.key == '<':
+            self.u_model = np.dot(self.u_model, rotate(+1, [0, 0, 1]))
         elif event.text == 'l':
             self.show_legend = not self.show_legend
         elif event.key == 'Escape':
@@ -519,46 +506,28 @@ class GLviewer(app.Canvas):
             pos = member.rdot[0].T
 
             attributes = [
-                ('a_temp', np.float32, 1),
-                ('a_mass', np.float32, 1),
-                ('a_psize', np.float32, 1),
+                ('a_radius', np.float32, 1),
+                ('a_temperature', np.float32, 1),
                 ('a_position', np.float32, 3),
             ]
             self.data[name] = np.zeros(n, attributes)
 
-            four_pi = 4 * np.pi
             sigma = 5.67037e-8
+            four_pi = 4 * np.pi
             m = mass / mass.mean()
             L = m**(7/2)
             R = m**(2/3)
             T = (3.828e+26 * L / (four_pi * sigma * (6.957e+8 * R)**2))**(1/4)
 
-#            F = sigma * T**4 * (R/10)**2
-#            F = 3.828e+26 * L / (four_pi * (10 * 3.0852823)**2)
-#            F = L / (four_pi * 10**2)
-#            F0 = sigma * 5772**4 * (1/10)**2
-#            F0 = 3.828e+26 / (four_pi * (10 * 3.0852823)**2)
-#            F0 = 1 / (four_pi * 10**2)
-#            M = -2.5 * np.log10(L)
-
-#            print(m.min(), m.max(), m.mean())
-#            print(M.min(), M.max(), M.mean())
-#            print(L.min(), L.max(), L.mean())
-#            print(R.min(), R.max(), R.mean())
-#            print(T.min(), T.max(), T.mean())
+            F = sigma * T**4
+            self.program[name]['u_bolometric_flux'] = F.mean() * 8192
 
 #            from numpy.random import seed, shuffle
 #            seed(0)
 #            shuffle(T)
-#            shuffle(R)
-#            shuffle(M)
 
-            F = sigma * T**4
-            self.program[name]['u_bolometric_flux'] = F.mean()
-
-            self.data[name]['a_temp'][...] = T
-            self.data[name]['a_mass'][...] = m
-            self.data[name]['a_psize'][...] = R
+            self.data[name]['a_radius'][...] = R
+            self.data[name]['a_temperature'][...] = T
             self.data[name]['a_position'][...] = pos
 
             self.vdata[name] = gloo.VertexBuffer(self.data[name])
