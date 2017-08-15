@@ -369,10 +369,11 @@ class GLviewer(app.Canvas):
                 "-s", "{0}x{1}".format(*self.size),
                 "-r", "{}".format(cli.record),
                 "-i", "-",
-                "-an",  # no audio
-                "-pix_fmt", "yuv420p",
                 "-c:v", "libx265",
-                "-b:v", "300000k",
+                "-pix_fmt", "yuv420p10le",
+                "-preset", "ultrafast",
+                "-crf", "0",
+                "-an",  # no audio
                 "movie.mkv",
             ]
             self.ffwriter = subprocess.Popen(
