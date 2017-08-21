@@ -15,16 +15,15 @@ def power_of_two(ps, dt_max):
     """
 
     """
-    dt = abs(ps.tstep).min()
-
-    power = int(np.log2(dt) - 1)
+    power = int(np.log2(ps.tstep_min) - 1)
     dtq = 2.0**power
     dtq = min(dtq, abs(dt_max))
-    dtq = np.copysign(dtq, dt_max)
 
-    while ps.time[0] % dtq != 0:
+    time = ps.global_time
+    while time % dtq != 0:
         dtq /= 2
 
+    dtq = np.copysign(dtq, dt_max)
     return dtq
 
 
@@ -100,7 +99,7 @@ class Base(object):
 
     @property
     def time(self):
-        return self.ps.time[0]
+        return self.ps.global_time
 
 
 # -- End of File --

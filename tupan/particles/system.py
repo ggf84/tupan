@@ -67,6 +67,14 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         if name not in self.attr_names:
             self.attr_names[name] = (shape, sctype, doc)
 
+    @property
+    def global_time(self):
+        return min(abs(p.time).min() for p in self.members.values() if p.n)
+
+    @property
+    def tstep_min(self):
+        return min(abs(p.tstep).min() for p in self.members.values() if p.n)
+
     #
     # miscellaneous methods
     #
@@ -209,7 +217,9 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         for member in members.values():
             if name in member.attr_names:
                 nf += member.n
-                setattr(member, name, value[..., ns:nf])
+                v = value[..., ns:nf]
+#                setattr(member, name, v)
+                setattr(member, name, np.array(v, copy=False, order='C'))
                 ns += member.n
         setattr(self, name, value)
         return value

@@ -49,7 +49,7 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
 
     """
     def __init__(self, n=0):
-        self.n = n
+        self.n = int(n)
 
     def update_attrs(self, **attrs):
         vars(self).update(**attrs)
@@ -388,39 +388,83 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         return 2 * self.kinetic_energy + self.potential_energy
 
     # -- gravity
-    def set_tstep(self, other, eta, shared=False,
+    def set_tstep(self, other, eta,
                   kernel=ext.get_kernel('Tstep')):
         """Set individual time-steps due to other particles.
 
         """
-        kernel(self, other, eta=eta)
+        i_tstep = {i: 0 for i in self.members.keys()}
+        j_tstep = {j: 0 for j in other.members.keys()}
+        i_tstep_sum = {i: 0 for i in self.members.keys()}
+        j_tstep_sum = {j: 0 for j in other.members.keys()}
 
-        self.tstep[...] = eta / np.sqrt(self.tstep)
-        self.tstep_sum[...] = eta / np.sqrt(self.tstep_sum)
+        for i, ip in self.members.items():
+            if ip.n:
+                for j, jp in other.members.items():
+                    if jp.n:
+                        kernel(ip, jp, eta=eta)
+                        i_tstep_sum[i] += ip.tstep_sum
+                        j_tstep_sum[j] += jp.tstep_sum
+                        i_tstep[i] = np.maximum(i_tstep[i], ip.tstep)
+                        j_tstep[j] = np.maximum(j_tstep[j], jp.tstep)
+
         if self != other:
-            other.tstep[...] = eta / np.sqrt(other.tstep)
-            other.tstep_sum[...] = eta / np.sqrt(other.tstep_sum)
-
-        if shared:
-            tstep = self.tstep
-            tstep[...] = np.copysign(abs(tstep).min(), tstep)
-            if self != other:
-                tstep = other.tstep
-                tstep[...] = np.copysign(abs(tstep).min(), tstep)
+            for j, jp in other.members.items():
+                if jp.n:
+                    jp.tstep[...] = eta / np.sqrt(j_tstep[j])
+                    jp.tstep_sum[...] = eta / np.sqrt(j_tstep_sum[j])
+        for i, ip in self.members.items():
+            if ip.n:
+                ip.tstep[...] = eta / np.sqrt(i_tstep[i])
+                ip.tstep_sum[...] = eta / np.sqrt(i_tstep_sum[i])
 
     def set_phi(self, other,
                 kernel=ext.get_kernel('Phi')):
         """Set individual gravitational potential due to other particles.
 
         """
-        kernel(self, other)
+        i_phi = {i: 0 for i in self.members.keys()}
+        j_phi = {j: 0 for j in other.members.keys()}
+
+        for i, ip in self.members.items():
+            if ip.n:
+                for j, jp in other.members.items():
+                    if jp.n:
+                        kernel(ip, jp)
+                        i_phi[i] += ip.phi
+                        j_phi[j] += jp.phi
+
+        if self != other:
+            for j, jp in other.members.items():
+                if jp.n:
+                    jp.phi[...] = j_phi[j]
+        for i, ip in self.members.items():
+            if ip.n:
+                ip.phi[...] = i_phi[i]
 
     def set_acc(self, other,
                 kernel=ext.get_kernel('Acc')):
         """Set individual gravitational acceleration due to other particles.
 
         """
-        kernel(self, other)
+        i_acc = {i: 0 for i in self.members.keys()}
+        j_acc = {j: 0 for j in other.members.keys()}
+
+        for i, ip in self.members.items():
+            if ip.n:
+                for j, jp in other.members.items():
+                    if jp.n:
+                        kernel(ip, jp)
+                        i_acc[i] += ip.rdot[2]
+                        j_acc[j] += jp.rdot[2]
+
+        if self != other:
+            for j, jp in other.members.items():
+                if jp.n:
+                    jp.rdot[2] = j_acc[j]
+        for i, ip in self.members.items():
+            if ip.n:
+                ip.rdot[2] = i_acc[i]
 
     def set_pnacc(self, other, pn=None, use_auxvel=False,
                   kernel=ext.get_kernel('PNAcc')):
@@ -428,22 +472,23 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         other particles.
 
         """
-        def swap_vel(ips, jps):
-            if ips != jps:
-                v, w = jps.rdot[1], jps.pnvel
+        def swap_vel(ps):
+            for p in ps.members.values():
+                v, w = p.rdot[1], p.pnvel
                 vv, ww = v.copy(), w.copy()
                 v[...], w[...] = ww, vv
-            v, w = ips.rdot[1], ips.pnvel
-            vv, ww = v.copy(), w.copy()
-            v[...], w[...] = ww, vv
 
         if use_auxvel:
-            swap_vel(self, other)
+            swap_vel(self)
+            if self != other:
+                swap_vel(other)
 
         kernel(self, other, pn=pn)
 
         if use_auxvel:
-            swap_vel(self, other)
+            swap_vel(self)
+            if self != other:
+                swap_vel(other)
 
     def set_acc_jrk(self, other,
                     kernel=ext.get_kernel('AccJrk')):
@@ -451,7 +496,30 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         particles.
 
         """
-        kernel(self, other)
+        i_acc = {i: 0 for i in self.members.keys()}
+        j_acc = {j: 0 for j in other.members.keys()}
+        i_jrk = {i: 0 for i in self.members.keys()}
+        j_jrk = {j: 0 for j in other.members.keys()}
+
+        for i, ip in self.members.items():
+            if ip.n:
+                for j, jp in other.members.items():
+                    if jp.n:
+                        kernel(ip, jp)
+                        i_acc[i] += ip.rdot[2]
+                        j_acc[j] += jp.rdot[2]
+                        i_jrk[i] += ip.rdot[3]
+                        j_jrk[j] += jp.rdot[3]
+
+        if self != other:
+            for j, jp in other.members.items():
+                if jp.n:
+                    jp.rdot[2] = j_acc[j]
+                    jp.rdot[3] = j_jrk[j]
+        for i, ip in self.members.items():
+            if ip.n:
+                ip.rdot[2] = i_acc[i]
+                ip.rdot[3] = i_jrk[i]
 
     def set_snp_crk(self, other,
                     kernel=ext.get_kernel('SnpCrk')):
@@ -459,7 +527,42 @@ class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
         particles.
 
         """
-        kernel(self, other)
+        i_acc = {i: 0 for i in self.members.keys()}
+        j_acc = {j: 0 for j in other.members.keys()}
+        i_jrk = {i: 0 for i in self.members.keys()}
+        j_jrk = {j: 0 for j in other.members.keys()}
+        i_snp = {i: 0 for i in self.members.keys()}
+        j_snp = {j: 0 for j in other.members.keys()}
+        i_crk = {i: 0 for i in self.members.keys()}
+        j_crk = {j: 0 for j in other.members.keys()}
+
+        for i, ip in self.members.items():
+            if ip.n:
+                for j, jp in other.members.items():
+                    if jp.n:
+                        kernel(ip, jp)
+                        i_acc[i] += ip.rdot[2]
+                        j_acc[j] += jp.rdot[2]
+                        i_jrk[i] += ip.rdot[3]
+                        j_jrk[j] += jp.rdot[3]
+                        i_snp[i] += ip.rdot[4]
+                        j_snp[j] += jp.rdot[4]
+                        i_crk[i] += ip.rdot[5]
+                        j_crk[j] += jp.rdot[5]
+
+        if self != other:
+            for j, jp in other.members.items():
+                if jp.n:
+                    jp.rdot[2] = j_acc[j]
+                    jp.rdot[3] = j_jrk[j]
+                    jp.rdot[4] = j_snp[j]
+                    jp.rdot[5] = j_crk[j]
+        for i, ip in self.members.items():
+            if ip.n:
+                ip.rdot[2] = i_acc[i]
+                ip.rdot[3] = i_jrk[i]
+                ip.rdot[4] = i_snp[i]
+                ip.rdot[5] = i_crk[i]
 
     # -- lenght scales
     @property

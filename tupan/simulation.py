@@ -64,7 +64,7 @@ class Diagnostic(object):
 
     def print_diagnostic(self, ps):
         self.ps = ps
-        time = ps.time[0]
+        time = ps.global_time
         dtime = time - self.time
         self.time = time
 
@@ -203,7 +203,8 @@ class Run(object):
         # read initial conditions
         with HDF5IO(cli.input_file, 'r') as fid:
             ps = fid.load_snap()
-            ps.time[...] = cli.t_begin
+            for p in ps.members.values():
+                p.time[...] = cli.t_begin
 
         # main function
         def run(ps, cli, viewer=None):

@@ -13,61 +13,73 @@ from ..lib import extensions as ext
 #
 # n_drift
 #
-def n_drift(ips, dt):
+def n_drift(ps, dt):
     """Newtonian drift operator.
 
     """
-    ips.time += dt
-    ips.rdot[0] += ips.rdot[1] * dt
-    return ips
+    for p in ps.members.values():
+        if p.n:
+            p.time += dt
+            p.rdot[0] += p.rdot[1] * dt
+    return ps
 
 
 #
 # pn_drift
 #
-def pn_drift(ips, dt):
+def pn_drift(ps, dt):
     """Post-Newtonian drift operator.
 
     """
-    ips.time += dt
-    ips.rdot[0] += ips.rdot[1] * dt
-    ips.pn_mr += ips.pn_mv * dt
-    return ips
+    for p in ps.members.values():
+        if p.n:
+            p.time += dt
+            p.rdot[0] += p.rdot[1] * dt
+            p.pn_mr += p.pn_mv * dt
+    return ps
 
 
 #
 # n_kick
 #
-def n_kick(ips, dt):
+def n_kick(ps, dt):
     """Newtonian kick operator.
 
     """
-    ips.rdot[1] += ips.rdot[2] * dt
-    return ips
+    for p in ps.members.values():
+        if p.n:
+            p.rdot[1] += p.rdot[2] * dt
+    return ps
 
 
 #
 # pn_kick
 #
-def pn_kick(ips, dt, pn=None):
+def pn_kick(ps, dt, pn=None):
     """Post-Newtonian kick operator.
 
     """
     #
-    ips.set_pnacc(ips, pn=pn)
-    ips.pnvel += (ips.rdot[2] + ips.pnacc) * (dt / 2)
+    ps.set_pnacc(ps, pn=pn)
+    for p in ps.members.values():
+        if p.n:
+            p.pnvel += (p.rdot[2] + p.pnacc) * (dt / 2)
 
-    ips.set_pnacc(ips, pn=pn, use_auxvel=True)
-    pnforce = ips.mass * ips.pnacc
-    ips.pn_mv -= pnforce * dt
-    ips.pn_am -= np.cross(ips.rdot[0].T, pnforce.T).T * dt
-    ips.pn_ke -= (ips.pnvel * pnforce).sum(0) * dt
-    ips.rdot[1] += (ips.rdot[2] + ips.pnacc) * dt
+    ps.set_pnacc(ps, pn=pn, use_auxvel=True)
+    for p in ps.members.values():
+        if p.n:
+            pnforce = p.mass * p.pnacc
+            p.pn_mv -= pnforce * dt
+            p.pn_am -= np.cross(p.rdot[0].T, pnforce.T).T * dt
+            p.pn_ke -= (p.pnvel * pnforce).sum(0) * dt
+            p.rdot[1] += (p.rdot[2] + p.pnacc) * dt
 
-    ips.set_pnacc(ips, pn=pn)
-    ips.pnvel += (ips.rdot[2] + ips.pnacc) * (dt / 2)
+    ps.set_pnacc(ps, pn=pn)
+    for p in ps.members.values():
+        if p.n:
+            p.pnvel += (p.rdot[2] + p.pnacc) * (dt / 2)
     #
-    return ips
+    return ps
 
 
 #
@@ -78,7 +90,9 @@ def sf_n_kick(slow, fast, dt):
 
     """
     for ps in [slow, fast]:
-        ps.rdot[1] += ps.rdot[2] * dt
+        for p in ps.members.values():
+            if p.n:
+                p.rdot[1] += p.rdot[2] * dt
     return slow, fast
 
 
@@ -92,19 +106,25 @@ def sf_pn_kick(slow, fast, dt, pn=None):
     #
     slow.set_pnacc(fast, pn=pn)
     for ps in [slow, fast]:
-        ps.pnvel += (ps.rdot[2] + ps.pnacc) * (dt / 2)
+        for p in ps.members.values():
+            if p.n:
+                p.pnvel += (p.rdot[2] + p.pnacc) * (dt / 2)
 
     slow.set_pnacc(fast, pn=pn, use_auxvel=True)
     for ps in [slow, fast]:
-        pnforce = ps.mass * ps.pnacc
-        ps.pn_mv -= pnforce * dt
-        ps.pn_am -= np.cross(ps.rdot[0].T, pnforce.T).T * dt
-        ps.pn_ke -= (ps.pnvel * pnforce).sum(0) * dt
-        ps.rdot[1] += (ps.rdot[2] + ps.pnacc) * dt
+        for p in ps.members.values():
+            if p.n:
+                pnforce = p.mass * p.pnacc
+                p.pn_mv -= pnforce * dt
+                p.pn_am -= np.cross(p.rdot[0].T, pnforce.T).T * dt
+                p.pn_ke -= (p.pnvel * pnforce).sum(0) * dt
+                p.rdot[1] += (p.rdot[2] + p.pnacc) * dt
 
     slow.set_pnacc(fast, pn=pn)
     for ps in [slow, fast]:
-        ps.pnvel += (ps.rdot[2] + ps.pnacc) * (dt / 2)
+        for p in ps.members.values():
+            if p.n:
+                p.pnvel += (p.rdot[2] + p.pnacc) * (dt / 2)
     #
     return slow, fast
 
@@ -112,7 +132,7 @@ def sf_pn_kick(slow, fast, dt, pn=None):
 #
 # twobody_solver
 #
-def twobody_solver(ips, dt, pn=None, kernel=ext.get_kernel('Kepler')):
+def twobody_solver(ps, dt, pn=None, kernel=ext.get_kernel('Kepler')):
     """
 
     """
@@ -121,13 +141,13 @@ def twobody_solver(ips, dt, pn=None, kernel=ext.get_kernel('Kepler')):
                                   'Kepler-solver does not include '
                                   'post-Newtonian corrections.')
     else:
-        ps0, ps1 = ips[0], ips[1]
+        ps0, ps1 = ps[0], ps[1]
         kernel(next(iter(ps0.members.values())),
                next(iter(ps1.members.values())),
                dt=dt)
-        ips = ps0 + ps1
-        ips.time += dt
-    return ips
+        ps = ps0 + ps1
+        ps.time += dt
+    return ps
 
 
 class SIAXX(object):
@@ -144,82 +164,82 @@ class SIAXX(object):
         self.evolve = getattr(self, meth)
         self.bridge = getattr(self, 'sf_' + meth)
 
-    def drift(self, ips, dt):
+    def drift(self, ps, dt):
         """Drift operator.
 
         """
         if self.cli.pn:
-            return pn_drift(ips, dt)
-        return n_drift(ips, dt)
+            return pn_drift(ps, dt)
+        return n_drift(ps, dt)
 
-    def kick(self, ips, dt):
+    def kick(self, ps, dt):
         """Kick operator.
 
         """
-        ips.set_acc(ips)
+        ps.set_acc(ps)
         if self.cli.pn:
-            return pn_kick(ips, dt, pn=self.cli.pn)
-        return n_kick(ips, dt)
+            return pn_kick(ps, dt, pn=self.cli.pn)
+        return n_kick(ps, dt)
 
-    def dkd(self, ips, dt):
+    def dkd(self, ps, dt):
         """Arbitrary order DKD-type operator.
 
         """
         kick = self.kick
         drift = self.drift
 
-        if ips.n == 1:
-            return drift(ips, dt)
+        if ps.n == 1:
+            return drift(ps, dt)
 
-#        if ips.n == 2:
-#            return twobody_solver(ips, dt, pn=self.cli.pn)
+#        if ps.n == 2:
+#            return twobody_solver(ps, dt, pn=self.cli.pn)
 
         coefs = self.coefs
         ck0, cd0 = coefs[-1]
 
         for ck, cd in coefs[:-1]:
-            ips = drift(ips, cd * dt) if cd else ips
-            ips = kick(ips, ck * dt) if ck else ips
+            ps = drift(ps, cd * dt) if cd else ps
+            ps = kick(ps, ck * dt) if ck else ps
 
-        ips = drift(ips, cd0 * dt)
-        ips = kick(ips, ck0 * dt)
-        ips = drift(ips, cd0 * dt)
+        ps = drift(ps, cd0 * dt)
+        ps = kick(ps, ck0 * dt)
+        ps = drift(ps, cd0 * dt)
 
         for ck, cd in reversed(coefs[:-1]):
-            ips = kick(ips, ck * dt) if ck else ips
-            ips = drift(ips, cd * dt) if cd else ips
+            ps = kick(ps, ck * dt) if ck else ps
+            ps = drift(ps, cd * dt) if cd else ps
 
-        return ips
+        return ps
 
-    def kdk(self, ips, dt):
+    def kdk(self, ps, dt):
         """Arbitrary order KDK-type operator.
 
         """
         kick = self.kick
         drift = self.drift
 
-        if ips.n == 1:
-            return drift(ips, dt)
+        if ps.n == 1:
+            return drift(ps, dt)
 
-#        if ips.n == 2:
-#            return twobody_solver(ips, dt, pn=self.cli.pn)
+#        if ps.n == 2:
+#            return twobody_solver(ps, dt, pn=self.cli.pn)
 
         coefs = self.coefs
         cd0, ck0 = coefs[-1]
 
         for cd, ck in coefs[:-1]:
-            ips = kick(ips, ck * dt) if ck else ips
-            ips = drift(ips, cd * dt) if cd else ips
+            ps = kick(ps, ck * dt) if ck else ps
+            ps = drift(ps, cd * dt) if cd else ps
 
-        ips = kick(ips, ck0 * dt)
-        ips = drift(ips, cd0 * dt)
-        ips = kick(ips, ck0 * dt)
+        ps = kick(ps, ck0 * dt)
+        ps = drift(ps, cd0 * dt)
+        ps = kick(ps, ck0 * dt)
 
         for cd, ck in reversed(coefs[:-1]):
-            ips = drift(ips, cd * dt) if cd else ips
-            ips = kick(ips, ck * dt) if ck else ips
+            ps = drift(ps, cd * dt) if cd else ps
+            ps = kick(ps, ck * dt) if ck else ps
 
-        return ips
+        return ps
 
     def recurse(self, ps, dt):
         """
@@ -230,7 +250,10 @@ class SIAXX(object):
         if self.update_tstep:
             ps.set_tstep(ps, self.cli.eta)
             if self.shared_tstep:
-                ps.tstep[...] = ps.tstep.min()
+                tstep_min = np.copysign(ps.tstep_min, self.cli.eta)
+                for p in ps.members.values():
+                    if p.n:
+                        p.tstep[...] = tstep_min
         return ps
 
     def sf_drift(self, slow, fast, dt):
@@ -256,7 +279,9 @@ class SIAXX(object):
         """
         if not fast.n:
             slow = self.evolve(slow, dt)
-            slow.nstep += 1
+            for s in slow.members.values():
+                if s.n:
+                    s.nstep += 1
             self.dump(slow, dt)
             return slow
 
@@ -282,7 +307,9 @@ class SIAXX(object):
             slow, fast = sf_kick(slow, fast, ck * dt) if ck else (slow, fast)
             slow, fast = sf_drift(slow, fast, cd * dt) if cd else (slow, fast)
 
-        slow.nstep += 1
+        for s in slow.members.values():
+            if s.n:
+                s.nstep += 1
         self.dump(slow, dt)
         return slow + fast
 
@@ -292,7 +319,9 @@ class SIAXX(object):
         """
         if not fast.n:
             slow = self.evolve(slow, dt)
-            slow.nstep += 1
+            for s in slow.members.values():
+                if s.n:
+                    s.nstep += 1
             self.dump(slow, dt)
             return slow
 
@@ -318,7 +347,9 @@ class SIAXX(object):
             slow, fast = sf_drift(slow, fast, cd * dt) if cd else (slow, fast)
             slow, fast = sf_kick(slow, fast, ck * dt) if ck else (slow, fast)
 
-        slow.nstep += 1
+        for s in slow.members.values():
+            if s.n:
+                s.nstep += 1
         self.dump(slow, dt)
         return slow + fast
 
@@ -492,19 +523,27 @@ class SIA(Base):
                 ps.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
             if not hasattr(ps, 'pnvel'):
                 ps.register_attribute('pnvel', '{nd}, {nb}', 'real_t')
-                ps.pnvel[...] = ps.rdot[1]
+                for p in ps.members.values():
+                    if p.n:
+                        p.pnvel[...] = p.rdot[1]
 
-        ps.tstep[...] = self.cli.dt_max
-        if self.update_tstep:
+        if not self.update_tstep:
+            for p in ps.members.values():
+                if p.n:
+                    p.tstep[...] = self.cli.dt_max
+        else:
             ps.set_tstep(ps, self.cli.eta)
             if self.shared_tstep:
-                ps.tstep[...] = ps.tstep.min()
+                tstep_min = np.copysign(ps.tstep_min, self.cli.eta)
+                for p in ps.members.values():
+                    if p.n:
+                        p.tstep[...] = tstep_min
 
     def dump(self, ps, dt):
         """
 
         """
-        tdiff = abs(self.t_next - ps.time[0])
+        tdiff = abs(self.t_next - ps.global_time)
         ratio = tdiff // abs(dt)
         if ratio > 0:
             if self.viewer:
