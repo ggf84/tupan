@@ -27,6 +27,7 @@ class Diagnostic(object):
         self.wct = Timer()
         self.wct.start()
 
+        ps.set_phi(ps)
         self.com_r0 = ps.com_r
         self.com_v0 = ps.com_v
         self.ke0 = ps.kinetic_energy
@@ -51,14 +52,14 @@ class Diagnostic(object):
 
     def print_header(self):
         fmt = '{0:13s} {1:10s} '\
-              '{2:10s} {3:10s} {4:15s} '\
-              '{5:10s} {6:10s} {7:10s} '\
+              '{2:10s} {3:10s} {4:10s} '\
+              '{5:15s} {6:10s} {7:10s} '\
               '{8:10s} {9:10s} {10:10s} '\
               '{11:10s} {12:10s} {13:13s}'
         print(fmt.format('#00:time', '#01:dtime',
-                         '#02:ke', '#03:pe', '#04:te',
-                         '#05:virial', '#06:eerr', '#07:abserr',
-                         '#08:avrerr', '#09:com_r', '#10:com_v',
+                         '#02:ke', '#03:pe', '#04:ve',
+                         '#05:te', '#06:eerr', '#07:avrerr',
+                         '#08:abserr', '#09:com_r', '#10:com_v',
                          '#11:lmom', '#12:amom', '#13:wct'),
               file=sys.stdout)
 
@@ -68,12 +69,13 @@ class Diagnostic(object):
         dtime = time - self.time
         self.time = time
 
+        ps.set_phi(ps)
         com_r = ps.com_r
         com_v = ps.com_v
         ke = ps.kinetic_energy
         pe = ps.potential_energy
         te = ke + pe
-        virial = ps.virial_energy
+        ve = ke + te
         lmom = ps.linear_momentum
         amom = ps.angular_momentum
 
@@ -89,15 +91,15 @@ class Diagnostic(object):
         damom = (((amom - self.amom0)**2).sum())**0.5
 
         fmt = '{time:< 13.6e} {dtime:< 10.3e} '\
-              '{ke:< 10.3e} {pe:< 10.3e} {te:< 15.8e} '\
-              '{virial:< 10.3e} {eerr:< 10.3e} {abs_err:< 10.3e} '\
-              '{avr_err:< 10.3e} {com_r:< 10.3e} {com_v:< 10.3e} '\
+              '{ke:< 10.3e} {pe:< 10.3e} {ve:< 10.3e} '\
+              '{te:< 15.8e} {eerr:< 10.3e} {avr_err:< 10.3e} '\
+              '{abs_err:< 10.3e} {com_r:< 10.3e} {com_v:< 10.3e} '\
               '{lmom:< 10.3e} {amom:< 10.3e} {wct:< 13.6e}'
         print(fmt.format(time=time, dtime=dtime,
                          ke=ke, pe=pe,
-                         te=te, virial=virial,
-                         eerr=eerr, abs_err=abs_err,
-                         avr_err=avr_err, com_r=com_dr,
+                         ve=ve, te=te,
+                         eerr=eerr, avr_err=avr_err,
+                         abs_err=abs_err, com_r=com_dr,
                          com_v=com_dv, lmom=dlmom, amom=damom,
                          wct=self.wct.elapsed()),
               file=sys.stdout)
@@ -203,7 +205,10 @@ class Run(object):
         # read initial conditions
         with HDF5IO(cli.input_file, 'r') as fid:
             ps = fid.load_snap()
-            for p in ps.members.values():
+
+        # set initial time for all particles
+        for p in ps.members.values():
+            if p.n:
                 p.time[...] = cli.t_begin
 
         # main function

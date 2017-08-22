@@ -309,6 +309,8 @@ class GLviewer(app.Canvas):
 
         self.program['body']['u_xyzbar31'] = ciexyz31
         self.program['star']['u_xyzbar31'] = ciexyz31
+        self.program['sph']['u_xyzbar31'] = ciexyz31
+        self.program['blackhole']['u_xyzbar31'] = ciexyz31
 
         self.bg_alpha = 1.0
         self.translate = [0.0, 0.0, -10.0]
@@ -545,7 +547,7 @@ class GLviewer(app.Canvas):
             self.data[name]['a_position'][pid] = pos
             self.vdata[name].set_data(self.data[name])
 
-        time = ps.time[0]
+        time = ps.global_time
         self.text.text = f'T = {time:e}'
         self.app.process_events()
         self.update()

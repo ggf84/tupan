@@ -20,31 +20,30 @@ if __name__ == "__main__":
     imf = ("parravano2011", 0.075, 120.0)
 #    imf = ("padoan2007", 0.075, 120.0)
 
-    ps = make_plummer(n, eps, imf, seed=1)
+    stars = make_plummer(n, eps, imf, seed=1).astype('star')
 
     fname = ("plummer" + str(n).zfill(5) + '-' +
              '_'.join(str(i) for i in imf))
 
     with HDF5IO(fname, 'w') as fid:
-        fid.dump_snap(ps)
+        fid.dump_snap(stars)
 
 #    from tupan.ics.fewbody import make_figure83
+#    bh = make_figure83().astype('blackhole')
     from tupan.ics.fewbody import make_pythagorean
-    from tupan.particles.blackhole import Blackhole
-#    bh = make_figure83().members.body.astype(Blackhole)
-    bh = make_pythagorean().members.body.astype(Blackhole)
-    bh.dynrescale_total_mass(0.5)
-    ps.dynrescale_total_mass(0.5)
-    members = ps.members
-    members[bh.name] = bh
-    ps.update_members(**members)
+    bhs = make_pythagorean().astype('blackhole')
+
+    bhs.dynrescale_total_mass(0.5)
+    stars.dynrescale_total_mass(0.5)
+
+    ps = stars + bhs
+
     ps.reset_pid()
     ps.to_nbody_units()
-    nbh = ps.members.blackhole.n
 
     fname = ("plummer" + str(n).zfill(5) + '-' +
              '_'.join(str(i) for i in imf) +
-             '-' + str(nbh) + 'bh')
+             '-' + str(bhs.n) + 'bh')
 
     with HDF5IO(fname, 'w') as fid:
         fid.dump_snap(ps)
