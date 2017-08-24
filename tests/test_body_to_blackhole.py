@@ -29,7 +29,7 @@ if __name__ == "__main__":
         fid.dump_snap(stars)
 
 #    from tupan.ics.fewbody import make_figure83
-#    bh = make_figure83().astype('blackhole')
+#    bhs = make_figure83().astype('blackhole')
     from tupan.ics.fewbody import make_pythagorean
     bhs = make_pythagorean().astype('blackhole')
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     ps.reset_pid()
     ps.to_nbody_units()
 
-    fname = ("plummer" + str(n).zfill(5) + '-' +
+    fname = ("plummer" + str(stars.n).zfill(5) + '-' +
              '_'.join(str(i) for i in imf) +
              '-' + str(bhs.n) + 'bh')
 

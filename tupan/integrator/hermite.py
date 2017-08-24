@@ -44,9 +44,12 @@ class HX(with_metaclass(abc.ABCMeta, object)):
         def A(a2, k):
             return (a2[k-1] * a2[k+1])**0.5 + a2[k]
 
-        p = self.order
-        a2 = (ps.rdot[2:p+2]**2).sum(1)
-        ps.tstep[...] = eta * (A(a2, 1) / A(a2, p-2))**(0.5/(p-3))
+        order = self.order
+        for p in ps.members.values():
+            if p.n:
+                a2 = (p.rdot[2:order+2]**2).sum(1)
+                frac = A(a2, 1) / A(a2, order-2)
+                p.tstep[...] = eta * frac**(0.5/(order-3))
 
     def set_nextstep(self, ps, dt):
         if not self.initialized:
@@ -55,7 +58,7 @@ class HX(with_metaclass(abc.ABCMeta, object)):
             if self.order > 4:
                 ps.set_snp_crk(ps)
             if self.update_tstep:
-                ps.set_tstep(ps, self.cli.eta)
+                ps.set_tstep(ps, 0.5 * self.cli.eta)
                 return power_of_two(ps, dt)
         else:
             if self.update_tstep:
@@ -69,12 +72,14 @@ class HX(with_metaclass(abc.ABCMeta, object)):
         at time t to the next time t+dt.
         """
         order = self.order
-        for i in range(order//2):
-            drdot = 0
-            for j in reversed(range(i+1, order)):
-                drdot += ps.rdot[j]
-                drdot *= dt / (j-i)
-            ps.rdot[i] += drdot
+        for p in ps.members.values():
+            if p.n:
+                for i in range(order//2):
+                    drdot = 0
+                    for j in reversed(range(i+1, order)):
+                        drdot += p.rdot[j]
+                        drdot *= dt / (j-i)
+                    p.rdot[i] += drdot
         return ps
 
     def correct(self, ps1, ps0, dt):
@@ -83,59 +88,61 @@ class HX(with_metaclass(abc.ABCMeta, object)):
         values of acceleration and its time derivatives at t+dt and those at
         the previous time t.
         """
+        h = dt / 2
         order = self.order
         coefs = self.coefs[0]
-
-        h = dt / 2
-        for i in reversed(range(2)):
-            drdot = 0
-            for j in reversed(range(order//2)):
-                k = j % 2
-                c = coefs[j]
-                ff = PM[k](ps0.rdot[j+i+1], ps1.rdot[j+i+1])
-                j += 1 if j == 0 else 0
-                drdot += c * ff
-                drdot *= h / j
-            ps1.rdot[i, ...] = ps0.rdot[i] + drdot
+        for p0, p1 in zip(ps0.members.values(), ps1.members.values()):
+            if p0.n and p1.n:
+                for i in reversed(range(2)):
+                    drdot = 0
+                    for j in reversed(range(order//2)):
+                        k = j % 2
+                        c = coefs[j]
+                        ff = PM[k](p0.rdot[j+i+1], p1.rdot[j+i+1])
+                        j += 1 if j == 0 else 0
+                        drdot += c * ff
+                        drdot *= h / j
+                    p1.rdot[i] = p0.rdot[i] + drdot
         return ps1
 
     def interpolate(self, ps1, ps0, dt):
         """
         Interpolate polynomial.
         """
+        h = dt / 2
         order = self.order
         coefs = self.coefs[1]
 
-        h = dt / 2
         hinv = [1.0, 1/h]
         for i in range(2, order):
             hinv.append(i * hinv[1] * hinv[-1])
 
-        p = order//2
-        A = [
-            ps0.rdot[2:2+p] + ps1.rdot[2:2+p],
-            ps0.rdot[2:2+p] - ps1.rdot[2:2+p],
-        ]
+        o_2 = order//2
+        for p0, p1 in zip(ps0.members.values(), ps1.members.values()):
+            if p0.n and p1.n:
+                A = [
+                    p0.rdot[2:2+o_2] + p1.rdot[2:2+o_2],
+                    p0.rdot[2:2+o_2] - p1.rdot[2:2+o_2],
+                ]
 
-        for i in reversed(range(order//2)):
-            s = 0
-            for j in reversed(range(order//2)):
-                c = coefs[i][j]
-                if c != 0:
-                    k = (i+j+order//2) % 2
-                    s += c * A[k][j]
-                if j != 0:
-                    s *= h / j
-            i += order//2
-            ps1.rdot[i+2, ...] = s * hinv[i]
+                for i in reversed(range(o_2)):
+                    s = 0
+                    for j in reversed(range(o_2)):
+                        c = coefs[i][j]
+                        if c != 0:
+                            k = (i+j+o_2) % 2
+                            s += c * A[k][j]
+                        if j != 0:
+                            s *= h / j
+                    i += o_2
+                    p1.rdot[i+2] = s * hinv[i]
 
-        for i in range(order//2):
-            drdot = 0
-            i += order//2
-            for j in reversed(range(i+1, order)):
-                drdot += ps1.rdot[j+2]
-                drdot *= h / (j-i)
-            ps1.rdot[i+2] += drdot
+                for i in range(o_2, order):
+                    drdot = 0
+                    for j in reversed(range(i+1, order)):
+                        drdot += p1.rdot[j+2]
+                        drdot *= h / (j-i)
+                    p1.rdot[i+2] += drdot
         return ps1
 
     def pec(self, n, ps0, dt):
@@ -146,8 +153,10 @@ class HX(with_metaclass(abc.ABCMeta, object)):
             ps1 = self.correct(ps1, ps0, dt)
             n -= 1
         ps1 = self.interpolate(ps1, ps0, dt)
-        ps1.time += dt
-        ps1.nstep += 1
+        for p1 in ps1.members.values():
+            if p1.n:
+                p1.time += dt
+                p1.nstep += 1
         return ps1
 
 
@@ -170,9 +179,11 @@ class H2(HX):
         ps.set_acc(ps)
 
     def timestep_criterion(self, ps, eta):
-        p = self.order
-        a2 = (ps.rdot[2:p+2]**2).sum(1)
-        ps.tstep[...] = eta * (a2[0] / a2[1])**0.5
+        order = self.order
+        for p in ps.members.values():
+            if p.n:
+                a2 = (p.rdot[2:order+2]**2).sum(1)
+                p.tstep[...] = eta * (a2[0] / a2[1])**0.5
 
 
 class H4(HX):

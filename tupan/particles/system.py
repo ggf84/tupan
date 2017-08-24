@@ -106,7 +106,7 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
                     members[name] += member
                 except KeyError:
                     members[name] = member.copy()
-            self.update_members(**members)
+            return self.from_members(**members)
         return self
 
     __radd__ = __add__
@@ -618,6 +618,8 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         i_crk = {i: 0 for i in self.members.keys()}
         j_crk = {j: 0 for j in other.members.keys()}
 
+        ipsys = self.copy()
+        jpsys = other.copy()
         for i, ip in self.members.items():
             if ip.n:
                 for j, jp in other.members.items():
@@ -631,6 +633,8 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
                         j_snp[j] += jp.rdot[4]
                         i_crk[i] += ip.rdot[5]
                         j_crk[j] += jp.rdot[5]
+                        ip.rdot[...] = ipsys.members[i].rdot[...]
+                        jp.rdot[...] = jpsys.members[j].rdot[...]
 
         if self != other:
             for j, jp in other.members.items():
