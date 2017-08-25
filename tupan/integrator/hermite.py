@@ -47,7 +47,7 @@ class HX(with_metaclass(abc.ABCMeta, object)):
         order = self.order
         for p in ps.members.values():
             if p.n:
-                a2 = (p.rdot[2:order+2]**2).sum(1)
+                a2 = (p.rdot[2:2+order]**2).sum(1)
                 frac = A(a2, 1) / A(a2, order-2)
                 p.tstep[...] = eta * frac**(0.5/(order-3))
 
@@ -72,13 +72,14 @@ class HX(with_metaclass(abc.ABCMeta, object)):
         at time t to the next time t+dt.
         """
         order = self.order
+        nforce = self.nforce
         for p in ps.members.values():
             if p.n:
-                for i in range(order//2):
+                for i in range(nforce):
                     drdot = 0
-                    for j in reversed(range(i+1, order)):
-                        drdot += p.rdot[j]
-                        drdot *= dt / (j-i)
+                    for j in reversed(range(1, order-i)):
+                        drdot += p.rdot[j+i]
+                        drdot *= dt / j
                     p.rdot[i] += drdot
         return ps
 
@@ -89,20 +90,19 @@ class HX(with_metaclass(abc.ABCMeta, object)):
         the previous time t.
         """
         h = dt / 2
-        order = self.order
+        nforce = self.nforce
         coefs = self.coefs[0]
         for p0, p1 in zip(ps0.members.values(), ps1.members.values()):
             if p0.n and p1.n:
                 for i in reversed(range(2)):
                     drdot = 0
-                    for j in reversed(range(order//2)):
-                        k = j % 2
-                        c = coefs[j]
-                        ff = PM[k](p0.rdot[j+i+1], p1.rdot[j+i+1])
-                        j += 1 if j == 0 else 0
-                        drdot += c * ff
+                    for j in reversed(range(1, nforce)):
+                        ff = PM[j % 2](p0.rdot[j+i+1], p1.rdot[j+i+1])
+                        drdot += ff * coefs[j]
                         drdot *= h / j
-                    p1.rdot[i] = p0.rdot[i] + drdot
+                    ff = PM[0](p0.rdot[i+1], p1.rdot[i+1])
+                    drdot += ff * coefs[0]
+                    p1.rdot[i] = p0.rdot[i] + h * drdot
         return ps1
 
     def interpolate(self, ps1, ps0, dt):
@@ -111,38 +111,36 @@ class HX(with_metaclass(abc.ABCMeta, object)):
         """
         h = dt / 2
         order = self.order
+        nforce = self.nforce
         coefs = self.coefs[1]
 
         hinv = [1.0, 1/h]
         for i in range(2, order):
             hinv.append(i * hinv[1] * hinv[-1])
 
-        o_2 = order//2
         for p0, p1 in zip(ps0.members.values(), ps1.members.values()):
             if p0.n and p1.n:
-                A = [
-                    p0.rdot[2:2+o_2] + p1.rdot[2:2+o_2],
-                    p0.rdot[2:2+o_2] - p1.rdot[2:2+o_2],
-                ]
-
-                for i in reversed(range(o_2)):
+                for i in range(nforce):
                     s = 0
-                    for j in reversed(range(o_2)):
-                        c = coefs[i][j]
-                        if c != 0:
-                            k = (i+j+o_2) % 2
-                            s += c * A[k][j]
-                        if j != 0:
-                            s *= h / j
-                    i += o_2
-                    p1.rdot[i+2] = s * hinv[i]
+                    c = coefs[i]
+                    i += nforce
+                    for j in reversed(range(1, nforce)):
+                        ff = PM[(i + j) % 2](p0.rdot[j+2], p1.rdot[j+2])
+                        s += ff * c[j]
+                        s *= h / j
+                    ff = PM[i % 2](p0.rdot[2], p1.rdot[2])
+                    s += ff * c[0]
+                    s *= hinv[i]
+                    p1.rdot[i+2] = s
 
-                for i in range(o_2, order):
+                for i in range(nforce):
                     drdot = 0
-                    for j in reversed(range(i+1, order)):
-                        drdot += p1.rdot[j+2]
-                        drdot *= h / (j-i)
+                    i += nforce
+                    for j in reversed(range(1, order-i)):
+                        drdot += p1.rdot[j+i+2]
+                        drdot *= h / j
                     p1.rdot[i+2] += drdot
+
         return ps1
 
     def pec(self, n, ps0, dt):
@@ -164,7 +162,8 @@ class H2(HX):
     """
 
     """
-    order = 2
+    nforce = 1
+    order = 2 * nforce
     coefs = [
         [1],
         [
@@ -182,7 +181,7 @@ class H2(HX):
         order = self.order
         for p in ps.members.values():
             if p.n:
-                a2 = (p.rdot[2:order+2]**2).sum(1)
+                a2 = (p.rdot[2:2+order]**2).sum(1)
                 p.tstep[...] = eta * (a2[0] / a2[1])**0.5
 
 
@@ -190,7 +189,8 @@ class H4(HX):
     """
 
     """
-    order = 4
+    nforce = 2
+    order = 2 * nforce
     coefs = [
         [1, 3],
         [
@@ -210,7 +210,8 @@ class H6(HX):
     """
 
     """
-    order = 6
+    nforce = 3
+    order = 2 * nforce
     coefs = [
         [1, 5/2., 15/2.],
         [
@@ -231,7 +232,8 @@ class H8(HX):
     """
 
     """
-    order = 8
+    nforce = 4
+    order = 2 * nforce
     coefs = [
         [1, 7/3., 21/4., 35/2.],
         [

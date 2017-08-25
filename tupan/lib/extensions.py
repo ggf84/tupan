@@ -54,7 +54,7 @@ class Acc_rectangle(object):
         inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
                    jps.n, jps.mass, jps.eps2, jps.rdot[:p])
 
-        outargs = (ips.rdot[2:2+p], jps.rdot[2:2+p])
+        outargs = (ips.fdot[:p], jps.fdot[:p])
 
         super(Acc_rectangle, self).set_args(inpargs, outargs)
 
@@ -69,7 +69,7 @@ class Acc_triangle(object):
         p = 1
         inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
 
-        outargs = (ips.rdot[2:2+p],)
+        outargs = (ips.fdot[:p],)
 
         super(Acc_triangle, self).set_args(inpargs, outargs)
 
@@ -85,7 +85,7 @@ class AccJrk_rectangle(object):
         inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
                    jps.n, jps.mass, jps.eps2, jps.rdot[:p])
 
-        outargs = (ips.rdot[2:2+p], jps.rdot[2:2+p])
+        outargs = (ips.fdot[:p], jps.fdot[:p])
 
         super(AccJrk_rectangle, self).set_args(inpargs, outargs)
 
@@ -100,7 +100,7 @@ class AccJrk_triangle(object):
         p = 2
         inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
 
-        outargs = (ips.rdot[2:2+p],)
+        outargs = (ips.fdot[:p],)
 
         super(AccJrk_triangle, self).set_args(inpargs, outargs)
 
@@ -116,7 +116,7 @@ class SnpCrk_rectangle(object):
         inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
                    jps.n, jps.mass, jps.eps2, jps.rdot[:p])
 
-        outargs = (ips.rdot[2:2+p], jps.rdot[2:2+p])
+        outargs = (ips.fdot[:p], jps.fdot[:p])
 
         super(SnpCrk_rectangle, self).set_args(inpargs, outargs)
 
@@ -131,7 +131,7 @@ class SnpCrk_triangle(object):
         p = 4
         inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p])
 
-        outargs = (ips.rdot[2:2+p],)
+        outargs = (ips.fdot[:p],)
 
         super(SnpCrk_triangle, self).set_args(inpargs, outargs)
 
