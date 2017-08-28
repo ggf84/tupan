@@ -15,7 +15,7 @@ def make_hierarchy(parent, make_subsys, *args, **kwargs):
     ps = ParticleSystem()
     for p in parent:
         subsys = make_subsys(*args, **kwargs)
-        subsys.dynrescale_total_mass(p.mass)
+        subsys.dynrescale_total_mass(p.total_mass)
         subsys.com_to_origin()
         subsys.com_move_to(p.com_r, p.com_v)
         ps += subsys

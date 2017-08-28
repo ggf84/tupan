@@ -34,12 +34,13 @@ def best_of(n, func, *args, **kwargs):
 
 def set_particles(n):
     ps = ParticleSystem(n)
-    ps.mass[...] = np.random.random((n,))
-    ps.rdot[0][...] = np.random.random((3, n)) * 10
-    ps.rdot[1][...] = np.random.random((3, n)) * 10
-    ps.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
-    ps.register_attribute('drdot', '2, {nd}, {nb}', 'real_t')
-    return ps
+    b = ps.body
+    b.mass[...] = np.random.random((n,))
+    b.rdot[0][...] = np.random.random((3, n)) * 10
+    b.rdot[1][...] = np.random.random((3, n)) * 10
+    b.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
+    b.register_attribute('drdot', '2, {nd}, {nb}', 'real_t')
+    return b
 
 
 def benchmark(bench, n_max, backend, rect=False):

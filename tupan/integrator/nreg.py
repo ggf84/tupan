@@ -14,8 +14,10 @@ def drift(ps, h):
     """
     W = ps.kinetic_energy + ps.B
     dt = h / W
-    ps.time += dt
-    ps.rdot[0] += ps.rdot[1] * dt
+    for p in ps.members.values():
+        if p.n:
+            p.time += dt
+            p.rdot[0] += p.rdot[1] * dt
     return ps, W
 
 
@@ -24,9 +26,12 @@ def kick(ps, h):
 
     """
     ps.set_acc(ps)
+    ps.set_phi(ps)
     U = -ps.potential_energy
     dt = h / U
-    ps.rdot[1] += ps.rdot[2] * dt
+    for p in ps.members.values():
+        if p.n:
+            p.rdot[1] += p.rdot[2] * dt
     return ps, U
 
 
@@ -38,7 +43,9 @@ def a_nreg_step(ps, h):
     ps, _ = kick(ps, h)
     ps, _ = drift(ps, h/2)
 
-    ps.nstep += 1
+    for p in ps.members.values():
+        if p.n:
+            p.nstep += 1
     return ps
 
 
@@ -49,6 +56,7 @@ def c_nreg_step(ps, h):
     try:
         U = ps.U
     except:
+        ps.set_phi(ps)
         U = -ps.potential_energy
         ps.U = U
 
@@ -57,7 +65,9 @@ def c_nreg_step(ps, h):
     ps, W = drift(ps, U * h/2)
     ps.U = U = (W**2) / ps.U
 
-    ps.nstep += 1
+    for p in ps.members.values():
+        if p.n:
+            p.nstep += 1
     return ps
 
 
@@ -78,6 +88,7 @@ class NREG(Base):
         self.update_tstep = False
         self.shared_tstep = True
 
+        ps.set_phi(ps)
         T = ps.kinetic_energy
         U = -ps.potential_energy
         ps.B = U - T

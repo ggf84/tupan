@@ -511,21 +511,15 @@ class SIA(Base):
                 self.sia = SIA69(self, 'kdk')
 
         if self.cli.pn:
-            if not hasattr(ps, 'pn_ke'):
-                ps.register_attribute('pn_ke', '{nb}', 'real_t')
-            if not hasattr(ps, 'pn_mr'):
-                ps.register_attribute('pn_mr', '{nd}, {nb}', 'real_t')
-            if not hasattr(ps, 'pn_mv'):
-                ps.register_attribute('pn_mv', '{nd}, {nb}', 'real_t')
-            if not hasattr(ps, 'pn_am'):
-                ps.register_attribute('pn_am', '{nd}, {nb}', 'real_t')
-            if not hasattr(ps, 'pnacc'):
-                ps.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
-            if not hasattr(ps, 'pnvel'):
-                ps.register_attribute('pnvel', '{nd}, {nb}', 'real_t')
-                for p in ps.members.values():
-                    if p.n:
-                        p.pnvel[...] = p.rdot[1]
+            for p in ps.members.values():
+                if p.n:
+                    p.register_attribute('pn_ke', '{nb}', 'real_t')
+                    p.register_attribute('pn_mr', '{nd}, {nb}', 'real_t')
+                    p.register_attribute('pn_mv', '{nd}, {nb}', 'real_t')
+                    p.register_attribute('pn_am', '{nd}, {nb}', 'real_t')
+                    p.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
+                    p.register_attribute('pnvel', '{nd}, {nb}', 'real_t')
+                    p.pnvel[...] = p.rdot[1]
 
         if not self.update_tstep:
             for p in ps.members.values():

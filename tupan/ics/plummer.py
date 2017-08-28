@@ -17,18 +17,16 @@ LOGGER = logging.getLogger(__name__)
 class Plummer(object):
     """  """
 
-    def __init__(self, n, eps, imf, seed=None, mfrac=0.999, softening_type=0):
-        self.n = n
+    def __init__(self, eps, imf, seed=None, mfrac=0.999, softening_type=0):
         self.eps2 = eps*eps
         self.imf = imf
         self.mfrac = mfrac
         self.softening_type = softening_type
-        self.ps = ParticleSystem(n)
         if seed:
             np.random.seed(seed)
 
     def set_eps2(self, mass):
-        n = self.n
+        n = len(mass)
         if self.softening_type == 0:
             # eps2 ~ cte
             eps2 = np.ones(n)
@@ -59,7 +57,7 @@ class Plummer(object):
         return eps2 / 2
 
     def set_pos(self, irand):
-        n = self.n
+        n = len(irand)
         mfrac = self.mfrac
         mrand = (irand + np.random.random(n)) * mfrac / n
         radius = 1.0 / np.sqrt(np.power(mrand, -2.0 / 3.0) - 1.0)
@@ -72,7 +70,7 @@ class Plummer(object):
 
     def set_vel(self, pot):
         count = 0
-        n = self.n
+        n = len(pot)
         rnd = np.empty(n)
         while count < n:
             r1 = np.random.random()
@@ -88,48 +86,46 @@ class Plummer(object):
         vz = velocity * np.cos(theta)
         return (vx, vy, vz)
 
-    def set_bodies(self):
+    def make_model(self, n):
         """  """
-        n = self.n
         ilist = np.arange(n)
 
-        # set index
-        self.ps.pid[...] = ilist
+        ps = ParticleSystem(n)
+        b = ps.body
 
         srand = np.random.get_state()
 
         # set mass
-        self.ps.mass[...] = self.imf.sample(n)
-        self.ps.mass /= self.ps.total_mass
+        b.mass[...] = self.imf.sample(n)
+        b.mass /= ps.total_mass
 
         # set eps2
-        self.ps.eps2[...] = self.set_eps2(self.ps.mass)
+        b.eps2[...] = self.set_eps2(b.mass)
 
         np.random.set_state(srand)
 
         # set pos
         pos = self.set_pos(np.random.permutation(ilist))
-        self.ps.rdot[0][...] = pos
+        b.rdot[0][...] = pos
 
         # set phi
-        self.ps.set_phi(self.ps)
+        ps.set_phi(ps)
 
         # set vel
-        vel = self.set_vel(self.ps.phi)
-        self.ps.rdot[1][...] = vel
+        vel = self.set_vel(b.phi)
+        b.rdot[1][...] = vel
 
-    def make_model(self):
-        self.set_bodies()
-        self.ps.com_to_origin()
-        self.ps.to_nbody_units()
-        self.ps.scale_to_virial()
+        ps.com_to_origin()
+        ps.to_nbody_units()
+        ps.scale_to_virial()
+        return ps
 
-    def show(self, nbins=32):
+    def show(self, body, nbins=32):
         from scipy import optimize
         import matplotlib.pyplot as plt
         from matplotlib.patches import Circle
 
-        mass = self.imf._mtot * self.ps.mass.copy()
+        mass = self.imf._mtot * body.mass
 
         ###################################
 
@@ -153,7 +149,7 @@ class Plummer(object):
         ###################################
         # IMF plot
 
-        fig = plt.figure(figsize=(13.5, 6))
+        fig = plt.figure(figsize=(8, 4))
         ax1 = fig.add_subplot(1, 2, 1)
         ax1.plot(bins[selection], np.log10(hist[selection]),
                  'bo', label='IMF sample')
@@ -167,7 +163,7 @@ class Plummer(object):
 
         ###################################
 
-        b = self.ps
+        b = body
         n = b.n
         r = b.rdot[0]
         radius = 2 * n * b.mass
@@ -179,7 +175,7 @@ class Plummer(object):
         ax2 = fig.add_subplot(1, 2, 2)
 #        ax.set_axis_bgcolor('0.75')
         ax2.scatter(r[0], r[1], c=color, s=radius, cmap='gist_rainbow',
-                    alpha=0.75, label=r'$Stars$')
+                    alpha=0.5, label=r'$Stars$')
         circle = Circle(
             (0, 0), 1,
             facecolor='none',
@@ -197,6 +193,7 @@ class Plummer(object):
         ax2.legend(loc='upper right', shadow=True,
                    fancybox=True, borderaxespad=0.75)
 
+        plt.tight_layout()
         ###################################
         # Show
         plt.savefig('show.png', bbox_inches="tight")
@@ -212,12 +209,12 @@ def make_plummer(n, eps, imf,
         n = 2
     from tupan.ics.imf import IMF
     imf = getattr(IMF, imf[0])(*imf[1:])
-    p = Plummer(n, eps, imf, seed=seed, mfrac=mfrac,
+    p = Plummer(eps, imf, seed=seed, mfrac=mfrac,
                 softening_type=softening_type)
-    p.make_model()
+    ps = p.make_model(n)
     if show:
-        p.show()
-    return p.ps
+        p.show(ps.body)
+    return ps
 
 
 # -- End of File --

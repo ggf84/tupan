@@ -35,20 +35,20 @@ def make_binary(m1, m2, ecc, sma=1):
     v2 = -(m1 / m) * v
 
     ps = ParticleSystem(2)
+    b = ps.body
 
-    ps.mass[...] = [m1, m2]
+    b.mass[...] = [m1, m2]
 
     rx = [r1, r2]
     ry = [0.0, 0.0]
     rz = [0.0, 0.0]
-    ps.rdot[0][...] = [rx, ry, rz]
+    b.rdot[0][...] = [rx, ry, rz]
 
     vx = [0.0, 0.0]
     vy = [v1, v2]
     vz = [0.0, 0.0]
-    ps.rdot[1][...] = [vx, vy, vz]
+    b.rdot[1][...] = [vx, vy, vz]
 
-    ps.pid[...] = range(ps.n)
     return ps
 
 
@@ -57,20 +57,20 @@ def make_pythagorean():
     Returns initial conditions for the pythagorean 3-body system.
     """
     ps = ParticleSystem(3)
+    b = ps.body
 
-    ps.mass[...] = [3.0, 4.0, 5.0]
+    b.mass[...] = [3.0, 4.0, 5.0]
 
     rx = [+1.0, -2.0, +1.0]
     ry = [+3.0, -1.0, -1.0]
     rz = [0.0, 0.0, 0.0]
-    ps.rdot[0][...] = [rx, ry, rz]
+    b.rdot[0][...] = [rx, ry, rz]
 
     vx = [0.0, 0.0, 0.0]
     vy = [0.0, 0.0, 0.0]
     vz = [0.0, 0.0, 0.0]
-    ps.rdot[1][...] = [vx, vy, vz]
+    b.rdot[1][...] = [vx, vy, vz]
 
-    ps.pid[...] = range(ps.n)
     return ps
 
 
@@ -79,20 +79,20 @@ def make_circular3():
     Returns initial conditions for a 3-body system in a circular orbit.
     """
     ps = ParticleSystem(3)
+    b = ps.body
 
-    ps.mass[...] = [1.0, 1.0, 1.0]
+    b.mass[...] = [1.0, 1.0, 1.0]
 
     rx = [0.0, +1.0, +0.5]
     ry = [0.0, 0.0, +0.8660254037844386]
     rz = [0.0, 0.0, 0.0]
-    ps.rdot[0][...] = [rx, ry, rz]
+    b.rdot[0][...] = [rx, ry, rz]
 
     vx = [-0.5, -0.5, +1.0]
     vy = [+0.8660254037844386, -0.8660254037844386, 0.0]
     vz = [0.0, 0.0, 0.0]
-    ps.rdot[1][...] = [vx, vy, vz]
+    b.rdot[1][...] = [vx, vy, vz]
 
-    ps.pid[...] = range(ps.n)
     return ps
 
 
@@ -101,20 +101,20 @@ def make_figure83():
     Returns initial conditions for a 3-body system in a 8-shaped orbit.
     """
     ps = ParticleSystem(3)
+    b = ps.body
 
-    ps.mass[...] = [1.0, 1.0, 1.0]
+    b.mass[...] = [1.0, 1.0, 1.0]
 
     rx = [+0.9700436, -0.9700436, 0.0]
     ry = [-0.24308753, +0.24308753, 0.0]
     rz = [0.0, 0.0, 0.0]
-    ps.rdot[0][...] = [rx, ry, rz]
+    b.rdot[0][...] = [rx, ry, rz]
 
     vx = [+0.466203685, +0.466203685, -0.93240737]
     vy = [+0.43236573, +0.43236573, -0.86473146]
     vz = [0.0, 0.0, 0.0]
-    ps.rdot[1][...] = [vx, vy, vz]
+    b.rdot[1][...] = [vx, vy, vz]
 
-    ps.pid[...] = range(ps.n)
     return ps
 
 
@@ -123,20 +123,20 @@ def make_figure84():
     Returns initial conditions for a 4-body system in a 8-shaped orbit.
     """
     ps = ParticleSystem(4)
+    b = ps.body
 
-    ps.mass[...] = [1.0, 1.0, 1.0, 1.0]
+    b.mass[...] = [1.0, 1.0, 1.0, 1.0]
 
     rx = [+1.382857, 0.0, -1.382857, 0.0]
     ry = [0.0, +0.157030, 0.0, -0.157030]
     rz = [0.0, 0.0, 0.0, 0.0]
-    ps.rdot[0][...] = [rx, ry, rz]
+    b.rdot[0][...] = [rx, ry, rz]
 
     vx = [0.0, +1.871935, 0.0, -1.871935]
     vy = [+0.584873, 0.0, -0.584873, 0.0]
     vz = [0.0, 0.0, 0.0, 0.0]
-    ps.rdot[1][...] = [vx, vy, vz]
+    b.rdot[1][...] = [vx, vy, vz]
 
-    ps.pid[...] = range(ps.n)
     return ps
 
 
@@ -145,17 +145,18 @@ def make_solar_system():
     Returns initial conditions for the 10-body solar system.
     """
     ps = ParticleSystem(10)
+    b = ps.body
 
-    ps.mass[...] = [1.0,                     # Sun
-                    1.66013679527193e-07,    # Mercury
-                    2.44783833966455e-06,    # Venus
-                    3.04043264626853e-06,    # Earth
-                    3.22715144505387e-07,    # Mars
-                    0.000954791938424327,    # Jupiter
-                    0.000285885980666131,    # Saturn
-                    4.36625166911354e-05,    # Uranus
-                    5.15138902046612e-05,    # Neptune
-                    7.40740740830878e-09, ]  # Pluto (bear with me)
+    b.mass[...] = [1.0,                     # Sun
+                   1.66013679527193e-07,    # Mercury
+                   2.44783833966455e-06,    # Venus
+                   3.04043264626853e-06,    # Earth
+                   3.22715144505387e-07,    # Mars
+                   0.000954791938424327,    # Jupiter
+                   0.000285885980666131,    # Saturn
+                   4.36625166911354e-05,    # Uranus
+                   5.15138902046612e-05,    # Neptune
+                   7.40740740830878e-09, ]  # Pluto (bear with me)
 
     rx = [-0.00712377699396443,
           -0.134041839403259,
@@ -187,7 +188,7 @@ def make_solar_system():
           +0.0266710693728891,
           +0.360719859921208,
           +5.35614463977912, ]
-    ps.rdot[0][...] = [rx, ry, rz]
+    b.rdot[0][...] = [rx, ry, rz]
 
     vx = [+0.0003150431297530473,
           +1.24765113964416,
@@ -219,9 +220,8 @@ def make_solar_system():
           +0.00394092485741823,
           -0.000776459933629997,
           -0.0375021230229398, ]
-    ps.rdot[1][...] = [vx, vy, vz]
+    b.rdot[1][...] = [vx, vy, vz]
 
-    ps.pid[...] = range(ps.n)
     return ps
 
 

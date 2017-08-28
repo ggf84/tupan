@@ -40,30 +40,30 @@ class HX(with_metaclass(abc.ABCMeta, object)):
         self.cli = manager.cli
         self.update_tstep = manager.update_tstep
 
-    def timestep_criterion(self, ps, eta):
-        def A(a2, k):
-            return (a2[k-1] * a2[k+1])**0.5 + a2[k]
+    @staticmethod
+    def A(a2, k):
+        return (a2[k-1] * a2[k+1])**0.5 + a2[k]
 
+    def set_timestep(self, ps, eta):
         order = self.order
         for p in ps.members.values():
             if p.n:
                 a2 = (p.rdot[2:2+order]**2).sum(1)
-                frac = A(a2, 1) / A(a2, order-2)
+                frac = self.A(a2, 1) / self.A(a2, order-2)
                 p.tstep[...] = eta * frac**(0.5/(order-3))
 
     def set_nextstep(self, ps, dt):
         if not self.initialized:
             self.initialized = True
-            ps.set_acc_jrk(ps)
+            self.evaluate(ps)       # acc [, jrk]
             if self.order > 4:
-                ps.set_snp_crk(ps)
+                self.evaluate(ps)   # acc, jrk [, snp [, crk]]
             if self.update_tstep:
                 ps.set_tstep(ps, 0.5 * self.cli.eta)
                 return power_of_two(ps, dt)
-        else:
-            if self.update_tstep:
-                self.timestep_criterion(ps, self.cli.eta)
-                return power_of_two(ps, dt)
+        if self.update_tstep:
+            self.set_timestep(ps, self.cli.eta)
+            return power_of_two(ps, dt)
         return dt
 
     def predict(self, ps, dt):
@@ -177,12 +177,9 @@ class H2(HX):
     def evaluate(ps):
         ps.set_acc(ps)
 
-    def timestep_criterion(self, ps, eta):
-        order = self.order
-        for p in ps.members.values():
-            if p.n:
-                a2 = (p.rdot[2:2+order]**2).sum(1)
-                p.tstep[...] = eta * (a2[0] / a2[1])**0.5
+    @staticmethod
+    def A(a2, k):
+        return a2[k]
 
 
 class H4(HX):

@@ -15,15 +15,13 @@ def set_particles(n):
     from tupan.particles.system import ParticleSystem
 
     ps = ParticleSystem(n)
-
-    ps.eps2[...] = np.zeros((n,))
-    ps.mass[...] = np.random.random((n,))
-    ps.rdot[0][...] = np.random.random((3, n)) * 10
-    ps.rdot[1][...] = np.random.random((3, n)) * 10
-    ps.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
-    ps.register_attribute('drdot', '2, {nd}, {nb}', 'real_t')
-
-    return ps
+    b = ps.body
+    b.mass[...] = np.random.random((n,))
+    b.rdot[0][...] = np.random.random((3, n)) * 10
+    b.rdot[1][...] = np.random.random((3, n)) * 10
+    b.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
+    b.register_attribute('drdot', '2, {nd}, {nb}', 'real_t')
+    return b
 
 
 def compare_result(test_number, kernel_name, **kwargs):
@@ -37,7 +35,7 @@ def compare_result(test_number, kernel_name, **kwargs):
     for (c_ip, c_jp), (cl_ip, cl_jp) in [((c_ips, c_ips), (cl_ips, cl_ips)),
                                          ((c_jps, c_jps), (cl_jps, cl_jps)),
                                          ((c_ips, c_jps), (cl_ips, cl_jps)),
-                                         ((c_jps, c_ips), (cl_jps, cl_ips)),]:
+                                         ((c_jps, c_ips), (cl_jps, cl_ips)), ]:
 
         res = [Ckernel(c_ip, c_jp, **kwargs), CLkernel(cl_ip, cl_jp, **kwargs)]
 

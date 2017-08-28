@@ -12,121 +12,100 @@ from .body import Body
 from .sph import Sph
 from .star import Star
 from .blackhole import Blackhole
-from .base import MetaParticle, AbstractNbodyMethods
 from ..lib import extensions as ext
-from ..lib.utils import with_metaclass
 
 
-class Members(dict):
-    def __init__(self, **members):
-        super(Members, self).__init__(**members)
-        self.__dict__ = self
-
-
-class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
+class ParticleSystem(object):
     """
-    This class holds the particle types in the simulation.
+    This class holds the particle system in the simulation.
     """
-    name = None
-
     def __init__(self, nbody=0, nstar=0, nbh=0, nsph=0):
-        """
-        Initializer.
-        """
         members = {cls.name: cls(n) for (n, cls) in [(nbody, Body),
                                                      (nstar, Star),
                                                      (nbh, Blackhole),
                                                      (nsph, Sph)] if n}
-        self.set_members(**members)
+        self.update_members(**members)
         if self.n:
             self.reset_pid()
 
-    def reset_pid(self):
-        for member in self.members.values():
-            member.pid[...] = range(member.n)
-
-    def set_members(self, **members):
-        self.members = Members(**members)
-        self.n = len(self)
-        for member in self.members.values():
-            self.attr_names.update(**member.attr_names)
-
     def update_members(self, **members):
-        vars(self).clear()
-        self.set_members(**members)
+        dct = vars(self)
+        dct.clear()
+        dct.update(**members)
+        self.members = members
+        self.n = len(self)
 
     @classmethod
     def from_members(cls, **members):
         obj = cls.__new__(cls)
-        obj.set_members(**members)
+        obj.update_members(**members)
         return obj
 
-    def register_attribute(self, name, shape, sctype, doc=''):
-        for member in self.members.values():
-            member.register_attribute(name, shape, sctype, doc)
-
-        if name not in self.attr_names:
-            self.attr_names[name] = (shape, sctype, doc)
+    def reset_pid(self):
+        for ps in self.members.values():
+            if ps.n:
+                ps.pid[...] = range(ps.n)
 
     def astype(self, name='body'):
         cls = globals()[name.capitalize()]
         obj = cls()
-        for p in self.members.values():
-            if p.n:
-                obj += p.astype(cls)
+        for ps in self.members.values():
+            if ps.n:
+                obj += ps.astype(cls)
         return self.from_members(**{cls.name: obj})
+
+    def split_by(self, mask_function):
+        a, b = {}, {}
+        for name, ps in self.members.items():
+            if ps.n:
+                a[name], b[name] = ps.split_by(mask_function)
+        return (self.from_members(**a),
+                self.from_members(**b))
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     #
     # miscellaneous methods
     #
 
-    def copy(self):
-        return copy.deepcopy(self)
+    def __len__(self):
+        return sum(len(ps) for ps in self.members.values())
 
     def __repr__(self):
         return repr(vars(self))
 
     def __str__(self):
-        fmt = self.name + '(['
+        fmt = self.__class__.__name__ + '(['
+        for ps in self.members.values():
+            if ps.n:
+                fmt += '\n\t{0},'.format('\n\t'.join(str(ps).split('\n')))
         if self.n:
-            for member in self.members.values():
-                fmt += '\n\t{0},'.format('\n\t'.join(str(member).split('\n')))
             fmt += '\n'
         fmt += '])'
         return fmt
 
-    def __len__(self):
-        return sum(len(member) for member in self.members.values())
-
     def __add__(self, other):
         if other.n:
             members = self.members
-            for name, member in other.members.items():
+            for name, ps in other.members.items():
                 try:
-                    members[name] += member
+                    members[name] += ps
                 except KeyError:
-                    members[name] = member.copy()
+                    members[name] = ps.copy()
             return self.from_members(**members)
         return self
 
     __radd__ = __add__
 
-    def split_by(self, mask_function):
-        d_a, d_b = {}, {}
-        for name, member in self.members.items():
-            if member.n:
-                d_a[name], d_b[name] = member.split_by(mask_function)
-        return (self.from_members(**d_a),
-                self.from_members(**d_b))
-
     def __getitem__(self, index):
         if isinstance(index, np.ndarray):
             ns, nf = 0, 0
             members = {}
-            for name, member in self.members.items():
-                nf += member.n
-                members[name] = member[index[ns:nf]]
-                ns += member.n
+            for name, ps in self.members.items():
+                nf += ps.n
+                members[name] = ps[index[ns:nf]]
+                ns += ps.n
             return self.from_members(**members)
 
         if isinstance(index, int):
@@ -136,10 +115,10 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
             if index < 0:
                 index = self.n + index
             members = {}
-            for name, member in self.members.items():
-                if 0 <= index < member.n:
-                    members[name] = member[index]
-                index -= member.n
+            for name, ps in self.members.items():
+                if 0 <= index < ps.n:
+                    members[name] = ps[index]
+                index -= ps.n
             return self.from_members(**members)
 
         if isinstance(index, slice):
@@ -154,21 +133,21 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
             if stop < 0:
                 stop = self.n + stop
             members = {}
-            for name, member in self.members.items():
-                if stop >= 0 and start < member.n:
-                    members[name] = member[start-member.n:stop]
-                start -= member.n
-                stop -= member.n
+            for name, ps in self.members.items():
+                if stop >= 0 and start < ps.n:
+                    members[name] = ps[start-ps.n:stop]
+                start -= ps.n
+                stop -= ps.n
             return self.from_members(**members)
 
     def __setitem__(self, index, value):
         if isinstance(index, np.ndarray):
             ns, nf = 0, 0
-            for name, member in self.members.items():
-                nf += member.n
+            for name, ps in self.members.items():
+                nf += ps.n
                 if name in value.members:
-                    member[index[ns:nf]] = value.members[name]
-                ns += member.n
+                    ps[index[ns:nf]] = value.members[name]
+                ns += ps.n
             return
 
         if isinstance(index, int):
@@ -177,11 +156,11 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
                 raise IndexError(msg.format(index, self.n))
             if index < 0:
                 index = self.n + index
-            for name, member in self.members.items():
-                if 0 <= index < member.n:
+            for name, ps in self.members.items():
+                if 0 <= index < ps.n:
                     if name in value.members:
-                        member[index] = value.members[name]
-                index -= member.n
+                        ps[index] = value.members[name]
+                index -= ps.n
             return
 
         if isinstance(index, slice):
@@ -195,48 +174,25 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
                 start = self.n + start
             if stop < 0:
                 stop = self.n + stop
-            for name, member in self.members.items():
-                if stop >= 0 and start < member.n:
+            for name, ps in self.members.items():
+                if stop >= 0 and start < ps.n:
                     if name in value.members:
-                        member[start-member.n:stop] = value.members[name]
-                start -= member.n
-                stop -= member.n
+                        ps[start-ps.n:stop] = value.members[name]
+                start -= ps.n
+                stop -= ps.n
             return
-
-    def __getattr__(self, name):
-        if name not in self.attr_names:
-            raise AttributeError(name)
-        members = self.members
-        if len(members) == 1:
-            member = next(iter(members.values()))
-            value = getattr(member, name)
-            setattr(self, name, value)
-            return value
-        arrays = [getattr(member, name) for member in members.values()
-                  if name in member.attr_names]
-        value = np.concatenate(arrays, -1)  # along last dimension
-        ns, nf = 0, 0
-        for member in members.values():
-            if name in member.attr_names:
-                nf += member.n
-                v = value[..., ns:nf]
-#                setattr(member, name, v)
-                setattr(member, name, np.array(v, copy=False, order='C'))
-                ns += member.n
-        setattr(self, name, value)
-        return value
-
-    @property
-    def global_time(self):
-        return min(abs(p.time).min() for p in self.members.values() if p.n)
-
-    @property
-    def tstep_min(self):
-        return min(abs(p.tstep).min() for p in self.members.values() if p.n)
 
     #
     # n-body methods
     #
+
+    @property
+    def global_time(self):
+        return min(abs(ps.time).min() for ps in self.members.values() if ps.n)
+
+    @property
+    def tstep_min(self):
+        return min(abs(ps.tstep).min() for ps in self.members.values() if ps.n)
 
     # -- total mass and center-of-mass
     @property
@@ -244,7 +200,7 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         """Total mass of the system.
 
         """
-        return float(sum(p.mass.sum() for p in self.members.values() if p.n))
+        return float(sum(ps.mass.sum() for ps in self.members.values()))
 
     @property
     def com_r(self):
@@ -256,11 +212,11 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
 
         """
         mr_sum = 0
-        for p in self.members.values():
-            if p.n:
-                mr = p.mass * p.rdot[0]
-                if hasattr(p, 'pn_mr'):
-                    mr += p.pn_mr
+        for ps in self.members.values():
+            if ps.n:
+                mr = ps.mass * ps.rdot[0]
+                if hasattr(ps, 'pn_mr'):
+                    mr += ps.pn_mr
                 mr_sum += mr.sum(1)
         return mr_sum / self.total_mass
 
@@ -274,11 +230,11 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
 
         """
         mv_sum = 0
-        for p in self.members.values():
-            if p.n:
-                mv = p.mass * p.rdot[1]
-                if hasattr(p, 'pn_mv'):
-                    mv += p.pn_mv
+        for ps in self.members.values():
+            if ps.n:
+                mv = ps.mass * ps.rdot[1]
+                if hasattr(ps, 'pn_mv'):
+                    mv += ps.pn_mv
                 mv_sum += mv.sum(1)
         return mv_sum / self.total_mass
 
@@ -307,10 +263,10 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         """Moves the center-of-mass to the given coordinates.
 
         """
-        for p in self.members.values():
-            if p.n:
-                p.rdot[0].T[...] += com_r
-                p.rdot[1].T[...] += com_v
+        for ps in self.members.values():
+            if ps.n:
+                ps.rdot[0].T[...] += com_r
+                ps.rdot[1].T[...] += com_v
 
     def com_to_origin(self):
         """Moves the center-of-mass to the origin of coordinates.
@@ -329,11 +285,11 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
 
         """
         lm_sum = 0
-        for p in self.members.values():
-            if p.n:
-                lm = p.mass * p.rdot[1]
-                if hasattr(p, 'pn_mv'):
-                    lm += p.pn_mv
+        for ps in self.members.values():
+            if ps.n:
+                lm = ps.mass * ps.rdot[1]
+                if hasattr(ps, 'pn_mv'):
+                    lm += ps.pn_mv
                 lm_sum += lm.sum(1)
         return lm_sum
 
@@ -347,12 +303,12 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
 
         """
         am_sum = 0
-        for p in self.members.values():
-            if p.n:
-                mv = p.mass * p.rdot[1]
-                am = np.cross(p.rdot[0].T, mv.T).T
-                if hasattr(p, 'pn_am'):
-                    am += p.pn_am
+        for ps in self.members.values():
+            if ps.n:
+                mv = ps.mass * ps.rdot[1]
+                am = np.cross(ps.rdot[0].T, mv.T).T
+                if hasattr(ps, 'pn_am'):
+                    am += ps.pn_am
                 am_sum += am.sum(1)
         return am_sum
 
@@ -367,12 +323,12 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
 
         """
         ke_sum = 0
-        for p in self.members.values():
-            if p.n:
-                v2 = (p.rdot[1]**2).sum(0)
-                ke = 0.5 * p.mass * v2
-                if hasattr(p, 'pn_ke'):
-                    ke += p.pn_ke
+        for ps in self.members.values():
+            if ps.n:
+                v2 = (ps.rdot[1]**2).sum(0)
+                ke = 0.5 * ps.mass * v2
+                if hasattr(ps, 'pn_ke'):
+                    ke += ps.pn_ke
                 ke_sum += ke.sum()
         return float(ke_sum)
 
@@ -382,9 +338,9 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
 
         """
         pe_sum = 0
-        for p in self.members.values():
-            if p.n:
-                pe = p.mass * p.phi
+        for ps in self.members.values():
+            if ps.n:
+                pe = ps.mass * ps.phi
                 pe_sum += pe.sum()
         return 0.5 * float(pe_sum)
 
@@ -406,10 +362,10 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         """
         mr2_sum = 0
         com_r = self.com_r
-        for p in self.members.values():
-            if p.n:
-                pos = (p.rdot[0].T - com_r).T
-                mr2 = p.mass * pos**2
+        for ps in self.members.values():
+            if ps.n:
+                pos = (ps.rdot[0].T - com_r).T
+                mr2 = ps.mass * pos**2
                 mr2_sum += mr2.sum()
         return (mr2_sum / self.total_mass)**0.5
 
@@ -420,10 +376,10 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
 
         """
         m_ratio = total_mass / self.total_mass
-        for p in self.members.values():
-            if p.n:
-                p.mass *= m_ratio
-                p.rdot[0] *= m_ratio
+        for ps in self.members.values():
+            if ps.n:
+                ps.mass *= m_ratio
+                ps.rdot[0] *= m_ratio
 
     def dynrescale_radial_size(self, size):
         """Rescales the radial size of the system while maintaining its
@@ -432,10 +388,10 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         """
         r_scale = size / self.radial_size
         v_scale = 1 / r_scale**0.5
-        for p in self.members.values():
-            if p.n:
-                p.rdot[0] *= r_scale
-                p.rdot[1] *= v_scale
+        for ps in self.members.values():
+            if ps.n:
+                ps.rdot[0] *= r_scale
+                ps.rdot[1] *= v_scale
 
     def dynrescale_virial_radius(self, rvir):
         """Rescales the virial radius of the system while maintaining its
@@ -445,10 +401,10 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         self.set_phi(self)
         r_scale = rvir / self.virial_radius
         v_scale = 1 / r_scale**0.5
-        for p in self.members.values():
-            if p.n:
-                p.rdot[0] *= r_scale
-                p.rdot[1] *= v_scale
+        for ps in self.members.values():
+            if ps.n:
+                ps.rdot[0] *= r_scale
+                ps.rdot[1] *= v_scale
 
     def scale_to_virial(self):
         """Rescale system to virial equilibrium (2K + U = 0).
@@ -458,9 +414,9 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         ke = self.kinetic_energy
         pe = self.potential_energy
         v_scale = ((-0.5 * pe) / ke)**0.5
-        for p in self.members.values():
-            if p.n:
-                p.rdot[1] *= v_scale
+        for ps in self.members.values():
+            if ps.n:
+                ps.rdot[1] *= v_scale
 
     def to_nbody_units(self):
         """Rescales system to nbody units while maintaining its dynamics
@@ -577,30 +533,30 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
         """Set individual time-steps due to other particles.
 
         """
-        i_tstep = {i: 0 for i in self.members.keys()}
-        j_tstep = {j: 0 for j in other.members.keys()}
-        i_tstep_sum = {i: 0 for i in self.members.keys()}
-        j_tstep_sum = {j: 0 for j in other.members.keys()}
+        itstep = {i: 0 for i in self.members.keys()}
+        jtstep = {j: 0 for j in other.members.keys()}
+        itstep_sum = {i: 0 for i in self.members.keys()}
+        jtstep_sum = {j: 0 for j in other.members.keys()}
 
         for i, ip in self.members.items():
             if ip.n:
                 for j, jp in other.members.items():
                     if jp.n:
                         kernel(ip, jp, eta=eta)
-                        i_tstep_sum[i] += ip.tstep_sum
-                        j_tstep_sum[j] += jp.tstep_sum
-                        i_tstep[i] = np.maximum(i_tstep[i], ip.tstep)
-                        j_tstep[j] = np.maximum(j_tstep[j], jp.tstep)
+                        itstep_sum[i] += ip.tstep_sum
+                        jtstep_sum[j] += jp.tstep_sum
+                        itstep[i] = np.maximum(itstep[i], ip.tstep)
+                        jtstep[j] = np.maximum(jtstep[j], jp.tstep)
 
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    jp.tstep[...] = eta / np.sqrt(j_tstep[j])
-                    jp.tstep_sum[...] = eta / np.sqrt(j_tstep_sum[j])
+                    jp.tstep[...] = eta / np.sqrt(jtstep[j])
+                    jp.tstep_sum[...] = eta / np.sqrt(jtstep_sum[j])
         for i, ip in self.members.items():
             if ip.n:
-                ip.tstep[...] = eta / np.sqrt(i_tstep[i])
-                ip.tstep_sum[...] = eta / np.sqrt(i_tstep_sum[i])
+                ip.tstep[...] = eta / np.sqrt(itstep[i])
+                ip.tstep_sum[...] = eta / np.sqrt(itstep_sum[i])
 
     def set_pnacc(self, other, pn=None, use_auxvel=False,
                   kernel=ext.get_kernel('PNAcc')):
@@ -609,8 +565,8 @@ class ParticleSystem(with_metaclass(MetaParticle, AbstractNbodyMethods)):
 
         """
         def swap_vel(ps):
-            for p in ps.members.values():
-                v, w = p.rdot[1], p.pnvel
+            for ps in ps.members.values():
+                v, w = ps.rdot[1], ps.pnvel
                 vv, ww = v.copy(), w.copy()
                 v[...], w[...] = ww, vv
 

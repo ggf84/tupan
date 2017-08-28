@@ -70,9 +70,8 @@ class Base(object):
         """
 
         """
-        while abs(self.time) < self.t_next:
+        while abs(self.ps.global_time) < self.t_next:
             self.ps = self.do_step(self.ps, dt)
-        self.t_next += self.cli.dt_max
 
         if self.viewer:
             self.viewer.show_event(self.ps)
@@ -94,12 +93,9 @@ class Base(object):
         if self.viewer:
             self.viewer.show_event(self.ps)
 
-        while abs(self.time) < t_end:
+        while abs(self.ps.global_time) < t_end:
             self.evolve_step(dt, next(self.step))
-
-    @property
-    def time(self):
-        return self.ps.global_time
+            self.t_next += self.cli.dt_max
 
 
 # -- End of File --
