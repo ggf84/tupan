@@ -9,14 +9,13 @@ import abc
 import logging
 from operator import add, sub
 from .base import Base, power_of_two
-from ..lib.utils import with_metaclass
 
 
 LOGGER = logging.getLogger(__name__)
 PM = [add, sub]  # plus/minus operator.
 
 
-class HX(with_metaclass(abc.ABCMeta, object)):
+class HX(metaclass=abc.ABCMeta):
     """
 
     """
@@ -191,8 +190,8 @@ class H4(HX):
     coefs = [
         [1, 3],
         [
-            [ 0, -1],
-            [ 1,  1],
+            [+0, -1],
+            [+1, +1],
         ],
     ]
     coefs[0] = [1.0/i for i in coefs[0]]
@@ -212,9 +211,9 @@ class H6(HX):
     coefs = [
         [1, 5/2., 15/2.],
         [
-            [ 10, 10,  4],
-            [  0,  1,  2],
-            [ -3, -3, -2],
+            [+10, +10, +4],
+            [+0,  +1,  +2],
+            [-3,  -3,  -2],
         ],
     ]
     coefs[0] = [1.0/i for i in coefs[0]]
@@ -234,10 +233,10 @@ class H8(HX):
     coefs = [
         [1, 7/3., 21/4., 35/2.],
         [
-            [  0,   5,  10,  6],
+            [+0,  +5,  +10, +6],
             [-21, -21, -16, -6],
-            [  0,  -1,  -2, -2],
-            [  5,   5,   4,  2],
+            [+0,  -1,  -2,  -2],
+            [+5,  +5,  +4,  +2],
         ],
     ]
     coefs[0] = [1.0/i for i in coefs[0]]
