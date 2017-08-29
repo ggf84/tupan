@@ -5,7 +5,6 @@
 TODO.
 """
 
-from __future__ import print_function
 import copy
 import numpy as np
 from .body import Body
@@ -435,13 +434,20 @@ class ParticleSystem(object):
         iphi = {i: 0 for i in self.members.keys()}
         jphi = {j: 0 for j in other.members.keys()}
 
+        interactions = []
         for i, ip in self.members.items():
             if ip.n:
                 for j, jp in other.members.items():
                     if jp.n:
-                        kernel(ip, jp)
-                        iphi[i] += ip.phi
-                        jphi[j] += jp.phi
+                        if (ip, jp) not in interactions:
+                            interactions.append((jp, ip))
+                            kernel(ip, jp)
+                            iphi[i] += ip.phi
+                            if ip != jp:
+                                jphi[j] += jp.phi
+                                if self == other:
+                                    jphi[i] += ip.phi
+                                    iphi[j] += jp.phi
 
         if self != other:
             for j, jp in other.members.items():
@@ -460,13 +466,20 @@ class ParticleSystem(object):
         ifdot = {i: 0 for i in self.members.keys()}
         jfdot = {j: 0 for j in other.members.keys()}
 
+        interactions = []
         for i, ip in self.members.items():
             if ip.n:
                 for j, jp in other.members.items():
                     if jp.n:
-                        kernel(ip, jp)
-                        ifdot[i] += ip.fdot[:nforce]
-                        jfdot[j] += jp.fdot[:nforce]
+                        if (ip, jp) not in interactions:
+                            interactions.append((jp, ip))
+                            kernel(ip, jp)
+                            ifdot[i] += ip.fdot[:nforce]
+                            if ip != jp:
+                                jfdot[j] += jp.fdot[:nforce]
+                                if self == other:
+                                    jfdot[i] += ip.fdot[:nforce]
+                                    ifdot[j] += jp.fdot[:nforce]
 
         if self != other:
             for j, jp in other.members.items():
@@ -486,13 +499,20 @@ class ParticleSystem(object):
         ifdot = {i: 0 for i in self.members.keys()}
         jfdot = {j: 0 for j in other.members.keys()}
 
+        interactions = []
         for i, ip in self.members.items():
             if ip.n:
                 for j, jp in other.members.items():
                     if jp.n:
-                        kernel(ip, jp)
-                        ifdot[i] += ip.fdot[:nforce]
-                        jfdot[j] += jp.fdot[:nforce]
+                        if (ip, jp) not in interactions:
+                            interactions.append((jp, ip))
+                            kernel(ip, jp)
+                            ifdot[i] += ip.fdot[:nforce]
+                            if ip != jp:
+                                jfdot[j] += jp.fdot[:nforce]
+                                if self == other:
+                                    jfdot[i] += ip.fdot[:nforce]
+                                    ifdot[j] += jp.fdot[:nforce]
 
         if self != other:
             for j, jp in other.members.items():
@@ -512,13 +532,20 @@ class ParticleSystem(object):
         ifdot = {i: 0 for i in self.members.keys()}
         jfdot = {j: 0 for j in other.members.keys()}
 
+        interactions = []
         for i, ip in self.members.items():
             if ip.n:
                 for j, jp in other.members.items():
                     if jp.n:
-                        kernel(ip, jp)
-                        ifdot[i] += ip.fdot[:nforce]
-                        jfdot[j] += jp.fdot[:nforce]
+                        if (ip, jp) not in interactions:
+                            interactions.append((jp, ip))
+                            kernel(ip, jp)
+                            ifdot[i] += ip.fdot[:nforce]
+                            if ip != jp:
+                                jfdot[j] += jp.fdot[:nforce]
+                                if self == other:
+                                    jfdot[i] += ip.fdot[:nforce]
+                                    ifdot[j] += jp.fdot[:nforce]
 
         if self != other:
             for j, jp in other.members.items():
@@ -538,15 +565,24 @@ class ParticleSystem(object):
         itstep_sum = {i: 0 for i in self.members.keys()}
         jtstep_sum = {j: 0 for j in other.members.keys()}
 
+        interactions = []
         for i, ip in self.members.items():
             if ip.n:
                 for j, jp in other.members.items():
                     if jp.n:
-                        kernel(ip, jp, eta=eta)
-                        itstep_sum[i] += ip.tstep_sum
-                        jtstep_sum[j] += jp.tstep_sum
-                        itstep[i] = np.maximum(itstep[i], ip.tstep)
-                        jtstep[j] = np.maximum(jtstep[j], jp.tstep)
+                        if (ip, jp) not in interactions:
+                            interactions.append((jp, ip))
+                            kernel(ip, jp, eta=eta)
+                            itstep_sum[i] += ip.tstep_sum
+                            itstep[i] = np.maximum(itstep[i], ip.tstep)
+                            if ip != jp:
+                                jtstep_sum[j] += jp.tstep_sum
+                                jtstep[j] = np.maximum(jtstep[j], jp.tstep)
+                                if self == other:
+                                    jtstep_sum[i] += ip.tstep_sum
+                                    jtstep[i] = np.maximum(jtstep[i], ip.tstep)
+                                    itstep_sum[j] += jp.tstep_sum
+                                    itstep[j] = np.maximum(itstep[j], jp.tstep)
 
         if self != other:
             for j, jp in other.members.items():
@@ -575,7 +611,31 @@ class ParticleSystem(object):
             if self != other:
                 swap_vel(other)
 
-        kernel(self, other, pn=pn)
+        ipnacc = {i: 0 for i in self.members.keys()}
+        jpnacc = {j: 0 for j in other.members.keys()}
+
+        interactions = []
+        for i, ip in self.members.items():
+            if ip.n:
+                for j, jp in other.members.items():
+                    if jp.n:
+                        if (ip, jp) not in interactions:
+                            interactions.append((jp, ip))
+                            kernel(ip, jp, pn=pn)
+                            ipnacc[i] += ip.pnacc
+                            if ip != jp:
+                                jpnacc[j] += jp.pnacc
+                                if self == other:
+                                    jpnacc[i] += ip.pnacc
+                                    ipnacc[j] += jp.pnacc
+
+        if self != other:
+            for j, jp in other.members.items():
+                if jp.n:
+                    jp.pnacc[...] = jpnacc[j]
+        for i, ip in self.members.items():
+            if ip.n:
+                ip.pnacc[...] = ipnacc[i]
 
         if use_auxvel:
             swap_vel(self)

@@ -20,13 +20,20 @@ def sakura_step(ips, jps, dt, flag, kernel=ext.get_kernel('Sakura')):
     idrdot = {i: 0 for i in ips.members.keys()}
     jdrdot = {j: 0 for j in jps.members.keys()}
 
+    interactions = []
     for i, ip in ips.members.items():
         if ip.n:
             for j, jp in jps.members.items():
                 if jp.n:
-                    kernel(ip, jp, dt=dt, flag=flag)
-                    idrdot[i] += ip.drdot
-                    jdrdot[j] += jp.drdot
+                    if (ip, jp) not in interactions:
+                        interactions.append((jp, ip))
+                        kernel(ip, jp, dt=dt, flag=flag)
+                        idrdot[i] += ip.drdot
+                        if ip != jp:
+                            jdrdot[j] += jp.drdot
+                            if ips == jps:
+                                jdrdot[i] += ip.drdot
+                                idrdot[j] += jp.drdot
 
     if ips != jps:
         for j, jp in jps.members.items():

@@ -5,16 +5,37 @@
 TODO.
 """
 
-from __future__ import print_function
 import abc
 import copy
 import numpy as np
 from itertools import count
-from ..lib.utils import with_metaclass
 from ..lib.utils.ctype import Ctype
 
 
 part_type = count()
+
+
+class Attributes(object):
+    """This class holds common attribute descriptions for particles.
+
+    The descriptions are composed by: 'name', 'shape', 'ctype' and 'doc'.
+
+    """
+    default = [
+        ('pid', '{nb}', 'uint_t', 'particle id'),
+        ('mass', '{nb}', 'real_t', 'mass'),
+        ('eps2', '{nb}', 'real_t', 'squared smoothing parameter'),
+        ('rdot', '10, {nd}, {nb}', 'real_t', 'position and its derivatives'),
+        ('time', '{nb}', 'real_t', 'current time'),
+        ('nstep', '{nb}', 'uint_t', 'step number'),
+    ]
+
+    extra = [
+        ('phi', '{nb}', 'real_t', 'gravitational potential'),
+        ('fdot', '4, {nd}, {nb}', 'real_t', 'force and its derivatives'),
+        ('tstep', '{nb}', 'real_t', 'time step'),
+        ('tstep_sum', '{nb}', 'real_t', 'auxiliary time step'),
+    ]
 
 
 class MetaParticle(abc.ABCMeta):
@@ -43,7 +64,7 @@ class MetaParticle(abc.ABCMeta):
             setattr(cls, 'attr_names', attr_names)
 
 
-class AbstractParticle(with_metaclass(MetaParticle, object)):
+class AbstractParticle(metaclass=MetaParticle):
     """
 
     """
@@ -102,14 +123,13 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
         if not any(mask):
             return type(self)(), self
 
-        d_a, d_b = {}, {}
+        a, b = {}, {}
         for name in self.attr_names:
             array = getattr(self, name)
-            v_a, v_b = array[..., mask], array[..., ~mask]
-            d_a[name], d_b[name] = (np.array(v_a, copy=False, order='C'),
-                                    np.array(v_b, copy=False, order='C'))
-        return (self.from_attrs(**d_a),
-                self.from_attrs(**d_b))
+            a[name] = np.array(array[...,  mask], copy=False, order='C')
+            b[name] = np.array(array[..., ~mask], copy=False, order='C')
+        return (self.from_attrs(**a),
+                self.from_attrs(**b))
 
     def __getitem__(self, index):
         index = ((Ellipsis, index, None)
@@ -154,31 +174,6 @@ class AbstractParticle(with_metaclass(MetaParticle, object)):
             if name in data:
                 value = getattr(self, name)
                 value[...] = data[name]
-
-
-###############################################################################
-
-
-class AbstractNbodyMethods(with_metaclass(abc.ABCMeta, object)):
-    """This class holds common methods for particles in n-body systems.
-
-    """
-    # name, shape, sctype, doc
-    default_attr_descr = [
-        ('pid', '{nb}', 'uint_t', 'particle id'),
-        ('mass', '{nb}', 'real_t', 'particle mass'),
-        ('eps2', '{nb}', 'real_t', 'particle squared softening'),
-        ('rdot', '10, {nd}, {nb}', 'real_t', 'position and its derivatives'),
-        ('time', '{nb}', 'real_t', 'current time'),
-        ('nstep', '{nb}', 'uint_t', 'step number'),
-    ]
-
-    extra_attr_descr = [
-        ('phi', '{nb}', 'real_t', 'gravitational potential'),
-        ('fdot', '4, {nd}, {nb}', 'real_t', 'force and its derivatives'),
-        ('tstep', '{nb}', 'real_t', 'time step'),
-        ('tstep_sum', '{nb}', 'real_t', 'auxiliary time step'),
-    ]
 
 
 # -- End of File --
