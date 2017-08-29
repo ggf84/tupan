@@ -7,7 +7,6 @@ This script converts a simulation data stream into a serie of snapshots.
 """
 
 
-from __future__ import print_function
 from tupan.io.hdf5io import HDF5IO
 from tupan.lib.utils.timing import Timer
 

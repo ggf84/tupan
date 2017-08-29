@@ -5,7 +5,6 @@
 Test suite for extensions module.
 """
 
-from __future__ import print_function
 import unittest
 import numpy as np
 from tupan.lib import extensions as ext

@@ -5,7 +5,6 @@
 TODO.
 """
 
-from __future__ import (print_function, division)
 import logging
 import numpy as np
 from ..particles.system import ParticleSystem

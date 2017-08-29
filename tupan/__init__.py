@@ -5,7 +5,6 @@
 A python toolkit for astrophysical N-body simulations
 """
 
-from __future__ import print_function
 import logging
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 

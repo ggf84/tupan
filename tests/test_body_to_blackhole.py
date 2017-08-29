@@ -5,8 +5,6 @@
 TODO.
 """
 
-from __future__ import print_function
-
 
 if __name__ == "__main__":
     from tupan.ics.plummer import make_plummer

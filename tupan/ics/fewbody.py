@@ -6,7 +6,6 @@ This module provides initial conditions for some few-body systems with
 known numerical solutions.
 """
 
-from __future__ import division
 from ..particles.system import ParticleSystem
 
 

@@ -5,7 +5,6 @@
 TODO.
 """
 
-from __future__ import print_function
 import numpy as np
 from scipy.integrate import quad
 from scipy.optimize import fminbound
