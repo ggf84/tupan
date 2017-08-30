@@ -132,7 +132,8 @@ def sf_pn_kick(slow, fast, dt, pn=None):
 #
 # twobody_solver
 #
-def twobody_solver(ps, dt, pn=None, kernel=ext.get_kernel('Kepler')):
+def twobody_solver(ps, dt, pn=None,
+                   kernel=ext.make_extension('Kepler', 'C')):
     """
 
     """
@@ -146,7 +147,9 @@ def twobody_solver(ps, dt, pn=None, kernel=ext.get_kernel('Kepler')):
                next(iter(ps1.members.values())),
                dt=dt)
         ps = ps0 + ps1
-        ps.time += dt
+        for p in ps.members.values():
+            if p.n:
+                p.time += dt
     return ps
 
 

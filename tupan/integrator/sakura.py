@@ -13,7 +13,9 @@ from ..lib import extensions as ext
 LOGGER = logging.getLogger(__name__)
 
 
-def sakura_step(ips, jps, dt, flag, kernel=ext.get_kernel('Sakura')):
+def sakura_step(ips, jps, dt, flag,
+                kernel_r=ext.make_extension('Sakura_rectangle'),
+                kernel_t=ext.make_extension('Sakura_triangle')):
     """
 
     """
@@ -25,15 +27,17 @@ def sakura_step(ips, jps, dt, flag, kernel=ext.get_kernel('Sakura')):
         if ip.n:
             for j, jp in jps.members.items():
                 if jp.n:
-                    if (ip, jp) not in interactions:
-                        interactions.append((jp, ip))
-                        kernel(ip, jp, dt=dt, flag=flag)
+                    if ip == jp:
+                        kernel_t(ip, dt=dt, flag=flag)
                         idrdot[i] += ip.drdot
-                        if ip != jp:
-                            jdrdot[j] += jp.drdot
-                            if ips == jps:
-                                jdrdot[i] += ip.drdot
-                                idrdot[j] += jp.drdot
+                    elif (ip, jp) not in interactions:
+                        interactions.append((jp, ip))
+                        kernel_r(ip, jp, dt=dt, flag=flag)
+                        idrdot[i] += ip.drdot
+                        jdrdot[j] += jp.drdot
+                        if ips == jps:
+                            jdrdot[i] += ip.drdot
+                            idrdot[j] += jp.drdot
 
     if ips != jps:
         for j, jp in jps.members.items():

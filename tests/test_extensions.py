@@ -23,10 +23,22 @@ def set_particles(n):
     return b
 
 
+def get_kernel(name, backend):
+    kernel_r = ext.make_extension(name+'_rectangle', backend)
+    kernel_t = ext.make_extension(name+'_triangle', backend)
+
+    def func(ips, jps, *args, **kwargs):
+        if ips != jps:
+            return kernel_r(ips, jps, *args, **kwargs)
+        return kernel_t(ips, *args, **kwargs)
+
+    return func
+
+
 def compare_result(test_number, kernel_name, **kwargs):
     np.random.seed(0)
-    Ckernel = ext.get_kernel(kernel_name, backend='C')
-    CLkernel = ext.get_kernel(kernel_name, backend='CL')
+    Ckernel = get_kernel(kernel_name, backend='C')
+    CLkernel = get_kernel(kernel_name, backend='CL')
 
     deviations = []
     c_ips, c_jps = set_particles(32), set_particles(2048)

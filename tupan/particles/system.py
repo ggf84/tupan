@@ -426,7 +426,8 @@ class ParticleSystem(object):
 
     # -- O(N^2) methods
     def set_phi(self, other,
-                kernel=ext.get_kernel('Phi')):
+                kernel_r=ext.make_extension('Phi_rectangle'),
+                kernel_t=ext.make_extension('Phi_triangle')):
         """Set individual gravitational potential due to other particles.
 
         """
@@ -438,15 +439,17 @@ class ParticleSystem(object):
             if ip.n:
                 for j, jp in other.members.items():
                     if jp.n:
-                        if (ip, jp) not in interactions:
-                            interactions.append((jp, ip))
-                            kernel(ip, jp)
+                        if ip == jp:
+                            kernel_t(ip)
                             iphi[i] += ip.phi
-                            if ip != jp:
-                                jphi[j] += jp.phi
-                                if self == other:
-                                    jphi[i] += ip.phi
-                                    iphi[j] += jp.phi
+                        elif (ip, jp) not in interactions:
+                            interactions.append((jp, ip))
+                            kernel_r(ip, jp)
+                            iphi[i] += ip.phi
+                            jphi[j] += jp.phi
+                            if self == other:
+                                jphi[i] += ip.phi
+                                iphi[j] += jp.phi
 
         if self != other:
             for j, jp in other.members.items():
@@ -457,7 +460,8 @@ class ParticleSystem(object):
                 ip.phi[...] = iphi[i]
 
     def set_acc(self, other,
-                kernel=ext.get_kernel('Acc')):
+                kernel_r=ext.make_extension('Acc_rectangle'),
+                kernel_t=ext.make_extension('Acc_triangle')):
         """Set individual gravitational acceleration due to other particles.
 
         """
@@ -470,15 +474,17 @@ class ParticleSystem(object):
             if ip.n:
                 for j, jp in other.members.items():
                     if jp.n:
-                        if (ip, jp) not in interactions:
-                            interactions.append((jp, ip))
-                            kernel(ip, jp)
+                        if ip == jp:
+                            kernel_t(ip)
                             ifdot[i] += ip.fdot[:nforce]
-                            if ip != jp:
-                                jfdot[j] += jp.fdot[:nforce]
-                                if self == other:
-                                    jfdot[i] += ip.fdot[:nforce]
-                                    ifdot[j] += jp.fdot[:nforce]
+                        elif (ip, jp) not in interactions:
+                            interactions.append((jp, ip))
+                            kernel_r(ip, jp)
+                            ifdot[i] += ip.fdot[:nforce]
+                            jfdot[j] += jp.fdot[:nforce]
+                            if self == other:
+                                jfdot[i] += ip.fdot[:nforce]
+                                ifdot[j] += jp.fdot[:nforce]
 
         if self != other:
             for j, jp in other.members.items():
@@ -489,7 +495,8 @@ class ParticleSystem(object):
                 ip.rdot[2:2+nforce] = ifdot[i]
 
     def set_acc_jrk(self, other,
-                    kernel=ext.get_kernel('AccJrk')):
+                    kernel_r=ext.make_extension('AccJrk_rectangle'),
+                    kernel_t=ext.make_extension('AccJrk_triangle')):
         """Set individual gravitational acceleration and jerk due to other
         particles.
 
@@ -503,15 +510,17 @@ class ParticleSystem(object):
             if ip.n:
                 for j, jp in other.members.items():
                     if jp.n:
-                        if (ip, jp) not in interactions:
-                            interactions.append((jp, ip))
-                            kernel(ip, jp)
+                        if ip == jp:
+                            kernel_t(ip)
                             ifdot[i] += ip.fdot[:nforce]
-                            if ip != jp:
-                                jfdot[j] += jp.fdot[:nforce]
-                                if self == other:
-                                    jfdot[i] += ip.fdot[:nforce]
-                                    ifdot[j] += jp.fdot[:nforce]
+                        elif (ip, jp) not in interactions:
+                            interactions.append((jp, ip))
+                            kernel_r(ip, jp)
+                            ifdot[i] += ip.fdot[:nforce]
+                            jfdot[j] += jp.fdot[:nforce]
+                            if self == other:
+                                jfdot[i] += ip.fdot[:nforce]
+                                ifdot[j] += jp.fdot[:nforce]
 
         if self != other:
             for j, jp in other.members.items():
@@ -522,7 +531,8 @@ class ParticleSystem(object):
                 ip.rdot[2:2+nforce] = ifdot[i]
 
     def set_snp_crk(self, other,
-                    kernel=ext.get_kernel('SnpCrk')):
+                    kernel_r=ext.make_extension('SnpCrk_rectangle'),
+                    kernel_t=ext.make_extension('SnpCrk_triangle')):
         """Set individual gravitational snap and crackle due to other
         particles.
 
@@ -536,15 +546,17 @@ class ParticleSystem(object):
             if ip.n:
                 for j, jp in other.members.items():
                     if jp.n:
-                        if (ip, jp) not in interactions:
-                            interactions.append((jp, ip))
-                            kernel(ip, jp)
+                        if ip == jp:
+                            kernel_t(ip)
                             ifdot[i] += ip.fdot[:nforce]
-                            if ip != jp:
-                                jfdot[j] += jp.fdot[:nforce]
-                                if self == other:
-                                    jfdot[i] += ip.fdot[:nforce]
-                                    ifdot[j] += jp.fdot[:nforce]
+                        elif (ip, jp) not in interactions:
+                            interactions.append((jp, ip))
+                            kernel_r(ip, jp)
+                            ifdot[i] += ip.fdot[:nforce]
+                            jfdot[j] += jp.fdot[:nforce]
+                            if self == other:
+                                jfdot[i] += ip.fdot[:nforce]
+                                ifdot[j] += jp.fdot[:nforce]
 
         if self != other:
             for j, jp in other.members.items():
@@ -555,7 +567,8 @@ class ParticleSystem(object):
                 ip.rdot[2:2+nforce] = ifdot[i]
 
     def set_tstep(self, other, eta,
-                  kernel=ext.get_kernel('Tstep')):
+                  kernel_r=ext.make_extension('Tstep_rectangle'),
+                  kernel_t=ext.make_extension('Tstep_triangle')):
         """Set individual time-steps due to other particles.
 
         """
@@ -569,19 +582,22 @@ class ParticleSystem(object):
             if ip.n:
                 for j, jp in other.members.items():
                     if jp.n:
-                        if (ip, jp) not in interactions:
-                            interactions.append((jp, ip))
-                            kernel(ip, jp, eta=eta)
+                        if ip == jp:
+                            kernel_t(ip, eta=eta)
                             itstep_sum[i] += ip.tstep_sum
                             itstep[i] = np.maximum(itstep[i], ip.tstep)
-                            if ip != jp:
-                                jtstep_sum[j] += jp.tstep_sum
-                                jtstep[j] = np.maximum(jtstep[j], jp.tstep)
-                                if self == other:
-                                    jtstep_sum[i] += ip.tstep_sum
-                                    jtstep[i] = np.maximum(jtstep[i], ip.tstep)
-                                    itstep_sum[j] += jp.tstep_sum
-                                    itstep[j] = np.maximum(itstep[j], jp.tstep)
+                        elif (ip, jp) not in interactions:
+                            interactions.append((jp, ip))
+                            kernel_r(ip, jp, eta=eta)
+                            itstep_sum[i] += ip.tstep_sum
+                            itstep[i] = np.maximum(itstep[i], ip.tstep)
+                            jtstep_sum[j] += jp.tstep_sum
+                            jtstep[j] = np.maximum(jtstep[j], jp.tstep)
+                            if self == other:
+                                jtstep_sum[i] += ip.tstep_sum
+                                jtstep[i] = np.maximum(jtstep[i], ip.tstep)
+                                itstep_sum[j] += jp.tstep_sum
+                                itstep[j] = np.maximum(itstep[j], jp.tstep)
 
         if self != other:
             for j, jp in other.members.items():
@@ -594,7 +610,8 @@ class ParticleSystem(object):
                 ip.tstep_sum[...] = eta / np.sqrt(itstep_sum[i])
 
     def set_pnacc(self, other, pn=None, use_auxvel=False,
-                  kernel=ext.get_kernel('PNAcc')):
+                  kernel_r=ext.make_extension('PNAcc_rectangle'),
+                  kernel_t=ext.make_extension('PNAcc_triangle')):
         """Set individual post-Newtonian gravitational acceleration due to
         other particles.
 
@@ -618,15 +635,17 @@ class ParticleSystem(object):
             if ip.n:
                 for j, jp in other.members.items():
                     if jp.n:
-                        if (ip, jp) not in interactions:
-                            interactions.append((jp, ip))
-                            kernel(ip, jp, pn=pn)
+                        if ip == jp:
+                            kernel_t(ip, pn=pn)
                             ipnacc[i] += ip.pnacc
-                            if ip != jp:
-                                jpnacc[j] += jp.pnacc
-                                if self == other:
-                                    jpnacc[i] += ip.pnacc
-                                    ipnacc[j] += jp.pnacc
+                        elif (ip, jp) not in interactions:
+                            interactions.append((jp, ip))
+                            kernel_r(ip, jp, pn=pn)
+                            ipnacc[i] += ip.pnacc
+                            jpnacc[j] += jp.pnacc
+                            if self == other:
+                                jpnacc[i] += ip.pnacc
+                                ipnacc[j] += jp.pnacc
 
         if self != other:
             for j, jp in other.members.items():

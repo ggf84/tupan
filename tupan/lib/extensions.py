@@ -293,7 +293,7 @@ def get_backend(backend):
     return Kernel
 
 
-def make_extension(name, backend):
+def make_extension(name, backend=cli.backend):
     cls = globals()[name]
     Kernel = get_backend(backend)
 
@@ -305,26 +305,6 @@ def make_extension(name, backend):
 
     Extension = type(name, (cls, Kernel), {'__call__': __call__})
     return Extension(cls.name)
-
-
-def get_kernel(name, backend=cli.backend):
-    if name == 'Kepler':
-        kernel = make_extension(name, 'C')
-
-        def func(ips, jps, *args, **kwargs):
-            return kernel(ips, jps, *args, **kwargs)
-
-        return func
-
-    kernel_r = make_extension(name+'_rectangle', backend)
-    kernel_t = make_extension(name+'_triangle', backend)
-
-    def func(ips, jps, *args, **kwargs):
-        if ips != jps:
-            return kernel_r(ips, jps, *args, **kwargs)
-        return kernel_t(ips, *args, **kwargs)
-
-    return func
 
 
 # -- End of File --
