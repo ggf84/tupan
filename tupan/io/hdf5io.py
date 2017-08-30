@@ -20,17 +20,17 @@ def do_pickle(obj):
 
 
 def dump_ps(parent, ps):
-    psys = parent.create_group('PartSys')
+    psys = parent.create_group('PartSystem')
     psys.attrs['npart'] = ps.n
     psys.attrs['class'] = do_pickle(ps)
     for member in ps.members.values():
         ptype = psys.create_group('PartType#' + str(member.part_type))
         ptype.attrs['npart'] = member.n
         ptype.attrs['class'] = do_pickle(member)
-        for name in member.default_attr_names:
-            array = getattr(member, name)
+        for attr in member.default_attrs:
+            array = getattr(member, attr)
             ptype.create_dataset(
-                name,
+                attr,
                 data=array.T,
                 chunks=True,
                 shuffle=True,
@@ -40,15 +40,15 @@ def dump_ps(parent, ps):
 
 
 def load_ps(parent):
-    psys = parent['PartSys']
+    psys = parent['PartSystem']
     members = {}
     for part_type in psys.values():
         n = part_type.attrs['npart']
         cls = pickle.loads(part_type.attrs['class'])
         member = cls(n)
-        for name, dset in part_type.items():
-            attr = getattr(member, name)
-            attr[...] = dset[...].T
+        for attr, dset in part_type.items():
+            array = getattr(member, attr)
+            array[...] = dset[...].T
         members[member.name] = member
     cls = pickle.loads(psys.attrs['class'])
     return cls.from_members(**members)
@@ -141,7 +141,8 @@ class HDF5IO(object):
         from scipy.interpolate import interp1d
 
         ps = self.load_era(era)
-        t_begin, t_end = np.min(ps.time), np.max(ps.time)
+        t_begin = min(np.min(p.time) for p in ps.members.values())
+        t_end = max(np.max(p.time) for p in ps.members.values())
         times = np.arange(t_begin, t_end, (t_end - t_begin)/n_snaps)
 
         snaps = OrderedDict()
@@ -162,7 +163,7 @@ class HDF5IO(object):
 #        n = len(pids)
 #        for i, pid in enumerate(pids):
 #            pstream = ps[ps.pid == pid]
-#            for attr in ps.default_attr_names:
+#            for attr in ps.default_attrs:
 #                array = getattr(pstream, attr)
 #                alen = len(array.T)
 #                kdeg = 3 if alen > 3 else (2 if alen > 2 else 1)
@@ -185,14 +186,14 @@ class HDF5IO(object):
                     snaps[t].update_members(**members)
                 for pid in pids:
                     pstream = member[member.pid == pid]
-                    for attr in member.default_attr_names:
+                    for attr in member.default_attrs:
                         array = getattr(pstream, attr)
                         alen = len(array.T)
                         kdeg = 3 if alen > 3 else (2 if alen > 2 else 1)
                         f = interp1d(pstream.time, array, kind=kdeg)
                         for t in times:
                             snap = snaps[t]
-                            obj = getattr(snap.members, name)
+                            obj = snap.members[name]
                             ary = getattr(obj, attr)
                             ary[..., pid] = pid if attr == 'pid' else f(t)
         # ---

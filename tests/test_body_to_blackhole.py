@@ -18,7 +18,7 @@ if __name__ == "__main__":
     imf = ("parravano2011", 0.075, 120.0)
 #    imf = ("padoan2007", 0.075, 120.0)
 
-    stars = make_plummer(n, eps, imf, seed=1).astype('star')
+    stars = make_plummer(n, eps, imf, seed=1).astype('stars')
 
     fname = ("plummer" + str(n).zfill(5) + '-' +
              '_'.join(str(i) for i in imf))
@@ -27,9 +27,9 @@ if __name__ == "__main__":
         fid.dump_snap(stars)
 
 #    from tupan.ics.fewbody import make_figure83
-#    bhs = make_figure83().astype('blackhole')
+#    bhs = make_figure83().astype('blackholes')
     from tupan.ics.fewbody import make_pythagorean
-    bhs = make_pythagorean().astype('blackhole')
+    bhs = make_pythagorean().astype('blackholes')
 
     bhs.dynrescale_total_mass(0.5)
     stars.dynrescale_total_mass(0.5)

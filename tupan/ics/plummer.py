@@ -90,7 +90,7 @@ class Plummer(object):
         ilist = np.arange(n)
 
         ps = ParticleSystem(n)
-        b = ps.body
+        b = ps.bodies
 
         srand = np.random.get_state()
 
@@ -119,12 +119,12 @@ class Plummer(object):
         ps.scale_to_virial()
         return ps
 
-    def show(self, body, nbins=32):
+    def show(self, bodies, nbins=32):
         from scipy import optimize
         import matplotlib.pyplot as plt
         from matplotlib.patches import Circle
 
-        mass = self.imf._mtot * body.mass
+        mass = self.imf._mtot * bodies.mass
 
         ###################################
 
@@ -162,7 +162,7 @@ class Plummer(object):
 
         ###################################
 
-        b = body
+        b = bodies
         n = b.n
         r = b.rdot[0]
         radius = 2 * n * b.mass
@@ -212,7 +212,7 @@ def make_plummer(n, eps, imf,
                 softening_type=softening_type)
     ps = p.make_model(n)
     if show:
-        p.show(ps.body)
+        p.show(ps.bodies)
     return ps
 
 

@@ -34,7 +34,7 @@ def make_binary(m1, m2, ecc, sma=1):
     v2 = -(m1 / m) * v
 
     ps = ParticleSystem(2)
-    b = ps.body
+    b = ps.bodies
 
     b.mass[...] = [m1, m2]
 
@@ -56,7 +56,7 @@ def make_pythagorean():
     Returns initial conditions for the pythagorean 3-body system.
     """
     ps = ParticleSystem(3)
-    b = ps.body
+    b = ps.bodies
 
     b.mass[...] = [3.0, 4.0, 5.0]
 
@@ -78,7 +78,7 @@ def make_circular3():
     Returns initial conditions for a 3-body system in a circular orbit.
     """
     ps = ParticleSystem(3)
-    b = ps.body
+    b = ps.bodies
 
     b.mass[...] = [1.0, 1.0, 1.0]
 
@@ -100,7 +100,7 @@ def make_figure83():
     Returns initial conditions for a 3-body system in a 8-shaped orbit.
     """
     ps = ParticleSystem(3)
-    b = ps.body
+    b = ps.bodies
 
     b.mass[...] = [1.0, 1.0, 1.0]
 
@@ -122,7 +122,7 @@ def make_figure84():
     Returns initial conditions for a 4-body system in a 8-shaped orbit.
     """
     ps = ParticleSystem(4)
-    b = ps.body
+    b = ps.bodies
 
     b.mass[...] = [1.0, 1.0, 1.0, 1.0]
 
@@ -144,7 +144,7 @@ def make_solar_system():
     Returns initial conditions for the 10-body solar system.
     """
     ps = ParticleSystem(10)
-    b = ps.body
+    b = ps.bodies
 
     b.mass[...] = [1.0,                     # Sun
                    1.66013679527193e-07,    # Mercury

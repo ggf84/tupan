@@ -302,15 +302,15 @@ class GLviewer(app.Canvas):
         self.data = {}
         self.vdata = {}
         self.program = {}
-        self.program['body'] = gloo.Program(VERT_SHADER, FRAG_SHADER0)
-        self.program['star'] = gloo.Program(VERT_SHADER, FRAG_SHADER0)
-        self.program['sph'] = gloo.Program(VERT_SHADER, FRAG_SHADER1)
-        self.program['blackhole'] = gloo.Program(VERT_SHADER, FRAG_SHADER2)
+        self.program['bodies'] = gloo.Program(VERT_SHADER, FRAG_SHADER0)
+        self.program['stars'] = gloo.Program(VERT_SHADER, FRAG_SHADER0)
+        self.program['gas'] = gloo.Program(VERT_SHADER, FRAG_SHADER1)
+        self.program['blackholes'] = gloo.Program(VERT_SHADER, FRAG_SHADER2)
 
-        self.program['body']['u_xyzbar31'] = ciexyz31
-        self.program['star']['u_xyzbar31'] = ciexyz31
-        self.program['sph']['u_xyzbar31'] = ciexyz31
-        self.program['blackhole']['u_xyzbar31'] = ciexyz31
+        self.program['bodies']['u_xyzbar31'] = ciexyz31
+        self.program['stars']['u_xyzbar31'] = ciexyz31
+        self.program['gas']['u_xyzbar31'] = ciexyz31
+        self.program['blackholes']['u_xyzbar31'] = ciexyz31
 
         self.bg_alpha = 1.0
         self.translate = [0.0, 0.0, -10.0]

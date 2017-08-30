@@ -34,7 +34,7 @@ def best_of(n, func, *args, **kwargs):
 
 def set_particles(n):
     ps = ParticleSystem(n)
-    b = ps.body
+    b = ps.bodies
     b.mass[...] = np.random.random((n,))
     b.rdot[0][...] = np.random.random((3, n)) * 10
     b.rdot[1][...] = np.random.random((3, n)) * 10

@@ -7,10 +7,7 @@ TODO.
 
 import copy
 import numpy as np
-from .body import Body
-from .sph import Sph
-from .star import Star
-from .blackhole import Blackhole
+from .base import (Bodies, Stars, Planets, Blackholes, Gas)
 from ..lib import extensions as ext
 
 
@@ -18,11 +15,13 @@ class ParticleSystem(object):
     """
     This class holds the particle system in the simulation.
     """
-    def __init__(self, nbody=0, nstar=0, nbh=0, nsph=0):
-        members = {cls.name: cls(n) for (n, cls) in [(nbody, Body),
-                                                     (nstar, Star),
-                                                     (nbh, Blackhole),
-                                                     (nsph, Sph)] if n}
+    def __init__(self, nbodies=0, nstars=0, nplanets=0, nblackholes=0, ngas=0):
+        members = {cls.name: cls(n)
+                   for (n, cls) in [(nbodies, Bodies),
+                                    (nstars, Stars),
+                                    (nplanets, Planets),
+                                    (nblackholes, Blackholes),
+                                    (ngas, Gas)] if n}
         self.update_members(**members)
         if self.n:
             self.reset_pid()
@@ -45,7 +44,7 @@ class ParticleSystem(object):
             if ps.n:
                 ps.pid[...] = range(ps.n)
 
-    def astype(self, name='body'):
+    def astype(self, name='bodies'):
         cls = globals()[name.capitalize()]
         obj = cls()
         for ps in self.members.values():

@@ -14,7 +14,7 @@ def set_particles(n):
     from tupan.particles.system import ParticleSystem
 
     ps = ParticleSystem(n)
-    b = ps.body
+    b = ps.bodies
     b.mass[...] = np.random.random((n,))
     b.rdot[0][...] = np.random.random((3, n)) * 10
     b.rdot[1][...] = np.random.random((3, n)) * 10
@@ -39,7 +39,7 @@ def compare_result(test_number, kernel_name, **kwargs):
         res = [Ckernel(c_ip, c_jp, **kwargs), CLkernel(cl_ip, cl_jp, **kwargs)]
 
         for vc, vcl in zip(*res):
-            for attr in vc.attr_names:
+            for attr in vc.attrs:
                 array_c = getattr(vc, attr)
                 array_cl = getattr(vcl, attr)
                 dev = abs(array_c - array_cl).max()
