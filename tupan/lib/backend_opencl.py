@@ -7,9 +7,9 @@ This module implements the OpenCL backend to call CL-extensions.
 
 import os
 import logging
+import numpy as np
 import pyopencl as cl
-from ..config import cli
-from .utils.ctype import Ctype
+from ..config import cli, Ctype
 
 
 LOGGER = logging.getLogger(__name__)
@@ -283,7 +283,6 @@ class CLKernel(object):
                               ('inv5', real_t), ('inv6', real_t),
                               ('inv7', real_t), ('order', uint_t)]}
 
-        import numpy as np
         dtype = np.dtype(formats[name], align=True)
         fields = tuple(kwargs[name] for name in dtype.names)
 #        return {'struct': np.array(fields, dtype=dtype)}

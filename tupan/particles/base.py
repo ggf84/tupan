@@ -8,7 +8,7 @@ TODO.
 import abc
 import copy
 import numpy as np
-from ..lib.utils.ctype import Ctype
+from ..config import Ctype
 
 
 class MetaParticles(abc.ABCMeta):
