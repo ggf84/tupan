@@ -8,7 +8,7 @@ This script converts a simulation data stream into a serie of snapshots.
 
 
 from tupan.io.hdf5io import HDF5IO
-from tupan.lib.utils.timing import Timer
+from tupan.utils.timing import Timer
 
 
 # number of snapshots per era.

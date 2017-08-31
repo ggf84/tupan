@@ -8,7 +8,7 @@ Utility functions for benchmarking extension kernels.
 import numpy as np
 from .particles.system import ParticleSystem
 from .lib import extensions as ext
-from .lib.utils.timing import Timer
+from .utils.timing import Timer
 
 
 KERNEL = [

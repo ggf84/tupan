@@ -10,7 +10,7 @@ import logging
 from itertools import count
 from .io.hdf5io import HDF5IO
 from .integrator import Integrator
-from .lib.utils.timing import Timer
+from .utils.timing import Timer
 
 
 LOGGER = logging.getLogger(__name__)
