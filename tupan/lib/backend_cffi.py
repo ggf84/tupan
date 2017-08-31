@@ -33,32 +33,26 @@ class CKernel(object):
     """
     def __init__(self, name):
         self.kernel = getattr(libtupan.lib, name)
-        self.iarg = {}
-        self.ibuf = {}
-        self.oarg = {}
-        self.obuf = {}
 
     def make_struct(self, name, **kwargs):
         return {'struct': drv.ffi.new(name+' *', kwargs)}
 
     def set_args(self, inpargs, outargs):
         try:
-            bufs = []
+            ibufs = []
+            obufs = []
             # set inpargs
             for (i, argtype) in enumerate(self.inptypes):
                 arg = inpargs[i]
                 buf = argtype(arg)
-                self.iarg[i] = arg
-                self.ibuf[i] = buf
-                bufs.append(buf)
+                ibufs.append((arg, buf))
             # set outargs
             for (i, argtype) in enumerate(self.outtypes):
                 arg = outargs[i]
+                arg[...] = 0
                 buf = argtype(arg)
-                self.oarg[i] = arg
-                self.obuf[i] = buf
-                bufs.append(buf)
-            self.bufs = bufs
+                obufs.append((arg, buf))
+            return ibufs, obufs
         except AttributeError:
             types = []
             cast = drv.ffi.cast
@@ -75,13 +69,14 @@ class CKernel(object):
             self.inptypes = types
             self.outtypes = [lambda x: cast('real_t *', from_buffer(x))
                              for _ in outargs]
-            CKernel.set_args(self, inpargs, outargs)
+            return CKernel.set_args(self, inpargs, outargs)
 
-    def map_buffers(self):
+    def map_buffers(self, obufs):
         pass
 
-    def run(self):
-        self.kernel(*self.bufs)
+    def run(self, ibufs, obufs):
+        bufs = (buf for (arg, buf) in ibufs+obufs)
+        self.kernel(*bufs)
 
 
 # -- End of File --

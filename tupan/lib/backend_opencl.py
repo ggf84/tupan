@@ -270,10 +270,6 @@ class CLKernel(object):
     """
     def __init__(self, name):
         self.name = name
-        self.iarg = {}
-        self.ibuf = {}
-        self.oarg = {}
-        self.obuf = {}
 
     def make_struct(self, name, **kwargs):
         real_t = Ctype.real_t
@@ -290,23 +286,20 @@ class CLKernel(object):
 
     def set_args(self, inpargs, outargs):
         try:
-            bufs = []
+            ibufs = []
+            obufs = []
             # set inpargs
             for (i, argtype) in enumerate(self.inptypes):
                 arg = inpargs[i]
                 buf = argtype(arg)
-                self.iarg[i] = arg
-                self.ibuf[i] = buf
-                bufs.append(buf)
+                ibufs.append((arg, buf))
             # set outargs
             for (i, argtype) in enumerate(self.outtypes):
                 arg = outargs[i]
                 arg[...] = 0
                 buf = argtype(arg)
-                self.oarg[i] = arg
-                self.obuf[i] = buf
-                bufs.append(buf)
-            self.bufs = bufs
+                obufs.append((arg, buf))
+            return ibufs, obufs
         except AttributeError:
             types = []
             for arg in inpargs:
@@ -320,17 +313,16 @@ class CLKernel(object):
                     types.append(drv.context.to_buf)
             self.inptypes = types
             self.outtypes = [drv.context.to_buf for _ in outargs]
-            CLKernel.set_args(self, inpargs, outargs)
+            return CLKernel.set_args(self, inpargs, outargs)
 
-    def map_buffers(self):
+    def map_buffers(self, obufs):
         if MEM_FLAG == COPY_HOST_FLAG:
             queue = drv.context.default_queue
-            for (key, arg) in self.oarg.items():
-                buf = self.obuf[key]
+            for (arg, buf) in obufs:
                 queue.enqueue_read_buffer(buf, arg)
             queue.wait_for_events()
 
-    def run(self):
+    def run(self, ibufs, obufs):
         name = self.name
 #        ni = self.iarg[0]
 #        uint_t = Ctype.uint_t
@@ -349,7 +341,7 @@ class CLKernel(object):
             local_work_size = (wgsize, 1, 1)
             global_work_size = (gwsize, 1, 1)
 
-            for (i, buf) in enumerate(self.bufs):
+            for i, (arg, buf) in enumerate(ibufs+obufs):
                 kernel.set_arg(i, buf)
 
             device.queue.enqueue_nd_range_kernel(

@@ -5,10 +5,10 @@
 Utility functions for benchmarking extension kernels.
 """
 
+import timeit
 import numpy as np
 from .particles.system import ParticleSystem
 from .lib import extensions as ext
-from .utils.timing import Timer
 
 
 KERNEL = [
@@ -20,16 +20,6 @@ KERNEL = [
     ('PNAcc', {'pn': {'order': 7, 'clight': 128.0}}),
     ('Sakura', {'dt': 1/64, 'flag': -2}),
 ]
-
-
-def best_of(n, func, *args, **kwargs):
-    timer = Timer()
-    elapsed = []
-    for i in range(n):
-        timer.start()
-        func(*args, **kwargs)
-        elapsed.append(timer.elapsed())
-    return min(elapsed)
 
 
 def set_particles(n):
@@ -48,33 +38,44 @@ def benchmark(bench, n_max, backend, rect=False):
 
     name, kwargs = bench
 
-    if rect:
-        name += '_rectangle'
-    else:
-        name += '_triangle'
+    name += '_rectangle' if rect else '_triangle'
 
     kernel = ext.make_extension(name, backend)
 
     ips = set_particles(n_max)
-    if rect:
-        jps = set_particles(n_max)
+    jps = set_particles(n_max)
 
     n = 2
     print('\n# benchmark:', name)
     while n <= n_max:
         print('#    n:', n)
-        if rect:
-            elapsed = best_of(5, kernel.set_args, ips[:n], jps[:n], **kwargs)
-        else:
-            elapsed = best_of(5, kernel.set_args, ips[:n], **kwargs)
-        print("#        {meth} (s): {elapsed:.4e}"
-              .format(meth='set', elapsed=elapsed))
-        elapsed = best_of(3, kernel.run)
-        print("#        {meth} (s): {elapsed:.4e}"
-              .format(meth='run', elapsed=elapsed))
-        elapsed = best_of(5, kernel.map_buffers)
-        print("#        {meth} (s): {elapsed:.4e}"
-              .format(meth='get', elapsed=elapsed))
+
+        elapsed = {'set': [], 'run': [], 'get': []}
+        for i in range(3):
+            if rect:
+                t0 = timeit.default_timer()
+                ibufs, obufs = kernel.set_args(ips[:n], jps[:n], **kwargs)
+                t1 = timeit.default_timer()
+                elapsed['set'].append(t1-t0)
+            else:
+                t0 = timeit.default_timer()
+                ibufs, obufs = kernel.set_args(ips[:n], **kwargs)
+                t1 = timeit.default_timer()
+                elapsed['set'].append(t1-t0)
+
+            t0 = timeit.default_timer()
+            kernel.run(ibufs, obufs)
+            t1 = timeit.default_timer()
+            elapsed['run'].append(t1-t0)
+
+            t0 = timeit.default_timer()
+            kernel.map_buffers(obufs)
+            t1 = timeit.default_timer()
+            elapsed['get'].append(t1-t0)
+
+        for meth, values in elapsed.items():
+            print(f"#        {meth} (s): {min(values):.4e}")
+
         n *= 2
 
 

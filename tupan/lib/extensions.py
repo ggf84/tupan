@@ -25,7 +25,7 @@ class Phi_rectangle(object):
 
         outargs = (ips.phi, jps.phi)
 
-        super(Phi_rectangle, self).set_args(inpargs, outargs)
+        return super(Phi_rectangle, self).set_args(inpargs, outargs)
 
 
 class Phi_triangle(object):
@@ -40,7 +40,7 @@ class Phi_triangle(object):
 
         outargs = (ips.phi,)
 
-        super(Phi_triangle, self).set_args(inpargs, outargs)
+        return super(Phi_triangle, self).set_args(inpargs, outargs)
 
 
 class Acc_rectangle(object):
@@ -56,7 +56,7 @@ class Acc_rectangle(object):
 
         outargs = (ips.fdot[:p], jps.fdot[:p])
 
-        super(Acc_rectangle, self).set_args(inpargs, outargs)
+        return super(Acc_rectangle, self).set_args(inpargs, outargs)
 
 
 class Acc_triangle(object):
@@ -71,7 +71,7 @@ class Acc_triangle(object):
 
         outargs = (ips.fdot[:p],)
 
-        super(Acc_triangle, self).set_args(inpargs, outargs)
+        return super(Acc_triangle, self).set_args(inpargs, outargs)
 
 
 class AccJrk_rectangle(object):
@@ -87,7 +87,7 @@ class AccJrk_rectangle(object):
 
         outargs = (ips.fdot[:p], jps.fdot[:p])
 
-        super(AccJrk_rectangle, self).set_args(inpargs, outargs)
+        return super(AccJrk_rectangle, self).set_args(inpargs, outargs)
 
 
 class AccJrk_triangle(object):
@@ -102,7 +102,7 @@ class AccJrk_triangle(object):
 
         outargs = (ips.fdot[:p],)
 
-        super(AccJrk_triangle, self).set_args(inpargs, outargs)
+        return super(AccJrk_triangle, self).set_args(inpargs, outargs)
 
 
 class SnpCrk_rectangle(object):
@@ -118,7 +118,7 @@ class SnpCrk_rectangle(object):
 
         outargs = (ips.fdot[:p], jps.fdot[:p])
 
-        super(SnpCrk_rectangle, self).set_args(inpargs, outargs)
+        return super(SnpCrk_rectangle, self).set_args(inpargs, outargs)
 
 
 class SnpCrk_triangle(object):
@@ -133,7 +133,7 @@ class SnpCrk_triangle(object):
 
         outargs = (ips.fdot[:p],)
 
-        super(SnpCrk_triangle, self).set_args(inpargs, outargs)
+        return super(SnpCrk_triangle, self).set_args(inpargs, outargs)
 
 
 class Tstep_rectangle(object):
@@ -151,7 +151,7 @@ class Tstep_rectangle(object):
         outargs = (ips.tstep, ips.tstep_sum,
                    jps.tstep, jps.tstep_sum)
 
-        super(Tstep_rectangle, self).set_args(inpargs, outargs)
+        return super(Tstep_rectangle, self).set_args(inpargs, outargs)
 
 
 class Tstep_triangle(object):
@@ -167,7 +167,7 @@ class Tstep_triangle(object):
 
         outargs = (ips.tstep, ips.tstep_sum)
 
-        super(Tstep_triangle, self).set_args(inpargs, outargs)
+        return super(Tstep_triangle, self).set_args(inpargs, outargs)
 
 
 class PNAcc_rectangle(object):
@@ -191,7 +191,7 @@ class PNAcc_rectangle(object):
 
         outargs = (ips.pnacc, jps.pnacc)
 
-        super(PNAcc_rectangle, self).set_args(inpargs, outargs)
+        return super(PNAcc_rectangle, self).set_args(inpargs, outargs)
 
 
 class PNAcc_triangle(object):
@@ -214,7 +214,7 @@ class PNAcc_triangle(object):
 
         outargs = (ips.pnacc,)
 
-        super(PNAcc_triangle, self).set_args(inpargs, outargs)
+        return super(PNAcc_triangle, self).set_args(inpargs, outargs)
 
 
 class Sakura_rectangle(object):
@@ -231,7 +231,7 @@ class Sakura_rectangle(object):
 
         outargs = (ips.drdot, jps.drdot)
 
-        super(Sakura_rectangle, self).set_args(inpargs, outargs)
+        return super(Sakura_rectangle, self).set_args(inpargs, outargs)
 
 
 class Sakura_triangle(object):
@@ -247,7 +247,7 @@ class Sakura_triangle(object):
 
         outargs = (ips.drdot,)
 
-        super(Sakura_triangle, self).set_args(inpargs, outargs)
+        return super(Sakura_triangle, self).set_args(inpargs, outargs)
 
 
 class Kepler(object):
@@ -270,7 +270,7 @@ class Kepler(object):
                    jps.rdot[0][0], jps.rdot[0][1], jps.rdot[0][2],
                    jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2])
 
-        super(Kepler, self).set_args(inpargs, outargs)
+        return super(Kepler, self).set_args(inpargs, outargs)
 
 
 def pn_struct(pn):
@@ -298,9 +298,9 @@ def make_extension(name, backend=cli.backend):
     Kernel = get_backend(backend)
 
     def __call__(self, *args, **kwargs):
-        self.set_args(*args, **kwargs)
-        self.run()
-        self.map_buffers()
+        ibufs, obufs = self.set_args(*args, **kwargs)
+        self.run(ibufs, obufs)
+        self.map_buffers(obufs)
         return args
 
     Extension = type(name, (cls, Kernel), {'__call__': __call__})
