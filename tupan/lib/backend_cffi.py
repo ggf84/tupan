@@ -10,7 +10,7 @@ from ..config import cli
 
 
 libtupan = importlib.import_module(
-    '.libtupan'+cli.fpwidth,
+    '.libtupan'+str(cli.fp),
     package=__package__
 )
 

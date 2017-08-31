@@ -23,11 +23,11 @@ parser.add_argument(
           'choices: {%(choices)s})')
 )
 parser.add_argument(
-    '--fpwidth',
-    metavar='FPWIDTH',
-    type=str,
-    default='fp64',
-    choices=['fp32', 'fp64'],
+    '--fp',
+    metavar='FP',
+    type=int,
+    default=64,
+    choices=[32, 64],
     help=('Floating-point width '
           '(type: %(type)s, default: %(default)s, '
           'choices: {%(choices)s})')
@@ -73,39 +73,39 @@ logging.basicConfig(level=level, format=fmt)
 
 class Ctype(object):
     int_t = (np.int32
-             if cli.fpwidth == 'fp32'
+             if cli.fp == 32
              else (np.int64
-                   if cli.fpwidth == 'fp64'
+                   if cli.fp == 64
                    else np.int64))
 
     uint_t = (np.uint32
-              if cli.fpwidth == 'fp32'
+              if cli.fp == 32
               else (np.uint64
-                    if cli.fpwidth == 'fp64'
+                    if cli.fp == 64
                     else np.uint64))
 
     real_t = (np.float32
-              if cli.fpwidth == 'fp32'
+              if cli.fp == 32
               else (np.float64
-                    if cli.fpwidth == 'fp64'
+                    if cli.fp == 64
                     else np.float64))
 
     c_int = ('int'
-             if cli.fpwidth == 'fp32'
+             if cli.fp == 32
              else ('long'
-                   if cli.fpwidth == 'fp64'
+                   if cli.fp == 64
                    else 'long'))
 
     c_uint = ('unsigned int'
-              if cli.fpwidth == 'fp32'
+              if cli.fp == 32
               else ('unsigned long'
-                    if cli.fpwidth == 'fp64'
+                    if cli.fp == 64
                     else 'unsigned long'))
 
     c_real = ('float'
-              if cli.fpwidth == 'fp32'
+              if cli.fp == 32
               else ('double'
-                    if cli.fpwidth == 'fp64'
+                    if cli.fp == 64
                     else 'double'))
 
 

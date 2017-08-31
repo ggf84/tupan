@@ -39,17 +39,17 @@ COMPILER_FLAGS = [
 ]
 
 
-def ffibuilder(fpwidth):
+def ffibuilder(fp):
     ffi = FFI()
 
     define_macros = {}
     define_macros['SIMD'] = 1
 #    define_macros['CONFIG_DEBUG'] = 1
-    if fpwidth == 'fp64':
+    if fp == 64:
         define_macros['CONFIG_USE_DOUBLE'] = 1
 
     ffi.set_source(
-        "tupan.lib.libtupan"+fpwidth,
+        "tupan.lib.libtupan"+str(fp),
         """
         #include "common.h"
         """,
@@ -88,16 +88,16 @@ def ffibuilder(fpwidth):
 
 
 def ffibuilder32():
-    return ffibuilder('fp32')
+    return ffibuilder(32)
 
 
 def ffibuilder64():
-    return ffibuilder('fp64')
+    return ffibuilder(64)
 
 
 if __name__ == "__main__":
-    ffibuilder('fp32').compile(verbose=True)
-    ffibuilder('fp64').compile(verbose=True)
+    ffibuilder(32).compile(verbose=True)
+    ffibuilder(64).compile(verbose=True)
 
 
 # -- End of File --

@@ -163,11 +163,11 @@ class Program(object):
         self.cl_program = cl.Program(cl_context, source)
         self.kernel = None
 
-    def build(self, fpwidth=cli.fpwidth):
+    def build(self, fp=cli.fp):
         dev = self.cl_device
 
         simd = (dev.preferred_vector_width_float
-                if fpwidth == 'fp32'
+                if fp == 32
                 else dev.preferred_vector_width_double)
 
         wpt = 1                         # work per thread
@@ -186,7 +186,7 @@ class Program(object):
 
         if dev.type == cl.device_type.GPU:
             wpt *= 2
-            simd *= 2 if fpwidth == 'fp32' else 1
+            simd *= 2 if fp == 32 else 1
             nwarps *= 2
             nlanes *= 32
             wgsize *= nwarps * nlanes
@@ -198,7 +198,7 @@ class Program(object):
         options += ' -D NLANES={}'.format(nlanes)
         options += ' -D WGSIZE={}'.format(wgsize)
         options += ' -D CONFIG_USE_OPENCL'
-        if fpwidth == 'fp64':
+        if fp == 64:
             options += ' -D CONFIG_USE_DOUBLE'
         options += ' -I {path}'.format(path=PATH)
         options += ' -cl-fast-relaxed-math'
