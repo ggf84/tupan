@@ -67,20 +67,6 @@ def ffibuilder(fp):
         src.append('typedef int... int_t;')
         src.append('typedef unsigned int... uint_t;')
         src.append('typedef float... real_t;')
-        src.append(
-            '''
-            typedef struct clight_struct {
-                real_t inv1;
-                real_t inv2;
-                real_t inv3;
-                real_t inv4;
-                real_t inv5;
-                real_t inv6;
-                real_t inv7;
-                uint_t order;
-            } CLIGHT;
-            '''
-        )
         src.append(fobj.read())
     source = '\n'.join(src)
     ffi.cdef(source)

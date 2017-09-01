@@ -177,17 +177,10 @@ class PNAcc_rectangle(object):
     name = 'pnacc_kernel_rectangle'
 
     def set_args(self, ips, jps, pn=None):
-        try:
-            clight = self.clight
-        except AttributeError:
-            pn = pn_struct(pn)
-            clight = self.make_struct('CLIGHT', **pn)
-            self.clight = clight
-
         p = 2
         inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
                    jps.n, jps.mass, jps.eps2, jps.rdot[:p],
-                   clight)
+                   pn['order'], pn['clight'])
 
         outargs = (ips.pnacc, jps.pnacc)
 
@@ -201,16 +194,9 @@ class PNAcc_triangle(object):
     name = 'pnacc_kernel_triangle'
 
     def set_args(self, ips, pn=None):
-        try:
-            clight = self.clight
-        except AttributeError:
-            pn = pn_struct(pn)
-            clight = self.make_struct('CLIGHT', **pn)
-            self.clight = clight
-
         p = 2
         inpargs = (ips.n, ips.mass, ips.eps2, ips.rdot[:p],
-                   clight)
+                   pn['order'], pn['clight'])
 
         outargs = (ips.pnacc,)
 
@@ -271,15 +257,6 @@ class Kepler(object):
                    jps.rdot[1][0], jps.rdot[1][1], jps.rdot[1][2])
 
         return super(Kepler, self).set_args(inpargs, outargs)
-
-
-def pn_struct(pn):
-    order = pn['order']
-    clight = pn['clight']
-    d = {'order': order}
-    for i in range(1, 8):
-        d['inv'+str(i)] = clight**(-i)
-    return d
 
 
 def get_backend(backend):

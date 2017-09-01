@@ -3,7 +3,8 @@
 
 static inline void
 p2p_pnacc_kernel_core(
-	const CLIGHT clight,
+	const uint_t order,
+	const real_t clight,
 	uint_t lid,
 	concat(PNAcc_Data, WPT) *jp,
 	local concat(PNAcc_Data, WGSIZE) *ip)
@@ -71,8 +72,7 @@ p2p_pnacc_kernel_core(
 					real_tn nvnv = nv * nv;
 					real_tn nivnjv = niv * njv;
 
-					uint_t order = clight.order;
-					real_t inv_c = clight.inv1;
+					real_t inv_c = 1 / clight;
 
 					real_tn ipnA = pnterms_A(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
 											 im, im2, im_r, iv2, iv4, -niv, niv2,
@@ -109,7 +109,8 @@ p2p_pnacc_kernel_core(
 
 static inline void
 pnacc_kernel_core(
-	const CLIGHT clight,
+	const uint_t order,
+	const real_t clight,
 	uint_t lid,
 	concat(PNAcc_Data, WPT) *jp,
 	local concat(PNAcc_Data, WGSIZE) *ip)
@@ -178,8 +179,7 @@ pnacc_kernel_core(
 					real_tn nvnv = nv * nv;
 					real_tn nivnjv = niv * njv;
 
-					uint_t order = clight.order;
-					real_t inv_c = clight.inv1;
+					real_t inv_c = 1 / clight;
 
 					real_tn ipnA = pnterms_A(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
 											 im, im2, im_r, iv2, iv4, -niv, niv2,
@@ -225,8 +225,8 @@ pnacc_kernel_rectangle(
 	global const real_t __jm[],
 	global const real_t __je2[],
 	global const real_t __jrdot[],
-//	const CLIGHT clight,
-	constant const CLIGHT * clight,
+	const uint_t order,
+	const real_t clight,
 	global real_t __ipnacc[],
 	global real_t __jpnacc[])
 {
@@ -271,9 +271,9 @@ pnacc_kernel_rectangle(
 				_ip.pnaz[lid] = ip.pnaz[0];
 
 				if (ii != jj) {
-					p2p_pnacc_kernel_core(*clight, lid, &jp, &_ip);
+					p2p_pnacc_kernel_core(order, clight, lid, &jp, &_ip);
 				} else {
-					p2p_pnacc_kernel_core(*clight, lid, &jp, &_ip);
+					p2p_pnacc_kernel_core(order, clight, lid, &jp, &_ip);
 				}
 
 				ip.pnax[0] = -_ip.pnax[lid];
@@ -301,8 +301,8 @@ pnacc_kernel_triangle(
 	global const real_t __im[],
 	global const real_t __ie2[],
 	global const real_t __irdot[],
-//	const CLIGHT clight,
-	constant const CLIGHT * clight,
+	const uint_t order,
+	const real_t clight,
 	global real_t __ipnacc[])
 {
 	// ------------------------------------------------------------------------
@@ -354,9 +354,9 @@ pnacc_kernel_triangle(
 				_ip.pnaz[lid] = ip.pnaz[0];
 
 				if (ii != jj) {
-					p2p_pnacc_kernel_core(*clight, lid, &jp, &_ip);
+					p2p_pnacc_kernel_core(order, clight, lid, &jp, &_ip);
 				} else {
-					pnacc_kernel_core(*clight, lid, &jp, &_ip);
+					pnacc_kernel_core(order, clight, lid, &jp, &_ip);
 				}
 
 				ip.pnax[0] = -_ip.pnax[lid];

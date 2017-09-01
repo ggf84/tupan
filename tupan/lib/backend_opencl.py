@@ -7,7 +7,6 @@ This module implements the OpenCL backend to call CL-extensions.
 
 import os
 import logging
-import numpy as np
 import pyopencl as cl
 from ..config import cli, Ctype
 
@@ -276,19 +275,6 @@ class CLKernel(object):
         self.to_int = Ctype.int_t
         self.to_real = Ctype.real_t
         self.to_buffer = ctx.to_buf
-        self.to_struct = lambda x: ctx.to_buf(x['struct'])
-
-    def make_struct(self, name, **kwargs):
-        real_t = Ctype.real_t
-        uint_t = Ctype.uint_t
-        formats = {'CLIGHT': [('inv1', real_t), ('inv2', real_t),
-                              ('inv3', real_t), ('inv4', real_t),
-                              ('inv5', real_t), ('inv6', real_t),
-                              ('inv7', real_t), ('order', uint_t)]}
-
-        dtype = np.dtype(formats[name], align=True)
-        fields = tuple(kwargs[name] for name in dtype.names)
-        return {'struct': np.array(fields, dtype=dtype)}
 
     def set_args(self, inpargs, outargs):
         try:
@@ -313,8 +299,6 @@ class CLKernel(object):
                     types.append(self.to_int)
                 elif isinstance(arg, float):
                     types.append(self.to_real)
-                elif isinstance(arg, dict):
-                    types.append(self.to_struct)
                 else:
                     types.append(self.to_buffer)
             self.inptypes = types

@@ -40,10 +40,6 @@ class CKernel(object):
         self.to_int = Ctype.int_t
         self.to_real = Ctype.real_t
         self.to_buffer = lambda x: cast('real_t *', from_buffer(x))
-        self.to_struct = lambda x: x['struct'][0]
-
-    def make_struct(self, name, **kwargs):
-        return {'struct': drv.ffi.new(name+' *', kwargs)}
 
     def set_args(self, inpargs, outargs):
         try:
@@ -68,8 +64,6 @@ class CKernel(object):
                     types.append(self.to_int)
                 elif isinstance(arg, float):
                     types.append(self.to_real)
-                elif isinstance(arg, dict):
-                    types.append(self.to_struct)
                 else:
                     types.append(self.to_buffer)
             self.inptypes = types

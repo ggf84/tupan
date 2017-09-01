@@ -62,8 +62,11 @@ void commit(const uint_t n, const PART& part, real_t __pnacc[])
 
 template<size_t TILE>
 struct P2P_pnacc_kernel_core {
-	const CLIGHT clight;
-	P2P_pnacc_kernel_core(const CLIGHT& clight) : clight(clight) {}
+	const uint_t order;
+	const real_t clight;
+	P2P_pnacc_kernel_core(const uint_t& order, const real_t& clight) :
+		order(order), clight(clight)
+		{}
 
 	template<typename IP, typename JP>
 	void operator()(IP&& ip, JP&& jp) {
@@ -128,8 +131,7 @@ struct P2P_pnacc_kernel_core {
 				auto nvnv = nv * nv;
 				auto nivnjv = niv * njv;
 
-				auto order = clight.order;
-				auto inv_c = clight.inv1;
+				auto inv_c = 1 / clight;
 
 				auto ipnA = pnterms_A(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
 									  im, im2, im_r, iv2, iv4, -niv, niv2,
@@ -222,8 +224,7 @@ struct P2P_pnacc_kernel_core {
 				auto nvnv = nv * nv;
 				auto nivnjv = niv * njv;
 
-				auto order = clight.order;
-				auto inv_c = clight.inv1;
+				auto inv_c = 1 / clight;
 
 				auto ipnA = pnterms_A(jm, jm2, jm_r, jv2, jv4, -njv, njv2,
 									  im, im2, im_r, iv2, iv4, -niv, niv2,

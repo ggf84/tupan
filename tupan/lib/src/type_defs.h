@@ -23,20 +23,4 @@ typedef vec(real_t) real_tn;
 #endif
 #define MAXITER 64
 
-typedef struct clight_struct {
-	real_t inv1;
-	real_t inv2;
-	real_t inv3;
-	real_t inv4;
-	real_t inv5;
-	real_t inv6;
-	real_t inv7;
-	uint_t order;
-} CLIGHT;
-#define CLIGHT_Init(ORDER, INV1, INV2, INV3, INV4, INV5, INV6, INV7)	\
-	(CLIGHT){.order=(uint_t)(ORDER), .inv1=(real_t)(INV1),				\
-			 .inv2=(real_t)(INV2), .inv3=(real_t)(INV3),				\
-			 .inv4=(real_t)(INV4), .inv5=(real_t)(INV5),				\
-			 .inv6=(real_t)(INV6), .inv7=(real_t)(INV7)}
-
 #endif	// __TYPE_DEFS_H__
