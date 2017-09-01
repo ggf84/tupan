@@ -90,23 +90,5 @@ class Ctype(object):
                     if cli.fp == 64
                     else np.float64))
 
-    c_int = ('int'
-             if cli.fp == 32
-             else ('long'
-                   if cli.fp == 64
-                   else 'long'))
-
-    c_uint = ('unsigned int'
-              if cli.fp == 32
-              else ('unsigned long'
-                    if cli.fp == 64
-                    else 'unsigned long'))
-
-    c_real = ('float'
-              if cli.fp == 32
-              else ('double'
-                    if cli.fp == 64
-                    else 'double'))
-
 
 # -- End of File --

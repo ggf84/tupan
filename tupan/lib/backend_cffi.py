@@ -6,7 +6,7 @@ This module implements the CFFI backend to call C-extensions.
 """
 
 import importlib
-from ..config import cli
+from ..config import cli, Ctype
 
 
 libtupan = importlib.import_module(
@@ -34,6 +34,14 @@ class CKernel(object):
     def __init__(self, name):
         self.kernel = getattr(libtupan.lib, name)
 
+        cast = drv.ffi.cast
+        from_buffer = drv.ffi.from_buffer
+
+        self.to_int = Ctype.int_t
+        self.to_real = Ctype.real_t
+        self.to_buffer = lambda x: cast('real_t *', from_buffer(x))
+        self.to_struct = lambda x: x['struct'][0]
+
     def make_struct(self, name, **kwargs):
         return {'struct': drv.ffi.new(name+' *', kwargs)}
 
@@ -55,28 +63,24 @@ class CKernel(object):
             return ibufs, obufs
         except AttributeError:
             types = []
-            cast = drv.ffi.cast
-            from_buffer = drv.ffi.from_buffer
             for arg in inpargs:
                 if isinstance(arg, int):
-                    types.append(lambda x: x)
+                    types.append(self.to_int)
                 elif isinstance(arg, float):
-                    types.append(lambda x: x)
+                    types.append(self.to_real)
                 elif isinstance(arg, dict):
-                    types.append(lambda x: x['struct'][0])
+                    types.append(self.to_struct)
                 else:
-                    types.append(lambda x: cast('real_t *', from_buffer(x)))
+                    types.append(self.to_buffer)
             self.inptypes = types
-            self.outtypes = [lambda x: cast('real_t *', from_buffer(x))
-                             for _ in outargs]
+            self.outtypes = [self.to_buffer for _ in outargs]
             return CKernel.set_args(self, inpargs, outargs)
 
     def map_buffers(self, obufs):
         pass
 
     def run(self, ibufs, obufs):
-        bufs = (buf for (arg, buf) in ibufs+obufs)
-        self.kernel(*bufs)
+        self.kernel(*map(lambda x: x[1], ibufs+obufs))
 
 
 # -- End of File --

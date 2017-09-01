@@ -271,6 +271,13 @@ class CLKernel(object):
     def __init__(self, name):
         self.name = name
 
+        ctx = drv.context
+
+        self.to_int = Ctype.int_t
+        self.to_real = Ctype.real_t
+        self.to_buffer = ctx.to_buf
+        self.to_struct = lambda x: ctx.to_buf(x['struct'])
+
     def make_struct(self, name, **kwargs):
         real_t = Ctype.real_t
         uint_t = Ctype.uint_t
@@ -281,8 +288,7 @@ class CLKernel(object):
 
         dtype = np.dtype(formats[name], align=True)
         fields = tuple(kwargs[name] for name in dtype.names)
-#        return {'struct': np.array(fields, dtype=dtype)}
-        return np.array(fields, dtype=dtype)
+        return {'struct': np.array(fields, dtype=dtype)}
 
     def set_args(self, inpargs, outargs):
         try:
@@ -304,15 +310,15 @@ class CLKernel(object):
             types = []
             for arg in inpargs:
                 if isinstance(arg, int):
-                    types.append(Ctype.uint_t)
+                    types.append(self.to_int)
                 elif isinstance(arg, float):
-                    types.append(Ctype.real_t)
-#                elif isinstance(arg, dict):
-#                    types.append(lambda x: x['struct'])
+                    types.append(self.to_real)
+                elif isinstance(arg, dict):
+                    types.append(self.to_struct)
                 else:
-                    types.append(drv.context.to_buf)
+                    types.append(self.to_buffer)
             self.inptypes = types
-            self.outtypes = [drv.context.to_buf for _ in outargs]
+            self.outtypes = [self.to_buffer for _ in outargs]
             return CLKernel.set_args(self, inpargs, outargs)
 
     def map_buffers(self, obufs):
