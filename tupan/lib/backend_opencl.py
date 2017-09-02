@@ -269,50 +269,18 @@ class CLKernel(object):
     """
     def __init__(self, name):
         self.name = name
-
-        ctx = drv.context
-
         self.to_int = Ctype.int_t
         self.to_real = Ctype.real_t
-        self.to_buffer = ctx.to_buf
+        self.to_buffer = drv.context.to_buf
 
-    def set_args(self, inpargs, outargs):
-        try:
-            ibufs = []
-            obufs = []
-            # set inpargs
-            for (i, argtype) in enumerate(self.inptypes):
-                arg = inpargs[i]
-                buf = argtype(arg)
-                ibufs.append((arg, buf))
-            # set outargs
-            for (i, argtype) in enumerate(self.outtypes):
-                arg = outargs[i]
-                arg[...] = 0
-                buf = argtype(arg)
-                obufs.append((arg, buf))
-            return ibufs, obufs
-        except AttributeError:
-            types = []
-            for arg in inpargs:
-                if isinstance(arg, int):
-                    types.append(self.to_int)
-                elif isinstance(arg, float):
-                    types.append(self.to_real)
-                else:
-                    types.append(self.to_buffer)
-            self.inptypes = types
-            self.outtypes = [self.to_buffer for _ in outargs]
-            return CLKernel.set_args(self, inpargs, outargs)
-
-    def map_buffers(self, obufs):
+    def map_buffers(self, oargs, obufs):
         if MEM_FLAG == COPY_HOST_FLAG:
             queue = drv.context.default_queue
-            for (arg, buf) in obufs:
+            for (arg, buf) in zip(oargs, obufs):
                 queue.enqueue_read_buffer(buf, arg)
             queue.wait_for_events()
 
-    def run(self, ibufs, obufs):
+    def run(self, bufs):
         name = self.name
 #        ni = self.iarg[0]
 #        uint_t = Ctype.uint_t
@@ -331,7 +299,7 @@ class CLKernel(object):
             local_work_size = (wgsize, 1, 1)
             global_work_size = (gwsize, 1, 1)
 
-            for i, (arg, buf) in enumerate(ibufs+obufs):
+            for i, buf in enumerate(bufs):
                 kernel.set_arg(i, buf)
 
             device.queue.enqueue_nd_range_kernel(

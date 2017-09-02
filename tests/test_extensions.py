@@ -74,13 +74,13 @@ class TestCase1(unittest.TestCase):
         compare_result(1, 'Phi')
 
     def test02(self):
-        compare_result(2, 'Acc')
+        compare_result(2, 'Acc', nforce=1)
 
     def test03(self):
-        compare_result(3, 'AccJrk')
+        compare_result(3, 'AccJrk', nforce=2)
 
     def test04(self):
-        compare_result(4, 'SnpCrk')
+        compare_result(4, 'SnpCrk', nforce=4)
 
     def test05(self):
         eta = 1.0/64

@@ -475,11 +475,11 @@ class ParticleSystem(object):
                 for j, jp in other.members.items():
                     if jp.n:
                         if ip == jp:
-                            kernel_t(ip)
+                            kernel_t(ip, nforce=nforce)
                             ifdot[i] += ip.fdot[:nforce]
                         elif (ip, jp) not in interactions:
                             interactions.append((jp, ip))
-                            kernel_r(ip, jp)
+                            kernel_r(ip, jp, nforce=nforce)
                             ifdot[i] += ip.fdot[:nforce]
                             jfdot[j] += jp.fdot[:nforce]
                             if self == other:
@@ -511,11 +511,11 @@ class ParticleSystem(object):
                 for j, jp in other.members.items():
                     if jp.n:
                         if ip == jp:
-                            kernel_t(ip)
+                            kernel_t(ip, nforce=nforce)
                             ifdot[i] += ip.fdot[:nforce]
                         elif (ip, jp) not in interactions:
                             interactions.append((jp, ip))
-                            kernel_r(ip, jp)
+                            kernel_r(ip, jp, nforce=nforce)
                             ifdot[i] += ip.fdot[:nforce]
                             jfdot[j] += jp.fdot[:nforce]
                             if self == other:
@@ -547,11 +547,11 @@ class ParticleSystem(object):
                 for j, jp in other.members.items():
                     if jp.n:
                         if ip == jp:
-                            kernel_t(ip)
+                            kernel_t(ip, nforce=nforce)
                             ifdot[i] += ip.fdot[:nforce]
                         elif (ip, jp) not in interactions:
                             interactions.append((jp, ip))
-                            kernel_r(ip, jp)
+                            kernel_r(ip, jp, nforce=nforce)
                             ifdot[i] += ip.fdot[:nforce]
                             jfdot[j] += jp.fdot[:nforce]
                             if self == other:

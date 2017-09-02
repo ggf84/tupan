@@ -13,9 +13,9 @@ from .lib import extensions as ext
 
 KERNEL = [
     ('Phi', {}),
-    ('Acc', {}),
-    ('AccJrk', {}),
-    ('SnpCrk', {}),
+    ('Acc', {'nforce': 1}),
+    ('AccJrk', {'nforce': 2}),
+    ('SnpCrk', {'nforce': 4}),
     ('Tstep', {'eta': 1/64}),
     ('PNAcc', {'pn': {'order': 7, 'clight': 128.0}}),
     ('Sakura', {'dt': 1/64, 'flag': -2}),
@@ -33,7 +33,7 @@ def set_particles(n):
     return b
 
 
-def benchmark(bench, n_max, backend, rect=False):
+def benchmark(bench, n, backend, rect=False):
     np.random.seed(0)
 
     name, kwargs = bench
@@ -42,41 +42,35 @@ def benchmark(bench, n_max, backend, rect=False):
 
     kernel = ext.make_extension(name, backend)
 
-    ips = set_particles(n_max)
-    jps = set_particles(n_max)
+    ips = set_particles(n)
+    jps = set_particles(n)
 
-    n = 2
-    print('\n# benchmark:', name)
-    while n <= n_max:
-        print('#    n:', n)
-
-        elapsed = {'set': [], 'run': [], 'get': []}
-        for i in range(3):
-            if rect:
-                t0 = timeit.default_timer()
-                ibufs, obufs = kernel.set_args(ips[:n], jps[:n], **kwargs)
-                t1 = timeit.default_timer()
-                elapsed['set'].append(t1-t0)
-            else:
-                t0 = timeit.default_timer()
-                ibufs, obufs = kernel.set_args(ips[:n], **kwargs)
-                t1 = timeit.default_timer()
-                elapsed['set'].append(t1-t0)
-
+    print(f'\n# {name} (n = {n}):')
+    elapsed = {'set': [], 'run': [], 'get': []}
+    for i in range(3):
+        if rect:
             t0 = timeit.default_timer()
-            kernel.run(ibufs, obufs)
+            ibufs, (oargs, obufs) = kernel.set_args(ips, jps, **kwargs)
             t1 = timeit.default_timer()
-            elapsed['run'].append(t1-t0)
-
+            elapsed['set'].append(t1-t0)
+        else:
             t0 = timeit.default_timer()
-            kernel.map_buffers(obufs)
+            ibufs, (oargs, obufs) = kernel.set_args(ips, **kwargs)
             t1 = timeit.default_timer()
-            elapsed['get'].append(t1-t0)
+            elapsed['set'].append(t1-t0)
 
-        for meth, values in elapsed.items():
-            print(f"#        {meth} (s): {min(values):.4e}")
+        t0 = timeit.default_timer()
+        kernel.run(ibufs+obufs)
+        t1 = timeit.default_timer()
+        elapsed['run'].append(t1-t0)
 
-        n *= 2
+        t0 = timeit.default_timer()
+        kernel.map_buffers(oargs, obufs)
+        t1 = timeit.default_timer()
+        elapsed['get'].append(t1-t0)
+
+    for meth, values in elapsed.items():
+        print(f"#\t{meth} (s): {min(values):.4e}")
 
 
 class Benchmark(object):
@@ -100,10 +94,10 @@ class Benchmark(object):
                   'choices: {%(choices)s})')
         )
         parser.add_argument(
-            '-n', '--n_max',
+            '-n',
             type=int,
             default=4096,
-            help=('Max number of particles '
+            help=('Number of particles '
                   '(type: %(type)s, default: %(default)s)')
         )
         parser.add_argument(
@@ -117,14 +111,14 @@ class Benchmark(object):
 
     def __call__(self, cli):
         k = cli.kernel
-        n_max = cli.n_max
+        n = cli.n
         rect = cli.rect
         backend = cli.backend
         if k == -1:
             for kernel in KERNEL:
-                benchmark(kernel, n_max, backend, rect)
+                benchmark(kernel, n, backend, rect)
         else:
-            benchmark(KERNEL[k], n_max, backend, rect)
+            benchmark(KERNEL[k], n, backend, rect)
 
 
 # -- End of File --
