@@ -217,17 +217,17 @@ pnacc_kernel_core(
 kernel void
 __attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 pnacc_kernel_rectangle(
+	const uint_t order,
+	const real_t clight,
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
 	global const real_t __irdot[],
+	global real_t __ipnacc[],
 	const uint_t nj,
 	global const real_t __jm[],
 	global const real_t __je2[],
 	global const real_t __jrdot[],
-	const uint_t order,
-	const real_t clight,
-	global real_t __ipnacc[],
 	global real_t __jpnacc[])
 {
 	local concat(PNAcc_Data, WGSIZE) _ip;
@@ -297,12 +297,12 @@ pnacc_kernel_rectangle(
 kernel void
 __attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 pnacc_kernel_triangle(
+	const uint_t order,
+	const real_t clight,
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
 	global const real_t __irdot[],
-	const uint_t order,
-	const real_t clight,
 	global real_t __ipnacc[])
 {
 	// ------------------------------------------------------------------------

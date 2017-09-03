@@ -273,14 +273,14 @@ class CLKernel(object):
         self.to_real = Ctype.real_t
         self.to_buffer = drv.context.to_buf
 
-    def map_buffers(self, oargs, obufs):
+    def map_buffers(self, oargs, bufs):
         if MEM_FLAG == COPY_HOST_FLAG:
             queue = drv.context.default_queue
-            for (arg, buf) in zip(oargs, obufs):
-                queue.enqueue_read_buffer(buf, arg)
+            for (k, arg) in oargs.items():
+                queue.enqueue_read_buffer(bufs[k], arg)
             queue.wait_for_events()
 
-    def run(self, bufs):
+    def run(self, *bufs):
         name = self.name
 #        ni = self.iarg[0]
 #        uint_t = Ctype.uint_t

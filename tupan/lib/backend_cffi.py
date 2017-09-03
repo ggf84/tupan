@@ -32,18 +32,13 @@ class CKernel(object):
 
     """
     def __init__(self, name):
-        self.kernel = getattr(libtupan.lib, name)
         cast = drv.ffi.cast
         from_buffer = drv.ffi.from_buffer
+        self.run = getattr(drv.lib, name)
         self.to_int = Ctype.int_t
         self.to_real = Ctype.real_t
         self.to_buffer = lambda x: cast('real_t *', from_buffer(x))
-
-    def map_buffers(self, oargs, obufs):
-        pass
-
-    def run(self, bufs):
-        self.kernel(*bufs)
+        self.map_buffers = lambda x, y: None
 
 
 # -- End of File --

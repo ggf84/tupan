@@ -133,17 +133,17 @@ tstep_kernel_core(
 kernel void
 __attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 tstep_kernel_rectangle(
+	const real_t eta,
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
 	global const real_t __irdot[],
+	global real_t __iw2_a[],
+	global real_t __iw2_b[],
 	const uint_t nj,
 	global const real_t __jm[],
 	global const real_t __je2[],
 	global const real_t __jrdot[],
-	const real_t eta,
-	global real_t __iw2_a[],
-	global real_t __iw2_b[],
 	global real_t __jw2_a[],
 	global real_t __jw2_b[])
 {
@@ -212,11 +212,11 @@ tstep_kernel_rectangle(
 kernel void
 __attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 tstep_kernel_triangle(
+	const real_t eta,
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
 	global const real_t __irdot[],
-	const real_t eta,
 	global real_t __iw2_a[],
 	global real_t __iw2_b[])
 {

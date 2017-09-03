@@ -4,17 +4,17 @@
 
 void
 tstep_kernel_rectangle(
+	const real_t eta,
 	const uint_t ni,
 	const real_t __im[],
 	const real_t __ie2[],
 	const real_t __irdot[],
+	real_t __iw2_a[],
+	real_t __iw2_b[],
 	const uint_t nj,
 	const real_t __jm[],
 	const real_t __je2[],
 	const real_t __jrdot[],
-	const real_t eta,
-	real_t __iw2_a[],
-	real_t __iw2_b[],
 	real_t __jw2_a[],
 	real_t __jw2_b[])
 {
@@ -39,11 +39,11 @@ tstep_kernel_rectangle(
 
 void
 tstep_kernel_triangle(
+	const real_t eta,
 	const uint_t ni,
 	const real_t __im[],
 	const real_t __ie2[],
 	const real_t __irdot[],
-	const real_t eta,
 	real_t __iw2_a[],
 	real_t __iw2_b[])
 {

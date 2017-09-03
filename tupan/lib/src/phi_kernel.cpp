@@ -8,11 +8,11 @@ phi_kernel_rectangle(
 	const real_t __im[],
 	const real_t __ie2[],
 	const real_t __irdot[],
+	real_t __iphi[],
 	const uint_t nj,
 	const real_t __jm[],
 	const real_t __je2[],
 	const real_t __jrdot[],
-	real_t __iphi[],
 	real_t __jphi[])
 {
 	using namespace Phi;

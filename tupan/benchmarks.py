@@ -50,22 +50,22 @@ def benchmark(bench, n, backend, rect=False):
     for i in range(3):
         if rect:
             t0 = timeit.default_timer()
-            ibufs, (oargs, obufs) = kernel.set_args(ips, jps, **kwargs)
+            oargs, bufs = kernel.set_args(ips, jps, **kwargs)
             t1 = timeit.default_timer()
             elapsed['set'].append(t1-t0)
         else:
             t0 = timeit.default_timer()
-            ibufs, (oargs, obufs) = kernel.set_args(ips, **kwargs)
+            oargs, bufs = kernel.set_args(ips, **kwargs)
             t1 = timeit.default_timer()
             elapsed['set'].append(t1-t0)
 
         t0 = timeit.default_timer()
-        kernel.run(ibufs+obufs)
+        kernel.run(*bufs)
         t1 = timeit.default_timer()
         elapsed['run'].append(t1-t0)
 
         t0 = timeit.default_timer()
-        kernel.map_buffers(oargs, obufs)
+        kernel.map_buffers(oargs, bufs)
         t1 = timeit.default_timer()
         elapsed['get'].append(t1-t0)
 

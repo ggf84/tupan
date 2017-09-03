@@ -8,11 +8,11 @@ snp_crk_kernel_rectangle(
 	const real_t __im[],
 	const real_t __ie2[],
 	const real_t __irdot[],
+	real_t __iadot[],
 	const uint_t nj,
 	const real_t __jm[],
 	const real_t __je2[],
 	const real_t __jrdot[],
-	real_t __iadot[],
 	real_t __jadot[])
 {
 	using namespace Snp_Crk;

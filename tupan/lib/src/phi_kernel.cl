@@ -83,11 +83,11 @@ phi_kernel_rectangle(
 	global const real_t __im[],
 	global const real_t __ie2[],
 	global const real_t __irdot[],
+	global real_t __iphi[],
 	const uint_t nj,
 	global const real_t __jm[],
 	global const real_t __je2[],
 	global const real_t __jrdot[],
-	global real_t __iphi[],
 	global real_t __jphi[])
 {
 	local concat(Phi_Data, WGSIZE) _ip;

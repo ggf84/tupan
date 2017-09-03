@@ -4,17 +4,17 @@
 
 void
 pnacc_kernel_rectangle(
+	const uint_t order,
+	const real_t clight,
 	const uint_t ni,
 	const real_t __im[],
 	const real_t __ie2[],
 	const real_t __irdot[],
+	real_t __ipnacc[],
 	const uint_t nj,
 	const real_t __jm[],
 	const real_t __je2[],
 	const real_t __jrdot[],
-	const uint_t order,
-	const real_t clight,
-	real_t __ipnacc[],
 	real_t __jpnacc[])
 {
 	using namespace PNAcc;
@@ -38,12 +38,12 @@ pnacc_kernel_rectangle(
 
 void
 pnacc_kernel_triangle(
+	const uint_t order,
+	const real_t clight,
 	const uint_t ni,
 	const real_t __im[],
 	const real_t __ie2[],
 	const real_t __irdot[],
-	const uint_t order,
-	const real_t clight,
 	real_t __ipnacc[])
 {
 	using namespace PNAcc;

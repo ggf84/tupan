@@ -142,17 +142,17 @@ sakura_kernel_core(
 kernel void
 __attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 sakura_kernel_rectangle(
+	const real_t dt,
+	const int_t flag,
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
 	global const real_t __irdot[],
+	global real_t __idrdot[],
 	const uint_t nj,
 	global const real_t __jm[],
 	global const real_t __je2[],
 	global const real_t __jrdot[],
-	const real_t dt,
-	const int_t flag,
-	global real_t __idrdot[],
 	global real_t __jdrdot[])
 {
 	local concat(Sakura_Data, WGSIZE) _ip;
@@ -228,12 +228,12 @@ sakura_kernel_rectangle(
 kernel void
 __attribute__((reqd_work_group_size(WGSIZE, 1, 1)))
 sakura_kernel_triangle(
+	const real_t dt,
+	const int_t flag,
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
 	global const real_t __irdot[],
-	const real_t dt,
-	const int_t flag,
 	global real_t __idrdot[])
 {
 	// ------------------------------------------------------------------------
