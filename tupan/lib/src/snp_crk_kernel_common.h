@@ -74,18 +74,18 @@ void commit(const uint_t n, const PART& part, real_t __adot[])
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
-		__adot[(0*NDIM+0)*n + k] = p.Ax[kk];
-		__adot[(0*NDIM+1)*n + k] = p.Ay[kk];
-		__adot[(0*NDIM+2)*n + k] = p.Az[kk];
-		__adot[(1*NDIM+0)*n + k] = p.Jx[kk];
-		__adot[(1*NDIM+1)*n + k] = p.Jy[kk];
-		__adot[(1*NDIM+2)*n + k] = p.Jz[kk];
-		__adot[(2*NDIM+0)*n + k] = p.Sx[kk];
-		__adot[(2*NDIM+1)*n + k] = p.Sy[kk];
-		__adot[(2*NDIM+2)*n + k] = p.Sz[kk];
-		__adot[(3*NDIM+0)*n + k] = p.Cx[kk];
-		__adot[(3*NDIM+1)*n + k] = p.Cy[kk];
-		__adot[(3*NDIM+2)*n + k] = p.Cz[kk];
+		__adot[(0*NDIM+0)*n + k] += p.Ax[kk];
+		__adot[(0*NDIM+1)*n + k] += p.Ay[kk];
+		__adot[(0*NDIM+2)*n + k] += p.Az[kk];
+		__adot[(1*NDIM+0)*n + k] += p.Jx[kk];
+		__adot[(1*NDIM+1)*n + k] += p.Jy[kk];
+		__adot[(1*NDIM+2)*n + k] += p.Jz[kk];
+		__adot[(2*NDIM+0)*n + k] += p.Sx[kk];
+		__adot[(2*NDIM+1)*n + k] += p.Sy[kk];
+		__adot[(2*NDIM+2)*n + k] += p.Sz[kk];
+		__adot[(3*NDIM+0)*n + k] += p.Cx[kk];
+		__adot[(3*NDIM+1)*n + k] += p.Cy[kk];
+		__adot[(3*NDIM+2)*n + k] += p.Cz[kk];
 	}
 }
 

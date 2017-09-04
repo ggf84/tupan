@@ -52,8 +52,8 @@ void commit(const uint_t n, const PART& part, real_t __w2_a[], real_t __w2_b[], 
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
-		__w2_a[k] = p.w2_a[kk];
-		__w2_b[k] = p.w2_b[kk];
+		__w2_a[k] = fmax(__w2_a[k], p.w2_a[kk]);
+		__w2_b[k] += p.w2_b[kk];
 	}
 }
 

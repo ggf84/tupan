@@ -12,6 +12,26 @@ from ..config import cli
 LOGGER = logging.getLogger(__name__)
 
 
+class Phi(object):
+    """
+
+    """
+    name = 'phi_kernel'
+    both = True
+
+    def set_bufs(self, ps, nforce=1):
+        to_int = self.to_int
+        to_buffer = self.to_buffer
+        bufs = [
+            to_int(ps.n),
+            to_buffer(ps.mass),
+            to_buffer(ps.eps2),
+            to_buffer(ps.rdot[:nforce]),
+            to_buffer(ps.phi),
+        ]
+        return bufs
+
+
 class Phi_triangle(object):
     """
 
@@ -126,6 +146,14 @@ class Acc_rectangle(Acc_triangle):
         return oargs, bufs
 
 
+class AccJrk(Acc):
+    """
+
+    """
+    name = 'acc_jrk_kernel'
+    both = True
+
+
 class AccJrk_triangle(Acc_triangle):
     """
 
@@ -147,11 +175,40 @@ class SnpCrk_triangle(Acc_triangle):
     name = 'snp_crk_kernel_triangle'
 
 
+class SnpCrk(Acc):
+    """
+
+    """
+    name = 'snp_crk_kernel'
+    both = True
+
+
 class SnpCrk_rectangle(Acc_rectangle):
     """
 
     """
     name = 'snp_crk_kernel_rectangle'
+
+
+class Tstep(object):
+    """
+
+    """
+    name = 'tstep_kernel'
+    both = True
+
+    def set_bufs(self, ps, nforce=2):
+        to_int = self.to_int
+        to_buffer = self.to_buffer
+        bufs = [
+            to_int(ps.n),
+            to_buffer(ps.mass),
+            to_buffer(ps.eps2),
+            to_buffer(ps.rdot[:nforce]),
+            to_buffer(ps.tstep),
+            to_buffer(ps.tstep_sum),
+        ]
+        return bufs
 
 
 class Tstep_triangle(object):
@@ -214,6 +271,26 @@ class Tstep_rectangle(Tstep_triangle):
         return oargs, bufs
 
 
+class PNAcc(object):
+    """
+
+    """
+    name = 'pnacc_kernel'
+    both = True
+
+    def set_bufs(self, ps, nforce=2):
+        to_int = self.to_int
+        to_buffer = self.to_buffer
+        bufs = [
+            to_int(ps.n),
+            to_buffer(ps.mass),
+            to_buffer(ps.eps2),
+            to_buffer(ps.rdot[:nforce]),
+            to_buffer(ps.pnacc),
+        ]
+        return bufs
+
+
 class PNAcc_triangle(object):
     """
 
@@ -265,6 +342,26 @@ class PNAcc_rectangle(PNAcc_triangle):
         bufs += self.set_bufs(ips)
         bufs += self.set_bufs(jps)
         return oargs, bufs
+
+
+class Sakura(object):
+    """
+
+    """
+    name = 'sakura_kernel'
+    both = True
+
+    def set_bufs(self, ps, nforce=2):
+        to_int = self.to_int
+        to_buffer = self.to_buffer
+        bufs = [
+            to_int(ps.n),
+            to_buffer(ps.mass),
+            to_buffer(ps.eps2),
+            to_buffer(ps.rdot[:nforce]),
+            to_buffer(ps.drdot),
+        ]
+        return bufs
 
 
 class Sakura_triangle(object):

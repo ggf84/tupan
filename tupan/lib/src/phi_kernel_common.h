@@ -45,7 +45,7 @@ void commit(const uint_t n, const PART& part, real_t __phi[])
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
-		__phi[k] = p.phi[kk];
+		__phi[k] += p.phi[kk];
 	}
 }
 

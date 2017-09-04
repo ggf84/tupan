@@ -157,12 +157,12 @@ void commit(const uint_t n, const PART& part, real_t __drdot[])
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
-		__drdot[(0*NDIM+0)*n + k] = p.drx[kk];
-		__drdot[(0*NDIM+1)*n + k] = p.dry[kk];
-		__drdot[(0*NDIM+2)*n + k] = p.drz[kk];
-		__drdot[(1*NDIM+0)*n + k] = p.dvx[kk];
-		__drdot[(1*NDIM+1)*n + k] = p.dvy[kk];
-		__drdot[(1*NDIM+2)*n + k] = p.dvz[kk];
+		__drdot[(0*NDIM+0)*n + k] += p.drx[kk];
+		__drdot[(0*NDIM+1)*n + k] += p.dry[kk];
+		__drdot[(0*NDIM+2)*n + k] += p.drz[kk];
+		__drdot[(1*NDIM+0)*n + k] += p.dvx[kk];
+		__drdot[(1*NDIM+1)*n + k] += p.dvy[kk];
+		__drdot[(1*NDIM+2)*n + k] += p.dvz[kk];
 	}
 }
 

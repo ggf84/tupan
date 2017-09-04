@@ -14,13 +14,27 @@ LOGGER = logging.getLogger(__name__)
 
 
 def sakura_step(ips, jps, dt, flag,
-                kernel_r=ext.make_extension('Sakura_rectangle'),
-                kernel_t=ext.make_extension('Sakura_triangle')):
+                nforce=2,
+                kernel=ext.make_extension('Sakura')):
     """
 
     """
-    idrdot = {i: 0 for i in ips.members.keys()}
-    jdrdot = {j: 0 for j in jps.members.keys()}
+    cbufs = [
+        kernel.to_real(dt),
+        kernel.to_int(flag),
+    ]
+
+    ibufs = {}
+    for i, ip in ips.members.items():
+        if ip.n:
+            ip.drdot[...] = 0
+            ibufs[i] = kernel.set_bufs(ip, nforce=nforce)
+    jbufs = {**ibufs}
+    if ips != jps:
+        for j, jp in jps.members.items():
+            if jp.n:
+                jp.drdot[...] = 0
+                jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
     interactions = []
     for i, ip in ips.members.items():
@@ -28,24 +42,22 @@ def sakura_step(ips, jps, dt, flag,
             for j, jp in jps.members.items():
                 if jp.n:
                     if ip == jp:
-                        kernel_t(ip, dt=dt, flag=flag)
-                        idrdot[i] += ip.drdot
+                        bufs = cbufs + ibufs[i]
+                        kernel.triangle(*bufs)
                     elif (ip, jp) not in interactions:
+                        bufs = cbufs + ibufs[i] + jbufs[j]
+                        kernel.rectangle(*bufs)
                         interactions.append((jp, ip))
-                        kernel_r(ip, jp, dt=dt, flag=flag)
-                        idrdot[i] += ip.drdot
-                        jdrdot[j] += jp.drdot
-                        if ips == jps:
-                            jdrdot[i] += ip.drdot
-                            idrdot[j] += jp.drdot
 
+    for i, ip in ips.members.items():
+        if ip.n:
+            kernel.map_bufs({4: ip.drdot}, ibufs[i])
+            ip.rdot[:2] += ip.drdot
     if ips != jps:
         for j, jp in jps.members.items():
             if jp.n:
-                jp.rdot[:2] += jdrdot[j]
-    for i, ip in ips.members.items():
-        if ip.n:
-            ip.rdot[:2] += idrdot[i]
+                kernel.map_bufs({4: jp.drdot}, jbufs[j])
+                jp.rdot[:2] += jp.drdot
 
 
 def evolve_sakura(ps, dt):

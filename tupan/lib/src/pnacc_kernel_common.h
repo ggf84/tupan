@@ -54,9 +54,9 @@ void commit(const uint_t n, const PART& part, real_t __pnacc[])
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
-		__pnacc[(0*NDIM+0)*n + k] = p.pnax[kk];
-		__pnacc[(0*NDIM+1)*n + k] = p.pnay[kk];
-		__pnacc[(0*NDIM+2)*n + k] = p.pnaz[kk];
+		__pnacc[(0*NDIM+0)*n + k] += p.pnax[kk];
+		__pnacc[(0*NDIM+1)*n + k] += p.pnay[kk];
+		__pnacc[(0*NDIM+2)*n + k] += p.pnaz[kk];
 	}
 }
 

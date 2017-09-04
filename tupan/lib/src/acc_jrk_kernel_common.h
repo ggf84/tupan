@@ -56,12 +56,12 @@ void commit(const uint_t n, const PART& part, real_t __adot[])
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
-		__adot[(0*NDIM+0)*n + k] = p.ax[kk];
-		__adot[(0*NDIM+1)*n + k] = p.ay[kk];
-		__adot[(0*NDIM+2)*n + k] = p.az[kk];
-		__adot[(1*NDIM+0)*n + k] = p.jx[kk];
-		__adot[(1*NDIM+1)*n + k] = p.jy[kk];
-		__adot[(1*NDIM+2)*n + k] = p.jz[kk];
+		__adot[(0*NDIM+0)*n + k] += p.ax[kk];
+		__adot[(0*NDIM+1)*n + k] += p.ay[kk];
+		__adot[(0*NDIM+2)*n + k] += p.az[kk];
+		__adot[(1*NDIM+0)*n + k] += p.jx[kk];
+		__adot[(1*NDIM+1)*n + k] += p.jy[kk];
+		__adot[(1*NDIM+2)*n + k] += p.jz[kk];
 	}
 }
 
