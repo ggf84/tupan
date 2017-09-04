@@ -460,14 +460,24 @@ class ParticleSystem(object):
                 ip.phi[...] = iphi[i]
 
     def set_acc(self, other,
-                kernel_r=ext.make_extension('Acc_rectangle'),
-                kernel_t=ext.make_extension('Acc_triangle')):
+                nforce=1,
+                kernel=ext.make_extension('Acc')):
         """Set individual gravitational acceleration due to other particles.
 
         """
-        nforce = 1
-        ifdot = {i: 0 for i in self.members.keys()}
-        jfdot = {j: 0 for j in other.members.keys()}
+        cbufs = []
+
+        ibufs = {}
+        for i, ip in self.members.items():
+            if ip.n:
+                ip.fdot[:nforce] = 0
+                ibufs[i] = kernel.set_bufs(ip, nforce=nforce)
+        jbufs = {**ibufs}
+        if self != other:
+            for j, jp in other.members.items():
+                if jp.n:
+                    jp.fdot[:nforce] = 0
+                    jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
         interactions = []
         for i, ip in self.members.items():
@@ -475,24 +485,22 @@ class ParticleSystem(object):
                 for j, jp in other.members.items():
                     if jp.n:
                         if ip == jp:
-                            kernel_t(ip, nforce=nforce)
-                            ifdot[i] += ip.fdot[:nforce]
+                            bufs = cbufs + ibufs[i]
+                            kernel.triangle(*bufs)
                         elif (ip, jp) not in interactions:
+                            bufs = cbufs + ibufs[i] + jbufs[j]
+                            kernel.rectangle(*bufs)
                             interactions.append((jp, ip))
-                            kernel_r(ip, jp, nforce=nforce)
-                            ifdot[i] += ip.fdot[:nforce]
-                            jfdot[j] += jp.fdot[:nforce]
-                            if self == other:
-                                jfdot[i] += ip.fdot[:nforce]
-                                ifdot[j] += jp.fdot[:nforce]
 
+        for i, ip in self.members.items():
+            if ip.n:
+                kernel.map_bufs({4: ip.fdot[:nforce]}, ibufs[i])
+                ip.rdot[2:2+nforce] = ip.fdot[:nforce]
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    jp.rdot[2:2+nforce] = jfdot[j]
-        for i, ip in self.members.items():
-            if ip.n:
-                ip.rdot[2:2+nforce] = ifdot[i]
+                    kernel.map_bufs({4: jp.fdot[:nforce]}, jbufs[j])
+                    jp.rdot[2:2+nforce] = jp.fdot[:nforce]
 
     def set_acc_jrk(self, other,
                     kernel_r=ext.make_extension('AccJrk_rectangle'),

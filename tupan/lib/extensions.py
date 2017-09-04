@@ -59,6 +59,26 @@ class Phi_rectangle(Phi_triangle):
         return oargs, bufs
 
 
+class Acc(object):
+    """
+
+    """
+    name = 'acc_kernel'
+    both = True
+
+    def set_bufs(self, ps, nforce=1):
+        to_int = self.to_int
+        to_buffer = self.to_buffer
+        bufs = [
+            to_int(ps.n),
+            to_buffer(ps.mass),
+            to_buffer(ps.eps2),
+            to_buffer(ps.rdot[:nforce]),
+            to_buffer(ps.fdot[:nforce]),
+        ]
+        return bufs
+
+
 class Acc_triangle(object):
     """
 

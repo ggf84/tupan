@@ -268,29 +268,32 @@ class CLKernel(object):
 
     """
     def __init__(self, name):
-        self.name = name
+        if hasattr(self, 'both'):
+            self.kernels_t = [device.program.kernel[name+'_triangle']
+                              for device in drv.context.devices]
+            self.kernels_r = [device.program.kernel[name+'_rectangle']
+                              for device in drv.context.devices]
+        else:
+            self.kernels = [device.program.kernel[name]
+                            for device in drv.context.devices]
+        self.queues = [device.queue
+                       for device in drv.context.devices]
+
         self.to_int = Ctype.int_t
         self.to_real = Ctype.real_t
         self.to_buffer = drv.context.to_buf
 
-    def map_buffers(self, oargs, bufs):
+    def map_bufs(self, oargs, bufs):
         if MEM_FLAG == COPY_HOST_FLAG:
             queue = drv.context.default_queue
             for (k, arg) in oargs.items():
                 queue.enqueue_read_buffer(bufs[k], arg)
             queue.wait_for_events()
 
+    map_buffers = map_bufs
+
     def run(self, *bufs):
-        name = self.name
-#        ni = self.iarg[0]
-#        uint_t = Ctype.uint_t
-#        ndevs = len(drv.context.devices)
-#        dn = (ni + ndevs - 1) // ndevs
-
-        ctx = drv.context
-        for device in ctx.devices:
-            kernel = device.program.kernel[name]
-
+        for queue, kernel in zip(self.queues, self.kernels):
             wgsize = kernel.wgsize
             ngroup = kernel.ngroup
 
@@ -302,13 +305,55 @@ class CLKernel(object):
             for i, buf in enumerate(bufs):
                 kernel.set_arg(i, buf)
 
-            device.queue.enqueue_nd_range_kernel(
+            queue.enqueue_nd_range_kernel(
                 kernel,
                 global_work_size,
                 local_work_size,
             )
 
-        ctx.default_queue.wait_for_events()
+        drv.context.default_queue.wait_for_events()
+
+    def triangle(self, *bufs):
+        for queue, kernel in zip(self.queues, self.kernels_t):
+            wgsize = kernel.wgsize
+            ngroup = kernel.ngroup
+
+            gwsize = ngroup * wgsize
+
+            local_work_size = (wgsize, 1, 1)
+            global_work_size = (gwsize, 1, 1)
+
+            for i, buf in enumerate(bufs):
+                kernel.set_arg(i, buf)
+
+            queue.enqueue_nd_range_kernel(
+                kernel,
+                global_work_size,
+                local_work_size,
+            )
+
+        drv.context.default_queue.wait_for_events()
+
+    def rectangle(self, *bufs):
+        for queue, kernel in zip(self.queues, self.kernels_r):
+            wgsize = kernel.wgsize
+            ngroup = kernel.ngroup
+
+            gwsize = ngroup * wgsize
+
+            local_work_size = (wgsize, 1, 1)
+            global_work_size = (gwsize, 1, 1)
+
+            for i, buf in enumerate(bufs):
+                kernel.set_arg(i, buf)
+
+            queue.enqueue_nd_range_kernel(
+                kernel,
+                global_work_size,
+                local_work_size,
+            )
+
+        drv.context.default_queue.wait_for_events()
 
 
 # -- End of File --
