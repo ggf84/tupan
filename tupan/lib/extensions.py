@@ -22,6 +22,7 @@ class Phi(object):
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
         to_buffer = self.to_buffer
+        ps.phi[...] = 0
         bufs = [
             to_int(ps.n),
             to_buffer(ps.mass),
@@ -30,6 +31,9 @@ class Phi(object):
             to_buffer(ps.phi),
         ]
         return bufs
+
+    def map_bufs(self, bufs, ps, nforce=1):
+        self.map_buf(bufs[4], ps.phi)
 
 
 class Phi_triangle(object):
@@ -89,6 +93,7 @@ class Acc(object):
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
         to_buffer = self.to_buffer
+        ps.fdot[:nforce] = 0
         bufs = [
             to_int(ps.n),
             to_buffer(ps.mass),
@@ -97,6 +102,9 @@ class Acc(object):
             to_buffer(ps.fdot[:nforce]),
         ]
         return bufs
+
+    def map_bufs(self, bufs, ps, nforce=1):
+        self.map_buf(bufs[4], ps.fdot[:nforce])
 
 
 class Acc_triangle(object):
@@ -200,6 +208,8 @@ class Tstep(object):
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
         to_buffer = self.to_buffer
+        ps.tstep[...] = 0
+        ps.tstep_sum[...] = 0
         bufs = [
             to_int(ps.n),
             to_buffer(ps.mass),
@@ -209,6 +219,10 @@ class Tstep(object):
             to_buffer(ps.tstep_sum),
         ]
         return bufs
+
+    def map_bufs(self, bufs, ps, nforce=2):
+        self.map_buf(bufs[4], ps.tstep)
+        self.map_buf(bufs[5], ps.tstep_sum)
 
 
 class Tstep_triangle(object):
@@ -281,6 +295,7 @@ class PNAcc(object):
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
         to_buffer = self.to_buffer
+        ps.pnacc[...] = 0
         bufs = [
             to_int(ps.n),
             to_buffer(ps.mass),
@@ -289,6 +304,9 @@ class PNAcc(object):
             to_buffer(ps.pnacc),
         ]
         return bufs
+
+    def map_bufs(self, bufs, ps, nforce=1):
+        self.map_buf(bufs[4], ps.pnacc)
 
 
 class PNAcc_triangle(object):
@@ -354,6 +372,7 @@ class Sakura(object):
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
         to_buffer = self.to_buffer
+        ps.drdot[...] = 0
         bufs = [
             to_int(ps.n),
             to_buffer(ps.mass),
@@ -362,6 +381,9 @@ class Sakura(object):
             to_buffer(ps.drdot),
         ]
         return bufs
+
+    def map_bufs(self, bufs, ps, nforce=1):
+        self.map_buf(bufs[4], ps.drdot)
 
 
 class Sakura_triangle(object):

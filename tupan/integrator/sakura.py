@@ -27,13 +27,11 @@ def sakura_step(ips, jps, dt, flag,
     ibufs = {}
     for i, ip in ips.members.items():
         if ip.n:
-            ip.drdot[...] = 0
             ibufs[i] = kernel.set_bufs(ip, nforce=nforce)
     jbufs = {**ibufs}
     if ips != jps:
         for j, jp in jps.members.items():
             if jp.n:
-                jp.drdot[...] = 0
                 jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
     interactions = []
@@ -51,12 +49,12 @@ def sakura_step(ips, jps, dt, flag,
 
     for i, ip in ips.members.items():
         if ip.n:
-            kernel.map_bufs({4: ip.drdot}, ibufs[i])
+            kernel.map_bufs(ibufs[i], ip, nforce=nforce)
             ip.rdot[:2] += ip.drdot
     if ips != jps:
         for j, jp in jps.members.items():
             if jp.n:
-                kernel.map_bufs({4: jp.drdot}, jbufs[j])
+                kernel.map_bufs(jbufs[j], jp, nforce=nforce)
                 jp.rdot[:2] += jp.drdot
 
 

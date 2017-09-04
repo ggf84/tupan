@@ -436,13 +436,11 @@ class ParticleSystem(object):
         ibufs = {}
         for i, ip in self.members.items():
             if ip.n:
-                ip.phi[...] = 0
                 ibufs[i] = kernel.set_bufs(ip, nforce=nforce)
         jbufs = {**ibufs}
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    jp.phi[...] = 0
                     jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
         interactions = []
@@ -460,12 +458,12 @@ class ParticleSystem(object):
 
         for i, ip in self.members.items():
             if ip.n:
-                kernel.map_bufs({4: ip.phi}, ibufs[i])
+                kernel.map_bufs(ibufs[i], ip, nforce=nforce)
 #                ip.phi[...] = ip.phi
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    kernel.map_bufs({4: jp.phi}, jbufs[j])
+                    kernel.map_bufs(jbufs[j], jp, nforce=nforce)
 #                    jp.phi[...] = jp.phi
 
     def set_acc(self, other,
@@ -479,13 +477,11 @@ class ParticleSystem(object):
         ibufs = {}
         for i, ip in self.members.items():
             if ip.n:
-                ip.fdot[:nforce] = 0
                 ibufs[i] = kernel.set_bufs(ip, nforce=nforce)
         jbufs = {**ibufs}
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    jp.fdot[:nforce] = 0
                     jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
         interactions = []
@@ -503,12 +499,12 @@ class ParticleSystem(object):
 
         for i, ip in self.members.items():
             if ip.n:
-                kernel.map_bufs({4: ip.fdot[:nforce]}, ibufs[i])
+                kernel.map_bufs(ibufs[i], ip, nforce=nforce)
                 ip.rdot[2:2+nforce] = ip.fdot[:nforce]
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    kernel.map_bufs({4: jp.fdot[:nforce]}, jbufs[j])
+                    kernel.map_bufs(jbufs[j], jp, nforce=nforce)
                     jp.rdot[2:2+nforce] = jp.fdot[:nforce]
 
     def set_acc_jrk(self, other,
@@ -523,13 +519,11 @@ class ParticleSystem(object):
         ibufs = {}
         for i, ip in self.members.items():
             if ip.n:
-                ip.fdot[:nforce] = 0
                 ibufs[i] = kernel.set_bufs(ip, nforce=nforce)
         jbufs = {**ibufs}
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    jp.fdot[:nforce] = 0
                     jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
         interactions = []
@@ -547,12 +541,12 @@ class ParticleSystem(object):
 
         for i, ip in self.members.items():
             if ip.n:
-                kernel.map_bufs({4: ip.fdot[:nforce]}, ibufs[i])
+                kernel.map_bufs(ibufs[i], ip, nforce=nforce)
                 ip.rdot[2:2+nforce] = ip.fdot[:nforce]
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    kernel.map_bufs({4: jp.fdot[:nforce]}, jbufs[j])
+                    kernel.map_bufs(jbufs[j], jp, nforce=nforce)
                     jp.rdot[2:2+nforce] = jp.fdot[:nforce]
 
     def set_snp_crk(self, other,
@@ -567,13 +561,11 @@ class ParticleSystem(object):
         ibufs = {}
         for i, ip in self.members.items():
             if ip.n:
-                ip.fdot[:nforce] = 0
                 ibufs[i] = kernel.set_bufs(ip, nforce=nforce)
         jbufs = {**ibufs}
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    jp.fdot[:nforce] = 0
                     jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
         interactions = []
@@ -591,12 +583,12 @@ class ParticleSystem(object):
 
         for i, ip in self.members.items():
             if ip.n:
-                kernel.map_bufs({4: ip.fdot[:nforce]}, ibufs[i])
+                kernel.map_bufs(ibufs[i], ip, nforce=nforce)
                 ip.rdot[2:2+nforce] = ip.fdot[:nforce]
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    kernel.map_bufs({4: jp.fdot[:nforce]}, jbufs[j])
+                    kernel.map_bufs(jbufs[j], jp, nforce=nforce)
                     jp.rdot[2:2+nforce] = jp.fdot[:nforce]
 
     def set_tstep(self, other, eta,
@@ -612,15 +604,11 @@ class ParticleSystem(object):
         ibufs = {}
         for i, ip in self.members.items():
             if ip.n:
-                ip.tstep[...] = 0
-                ip.tstep_sum[...] = 0
                 ibufs[i] = kernel.set_bufs(ip, nforce=nforce)
         jbufs = {**ibufs}
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    jp.tstep[...] = 0
-                    jp.tstep_sum[...] = 0
                     jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
         interactions = []
@@ -638,13 +626,13 @@ class ParticleSystem(object):
 
         for i, ip in self.members.items():
             if ip.n:
-                kernel.map_bufs({4: ip.tstep, 5: ip.tstep_sum}, ibufs[i])
+                kernel.map_bufs(ibufs[i], ip, nforce=nforce)
                 ip.tstep[...] = eta / np.sqrt(ip.tstep)
                 ip.tstep_sum[...] = eta / np.sqrt(ip.tstep_sum)
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    kernel.map_bufs({4: jp.tstep, 5: jp.tstep_sum}, jbufs[j])
+                    kernel.map_bufs(jbufs[j], jp, nforce=nforce)
                     jp.tstep[...] = eta / np.sqrt(jp.tstep)
                     jp.tstep_sum[...] = eta / np.sqrt(jp.tstep_sum)
 
@@ -674,13 +662,11 @@ class ParticleSystem(object):
         ibufs = {}
         for i, ip in self.members.items():
             if ip.n:
-                ip.pnacc[...] = 0
                 ibufs[i] = kernel.set_bufs(ip, nforce=nforce)
         jbufs = {**ibufs}
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    jp.pnacc[...] = 0
                     jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
         interactions = []
@@ -698,12 +684,12 @@ class ParticleSystem(object):
 
         for i, ip in self.members.items():
             if ip.n:
-                kernel.map_bufs({4: ip.pnacc}, ibufs[i])
+                kernel.map_bufs(ibufs[i], ip, nforce=nforce)
 #                ip.pnacc[...] = ip.pnacc
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
-                    kernel.map_bufs({4: jp.pnacc}, jbufs[j])
+                    kernel.map_bufs(jbufs[j], jp, nforce=nforce)
 #                    jp.pnacc[...] = jp.pnacc
 
         if use_auxvel:

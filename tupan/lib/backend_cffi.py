@@ -42,7 +42,7 @@ class CKernel(object):
         self.to_int = Ctype.int_t
         self.to_real = Ctype.real_t
         self.to_buffer = lambda x: cast('real_t *', from_buffer(x))
-        self.map_bufs = lambda x, y: None
+        self.map_buf = lambda x, y: None
         self.map_buffers = lambda x, y: None
 
 
