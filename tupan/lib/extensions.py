@@ -154,7 +154,7 @@ class Acc_rectangle(Acc_triangle):
         return oargs, bufs
 
 
-class AccJrk(Acc):
+class Acc_Jrk(Acc):
     """
 
     """
@@ -162,28 +162,21 @@ class AccJrk(Acc):
     both = True
 
 
-class AccJrk_triangle(Acc_triangle):
+class Acc_Jrk_triangle(Acc_triangle):
     """
 
     """
     name = 'acc_jrk_kernel_triangle'
 
 
-class AccJrk_rectangle(Acc_rectangle):
+class Acc_Jrk_rectangle(Acc_rectangle):
     """
 
     """
     name = 'acc_jrk_kernel_rectangle'
 
 
-class SnpCrk_triangle(Acc_triangle):
-    """
-
-    """
-    name = 'snp_crk_kernel_triangle'
-
-
-class SnpCrk(Acc):
+class Snp_Crk(Acc):
     """
 
     """
@@ -191,7 +184,14 @@ class SnpCrk(Acc):
     both = True
 
 
-class SnpCrk_rectangle(Acc_rectangle):
+class Snp_Crk_triangle(Acc_triangle):
+    """
+
+    """
+    name = 'snp_crk_kernel_triangle'
+
+
+class Snp_Crk_rectangle(Acc_rectangle):
     """
 
     """

@@ -7,12 +7,14 @@ Test suite for extensions module.
 
 import unittest
 import numpy as np
+from tupan.integrator.sakura import sakura_step
+from tupan.particles.system import ParticleSystem
 from tupan.lib import extensions as ext
+
+setattr(ParticleSystem, 'set_sakura', sakura_step)
 
 
 def set_particles(n):
-    from tupan.particles.system import ParticleSystem
-
     ps = ParticleSystem(n)
     b = ps.bodies
     b.mass[...] = np.random.random((n,))
@@ -20,45 +22,46 @@ def set_particles(n):
     b.rdot[1][...] = np.random.random((3, n)) * 10
     b.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
     b.register_attribute('drdot', '2, {nd}, {nb}', 'real_t')
-    return b
+    return ps
 
 
-def get_kernel(name, backend):
-    kernel_r = ext.make_extension(name+'_rectangle', backend)
-    kernel_t = ext.make_extension(name+'_triangle', backend)
+def run_and_compare(ip_c, jp_c, ip_cl, jp_cl,
+                    func, ckernel, clkernel, **kwargs):
+    devs = []
+    func(ip_c, jp_c, kernel=ckernel, **kwargs)
+    func(ip_cl, jp_cl, kernel=clkernel, **kwargs)
 
-    def func(ips, jps, *args, **kwargs):
-        if ips != jps:
-            return kernel_r(ips, jps, *args, **kwargs)
-        return kernel_t(ips, *args, **kwargs)
+    for c_ps, cl_ps in zip(ip_c.members.values(), ip_cl.members.values()):
+        arrays_c = [getattr(c_ps, attr) for attr in c_ps.attrs]
+        arrays_cl = [getattr(cl_ps, attr) for attr in cl_ps.attrs]
+        for a, b in zip(arrays_c, arrays_cl):
+            devs.append(abs(a - b).max())
+    return devs
 
-    return func
 
-
-def compare_result(test_number, kernel_name, **kwargs):
+def compare_result(test_number, name, **kwargs):
     np.random.seed(0)
-    Ckernel = get_kernel(kernel_name, backend='C')
-    CLkernel = get_kernel(kernel_name, backend='CL')
+    ckernel = ext.make_extension(name, backend='C')
+    clkernel = ext.make_extension(name, backend='CL')
+    func = getattr(ParticleSystem, 'set_'+name.lower())
 
-    deviations = []
-    c_ips, c_jps = set_particles(32), set_particles(2048)
-    cl_ips, cl_jps = c_ips.copy(), c_jps.copy()
-    for (c_ip, c_jp), (cl_ip, cl_jp) in [((c_ips, c_ips), (cl_ips, cl_ips)),
-                                         ((c_jps, c_jps), (cl_jps, cl_jps)),
-                                         ((c_ips, c_jps), (cl_ips, cl_jps)),
-                                         ((c_jps, c_ips), (cl_jps, cl_ips)), ]:
+    ips_c, jps_c = set_particles(32), set_particles(2048)
+    ips_cl, jps_cl = ips_c.copy(), jps_c.copy()
 
-        res = [Ckernel(c_ip, c_jp, **kwargs), CLkernel(cl_ip, cl_jp, **kwargs)]
+    devs = []
+    devs += run_and_compare(ips_c, ips_c, ips_cl, ips_cl,
+                            func, ckernel, clkernel, **kwargs)
 
-        for vc, vcl in zip(*res):
-            for attr in vc.attrs:
-                array_c = getattr(vc, attr)
-                array_cl = getattr(vcl, attr)
-                dev = abs(array_c - array_cl).max()
-                deviations.append(dev)
+    devs += run_and_compare(jps_c, jps_c, jps_cl, jps_cl,
+                            func, ckernel, clkernel, **kwargs)
 
-    msg = "\ntest{0:02d}: maxdev({1}): {2}"
-    print(msg.format(test_number, kernel_name, max(deviations)))
+    devs += run_and_compare(ips_c, jps_c, ips_cl, jps_cl,
+                            func, ckernel, clkernel, **kwargs)
+
+    devs += run_and_compare(jps_c, ips_c, jps_cl, ips_cl,
+                            func, ckernel, clkernel, **kwargs)
+
+    print(f"\ntest{test_number:02d}: maxdev({name}): {max(devs)}")
 
 
 class TestCase1(unittest.TestCase):
@@ -71,28 +74,28 @@ class TestCase1(unittest.TestCase):
               "compare results calculated using C / CL extensions.")
 
     def test01(self):
-        compare_result(1, 'Phi')
+        compare_result(1, 'Phi', nforce=1)
 
     def test02(self):
         compare_result(2, 'Acc', nforce=1)
 
     def test03(self):
-        compare_result(3, 'AccJrk', nforce=2)
+        compare_result(3, 'Acc_Jrk', nforce=2)
 
     def test04(self):
-        compare_result(4, 'SnpCrk', nforce=4)
+        compare_result(4, 'Snp_Crk', nforce=4)
 
     def test05(self):
         eta = 1.0/64
-        compare_result(5, 'Tstep', eta=eta)
+        compare_result(5, 'Tstep', eta=eta, nforce=2)
 
     def test06(self):
         pn = {'order': 7, 'clight': 128.0}
-        compare_result(6, 'PNAcc', pn=pn)
+        compare_result(6, 'PNAcc', pn=pn, nforce=2)
 
     def test07(self):
         dt = 1.0/64
-        compare_result(7, 'Sakura', dt=dt, flag=-2)
+        compare_result(7, 'Sakura', dt=dt, flag=-2, nforce=2)
 
 
 if __name__ == "__main__":

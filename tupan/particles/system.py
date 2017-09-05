@@ -509,7 +509,7 @@ class ParticleSystem(object):
 
     def set_acc_jrk(self, other,
                     nforce=2,
-                    kernel=ext.make_extension('AccJrk')):
+                    kernel=ext.make_extension('Acc_Jrk')):
         """Set individual gravitational acceleration and jerk due to other
         particles.
 
@@ -551,7 +551,7 @@ class ParticleSystem(object):
 
     def set_snp_crk(self, other,
                     nforce=4,
-                    kernel=ext.make_extension('SnpCrk')):
+                    kernel=ext.make_extension('Snp_Crk')):
         """Set individual gravitational snap and crackle due to other
         particles.
 
