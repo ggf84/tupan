@@ -118,9 +118,12 @@ class Particles(metaclass=MetaParticles):
         return self.from_attrs(**data)
 
     def __setitem__(self, index, data):
+        index = ((Ellipsis, index, None)
+                 if isinstance(index, int)
+                 else (Ellipsis, index))
         for attr in self.attrs:
             array = getattr(self, attr)
-            array[..., index] = getattr(data, attr)
+            array[index] = getattr(data, attr)
 
     def __getattr__(self, attr):
         if attr not in self.attrs:
