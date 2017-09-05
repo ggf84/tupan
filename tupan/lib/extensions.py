@@ -168,6 +168,11 @@ class Kepler(object):
     """
     name = 'kepler_solver_kernel'
 
+    def set_consts(self, dt=None):
+        return [
+            self.to_real(dt),
+        ]
+
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
         to_buffer = self.to_buffer
@@ -183,27 +188,13 @@ class Kepler(object):
             to_buffer(ps.rdot[1][2]),
         ]
 
-    def set_args(self, ips, jps, dt=None):
-        oargs = {
-                4: ips.rdot[0][0],
-                5: ips.rdot[0][1],
-                6: ips.rdot[0][2],
-                7: ips.rdot[1][0],
-                8: ips.rdot[1][1],
-                9: ips.rdot[1][2],
-                13: jps.rdot[0][0],
-                14: jps.rdot[0][1],
-                15: jps.rdot[0][2],
-                16: jps.rdot[1][0],
-                17: jps.rdot[1][1],
-                18: jps.rdot[1][2],
-        }
-        bufs = [
-            self.to_real(dt),
-        ]
-        bufs += self.set_bufs(ips)
-        bufs += self.set_bufs(jps)
-        return oargs, bufs
+    def map_bufs(self, bufs, ps, nforce=2):
+        self.map_buf(bufs[3], ps.rdot[0][0])
+        self.map_buf(bufs[4], ps.rdot[0][1])
+        self.map_buf(bufs[5], ps.rdot[0][2])
+        self.map_buf(bufs[6], ps.rdot[1][0])
+        self.map_buf(bufs[7], ps.rdot[1][1])
+        self.map_buf(bufs[8], ps.rdot[1][2])
 
 
 def make_extension(name, backend=cli.backend):

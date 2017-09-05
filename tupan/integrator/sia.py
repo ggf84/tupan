@@ -133,6 +133,7 @@ def sf_pn_kick(slow, fast, dt, pn=None):
 # twobody_solver
 #
 def twobody_solver(ps, dt, pn=None,
+                   nforce=2,
                    kernel=ext.make_extension('Kepler', 'C')):
     """
 
@@ -142,11 +143,24 @@ def twobody_solver(ps, dt, pn=None,
                                   'Kepler-solver does not include '
                                   'post-Newtonian corrections.')
     else:
-        ps0, ps1 = ps[0], ps[1]
-        kernel(next(iter(ps0.members.values())),
-               next(iter(ps1.members.values())),
-               dt=dt)
-        ps = ps0 + ps1
+        ps0 = ps[0]
+        ps1 = ps[1]
+        ip = next(iter(ps0.members.values()))
+        jp = next(iter(ps1.members.values()))
+
+        consts = kernel.set_consts(dt=dt)
+
+        ibufs = kernel.set_bufs(ip, nforce=nforce)
+        jbufs = kernel.set_bufs(jp, nforce=nforce)
+
+        args = consts + ibufs + jbufs
+        kernel.rectangle(*args)
+
+        kernel.map_bufs(ibufs, ip, nforce=nforce)
+        kernel.map_bufs(jbufs, jp, nforce=nforce)
+
+        ps[0] = ps0
+        ps[1] = ps1
         for p in ps.members.values():
             if p.n:
                 p.time += dt
