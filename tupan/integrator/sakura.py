@@ -19,10 +19,7 @@ def sakura_step(ips, jps, dt, flag,
     """
 
     """
-    cbufs = [
-        kernel.to_real(dt),
-        kernel.to_int(flag),
-    ]
+    consts = kernel.set_consts(dt=dt, flag=flag)
 
     ibufs = {}
     for i, ip in ips.members.items():
@@ -40,11 +37,11 @@ def sakura_step(ips, jps, dt, flag,
             for j, jp in jps.members.items():
                 if jp.n:
                     if ip == jp:
-                        bufs = cbufs + ibufs[i]
-                        kernel.triangle(*bufs)
+                        args = consts + ibufs[i]
+                        kernel.triangle(*args)
                     elif (ip, jp) not in interactions:
-                        bufs = cbufs + ibufs[i] + jbufs[j]
-                        kernel.rectangle(*bufs)
+                        args = consts + ibufs[i] + jbufs[j]
+                        kernel.rectangle(*args)
                         interactions.append((jp, ip))
 
     for i, ip in ips.members.items():

@@ -431,7 +431,7 @@ class ParticleSystem(object):
         """Set individual gravitational potential due to other particles.
 
         """
-        cbufs = []
+        consts = kernel.set_consts()
 
         ibufs = {}
         for i, ip in self.members.items():
@@ -449,11 +449,11 @@ class ParticleSystem(object):
                 for j, jp in other.members.items():
                     if jp.n:
                         if ip == jp:
-                            bufs = cbufs + ibufs[i]
-                            kernel.triangle(*bufs)
+                            args = consts + ibufs[i]
+                            kernel.triangle(*args)
                         elif (ip, jp) not in interactions:
-                            bufs = cbufs + ibufs[i] + jbufs[j]
-                            kernel.rectangle(*bufs)
+                            args = consts + ibufs[i] + jbufs[j]
+                            kernel.rectangle(*args)
                             interactions.append((jp, ip))
 
         for i, ip in self.members.items():
@@ -472,7 +472,7 @@ class ParticleSystem(object):
         """Set individual gravitational acceleration due to other particles.
 
         """
-        cbufs = []
+        consts = kernel.set_consts()
 
         ibufs = {}
         for i, ip in self.members.items():
@@ -490,11 +490,11 @@ class ParticleSystem(object):
                 for j, jp in other.members.items():
                     if jp.n:
                         if ip == jp:
-                            bufs = cbufs + ibufs[i]
-                            kernel.triangle(*bufs)
+                            args = consts + ibufs[i]
+                            kernel.triangle(*args)
                         elif (ip, jp) not in interactions:
-                            bufs = cbufs + ibufs[i] + jbufs[j]
-                            kernel.rectangle(*bufs)
+                            args = consts + ibufs[i] + jbufs[j]
+                            kernel.rectangle(*args)
                             interactions.append((jp, ip))
 
         for i, ip in self.members.items():
@@ -514,7 +514,7 @@ class ParticleSystem(object):
         particles.
 
         """
-        cbufs = []
+        consts = kernel.set_consts()
 
         ibufs = {}
         for i, ip in self.members.items():
@@ -532,11 +532,11 @@ class ParticleSystem(object):
                 for j, jp in other.members.items():
                     if jp.n:
                         if ip == jp:
-                            bufs = cbufs + ibufs[i]
-                            kernel.triangle(*bufs)
+                            args = consts + ibufs[i]
+                            kernel.triangle(*args)
                         elif (ip, jp) not in interactions:
-                            bufs = cbufs + ibufs[i] + jbufs[j]
-                            kernel.rectangle(*bufs)
+                            args = consts + ibufs[i] + jbufs[j]
+                            kernel.rectangle(*args)
                             interactions.append((jp, ip))
 
         for i, ip in self.members.items():
@@ -556,7 +556,7 @@ class ParticleSystem(object):
         particles.
 
         """
-        cbufs = []
+        consts = kernel.set_consts()
 
         ibufs = {}
         for i, ip in self.members.items():
@@ -574,11 +574,11 @@ class ParticleSystem(object):
                 for j, jp in other.members.items():
                     if jp.n:
                         if ip == jp:
-                            bufs = cbufs + ibufs[i]
-                            kernel.triangle(*bufs)
+                            args = consts + ibufs[i]
+                            kernel.triangle(*args)
                         elif (ip, jp) not in interactions:
-                            bufs = cbufs + ibufs[i] + jbufs[j]
-                            kernel.rectangle(*bufs)
+                            args = consts + ibufs[i] + jbufs[j]
+                            kernel.rectangle(*args)
                             interactions.append((jp, ip))
 
         for i, ip in self.members.items():
@@ -597,9 +597,7 @@ class ParticleSystem(object):
         """Set individual time-steps due to other particles.
 
         """
-        cbufs = [
-            kernel.to_real(eta)
-        ]
+        consts = kernel.set_consts(eta=eta)
 
         ibufs = {}
         for i, ip in self.members.items():
@@ -617,11 +615,11 @@ class ParticleSystem(object):
                 for j, jp in other.members.items():
                     if jp.n:
                         if ip == jp:
-                            bufs = cbufs + ibufs[i]
-                            kernel.triangle(*bufs)
+                            args = consts + ibufs[i]
+                            kernel.triangle(*args)
                         elif (ip, jp) not in interactions:
-                            bufs = cbufs + ibufs[i] + jbufs[j]
-                            kernel.rectangle(*bufs)
+                            args = consts + ibufs[i] + jbufs[j]
+                            kernel.rectangle(*args)
                             interactions.append((jp, ip))
 
         for i, ip in self.members.items():
@@ -654,10 +652,7 @@ class ParticleSystem(object):
             if self != other:
                 swap_vel(other)
 
-        cbufs = [
-            kernel.to_int(pn['order']),
-            kernel.to_real(pn['clight']),
-        ]
+        consts = kernel.set_consts(order=pn['order'], clight=pn['clight'])
 
         ibufs = {}
         for i, ip in self.members.items():
@@ -675,11 +670,11 @@ class ParticleSystem(object):
                 for j, jp in other.members.items():
                     if jp.n:
                         if ip == jp:
-                            bufs = cbufs + ibufs[i]
-                            kernel.triangle(*bufs)
+                            args = consts + ibufs[i]
+                            kernel.triangle(*args)
                         elif (ip, jp) not in interactions:
-                            bufs = cbufs + ibufs[i] + jbufs[j]
-                            kernel.rectangle(*bufs)
+                            args = consts + ibufs[i] + jbufs[j]
+                            kernel.rectangle(*args)
                             interactions.append((jp, ip))
 
         for i, ip in self.members.items():

@@ -17,70 +17,24 @@ class Phi(object):
 
     """
     name = 'phi_kernel'
-    both = True
+
+    def set_consts(self):
+        return []
 
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
         to_buffer = self.to_buffer
         ps.phi[...] = 0
-        bufs = [
+        return [
             to_int(ps.n),
             to_buffer(ps.mass),
             to_buffer(ps.eps2),
             to_buffer(ps.rdot[:nforce]),
             to_buffer(ps.phi),
         ]
-        return bufs
 
     def map_bufs(self, bufs, ps, nforce=1):
         self.map_buf(bufs[4], ps.phi)
-
-
-class Phi_triangle(object):
-    """
-
-    """
-    name = 'phi_kernel_triangle'
-
-    def set_bufs(self, ps, nforce=1):
-        to_int = self.to_int
-        to_buffer = self.to_buffer
-        bufs = [
-            to_int(ps.n),
-            to_buffer(ps.mass),
-            to_buffer(ps.eps2),
-            to_buffer(ps.rdot[:nforce]),
-            to_buffer(ps.phi),
-        ]
-        return bufs
-
-    def set_args(self, ips):
-        ips.phi[...] = 0
-        oargs = {
-            4: ips.phi,
-        }
-        bufs = []
-        bufs += self.set_bufs(ips)
-        return oargs, bufs
-
-
-class Phi_rectangle(Phi_triangle):
-    """
-
-    """
-    name = 'phi_kernel_rectangle'
-
-    def set_args(self, ips, jps):
-        ips.phi[...] = 0
-        jps.phi[...] = 0
-        oargs = {
-            4: ips.phi,
-            9: jps.phi,
-        }
-        bufs = []
-        bufs += self.set_bufs(ips)
-        bufs += self.set_bufs(jps)
-        return oargs, bufs
 
 
 class Acc(object):
@@ -88,70 +42,24 @@ class Acc(object):
 
     """
     name = 'acc_kernel'
-    both = True
+
+    def set_consts(self):
+        return []
 
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
         to_buffer = self.to_buffer
         ps.fdot[:nforce] = 0
-        bufs = [
+        return [
             to_int(ps.n),
             to_buffer(ps.mass),
             to_buffer(ps.eps2),
             to_buffer(ps.rdot[:nforce]),
             to_buffer(ps.fdot[:nforce]),
         ]
-        return bufs
 
     def map_bufs(self, bufs, ps, nforce=1):
         self.map_buf(bufs[4], ps.fdot[:nforce])
-
-
-class Acc_triangle(object):
-    """
-
-    """
-    name = 'acc_kernel_triangle'
-
-    def set_bufs(self, ps, nforce=1):
-        to_int = self.to_int
-        to_buffer = self.to_buffer
-        bufs = [
-            to_int(ps.n),
-            to_buffer(ps.mass),
-            to_buffer(ps.eps2),
-            to_buffer(ps.rdot[:nforce]),
-            to_buffer(ps.fdot[:nforce]),
-        ]
-        return bufs
-
-    def set_args(self, ips, nforce=1):
-        ips.fdot[:nforce] = 0
-        oargs = {
-            4: ips.fdot[:nforce],
-        }
-        bufs = []
-        bufs += self.set_bufs(ips, nforce=nforce)
-        return oargs, bufs
-
-
-class Acc_rectangle(Acc_triangle):
-    """
-
-    """
-    name = 'acc_kernel_rectangle'
-
-    def set_args(self, ips, jps, nforce=1):
-        ips.fdot[:nforce] = 0
-        jps.fdot[:nforce] = 0
-        oargs = {
-            4: ips.fdot[:nforce],
-            9: jps.fdot[:nforce],
-        }
-        bufs = []
-        bufs += self.set_bufs(ips, nforce=nforce)
-        bufs += self.set_bufs(jps, nforce=nforce)
-        return oargs, bufs
 
 
 class Acc_Jrk(Acc):
@@ -159,21 +67,6 @@ class Acc_Jrk(Acc):
 
     """
     name = 'acc_jrk_kernel'
-    both = True
-
-
-class Acc_Jrk_triangle(Acc_triangle):
-    """
-
-    """
-    name = 'acc_jrk_kernel_triangle'
-
-
-class Acc_Jrk_rectangle(Acc_rectangle):
-    """
-
-    """
-    name = 'acc_jrk_kernel_rectangle'
 
 
 class Snp_Crk(Acc):
@@ -181,21 +74,6 @@ class Snp_Crk(Acc):
 
     """
     name = 'snp_crk_kernel'
-    both = True
-
-
-class Snp_Crk_triangle(Acc_triangle):
-    """
-
-    """
-    name = 'snp_crk_kernel_triangle'
-
-
-class Snp_Crk_rectangle(Acc_rectangle):
-    """
-
-    """
-    name = 'snp_crk_kernel_rectangle'
 
 
 class Tstep(object):
@@ -203,14 +81,18 @@ class Tstep(object):
 
     """
     name = 'tstep_kernel'
-    both = True
+
+    def set_consts(self, eta=None):
+        return [
+            self.to_real(eta),
+        ]
 
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
         to_buffer = self.to_buffer
         ps.tstep[...] = 0
         ps.tstep_sum[...] = 0
-        bufs = [
+        return [
             to_int(ps.n),
             to_buffer(ps.mass),
             to_buffer(ps.eps2),
@@ -218,71 +100,10 @@ class Tstep(object):
             to_buffer(ps.tstep),
             to_buffer(ps.tstep_sum),
         ]
-        return bufs
 
     def map_bufs(self, bufs, ps, nforce=2):
         self.map_buf(bufs[4], ps.tstep)
         self.map_buf(bufs[5], ps.tstep_sum)
-
-
-class Tstep_triangle(object):
-    """
-
-    """
-    name = 'tstep_kernel_triangle'
-
-    def set_bufs(self, ps, nforce=2):
-        to_int = self.to_int
-        to_buffer = self.to_buffer
-        bufs = [
-            to_int(ps.n),
-            to_buffer(ps.mass),
-            to_buffer(ps.eps2),
-            to_buffer(ps.rdot[:nforce]),
-            to_buffer(ps.tstep),
-            to_buffer(ps.tstep_sum),
-        ]
-        return bufs
-
-    def set_args(self, ips, eta=None):
-        ips.tstep[...] = 0
-        ips.tstep_sum[...] = 0
-        oargs = {
-            5: ips.tstep,
-            6: ips.tstep_sum,
-        }
-        bufs = [
-            self.to_real(eta),
-        ]
-        bufs += self.set_bufs(ips)
-        return oargs, bufs
-
-
-class Tstep_rectangle(Tstep_triangle):
-    """
-
-    """
-    name = 'tstep_kernel_rectangle'
-
-    def set_args(self, ips, jps, eta=None):
-        ips.tstep[...] = 0
-        ips.tstep_sum[...] = 0
-        ips.tstep[...] = 0
-        ips.tstep_sum[...] = 0
-        jps.tstep[...] = 0
-        jps.tstep_sum[...] = 0
-        oargs = {
-            5: ips.tstep,
-            6: ips.tstep_sum,
-            11: jps.tstep,
-            12: jps.tstep_sum,
-        }
-        bufs = [
-            self.to_real(eta),
-        ]
-        bufs += self.set_bufs(ips)
-        bufs += self.set_bufs(jps)
-        return oargs, bufs
 
 
 class PNAcc(object):
@@ -290,76 +111,27 @@ class PNAcc(object):
 
     """
     name = 'pnacc_kernel'
-    both = True
+
+    def set_consts(self, order=None, clight=None):
+        return [
+            self.to_int(order),
+            self.to_real(clight),
+        ]
 
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
         to_buffer = self.to_buffer
         ps.pnacc[...] = 0
-        bufs = [
+        return [
             to_int(ps.n),
             to_buffer(ps.mass),
             to_buffer(ps.eps2),
             to_buffer(ps.rdot[:nforce]),
             to_buffer(ps.pnacc),
         ]
-        return bufs
 
     def map_bufs(self, bufs, ps, nforce=1):
         self.map_buf(bufs[4], ps.pnacc)
-
-
-class PNAcc_triangle(object):
-    """
-
-    """
-    name = 'pnacc_kernel_triangle'
-
-    def set_bufs(self, ps, nforce=2):
-        to_int = self.to_int
-        to_buffer = self.to_buffer
-        bufs = [
-            to_int(ps.n),
-            to_buffer(ps.mass),
-            to_buffer(ps.eps2),
-            to_buffer(ps.rdot[:nforce]),
-            to_buffer(ps.pnacc),
-        ]
-        return bufs
-
-    def set_args(self, ips, pn=None):
-        ips.pnacc[...] = 0
-        oargs = {
-            6: ips.pnacc,
-        }
-        bufs = [
-            self.to_int(pn['order']),
-            self.to_real(pn['clight']),
-        ]
-        bufs += self.set_bufs(ips)
-        return oargs, bufs
-
-
-class PNAcc_rectangle(PNAcc_triangle):
-    """
-
-    """
-    name = 'pnacc_kernel_rectangle'
-
-    def set_args(self, ips, jps, pn=None):
-        ips.pnacc[...] = 0
-        jps.pnacc[...] = 0
-        oargs = {
-            6: ips.pnacc,
-            11: jps.pnacc,
-        }
-        bufs = [
-            self.to_int(pn['order']),
-            self.to_real(pn['clight']),
-        ]
-        bufs += self.set_bufs(ips)
-        bufs += self.set_bufs(jps)
-        return oargs, bufs
 
 
 class Sakura(object):
@@ -367,76 +139,27 @@ class Sakura(object):
 
     """
     name = 'sakura_kernel'
-    both = True
+
+    def set_consts(self, dt=None, flag=None):
+        return [
+            self.to_real(dt),
+            self.to_int(flag),
+        ]
 
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
         to_buffer = self.to_buffer
         ps.drdot[...] = 0
-        bufs = [
+        return [
             to_int(ps.n),
             to_buffer(ps.mass),
             to_buffer(ps.eps2),
             to_buffer(ps.rdot[:nforce]),
             to_buffer(ps.drdot),
         ]
-        return bufs
 
     def map_bufs(self, bufs, ps, nforce=1):
         self.map_buf(bufs[4], ps.drdot)
-
-
-class Sakura_triangle(object):
-    """
-
-    """
-    name = 'sakura_kernel_triangle'
-
-    def set_bufs(self, ps, nforce=2):
-        to_int = self.to_int
-        to_buffer = self.to_buffer
-        bufs = [
-            to_int(ps.n),
-            to_buffer(ps.mass),
-            to_buffer(ps.eps2),
-            to_buffer(ps.rdot[:nforce]),
-            to_buffer(ps.drdot),
-        ]
-        return bufs
-
-    def set_args(self, ips, dt=None, flag=None):
-        ips.drdot[...] = 0
-        oargs = {
-            6: ips.drdot,
-        }
-        bufs = [
-            self.to_real(dt),
-            self.to_int(flag),
-        ]
-        bufs += self.set_bufs(ips)
-        return oargs, bufs
-
-
-class Sakura_rectangle(Sakura_triangle):
-    """
-
-    """
-    name = 'sakura_kernel_rectangle'
-
-    def set_args(self, ips, jps, dt=None, flag=None):
-        ips.drdot[...] = 0
-        jps.drdot[...] = 0
-        oargs = {
-            6: ips.drdot,
-            11: jps.drdot,
-        }
-        bufs = [
-            self.to_real(dt),
-            self.to_int(flag),
-        ]
-        bufs += self.set_bufs(ips)
-        bufs += self.set_bufs(jps)
-        return oargs, bufs
 
 
 class Kepler(object):
@@ -448,7 +171,7 @@ class Kepler(object):
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
         to_buffer = self.to_buffer
-        bufs = [
+        return [
             to_int(ps.n),
             to_buffer(ps.mass),
             to_buffer(ps.eps2),
@@ -459,7 +182,6 @@ class Kepler(object):
             to_buffer(ps.rdot[1][1]),
             to_buffer(ps.rdot[1][2]),
         ]
-        return bufs
 
     def set_args(self, ips, jps, dt=None):
         oargs = {
@@ -484,7 +206,7 @@ class Kepler(object):
         return oargs, bufs
 
 
-def get_backend(backend):
+def make_extension(name, backend=cli.backend):
     if backend == 'C':
         from .backend_cffi import CKernel as Kernel
     elif backend == 'CL':
@@ -492,20 +214,9 @@ def get_backend(backend):
     else:
         msg = f"Invalid backend: '{backend}'. Choices are: ('C', 'CL')"
         raise ValueError(msg)
-    return Kernel
 
-
-def make_extension(name, backend=cli.backend):
     cls = globals()[name]
-    Kernel = get_backend(backend)
-
-    def __call__(self, *args, **kwargs):
-        oargs, bufs = self.set_args(*args, **kwargs)
-        self.run(*bufs)
-        self.map_buffers(oargs, bufs)
-        return args
-
-    Extension = type(name, (cls, Kernel), {'__call__': __call__})
+    Extension = type(name, (cls, Kernel), {})
     return Extension(cls.name)
 
 

@@ -12,13 +12,13 @@ from .lib import extensions as ext
 
 
 KERNEL = [
-    ('Phi', {}),
+    ('Phi', {'nforce': 1}),
     ('Acc', {'nforce': 1}),
-    ('AccJrk', {'nforce': 2}),
-    ('SnpCrk', {'nforce': 4}),
-    ('Tstep', {'eta': 1/64}),
-    ('PNAcc', {'pn': {'order': 7, 'clight': 128.0}}),
-    ('Sakura', {'dt': 1/64, 'flag': -2}),
+    ('Acc_Jrk', {'nforce': 2}),
+    ('Snp_Crk', {'nforce': 4}),
+    ('Tstep', {'eta': 1/64, 'nforce': 2}),
+    ('PNAcc', {'order': 7, 'clight': 128.0, 'nforce': 2}),
+    ('Sakura', {'dt': 1/64, 'flag': -2, 'nforce': 2}),
 ]
 
 
@@ -37,37 +37,51 @@ def benchmark(bench, n, backend, rect=False):
     np.random.seed(0)
 
     name, kwargs = bench
-
-    name += '_rectangle' if rect else '_triangle'
-
-    kernel = ext.make_extension(name, backend)
+    nforce = kwargs.pop('nforce')
 
     ips = set_particles(n)
     jps = set_particles(n)
+
+    kernel = ext.make_extension(name, backend)
+    consts = kernel.set_consts(**kwargs)
 
     print(f'\n# {name} (n = {n}):')
     elapsed = {'set': [], 'run': [], 'get': []}
     for i in range(3):
         if rect:
             t0 = timeit.default_timer()
-            oargs, bufs = kernel.set_args(ips, jps, **kwargs)
+            ibufs = kernel.set_bufs(ips, nforce=nforce)
+            jbufs = kernel.set_bufs(jps, nforce=nforce)
             t1 = timeit.default_timer()
             elapsed['set'].append(t1-t0)
+
+            t0 = timeit.default_timer()
+            args = consts + ibufs + jbufs
+            kernel.rectangle(*args)
+            t1 = timeit.default_timer()
+            elapsed['run'].append(t1-t0)
+
+            t0 = timeit.default_timer()
+            kernel.map_bufs(ibufs, ips, nforce=nforce)
+            kernel.map_bufs(jbufs, jps, nforce=nforce)
+            t1 = timeit.default_timer()
+            elapsed['get'].append(t1-t0)
         else:
             t0 = timeit.default_timer()
-            oargs, bufs = kernel.set_args(ips, **kwargs)
+            ibufs = kernel.set_bufs(ips, nforce=nforce)
             t1 = timeit.default_timer()
             elapsed['set'].append(t1-t0)
 
-        t0 = timeit.default_timer()
-        kernel.run(*bufs)
-        t1 = timeit.default_timer()
-        elapsed['run'].append(t1-t0)
+            t0 = timeit.default_timer()
+            args = consts + ibufs
+            kernel.triangle(*args)
+            t1 = timeit.default_timer()
+            elapsed['run'].append(t1-t0)
 
-        t0 = timeit.default_timer()
-        kernel.map_buffers(oargs, bufs)
-        t1 = timeit.default_timer()
-        elapsed['get'].append(t1-t0)
+            t0 = timeit.default_timer()
+            kernel.map_bufs(ibufs, ips, nforce=nforce)
+            t1 = timeit.default_timer()
+            elapsed['get'].append(t1-t0)
 
     for meth, values in elapsed.items():
         print(f"#\t{meth} (s): {min(values):.4e}")

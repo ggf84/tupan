@@ -268,14 +268,16 @@ class CLKernel(object):
 
     """
     def __init__(self, name):
-        if hasattr(self, 'both'):
-            self.kernels_t = [device.program.kernel[name+'_triangle']
-                              for device in drv.context.devices]
-            self.kernels_r = [device.program.kernel[name+'_rectangle']
-                              for device in drv.context.devices]
-        else:
-            self.kernels = [device.program.kernel[name]
-                            for device in drv.context.devices]
+        triangle = rectangle = name
+        if 'kepler' not in name:
+            triangle += '_triangle'
+            rectangle += '_rectangle'
+
+        self.kernels_t = [device.program.kernel[triangle]
+                          for device in drv.context.devices]
+        self.kernels_r = [device.program.kernel[rectangle]
+                          for device in drv.context.devices]
+
         self.queues = [device.queue
                        for device in drv.context.devices]
 
@@ -283,41 +285,13 @@ class CLKernel(object):
         self.to_real = Ctype.real_t
         self.to_buffer = drv.context.to_buf
 
-    def map_buf(self, buf, arg,
+    def map_buf(self, buf, ary,
                 default_queue=drv.context.default_queue):
         if MEM_FLAG == COPY_HOST_FLAG:
-            default_queue.enqueue_read_buffer(buf, arg)
+            default_queue.enqueue_read_buffer(buf, ary)
             default_queue.wait_for_events()
 
-    def map_buffers(self, oargs, bufs):
-        if MEM_FLAG == COPY_HOST_FLAG:
-            queue = drv.context.default_queue
-            for (k, arg) in oargs.items():
-                queue.enqueue_read_buffer(bufs[k], arg)
-            queue.wait_for_events()
-
-    def run(self, *bufs):
-        for queue, kernel in zip(self.queues, self.kernels):
-            wgsize = kernel.wgsize
-            ngroup = kernel.ngroup
-
-            gwsize = ngroup * wgsize
-
-            local_work_size = (wgsize, 1, 1)
-            global_work_size = (gwsize, 1, 1)
-
-            for i, buf in enumerate(bufs):
-                kernel.set_arg(i, buf)
-
-            queue.enqueue_nd_range_kernel(
-                kernel,
-                global_work_size,
-                local_work_size,
-            )
-
-        drv.context.default_queue.wait_for_events()
-
-    def triangle(self, *bufs):
+    def triangle(self, *args):
         for queue, kernel in zip(self.queues, self.kernels_t):
             wgsize = kernel.wgsize
             ngroup = kernel.ngroup
@@ -327,8 +301,8 @@ class CLKernel(object):
             local_work_size = (wgsize, 1, 1)
             global_work_size = (gwsize, 1, 1)
 
-            for i, buf in enumerate(bufs):
-                kernel.set_arg(i, buf)
+            for i, arg in enumerate(args):
+                kernel.set_arg(i, arg)
 
             queue.enqueue_nd_range_kernel(
                 kernel,
@@ -338,7 +312,7 @@ class CLKernel(object):
 
         drv.context.default_queue.wait_for_events()
 
-    def rectangle(self, *bufs):
+    def rectangle(self, *args):
         for queue, kernel in zip(self.queues, self.kernels_r):
             wgsize = kernel.wgsize
             ngroup = kernel.ngroup
@@ -348,8 +322,8 @@ class CLKernel(object):
             local_work_size = (wgsize, 1, 1)
             global_work_size = (gwsize, 1, 1)
 
-            for i, buf in enumerate(bufs):
-                kernel.set_arg(i, buf)
+            for i, arg in enumerate(args):
+                kernel.set_arg(i, arg)
 
             queue.enqueue_nd_range_kernel(
                 kernel,
