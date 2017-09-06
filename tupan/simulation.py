@@ -84,10 +84,10 @@ class Diagnostic(object):
         counter = next(self.counter)
         abs_err = self.abs_err_sum / counter
         avr_err = self.avr_err_sum / counter
-        com_dr = (((com_r - self.com_r0)**2).sum())**0.5
-        com_dv = (((com_v - self.com_v0)**2).sum())**0.5
-        dlmom = (((lmom - self.lmom0)**2).sum())**0.5
-        damom = (((amom - self.amom0)**2).sum())**0.5
+        com_dr = float((((com_r - self.com_r0)**2).sum())**0.5)
+        com_dv = float((((com_v - self.com_v0)**2).sum())**0.5)
+        dlmom = float((((lmom - self.lmom0)**2).sum())**0.5)
+        damom = float((((amom - self.amom0)**2).sum())**0.5)
 
         fmt = '{time:< 13.6e} {dtime:< 10.3e} '\
               '{ke:< 10.3e} {pe:< 10.3e} {ve:< 10.3e} '\
