@@ -91,30 +91,14 @@ class Particles(metaclass=MetaParticles):
 
     __radd__ = __add__
 
-    def split_by(self, mask_function):
-        mask = mask_function(self)
-        if all(mask):
-            return self, type(self)()
-        if not any(mask):
-            return type(self)(), self
-
-        a, b = {}, {}
-        for attr in self.attrs:
-            array = getattr(self, attr)
-            a[attr] = np.array(array[...,  mask], copy=False, order='C')
-            b[attr] = np.array(array[..., ~mask], copy=False, order='C')
-        return (self.from_attrs(**a),
-                self.from_attrs(**b))
-
     def __getitem__(self, index):
         index = ((Ellipsis, index, None)
                  if isinstance(index, int)
                  else (Ellipsis, index))
         data = {}
         for attr in self.attrs:
-            value = getattr(self, attr)[index]
-            value = np.array(value, copy=False, order='C')
-            data[attr] = value
+            array = getattr(self, attr)[index]
+            data[attr] = np.array(array, copy=False, order='C')
         return self.from_attrs(**data)
 
     def __setitem__(self, index, data):

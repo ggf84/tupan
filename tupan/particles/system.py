@@ -52,13 +52,40 @@ class ParticleSystem(object):
                 obj += ps.astype(cls)
         return self.from_members(**{cls.name: obj})
 
-    def split_by(self, mask_function):
-        a, b = {}, {}
+    def prepare_masks(self, func):
+        masks = {}
         for name, ps in self.members.items():
             if ps.n:
-                a[name], b[name] = ps.split_by(mask_function)
-        return (self.from_members(**a),
-                self.from_members(**b))
+                mask = func(ps)
+                n0 = int(mask.sum())
+                n1 = ps.n - n0
+                masks[name] = (n0, n1, mask, ~mask)
+        return masks
+
+    def split_by(self, masks):
+        data0, data1 = {}, {}
+        for name, ps in self.members.items():
+            if ps.n:
+                n0, n1, mask0, mask1 = masks[name]
+                if n0 and n1:
+                    data0[name] = ps[mask0]
+                    data1[name] = ps[mask1]
+                elif not n1:
+                    data0[name] = ps
+                    data1[name] = type(ps)()
+                elif not n0:
+                    data0[name] = type(ps)()
+                    data1[name] = ps
+        return (self.from_members(**data0),
+                self.from_members(**data1))
+
+    def join_by(self, masks, ps0, ps1):
+        for name, ps in self.members.items():
+            if ps.n:
+                n0, n1, mask0, mask1 = masks[name]
+                if n0 and n1:
+                    ps[mask0] = ps0.members[name]
+                    ps[mask1] = ps1.members[name]
 
     def copy(self):
         return copy.deepcopy(self)

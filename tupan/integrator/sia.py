@@ -262,8 +262,12 @@ class SIAXX(object):
         """
 
         """
-        slow, fast = ps.split_by(lambda obj: obj.tstep > abs(dt))
-        ps = self.bridge(slow, fast, dt)
+        masks = ps.prepare_masks(lambda obj: obj.tstep > abs(dt))
+
+        slow, fast = ps.split_by(masks)
+        slow, fast = self.bridge(slow, fast, dt)
+        ps.join_by(masks, slow, fast)
+
         if self.update_tstep:
             ps.set_tstep(ps, self.cli.eta)
             if self.shared_tstep:
@@ -300,12 +304,12 @@ class SIAXX(object):
                 if s.n:
                     s.nstep += 1
             self.dump(slow, dt)
-            return slow
+            return slow, fast
 
         if not slow.n:
             fast = self.recurse(fast, dt/2)
             fast = self.recurse(fast, dt/2)
-            return fast
+            return slow, fast
 
         coefs = self.coefs
         sf_kick = self.sf_kick
@@ -328,7 +332,7 @@ class SIAXX(object):
             if s.n:
                 s.nstep += 1
         self.dump(slow, dt)
-        return slow + fast
+        return slow, fast
 
     def sf_kdk(self, slow, fast, dt):
         """Arbitrary order slow<->fast KDK-type operator.
@@ -340,12 +344,12 @@ class SIAXX(object):
                 if s.n:
                     s.nstep += 1
             self.dump(slow, dt)
-            return slow
+            return slow, fast
 
         if not slow.n:
             fast = self.recurse(fast, dt/2)
             fast = self.recurse(fast, dt/2)
-            return fast
+            return slow, fast
 
         coefs = self.coefs
         sf_kick = self.sf_kick
@@ -368,7 +372,7 @@ class SIAXX(object):
             if s.n:
                 s.nstep += 1
         self.dump(slow, dt)
-        return slow + fast
+        return slow, fast
 
 
 #
