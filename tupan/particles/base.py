@@ -9,6 +9,7 @@ import abc
 import copy
 import numpy as np
 from ..config import Ctype
+from ..lib.extensions import ArrayWrapper
 
 
 class MetaParticles(abc.ABCMeta):
@@ -43,19 +44,40 @@ class Particles(metaclass=MetaParticles):
         'tstep_sum': ('{nb}', 'real_t', 'auxiliary time step'),
     }
 
+    def __new__(cls, *args, **kwargs):
+        obj = super().__new__(cls)
+        obj.n = 0
+        obj.data = {}
+        return obj
+
     def __init__(self, n=0):
         self.n = int(n)
+        self.data = {}
+        for attr, (shape, sctype, _) in self.attrs.items():
+            shape = eval(shape.format(nd=3, nb=n))
+            dtype = vars(Ctype)[sctype]
+            array = np.zeros(shape, dtype=dtype)
+            self.data[attr] = ArrayWrapper(array)
+
+    @classmethod
+    def empty(cls):
+        return cls.__new__(cls)
 
     @classmethod
     def from_attrs(cls, **attrs):
         obj = cls.__new__(cls)
-        vars(obj).update(**attrs)
+        obj.data = {**attrs}
         obj.n = len(obj.pid)
         return obj
 
     def register_attribute(self, attr, shape, sctype, doc=''):
         if attr not in self.attrs:
             self.attrs.update(**{attr: (shape, sctype, doc)})
+            for attr, (shape, sctype, _) in self.attrs.items():
+                shape = eval(shape.format(nd=3, nb=self.n))
+                dtype = vars(Ctype)[sctype]
+                array = np.zeros(shape, dtype=dtype)
+                self.data[attr] = ArrayWrapper(array)
 
     def copy(self):
         return copy.deepcopy(self)
@@ -66,9 +88,8 @@ class Particles(metaclass=MetaParticles):
     def __str__(self):
         fmt = self.name + '(['
         if self.n:
-            for attr in self.attrs:
-                value = getattr(self, attr)
-                fmt += '\n\t{0}: {1},'.format(attr, value)
+            for k, v in self.data.items():
+                fmt += '\n\t{0}: {1},'.format(k, v)
             fmt += '\n'
         fmt += '])'
         return fmt
@@ -80,14 +101,21 @@ class Particles(metaclass=MetaParticles):
         return self.n
 
     def __add__(self, other):
-        if other.n:
-            data = {}
-            concatenate = np.concatenate
-            for attr in self.attrs:
-                arrays = [getattr(self, attr), getattr(other, attr)]
-                data[attr] = concatenate(arrays, -1)  # along last dimension
-            return self.from_attrs(**data)
-        return self
+        if not other.n:
+            return self
+        if not self.n:
+            return other
+        data = {}
+        for k in set([*self.data, *other.data]):
+            if k not in other.data:
+                data[k] = self.data[k]
+            elif k not in self.data:
+                data[k] = other.data[k]
+            else:
+                u, v = self.data[k].ptr, other.data[k].ptr
+                array = np.concatenate([u, v], -1)  # along last dimension
+                data[k] = ArrayWrapper(array)
+        return self.from_attrs(**data)
 
     __radd__ = __add__
 
@@ -96,28 +124,22 @@ class Particles(metaclass=MetaParticles):
                  if isinstance(index, int)
                  else (Ellipsis, index))
         data = {}
-        for attr in self.attrs:
-            array = getattr(self, attr)[index]
-            data[attr] = np.array(array, copy=False, order='C')
+        for k, v in self.data.items():
+            data[k] = ArrayWrapper(v.ptr[index])
         return self.from_attrs(**data)
 
-    def __setitem__(self, index, data):
+    def __setitem__(self, index, obj):
         index = ((Ellipsis, index, None)
                  if isinstance(index, int)
                  else (Ellipsis, index))
-        for attr in self.attrs:
-            array = getattr(self, attr)
-            array[index] = getattr(data, attr)
+        for k, v in self.data.items():
+            v.ptr[index] = obj.data[k].ptr
 
     def __getattr__(self, attr):
-        if attr not in self.attrs:
+        try:
+            return self.data[attr].ptr
+        except KeyError:
             raise AttributeError(attr)
-        shape, sctype, _ = self.attrs[attr]
-        shape = eval(shape.format(nd=3, nb=self.n))
-        dtype = vars(Ctype)[sctype]
-        value = np.zeros(shape, dtype=dtype)
-        setattr(self, attr, value)
-        return value
 
     def astype(self, cls):
         obj = cls(self.n)
@@ -126,16 +148,14 @@ class Particles(metaclass=MetaParticles):
 
     def get_state(self):
         data = {}
-        for attr in self.attrs:
-            value = getattr(self, attr)
-            data[attr] = value
+        for k, v in self.data.items():
+            data[k] = v
         return data
 
     def set_state(self, data):
-        for attr in self.attrs:
-            if attr in data:
-                value = getattr(self, attr)
-                value[...] = data[attr]
+        for k, v in self.data.items():
+            if k in data:
+                v.ptr[...] = data[k].ptr
 
 
 class Bodies(Particles):

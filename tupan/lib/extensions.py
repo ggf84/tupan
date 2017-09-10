@@ -23,18 +23,19 @@ class Phi(object):
 
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
-        to_buffer = self.to_buffer
+        to_ibuf = self.to_ibuf
+        to_obuf = self.to_obuf
         ps.phi[...] = 0
         return [
             to_int(ps.n),
-            to_buffer(ps.mass),
-            to_buffer(ps.eps2),
-            to_buffer(ps.rdot[:nforce]),
-            to_buffer(ps.phi),
+            to_ibuf(ps.data['mass']),
+            to_ibuf(ps.data['eps2']),
+            to_ibuf(ps.data['rdot']),
+            to_obuf(ps.data['phi']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=1):
-        self.map_buf(bufs[4], ps.phi)
+        self.map_buf(ps.data['phi'])
 
 
 class Acc(object):
@@ -48,18 +49,19 @@ class Acc(object):
 
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
-        to_buffer = self.to_buffer
+        to_ibuf = self.to_ibuf
+        to_obuf = self.to_obuf
         ps.fdot[:nforce] = 0
         return [
             to_int(ps.n),
-            to_buffer(ps.mass),
-            to_buffer(ps.eps2),
-            to_buffer(ps.rdot[:nforce]),
-            to_buffer(ps.fdot[:nforce]),
+            to_ibuf(ps.data['mass']),
+            to_ibuf(ps.data['eps2']),
+            to_ibuf(ps.data['rdot']),
+            to_obuf(ps.data['fdot']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=1):
-        self.map_buf(bufs[4], ps.fdot[:nforce])
+        self.map_buf(ps.data['fdot'])
 
 
 class Acc_Jrk(Acc):
@@ -89,21 +91,22 @@ class Tstep(object):
 
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
-        to_buffer = self.to_buffer
+        to_ibuf = self.to_ibuf
+        to_obuf = self.to_obuf
         ps.tstep[...] = 0
         ps.tstep_sum[...] = 0
         return [
             to_int(ps.n),
-            to_buffer(ps.mass),
-            to_buffer(ps.eps2),
-            to_buffer(ps.rdot[:nforce]),
-            to_buffer(ps.tstep),
-            to_buffer(ps.tstep_sum),
+            to_ibuf(ps.data['mass']),
+            to_ibuf(ps.data['eps2']),
+            to_ibuf(ps.data['rdot']),
+            to_obuf(ps.data['tstep']),
+            to_obuf(ps.data['tstep_sum']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=2):
-        self.map_buf(bufs[4], ps.tstep)
-        self.map_buf(bufs[5], ps.tstep_sum)
+        self.map_buf(ps.data['tstep'])
+        self.map_buf(ps.data['tstep_sum'])
 
 
 class PNAcc(object):
@@ -120,18 +123,19 @@ class PNAcc(object):
 
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
-        to_buffer = self.to_buffer
+        to_ibuf = self.to_ibuf
+        to_obuf = self.to_obuf
         ps.pnacc[...] = 0
         return [
             to_int(ps.n),
-            to_buffer(ps.mass),
-            to_buffer(ps.eps2),
-            to_buffer(ps.rdot[:nforce]),
-            to_buffer(ps.pnacc),
+            to_ibuf(ps.data['mass']),
+            to_ibuf(ps.data['eps2']),
+            to_ibuf(ps.data['rdot']),
+            to_obuf(ps.data['pnacc']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=1):
-        self.map_buf(bufs[4], ps.pnacc)
+        self.map_buf(ps.data['pnacc'])
 
 
 class Sakura(object):
@@ -148,18 +152,19 @@ class Sakura(object):
 
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
-        to_buffer = self.to_buffer
+        to_ibuf = self.to_ibuf
+        to_obuf = self.to_obuf
         ps.drdot[...] = 0
         return [
             to_int(ps.n),
-            to_buffer(ps.mass),
-            to_buffer(ps.eps2),
-            to_buffer(ps.rdot[:nforce]),
-            to_buffer(ps.drdot),
+            to_ibuf(ps.data['mass']),
+            to_ibuf(ps.data['eps2']),
+            to_ibuf(ps.data['rdot']),
+            to_obuf(ps.data['drdot']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=1):
-        self.map_buf(bufs[4], ps.drdot)
+        self.map_buf(ps.data['drdot'])
 
 
 class Kepler(object):
@@ -175,26 +180,26 @@ class Kepler(object):
 
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
-        to_buffer = self.to_buffer
+        to_ibuf = self.to_ibuf
         return [
             to_int(ps.n),
-            to_buffer(ps.mass),
-            to_buffer(ps.eps2),
-            to_buffer(ps.rdot[0][0]),
-            to_buffer(ps.rdot[0][1]),
-            to_buffer(ps.rdot[0][2]),
-            to_buffer(ps.rdot[1][0]),
-            to_buffer(ps.rdot[1][1]),
-            to_buffer(ps.rdot[1][2]),
+            to_ibuf(ps.mass),
+            to_ibuf(ps.eps2),
+            to_ibuf(ps.rdot[0][0]),
+            to_ibuf(ps.rdot[0][1]),
+            to_ibuf(ps.rdot[0][2]),
+            to_ibuf(ps.rdot[1][0]),
+            to_ibuf(ps.rdot[1][1]),
+            to_ibuf(ps.rdot[1][2]),
         ]
 
     def map_bufs(self, bufs, ps, nforce=2):
-        self.map_buf(bufs[3], ps.rdot[0][0])
-        self.map_buf(bufs[4], ps.rdot[0][1])
-        self.map_buf(bufs[5], ps.rdot[0][2])
-        self.map_buf(bufs[6], ps.rdot[1][0])
-        self.map_buf(bufs[7], ps.rdot[1][1])
-        self.map_buf(bufs[8], ps.rdot[1][2])
+        self.map_buf(ps.rdot[0][0])
+        self.map_buf(ps.rdot[0][1])
+        self.map_buf(ps.rdot[0][2])
+        self.map_buf(ps.rdot[1][0])
+        self.map_buf(ps.rdot[1][1])
+        self.map_buf(ps.rdot[1][2])
 
 
 def make_extension(name, backend=cli.backend):
@@ -209,6 +214,37 @@ def make_extension(name, backend=cli.backend):
     cls = globals()[name]
     Extension = type(name, (cls, Kernel), {})
     return Extension(cls.name)
+
+
+def make_to_buf(backend=cli.backend):
+    if backend == 'C':
+        from .backend_cffi import to_cbuf as to_buf
+    elif backend == 'CL':
+        from .backend_opencl import to_clbuf as to_buf
+    else:
+        msg = f"Invalid backend: '{backend}'. Choices are: ('C', 'CL')"
+        raise ValueError(msg)
+    return to_buf
+
+
+class ArrayWrapper(object):
+    """
+
+    """
+    def __init__(self, ary):
+        self.ptr, self.buf = self.to_buf(ary)
+        self.shape = ary.shape
+        self.dtype = ary.dtype
+
+    def __getstate__(self):
+        return (self.ptr, self.shape, self.dtype)  # buf can not be pickled!
+
+    def __setstate__(self, state):
+        ary, self.shape, self.dtype = state
+        self.ptr, self.buf = self.to_buf(ary)
+
+    def to_buf(self, ary, to_buf=make_to_buf()):
+        return to_buf(ary)
 
 
 # -- End of File --

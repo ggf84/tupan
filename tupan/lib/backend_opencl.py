@@ -7,6 +7,7 @@ This module implements the OpenCL backend to call CL-extensions.
 
 import os
 import logging
+import numpy as np
 import pyopencl as cl
 from ..config import cli, Ctype
 
@@ -16,9 +17,11 @@ LOGGER = logging.getLogger(__name__)
 DIRNAME = os.path.dirname(__file__)
 PATH = os.path.join(DIRNAME, 'src')
 
-# MEM_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.USE_HOST_PTR
-MEM_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR
+USE_HOST_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.USE_HOST_PTR
 COPY_HOST_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.COPY_HOST_PTR
+ALLOC_HOST_FLAG = cl.mem_flags.READ_WRITE | cl.mem_flags.ALLOC_HOST_PTR
+
+MAP_FLAGS = cl.map_flags.READ | cl.map_flags.WRITE
 
 
 class Context(object):
@@ -40,7 +43,7 @@ class Context(object):
                         for cl_device in cl_devices]
 
     def to_buf(self, array):
-        return cl.Buffer(self.cl_context, MEM_FLAG, hostbuf=array)
+        return cl.Buffer(self.cl_context, COPY_HOST_FLAG, hostbuf=array)
 
 
 class Queue(object):
@@ -260,7 +263,22 @@ class Platform(object):
         self.context = Context(self.cl_platform)
 
 
-drv = Platform()
+class CLDriver(object):
+    """
+
+    """
+    def __init__(self):
+        self.platform = Platform()
+        self.context = self.platform.context
+        self.queue = self.context.default_queue
+
+        self.to_int = Ctype.int_t
+        self.to_uint = Ctype.uint_t
+        self.to_real = Ctype.real_t
+        self.to_buf = self.context.to_buf
+
+
+drv = CLDriver()
 
 
 class CLKernel(object):
@@ -281,15 +299,66 @@ class CLKernel(object):
         self.queues = [device.queue
                        for device in drv.context.devices]
 
-        self.to_int = Ctype.int_t
-        self.to_real = Ctype.real_t
-        self.to_buffer = drv.context.to_buf
+        self.to_int = drv.to_int
+        self.to_uint = drv.to_uint
+        self.to_real = drv.to_real
 
-    def map_buf(self, buf, ary,
+#   #1
+    def to_ibuf(self, obj):
+        obj.buf = drv.to_buf(obj.ptr)
+        return obj.buf
+
+    to_obuf = to_ibuf
+
+    def map_buf(self, obj,
                 default_queue=drv.context.default_queue):
-        if MEM_FLAG == COPY_HOST_FLAG:
-            default_queue.enqueue_read_buffer(buf, ary)
-            default_queue.wait_for_events()
+        default_queue.enqueue_read_buffer(obj.buf, obj.ptr)
+        default_queue.wait_for_events()
+
+#   #2
+#    def to_ibuf(self, obj,
+#                default_queue=drv.context.default_queue):
+#        default_queue.enqueue_read_buffer(obj.ptr, obj.buf)
+#        default_queue.wait_for_events()
+#        return obj.buf
+#
+#    to_obuf = to_ibuf
+#
+#    def map_buf(self, obj,
+#                default_queue=drv.context.default_queue):
+#        default_queue.enqueue_read_buffer(obj.buf, obj.ptr)
+#        default_queue.wait_for_events()
+
+#   #3
+#    def to_ibuf(self, obj):
+#        return obj.buf
+#
+#    to_obuf = to_ibuf
+#
+#    def map_buf(self, obj):
+#        pass
+
+
+#   #4 or #5
+#    def to_ibuf(self, obj):
+#        return obj.buf
+#
+#    def to_obuf(self, obj):
+#        del obj.ptr
+#        return obj.buf
+#
+#    def map_buf(self, obj,
+#                ctx=drv.context.cl_context,
+#                queue=drv.queue.cl_queue):
+#        obj.ptr, ev = cl.enqueue_map_buffer(queue, obj.buf,
+#                                            flags=MAP_FLAGS,
+#                                            offset=0,
+#                                            shape=obj.shape,
+#                                            dtype=obj.dtype,
+#                                            is_blocking=False)
+#        ev.wait()
+
+# --
 
     def triangle(self, *args):
         for queue, kernel in zip(self.queues, self.kernels_t):
@@ -332,6 +401,53 @@ class CLKernel(object):
             )
 
         drv.context.default_queue.wait_for_events()
+
+
+def to_clbuf(ary,
+             ctx=drv.context.cl_context,
+             queue=drv.queue.cl_queue):
+    nbytes = ary.nbytes
+    if not nbytes:
+        return ary, None
+
+#   #1
+    ptr = np.array(ary, copy=False, order='C')
+    buf = None
+    return ptr, buf
+
+#   #2
+#    ptr = np.array(ary, copy=False, order='C')
+#    buf = cl.Buffer(ctx, ALLOC_HOST_FLAG, size=nbytes)
+#    return ptr, buf
+
+#   #3
+#    ptr = np.array(ary, copy=False, order='C')
+#    buf = cl.Buffer(ctx, USE_HOST_FLAG, hostbuf=ptr)
+#    return ptr, buf
+
+#   #4
+#    ptr = np.array(ary, copy=False, order='C')
+#    buf = cl.Buffer(ctx, COPY_HOST_FLAG, hostbuf=ptr)
+#    ptr, ev = cl.enqueue_map_buffer(queue, buf,
+#                                    flags=MAP_FLAGS,
+#                                    offset=0,
+#                                    shape=ary.shape,
+#                                    dtype=ary.dtype,
+#                                    is_blocking=False)
+#    ev.wait()
+#    return ptr, buf
+
+#   #5
+#    buf = cl.Buffer(ctx, ALLOC_HOST_FLAG, size=nbytes)
+#    ptr, ev = cl.enqueue_map_buffer(queue, buf,
+#                                    flags=MAP_FLAGS,
+#                                    offset=0,
+#                                    shape=ary.shape,
+#                                    dtype=ary.dtype,
+#                                    is_blocking=False)
+#    ev.wait()
+#    ptr[...] = ary
+#    return ptr, buf
 
 
 # -- End of File --

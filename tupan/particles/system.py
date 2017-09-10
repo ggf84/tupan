@@ -72,9 +72,9 @@ class ParticleSystem(object):
                     data1[name] = ps[mask1]
                 elif not n1:
                     data0[name] = ps
-                    data1[name] = type(ps)()
+                    data1[name] = ps.empty()
                 elif not n0:
-                    data0[name] = type(ps)()
+                    data0[name] = ps.empty()
                     data1[name] = ps
         return (self.from_members(**data0),
                 self.from_members(**data1))
@@ -111,15 +111,19 @@ class ParticleSystem(object):
         return fmt
 
     def __add__(self, other):
-        if other.n:
-            members = self.members
-            for name, ps in other.members.items():
-                try:
-                    members[name] += ps
-                except KeyError:
-                    members[name] = ps.copy()
-            return self.from_members(**members)
-        return self
+        if not other.n:
+            return self
+        if not self.n:
+            return other
+        members = {}
+        for name in set([*self.members, *other.members]):
+            if name not in other.members:
+                members[name] = self.members[name]
+            elif name not in self.members:
+                members[name] = other.members[name]
+            else:
+                members[name] = self.members[name] + other.members[name]
+        return self.from_members(**members)
 
     __radd__ = __add__
 
@@ -244,7 +248,7 @@ class ParticleSystem(object):
         for ps in self.members.values():
             if ps.n:
                 mr = ps.mass * ps.rdot[0]
-                if hasattr(ps, 'pn_mr'):
+                if 'pn_mr' in ps.data:
                     mr += ps.pn_mr
                 mr_sum += mr.sum(1)
         return mr_sum / self.total_mass
@@ -262,7 +266,7 @@ class ParticleSystem(object):
         for ps in self.members.values():
             if ps.n:
                 mv = ps.mass * ps.rdot[1]
-                if hasattr(ps, 'pn_mv'):
+                if 'pn_mv' in ps.data:
                     mv += ps.pn_mv
                 mv_sum += mv.sum(1)
         return mv_sum / self.total_mass
@@ -317,7 +321,7 @@ class ParticleSystem(object):
         for ps in self.members.values():
             if ps.n:
                 lm = ps.mass * ps.rdot[1]
-                if hasattr(ps, 'pn_mv'):
+                if 'pn_mv' in ps.data:
                     lm += ps.pn_mv
                 lm_sum += lm.sum(1)
         return lm_sum
@@ -336,7 +340,7 @@ class ParticleSystem(object):
             if ps.n:
                 mv = ps.mass * ps.rdot[1]
                 am = np.cross(ps.rdot[0].T, mv.T).T
-                if hasattr(ps, 'pn_am'):
+                if 'pn_am' in ps.data:
                     am += ps.pn_am
                 am_sum += am.sum(1)
         return am_sum
@@ -356,7 +360,7 @@ class ParticleSystem(object):
             if ps.n:
                 v2 = (ps.rdot[1]**2).sum(0)
                 ke = 0.5 * ps.mass * v2
-                if hasattr(ps, 'pn_ke'):
+                if 'pn_ke' in ps.data:
                     ke += ps.pn_ke
                 ke_sum += ke.sum()
         return float(ke_sum)
