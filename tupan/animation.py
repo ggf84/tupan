@@ -541,11 +541,12 @@ class GLviewer(app.Canvas):
             self.init_vertex_buffers(ps)
 
         for name, member in ps.members.items():
-            pid = member.pid
-            pos = member.rdot[0].T
+            if member.n:
+                pid = member.pid
+                pos = member.rdot[0].T
 
-            self.data[name]['a_position'][pid] = pos
-            self.vdata[name].set_data(self.data[name])
+                self.data[name]['a_position'][pid] = pos
+                self.vdata[name].set_data(self.data[name])
 
         time = ps.global_time
         self.text.text = f'T = {time:e}'
