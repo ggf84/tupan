@@ -303,6 +303,7 @@ class CLKernel(object):
         self.to_uint = drv.to_uint
         self.to_real = drv.to_real
 
+
 #   #1
     def to_ibuf(self, obj):
         obj.buf = drv.to_buf(obj.ptr)
@@ -311,11 +312,18 @@ class CLKernel(object):
     to_obuf = to_ibuf
 
     def map_buf(self, obj,
-                default_queue=drv.context.default_queue):
-        default_queue.enqueue_read_buffer(obj.buf, obj.ptr)
-        default_queue.wait_for_events()
+                queue=drv.queue.cl_queue):
+        ptr, ev = cl.enqueue_map_buffer(queue, obj.buf,
+                                        flags=MAP_FLAGS,
+                                        offset=0,
+                                        shape=obj.shape,
+                                        dtype=obj.dtype,
+                                        is_blocking=False)
+        ev.wait()
+        obj.ptr = ptr
 
-#   #2
+
+#   #2a
 #    def to_ibuf(self, obj,
 #                default_queue=drv.context.default_queue):
 #        default_queue.enqueue_read_buffer(obj.ptr, obj.buf)
@@ -329,6 +337,34 @@ class CLKernel(object):
 #        default_queue.enqueue_read_buffer(obj.buf, obj.ptr)
 #        default_queue.wait_for_events()
 
+
+#   #2b
+#    def to_ibuf(self, obj,
+#                queue=drv.queue.cl_queue):
+#        ptr, ev = cl.enqueue_map_buffer(queue, obj.buf,
+#                                        flags=MAP_FLAGS,
+#                                        offset=0,
+#                                        shape=obj.shape,
+#                                        dtype=obj.dtype,
+#                                        is_blocking=False)
+#        ev.wait()
+#        ptr[...] = obj.ptr
+#        return obj.buf
+#
+#    to_obuf = to_ibuf
+#
+#    def map_buf(self, obj,
+#                queue=drv.queue.cl_queue):
+#        ptr, ev = cl.enqueue_map_buffer(queue, obj.buf,
+#                                        flags=MAP_FLAGS,
+#                                        offset=0,
+#                                        shape=obj.shape,
+#                                        dtype=obj.dtype,
+#                                        is_blocking=False)
+#        ev.wait()
+#        obj.ptr[...] = ptr
+
+
 #   #3
 #    def to_ibuf(self, obj):
 #        return obj.buf
@@ -341,6 +377,7 @@ class CLKernel(object):
 
 #   #4 or #5
 #    def to_ibuf(self, obj):
+#        del obj.ptr
 #        return obj.buf
 #
 #    def to_obuf(self, obj):
@@ -348,15 +385,15 @@ class CLKernel(object):
 #        return obj.buf
 #
 #    def map_buf(self, obj,
-#                ctx=drv.context.cl_context,
 #                queue=drv.queue.cl_queue):
-#        obj.ptr, ev = cl.enqueue_map_buffer(queue, obj.buf,
-#                                            flags=MAP_FLAGS,
-#                                            offset=0,
-#                                            shape=obj.shape,
-#                                            dtype=obj.dtype,
-#                                            is_blocking=False)
+#        ptr, ev = cl.enqueue_map_buffer(queue, obj.buf,
+#                                        flags=MAP_FLAGS,
+#                                        offset=0,
+#                                        shape=obj.shape,
+#                                        dtype=obj.dtype,
+#                                        is_blocking=False)
 #        ev.wait()
+#        obj.ptr = ptr
 
 # --
 
