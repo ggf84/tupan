@@ -66,7 +66,7 @@ class Particles(metaclass=MetaParticles):
     @classmethod
     def from_attrs(cls, **attrs):
         obj = cls.__new__(cls)
-        obj.data = {**attrs}
+        obj.data.update(**attrs)
         obj.n = len(obj.pid)
         return obj
 
@@ -113,20 +113,28 @@ class Particles(metaclass=MetaParticles):
                 data[k] = other.data[k]
             else:
                 u, v = self.data[k].ptr, other.data[k].ptr
-                array = np.concatenate([u, v], -1)  # along last dimension
-                data[k] = ArrayWrapper(array)
+                ary = np.concatenate([u, v], axis=-1)
+                data[k] = ArrayWrapper(ary)
         return self.from_attrs(**data)
 
     __radd__ = __add__
 
     def __getitem__(self, index):
-        index = ((Ellipsis, index, None)
-                 if isinstance(index, int)
-                 else (Ellipsis, index))
-        data = {}
-        for k, v in self.data.items():
-            data[k] = ArrayWrapper(v.ptr[index])
-        return self.from_attrs(**data)
+        try:
+            data = {}
+            for k, v in self.data.items():
+                ary = v.ptr.compress(index, axis=-1)
+                data[k] = ArrayWrapper(ary)
+            return self.from_attrs(**data)
+        except ValueError:
+            index = ((Ellipsis, index, None)
+                     if isinstance(index, int)
+                     else (Ellipsis, index))
+            data = {}
+            for k, v in self.data.items():
+                ary = np.array(v.ptr[index], copy=False, order='C')
+                data[k] = ArrayWrapper(ary)
+            return self.from_attrs(**data)
 
     def __setitem__(self, index, obj):
         index = ((Ellipsis, index, None)

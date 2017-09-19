@@ -23,19 +23,22 @@ class Phi(object):
 
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
-        to_ibuf = self.to_ibuf
-        to_obuf = self.to_obuf
+        to_buf = self.to_buf
         ps.phi[...] = 0
         return [
             to_int(ps.n),
-            to_ibuf(ps.data['mass']),
-            to_ibuf(ps.data['eps2']),
-            to_ibuf(ps.data['rdot']),
-            to_obuf(ps.data['phi']),
+            to_buf(ps.data['mass']),
+            to_buf(ps.data['eps2']),
+            to_buf(ps.data['rdot']),
+            to_buf(ps.data['phi']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=1):
+        self.map_buf(ps.data['mass'])
+        self.map_buf(ps.data['eps2'])
+        self.map_buf(ps.data['rdot'])
         self.map_buf(ps.data['phi'])
+        self.sync()
 
 
 class Acc(object):
@@ -49,19 +52,22 @@ class Acc(object):
 
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
-        to_ibuf = self.to_ibuf
-        to_obuf = self.to_obuf
+        to_buf = self.to_buf
         ps.fdot[:nforce] = 0
         return [
             to_int(ps.n),
-            to_ibuf(ps.data['mass']),
-            to_ibuf(ps.data['eps2']),
-            to_ibuf(ps.data['rdot']),
-            to_obuf(ps.data['fdot']),
+            to_buf(ps.data['mass']),
+            to_buf(ps.data['eps2']),
+            to_buf(ps.data['rdot']),
+            to_buf(ps.data['fdot']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=1):
+        self.map_buf(ps.data['mass'])
+        self.map_buf(ps.data['eps2'])
+        self.map_buf(ps.data['rdot'])
         self.map_buf(ps.data['fdot'])
+        self.sync()
 
 
 class Acc_Jrk(Acc):
@@ -91,22 +97,25 @@ class Tstep(object):
 
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
-        to_ibuf = self.to_ibuf
-        to_obuf = self.to_obuf
+        to_buf = self.to_buf
         ps.tstep[...] = 0
         ps.tstep_sum[...] = 0
         return [
             to_int(ps.n),
-            to_ibuf(ps.data['mass']),
-            to_ibuf(ps.data['eps2']),
-            to_ibuf(ps.data['rdot']),
-            to_obuf(ps.data['tstep']),
-            to_obuf(ps.data['tstep_sum']),
+            to_buf(ps.data['mass']),
+            to_buf(ps.data['eps2']),
+            to_buf(ps.data['rdot']),
+            to_buf(ps.data['tstep']),
+            to_buf(ps.data['tstep_sum']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=2):
+        self.map_buf(ps.data['mass'])
+        self.map_buf(ps.data['eps2'])
+        self.map_buf(ps.data['rdot'])
         self.map_buf(ps.data['tstep'])
         self.map_buf(ps.data['tstep_sum'])
+        self.sync()
 
 
 class PNAcc(object):
@@ -123,19 +132,22 @@ class PNAcc(object):
 
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
-        to_ibuf = self.to_ibuf
-        to_obuf = self.to_obuf
+        to_buf = self.to_buf
         ps.pnacc[...] = 0
         return [
             to_int(ps.n),
-            to_ibuf(ps.data['mass']),
-            to_ibuf(ps.data['eps2']),
-            to_ibuf(ps.data['rdot']),
-            to_obuf(ps.data['pnacc']),
+            to_buf(ps.data['mass']),
+            to_buf(ps.data['eps2']),
+            to_buf(ps.data['rdot']),
+            to_buf(ps.data['pnacc']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=1):
+        self.map_buf(ps.data['mass'])
+        self.map_buf(ps.data['eps2'])
+        self.map_buf(ps.data['rdot'])
         self.map_buf(ps.data['pnacc'])
+        self.sync()
 
 
 class Sakura(object):
@@ -152,19 +164,22 @@ class Sakura(object):
 
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
-        to_ibuf = self.to_ibuf
-        to_obuf = self.to_obuf
+        to_buf = self.to_buf
         ps.drdot[...] = 0
         return [
             to_int(ps.n),
-            to_ibuf(ps.data['mass']),
-            to_ibuf(ps.data['eps2']),
-            to_ibuf(ps.data['rdot']),
-            to_obuf(ps.data['drdot']),
+            to_buf(ps.data['mass']),
+            to_buf(ps.data['eps2']),
+            to_buf(ps.data['rdot']),
+            to_buf(ps.data['drdot']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=1):
+        self.map_buf(ps.data['mass'])
+        self.map_buf(ps.data['eps2'])
+        self.map_buf(ps.data['rdot'])
         self.map_buf(ps.data['drdot'])
+        self.sync()
 
 
 class Kepler(object):
@@ -180,17 +195,17 @@ class Kepler(object):
 
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
-        to_ibuf = self.to_ibuf
+        to_buf = self.to_buf
         return [
             to_int(ps.n),
-            to_ibuf(ps.mass),
-            to_ibuf(ps.eps2),
-            to_ibuf(ps.rdot[0][0]),
-            to_ibuf(ps.rdot[0][1]),
-            to_ibuf(ps.rdot[0][2]),
-            to_ibuf(ps.rdot[1][0]),
-            to_ibuf(ps.rdot[1][1]),
-            to_ibuf(ps.rdot[1][2]),
+            to_buf(ps.mass),
+            to_buf(ps.eps2),
+            to_buf(ps.rdot[0][0]),
+            to_buf(ps.rdot[0][1]),
+            to_buf(ps.rdot[0][2]),
+            to_buf(ps.rdot[1][0]),
+            to_buf(ps.rdot[1][1]),
+            to_buf(ps.rdot[1][2]),
         ]
 
     def map_bufs(self, bufs, ps, nforce=2):

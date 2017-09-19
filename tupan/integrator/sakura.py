@@ -31,6 +31,8 @@ def sakura_step(ips, jps, dt, flag,
             if jp.n:
                 jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
+    kernel.sync()
+
     interactions = []
     for i, ip in ips.members.items():
         if ip.n:

@@ -478,6 +478,8 @@ class ParticleSystem(object):
                 if jp.n:
                     jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
+        kernel.sync()
+
         interactions = []
         for i, ip in self.members.items():
             if ip.n:
@@ -518,6 +520,8 @@ class ParticleSystem(object):
             for j, jp in other.members.items():
                 if jp.n:
                     jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
+
+        kernel.sync()
 
         interactions = []
         for i, ip in self.members.items():
@@ -561,6 +565,8 @@ class ParticleSystem(object):
                 if jp.n:
                     jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
+        kernel.sync()
+
         interactions = []
         for i, ip in self.members.items():
             if ip.n:
@@ -603,6 +609,8 @@ class ParticleSystem(object):
                 if jp.n:
                     jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
 
+        kernel.sync()
+
         interactions = []
         for i, ip in self.members.items():
             if ip.n:
@@ -643,6 +651,8 @@ class ParticleSystem(object):
             for j, jp in other.members.items():
                 if jp.n:
                     jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
+
+        kernel.sync()
 
         interactions = []
         for i, ip in self.members.items():
@@ -698,6 +708,8 @@ class ParticleSystem(object):
             for j, jp in other.members.items():
                 if jp.n:
                     jbufs[j] = kernel.set_bufs(jp, nforce=nforce)
+
+        kernel.sync()
 
         interactions = []
         for i, ip in self.members.items():

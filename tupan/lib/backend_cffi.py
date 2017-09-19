@@ -6,7 +6,6 @@ This module implements the CFFI backend to call C-extensions.
 """
 
 import importlib
-import numpy as np
 from ..config import cli, Ctype
 
 
@@ -49,14 +48,18 @@ class CKernel(object):
         self.to_int = drv.to_int
         self.to_uint = drv.to_uint
         self.to_real = drv.to_real
-        self.to_ibuf = lambda obj: obj.buf
-        self.to_obuf = lambda obj: obj.buf
         self.map_buf = lambda obj: None
+        self.sync = lambda: None
+
+    def to_buf(self, obj):
+        if obj.buf is None:
+            obj.buf = drv.to_buf(obj.ptr)
+        return obj.buf
 
 
 def to_cbuf(ary):
-    ptr = np.array(ary, copy=False, order='C')
-    buf = drv.to_buf(ptr)
+    ptr = ary
+    buf = None
     return ptr, buf
 
 
