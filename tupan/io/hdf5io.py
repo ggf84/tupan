@@ -138,7 +138,8 @@ class HDF5IO(object):
         convert from worldline to snapshot layout (experimental!)
         """
         import numpy as np
-        from scipy.interpolate import interp1d
+#        from scipy.interpolate import interp1d
+        from scipy.interpolate import CubicSpline
 
         ps = self.load_era(era)
         t_begin = min(np.min(p.time) for p in ps.members.values())
@@ -165,9 +166,11 @@ class HDF5IO(object):
 #            pstream = ps[ps.pid == pid]
 #            for attr in ps.default_attrs:
 #                array = getattr(pstream, attr)
-#                alen = len(array.T)
-#                kdeg = 3 if alen > 3 else (2 if alen > 2 else 1)
-#                f = interp1d(pstream.time, array, kind=kdeg)
+#                # alen = len(array.T)
+#                # kdeg = 3 if alen > 3 else (2 if alen > 2 else 1)
+#                # f = interp1d(pstream.time, array, kind=kdeg)
+#                f = CubicSpline(pstream.time, array,
+#                                axis=-1, bc_type='natural')
 #                for t, snap in snaps.items():
 #                    ary = getattr(snap, attr)
 #                    ary[..., i] = pid if attr == 'pid' else f(t)
@@ -188,9 +191,11 @@ class HDF5IO(object):
                     pstream = member[member.pid == pid]
                     for attr in member.default_attrs:
                         array = getattr(pstream, attr)
-                        alen = len(array.T)
-                        kdeg = 3 if alen > 3 else (2 if alen > 2 else 1)
-                        f = interp1d(pstream.time, array, kind=kdeg)
+                        # alen = len(array.T)
+                        # kdeg = 3 if alen > 3 else (2 if alen > 2 else 1)
+                        # f = interp1d(pstream.time, array, kind=kdeg)
+                        f = CubicSpline(pstream.time, array,
+                                        axis=-1, bc_type='natural')
                         for t in times:
                             snap = snaps[t]
                             obj = snap.members[name]
