@@ -231,35 +231,22 @@ def make_extension(name, backend=cli.backend):
     return Extension(cls.name)
 
 
-def make_to_buf(backend=cli.backend):
-    if backend == 'C':
-        from .backend_cffi import to_cbuf as to_buf
-    elif backend == 'CL':
-        from .backend_opencl import to_clbuf as to_buf
-    else:
-        msg = f"Invalid backend: '{backend}'. Choices are: ('C', 'CL')"
-        raise ValueError(msg)
-    return to_buf
-
-
 class ArrayWrapper(object):
     """
 
     """
     def __init__(self, ary):
-        self.ptr, self.buf = self.to_buf(ary)
+        self.buf = None
+        self.ary = ary
         self.shape = ary.shape
         self.dtype = ary.dtype
 
     def __getstate__(self):
-        return (self.ptr, self.shape, self.dtype)  # buf can not be pickled!
+        return (self.ary, self.shape, self.dtype)  # buf can not be pickled!
 
     def __setstate__(self, state):
-        ary, self.shape, self.dtype = state
-        self.ptr, self.buf = self.to_buf(ary)
-
-    def to_buf(self, ary, to_buf=make_to_buf()):
-        return to_buf(ary)
+        self.ary, self.shape, self.dtype = state
+        self.buf = None
 
 
 # -- End of File --

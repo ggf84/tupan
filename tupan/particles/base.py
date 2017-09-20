@@ -112,7 +112,7 @@ class Particles(metaclass=MetaParticles):
             elif k not in self.data:
                 data[k] = other.data[k]
             else:
-                u, v = self.data[k].ptr, other.data[k].ptr
+                u, v = self.data[k].ary, other.data[k].ary
                 ary = np.concatenate([u, v], axis=-1)
                 data[k] = ArrayWrapper(ary)
         return self.from_attrs(**data)
@@ -123,7 +123,7 @@ class Particles(metaclass=MetaParticles):
         try:
             data = {}
             for k, v in self.data.items():
-                ary = v.ptr.compress(index, axis=-1)
+                ary = v.ary.compress(index, axis=-1)
                 data[k] = ArrayWrapper(ary)
             return self.from_attrs(**data)
         except ValueError:
@@ -132,7 +132,7 @@ class Particles(metaclass=MetaParticles):
                      else (Ellipsis, index))
             data = {}
             for k, v in self.data.items():
-                ary = np.array(v.ptr[index], copy=False, order='C')
+                ary = np.array(v.ary[index], copy=False, order='C')
                 data[k] = ArrayWrapper(ary)
             return self.from_attrs(**data)
 
@@ -141,11 +141,11 @@ class Particles(metaclass=MetaParticles):
                  if isinstance(index, int)
                  else (Ellipsis, index))
         for k, v in self.data.items():
-            v.ptr[index] = obj.data[k].ptr
+            v.ary[index] = obj.data[k].ary
 
     def __getattr__(self, attr):
         try:
-            return self.data[attr].ptr
+            return self.data[attr].ary
         except KeyError:
             raise AttributeError(attr)
 
@@ -163,7 +163,7 @@ class Particles(metaclass=MetaParticles):
     def set_state(self, data):
         for k, v in self.data.items():
             if k in data:
-                v.ptr[...] = data[k].ptr
+                v.ary[...] = data[k].ary
 
 
 class Bodies(Particles):

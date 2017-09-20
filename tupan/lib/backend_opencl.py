@@ -21,8 +21,8 @@ USE_HOST_FLAG = RW_FLAG | cl.mem_flags.USE_HOST_PTR
 COPY_HOST_FLAG = RW_FLAG | cl.mem_flags.COPY_HOST_PTR
 ALLOC_HOST_FLAG = RW_FLAG | cl.mem_flags.ALLOC_HOST_PTR
 
-#MAP_FLAGS = cl.map_flags.READ
-#MAP_FLAGS = cl.map_flags.WRITE
+# MAP_FLAGS = cl.map_flags.READ
+# MAP_FLAGS = cl.map_flags.WRITE
 MAP_FLAGS = cl.map_flags.READ | cl.map_flags.WRITE
 
 
@@ -176,6 +176,7 @@ class CLDriver(object):
         self.to_int = Ctype.int_t
         self.to_uint = Ctype.uint_t
         self.to_real = Ctype.real_t
+        self.to_buf = lambda x: cl.Buffer(self.ctx, COPY_HOST_FLAG, hostbuf=x)
 
 
 drv = CLDriver()
@@ -234,12 +235,12 @@ class CLKernel(object):
 #   #1
     def to_buf(self, obj):
         if obj.buf is None:
-            obj.buf = cl.Buffer(drv.ctx, COPY_HOST_FLAG, hostbuf=obj.ptr)
-        obj.ptr = None
+            obj.buf = drv.to_buf(obj.ary)
+        obj.ary = None
         return obj.buf
 
     def map_buf(self, obj):
-        if obj.ptr is None:
+        if obj.ary is None:
             ptr, ev = cl.enqueue_map_buffer(drv.queues[0],
                                             obj.buf,
                                             flags=MAP_FLAGS,
@@ -247,19 +248,17 @@ class CLKernel(object):
                                             shape=obj.shape,
                                             dtype=obj.dtype,
                                             is_blocking=False)
-            obj.ptr = ptr
+            obj.ary = ptr
 
 
 #   #2
-#    def to_buf(self, obj,
-#                queue=drv.queues[0]):
-#        cl.enqueue_copy(queue, obj.buf, obj.ptr,
+#    def to_buf(self, obj):
+#        cl.enqueue_copy(drv.queues[0], obj.buf, obj.ary,
 #                        is_blocking=False)
 #        return obj.buf
 #
-#    def map_buf(self, obj,
-#                queue=drv.queues[0]):
-#        cl.enqueue_copy(queue, obj.ptr, obj.buf,
+#    def map_buf(self, obj):
+#        cl.enqueue_copy(drv.queues[0], obj.ary, obj.buf,
 #                        is_blocking=False)
 
 
@@ -273,59 +272,54 @@ class CLKernel(object):
 
 #   #4 or #5
 #    def to_buf(self, obj):
-#        obj.ptr = None
+#        obj.ary = None
 #        return obj.buf
 #
-#    def map_buf(self, obj,
-#                queue=drv.queues[0]):
-#        ptr, ev = cl.enqueue_map_buffer(queue, obj.buf,
+#    def map_buf(self, obj):
+#        ptr, ev = cl.enqueue_map_buffer(drv.queues[0],
+#                                        obj.buf,
 #                                        flags=MAP_FLAGS,
 #                                        offset=0,
 #                                        shape=obj.shape,
 #                                        dtype=obj.dtype,
 #                                        is_blocking=False)
-#        obj.ptr = ptr
+#        obj.ary = ptr
 
 
 #   #6
-#    def to_buf(self, obj,
-#                queue=drv.queues[0]):
-#        cl.enqueue_copy(queue, obj.buf[1], obj.ptr,
+#    def to_buf(self, obj):
+#        cl.enqueue_copy(drv.queues[0], obj.buf[1], obj.ary,
 #                        is_blocking=False)
 #        return obj.buf[1]
 #
-#    def map_buf(self, obj,
-#                queue=drv.queues[0]):
-#        cl.enqueue_copy(queue, obj.ptr, obj.buf[1],
+#    def map_buf(self, obj):
+#        cl.enqueue_copy(drv.queues[0], obj.ary, obj.buf[1],
 #                        is_blocking=False)
 
 
-def to_clbuf(ary,
-             ctx=drv.ctx,
-             queue=drv.queues[0]):
-#   #1
-    ptr = ary
-    buf = None
-    return ptr, buf
+# ---
+
+
+# def to_clbuf(ary):
+#     #1
+#     return ary, None
 
 #    nbytes = ary.nbytes
 #    if not nbytes:
 #        return ary, None
 #
 #   #2
-#    ptr = ary
-#    buf = cl.Buffer(ctx, RW_FLAG, size=nbytes)
-#    return ptr, buf
+#    buf = cl.Buffer(drv.ctx, RW_FLAG, size=nbytes)
+#    return ary, buf
 
 #   #3
-#    ptr = ary
-#    buf = cl.Buffer(ctx, USE_HOST_FLAG, hostbuf=ptr)
-#    return ptr, buf
+#    buf = cl.Buffer(drv.ctx, USE_HOST_FLAG, hostbuf=ary)
+#    return ary, buf
 
 #   #4
-#    ptr = ary
-#    buf = cl.Buffer(ctx, COPY_HOST_FLAG, hostbuf=ptr)
-#    ptr, ev = cl.enqueue_map_buffer(queue, buf,
+#    buf = cl.Buffer(drv.ctx, COPY_HOST_FLAG, hostbuf=ary)
+#    ptr, ev = cl.enqueue_map_buffer(drv.queues[0],
+#                                    buf,
 #                                    flags=MAP_FLAGS,
 #                                    offset=0,
 #                                    shape=ary.shape,
@@ -335,8 +329,9 @@ def to_clbuf(ary,
 #    return ptr, buf
 
 #   #5
-#    buf = cl.Buffer(ctx, ALLOC_HOST_FLAG, size=nbytes)
-#    ptr, ev = cl.enqueue_map_buffer(queue, buf,
+#    buf = cl.Buffer(drv.ctx, ALLOC_HOST_FLAG, size=nbytes)
+#    ptr, ev = cl.enqueue_map_buffer(drv.queues[0],
+#                                    buf,
 #                                    flags=MAP_FLAGS,
 #                                    offset=0,
 #                                    shape=ary.shape,
@@ -347,9 +342,10 @@ def to_clbuf(ary,
 #    return ptr, buf
 
 #   #6
-#    dbuf = cl.Buffer(ctx, RW_FLAG, size=nbytes)
-#    hbuf = cl.Buffer(ctx, ALLOC_HOST_FLAG, size=nbytes)
-#    ptr, ev = cl.enqueue_map_buffer(queue, hbuf,
+#    dbuf = cl.Buffer(drv.ctx, RW_FLAG, size=nbytes)
+#    hbuf = cl.Buffer(drv.ctx, ALLOC_HOST_FLAG, size=nbytes)
+#    ptr, ev = cl.enqueue_map_buffer(drv.queues[0],
+#                                    hbuf,
 #                                    flags=MAP_FLAGS,
 #                                    offset=0,
 #                                    shape=ary.shape,
