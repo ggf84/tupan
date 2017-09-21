@@ -218,13 +218,15 @@ class ParticleSystem(object):
     @property
     def global_time(self):
         return float(
-            min(abs(ps.time).min() for ps in self.members.values() if ps.n)
+            min((abs(ps.time).min() for ps in self.members.values() if ps.n),
+                default=0)
         )
 
     @property
     def tstep_min(self):
         return float(
-            min(abs(ps.tstep).min() for ps in self.members.values() if ps.n)
+            min((abs(ps.tstep).min() for ps in self.members.values() if ps.n),
+                default=0)
         )
 
     # -- total mass and center-of-mass
