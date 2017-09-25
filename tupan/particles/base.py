@@ -66,7 +66,7 @@ class Particles(metaclass=MetaParticles):
         self.n = int(n)
         self.data = {}
         for attr, (shape, sctype, _) in self.attrs.items():
-            shape = eval(shape.format(nd=3, nb=n))
+            shape = eval(shape.format(nd=3, nb=self.n))
             dtype = vars(Ctype)[sctype]
             array = np.zeros(shape, dtype=dtype)
             self.data[attr] = ArrayWrapper(array)

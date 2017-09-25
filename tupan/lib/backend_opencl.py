@@ -176,7 +176,22 @@ class CLDriver(object):
         self.to_int = Ctype.int_t
         self.to_uint = Ctype.uint_t
         self.to_real = Ctype.real_t
-        self.to_buf = lambda x: cl.Buffer(self.ctx, COPY_HOST_FLAG, hostbuf=x)
+
+    def to_buf(self, ary):
+        # return cl.Buffer(self.ctx, RW_FLAG, size=ary.nbytes)
+        # return cl.Buffer(self.ctx, USE_HOST_FLAG, hostbuf=ary)
+        return cl.Buffer(self.ctx, COPY_HOST_FLAG, hostbuf=ary)
+        # return cl.Buffer(self.ctx, ALLOC_HOST_FLAG, size=ary.nbytes)
+
+    def map_buf(self, obj):
+        ptr, ev = cl.enqueue_map_buffer(drv.queues[0],
+                                        obj.buf,
+                                        flags=MAP_FLAGS,
+                                        offset=0,
+                                        shape=obj.shape,
+                                        dtype=obj.dtype,
+                                        is_blocking=False)
+        return ptr
 
 
 drv = CLDriver()
@@ -236,19 +251,14 @@ class CLKernel(object):
     def to_buf(self, obj):
         if obj.buf is None:
             obj.buf = drv.to_buf(obj.ary)
-        obj.ary = None
+            return obj.buf
+#        obj.ary = None
+        cl.enqueue_copy(drv.queues[0], obj.buf, obj.ary, is_blocking=False)
         return obj.buf
 
     def map_buf(self, obj):
-        if obj.ary is None:
-            ptr, ev = cl.enqueue_map_buffer(drv.queues[0],
-                                            obj.buf,
-                                            flags=MAP_FLAGS,
-                                            offset=0,
-                                            shape=obj.shape,
-                                            dtype=obj.dtype,
-                                            is_blocking=False)
-            obj.ary = ptr
+#        obj.ary = drv.map_buf(obj)
+        cl.enqueue_copy(drv.queues[0], obj.ary, obj.buf, is_blocking=False)
 
 
 #   #2
