@@ -23,7 +23,7 @@ auto setup(
 	const uint_t n,
 	const real_t __m[],
 	const real_t __e2[],
-	const real_t __rdot[])
+	const real_t __pos[])
 {
 	auto ntiles = (n + TILE - 1) / TILE;
 	vector<Phi_Data_SoA<TILE>> part(ntiles);
@@ -32,9 +32,9 @@ auto setup(
 		auto& p = part[k/TILE];
 		p.m[kk] = __m[k];
 		p.e2[kk] = __e2[k];
-		p.rx[kk] = __rdot[(0*NDIM+0)*n + k];
-		p.ry[kk] = __rdot[(0*NDIM+1)*n + k];
-		p.rz[kk] = __rdot[(0*NDIM+2)*n + k];
+		p.rx[kk] = __pos[0*n + k];
+		p.ry[kk] = __pos[1*n + k];
+		p.rz[kk] = __pos[2*n + k];
 	}
 	return part;
 }
@@ -153,7 +153,7 @@ concat(load_Phi_Data, TILE)(						\
 	const uint_t n,									\
 	global const real_t __m[],						\
 	global const real_t __e2[],						\
-	global const real_t __rdot[])					\
+	global const real_t __pos[])					\
 {													\
 	for (uint_t k = 0, kk = base;					\
 				k < TILE * nitems;					\
@@ -161,9 +161,9 @@ concat(load_Phi_Data, TILE)(						\
 		if (kk < n) {								\
 			p->_m[k] = __m[kk];						\
 			p->_e2[k] = __e2[kk];					\
-			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];	\
-			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];	\
-			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];	\
+			p->_rx[k] = (__pos+0*n)[kk];			\
+			p->_ry[k] = (__pos+1*n)[kk];			\
+			p->_rz[k] = (__pos+2*n)[kk];			\
 		}											\
 	}												\
 }													\

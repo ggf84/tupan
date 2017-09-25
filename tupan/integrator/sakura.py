@@ -49,12 +49,14 @@ def sakura_step(ips, jps, dt, flag,
     for i, ip in ips.members.items():
         if ip.n:
             kernel.map_bufs(ibufs[i], ip, nforce=nforce)
-            ip.rdot[:2] += ip.drdot
+            ip.pos += ip.dpos
+            ip.vel += ip.dvel
     if ips != jps:
         for j, jp in jps.members.items():
             if jp.n:
                 kernel.map_bufs(jbufs[j], jp, nforce=nforce)
-                jp.rdot[:2] += jp.drdot
+                jp.pos += jp.dpos
+                jp.vel += jp.dvel
 
 
 def evolve_sakura(ps, dt):
@@ -65,7 +67,7 @@ def evolve_sakura(ps, dt):
 
     for p in ps.members.values():
         if p.n:
-            p.rdot[0] += p.rdot[1] * dt
+            p.pos += p.vel * dt
 
     sakura_step(ps, ps, dt/2, -1)
     return ps
@@ -96,7 +98,8 @@ class Sakura(Base):
 
         for p in ps.members.values():
             if p.n:
-                p.register_attribute('drdot', '2, {nd}, {nb}', 'real_t')
+                p.register_attribute('dpos', '{nd}, {nb}', 'real_t')
+                p.register_attribute('dvel', '{nd}, {nb}', 'real_t')
 
         self.e0 = None
 

@@ -249,7 +249,7 @@ class ParticleSystem(object):
         mr_sum = 0
         for ps in self.members.values():
             if ps.n:
-                mr = ps.mass * ps.rdot[0]
+                mr = ps.mass * ps.pos
                 if 'pn_mr' in ps.data:
                     mr += ps.pn_mr
                 mr_sum += mr.sum(1)
@@ -267,7 +267,7 @@ class ParticleSystem(object):
         mv_sum = 0
         for ps in self.members.values():
             if ps.n:
-                mv = ps.mass * ps.rdot[1]
+                mv = ps.mass * ps.vel
                 if 'pn_mv' in ps.data:
                     mv += ps.pn_mv
                 mv_sum += mv.sum(1)
@@ -300,8 +300,8 @@ class ParticleSystem(object):
         """
         for ps in self.members.values():
             if ps.n:
-                ps.rdot[0].T[...] += com_r
-                ps.rdot[1].T[...] += com_v
+                ps.pos.T[...] += com_r
+                ps.vel.T[...] += com_v
 
     def com_to_origin(self):
         """Moves the center-of-mass to the origin of coordinates.
@@ -322,7 +322,7 @@ class ParticleSystem(object):
         lm_sum = 0
         for ps in self.members.values():
             if ps.n:
-                lm = ps.mass * ps.rdot[1]
+                lm = ps.mass * ps.vel
                 if 'pn_mv' in ps.data:
                     lm += ps.pn_mv
                 lm_sum += lm.sum(1)
@@ -340,8 +340,8 @@ class ParticleSystem(object):
         am_sum = 0
         for ps in self.members.values():
             if ps.n:
-                mv = ps.mass * ps.rdot[1]
-                am = np.cross(ps.rdot[0].T, mv.T).T
+                mv = ps.mass * ps.vel
+                am = np.cross(ps.pos.T, mv.T).T
                 if 'pn_am' in ps.data:
                     am += ps.pn_am
                 am_sum += am.sum(1)
@@ -360,7 +360,7 @@ class ParticleSystem(object):
         ke_sum = 0
         for ps in self.members.values():
             if ps.n:
-                v2 = (ps.rdot[1]**2).sum(0)
+                v2 = (ps.vel**2).sum(0)
                 ke = 0.5 * ps.mass * v2
                 if 'pn_ke' in ps.data:
                     ke += ps.pn_ke
@@ -399,7 +399,7 @@ class ParticleSystem(object):
         com_r = self.com_r
         for ps in self.members.values():
             if ps.n:
-                pos = (ps.rdot[0].T - com_r).T
+                pos = (ps.pos.T - com_r).T
                 mr2 = ps.mass * pos**2
                 mr2_sum += mr2.sum()
         return (mr2_sum / self.total_mass)**0.5
@@ -414,7 +414,7 @@ class ParticleSystem(object):
         for ps in self.members.values():
             if ps.n:
                 ps.mass *= m_ratio
-                ps.rdot[0] *= m_ratio
+                ps.pos *= m_ratio
 
     def dynrescale_radial_size(self, size):
         """Rescales the radial size of the system while maintaining its
@@ -425,8 +425,8 @@ class ParticleSystem(object):
         v_scale = 1 / r_scale**0.5
         for ps in self.members.values():
             if ps.n:
-                ps.rdot[0] *= r_scale
-                ps.rdot[1] *= v_scale
+                ps.pos *= r_scale
+                ps.vel *= v_scale
 
     def dynrescale_virial_radius(self, rvir):
         """Rescales the virial radius of the system while maintaining its
@@ -438,8 +438,8 @@ class ParticleSystem(object):
         v_scale = 1 / r_scale**0.5
         for ps in self.members.values():
             if ps.n:
-                ps.rdot[0] *= r_scale
-                ps.rdot[1] *= v_scale
+                ps.pos *= r_scale
+                ps.vel *= v_scale
 
     def scale_to_virial(self):
         """Rescale system to virial equilibrium (2K + U = 0).
@@ -451,7 +451,7 @@ class ParticleSystem(object):
         v_scale = ((-0.5 * pe) / ke)**0.5
         for ps in self.members.values():
             if ps.n:
-                ps.rdot[1] *= v_scale
+                ps.vel *= v_scale
 
     def to_nbody_units(self):
         """Rescales system to nbody units while maintaining its dynamics
@@ -498,12 +498,10 @@ class ParticleSystem(object):
         for i, ip in self.members.items():
             if ip.n:
                 kernel.map_bufs(ibufs[i], ip, nforce=nforce)
-#                ip.phi[...] = ip.phi
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
                     kernel.map_bufs(jbufs[j], jp, nforce=nforce)
-#                    jp.phi[...] = jp.phi
 
     def set_acc(self, other,
                 nforce=1,
@@ -541,12 +539,10 @@ class ParticleSystem(object):
         for i, ip in self.members.items():
             if ip.n:
                 kernel.map_bufs(ibufs[i], ip, nforce=nforce)
-                ip.rdot[2:2+nforce] = ip.fdot[:nforce]
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
                     kernel.map_bufs(jbufs[j], jp, nforce=nforce)
-                    jp.rdot[2:2+nforce] = jp.fdot[:nforce]
 
     def set_acc_jrk(self, other,
                     nforce=2,
@@ -585,12 +581,10 @@ class ParticleSystem(object):
         for i, ip in self.members.items():
             if ip.n:
                 kernel.map_bufs(ibufs[i], ip, nforce=nforce)
-                ip.rdot[2:2+nforce] = ip.fdot[:nforce]
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
                     kernel.map_bufs(jbufs[j], jp, nforce=nforce)
-                    jp.rdot[2:2+nforce] = jp.fdot[:nforce]
 
     def set_snp_crk(self, other,
                     nforce=4,
@@ -629,12 +623,18 @@ class ParticleSystem(object):
         for i, ip in self.members.items():
             if ip.n:
                 kernel.map_bufs(ibufs[i], ip, nforce=nforce)
-                ip.rdot[2:2+nforce] = ip.fdot[:nforce]
+                ip.acc[...] = ip.f0
+                ip.jrk[...] = ip.f1
+                ip.snp[...] = ip.f2
+                ip.crk[...] = ip.f3
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
                     kernel.map_bufs(jbufs[j], jp, nforce=nforce)
-                    jp.rdot[2:2+nforce] = jp.fdot[:nforce]
+                    jp.acc[...] = jp.f0
+                    jp.jrk[...] = jp.f1
+                    jp.snp[...] = jp.f2
+                    jp.crk[...] = jp.f3
 
     def set_tstep(self, other, eta,
                   nforce=2,
@@ -690,9 +690,10 @@ class ParticleSystem(object):
         """
         def swap_vel(ps):
             for ps in ps.members.values():
-                v, w = ps.rdot[1], ps.pnvel
-                vv, ww = v.copy(), w.copy()
-                v[...], w[...] = ww, vv
+                if ps.n:
+                    v, w = ps.vel, ps.pnvel
+                    vv, ww = v.copy(), w.copy()
+                    v[...], w[...] = ww, vv
 
         if use_auxvel:
             swap_vel(self)
@@ -729,12 +730,10 @@ class ParticleSystem(object):
         for i, ip in self.members.items():
             if ip.n:
                 kernel.map_bufs(ibufs[i], ip, nforce=nforce)
-#                ip.pnacc[...] = ip.pnacc
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
                     kernel.map_bufs(jbufs[j], jp, nforce=nforce)
-#                    jp.pnacc[...] = jp.pnacc
 
         if use_auxvel:
             swap_vel(self)

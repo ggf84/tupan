@@ -256,13 +256,25 @@ snp_crk_kernel_rectangle(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
-	global const real_t __irdot[],
-	global real_t __iadot[],
+	global const real_t __ipos[],
+	global const real_t __ivel[],
+	global const real_t __iacc[],
+	global const real_t __ijrk[],
+	global real_t __if0[],
+	global real_t __if1[],
+	global real_t __if2[],
+	global real_t __if3[],
 	const uint_t nj,
 	global const real_t __jm[],
 	global const real_t __je2[],
-	global const real_t __jrdot[],
-	global real_t __jadot[])
+	global const real_t __jpos[],
+	global const real_t __jvel[],
+	global const real_t __jacc[],
+	global const real_t __jjrk[],
+	global real_t __jf0[],
+	global real_t __jf1[],
+	global real_t __jf2[],
+	global real_t __jf3[])
 {
 	local concat(Snp_Crk_Data, WGSIZE) _ip;
 	uint_t lid = get_local_id(0);
@@ -275,7 +287,7 @@ snp_crk_kernel_rectangle(
 		concat(Snp_Crk_Data, WPT) jp = {{{0}}};
 		concat(load_Snp_Crk_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
-			nj, __jm, __je2, __jrdot
+			nj, __jm, __je2, __jpos, __jvel, __jacc, __jjrk
 		);
 
 		for (uint_t ii = 0;
@@ -290,7 +302,7 @@ snp_crk_kernel_rectangle(
 				concat(Snp_Crk_Data, 1) ip = {{{0}}};
 				concat(load_Snp_Crk_Data, 1)(
 					&ip, ii + ilid, WGSIZE, SIMD,
-					ni, __im, __ie2, __irdot
+					ni, __im, __ie2, __ipos, __ivel, __iacc, __ijrk
 				);
 				_ip.m[lid] = ip.m[0];
 				_ip.e2[lid] = ip.e2[0];
@@ -339,14 +351,14 @@ snp_crk_kernel_rectangle(
 				ip.Cz[0] = -_ip.Cz[lid];
 				concat(store_Snp_Crk_Data, 1)(
 					&ip, ii + ilid, WGSIZE, SIMD,
-					ni, __iadot
+					ni, __if0, __if1, __if2, __if3
 				);
 			}
 		}
 
 		concat(store_Snp_Crk_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
-			nj, __jadot
+			nj, __jf0, __jf1, __jf2, __jf3
 		);
 	}
 }
@@ -358,15 +370,27 @@ snp_crk_kernel_triangle(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
-	global const real_t __irdot[],
-	global real_t __iadot[])
+	global const real_t __ipos[],
+	global const real_t __ivel[],
+	global const real_t __iacc[],
+	global const real_t __ijrk[],
+	global real_t __if0[],
+	global real_t __if1[],
+	global real_t __if2[],
+	global real_t __if3[])
 {
 	// ------------------------------------------------------------------------
 	const uint_t nj = ni;
 	global const real_t *__jm = __im;
 	global const real_t *__je2 = __ie2;
-	global const real_t *__jrdot = __irdot;
-	global real_t *__jadot = __iadot;
+	global const real_t *__jpos = __ipos;
+	global const real_t *__jvel = __ivel;
+	global const real_t *__jacc = __iacc;
+	global const real_t *__jjrk = __ijrk;
+	global real_t *__jf0 = __if0;
+	global real_t *__jf1 = __if1;
+	global real_t *__jf2 = __if2;
+	global real_t *__jf3 = __if3;
 	// ------------------------------------------------------------------------
 
 	local concat(Snp_Crk_Data, WGSIZE) _ip;
@@ -380,7 +404,7 @@ snp_crk_kernel_triangle(
 		concat(Snp_Crk_Data, WPT) jp = {{{0}}};
 		concat(load_Snp_Crk_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
-			nj, __jm, __je2, __jrdot
+			nj, __jm, __je2, __jpos, __jvel, __jacc, __jjrk
 		);
 
 		for (uint_t ii = 0;
@@ -395,7 +419,7 @@ snp_crk_kernel_triangle(
 				concat(Snp_Crk_Data, 1) ip = {{{0}}};
 				concat(load_Snp_Crk_Data, 1)(
 					&ip, ii + ilid, WGSIZE, SIMD,
-					ni, __im, __ie2, __irdot
+					ni, __im, __ie2, __ipos, __ivel, __iacc, __ijrk
 				);
 				_ip.m[lid] = ip.m[0];
 				_ip.e2[lid] = ip.e2[0];
@@ -444,14 +468,14 @@ snp_crk_kernel_triangle(
 				ip.Cz[0] = -_ip.Cz[lid];
 				concat(store_Snp_Crk_Data, 1)(
 					&ip, ii + ilid, WGSIZE, SIMD,
-					ni, __iadot
+					ni, __if0, __if1, __if2, __if3
 				);
 			}
 		}
 
 		concat(store_Snp_Crk_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
-			nj, __jadot
+			nj, __jf0, __jf1, __jf2, __jf3
 		);
 	}
 }

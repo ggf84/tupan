@@ -222,12 +222,14 @@ pnacc_kernel_rectangle(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
-	global const real_t __irdot[],
+	global const real_t __ipos[],
+	global const real_t __ivel[],
 	global real_t __ipnacc[],
 	const uint_t nj,
 	global const real_t __jm[],
 	global const real_t __je2[],
-	global const real_t __jrdot[],
+	global const real_t __jpos[],
+	global const real_t __jvel[],
 	global real_t __jpnacc[])
 {
 	local concat(PNAcc_Data, WGSIZE) _ip;
@@ -241,7 +243,7 @@ pnacc_kernel_rectangle(
 		concat(PNAcc_Data, WPT) jp = {{{0}}};
 		concat(load_PNAcc_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
-			nj, __jm, __je2, __jrdot
+			nj, __jm, __je2, __jpos, __jvel
 		);
 
 		for (uint_t ii = 0;
@@ -256,7 +258,7 @@ pnacc_kernel_rectangle(
 				concat(PNAcc_Data, 1) ip = {{{0}}};
 				concat(load_PNAcc_Data, 1)(
 					&ip, ii + ilid, WGSIZE, SIMD,
-					ni, __im, __ie2, __irdot
+					ni, __im, __ie2, __ipos, __ivel
 				);
 				_ip.m[lid] = ip.m[0];
 				_ip.e2[lid] = ip.e2[0];
@@ -302,14 +304,16 @@ pnacc_kernel_triangle(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
-	global const real_t __irdot[],
+	global const real_t __ipos[],
+	global const real_t __ivel[],
 	global real_t __ipnacc[])
 {
 	// ------------------------------------------------------------------------
 	const uint_t nj = ni;
 	global const real_t *__jm = __im;
 	global const real_t *__je2 = __ie2;
-	global const real_t *__jrdot = __irdot;
+	global const real_t *__jpos = __ipos;
+	global const real_t *__jvel = __ivel;
 	global real_t *__jpnacc = __ipnacc;
 	// ------------------------------------------------------------------------
 
@@ -324,7 +328,7 @@ pnacc_kernel_triangle(
 		concat(PNAcc_Data, WPT) jp = {{{0}}};
 		concat(load_PNAcc_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
-			nj, __jm, __je2, __jrdot
+			nj, __jm, __je2, __jpos, __jvel
 		);
 
 		for (uint_t ii = 0;
@@ -339,7 +343,7 @@ pnacc_kernel_triangle(
 				concat(PNAcc_Data, 1) ip = {{{0}}};
 				concat(load_PNAcc_Data, 1)(
 					&ip, ii + ilid, WGSIZE, SIMD,
-					ni, __im, __ie2, __irdot
+					ni, __im, __ie2, __ipos, __ivel
 				);
 				_ip.m[lid] = ip.m[0];
 				_ip.e2[lid] = ip.e2[0];

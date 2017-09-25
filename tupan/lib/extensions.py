@@ -29,14 +29,14 @@ class Phi(object):
             to_int(ps.n),
             to_buf(ps.data['mass']),
             to_buf(ps.data['eps2']),
-            to_buf(ps.data['rdot']),
+            to_buf(ps.data['pos']),
             to_buf(ps.data['phi']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=1):
         self.map_buf(ps.data['mass'])
         self.map_buf(ps.data['eps2'])
-        self.map_buf(ps.data['rdot'])
+        self.map_buf(ps.data['pos'])
         self.map_buf(ps.data['phi'])
         self.sync()
 
@@ -53,35 +53,99 @@ class Acc(object):
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
         to_buf = self.to_buf
-        ps.fdot[:nforce] = 0
+        ps.acc[...] = 0
         return [
             to_int(ps.n),
             to_buf(ps.data['mass']),
             to_buf(ps.data['eps2']),
-            to_buf(ps.data['rdot']),
-            to_buf(ps.data['fdot']),
+            to_buf(ps.data['pos']),
+            to_buf(ps.data['acc']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=1):
         self.map_buf(ps.data['mass'])
         self.map_buf(ps.data['eps2'])
-        self.map_buf(ps.data['rdot'])
-        self.map_buf(ps.data['fdot'])
+        self.map_buf(ps.data['pos'])
+        self.map_buf(ps.data['acc'])
         self.sync()
 
 
-class Acc_Jrk(Acc):
+class Acc_Jrk(object):
     """
 
     """
     name = 'acc_jrk_kernel'
 
+    def set_consts(self):
+        return []
 
-class Snp_Crk(Acc):
+    def set_bufs(self, ps, nforce=1):
+        to_int = self.to_int
+        to_buf = self.to_buf
+        ps.acc[...] = 0
+        ps.jrk[...] = 0
+        return [
+            to_int(ps.n),
+            to_buf(ps.data['mass']),
+            to_buf(ps.data['eps2']),
+            to_buf(ps.data['pos']),
+            to_buf(ps.data['vel']),
+            to_buf(ps.data['acc']),
+            to_buf(ps.data['jrk']),
+        ]
+
+    def map_bufs(self, bufs, ps, nforce=1):
+        self.map_buf(ps.data['mass'])
+        self.map_buf(ps.data['eps2'])
+        self.map_buf(ps.data['pos'])
+        self.map_buf(ps.data['vel'])
+        self.map_buf(ps.data['acc'])
+        self.map_buf(ps.data['jrk'])
+        self.sync()
+
+
+class Snp_Crk(object):
     """
 
     """
     name = 'snp_crk_kernel'
+
+    def set_consts(self):
+        return []
+
+    def set_bufs(self, ps, nforce=1):
+        to_int = self.to_int
+        to_buf = self.to_buf
+        ps.f0[...] = 0
+        ps.f1[...] = 0
+        ps.f2[...] = 0
+        ps.f3[...] = 0
+        return [
+            to_int(ps.n),
+            to_buf(ps.data['mass']),
+            to_buf(ps.data['eps2']),
+            to_buf(ps.data['pos']),
+            to_buf(ps.data['vel']),
+            to_buf(ps.data['acc']),
+            to_buf(ps.data['jrk']),
+            to_buf(ps.data['f0']),
+            to_buf(ps.data['f1']),
+            to_buf(ps.data['f2']),
+            to_buf(ps.data['f3']),
+        ]
+
+    def map_bufs(self, bufs, ps, nforce=1):
+        self.map_buf(ps.data['mass'])
+        self.map_buf(ps.data['eps2'])
+        self.map_buf(ps.data['pos'])
+        self.map_buf(ps.data['vel'])
+        self.map_buf(ps.data['acc'])
+        self.map_buf(ps.data['jrk'])
+        self.map_buf(ps.data['f0'])
+        self.map_buf(ps.data['f1'])
+        self.map_buf(ps.data['f2'])
+        self.map_buf(ps.data['f3'])
+        self.sync()
 
 
 class Tstep(object):
@@ -104,7 +168,8 @@ class Tstep(object):
             to_int(ps.n),
             to_buf(ps.data['mass']),
             to_buf(ps.data['eps2']),
-            to_buf(ps.data['rdot']),
+            to_buf(ps.data['pos']),
+            to_buf(ps.data['vel']),
             to_buf(ps.data['tstep']),
             to_buf(ps.data['tstep_sum']),
         ]
@@ -112,7 +177,8 @@ class Tstep(object):
     def map_bufs(self, bufs, ps, nforce=2):
         self.map_buf(ps.data['mass'])
         self.map_buf(ps.data['eps2'])
-        self.map_buf(ps.data['rdot'])
+        self.map_buf(ps.data['pos'])
+        self.map_buf(ps.data['vel'])
         self.map_buf(ps.data['tstep'])
         self.map_buf(ps.data['tstep_sum'])
         self.sync()
@@ -138,14 +204,16 @@ class PNAcc(object):
             to_int(ps.n),
             to_buf(ps.data['mass']),
             to_buf(ps.data['eps2']),
-            to_buf(ps.data['rdot']),
+            to_buf(ps.data['pos']),
+            to_buf(ps.data['vel']),
             to_buf(ps.data['pnacc']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=1):
         self.map_buf(ps.data['mass'])
         self.map_buf(ps.data['eps2'])
-        self.map_buf(ps.data['rdot'])
+        self.map_buf(ps.data['pos'])
+        self.map_buf(ps.data['vel'])
         self.map_buf(ps.data['pnacc'])
         self.sync()
 
@@ -165,20 +233,25 @@ class Sakura(object):
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
         to_buf = self.to_buf
-        ps.drdot[...] = 0
+        ps.dpos[...] = 0
+        ps.dvel[...] = 0
         return [
             to_int(ps.n),
             to_buf(ps.data['mass']),
             to_buf(ps.data['eps2']),
-            to_buf(ps.data['rdot']),
-            to_buf(ps.data['drdot']),
+            to_buf(ps.data['pos']),
+            to_buf(ps.data['vel']),
+            to_buf(ps.data['dpos']),
+            to_buf(ps.data['dvel']),
         ]
 
     def map_bufs(self, bufs, ps, nforce=1):
         self.map_buf(ps.data['mass'])
         self.map_buf(ps.data['eps2'])
-        self.map_buf(ps.data['rdot'])
-        self.map_buf(ps.data['drdot'])
+        self.map_buf(ps.data['pos'])
+        self.map_buf(ps.data['vel'])
+        self.map_buf(ps.data['dpos'])
+        self.map_buf(ps.data['dvel'])
         self.sync()
 
 
@@ -200,21 +273,21 @@ class Kepler(object):
             to_int(ps.n),
             to_buf(ps.mass),
             to_buf(ps.eps2),
-            to_buf(ps.rdot[0][0]),
-            to_buf(ps.rdot[0][1]),
-            to_buf(ps.rdot[0][2]),
-            to_buf(ps.rdot[1][0]),
-            to_buf(ps.rdot[1][1]),
-            to_buf(ps.rdot[1][2]),
+            to_buf(ps.pos[0]),
+            to_buf(ps.pos[1]),
+            to_buf(ps.pos[2]),
+            to_buf(ps.vel[0]),
+            to_buf(ps.vel[1]),
+            to_buf(ps.vel[2]),
         ]
 
     def map_bufs(self, bufs, ps, nforce=2):
-        self.map_buf(ps.rdot[0][0])
-        self.map_buf(ps.rdot[0][1])
-        self.map_buf(ps.rdot[0][2])
-        self.map_buf(ps.rdot[1][0])
-        self.map_buf(ps.rdot[1][1])
-        self.map_buf(ps.rdot[1][2])
+        self.map_buf(ps.pos[0])
+        self.map_buf(ps.pos[1])
+        self.map_buf(ps.pos[2])
+        self.map_buf(ps.vel[0])
+        self.map_buf(ps.vel[1])
+        self.map_buf(ps.vel[2])
 
 
 def make_extension(name, backend=cli.backend):

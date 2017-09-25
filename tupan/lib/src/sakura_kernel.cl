@@ -147,13 +147,17 @@ sakura_kernel_rectangle(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
-	global const real_t __irdot[],
-	global real_t __idrdot[],
+	global const real_t __ipos[],
+	global const real_t __ivel[],
+	global real_t __idpos[],
+	global real_t __idvel[],
 	const uint_t nj,
 	global const real_t __jm[],
 	global const real_t __je2[],
-	global const real_t __jrdot[],
-	global real_t __jdrdot[])
+	global const real_t __jpos[],
+	global const real_t __jvel[],
+	global real_t __jdpos[],
+	global real_t __jdvel[])
 {
 	local concat(Sakura_Data, WGSIZE) _ip;
 	uint_t lid = get_local_id(0);
@@ -166,7 +170,7 @@ sakura_kernel_rectangle(
 		concat(Sakura_Data, WPT) jp = {{{0}}};
 		concat(load_Sakura_Data, WPT)(
 			&jp, jj + lid, WGSIZE, 1,
-			nj, __jm, __je2, __jrdot
+			nj, __jm, __je2, __jpos, __jvel
 		);
 
 		for (uint_t ii = 0;
@@ -181,7 +185,7 @@ sakura_kernel_rectangle(
 				concat(Sakura_Data, 1) ip = {{{0}}};
 				concat(load_Sakura_Data, 1)(
 					&ip, ii + ilid, WGSIZE, 1,
-					ni, __im, __ie2, __irdot
+					ni, __im, __ie2, __ipos, __ivel
 				);
 				_ip.m[lid] = ip.m[0];
 				_ip.e2[lid] = ip.e2[0];
@@ -212,14 +216,14 @@ sakura_kernel_rectangle(
 				ip.dvz[0] = -_ip.dvz[lid];
 				concat(store_Sakura_Data, 1)(
 					&ip, ii + ilid, WGSIZE, 1,
-					ni, __idrdot
+					ni, __idpos, __idvel
 				);
 			}
 		}
 
 		concat(store_Sakura_Data, WPT)(
 			&jp, jj + lid, WGSIZE, 1,
-			nj, __jdrdot
+			nj, __jdpos, __jdvel
 		);
 	}
 }
@@ -233,15 +237,19 @@ sakura_kernel_triangle(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
-	global const real_t __irdot[],
-	global real_t __idrdot[])
+	global const real_t __ipos[],
+	global const real_t __ivel[],
+	global real_t __idpos[],
+	global real_t __idvel[])
 {
 	// ------------------------------------------------------------------------
 	const uint_t nj = ni;
 	global const real_t *__jm = __im;
 	global const real_t *__je2 = __ie2;
-	global const real_t *__jrdot = __irdot;
-	global real_t *__jdrdot = __idrdot;
+	global const real_t *__jpos = __ipos;
+	global const real_t *__jvel = __ivel;
+	global real_t *__jdpos = __idpos;
+	global real_t *__jdvel = __idvel;
 	// ------------------------------------------------------------------------
 
 	local concat(Sakura_Data, WGSIZE) _ip;
@@ -255,7 +263,7 @@ sakura_kernel_triangle(
 		concat(Sakura_Data, WPT) jp = {{{0}}};
 		concat(load_Sakura_Data, WPT)(
 			&jp, jj + lid, WGSIZE, 1,
-			nj, __jm, __je2, __jrdot
+			nj, __jm, __je2, __jpos, __jvel
 		);
 
 		for (uint_t ii = 0;
@@ -270,7 +278,7 @@ sakura_kernel_triangle(
 				concat(Sakura_Data, 1) ip = {{{0}}};
 				concat(load_Sakura_Data, 1)(
 					&ip, ii + ilid, WGSIZE, 1,
-					ni, __im, __ie2, __irdot
+					ni, __im, __ie2, __ipos, __ivel
 				);
 				_ip.m[lid] = ip.m[0];
 				_ip.e2[lid] = ip.e2[0];
@@ -301,14 +309,14 @@ sakura_kernel_triangle(
 				ip.dvz[0] = -_ip.dvz[lid];
 				concat(store_Sakura_Data, 1)(
 					&ip, ii + ilid, WGSIZE, 1,
-					ni, __idrdot
+					ni, __idpos, __idvel
 				);
 			}
 		}
 
 		concat(store_Sakura_Data, WPT)(
 			&jp, jj + lid, WGSIZE, 1,
-			nj, __jdrdot
+			nj, __jdpos, __jdvel
 		);
 	}
 }

@@ -132,7 +132,8 @@ auto setup(
 	const uint_t n,
 	const real_t __m[],
 	const real_t __e2[],
-	const real_t __rdot[])
+	const real_t __pos[],
+	const real_t __vel[])
 {
 	auto ntiles = (n + TILE - 1) / TILE;
 	vector<Sakura_Data_SoA<TILE>> part(ntiles);
@@ -141,28 +142,29 @@ auto setup(
 		auto& p = part[k/TILE];
 		p.m[kk] = __m[k];
 		p.e2[kk] = __e2[k];
-		p.rx[kk] = __rdot[(0*NDIM+0)*n + k];
-		p.ry[kk] = __rdot[(0*NDIM+1)*n + k];
-		p.rz[kk] = __rdot[(0*NDIM+2)*n + k];
-		p.vx[kk] = __rdot[(1*NDIM+0)*n + k];
-		p.vy[kk] = __rdot[(1*NDIM+1)*n + k];
-		p.vz[kk] = __rdot[(1*NDIM+2)*n + k];
+		p.rx[kk] = __pos[0*n + k];
+		p.ry[kk] = __pos[1*n + k];
+		p.rz[kk] = __pos[2*n + k];
+		p.vx[kk] = __vel[0*n + k];
+		p.vy[kk] = __vel[1*n + k];
+		p.vz[kk] = __vel[2*n + k];
 	}
 	return part;
 }
 
 template<size_t TILE, typename PART>
-void commit(const uint_t n, const PART& part, real_t __drdot[])
+void commit(const uint_t n, const PART& part,
+			real_t __dpos[], real_t __dvel[])
 {
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
-		__drdot[(0*NDIM+0)*n + k] += p.drx[kk];
-		__drdot[(0*NDIM+1)*n + k] += p.dry[kk];
-		__drdot[(0*NDIM+2)*n + k] += p.drz[kk];
-		__drdot[(1*NDIM+0)*n + k] += p.dvx[kk];
-		__drdot[(1*NDIM+1)*n + k] += p.dvy[kk];
-		__drdot[(1*NDIM+2)*n + k] += p.dvz[kk];
+		__dpos[0*n + k] += p.drx[kk];
+		__dpos[1*n + k] += p.dry[kk];
+		__dpos[2*n + k] += p.drz[kk];
+		__dvel[0*n + k] += p.dvx[kk];
+		__dvel[1*n + k] += p.dvy[kk];
+		__dvel[2*n + k] += p.dvz[kk];
 	}
 }
 
@@ -376,7 +378,8 @@ concat(load_Sakura_Data, TILE)(						\
 	const uint_t n,									\
 	global const real_t __m[],						\
 	global const real_t __e2[],						\
-	global const real_t __rdot[])					\
+	global const real_t __pos[],					\
+	global const real_t __vel[])					\
 {													\
 	for (uint_t k = 0, kk = base;					\
 				k < TILE * nitems;					\
@@ -384,12 +387,12 @@ concat(load_Sakura_Data, TILE)(						\
 		if (kk < n) {								\
 			p->_m[k] = __m[kk];						\
 			p->_e2[k] = __e2[kk];					\
-			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];	\
-			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];	\
-			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];	\
-			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];	\
-			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];	\
-			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];	\
+			p->_rx[k] = (__pos+0*n)[kk];			\
+			p->_ry[k] = (__pos+1*n)[kk];			\
+			p->_rz[k] = (__pos+2*n)[kk];			\
+			p->_vx[k] = (__vel+0*n)[kk];			\
+			p->_vy[k] = (__vel+1*n)[kk];			\
+			p->_vz[k] = (__vel+2*n)[kk];			\
 		}											\
 	}												\
 }													\
@@ -408,18 +411,19 @@ concat(store_Sakura_Data, TILE)(									\
 	const uint_t stride,											\
 	const uint_t nitems,											\
 	const uint_t n,													\
-	global real_t __drdot[])										\
+	global real_t __dpos[],											\
+	global real_t __dvel[])											\
 {																	\
 	for (uint_t k = 0, kk = base;									\
 				k < TILE * nitems;									\
 				k += 1, kk += stride) {								\
 		if (kk < n) {												\
-			atomic_fadd(&(__drdot+(0*NDIM+0)*n)[kk], p->_drx[k]);	\
-			atomic_fadd(&(__drdot+(0*NDIM+1)*n)[kk], p->_dry[k]);	\
-			atomic_fadd(&(__drdot+(0*NDIM+2)*n)[kk], p->_drz[k]);	\
-			atomic_fadd(&(__drdot+(1*NDIM+0)*n)[kk], p->_dvx[k]);	\
-			atomic_fadd(&(__drdot+(1*NDIM+1)*n)[kk], p->_dvy[k]);	\
-			atomic_fadd(&(__drdot+(1*NDIM+2)*n)[kk], p->_dvz[k]);	\
+			atomic_fadd(&(__dpos+0*n)[kk], p->_drx[k]);				\
+			atomic_fadd(&(__dpos+1*n)[kk], p->_dry[k]);				\
+			atomic_fadd(&(__dpos+2*n)[kk], p->_drz[k]);				\
+			atomic_fadd(&(__dvel+0*n)[kk], p->_dvx[k]);				\
+			atomic_fadd(&(__dvel+1*n)[kk], p->_dvy[k]);				\
+			atomic_fadd(&(__dvel+2*n)[kk], p->_dvz[k]);				\
 		}															\
 	}																\
 }																	\

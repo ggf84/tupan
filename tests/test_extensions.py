@@ -18,10 +18,11 @@ def set_particles(n):
     ps = ParticleSystem(n)
     b = ps.bodies
     b.mass[...] = np.random.random((n,))
-    b.rdot[0][...] = np.random.random((3, n)) * 10
-    b.rdot[1][...] = np.random.random((3, n)) * 10
+    b.pos[...] = np.random.random((3, n)) * 10
+    b.vel[...] = np.random.random((3, n)) * 10
     b.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
-    b.register_attribute('drdot', '2, {nd}, {nb}', 'real_t')
+    b.register_attribute('dpos', '{nd}, {nb}', 'real_t')
+    b.register_attribute('dvel', '{nd}, {nb}', 'real_t')
     return ps
 
 

@@ -20,7 +20,7 @@ def n_drift(ps, dt):
     for p in ps.members.values():
         if p.n:
             p.time += dt
-            p.rdot[0] += p.rdot[1] * dt
+            p.pos += p.vel * dt
     return ps
 
 
@@ -34,7 +34,7 @@ def pn_drift(ps, dt):
     for p in ps.members.values():
         if p.n:
             p.time += dt
-            p.rdot[0] += p.rdot[1] * dt
+            p.pos += p.vel * dt
             p.pn_mr += p.pn_mv * dt
     return ps
 
@@ -48,7 +48,7 @@ def n_kick(ps, dt):
     """
     for p in ps.members.values():
         if p.n:
-            p.rdot[1] += p.rdot[2] * dt
+            p.vel += p.acc * dt
     return ps
 
 
@@ -63,21 +63,21 @@ def pn_kick(ps, dt, pn=None):
     ps.set_pnacc(ps, pn=pn)
     for p in ps.members.values():
         if p.n:
-            p.pnvel += (p.rdot[2] + p.pnacc) * (dt / 2)
+            p.pnvel += (p.acc + p.pnacc) * (dt / 2)
 
     ps.set_pnacc(ps, pn=pn, use_auxvel=True)
     for p in ps.members.values():
         if p.n:
             pnforce = p.mass * p.pnacc
             p.pn_mv -= pnforce * dt
-            p.pn_am -= np.cross(p.rdot[0].T, pnforce.T).T * dt
+            p.pn_am -= np.cross(p.pos.T, pnforce.T).T * dt
             p.pn_ke -= (p.pnvel * pnforce).sum(0) * dt
-            p.rdot[1] += (p.rdot[2] + p.pnacc) * dt
+            p.vel += (p.acc + p.pnacc) * dt
 
     ps.set_pnacc(ps, pn=pn)
     for p in ps.members.values():
         if p.n:
-            p.pnvel += (p.rdot[2] + p.pnacc) * (dt / 2)
+            p.pnvel += (p.acc + p.pnacc) * (dt / 2)
     #
     return ps
 
@@ -92,7 +92,7 @@ def sf_n_kick(slow, fast, dt):
     for ps in [slow, fast]:
         for p in ps.members.values():
             if p.n:
-                p.rdot[1] += p.rdot[2] * dt
+                p.vel += p.acc * dt
     return slow, fast
 
 
@@ -108,7 +108,7 @@ def sf_pn_kick(slow, fast, dt, pn=None):
     for ps in [slow, fast]:
         for p in ps.members.values():
             if p.n:
-                p.pnvel += (p.rdot[2] + p.pnacc) * (dt / 2)
+                p.pnvel += (p.acc + p.pnacc) * (dt / 2)
 
     slow.set_pnacc(fast, pn=pn, use_auxvel=True)
     for ps in [slow, fast]:
@@ -116,15 +116,15 @@ def sf_pn_kick(slow, fast, dt, pn=None):
             if p.n:
                 pnforce = p.mass * p.pnacc
                 p.pn_mv -= pnforce * dt
-                p.pn_am -= np.cross(p.rdot[0].T, pnforce.T).T * dt
+                p.pn_am -= np.cross(p.pos.T, pnforce.T).T * dt
                 p.pn_ke -= (p.pnvel * pnforce).sum(0) * dt
-                p.rdot[1] += (p.rdot[2] + p.pnacc) * dt
+                p.vel += (p.acc + p.pnacc) * dt
 
     slow.set_pnacc(fast, pn=pn)
     for ps in [slow, fast]:
         for p in ps.members.values():
             if p.n:
-                p.pnvel += (p.rdot[2] + p.pnacc) * (dt / 2)
+                p.pnvel += (p.acc + p.pnacc) * (dt / 2)
     #
     return slow, fast
 
@@ -540,7 +540,7 @@ class SIA(Base):
                     p.register_attribute('pn_am', '{nd}, {nb}', 'real_t')
                     p.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
                     p.register_attribute('pnvel', '{nd}, {nb}', 'real_t')
-                    p.pnvel[...] = p.rdot[1]
+                    p.pnvel[...] = p.vel
 
         if not self.update_tstep:
             for p in ps.members.values():

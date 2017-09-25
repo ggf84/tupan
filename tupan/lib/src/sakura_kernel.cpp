@@ -9,19 +9,23 @@ sakura_kernel_rectangle(
 	const uint_t ni,
 	const real_t __im[],
 	const real_t __ie2[],
-	const real_t __irdot[],
-	real_t __idrdot[],
+	const real_t __ipos[],
+	const real_t __ivel[],
+	real_t __idpos[],
+	real_t __idvel[],
 	const uint_t nj,
 	const real_t __jm[],
 	const real_t __je2[],
-	const real_t __jrdot[],
-	real_t __jdrdot[])
+	const real_t __jpos[],
+	const real_t __jvel[],
+	real_t __jdpos[],
+	real_t __jdvel[])
 {
 	using namespace Sakura;
 	constexpr auto tile = 64 / sizeof(real_t);
 
-	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
-	auto jpart = setup<tile>(nj, __jm, __je2, __jrdot);
+	auto ipart = setup<tile>(ni, __im, __ie2, __ipos, __ivel);
+	auto jpart = setup<tile>(nj, __jm, __je2, __jpos, __jvel);
 
 	#pragma omp parallel
 	#pragma omp single
@@ -31,8 +35,8 @@ sakura_kernel_rectangle(
 		P2P_sakura_kernel_core<tile>(dt, flag)
 	);
 
-	commit<tile>(ni, ipart, __idrdot);
-	commit<tile>(nj, jpart, __jdrdot);
+	commit<tile>(ni, ipart, __idpos, __idvel);
+	commit<tile>(nj, jpart, __jdpos, __jdvel);
 }
 
 
@@ -43,13 +47,15 @@ sakura_kernel_triangle(
 	const uint_t ni,
 	const real_t __im[],
 	const real_t __ie2[],
-	const real_t __irdot[],
-	real_t __idrdot[])
+	const real_t __ipos[],
+	const real_t __ivel[],
+	real_t __idpos[],
+	real_t __idvel[])
 {
 	using namespace Sakura;
 	constexpr auto tile = 64 / sizeof(real_t);
 
-	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
+	auto ipart = setup<tile>(ni, __im, __ie2, __ipos, __ivel);
 
 	#pragma omp parallel
 	#pragma omp single
@@ -58,6 +64,6 @@ sakura_kernel_triangle(
 		P2P_sakura_kernel_core<tile>(dt, flag)
 	);
 
-	commit<tile>(ni, ipart, __idrdot);
+	commit<tile>(ni, ipart, __idpos, __idvel);
 }
 

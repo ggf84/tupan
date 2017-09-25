@@ -105,14 +105,14 @@ class Plummer(object):
 
         # set pos
         pos = self.set_pos(np.random.permutation(ilist))
-        b.rdot[0][...] = pos
+        b.pos[...] = pos
 
         # set phi
         ps.set_phi(ps)
 
         # set vel
         vel = self.set_vel(b.phi)
-        b.rdot[1][...] = vel
+        b.vel[...] = vel
 
         ps.com_to_origin()
         ps.to_nbody_units()
@@ -164,7 +164,7 @@ class Plummer(object):
 
         b = bodies
         n = b.n
-        r = b.rdot[0]
+        r = b.pos
         radius = 2 * n * b.mass
         color = n * b.mass
 

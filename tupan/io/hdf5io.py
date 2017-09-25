@@ -223,33 +223,33 @@ class HDF5IO(object):
 
         x = np.linspace(t_begin, t_end, nsnaps+1)
         f = {}
-        f[0] = interp1d(a2.time, a2.rdot[0][0], kind=3)
-        f[1] = interp1d(a2.time, a2.rdot[0][1], kind=3)
-        f[2] = interp1d(a2.time, a2.rdot[0][2], kind=3)
+        f[0] = interp1d(a2.time, a2.pos[0], kind=3)
+        f[1] = interp1d(a2.time, a2.pos[1], kind=3)
+        f[2] = interp1d(a2.time, a2.pos[2], kind=3)
 
-        plt.plot(a0.rdot[0][0], a0.rdot[0][1], '-o', label="PBaSS: l=1")
-        plt.plot(a1.rdot[0][0], a1.rdot[0][1], '-o', label="PBaSS: l=4")
-        plt.plot(a2.rdot[0][0], a2.rdot[0][1], '-o', label="PBaSS: l=16")
+        plt.plot(a0.pos[0], a0.pos[1], '-o', label="PBaSS: l=1")
+        plt.plot(a1.pos[0], a1.pos[1], '-o', label="PBaSS: l=4")
+        plt.plot(a2.pos[0], a2.pos[1], '-o', label="PBaSS: l=16")
         plt.plot(f[0](x), f[1](x), '-', label="interp. function")
         plt.legend(loc="best", shadow=True,
                    fancybox=True, borderaxespad=0.75)
         plt.show()
 
         axis = 0
-        plt.plot(a0.time, a0.rdot[0][axis], '-o', label="PBaSS: l=1")
-        plt.plot(a1.time, a1.rdot[0][axis], '-o', label="PBaSS: l=4")
-        plt.plot(a2.time, a2.rdot[0][axis], '-o', label="PBaSS: l=16")
+        plt.plot(a0.time, a0.pos[axis], '-o', label="PBaSS: l=1")
+        plt.plot(a1.time, a1.pos[axis], '-o', label="PBaSS: l=4")
+        plt.plot(a2.time, a2.pos[axis], '-o', label="PBaSS: l=16")
         plt.plot(x, f[axis](x), '-', label="interp. function")
         plt.legend(loc="best", shadow=True,
                    fancybox=True, borderaxespad=0.75)
         plt.show()
 
         axis = 0
-        plt.plot(a0.time, a0.rdot[0][axis] - f[axis](a0.time),
+        plt.plot(a0.time, a0.pos[axis] - f[axis](a0.time),
                  '-o', label="PBaSS: l=1")
-        plt.plot(a1.time, a1.rdot[0][axis] - f[axis](a1.time),
+        plt.plot(a1.time, a1.pos[axis] - f[axis](a1.time),
                  '-o', label="PBaSS: l=4")
-        plt.plot(a2.time, a2.rdot[0][axis] - f[axis](a2.time),
+        plt.plot(a2.time, a2.pos[axis] - f[axis](a2.time),
                  '-o', label="PBaSS: l=16")
         plt.legend(loc="best", shadow=True,
                    fancybox=True, borderaxespad=0.75)

@@ -7,19 +7,19 @@ acc_kernel_rectangle(
 	const uint_t ni,
 	const real_t __im[],
 	const real_t __ie2[],
-	const real_t __irdot[],
-	real_t __iadot[],
+	const real_t __ipos[],
+	real_t __iacc[],
 	const uint_t nj,
 	const real_t __jm[],
 	const real_t __je2[],
-	const real_t __jrdot[],
-	real_t __jadot[])
+	const real_t __jpos[],
+	real_t __jacc[])
 {
 	using namespace Acc;
 	constexpr auto tile = 64 / sizeof(real_t);
 
-	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
-	auto jpart = setup<tile>(nj, __jm, __je2, __jrdot);
+	auto ipart = setup<tile>(ni, __im, __ie2, __ipos);
+	auto jpart = setup<tile>(nj, __jm, __je2, __jpos);
 
 	#pragma omp parallel
 	#pragma omp single
@@ -29,8 +29,8 @@ acc_kernel_rectangle(
 		P2P_acc_kernel_core<tile>()
 	);
 
-	commit<tile>(ni, ipart, __iadot);
-	commit<tile>(nj, jpart, __jadot);
+	commit<tile>(ni, ipart, __iacc);
+	commit<tile>(nj, jpart, __jacc);
 }
 
 
@@ -39,13 +39,13 @@ acc_kernel_triangle(
 	const uint_t ni,
 	const real_t __im[],
 	const real_t __ie2[],
-	const real_t __irdot[],
-	real_t __iadot[])
+	const real_t __ipos[],
+	real_t __iacc[])
 {
 	using namespace Acc;
 	constexpr auto tile = 64 / sizeof(real_t);
 
-	auto ipart = setup<tile>(ni, __im, __ie2, __irdot);
+	auto ipart = setup<tile>(ni, __im, __ie2, __ipos);
 
 	#pragma omp parallel
 	#pragma omp single
@@ -54,6 +54,6 @@ acc_kernel_triangle(
 		P2P_acc_kernel_core<tile>()
 	);
 
-	commit<tile>(ni, ipart, __iadot);
+	commit<tile>(ni, ipart, __iacc);
 }
 

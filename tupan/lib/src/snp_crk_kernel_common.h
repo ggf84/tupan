@@ -43,7 +43,10 @@ auto setup(
 	const uint_t n,
 	const real_t __m[],
 	const real_t __e2[],
-	const real_t __rdot[])
+	const real_t __pos[],
+	const real_t __vel[],
+	const real_t __acc[],
+	const real_t __jrk[])
 {
 	auto ntiles = (n + TILE - 1) / TILE;
 	vector<Snp_Crk_Data_SoA<TILE>> part(ntiles);
@@ -52,40 +55,42 @@ auto setup(
 		auto& p = part[k/TILE];
 		p.m[kk] = __m[k];
 		p.e2[kk] = __e2[k];
-		p.rx[kk] = __rdot[(0*NDIM+0)*n + k];
-		p.ry[kk] = __rdot[(0*NDIM+1)*n + k];
-		p.rz[kk] = __rdot[(0*NDIM+2)*n + k];
-		p.vx[kk] = __rdot[(1*NDIM+0)*n + k];
-		p.vy[kk] = __rdot[(1*NDIM+1)*n + k];
-		p.vz[kk] = __rdot[(1*NDIM+2)*n + k];
-		p.ax[kk] = __rdot[(2*NDIM+0)*n + k];
-		p.ay[kk] = __rdot[(2*NDIM+1)*n + k];
-		p.az[kk] = __rdot[(2*NDIM+2)*n + k];
-		p.jx[kk] = __rdot[(3*NDIM+0)*n + k];
-		p.jy[kk] = __rdot[(3*NDIM+1)*n + k];
-		p.jz[kk] = __rdot[(3*NDIM+2)*n + k];
+		p.rx[kk] = __pos[0*n + k];
+		p.ry[kk] = __pos[1*n + k];
+		p.rz[kk] = __pos[2*n + k];
+		p.vx[kk] = __vel[0*n + k];
+		p.vy[kk] = __vel[1*n + k];
+		p.vz[kk] = __vel[2*n + k];
+		p.ax[kk] = __acc[0*n + k];
+		p.ay[kk] = __acc[1*n + k];
+		p.az[kk] = __acc[2*n + k];
+		p.jx[kk] = __jrk[0*n + k];
+		p.jy[kk] = __jrk[1*n + k];
+		p.jz[kk] = __jrk[2*n + k];
 	}
 	return part;
 }
 
 template<size_t TILE, typename PART>
-void commit(const uint_t n, const PART& part, real_t __adot[])
+void commit(const uint_t n, const PART& part,
+			real_t __acc[], real_t __jrk[],
+			real_t __snp[], real_t __crk[])
 {
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
-		__adot[(0*NDIM+0)*n + k] += p.Ax[kk];
-		__adot[(0*NDIM+1)*n + k] += p.Ay[kk];
-		__adot[(0*NDIM+2)*n + k] += p.Az[kk];
-		__adot[(1*NDIM+0)*n + k] += p.Jx[kk];
-		__adot[(1*NDIM+1)*n + k] += p.Jy[kk];
-		__adot[(1*NDIM+2)*n + k] += p.Jz[kk];
-		__adot[(2*NDIM+0)*n + k] += p.Sx[kk];
-		__adot[(2*NDIM+1)*n + k] += p.Sy[kk];
-		__adot[(2*NDIM+2)*n + k] += p.Sz[kk];
-		__adot[(3*NDIM+0)*n + k] += p.Cx[kk];
-		__adot[(3*NDIM+1)*n + k] += p.Cy[kk];
-		__adot[(3*NDIM+2)*n + k] += p.Cz[kk];
+		__acc[0*n + k] += p.Ax[kk];
+		__acc[1*n + k] += p.Ay[kk];
+		__acc[2*n + k] += p.Az[kk];
+		__jrk[0*n + k] += p.Jx[kk];
+		__jrk[1*n + k] += p.Jy[kk];
+		__jrk[2*n + k] += p.Jz[kk];
+		__snp[0*n + k] += p.Sx[kk];
+		__snp[1*n + k] += p.Sy[kk];
+		__snp[2*n + k] += p.Sz[kk];
+		__crk[0*n + k] += p.Cx[kk];
+		__crk[1*n + k] += p.Cy[kk];
+		__crk[2*n + k] += p.Cz[kk];
 	}
 }
 
@@ -418,7 +423,10 @@ concat(load_Snp_Crk_Data, TILE)(					\
 	const uint_t n,									\
 	global const real_t __m[],						\
 	global const real_t __e2[],						\
-	global const real_t __rdot[])					\
+	global const real_t __pos[],					\
+	global const real_t __vel[],					\
+	global const real_t __acc[],					\
+	global const real_t __jrk[])					\
 {													\
 	for (uint_t k = 0, kk = base;					\
 				k < TILE * nitems;					\
@@ -426,18 +434,18 @@ concat(load_Snp_Crk_Data, TILE)(					\
 		if (kk < n) {								\
 			p->_m[k] = __m[kk];						\
 			p->_e2[k] = __e2[kk];					\
-			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];	\
-			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];	\
-			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];	\
-			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];	\
-			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];	\
-			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];	\
-			p->_ax[k] = (__rdot+(2*NDIM+0)*n)[kk];	\
-			p->_ay[k] = (__rdot+(2*NDIM+1)*n)[kk];	\
-			p->_az[k] = (__rdot+(2*NDIM+2)*n)[kk];	\
-			p->_jx[k] = (__rdot+(3*NDIM+0)*n)[kk];	\
-			p->_jy[k] = (__rdot+(3*NDIM+1)*n)[kk];	\
-			p->_jz[k] = (__rdot+(3*NDIM+2)*n)[kk];	\
+			p->_rx[k] = (__pos+0*n)[kk];			\
+			p->_ry[k] = (__pos+1*n)[kk];			\
+			p->_rz[k] = (__pos+2*n)[kk];			\
+			p->_vx[k] = (__vel+0*n)[kk];			\
+			p->_vy[k] = (__vel+1*n)[kk];			\
+			p->_vz[k] = (__vel+2*n)[kk];			\
+			p->_ax[k] = (__acc+0*n)[kk];			\
+			p->_ay[k] = (__acc+1*n)[kk];			\
+			p->_az[k] = (__acc+2*n)[kk];			\
+			p->_jx[k] = (__jrk+0*n)[kk];			\
+			p->_jy[k] = (__jrk+1*n)[kk];			\
+			p->_jz[k] = (__jrk+2*n)[kk];			\
 		}											\
 	}												\
 }													\
@@ -456,24 +464,27 @@ concat(store_Snp_Crk_Data, TILE)(								\
 	const uint_t stride,										\
 	const uint_t nitems,										\
 	const uint_t n,												\
-	global real_t __adot[])										\
+	global real_t __acc[],										\
+	global real_t __jrk[],										\
+	global real_t __snp[],										\
+	global real_t __crk[])										\
 {																\
 	for (uint_t k = 0, kk = base;								\
 				k < TILE * nitems;								\
 				k += 1, kk += stride) {							\
 		if (kk < n) {											\
-			atomic_fadd(&(__adot+(0*NDIM+0)*n)[kk], p->_Ax[k]);	\
-			atomic_fadd(&(__adot+(0*NDIM+1)*n)[kk], p->_Ay[k]);	\
-			atomic_fadd(&(__adot+(0*NDIM+2)*n)[kk], p->_Az[k]);	\
-			atomic_fadd(&(__adot+(1*NDIM+0)*n)[kk], p->_Jx[k]);	\
-			atomic_fadd(&(__adot+(1*NDIM+1)*n)[kk], p->_Jy[k]);	\
-			atomic_fadd(&(__adot+(1*NDIM+2)*n)[kk], p->_Jz[k]);	\
-			atomic_fadd(&(__adot+(2*NDIM+0)*n)[kk], p->_Sx[k]);	\
-			atomic_fadd(&(__adot+(2*NDIM+1)*n)[kk], p->_Sy[k]);	\
-			atomic_fadd(&(__adot+(2*NDIM+2)*n)[kk], p->_Sz[k]);	\
-			atomic_fadd(&(__adot+(3*NDIM+0)*n)[kk], p->_Cx[k]);	\
-			atomic_fadd(&(__adot+(3*NDIM+1)*n)[kk], p->_Cy[k]);	\
-			atomic_fadd(&(__adot+(3*NDIM+2)*n)[kk], p->_Cz[k]);	\
+			atomic_fadd(&(__acc+0*n)[kk], p->_Ax[k]);			\
+			atomic_fadd(&(__acc+1*n)[kk], p->_Ay[k]);			\
+			atomic_fadd(&(__acc+2*n)[kk], p->_Az[k]);			\
+			atomic_fadd(&(__jrk+0*n)[kk], p->_Jx[k]);			\
+			atomic_fadd(&(__jrk+1*n)[kk], p->_Jy[k]);			\
+			atomic_fadd(&(__jrk+2*n)[kk], p->_Jz[k]);			\
+			atomic_fadd(&(__snp+0*n)[kk], p->_Sx[k]);			\
+			atomic_fadd(&(__snp+1*n)[kk], p->_Sy[k]);			\
+			atomic_fadd(&(__snp+2*n)[kk], p->_Sz[k]);			\
+			atomic_fadd(&(__crk+0*n)[kk], p->_Cx[k]);			\
+			atomic_fadd(&(__crk+1*n)[kk], p->_Cy[k]);			\
+			atomic_fadd(&(__crk+2*n)[kk], p->_Cz[k]);			\
 		}														\
 	}															\
 }																\

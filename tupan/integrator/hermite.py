@@ -47,7 +47,8 @@ class HX(metaclass=abc.ABCMeta):
         order = self.order
         for p in ps.members.values():
             if p.n:
-                a2 = (p.rdot[2:2+order]**2).sum(1)
+                rdot = self.make_rdot(p)
+                a2 = [(rdot[2+i]**2).sum(0) for i in range(order)]
                 frac = self.A(a2, 1) / self.A(a2, order-2)
                 p.tstep[...] = eta * frac**(0.5/(order-3))
 
@@ -74,12 +75,13 @@ class HX(metaclass=abc.ABCMeta):
         nforce = self.nforce
         for p in ps.members.values():
             if p.n:
+                rdot = self.make_rdot(p)
                 for i in range(nforce):
                     drdot = 0
                     for j in reversed(range(1, order-i)):
-                        drdot += p.rdot[j+i]
+                        drdot += rdot[j+i]
                         drdot *= dt / j
-                    p.rdot[i] += drdot
+                    rdot[i] += drdot
         return ps
 
     def correct(self, ps1, ps0, dt):
@@ -93,15 +95,17 @@ class HX(metaclass=abc.ABCMeta):
         coefs = self.coefs[0]
         for p0, p1 in zip(ps0.members.values(), ps1.members.values()):
             if p0.n and p1.n:
+                r0dot = self.make_rdot(p0)
+                r1dot = self.make_rdot(p1)
                 for i in reversed(range(2)):
                     drdot = 0
                     for j in reversed(range(1, nforce)):
-                        ff = PM[j % 2](p0.rdot[j+i+1], p1.rdot[j+i+1])
+                        ff = PM[j % 2](r0dot[j+i+1], r1dot[j+i+1])
                         drdot += ff * coefs[j]
                         drdot *= h / j
-                    ff = PM[0](p0.rdot[i+1], p1.rdot[i+1])
+                    ff = PM[0](r0dot[i+1], r1dot[i+1])
                     drdot += ff * coefs[0]
-                    p1.rdot[i] = p0.rdot[i] + h * drdot
+                    r1dot[i][...] = r0dot[i] + h * drdot
         return ps1
 
     def interpolate(self, ps1, ps0, dt):
@@ -119,26 +123,28 @@ class HX(metaclass=abc.ABCMeta):
 
         for p0, p1 in zip(ps0.members.values(), ps1.members.values()):
             if p0.n and p1.n:
+                r0dot = self.make_rdot(p0)
+                r1dot = self.make_rdot(p1)
                 for i in range(nforce):
                     s = 0
                     c = coefs[i]
                     i += nforce
                     for j in reversed(range(1, nforce)):
-                        ff = PM[(i + j) % 2](p0.rdot[j+2], p1.rdot[j+2])
+                        ff = PM[(i + j) % 2](r0dot[j+2], r1dot[j+2])
                         s += ff * c[j]
                         s *= h / j
-                    ff = PM[i % 2](p0.rdot[2], p1.rdot[2])
+                    ff = PM[i % 2](r0dot[2], r1dot[2])
                     s += ff * c[0]
                     s *= hinv[i]
-                    p1.rdot[i+2] = s
+                    r1dot[i+2][...] = s
 
                 for i in range(nforce):
                     drdot = 0
                     i += nforce
                     for j in reversed(range(1, order-i)):
-                        drdot += p1.rdot[j+i+2]
+                        drdot += r1dot[j+i+2]
                         drdot *= h / j
-                    p1.rdot[i+2] += drdot
+                    r1dot[i+2] += drdot
 
         return ps1
 
@@ -176,6 +182,14 @@ class H2(HX):
     def evaluate(ps):
         ps.set_acc(ps)
 
+    def make_rdot(self, ps):
+        return [
+            ps.pos,
+            ps.vel,
+            ps.acc,
+            ps.jrk,
+        ]
+
     @staticmethod
     def A(a2, k):
         return a2[k]
@@ -201,6 +215,16 @@ class H4(HX):
     def evaluate(ps):
         ps.set_acc_jrk(ps)
 
+    def make_rdot(self, ps):
+        return [
+            ps.pos,
+            ps.vel,
+            ps.acc,
+            ps.jrk,
+            ps.snp,
+            ps.crk,
+        ]
+
 
 class H6(HX):
     """
@@ -222,6 +246,18 @@ class H6(HX):
     @staticmethod
     def evaluate(ps):
         ps.set_snp_crk(ps)
+
+    def make_rdot(self, ps):
+        return [
+            ps.pos,
+            ps.vel,
+            ps.acc,
+            ps.jrk,
+            ps.snp,
+            ps.crk,
+            ps.ad4,
+            ps.ad5,
+        ]
 
 
 class H8(HX):
@@ -245,6 +281,20 @@ class H8(HX):
     @staticmethod
     def evaluate(ps):
         ps.set_snp_crk(ps)
+
+    def make_rdot(self, ps):
+        return [
+            ps.pos,
+            ps.vel,
+            ps.acc,
+            ps.jrk,
+            ps.snp,
+            ps.crk,
+            ps.ad4,
+            ps.ad5,
+            ps.ad6,
+            ps.ad7,
+        ]
 
 
 class Hermite(Base):

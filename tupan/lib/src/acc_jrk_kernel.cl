@@ -138,13 +138,17 @@ acc_jrk_kernel_rectangle(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
-	global const real_t __irdot[],
-	global real_t __iadot[],
+	global const real_t __ipos[],
+	global const real_t __ivel[],
+	global real_t __iacc[],
+	global real_t __ijrk[],
 	const uint_t nj,
 	global const real_t __jm[],
 	global const real_t __je2[],
-	global const real_t __jrdot[],
-	global real_t __jadot[])
+	global const real_t __jpos[],
+	global const real_t __jvel[],
+	global real_t __jacc[],
+	global real_t __jjrk[])
 {
 	local concat(Acc_Jrk_Data, WGSIZE) _ip;
 	uint_t lid = get_local_id(0);
@@ -157,7 +161,7 @@ acc_jrk_kernel_rectangle(
 		concat(Acc_Jrk_Data, WPT) jp = {{{0}}};
 		concat(load_Acc_Jrk_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
-			nj, __jm, __je2, __jrdot
+			nj, __jm, __je2, __jpos, __jvel
 		);
 
 		for (uint_t ii = 0;
@@ -172,7 +176,7 @@ acc_jrk_kernel_rectangle(
 				concat(Acc_Jrk_Data, 1) ip = {{{0}}};
 				concat(load_Acc_Jrk_Data, 1)(
 					&ip, ii + ilid, WGSIZE, SIMD,
-					ni, __im, __ie2, __irdot
+					ni, __im, __ie2, __ipos, __ivel
 				);
 				_ip.m[lid] = ip.m[0];
 				_ip.e2[lid] = ip.e2[0];
@@ -203,14 +207,14 @@ acc_jrk_kernel_rectangle(
 				ip.jz[0] = -_ip.jz[lid];
 				concat(store_Acc_Jrk_Data, 1)(
 					&ip, ii + ilid, WGSIZE, SIMD,
-					ni, __iadot
+					ni, __iacc, __ijrk
 				);
 			}
 		}
 
 		concat(store_Acc_Jrk_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
-			nj, __jadot
+			nj, __jacc, __jjrk
 		);
 	}
 }
@@ -222,15 +226,19 @@ acc_jrk_kernel_triangle(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
-	global const real_t __irdot[],
-	global real_t __iadot[])
+	global const real_t __ipos[],
+	global const real_t __ivel[],
+	global real_t __iacc[],
+	global real_t __ijrk[])
 {
 	// ------------------------------------------------------------------------
 	const uint_t nj = ni;
 	global const real_t *__jm = __im;
 	global const real_t *__je2 = __ie2;
-	global const real_t *__jrdot = __irdot;
-	global real_t *__jadot = __iadot;
+	global const real_t *__jpos = __ipos;
+	global const real_t *__jvel = __ivel;
+	global real_t *__jacc = __iacc;
+	global real_t *__jjrk = __ijrk;
 	// ------------------------------------------------------------------------
 
 	local concat(Acc_Jrk_Data, WGSIZE) _ip;
@@ -244,7 +252,7 @@ acc_jrk_kernel_triangle(
 		concat(Acc_Jrk_Data, WPT) jp = {{{0}}};
 		concat(load_Acc_Jrk_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
-			nj, __jm, __je2, __jrdot
+			nj, __jm, __je2, __jpos, __jvel
 		);
 
 		for (uint_t ii = 0;
@@ -259,7 +267,7 @@ acc_jrk_kernel_triangle(
 				concat(Acc_Jrk_Data, 1) ip = {{{0}}};
 				concat(load_Acc_Jrk_Data, 1)(
 					&ip, ii + ilid, WGSIZE, SIMD,
-					ni, __im, __ie2, __irdot
+					ni, __im, __ie2, __ipos, __ivel
 				);
 				_ip.m[lid] = ip.m[0];
 				_ip.e2[lid] = ip.e2[0];
@@ -290,14 +298,14 @@ acc_jrk_kernel_triangle(
 				ip.jz[0] = -_ip.jz[lid];
 				concat(store_Acc_Jrk_Data, 1)(
 					&ip, ii + ilid, WGSIZE, SIMD,
-					ni, __iadot
+					ni, __iacc, __ijrk
 				);
 			}
 		}
 
 		concat(store_Acc_Jrk_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
-			nj, __jadot
+			nj, __jacc, __jjrk
 		);
 	}
 }

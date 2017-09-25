@@ -29,7 +29,8 @@ auto setup(
 	const uint_t n,
 	const real_t __m[],
 	const real_t __e2[],
-	const real_t __rdot[])
+	const real_t __pos[],
+	const real_t __vel[])
 {
 	auto ntiles = (n + TILE - 1) / TILE;
 	vector<PNAcc_Data_SoA<TILE>> part(ntiles);
@@ -38,12 +39,12 @@ auto setup(
 		auto& p = part[k/TILE];
 		p.m[kk] = __m[k];
 		p.e2[kk] = __e2[k];
-		p.rx[kk] = __rdot[(0*NDIM+0)*n + k];
-		p.ry[kk] = __rdot[(0*NDIM+1)*n + k];
-		p.rz[kk] = __rdot[(0*NDIM+2)*n + k];
-		p.vx[kk] = __rdot[(1*NDIM+0)*n + k];
-		p.vy[kk] = __rdot[(1*NDIM+1)*n + k];
-		p.vz[kk] = __rdot[(1*NDIM+2)*n + k];
+		p.rx[kk] = __pos[0*n + k];
+		p.ry[kk] = __pos[1*n + k];
+		p.rz[kk] = __pos[2*n + k];
+		p.vx[kk] = __vel[0*n + k];
+		p.vy[kk] = __vel[1*n + k];
+		p.vz[kk] = __vel[2*n + k];
 	}
 	return part;
 }
@@ -54,9 +55,9 @@ void commit(const uint_t n, const PART& part, real_t __pnacc[])
 	for (size_t k = 0; k < n; ++k) {
 		auto kk = k%TILE;
 		auto& p = part[k/TILE];
-		__pnacc[(0*NDIM+0)*n + k] += p.pnax[kk];
-		__pnacc[(0*NDIM+1)*n + k] += p.pnay[kk];
-		__pnacc[(0*NDIM+2)*n + k] += p.pnaz[kk];
+		__pnacc[0*n + k] += p.pnax[kk];
+		__pnacc[1*n + k] += p.pnay[kk];
+		__pnacc[2*n + k] += p.pnaz[kk];
 	}
 }
 
@@ -316,7 +317,8 @@ concat(load_PNAcc_Data, TILE)(						\
 	const uint_t n,									\
 	global const real_t __m[],						\
 	global const real_t __e2[],						\
-	global const real_t __rdot[])					\
+	global const real_t __pos[],					\
+	global const real_t __vel[])					\
 {													\
 	for (uint_t k = 0, kk = base;					\
 				k < TILE * nitems;					\
@@ -324,12 +326,12 @@ concat(load_PNAcc_Data, TILE)(						\
 		if (kk < n) {								\
 			p->_m[k] = __m[kk];						\
 			p->_e2[k] = __e2[kk];					\
-			p->_rx[k] = (__rdot+(0*NDIM+0)*n)[kk];	\
-			p->_ry[k] = (__rdot+(0*NDIM+1)*n)[kk];	\
-			p->_rz[k] = (__rdot+(0*NDIM+2)*n)[kk];	\
-			p->_vx[k] = (__rdot+(1*NDIM+0)*n)[kk];	\
-			p->_vy[k] = (__rdot+(1*NDIM+1)*n)[kk];	\
-			p->_vz[k] = (__rdot+(1*NDIM+2)*n)[kk];	\
+			p->_rx[k] = (__pos+0*n)[kk];			\
+			p->_ry[k] = (__pos+1*n)[kk];			\
+			p->_rz[k] = (__pos+2*n)[kk];			\
+			p->_vx[k] = (__vel+0*n)[kk];			\
+			p->_vy[k] = (__vel+1*n)[kk];			\
+			p->_vz[k] = (__vel+2*n)[kk];			\
 		}											\
 	}												\
 }													\
@@ -354,9 +356,9 @@ concat(store_PNAcc_Data, TILE)(										\
 				k < TILE * nitems;									\
 				k += 1, kk += stride) {								\
 		if (kk < n) {												\
-			atomic_fadd(&(__pnacc+(0*NDIM+0)*n)[kk], -p->_pnax[k]);	\
-			atomic_fadd(&(__pnacc+(0*NDIM+1)*n)[kk], -p->_pnay[k]);	\
-			atomic_fadd(&(__pnacc+(0*NDIM+2)*n)[kk], -p->_pnaz[k]);	\
+			atomic_fadd(&(__pnacc+0*n)[kk], -p->_pnax[k]);			\
+			atomic_fadd(&(__pnacc+1*n)[kk], -p->_pnay[k]);			\
+			atomic_fadd(&(__pnacc+2*n)[kk], -p->_pnaz[k]);			\
 		}															\
 	}																\
 }																	\

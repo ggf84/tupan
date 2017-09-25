@@ -17,7 +17,7 @@ def drift(ps, h):
     for p in ps.members.values():
         if p.n:
             p.time += dt
-            p.rdot[0] += p.rdot[1] * dt
+            p.pos += p.vel * dt
     return ps, W
 
 
@@ -31,7 +31,7 @@ def kick(ps, h):
     dt = h / U
     for p in ps.members.values():
         if p.n:
-            p.rdot[1] += p.rdot[2] * dt
+            p.vel += p.acc * dt
     return ps, U
 
 

@@ -32,14 +32,26 @@ class Particles(metaclass=MetaParticles):
         'pid': ('{nb}', 'uint_t', 'particle id'),
         'mass': ('{nb}', 'real_t', 'mass'),
         'eps2': ('{nb}', 'real_t', 'squared smoothing parameter'),
-        'rdot': ('10, {nd}, {nb}', 'real_t', 'position and its derivatives'),
+        'pos': ('{nd}, {nb}', 'real_t', 'position'),
+        'vel': ('{nd}, {nb}', 'real_t', 'velocity'),
         'time': ('{nb}', 'real_t', 'current time'),
         'nstep': ('{nb}', 'uint_t', 'step number'),
     }
 
     extra_attrs = {
         'phi': ('{nb}', 'real_t', 'gravitational potential'),
-        'fdot': ('4, {nd}, {nb}', 'real_t', 'force and its derivatives'),
+        'acc': ('{nd}, {nb}', 'real_t', 'acceleration'),
+        'jrk': ('{nd}, {nb}', 'real_t', '1st derivative of acc'),
+        'snp': ('{nd}, {nb}', 'real_t', '2nd derivative of acc'),
+        'crk': ('{nd}, {nb}', 'real_t', '3rd derivative of acc'),
+        'ad4': ('{nd}, {nb}', 'real_t', '4th derivative of acc'),
+        'ad5': ('{nd}, {nb}', 'real_t', '5th derivative of acc'),
+        'ad6': ('{nd}, {nb}', 'real_t', '6th derivative of acc'),
+        'ad7': ('{nd}, {nb}', 'real_t', '7th derivative of acc'),
+        'f0': ('{nd}, {nb}', 'real_t', 'auxiliary acc'),
+        'f1': ('{nd}, {nb}', 'real_t', 'auxiliary jrk'),
+        'f2': ('{nd}, {nb}', 'real_t', 'auxiliary snp'),
+        'f3': ('{nd}, {nb}', 'real_t', 'auxiliary crk'),
         'tstep': ('{nb}', 'real_t', 'time step'),
         'tstep_sum': ('{nb}', 'real_t', 'auxiliary time step'),
     }
@@ -72,12 +84,11 @@ class Particles(metaclass=MetaParticles):
 
     def register_attribute(self, attr, shape, sctype, doc=''):
         if attr not in self.attrs:
-            self.attrs.update(**{attr: (shape, sctype, doc)})
-            for attr, (shape, sctype, _) in self.attrs.items():
-                shape = eval(shape.format(nd=3, nb=self.n))
-                dtype = vars(Ctype)[sctype]
-                array = np.zeros(shape, dtype=dtype)
-                self.data[attr] = ArrayWrapper(array)
+            self.attrs[attr] = (shape, sctype, doc)
+            shape = eval(shape.format(nd=3, nb=self.n))
+            dtype = vars(Ctype)[sctype]
+            array = np.zeros(shape, dtype=dtype)
+            self.data[attr] = ArrayWrapper(array)
 
     def copy(self):
         return copy.deepcopy(self)

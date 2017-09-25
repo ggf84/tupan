@@ -137,13 +137,15 @@ tstep_kernel_rectangle(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
-	global const real_t __irdot[],
+	global const real_t __ipos[],
+	global const real_t __ivel[],
 	global real_t __iw2_a[],
 	global real_t __iw2_b[],
 	const uint_t nj,
 	global const real_t __jm[],
 	global const real_t __je2[],
-	global const real_t __jrdot[],
+	global const real_t __jpos[],
+	global const real_t __jvel[],
 	global real_t __jw2_a[],
 	global real_t __jw2_b[])
 {
@@ -158,7 +160,7 @@ tstep_kernel_rectangle(
 		concat(Tstep_Data, WPT) jp = {{{0}}};
 		concat(load_Tstep_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
-			nj, __jm, __je2, __jrdot
+			nj, __jm, __je2, __jpos, __jvel
 		);
 
 		for (uint_t ii = 0;
@@ -173,7 +175,7 @@ tstep_kernel_rectangle(
 				concat(Tstep_Data, 1) ip = {{{0}}};
 				concat(load_Tstep_Data, 1)(
 					&ip, ii + ilid, WGSIZE, SIMD,
-					ni, __im, __ie2, __irdot
+					ni, __im, __ie2, __ipos, __ivel
 				);
 				_ip.m[lid] = ip.m[0];
 				_ip.e2[lid] = ip.e2[0];
@@ -216,7 +218,8 @@ tstep_kernel_triangle(
 	const uint_t ni,
 	global const real_t __im[],
 	global const real_t __ie2[],
-	global const real_t __irdot[],
+	global const real_t __ipos[],
+	global const real_t __ivel[],
 	global real_t __iw2_a[],
 	global real_t __iw2_b[])
 {
@@ -224,7 +227,8 @@ tstep_kernel_triangle(
 	const uint_t nj = ni;
 	global const real_t *__jm = __im;
 	global const real_t *__je2 = __ie2;
-	global const real_t *__jrdot = __irdot;
+	global const real_t *__jpos = __ipos;
+	global const real_t *__jvel = __ivel;
 	global real_t *__jw2_a = __iw2_a;
 	global real_t *__jw2_b = __iw2_b;
 	// ------------------------------------------------------------------------
@@ -240,7 +244,7 @@ tstep_kernel_triangle(
 		concat(Tstep_Data, WPT) jp = {{{0}}};
 		concat(load_Tstep_Data, WPT)(
 			&jp, jj + lid, WGSIZE, SIMD,
-			nj, __jm, __je2, __jrdot
+			nj, __jm, __je2, __jpos, __jvel
 		);
 
 		for (uint_t ii = 0;
@@ -255,7 +259,7 @@ tstep_kernel_triangle(
 				concat(Tstep_Data, 1) ip = {{{0}}};
 				concat(load_Tstep_Data, 1)(
 					&ip, ii + ilid, WGSIZE, SIMD,
-					ni, __im, __ie2, __irdot
+					ni, __im, __ie2, __ipos, __ivel
 				);
 				_ip.m[lid] = ip.m[0];
 				_ip.e2[lid] = ip.e2[0];
