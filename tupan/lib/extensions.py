@@ -24,7 +24,7 @@ class Phi(object):
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
         to_buf = self.to_buf
-        ps.phi[...] = 0
+        ps.phi.m[...] = 0
         return [
             to_int(ps.n),
             to_buf(ps.data['mass']),
@@ -53,7 +53,7 @@ class Acc(object):
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
         to_buf = self.to_buf
-        ps.acc[...] = 0
+        ps.acc.m[...] = 0
         return [
             to_int(ps.n),
             to_buf(ps.data['mass']),
@@ -82,8 +82,8 @@ class Acc_Jrk(object):
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
         to_buf = self.to_buf
-        ps.acc[...] = 0
-        ps.jrk[...] = 0
+        ps.acc.m[...] = 0
+        ps.jrk.m[...] = 0
         return [
             to_int(ps.n),
             to_buf(ps.data['mass']),
@@ -116,10 +116,10 @@ class Snp_Crk(object):
     def set_bufs(self, ps, nforce=1):
         to_int = self.to_int
         to_buf = self.to_buf
-        ps.f0[...] = 0
-        ps.f1[...] = 0
-        ps.f2[...] = 0
-        ps.f3[...] = 0
+        ps.f0.m[...] = 0
+        ps.f1.m[...] = 0
+        ps.f2.m[...] = 0
+        ps.f3.m[...] = 0
         return [
             to_int(ps.n),
             to_buf(ps.data['mass']),
@@ -162,8 +162,8 @@ class Tstep(object):
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
         to_buf = self.to_buf
-        ps.tstep[...] = 0
-        ps.tstep_sum[...] = 0
+        ps.tstep.m[...] = 0
+        ps.tstep_sum.m[...] = 0
         return [
             to_int(ps.n),
             to_buf(ps.data['mass']),
@@ -199,7 +199,7 @@ class PNAcc(object):
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
         to_buf = self.to_buf
-        ps.pnacc[...] = 0
+        ps.pnacc.m[...] = 0
         return [
             to_int(ps.n),
             to_buf(ps.data['mass']),
@@ -233,8 +233,8 @@ class Sakura(object):
     def set_bufs(self, ps, nforce=2):
         to_int = self.to_int
         to_buf = self.to_buf
-        ps.dpos[...] = 0
-        ps.dvel[...] = 0
+        ps.dpos.m[...] = 0
+        ps.dvel.m[...] = 0
         return [
             to_int(ps.n),
             to_buf(ps.data['mass']),

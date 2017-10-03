@@ -8,6 +8,7 @@ TODO.
 import sys
 import logging
 from itertools import count
+from .units import ureg
 from .io.hdf5io import HDF5IO
 from .integrator import Integrator
 from .utils.timing import Timer
@@ -84,22 +85,29 @@ class Diagnostic(object):
         counter = next(self.counter)
         abs_err = self.abs_err_sum / counter
         avr_err = self.avr_err_sum / counter
-        com_dr = float((((com_r - self.com_r0)**2).sum())**0.5)
-        com_dv = float((((com_v - self.com_v0)**2).sum())**0.5)
-        dlmom = float((((lmom - self.lmom0)**2).sum())**0.5)
-        damom = float((((amom - self.amom0)**2).sum())**0.5)
+        com_dr = float(((((com_r - self.com_r0)**2).sum())**0.5).m)
+        com_dv = float(((((com_v - self.com_v0)**2).sum())**0.5).m)
+        dlmom = float(((((lmom - self.lmom0)**2).sum())**0.5).m)
+        damom = float(((((amom - self.amom0)**2).sum())**0.5))
 
         fmt = '{time:< 13.6e} {dtime:< 10.3e} '\
               '{ke:< 10.3e} {pe:< 10.3e} {ve:< 10.3e} '\
               '{te:< 15.8e} {eerr:< 10.3e} {avr_err:< 10.3e} '\
               '{abs_err:< 10.3e} {com_r:< 10.3e} {com_v:< 10.3e} '\
               '{lmom:< 10.3e} {amom:< 10.3e} {wct:< 13.6e}'
-        print(fmt.format(time=time, dtime=dtime,
-                         ke=ke, pe=pe,
-                         ve=ve, te=te,
-                         eerr=eerr, avr_err=avr_err,
-                         abs_err=abs_err, com_r=com_dr,
-                         com_v=com_dv, lmom=dlmom, amom=damom,
+        print(fmt.format(time=time.m_as('Myr'),
+                         dtime=dtime.m_as('Myr'),
+                         ke=ke.m_as('uM*(uL/uT)**2'),
+                         pe=pe.m_as('uM*(uL/uT)**2'),
+                         ve=ve.m_as('uM*(uL/uT)**2'),
+                         te=te.m_as('uM*(uL/uT)**2'),
+                         eerr=eerr.m_as(''),
+                         avr_err=avr_err.m_as(''),
+                         abs_err=abs_err.m_as(''),
+                         com_r=com_dr,
+                         com_v=com_dv,
+                         lmom=dlmom,
+                         amom=damom,
                          wct=self.wct.elapsed()),
               file=sys.stdout)
 
@@ -126,7 +134,7 @@ class Run(object):
         )
         parser.add_argument(
             '-t', '--t_end',
-            type=float,
+            type=lambda x: float(x) * ureg.Myr,
             required=True,
             help='Simulation end time (type: %(type)s, required: %(required)s)'
         )
@@ -149,8 +157,8 @@ class Run(object):
         )
         parser.add_argument(
             '--dt_max',
-            type=float,
-            default=0.5,
+            type=lambda x: float(x) * ureg.Myr,
+            default=0.5 * ureg.Myr,
             help=('Maximum time-step size '
                   '(type: %(type)s, default: %(default)s)')
         )
@@ -162,8 +170,8 @@ class Run(object):
         )
         parser.add_argument(
             '--t_begin',
-            type=float,
-            default=0.0,
+            type=lambda x: float(x) * ureg.Myr,
+            default=0.0 * ureg.Myr,
             help='Simulation begin time (type: %(type)s, default: %(default)s)'
         )
         parser.add_argument(

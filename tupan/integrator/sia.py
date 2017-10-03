@@ -262,7 +262,7 @@ class SIAXX(object):
         """
 
         """
-        masks = ps.prepare_masks(lambda obj: obj.tstep > abs(dt))
+        masks = ps.prepare_masks(lambda obj: abs(obj.tstep) > abs(dt))
 
         slow, fast = ps.split_by(masks)
         slow, fast = self.bridge(slow, fast, dt)
@@ -271,7 +271,8 @@ class SIAXX(object):
         if self.update_tstep:
             ps.set_tstep(ps, self.cli.eta)
             if self.shared_tstep:
-                tstep_min = np.copysign(ps.tstep_min, self.cli.eta)
+                tstep_min = ps.tstep_min
+                tstep_min *= -1 if self.cli.eta < 0 else 1
                 for p in ps.members.values():
                     if p.n:
                         p.tstep[...] = tstep_min
@@ -549,7 +550,8 @@ class SIA(Base):
         else:
             ps.set_tstep(ps, self.cli.eta)
             if self.shared_tstep:
-                tstep_min = np.copysign(ps.tstep_min, self.cli.eta)
+                tstep_min = ps.tstep_min
+                tstep_min *= -1 if self.cli.eta < 0 else 1
                 for p in ps.members.values():
                     if p.n:
                         p.tstep[...] = tstep_min

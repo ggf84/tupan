@@ -8,6 +8,7 @@ TODO.
 import h5py
 import pickle
 import logging
+from ..units import ureg
 from collections import OrderedDict
 
 
@@ -29,7 +30,7 @@ def dump_ps(parent, ps):
         ptype.attrs['class'] = do_pickle(member)
         for attr in member.default_attrs:
             array = getattr(member, attr)
-            ptype.create_dataset(
+            dset = ptype.create_dataset(
                 attr,
                 data=array.T,
                 chunks=True,
@@ -37,6 +38,7 @@ def dump_ps(parent, ps):
                 compression='gzip',
                 compression_opts=9,
             )
+            dset.attrs['unit'] = array.units.format_babel()
 
 
 def load_ps(parent):
@@ -48,7 +50,7 @@ def load_ps(parent):
         member = cls(n)
         for attr, dset in part_type.items():
             array = getattr(member, attr)
-            array[...] = dset[...].T
+            array[...] = dset[...].T * ureg(dset.attrs['unit'])
         members[member.name] = member
     cls = pickle.loads(psys.attrs['class'])
     return cls.from_members(**members)

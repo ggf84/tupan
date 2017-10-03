@@ -88,7 +88,8 @@ class Base(object):
         """
         dt = self.cli.dt_max
         if not self.update_tstep:
-            dt *= self.cli.eta
+            dt *= abs(self.cli.eta)
+        dt *= -1 if self.cli.eta < 0 else 1
 
         if self.viewer:
             self.viewer.show_event(self.ps)

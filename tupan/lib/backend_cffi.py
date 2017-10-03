@@ -53,7 +53,7 @@ class CKernel(object):
 
     def to_buf(self, obj):
         if obj.buf is None:
-            obj.buf = drv.to_buf(obj.ary)
+            obj.buf = drv.to_buf(obj.ary.m)
         return obj.buf
 
 

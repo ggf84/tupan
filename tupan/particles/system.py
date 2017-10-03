@@ -7,6 +7,7 @@ TODO.
 
 import copy
 import numpy as np
+from ..units import ureg
 from .base import (Bodies, Stars, Planets, Blackholes, Gas)
 from ..lib import extensions as ext
 
@@ -217,16 +218,24 @@ class ParticleSystem(object):
 
     @property
     def global_time(self):
-        return float(
-            min((abs(ps.time).min() for ps in self.members.values() if ps.n),
-                default=0)
+#        return float(
+#            min((abs(ps.time).min() for ps in self.members.values() if ps.n),
+#                default=0)
+#        )
+        return min(
+            (abs(ps.time).min() for ps in self.members.values() if ps.n),
+            default=0
         )
 
     @property
     def tstep_min(self):
-        return float(
-            min((abs(ps.tstep).min() for ps in self.members.values() if ps.n),
-                default=0)
+#        return float(
+#            min((abs(ps.tstep).min() for ps in self.members.values() if ps.n),
+#                default=0)
+#        )
+        return min(
+            (abs(ps.tstep).min() for ps in self.members.values() if ps.n),
+            default=0
         )
 
     # -- total mass and center-of-mass
@@ -235,7 +244,8 @@ class ParticleSystem(object):
         """Total mass of the system.
 
         """
-        return float(sum(ps.mass.sum() for ps in self.members.values()))
+#        return float(sum(ps.mass.sum() for ps in self.members.values()))
+        return sum(ps.mass.sum() for ps in self.members.values())
 
     @property
     def com_r(self):
@@ -365,7 +375,8 @@ class ParticleSystem(object):
                 if 'pn_ke' in ps.data:
                     ke += ps.pn_ke
                 ke_sum += ke.sum()
-        return float(ke_sum)
+#        return float(ke_sum)
+        return ke_sum
 
     @property
     def potential_energy(self):
@@ -377,7 +388,8 @@ class ParticleSystem(object):
             if ps.n:
                 pe = ps.mass * ps.phi
                 pe_sum += pe.sum()
-        return 0.5 * float(pe_sum)
+#        return 0.5 * float(pe_sum)
+        return 0.5 * pe_sum
 
     # -- lenght scales
     @property
@@ -387,7 +399,7 @@ class ParticleSystem(object):
         """
         mtot = self.total_mass
         pe = self.potential_energy
-        return (mtot**2) / (-2 * pe)
+        return (ureg.G * mtot**2) / (-2 * pe)
 
     @property
     def radial_size(self):
@@ -413,8 +425,8 @@ class ParticleSystem(object):
         m_ratio = total_mass / self.total_mass
         for ps in self.members.values():
             if ps.n:
-                ps.mass *= m_ratio
-                ps.pos *= m_ratio
+                ps.mass[...] *= m_ratio
+                ps.pos[...] *= m_ratio
 
     def dynrescale_radial_size(self, size):
         """Rescales the radial size of the system while maintaining its
@@ -425,8 +437,8 @@ class ParticleSystem(object):
         v_scale = 1 / r_scale**0.5
         for ps in self.members.values():
             if ps.n:
-                ps.pos *= r_scale
-                ps.vel *= v_scale
+                ps.pos[...] *= r_scale
+                ps.vel[...] *= v_scale
 
     def dynrescale_virial_radius(self, rvir):
         """Rescales the virial radius of the system while maintaining its
@@ -438,8 +450,8 @@ class ParticleSystem(object):
         v_scale = 1 / r_scale**0.5
         for ps in self.members.values():
             if ps.n:
-                ps.pos *= r_scale
-                ps.vel *= v_scale
+                ps.pos[...] *= r_scale
+                ps.vel[...] *= v_scale
 
     def scale_to_virial(self):
         """Rescale system to virial equilibrium (2K + U = 0).
@@ -451,7 +463,7 @@ class ParticleSystem(object):
         v_scale = ((-0.5 * pe) / ke)**0.5
         for ps in self.members.values():
             if ps.n:
-                ps.vel *= v_scale
+                ps.vel[...] *= v_scale
 
     def to_nbody_units(self):
         """Rescales system to nbody units while maintaining its dynamics
@@ -672,14 +684,14 @@ class ParticleSystem(object):
         for i, ip in self.members.items():
             if ip.n:
                 kernel.map_bufs(ibufs[i], ip, nforce=nforce)
-                ip.tstep[...] = eta / np.sqrt(ip.tstep)
-                ip.tstep_sum[...] = eta / np.sqrt(ip.tstep_sum)
+                ip.tstep.m[...] = eta / np.sqrt(ip.tstep.m)
+                ip.tstep_sum.m[...] = eta / np.sqrt(ip.tstep_sum.m)
         if self != other:
             for j, jp in other.members.items():
                 if jp.n:
                     kernel.map_bufs(jbufs[j], jp, nforce=nforce)
-                    jp.tstep[...] = eta / np.sqrt(jp.tstep)
-                    jp.tstep_sum[...] = eta / np.sqrt(jp.tstep_sum)
+                    jp.tstep.m[...] = eta / np.sqrt(jp.tstep.m)
+                    jp.tstep_sum.m[...] = eta / np.sqrt(jp.tstep_sum.m)
 
     def set_pnacc(self, other, pn=None, use_auxvel=False,
                   nforce=2,

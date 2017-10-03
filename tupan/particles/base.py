@@ -9,6 +9,7 @@ import abc
 import copy
 import numpy as np
 from ..config import Ctype
+from ..units import ureg
 from ..lib.extensions import ArrayWrapper
 
 
@@ -29,31 +30,31 @@ class Particles(metaclass=MetaParticles):
     """
     part_type = 0
     default_attrs = {
-        'pid': ('{nb}', 'uint_t', 'particle id'),
-        'mass': ('{nb}', 'real_t', 'mass'),
-        'eps2': ('{nb}', 'real_t', 'squared smoothing parameter'),
-        'pos': ('{nd}, {nb}', 'real_t', 'position'),
-        'vel': ('{nd}, {nb}', 'real_t', 'velocity'),
-        'time': ('{nb}', 'real_t', 'current time'),
-        'nstep': ('{nb}', 'uint_t', 'step number'),
+        'pid': ('{nb}', 'uint_t', '', 'particle id'),
+        'nstep': ('{nb}', 'uint_t', '', 'step number'),
+        'mass': ('{nb}', 'real_t', 'uM', 'mass'),
+        'eps2': ('{nb}', 'real_t', 'uL**2', 'squared smoothing parameter'),
+        'pos': ('{nd}, {nb}', 'real_t', 'uL', 'position'),
+        'vel': ('{nd}, {nb}', 'real_t', 'uL / uT', 'velocity'),
+        'time': ('{nb}', 'real_t', 'uT', 'current time'),
     }
 
     extra_attrs = {
-        'phi': ('{nb}', 'real_t', 'gravitational potential'),
-        'acc': ('{nd}, {nb}', 'real_t', 'acceleration'),
-        'jrk': ('{nd}, {nb}', 'real_t', '1st derivative of acc'),
-        'snp': ('{nd}, {nb}', 'real_t', '2nd derivative of acc'),
-        'crk': ('{nd}, {nb}', 'real_t', '3rd derivative of acc'),
-        'ad4': ('{nd}, {nb}', 'real_t', '4th derivative of acc'),
-        'ad5': ('{nd}, {nb}', 'real_t', '5th derivative of acc'),
-        'ad6': ('{nd}, {nb}', 'real_t', '6th derivative of acc'),
-        'ad7': ('{nd}, {nb}', 'real_t', '7th derivative of acc'),
-        'f0': ('{nd}, {nb}', 'real_t', 'auxiliary acc'),
-        'f1': ('{nd}, {nb}', 'real_t', 'auxiliary jrk'),
-        'f2': ('{nd}, {nb}', 'real_t', 'auxiliary snp'),
-        'f3': ('{nd}, {nb}', 'real_t', 'auxiliary crk'),
-        'tstep': ('{nb}', 'real_t', 'time step'),
-        'tstep_sum': ('{nb}', 'real_t', 'auxiliary time step'),
+        'phi': ('{nb}', 'real_t', 'uL**2 / uT**2', 'gravitational potential'),
+        'acc': ('{nd}, {nb}', 'real_t', 'uL / uT**2', 'acceleration'),
+        'jrk': ('{nd}, {nb}', 'real_t', 'uL / uT**3', '1st derivative of acc'),
+        'snp': ('{nd}, {nb}', 'real_t', 'uL / uT**4', '2nd derivative of acc'),
+        'crk': ('{nd}, {nb}', 'real_t', 'uL / uT**5', '3rd derivative of acc'),
+        'ad4': ('{nd}, {nb}', 'real_t', 'uL / uT**6', '4th derivative of acc'),
+        'ad5': ('{nd}, {nb}', 'real_t', 'uL / uT**7', '5th derivative of acc'),
+        'ad6': ('{nd}, {nb}', 'real_t', 'uL / uT**8', '6th derivative of acc'),
+        'ad7': ('{nd}, {nb}', 'real_t', 'uL / uT**9', '7th derivative of acc'),
+        'f0': ('{nd}, {nb}', 'real_t', 'uL / uT**2', 'auxiliary acc'),
+        'f1': ('{nd}, {nb}', 'real_t', 'uL / uT**3', 'auxiliary jrk'),
+        'f2': ('{nd}, {nb}', 'real_t', 'uL / uT**4', 'auxiliary snp'),
+        'f3': ('{nd}, {nb}', 'real_t', 'uL / uT**5', 'auxiliary crk'),
+        'tstep': ('{nb}', 'real_t', 'uT', 'time step'),
+        'tstep_sum': ('{nb}', 'real_t', 'uT', 'auxiliary time step'),
     }
 
     def __new__(cls, *args, **kwargs):
@@ -65,10 +66,10 @@ class Particles(metaclass=MetaParticles):
     def __init__(self, n=0):
         self.n = int(n)
         self.data = {}
-        for attr, (shape, sctype, _) in self.attrs.items():
+        for attr, (shape, sctype, unit, _) in self.attrs.items():
             shape = eval(shape.format(nd=3, nb=self.n))
             dtype = vars(Ctype)[sctype]
-            array = np.zeros(shape, dtype=dtype)
+            array = np.zeros(shape, dtype=dtype) * ureg(unit)
             self.data[attr] = ArrayWrapper(array)
 
     @classmethod
@@ -82,12 +83,12 @@ class Particles(metaclass=MetaParticles):
         obj.n = len(obj.pid)
         return obj
 
-    def register_attribute(self, attr, shape, sctype, doc=''):
+    def register_attribute(self, attr, shape, sctype, unit, doc=''):
         if attr not in self.attrs:
-            self.attrs[attr] = (shape, sctype, doc)
+            self.attrs[attr] = (shape, sctype, unit, doc)
             shape = eval(shape.format(nd=3, nb=self.n))
             dtype = vars(Ctype)[sctype]
-            array = np.zeros(shape, dtype=dtype)
+            array = np.zeros(shape, dtype=dtype) * ureg(unit)
             self.data[attr] = ArrayWrapper(array)
 
     def copy(self):
@@ -152,7 +153,7 @@ class Particles(metaclass=MetaParticles):
                  if isinstance(index, int)
                  else (Ellipsis, index))
         for k, v in self.data.items():
-            v.ary[index] = obj.data[k].ary
+            v.ary.m[index] = obj.data[k].ary.m
 
     def __getattr__(self, attr):
         try:
@@ -193,10 +194,10 @@ class Stars(Particles):
     extra_attrs = Particles.extra_attrs.copy()
 
     default_attrs.update(**{
-        'age': ('{nb}', 'real_t', 'age'),
-        'spin': ('{nd}, {nb}', 'real_t', 'spin'),
-        'radius': ('{nb}', 'real_t', 'radius'),
-        'metallicity': ('{nb}', 'real_t', 'metallicity'),
+        'age': ('{nb}', 'real_t', 'uT', 'age'),
+        'spin': ('{nd}, {nb}', 'real_t', 'uM * uL * uL / uT', 'spin'),
+        'radius': ('{nb}', 'real_t', 'uL', 'radius'),
+        'metallicity': ('{nb}', 'real_t', '', 'metallicity'),
     })
 
 
@@ -209,8 +210,8 @@ class Planets(Particles):
     extra_attrs = Particles.extra_attrs.copy()
 
     default_attrs.update(**{
-        'spin': ('{nd}, {nb}', 'real_t', 'spin'),
-        'radius': ('{nb}', 'real_t', 'radius'),
+        'spin': ('{nd}, {nb}', 'real_t', 'uM * uL * uL / uT', 'spin'),
+        'radius': ('{nb}', 'real_t', 'uL', 'radius'),
     })
 
 
@@ -223,8 +224,8 @@ class Blackholes(Particles):
     extra_attrs = Particles.extra_attrs.copy()
 
     default_attrs.update(**{
-        'spin': ('{nd}, {nb}', 'real_t', 'spin'),
-        'radius': ('{nb}', 'real_t', 'radius'),
+        'spin': ('{nd}, {nb}', 'real_t', 'uM * uL * uL / uT', 'spin'),
+        'radius': ('{nb}', 'real_t', 'uL', 'radius'),
     })
 
 
@@ -237,10 +238,10 @@ class Gas(Particles):
     extra_attrs = Particles.extra_attrs.copy()
 
     default_attrs.update(**{
-        'density': ('{nb}', 'real_t', 'density at particle position'),
-        'pressure': ('{nb}', 'real_t', 'pressure at particle position'),
-        'viscosity': ('{nb}', 'real_t', 'viscosity at particle position'),
-        'temperature': ('{nb}', 'real_t', 'temperature at particle position'),
+        'density': ('{nb}', 'real_t', 'uM / uL**3', 'density at particle position'),
+        'pressure': ('{nb}', 'real_t', 'pascal', 'pressure at particle position'),
+        'viscosity': ('{nb}', 'real_t', 'stokes', 'viscosity at particle position'),
+        'temperature': ('{nb}', 'real_t', 'kelvin', 'temperature at particle position'),
     })
 
 

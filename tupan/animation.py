@@ -505,8 +505,8 @@ class GLviewer(app.Canvas):
     def init_vertex_buffers(self, ps):
         for name, member in ps.members.items():
             n = member.n
-            mass = member.mass
-            pos = member.pos.T
+            mass = member.mass.m_as('M_sun')
+            pos = member.pos.T.m_as('pc')
 
             attributes = [
                 ('a_radius', np.float32, 1),
@@ -517,7 +517,7 @@ class GLviewer(app.Canvas):
 
             sigma = 5.67037e-8
             four_pi = 4 * np.pi
-            m = mass / mass.mean()
+            m = mass
             L = m**(7/2)
             R = m**(2/3)
             T = (3.828e+26 * L / (four_pi * sigma * (6.957e+8 * R)**2))**(1/4)
@@ -542,14 +542,14 @@ class GLviewer(app.Canvas):
 
         for name, member in ps.members.items():
             if member.n:
-                pid = member.pid
-                pos = member.pos.T
+                pid = member.pid.m_as('')
+                pos = member.pos.T.m_as('pc')
 
                 self.data[name]['a_position'][pid] = pos
                 self.vdata[name].set_data(self.data[name])
 
-        time = ps.global_time
-        self.text.text = f'T = {time:e}'
+        time = ps.global_time.to('Myr')
+        self.text.text = f'T = {time:~e}'
         self.app.process_events()
         self.update()
 

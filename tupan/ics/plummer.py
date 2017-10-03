@@ -7,6 +7,7 @@ TODO.
 
 import logging
 import numpy as np
+from ..units import ureg
 from ..particles.system import ParticleSystem
 
 
@@ -95,28 +96,38 @@ class Plummer(object):
         srand = np.random.get_state()
 
         # set mass
-        b.mass[...] = self.imf.sample(n)
-        b.mass /= ps.total_mass
+        b.mass[...] = self.imf.sample(n) * ureg.M_sun
 
         # set eps2
-        b.eps2[...] = self.set_eps2(b.mass)
+        b.eps2[...] = self.set_eps2(b.mass) * ureg.pc**2
 
         np.random.set_state(srand)
 
         # set pos
         pos = self.set_pos(np.random.permutation(ilist))
-        b.pos[...] = pos
+        b.pos[...] = pos * ureg.pc
 
         # set phi
         ps.set_phi(ps)
 
         # set vel
-        vel = self.set_vel(b.phi)
-        b.vel[...] = vel
+        vel = self.set_vel(b.phi.m_as('(uL/uT)**2'))
+        b.vel[...] = vel * ureg('uL/uT')
+
+        ps.dynrescale_virial_radius(1.0 * ureg.uL)
 
         ps.com_to_origin()
-        ps.to_nbody_units()
         ps.scale_to_virial()
+
+#        print(ps.kinetic_energy)
+#        print(ps.potential_energy)
+#        print(ps.virial_radius.to('pc'))
+#        print(np.sum(b.mass).to('M_sun'))
+#        print(np.mean(b.mass).to('M_sun'))
+#        print(np.std(b.vel[0]).to('km/s'))
+#        print(np.std(b.vel[1]).to('km/s'))
+#        print(np.std(b.vel[2]).to('km/s'))
+
         return ps
 
     def show(self, bodies, nbins=32):
@@ -124,7 +135,8 @@ class Plummer(object):
         import matplotlib.pyplot as plt
         from matplotlib.patches import Circle
 
-        mass = self.imf._mtot * bodies.mass
+        r = bodies.pos.m_as('pc')
+        mass = bodies.mass.m_as('M_sun')
 
         ###################################
 
@@ -162,11 +174,8 @@ class Plummer(object):
 
         ###################################
 
-        b = bodies
-        n = b.n
-        r = b.pos
-        radius = 2 * n * b.mass
-        color = n * b.mass
+        radius = 2 * mass
+        color = mass
 
         ###################################
         # Scatter plot
