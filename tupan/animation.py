@@ -506,7 +506,7 @@ class GLviewer(app.Canvas):
         for name, member in ps.members.items():
             n = member.n
             mass = member.mass.m_as('M_sun')
-            pos = member.pos.T.m_as('pc')
+            pos = member.pos.T.m_as('uL')
 
             attributes = [
                 ('a_radius', np.float32, 1),
@@ -543,7 +543,7 @@ class GLviewer(app.Canvas):
         for name, member in ps.members.items():
             if member.n:
                 pid = member.pid.m_as('')
-                pos = member.pos.T.m_as('pc')
+                pos = member.pos.T.m_as('uL')
 
                 self.data[name]['a_position'][pid] = pos
                 self.vdata[name].set_data(self.data[name])

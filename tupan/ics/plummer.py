@@ -96,16 +96,18 @@ class Plummer(object):
         srand = np.random.get_state()
 
         # set mass
-        b.mass[...] = self.imf.sample(n) * ureg.M_sun
+        imf = self.imf.sample(n)
+        imf /= imf.sum()
+        b.mass[...] = imf * ureg.uM
 
         # set eps2
-        b.eps2[...] = self.set_eps2(b.mass) * ureg.pc**2
+        b.eps2[...] = self.set_eps2(b.mass) * ureg.uL**2
 
         np.random.set_state(srand)
 
         # set pos
         pos = self.set_pos(np.random.permutation(ilist))
-        b.pos[...] = pos * ureg.pc
+        b.pos[...] = pos * ureg.uL
 
         # set phi
         ps.set_phi(ps)

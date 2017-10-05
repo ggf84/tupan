@@ -13,6 +13,7 @@ ureg = UnitRegistry()
 ureg.define('G = 6.67408e-11 m^3 kg^-1 s^-2')
 ureg.define('speed_of_light = 2.99792458e8 m s^-1 = c')
 ureg.define('astronomical_unit = 1.49597870700e11 m = au')
+
 ureg.define('R_sun = 6.957e8 m')
 ureg.define('L_sun = 3.828e26 W')
 ureg.define('GM_sun = 1.3271244e20 m^3 s^-2')
@@ -33,12 +34,12 @@ ureg.define('light_year = speed_of_light * year = ly')
 #ureg.define('uL = (G * uM * uT**2)**(1/3)')
 #ureg.define('uE = 0.25 * G * uM**2 / uL')
 
-ureg.define('uL = 1 * pc')
+ureg.define('uL = 4 * pc')
 ureg.define('uT = 1 * Myr')
 ureg.define('uM = uL**3 / (G * uT**2)')
-#ureg.define('uE = 0.25 * G * uM**2 / uL')
-#ureg.define('uE = 0.25 * uM * uL**2 / uT**2')
 ureg.define('uE = 0.25 * uL**5 / (G * uT**4)')
+#ureg.define('uE = 0.25 * uM * uL**2 / uT**2')
+#ureg.define('uE = 0.25 * G * uM**2 / uL')
 
 
 if __name__ == '__main__':
