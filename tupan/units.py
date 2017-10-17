@@ -5,10 +5,10 @@
 Units support.
 """
 
-from pint import UnitRegistry
+import pint
 
-
-ureg = UnitRegistry()
+ureg = pint.UnitRegistry()
+pint.set_application_registry(ureg)
 
 ureg.define('G = 6.67408e-11 m^3 kg^-1 s^-2')
 ureg.define('speed_of_light = 2.99792458e8 m s^-1 = c')
@@ -23,26 +23,25 @@ ureg.define('year = 365.25 * day = yr')
 ureg.define('parsec = (648000.0 / pi) * au = pc')
 ureg.define('light_year = speed_of_light * year = ly')
 
-
-#ureg.define('uM = 1 * M_sun')
-#ureg.define('uL = 1 * pc')
-#ureg.define('uE = 0.25 * G * uM**2 / uL')
-#ureg.define('uT = G * (uM**2.5) / (4 * uE)**1.5')
-
-#ureg.define('uM = 1 * M_sun')
-#ureg.define('uT = 1 * Myr')
-#ureg.define('uL = (G * uM * uT**2)**(1/3)')
-#ureg.define('uE = 0.25 * G * uM**2 / uL')
-
-ureg.define('uL = 4 * pc')
+# ureg.define('uM = 10**4 * M_sun')  # defined by initial conditions.
 ureg.define('uT = 1 * Myr')
-ureg.define('uM = uL**3 / (G * uT**2)')
-ureg.define('uE = 0.25 * uL**5 / (G * uT**4)')
-#ureg.define('uE = 0.25 * uM * uL**2 / uT**2')
-#ureg.define('uE = 0.25 * G * uM**2 / uL')
+ureg.define('uL = (G * uM * uT**2)**(1/3)')
+ureg.define('uE = 0.25 * G * uM**2 / uL')
 
+# ureg.define('uM = 1 * M_sun')
+# ureg.define('uL = 1 * pc')
+# ureg.define('uE = 0.25 * G * uM**2 / uL')
+# ureg.define('uT = G * (uM**2.5) / (4 * uE)**1.5')
+
+# ureg.define('uL = 4 * pc')
+# ureg.define('uT = 1 * Myr')
+# ureg.define('uM = uL**3 / (G * uT**2)')
+# ureg.define('uE = 0.25 * uL**5 / (G * uT**4)')
+# #ureg.define('uE = 0.25 * uM * uL**2 / uT**2')
+# #ureg.define('uE = 0.25 * G * uM**2 / uL')
 
 if __name__ == '__main__':
+    ureg.define('uM = 10**6 * M_sun')  # defined here for testing purpose only.
     print('G:', (1.0 * ureg.G).to('uL**3 / (uM * uT**2)'))
     print('M:', (1.0 * ureg.uM).to('uM'))
     print('L:', (1.0 * ureg.uL).to('uL'))

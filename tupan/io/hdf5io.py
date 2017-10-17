@@ -76,6 +76,12 @@ class HDF5IO(object):
             )
         )
         self.open_file = h5py.File(self.fname, self.fmode)
+        if self.fmode == 'r':
+            tup = pickle.loads(self.open_file.attrs['uM'])
+            ureg.define(f'uM = {ureg.Quantity.from_tuple(tup)}')
+        if self.fmode == 'w':
+            tup = ureg('1 uM').to('M_sun').to_tuple()
+            self.open_file.attrs['uM'] = pickle.dumps(tup, 0)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
