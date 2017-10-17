@@ -69,8 +69,8 @@ class Particles(metaclass=MetaParticles):
         for attr, (shape, sctype, unit, _) in self.attrs.items():
             shape = eval(shape.format(nd=3, nb=self.n))
             dtype = vars(Ctype)[sctype]
-            array = np.zeros(shape, dtype=dtype) * ureg(unit)
-            self.data[attr] = ArrayWrapper(array)
+            array = np.zeros(shape, dtype=dtype)
+            self.data[attr] = ArrayWrapper(array * ureg(unit))
 
     @classmethod
     def empty(cls):
@@ -88,8 +88,8 @@ class Particles(metaclass=MetaParticles):
             self.attrs[attr] = (shape, sctype, unit, doc)
             shape = eval(shape.format(nd=3, nb=self.n))
             dtype = vars(Ctype)[sctype]
-            array = np.zeros(shape, dtype=dtype) * ureg(unit)
-            self.data[attr] = ArrayWrapper(array)
+            array = np.zeros(shape, dtype=dtype)
+            self.data[attr] = ArrayWrapper(array * ureg(unit))
 
     def copy(self):
         return copy.deepcopy(self)
@@ -101,7 +101,7 @@ class Particles(metaclass=MetaParticles):
         fmt = self.name + '(['
         if self.n:
             for k, v in self.data.items():
-                fmt += '\n\t{0}: {1},'.format(k, v)
+                fmt += '\n\t{0}: {1},'.format(k, v.ary)
             fmt += '\n'
         fmt += '])'
         return fmt
@@ -124,9 +124,10 @@ class Particles(metaclass=MetaParticles):
             elif k not in self.data:
                 data[k] = other.data[k]
             else:
-                u, v = self.data[k].ary, other.data[k].ary
-                ary = np.concatenate([u, v], axis=-1)
-                data[k] = ArrayWrapper(ary)
+                u, v = self.data[k], other.data[k]
+                units = v.ary.units
+                ary = np.concatenate([u.ary.m, v.ary.m], axis=-1)
+                data[k] = ArrayWrapper(ary * units)
         return self.from_attrs(**data)
 
     __radd__ = __add__
@@ -135,8 +136,9 @@ class Particles(metaclass=MetaParticles):
         try:
             data = {}
             for k, v in self.data.items():
-                ary = v.ary.compress(index, axis=-1)
-                data[k] = ArrayWrapper(ary)
+                units = v.ary.units
+                ary = v.ary.m.compress(index, axis=-1)
+                data[k] = ArrayWrapper(ary * units)
             return self.from_attrs(**data)
         except ValueError:
             index = ((Ellipsis, index, None)
@@ -144,8 +146,9 @@ class Particles(metaclass=MetaParticles):
                      else (Ellipsis, index))
             data = {}
             for k, v in self.data.items():
-                ary = np.array(v.ary[index], copy=False, order='C')
-                data[k] = ArrayWrapper(ary)
+                units = v.ary.units
+                ary = np.array(v.ary.m[index], copy=False, order='C')
+                data[k] = ArrayWrapper(ary * units)
             return self.from_attrs(**data)
 
     def __setitem__(self, index, obj):
