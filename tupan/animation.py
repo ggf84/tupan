@@ -69,8 +69,8 @@ float asinh(float x)
 vec3 xyz_to_rgb(vec3 c)
 {
     // luminance adjustment
-    float I = (c.x + c.y + c.z) / 3;
-    float i = asinh(32 * I) / (2 * asinh(32));
+    float I = (c.x + c.y + c.z);
+    float i = asinh(4 * I) / asinh(4);
     c *= i / I;
 
     mat3 xyz2rgb = mat3(vec3(+3.24096994, -0.96924364, +0.05563008),
@@ -101,7 +101,6 @@ VERT_SHADER = """
 uniform int   u_dist_mod;
 uniform float u_radius;
 uniform float u_brightness;
-uniform float u_bolometric_flux;
 uniform vec2  u_viewport;
 uniform mat4  u_model;
 uniform mat4  u_view;
@@ -144,7 +143,7 @@ vec3 spectrum_to_xyz(float temperature, int step)
         float I = black_body(temperature, wlen);
         XYZ += I * cie.xyz * dwlen;
     }
-    XYZ /= u_bolometric_flux;
+    XYZ /= 5.67037e-8 * pow(temperature, 4.0);
     XYZ *= u_brightness;
     return XYZ;
 }
@@ -317,7 +316,7 @@ class GLviewer(app.Canvas):
 
         self.u_dist_mod = True
         self.u_radius = 4.0
-        self.u_brightness = 1.0
+        self.u_brightness = 1.0 / 512
         self.u_view = translate(self.translate)
         self.u_model = np.eye(4, dtype=np.float32)
         self.u_projection = np.eye(4, dtype=np.float32)
@@ -521,9 +520,6 @@ class GLviewer(app.Canvas):
             L = m**(7/2)
             R = m**(2/3)
             T = (3.828e+26 * L / (four_pi * sigma * (6.957e+8 * R)**2))**(1/4)
-
-            F = sigma * T**4
-            self.program[name]['u_bolometric_flux'] = F.mean() * 8192
 
 #            from numpy.random import seed, shuffle
 #            seed(0)
