@@ -218,10 +218,6 @@ class ParticleSystem(object):
 
     @property
     def global_time(self):
-#        return float(
-#            min((abs(ps.time).min() for ps in self.members.values() if ps.n),
-#                default=0)
-#        )
         return min(
             (abs(ps.time).min() for ps in self.members.values() if ps.n),
             default=0
@@ -229,10 +225,6 @@ class ParticleSystem(object):
 
     @property
     def tstep_min(self):
-#        return float(
-#            min((abs(ps.tstep).min() for ps in self.members.values() if ps.n),
-#                default=0)
-#        )
         return min(
             (abs(ps.tstep).min() for ps in self.members.values() if ps.n),
             default=0
@@ -244,7 +236,6 @@ class ParticleSystem(object):
         """Total mass of the system.
 
         """
-#        return float(sum(ps.mass.sum() for ps in self.members.values()))
         return sum(ps.mass.sum() for ps in self.members.values())
 
     @property
@@ -375,7 +366,6 @@ class ParticleSystem(object):
                 if 'pn_ke' in ps.data:
                     ke += ps.pn_ke
                 ke_sum += ke.sum()
-#        return float(ke_sum)
         return ke_sum
 
     @property
@@ -388,7 +378,6 @@ class ParticleSystem(object):
             if ps.n:
                 pe = ps.mass * ps.phi
                 pe_sum += pe.sum()
-#        return 0.5 * float(pe_sum)
         return 0.5 * pe_sum
 
     # -- lenght scales
@@ -465,13 +454,30 @@ class ParticleSystem(object):
             if ps.n:
                 ps.vel[...] *= v_scale
 
-    def to_nbody_units(self):
-        """Rescales system to nbody units while maintaining its dynamics
-        unchanged.
+    def scale_to_standard(self):
+        """Set the virial ratio to q=0.5 and total energy to E=-0.25, as
+        defined by standard nbody units by rescaling positions and velocities.
 
         """
-        self.dynrescale_total_mass(1.0)
-        self.dynrescale_virial_radius(1.0)
+        self.set_phi(self)
+        ke = self.kinetic_energy
+        pe = self.potential_energy
+
+        q = 0.5
+        v_scale = np.sqrt(-q * pe / ke)
+        for ps in self.members.values():
+            if ps.n:
+                ps.vel[...] *= v_scale
+
+        ke = -q * pe
+        te = ke + pe
+
+        r_scale = te.m / -0.25
+        v_scale = np.sqrt(1 / r_scale)
+        for ps in self.members.values():
+            if ps.n:
+                ps.pos[...] *= r_scale
+                ps.vel[...] *= v_scale
 
     # -- O(N^2) methods
     def set_phi(self, other,

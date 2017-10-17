@@ -22,8 +22,7 @@ class Plummer(object):
         self.imf = imf
         self.mfrac = mfrac
         self.softening_type = softening_type
-        if seed:
-            np.random.seed(seed)
+        np.random.seed(seed)
 
     def set_eps2(self, mass):
         n = len(mass)
@@ -56,79 +55,78 @@ class Plummer(object):
         # return half of real value in order to avoid to do this in force loop.
         return eps2 / 2
 
-    def set_pos(self, irand):
-        n = len(irand)
-        mfrac = self.mfrac
-        mrand = (irand + np.random.random(n)) * mfrac / n
-        radius = 1.0 / np.sqrt(np.power(mrand, -2.0 / 3.0) - 1.0)
+    def to_xyz(self, r):
+        n = len(r)
         theta = np.arccos(np.random.uniform(-1.0, 1.0, size=n))
         phi = np.random.uniform(0.0, 2.0 * np.pi, size=n)
-        rx = radius * np.sin(theta) * np.cos(phi)
-        ry = radius * np.sin(theta) * np.sin(phi)
-        rz = radius * np.cos(theta)
-        return (rx, ry, rz)
+        x = r * np.sin(theta) * np.cos(phi)
+        y = r * np.sin(theta) * np.sin(phi)
+        z = r * np.cos(theta)
+        return np.array([x, y, z])
 
-    def set_vel(self, pot):
-        count = 0
-        n = len(pot)
-        rnd = np.empty(n)
-        while count < n:
-            r1 = np.random.random()
-            r2 = np.random.random()
-            if r2 < r1:
-                rnd[count] = r2
-                count += 1
-        velocity = np.sqrt(-2 * rnd * pot)
-        theta = np.arccos(np.random.uniform(-1.0, 1.0, size=n))
-        phi = np.random.uniform(0.0, 2.0 * np.pi, size=n)
-        vx = velocity * np.sin(theta) * np.cos(phi)
-        vy = velocity * np.sin(theta) * np.sin(phi)
-        vz = velocity * np.cos(theta)
-        return (vx, vy, vz)
+    def get_coordinates(self, n):
+        # set radius
+        i = np.arange(n)
+        m_min = (i + 0) / n
+        m_max = (i + 1) / n
+        mfrac = self.mfrac
+        mfrac *= np.random.uniform(m_min, m_max, size=n)
+        radius = 1.0 / np.sqrt(pow(mfrac, -2.0/3.0) - 1.0)
+
+        # set velocity
+        q = np.zeros(0)
+        nq = len(q)
+        while nq < n:
+            x = np.random.uniform(0.0, 1.0, size=n-nq)
+            y = np.random.uniform(0.0, 0.1, size=n-nq)
+            g = x * x * pow(1.0 - x * x, 3.5)
+            q = np.concatenate([q, x.compress(y < g)])
+            nq = len(q)
+        velocity = q * np.sqrt(2.0) * pow(1 + radius * radius, -0.25)
+
+        # xyz components
+        return self.to_xyz(radius), self.to_xyz(velocity)
 
     def make_model(self, n):
-        """  """
-        ilist = np.arange(n)
+        """
 
+        """
         ps = ParticleSystem(n)
         b = ps.bodies
 
-        srand = np.random.get_state()
-
         # set mass
-        imf = self.imf.sample(n)
-        imf /= imf.sum()
-        b.mass[...] = imf * ureg.uM
+        b.mass[...] = self.imf
 
         # set eps2
-        b.eps2[...] = self.set_eps2(b.mass) * ureg.uL**2
+        b.eps2[...] = self.set_eps2(b.mass) * ureg('uL**2')
 
-        np.random.set_state(srand)
-
-        # set pos
-        pos = self.set_pos(np.random.permutation(ilist))
-        b.pos[...] = pos * ureg.uL
-
-        # set phi
-        ps.set_phi(ps)
-
-        # set vel
-        vel = self.set_vel(b.phi.m_as('(uL/uT)**2'))
+        # set pos, vel
+        pos, vel = self.get_coordinates(n)
+        b.pos[...] = pos * ureg('uL')
         b.vel[...] = vel * ureg('uL/uT')
 
-        ps.dynrescale_virial_radius(1.0 * ureg.uL)
+        # rescaling virial radius
+        scale_factor = 16 / (3 * np.pi)
+        b.pos[...] /= scale_factor
+        b.vel[...] *= np.sqrt(scale_factor)
 
         ps.com_to_origin()
-        ps.scale_to_virial()
+        ps.scale_to_standard()
 
-#        print(ps.kinetic_energy)
-#        print(ps.potential_energy)
-#        print(ps.virial_radius.to('pc'))
-#        print(np.sum(b.mass).to('M_sun'))
-#        print(np.mean(b.mass).to('M_sun'))
-#        print(np.std(b.vel[0]).to('km/s'))
-#        print(np.std(b.vel[1]).to('km/s'))
-#        print(np.std(b.vel[2]).to('km/s'))
+        ps.set_phi(ps)
+        print(ps.kinetic_energy)
+        print(ps.potential_energy)
+        print(ps.virial_radius.to('pc'))
+        print(np.min(b.mass).to('M_sun'))
+        print(np.median(b.mass.m_as('M_sun')) * ureg('M_sun'))
+        print(np.mean(b.mass).to('M_sun'))
+        print(np.std(b.mass).to('M_sun'))
+        print(np.max(b.mass).to('M_sun'))
+        print(np.sum(b.mass).to('M_sun'))
+        print(np.sum(b.mass).to('uM'))
+        print(np.std(b.vel[0]).to('km/s'))
+        print(np.std(b.vel[1]).to('km/s'))
+        print(np.std(b.vel[2]).to('km/s'))
 
         return ps
 
@@ -217,8 +215,6 @@ def make_plummer(n, eps, imf,
                  softening_type=0, show=False):
     if n < 2:
         n = 2
-    from tupan.ics.imf import IMF
-    imf = getattr(IMF, imf[0])(*imf[1:])
     p = Plummer(eps, imf, seed=seed, mfrac=mfrac,
                 softening_type=softening_type)
     ps = p.make_model(n)

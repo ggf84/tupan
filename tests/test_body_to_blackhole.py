@@ -37,7 +37,7 @@ if __name__ == "__main__":
     ps = stars + bhs
 
     ps.reset_pid()
-    ps.to_nbody_units()
+    ps.scale_to_standard()
 
     fname = ("plummer" + str(stars.n).zfill(5) + '-' +
              '_'.join(str(i) for i in imf) +

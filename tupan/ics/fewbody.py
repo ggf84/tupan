@@ -6,28 +6,29 @@ This module provides initial conditions for some few-body systems with
 known numerical solutions.
 """
 
+from ..units import ureg
 from ..particles.system import ParticleSystem
 
 
-def make_binary(m1, m2, ecc, sma=1):
+def make_binary(m1, m2, ecc, sma=1*ureg('uL')):
     """
     Returns initial conditions for a binary system.
     """
-    if not m1 > 0:
+    if not m1 > 0 * ureg.uM:
         raise ValueError("mass out of range (m1 > 0)")
 
-    if not m2 > 0:
+    if not m2 > 0 * ureg.uM:
         raise ValueError("mass out of range (m2 > 0)")
 
     if ecc > 1 or ecc < 0:
         raise ValueError("eccentricity out of range (0 < ecc < 1)")
 
-    if not sma > 0:
+    if not sma > 0 * ureg.uL:
         raise ValueError("semi-major-axis out of range (sma > 0)")
 
     m = m1 + m2
     r = sma * (1 + ecc)
-    v = ((m / sma) * (1 - ecc) / (1 + ecc))**0.5
+    v = (ureg.G * (m / sma) * (1 - ecc) / (1 + ecc))**0.5
     r1 = (m2 / m) * r
     r2 = -(m1 / m) * r
     v1 = (m2 / m) * v
@@ -36,17 +37,17 @@ def make_binary(m1, m2, ecc, sma=1):
     ps = ParticleSystem(2)
     b = ps.bodies
 
-    b.mass[...] = [m1, m2]
+    b.mass[...] = [m1.m_as('uM'), m2.m_as('uM')] * ureg('uM')
 
-    rx = [r1, r2]
+    rx = [r1.m_as('uL'), r2.m_as('uL')]
     ry = [0.0, 0.0]
     rz = [0.0, 0.0]
-    b.pos[...] = [rx, ry, rz]
+    b.pos[...] = [rx, ry, rz] * ureg('uL')
 
     vx = [0.0, 0.0]
-    vy = [v1, v2]
+    vy = [v1.m_as('uL/uT'), v2.m_as('uL/uT')]
     vz = [0.0, 0.0]
-    b.vel[...] = [vx, vy, vz]
+    b.vel[...] = [vx, vy, vz] * ureg('uL/uT')
 
     return ps
 
