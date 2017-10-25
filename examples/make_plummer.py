@@ -3,9 +3,9 @@
 
 
 """
-This example shows how to setup initial conditions
-for a star-cluster following a Plummer density profile.
-The model is constructed in viral equilibrium.
+This example shows how to setup initial conditions for
+a single star-cluster. Each cluster follows a Plummer
+density profile initially in virial equilibrium.
 """
 
 from tupan.units import ureg
@@ -24,27 +24,28 @@ eps = 4.0 / n
 # Initial Mass Function for particles, min/max mass.
 #
 # imf = IMF.equalmass()
-# imf = IMF.salpeter1955(0.4, 120.0)
-# imf = IMF.padoan2007(0.075, 120.0)
-# imf = IMF.parravano2011(0.075, 120.0)
-imf = IMF.maschberger2013(0.01, 150.0)
+# imf = IMF.salpeter1955(0.1 * ureg.M_sun, 120.0 * ureg.M_sun)
+# imf = IMF.padoan2007(0.01 * ureg.M_sun, 120.0 * ureg.M_sun)
+# imf = IMF.parravano2011(0.01 * ureg.M_sun, 120.0 * ureg.M_sun)
+imf = IMF.maschberger2013(0.01 * ureg.M_sun, 150.0 * ureg.M_sun)
 
 
 # Now construct the model in virial equilibrium.
 #
-mZAMS = imf.sample(n, seed=1) * ureg.M_sun
-mtot = mZAMS.sum()
+mZAMS, mtot = imf.sample(n, seed=1)
 ureg.define(f'uM = {mtot}')
 ps = make_plummer(n, eps, mZAMS, seed=1)
 
 
-# Dump the system to disk and view the final result.
+# Dump the system to disk.
 #
-
 fname = "plummer" + '-n' + str(n) + '-' + imf.__name__
 with HDF5IO(fname, 'w') as fid:
     fid.dump_snap(ps)
 
+
+# View the final result.
+#
 with GLviewer() as viewer:
     viewer.show_event(ps)
 

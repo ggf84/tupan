@@ -3,11 +3,10 @@
 
 
 """
-This example shows how to setup initial conditions
-for two colliding star-clusters. Each cluster follows
-a Plummer density profile initially in virial equilibrium.
+This example shows how to setup initial conditions for
+a binary star-cluster. Each cluster follows a Plummer
+density profile initially in virial equilibrium.
 """
-
 
 from tupan.units import ureg
 from tupan.ics.imf import IMF
@@ -20,29 +19,26 @@ from tupan.animation import GLviewer
 
 # Number of particles and softening parameter of each cluster.
 #
-n1 = 4096
-n2 = 16384
+n1 = 1024
+n2 = 4096
 eps1 = 4.0 / n1
 eps2 = 4.0 / n2
-n12 = n1 / n2
+
 
 # Initial Mass Function for particles, min/max mass.
 #
 # imf = IMF.equalmass()
-# imf = IMF.salpeter1955(0.4, 120.0)
-# imf = IMF.padoan2007(0.075, 120.0)
-# imf = IMF.parravano2011(0.075, 120.0)
-# imf = IMF.maschberger2013(0.01, 150.0)
-imf1 = IMF.maschberger2013(0.4, 4.0)
-imf2 = IMF.maschberger2013(0.1, 1.0)
+# imf = IMF.salpeter1955(0.1 * ureg.M_sun, 120.0 * ureg.M_sun)
+# imf = IMF.padoan2007(0.01 * ureg.M_sun, 120.0 * ureg.M_sun)
+# imf = IMF.parravano2011(0.01 * ureg.M_sun, 120.0 * ureg.M_sun)
+# imf = IMF.maschberger2013(0.01 * ureg.M_sun, 150.0 * ureg.M_sun)
+imf1 = IMF.maschberger2013(0.4 * ureg.M_sun, 4.0 * ureg.M_sun)
+imf2 = IMF.maschberger2013(0.1 * ureg.M_sun, 1.0 * ureg.M_sun)
 
-mZAMS1 = imf1.sample(n1, seed=1) * ureg.M_sun
-mZAMS2 = imf2.sample(n2, seed=2) * ureg.M_sun
+mZAMS1, mtot1 = imf1.sample(n1, seed=1)
+mZAMS2, mtot2 = imf2.sample(n2, seed=2)
 
-m1 = mZAMS1.sum()
-m2 = mZAMS2.sum()
-
-mtot = m1 + m2
+mtot = mtot1 + mtot2
 ureg.define(f'uM = {mtot}')
 
 
@@ -51,7 +47,7 @@ ureg.define(f'uM = {mtot}')
 #
 ecc = 0.7
 sma = 2.0 * ureg.uL
-parent = make_binary(m1, m2, ecc, sma=sma)
+parent = make_binary(mtot1, mtot2, ecc, sma=sma)
 
 
 # Now make the hierarchical system, i.e, substitute
@@ -67,11 +63,14 @@ subsys_factory = [
 ps = make_hierarchy(parent, subsys_factory)
 
 
-# Dump the system to disk and view the final result.
+# Dump the system to disk.
 #
 with HDF5IO("colliding_clusters", 'w') as fid:
     fid.dump_snap(ps)
 
+
+# View the final result.
+#
 with GLviewer() as viewer:
     viewer.show_event(ps)
 
