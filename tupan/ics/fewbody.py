@@ -59,18 +59,19 @@ def make_pythagorean():
     ps = ParticleSystem(3)
     b = ps.bodies
 
-    b.mass[...] = [3.0, 4.0, 5.0]
+    b.mass[...] = [3.0, 4.0, 5.0] * ureg('uM')
 
     rx = [+1.0, -2.0, +1.0]
     ry = [+3.0, -1.0, -1.0]
     rz = [0.0, 0.0, 0.0]
-    b.pos[...] = [rx, ry, rz]
+    b.pos[...] = [rx, ry, rz] * ureg('uL')
 
     vx = [0.0, 0.0, 0.0]
     vy = [0.0, 0.0, 0.0]
     vz = [0.0, 0.0, 0.0]
-    b.vel[...] = [vx, vy, vz]
+    b.vel[...] = [vx, vy, vz] * ureg('uL / uT')
 
+    ps.scale_to_standard(virial_ratio=None)
     return ps
 
 
@@ -81,18 +82,19 @@ def make_circular3():
     ps = ParticleSystem(3)
     b = ps.bodies
 
-    b.mass[...] = [1.0, 1.0, 1.0]
+    b.mass[...] = [1.0, 1.0, 1.0] * ureg('uM')
 
     rx = [0.0, +1.0, +0.5]
     ry = [0.0, 0.0, +0.8660254037844386]
     rz = [0.0, 0.0, 0.0]
-    b.pos[...] = [rx, ry, rz]
+    b.pos[...] = [rx, ry, rz] * ureg('uL')
 
     vx = [-0.5, -0.5, +1.0]
     vy = [+0.8660254037844386, -0.8660254037844386, 0.0]
     vz = [0.0, 0.0, 0.0]
-    b.vel[...] = [vx, vy, vz]
+    b.vel[...] = [vx, vy, vz] * ureg('uL / uT')
 
+    ps.scale_to_standard(virial_ratio=None)
     return ps
 
 
@@ -103,18 +105,19 @@ def make_figure83():
     ps = ParticleSystem(3)
     b = ps.bodies
 
-    b.mass[...] = [1.0, 1.0, 1.0]
+    b.mass[...] = [1.0, 1.0, 1.0] * ureg('uM')
 
     rx = [+0.9700436, -0.9700436, 0.0]
     ry = [-0.24308753, +0.24308753, 0.0]
     rz = [0.0, 0.0, 0.0]
-    b.pos[...] = [rx, ry, rz]
+    b.pos[...] = [rx, ry, rz] * ureg('uL')
 
     vx = [+0.466203685, +0.466203685, -0.93240737]
     vy = [+0.43236573, +0.43236573, -0.86473146]
     vz = [0.0, 0.0, 0.0]
-    b.vel[...] = [vx, vy, vz]
+    b.vel[...] = [vx, vy, vz] * ureg('uL / uT')
 
+    ps.scale_to_standard(virial_ratio=None)
     return ps
 
 
@@ -125,18 +128,19 @@ def make_figure84():
     ps = ParticleSystem(4)
     b = ps.bodies
 
-    b.mass[...] = [1.0, 1.0, 1.0, 1.0]
+    b.mass[...] = [1.0, 1.0, 1.0, 1.0] * ureg('uM')
 
     rx = [+1.382857, 0.0, -1.382857, 0.0]
     ry = [0.0, +0.157030, 0.0, -0.157030]
     rz = [0.0, 0.0, 0.0, 0.0]
-    b.pos[...] = [rx, ry, rz]
+    b.pos[...] = [rx, ry, rz] * ureg('uL')
 
     vx = [0.0, +1.871935, 0.0, -1.871935]
     vy = [+0.584873, 0.0, -0.584873, 0.0]
     vz = [0.0, 0.0, 0.0, 0.0]
-    b.vel[...] = [vx, vy, vz]
+    b.vel[...] = [vx, vy, vz] * ureg('uL / uT')
 
+    ps.scale_to_standard(virial_ratio=None)
     return ps
 
 
