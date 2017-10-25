@@ -454,7 +454,7 @@ class ParticleSystem(object):
             if ps.n:
                 ps.vel[...] *= v_scale
 
-    def scale_to_standard(self):
+    def scale_to_standard(self, virial_ratio=0.5):
         """Set the virial ratio to q=0.5 and total energy to E=-0.25, as
         defined by standard nbody units by rescaling positions and velocities.
 
@@ -463,15 +463,14 @@ class ParticleSystem(object):
         ke = self.kinetic_energy
         pe = self.potential_energy
 
-        q = 0.5
-        v_scale = np.sqrt(-q * pe / ke)
-        for ps in self.members.values():
-            if ps.n:
-                ps.vel[...] *= v_scale
+        if virial_ratio is not None:
+            v_scale = np.sqrt(-virial_ratio * pe / ke)
+            for ps in self.members.values():
+                if ps.n:
+                    ps.vel[...] *= v_scale
+            ke = -virial_ratio * pe
 
-        ke = -q * pe
         te = ke + pe
-
         r_scale = te.m / -0.25
         v_scale = np.sqrt(1 / r_scale)
         for ps in self.members.values():
