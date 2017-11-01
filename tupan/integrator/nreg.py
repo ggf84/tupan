@@ -55,7 +55,7 @@ def c_nreg_step(ps, h):
     """
     try:
         U = ps.U
-    except:
+    except AttributeError:
         ps.set_phi(ps)
         U = -ps.potential_energy
         ps.U = U
@@ -92,6 +92,7 @@ class NREG(Base):
         T = ps.kinetic_energy
         U = -ps.potential_energy
         ps.B = U - T
+        self.U0 = U
 
     def do_step(self, ps, h):
         """
@@ -100,7 +101,8 @@ class NREG(Base):
         if 'c.' in self.cli.method:
             return c_nreg_step(ps, h)
         elif 'a.' in self.cli.method:
-            return a_nreg_step(ps, h)
+            hh = h * self.U0
+            return a_nreg_step(ps, hh)
         else:
             raise NotImplemented(self.cli.method)
 
