@@ -98,8 +98,8 @@ class Sakura(Base):
 
         for p in ps.members.values():
             if p.n:
-                p.register_attribute('dpos', '{nd}, {nb}', 'real_t')
-                p.register_attribute('dvel', '{nd}, {nb}', 'real_t')
+                p.register_attribute('dpos', '{nd}, {nb}', 'real_t', 'uL')
+                p.register_attribute('dvel', '{nd}, {nb}', 'real_t', 'uL/uT')
 
         self.e0 = None
 
