@@ -9,18 +9,19 @@ import pickle
 import logging
 import numpy as np
 from itertools import count
+from ..units import ureg
 
 
 def power_of_two(ps, dt_max):
     """
 
     """
-    power = int(np.log2(ps.tstep_min) - 1)
-    dtq = 2.0**power
+    power = int(np.log2(ps.tstep_min.m_as('uT')) - 1)
+    dtq = (2.0**power) * ureg('uT')
     dtq = min(dtq, abs(dt_max))
 
     time = ps.global_time
-    while time % dtq != 0:
+    while (time % dtq).m_as('uT') != 0:
         dtq /= 2
 
     dtq = np.copysign(dtq, dt_max)

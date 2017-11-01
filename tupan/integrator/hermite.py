@@ -80,7 +80,8 @@ class HX(metaclass=abc.ABCMeta):
                     drdot = 0
                     for j in reversed(range(1, order-i)):
                         drdot += rdot[j+i]
-                        drdot *= dt / j
+                        # drdot *= dt / j
+                        drdot = drdot * dt / j
                     rdot[i] += drdot
         return ps
 
@@ -102,7 +103,8 @@ class HX(metaclass=abc.ABCMeta):
                     for j in reversed(range(1, nforce)):
                         ff = PM[j % 2](r0dot[j+i+1], r1dot[j+i+1])
                         drdot += ff * coefs[j]
-                        drdot *= h / j
+                        # drdot *= h / j
+                        drdot = drdot * h / j
                     ff = PM[0](r0dot[i+1], r1dot[i+1])
                     drdot += ff * coefs[0]
                     r1dot[i][...] = r0dot[i] + h * drdot
@@ -132,10 +134,12 @@ class HX(metaclass=abc.ABCMeta):
                     for j in reversed(range(1, nforce)):
                         ff = PM[(i + j) % 2](r0dot[j+2], r1dot[j+2])
                         s += ff * c[j]
-                        s *= h / j
+                        # s *= h / j
+                        s = s * h / j
                     ff = PM[i % 2](r0dot[2], r1dot[2])
                     s += ff * c[0]
-                    s *= hinv[i]
+                    # s *= hinv[i]
+                    s = s * hinv[i]
                     r1dot[i+2][...] = s
 
                 for i in range(nforce):
@@ -143,7 +147,8 @@ class HX(metaclass=abc.ABCMeta):
                     i += nforce
                     for j in reversed(range(1, order-i)):
                         drdot += r1dot[j+i+2]
-                        drdot *= h / j
+                        # drdot *= h / j
+                        drdot = drdot * h / j
                     r1dot[i+2] += drdot
 
         return ps1
