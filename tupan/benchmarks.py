@@ -9,7 +9,8 @@ import timeit
 import numpy as np
 from .particles.system import ParticleSystem
 from .lib import extensions as ext
-
+from .units import ureg
+ureg.define(f'uM = 1.0 * M_sun')
 
 KERNEL = [
     ('Phi', {'nforce': 1}),
@@ -25,12 +26,12 @@ KERNEL = [
 def set_particles(n):
     ps = ParticleSystem(n)
     b = ps.bodies
-    b.mass[...] = np.random.random((n,))
-    b.pos[...] = np.random.random((3, n)) * 10
-    b.vel[...] = np.random.random((3, n)) * 10
-    b.register_attribute('pnacc', '{nd}, {nb}', 'real_t')
-    b.register_attribute('dpos', '{nd}, {nb}', 'real_t')
-    b.register_attribute('dvel', '{nd}, {nb}', 'real_t')
+    b.mass[...] = np.random.random((n,)) * ureg('uM')
+    b.pos[...] = (np.random.random((3, n)) * 10) * ureg('uL')
+    b.vel[...] = (np.random.random((3, n)) * 10) * ureg('uL/uT')
+    b.register_attribute('pnacc', '{nd}, {nb}', 'real_t', 'uL/uT**2')
+    b.register_attribute('dpos', '{nd}, {nb}', 'real_t', 'uL')
+    b.register_attribute('dvel', '{nd}, {nb}', 'real_t', 'uL/uT')
     return b
 
 
