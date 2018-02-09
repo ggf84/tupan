@@ -28,7 +28,7 @@ FILE_NAMES = [
 
 
 COMPILER_FLAGS = [
-    '-O2',
+    '-O3',
     '-flto',
     '-fopenmp',
     '-ffast-math',
